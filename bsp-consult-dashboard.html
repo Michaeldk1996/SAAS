@@ -28624,7 +28624,9 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
   function openPair(ka, kb) { _pendingPair = [String(ka), String(kb)]; applyPendingPair(); }
   // a page load carrying a pair opens Head to Head on it
   (function xHandoverOnLoad() {
-    const go = () => { const pr = xReadHandover(); if (!pr) return; _pendingPair = pr; try { document.querySelector('#mainNav button[data-tab="h2h"]').click(); } catch (e) {} applyPendingPair(); };
+    // read now, while the page script runs: the first tab the shell opens (Matches) drops ?a=&b= from the URL
+    const pr0 = typeof location !== 'undefined' ? xReadHandover() : null;
+    const go = () => { const pr = pr0; if (!pr) return; _pendingPair = pr; try { document.querySelector('#mainNav button[data-tab="h2h"]').click(); } catch (e) {} applyPendingPair(); };
     if (typeof document === 'undefined') return;
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else setTimeout(go, 0);
   })();
@@ -28826,17 +28828,15 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
       <div style="display:flex; align-items:center; gap:12px;"><span style="width:34px; height:34px; border-radius:50%; background:var(--h2h-raised); border:1px solid color-mix(in srgb, var(--h2h-white) 8%, transparent); display:inline-flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:var(--h2h-text);">${E(sd === 'b' ? m.bMono : m.aMono)}</span><span style="font-size:15px; font-weight:800; color:var(--h2h-text);">${E(name)}</span></div>
       <div style="display:flex; flex-direction:column; align-items:center; gap:3px;"><span style="${X_CAP}">Likely opening price</span><span style="font-family:'IBM Plex Mono',monospace; font-size:clamp(20px,2.2vw,28px); font-weight:800; color:${state.flash ? 'var(--h2h-blue)' : 'var(--h2h-text)'}; transition:color 260ms ease; line-height:1.05;">${E(price)}</span></div>
     </div>`;
-    let foot = '';
-    const eA = weeklyElo(v.a.full), eB = weeklyElo(v.b.full);
-    if (m.priced && eA != null && eB != null) {
-      const ra = Number(eA), rb = Number(eB), gap = Math.abs(ra - rb), favA = ra >= rb, f = m.foot || {};
-      const pFav = 1 / (1 + Math.pow(10, -gap / 400));
-      const mod = f.model != null ? f.model : f.aPct != null ? (favA ? f.aPct : f.bPct) : null;
-      foot = `<div style="display:flex; justify-content:center;"><span style="font-size:11px; color:${G}; text-align:center;">Elo gap <span style="font-family:'IBM Plex Mono',monospace; color:${G};">${Math.round(gap)}</span> implies <span style="font-family:'IBM Plex Mono',monospace; color:${G};">~${Math.round(pFav * 100)}%</span> for ${E(favA ? v.a.short : v.b.short)}${mod != null ? ` — the model midpoint sits at <span style="font-family:'IBM Plex Mono',monospace; color:${G};">${E(String(mod))}%</span>` : ''}.</span></div>`;
-    }
-    return `<div id="h2h-model" class="x-sec" data-h2h-model="${m.priced ? 'priced' : 'empty'}" style="background:var(--h2h-card); border:1.25px solid color-mix(in srgb, var(--h2h-white) 6%, transparent); border-radius:14px; padding:26px 26px 24px; display:flex; flex-direction:column; gap:18px;">
+    // the foot = the founder's ruled content (2026-11-16, h2h.md "Model"): each player's win chance and the context, then how
+    // the price is built — drawn in the design's foot style (11px grey, centred, figures in Plex Mono), one line each.
+    const f = m.foot, n = x => `<span style="font-family:'IBM Plex Mono',monospace; color:${G};">${E(x)}</span>`;
+    const footLine = t => `<div style="display:flex; justify-content:center;"><span style="font-size:11px; color:${G}; text-align:center;">${t}</span></div>`;
+    const foot = !m.priced || !f ? '' : footLine(`Win chance ${E(f.aShort)} ${n(f.aPct + '%')} · ${E(f.bShort)} ${n(f.bPct + '%')} · ${E(f.surface)}, best of ${n(f.bestOf)}`)
+      + footLine(`Elo base ${n(f.basePct + '%')} for ${E(f.aShort)}, moved by ${n(f.layers)} of ${n(f.of)} model layers · plus Pinnacle’s typical opening margin, ${n(f.margin + '%')}${f.marginN ? ` (n=${n(f.marginN)})` : ''}${f.at ? ` · model run ${n(f.at)}` : ''}`);
+    return `<div id="h2h-model" class="x-sec" data-h2h-model="${m.priced ? 'priced' : (m.loading ? 'loading' : 'empty')}" style="background:var(--h2h-card); border:1.25px solid color-mix(in srgb, var(--h2h-white) 6%, transparent); border-radius:14px; padding:26px 26px 24px; display:flex; flex-direction:column; gap:18px;">
       <div style="display:flex; align-items:center; flex-wrap:wrap; gap:6px 12px;"><h2 style="margin:0; font-size:18px; font-weight:800; letter-spacing:-0.01em; color:var(--h2h-text);">Stennisfy Model</h2><span style="font-size:12.5px; color:${G};">Where the model expects the market to open this matchup</span></div>
-      ${m.priced ? `<div style="display:flex; flex-direction:column; gap:14px;"><div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:14px;">${box(v.a, 'a', m.aName, m.aPrice)}${box(v.b, 'b', m.bName, m.bPrice)}</div>${foot}</div>`
+      ${m.priced ? `<div style="display:flex; flex-direction:column; gap:14px;"><div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:14px;">${box(v.a, 'a', m.aName, m.aPrice)}${box(v.b, 'b', m.bName, m.bPrice)}</div>${foot ? `<div style="display:flex; flex-direction:column; gap:4px;">${foot}</div>` : ''}</div>`
         : `<span style="font-size:13px; color:${G};">${E(m.emptyText || 'No model price for this pair.')}</span>`}
     </div>`;
   }
