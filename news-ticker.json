@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-15T23:55:19.451Z",
+ "generatedAt": "2026-11-16T00:32:47.443Z",
  "tournaments": [
   {
    "key": "2794",
@@ -19,12 +19,12 @@
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 94,
+   "items": 100,
    "byType": {
-    "quote": 94
+    "quote": 100
    },
    "latestTimestamp": "2026-11-15T22:45:27.000Z",
-   "updatedAt": "2026-11-15T23:55:19.451Z"
+   "updatedAt": "2026-11-16T00:32:47.443Z"
   },
   {
    "key": "1681",
@@ -1424,6 +1424,38 @@
    "file": "news-ticker/1681-2026.json"
   },
   {
+   "id": "quote-39e909fee82206",
+   "type": "quote",
+   "playerId": "2832",
+   "opponentId": null,
+   "player": "T. Fritz",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-14T14:33:00.000Z",
+   "timestampKind": "observed (Tennis TV published the clip then)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "It feels, it feels nice. I think I think I've lost a lot of indoor finals, but at the same time I didn't really look too much into it, because when I won Tokyo the one year, the whole tournament was pretty much played indoors, roof closed.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "On-court interview",
+   "sourceUrl": "https://www.tennistv.com/videos/4609109/stockholm-2026-final-taylor-fritz-interview",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
+   "interview": "on-court",
+   "topic": "On his first indoor title",
+   "sourceHash": "76177ed9b10c2978",
+   "publishedAt": "2026-11-16T00:32:47.443Z",
+   "file": "news-ticker/tour-2026.json"
+  },
+  {
    "id": "quote-89334d215ebb52",
    "type": "quote",
    "playerId": "2832",
@@ -1456,6 +1488,38 @@
    "file": "news-ticker/1681-2026.json"
   },
   {
+   "id": "quote-f4686cdf762695",
+   "type": "quote",
+   "playerId": "2832",
+   "opponentId": null,
+   "player": "T. Fritz",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-14T14:33:00.000Z",
+   "timestampKind": "observed (Tennis TV published the clip then)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "Stressful match for sure. You know, I felt like I came out, I was playing really well, and then I let some opportunities slip in the second set, and then he played a good game, really, really good defensive game. I made a couple mistakes. He's got a big serve, he was playing well. It kind of changed the the momentum of the match. I was having a really hard time breaking him after that, and you know, it turned into a really a really tight just war of match.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "On-court interview",
+   "sourceUrl": "https://www.tennistv.com/videos/4609109/stockholm-2026-final-taylor-fritz-interview",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
+   "interview": "on-court",
+   "topic": "On the match",
+   "sourceHash": "6a3131bb16db3305",
+   "publishedAt": "2026-11-16T00:32:47.443Z",
+   "file": "news-ticker/tour-2026.json"
+  },
+  {
    "id": "quote-c9172b236c9ff9",
    "type": "quote",
    "playerId": "2382",
@@ -1485,235 +1549,6 @@
    "sourceHash": "3b784c34bf0e15b5",
    "publishedAt": "2026-11-14T15:06:10.545Z",
    "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-207e145342c9e0",
-   "type": "quote",
-   "playerId": "2832",
-   "opponentId": "2849",
-   "player": "T. Fritz",
-   "opponent": "L. Musetti",
-   "tournament": "Stockholm",
-   "tournamentKey": "1681",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-14T14:24:26.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Quotes",
-   "context": "after beating L. Musetti",
-   "eventKey": "12179838",
-   "won": true,
-   "text": "It was a really good match",
-   "originalText": "Det var en riktigt bra match",
-   "language": "sv",
-   "translated": true,
-   "translationModel": "claude-opus-5-5",
-   "sourceName": "SVT Sport",
-   "sourceUrl": "https://www.svt.se/sport/tennis/tennisslaget-i-stockholm-open-hyllas-hittar-krysset",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On his Stockholm Open final win over Tirante",
-   "sourceHash": "d7595ce7332d1393",
-   "publishedAt": "2026-11-14T15:06:10.545Z",
-   "file": "news-ticker/1681-2026.json"
-  },
-  {
-   "id": "report-12179948",
-   "type": "report",
-   "playerId": "2832",
-   "opponentId": "366",
-   "player": "T. Fritz",
-   "opponent": "T. A. Tirante",
-   "tournament": "Stockholm",
-   "tournamentKey": "1681",
-   "season": "2026",
-   "stage": "main draw",
-   "round": "final",
-   "eventKey": "12179948",
-   "timestamp": "2026-11-14T14:24:08.240Z",
-   "timestampKind": "observed",
-   "observed": {
-    "endedAt": "2026-11-14T14:24:08.240Z",
-    "startedAt": "2026-11-14T12:12:12.740Z",
-    "minutes": 132
-   },
-   "category": "Statistics",
-   "text": "Fritz beat Tirante 6–2, 4–6, 7–6 in the Stockholm final to win his first indoor title, the 12th of his career.\n\nFritz broke early after some strong defence to take the first set 6–2 but Tirante came back with attacking tennis and one break gave him the second 6–4. Fritz saw it the same way: \"It was a stressful match, … I came out and was playing really well but then let some opportunities slip.\" Nobody was broken in the third set and Fritz, now finding his forehand, was the better player in the tiebreak and took it 7–3.\n\nHis serve held up through all of it, even the second serve: he won 73% of the points behind it, far above his average of 53% on hard.\n\nOn the other side, Tirante, who called the physio in the SF, did not call for a medical timeout this time.\n\nAll in all, a deserved title built on a strong start and a serve that held in the third set, the strengths of a big server and complete baseliner like Fritz in these indoor conditions. He said: \"It feels, it feels nice.\"\n\nFritz: performance rating 8.4 | W: 22 / UE: 21 | DR: 1.30\n\nTirante: performance rating 8.0 | W: 35 / UE: 36 | DR: 0.77",
-   "baseText": "Fritz beat Tirante 6–2, 4–6, 7–6 in the Stockholm final to win his first indoor title, the 12th of his career.\n\nFritz broke early after some strong defence to take the first set 6–2 but Tirante came back with attacking tennis and one break gave him the second 6–4. Fritz saw it the same way: \"It was a stressful match, … I came out and was playing really well but then let some opportunities slip.\" Nobody was broken in the third set and Fritz, now finding his forehand, was the better player in the tiebreak and took it 7–3.\n\nHis serve held up through all of it, even the second serve: he won 73% of the points behind it, far above his average of 53% on hard.\n\nOn the other side, Tirante, who called the physio in the SF, did not call for a medical timeout this time.\n\nAll in all, a deserved title built on a strong start and a serve that held in the third set, the strengths of a big server and complete baseliner like Fritz in these indoor conditions. He said: \"It feels, it feels nice.\"",
-   "rating": [
-    "Fritz: performance rating 8.4 | W: 22 / UE: 21 | DR: 1.30",
-    "Tirante: performance rating 8.0 | W: 35 / UE: 36 | DR: 0.77"
-   ],
-   "shotStats": {
-    "p1": {
-     "performance": 8.4,
-     "serveQuality": 8.7,
-     "unreturnedPct": 32,
-     "firstInPct": 60,
-     "firstWonPct": 76,
-     "secondWonPct": 73,
-     "secondSpeed": 165,
-     "returnQuality": 7.3,
-     "fhWinners": 11,
-     "bhWinners": 4,
-     "fhUnforced": 10,
-     "bhUnforced": 10,
-     "forcedErrors": 26,
-     "baselineWon": 50,
-     "under9Won": 84,
-     "over9Won": 8,
-     "bpWon": [
-      2,
-      4
-     ],
-     "netWon": [
-      13,
-      22
-     ]
-    },
-    "p2": {
-     "performance": 8,
-     "serveQuality": 8.8,
-     "unreturnedPct": 33,
-     "firstInPct": 59,
-     "firstWonPct": 74,
-     "secondWonPct": 57,
-     "secondSpeed": 167,
-     "returnQuality": 7.2,
-     "fhWinners": 19,
-     "bhWinners": 6,
-     "fhUnforced": 16,
-     "bhUnforced": 19,
-     "forcedErrors": 34,
-     "baselineWon": 34,
-     "under9Won": 73,
-     "over9Won": 9,
-     "bpWon": [
-      1,
-      1
-     ],
-     "netWon": [
-      10,
-      13
-     ]
-    },
-    "postedAt": "2026-11-14T14:30:10.000Z",
-    "readAt": "2026-11-14T19:24:38.777Z",
-    "sourceName": "ATP broadcast match statistics (via @ATP_Entry)",
-    "sourceUrl": "https://x.com/ATP_Entry/status/2121611652835467572",
-    "agreed": "6 of 6 serve figures within 3 points of ours; set scores and break points equal",
-    "wue": {
-     "compared": 4,
-     "maxDiff": 0
-    }
-   },
-   "commentary": {
-    "text": "Fritz won the Stockholm final against Tirante in three sets, taking his first indoor title and the 12th title of his career. Fritz broke early in the first set after some strong defence and played well in that set but Tirante improved and took the second set to force a deciding set. Tirante played aggressive, attacking tennis and came to the net often, winning several points with his volleys, though some volleys were not good enough. Fritz hit some powerful returns and found his forehand more and more often as the match went on and he returned to his first-set level to close it out. Tirante, playing in his first final, pushed Fritz all the way and Fritz's experience may have made the difference.",
-    "sourceName": "Tennis TV highlights commentary",
-    "sourceUrl": "https://www.tennistv.com/videos/4609119/stockholm-2026-final-highlights"
-   },
-   "composed": {
-    "version": 3,
-    "sheetHash": "50cdad4d396c7d64",
-    "status": "ok",
-    "model": "claude-opus-5-5",
-    "tries": 1,
-    "runs": 1,
-    "usage": {
-     "input": 5464,
-     "output": 2850,
-     "calls": 1
-    },
-    "body": "Fritz beat Tirante 6–2, 4–6, 7–6 in the Stockholm final to win his first indoor title, the 12th of his career.\n\nFritz broke early after some strong defence to take the first set 6–2 but Tirante came back with attacking tennis and one break gave him the second 6–4. Fritz saw it the same way: \"It was a stressful match, … I came out and was playing really well but then let some opportunities slip.\" Nobody was broken in the third set and Fritz, now finding his forehand, was the better player in the tiebreak and took it 7–3.\n\nHis serve held up through all of it, even the second serve: he won 73% of the points behind it, far above his average of 53% on hard.\n\nOn the other side, Tirante, who called the physio in the SF, did not call for a medical timeout this time.\n\nAll in all, a deserved title built on a strong start and a serve that held in the third set, the strengths of a big server and complete baseliner like Fritz in these indoor conditions. He said: \"It feels, it feels nice.\""
-   },
-   "fields": {
-    "score": "6-2, 4-6, 7-6",
-    "round": "final",
-    "retired": false,
-    "h2h": {
-     "a": 1,
-     "b": 1,
-     "n": 2
-    },
-    "durationMinutes": 132,
-    "facts": {
-     "tiebreakSets": [
-      {
-       "set": 3,
-       "winner": "p1"
-      }
-     ],
-     "brokenFrom400": {
-      "p2": 1
-     }
-    },
-    "standouts": [
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "firstWon",
-      "value": 76,
-      "won": 38,
-      "total": 50
-     },
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "secondWon",
-      "value": 73,
-      "won": 24,
-      "total": 33,
-      "baseline": 53,
-      "scope": "last52",
-      "surface": "Hard",
-      "n": 53
-     },
-     {
-      "player": "winner",
-      "tone": "bad",
-      "metric": "ret2Won",
-      "value": 43,
-      "won": 16,
-      "total": 37,
-      "baseline": 53,
-      "scope": "last52",
-      "surface": "Hard",
-      "n": 53
-     },
-     {
-      "player": "loser",
-      "tone": "bad",
-      "metric": "winnersErrors",
-      "winners": 35,
-      "unforcedErrors": 36
-     }
-    ],
-    "winner": {
-     "aces": 7,
-     "winners": 22,
-     "unforcedErrors": 21,
-     "breakPointsSaved": 0,
-     "breakPointsFaced": 1,
-     "breakPointsSource": "box score"
-    },
-    "loser": {
-     "aces": 10,
-     "winners": 35,
-     "unforcedErrors": 36,
-     "breakPointsSaved": 2,
-     "breakPointsFaced": 4,
-     "breakPointsSource": "box score"
-    }
-   },
-   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
-   "sourceUrl": "pbp/12179948.json",
-   "language": "en",
-   "translated": false,
-   "sourceHash": "834da811f7e198d3",
-   "publishedAt": "2026-11-14T14:44:36.468Z",
-   "revisedAt": "2026-11-15T04:33:42.379Z",
-   "revision": 5,
-   "file": "news-ticker/1681-2026.json"
   }
  ]
 }
