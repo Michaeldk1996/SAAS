@@ -1,17 +1,17 @@
 {
- "generatedAt": "2026-11-16T15:56:20.689Z",
+ "generatedAt": "2026-11-16T16:41:28.259Z",
  "tournaments": [
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 115,
+   "items": 117,
    "byType": {
-    "quote": 115
+    "quote": 117
    },
-   "latestTimestamp": "2026-11-16T14:48:50.000Z",
-   "updatedAt": "2026-11-16T15:56:20.689Z"
+   "latestTimestamp": "2026-11-16T15:43:54.954Z",
+   "updatedAt": "2026-11-16T16:41:28.259Z"
   },
   {
    "key": "2794",
@@ -54,6 +54,68 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-1484fc62d72637",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": null,
+   "player": "C. Alcaraz",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-16T15:43:54.954Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "I&#x27;m just really happy to start the tournament like this.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "BBC Sport",
+   "sourceUrl": "https://www.bbc.co.uk/sport/tennis/articles/ckvg294x5yzqo?at_medium=RSS&at_campaign=rss",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his opening win over Frances Tiafoe",
+   "sourceHash": "13b85dd847e7779e",
+   "publishedAt": "2026-11-16T16:41:28.259Z",
+   "file": "news-ticker/tour-2026.json"
+  },
+  {
+   "id": "quote-758fd4e2661882",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": null,
+   "player": "C. Alcaraz",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-16T15:43:54.954Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "The trouble that I got every time I have played against Frances made me really focused,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "BBC Sport",
+   "sourceUrl": "https://www.bbc.co.uk/sport/tennis/articles/ckvg294x5yzqo?at_medium=RSS&at_campaign=rss",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On past difficulties facing Frances Tiafoe",
+   "sourceHash": "3c9daa15ae23a685",
+   "publishedAt": "2026-11-16T16:41:28.259Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-3d6b11f3aa06d9",
    "type": "quote",
@@ -1537,201 +1599,6 @@
    "sourceHash": "66d9f8a3d5aef611",
    "publishedAt": "2026-11-15T16:28:17.739Z",
    "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-ad770ae6ab6205",
-   "type": "quote",
-   "playerId": "1980",
-   "opponentId": null,
-   "player": "A. Zverev",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-15T15:08:00.000Z",
-   "timestampKind": "observed (Tennis TV published the clip then)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "I think all of them have great stories",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "On-court interview",
-   "sourceUrl": "https://www.tennistv.com/videos/4609436/turin-2026-rr-zverev-interview",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
-   "interview": "on-court",
-   "topic": "On the former world number ones",
-   "sourceHash": "044c154e4d10ea3f",
-   "publishedAt": "2026-11-15T16:28:17.739Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "report-12179707",
-   "type": "report",
-   "playerId": "1980",
-   "opponentId": "50323",
-   "player": "A. Zverev",
-   "opponent": "R. Jodar",
-   "tournament": "Finals - Turin",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "stage": "main draw",
-   "round": null,
-   "eventKey": "12179707",
-   "timestamp": "2026-11-15T14:55:53.134Z",
-   "timestampKind": "observed",
-   "observed": {
-    "endedAt": "2026-11-15T14:55:53.134Z",
-    "startedAt": "2026-11-15T13:28:51.970Z",
-    "minutes": 87
-   },
-   "category": "Statistics",
-   "text": "Zverev beat Jodar in straight sets in the opening singles match of the week in Turin, against a 20-year-old who was playing the event for the first time.\n\nIt was not easy for either of them. The ball was not flying through the air on this fast indoor court and both players seemed to struggle at times to control it. Jodar held well early on but Zverev broke him late in the first set and served for it. Jodar had two break points in that game, the only chances he got all match and Zverev saved both to take the set 6–4. The second set followed the same pattern. Zverev broke early, did not see another break point and took it 6–4 as well.\n\nThat serve was the whole story, because Jodar barely got a look at it. Zverev won 86% of the points behind his first serve, against his 74% average on hard. He was also the more clutch of the two on the big points.\n\nIt was not perfect but it did not need to be. It was not his best return performance and he let most of his break points go. Still, one break in each set was enough and the moment that decided it came when he held while serving for the first set. Shelton waits in his next match.\n\nZverev: W: 21 / UE: 18 | DR: 2.01\n\nJodar: W: 12 / UE: 10 | DR: 0.50",
-   "baseText": "Zverev beat Jodar in straight sets in the opening singles match of the week in Turin, against a 20-year-old who was playing the event for the first time.\n\nIt was not easy for either of them. The ball was not flying through the air on this fast indoor court and both players seemed to struggle at times to control it. Jodar held well early on but Zverev broke him late in the first set and served for it. Jodar had two break points in that game, the only chances he got all match and Zverev saved both to take the set 6–4. The second set followed the same pattern. Zverev broke early, did not see another break point and took it 6–4 as well.\n\nThat serve was the whole story, because Jodar barely got a look at it. Zverev won 86% of the points behind his first serve, against his 74% average on hard. He was also the more clutch of the two on the big points.\n\nIt was not perfect but it did not need to be. It was not his best return performance and he let most of his break points go. Still, one break in each set was enough and the moment that decided it came when he held while serving for the first set. Shelton waits in his next match.",
-   "rating": [
-    "Zverev: W: 21 / UE: 18 | DR: 2.01",
-    "Jodar: W: 12 / UE: 10 | DR: 0.50"
-   ],
-   "shotStats": {
-    "p1": {
-     "performance": null,
-     "serveQuality": null,
-     "unreturnedPct": null,
-     "firstInPct": 84,
-     "firstWonPct": 86,
-     "secondWonPct": 50,
-     "secondSpeed": null,
-     "returnQuality": null,
-     "fhWinners": null,
-     "bhWinners": null,
-     "fhUnforced": null,
-     "bhUnforced": null,
-     "forcedErrors": null,
-     "baselineWon": null,
-     "under9Won": null,
-     "over9Won": null,
-     "bpWon": [
-      2,
-      7
-     ],
-     "netWon": null
-    },
-    "p2": {
-     "performance": null,
-     "serveQuality": null,
-     "unreturnedPct": null,
-     "firstInPct": 63,
-     "firstWonPct": 67,
-     "secondWonPct": 50,
-     "secondSpeed": null,
-     "returnQuality": null,
-     "fhWinners": null,
-     "bhWinners": null,
-     "fhUnforced": null,
-     "bhUnforced": null,
-     "forcedErrors": null,
-     "baselineWon": null,
-     "under9Won": null,
-     "over9Won": null,
-     "bpWon": [
-      0,
-      2
-     ],
-     "netWon": null
-    },
-    "postedAt": "2026-11-15T15:01:01.000Z",
-    "readAt": "2026-11-15T17:26:26.803Z",
-    "sourceName": "ATP broadcast match statistics (via @ATP_Entry)",
-    "sourceUrl": "https://x.com/ATP_Entry/status/2121981804450029833",
-    "agreed": "6 of 6 serve figures within 3 points of ours; set scores and break points equal"
-   },
-   "commentary": {
-    "text": "Zverev beat Jodar 6-4, 6-4 in just under an hour and a half, in the opening singles match of the week. Jodar, aged 20 and making his debut at the event, came through his first two service games well but his serve was named as an area where he can still improve. The ball was not flying through the air and the players seemed to struggle at times to control it. Zverev served big and posted a high first serve percentage, taking the first set after 40 minutes. The second set followed a similar pattern. Jodar's movement and athleticism were good enough to compete at this level but Zverev's serving proved a little too much for him.",
-    "sourceName": "Tennis TV highlights commentary",
-    "sourceUrl": "https://www.tennistv.com/videos/4609437/turin-2026-rr-zverev-jodar-highlights"
-   },
-   "composed": {
-    "version": 3,
-    "sheetHash": "bfd6a7621f944721",
-    "status": "ok",
-    "model": "claude-opus-5-5",
-    "tries": 1,
-    "runs": 1,
-    "usage": {
-     "input": 6003,
-     "output": 1629,
-     "calls": 1
-    },
-    "body": "Zverev beat Jodar in straight sets in the opening singles match of the week in Turin, against a 20-year-old who was playing the event for the first time.\n\nIt was not easy for either of them. The ball was not flying through the air on this fast indoor court and both players seemed to struggle at times to control it. Jodar held well early on but Zverev broke him late in the first set and served for it. Jodar had two break points in that game, the only chances he got all match and Zverev saved both to take the set 6–4. The second set followed the same pattern. Zverev broke early, did not see another break point and took it 6–4 as well.\n\nThat serve was the whole story, because Jodar barely got a look at it. Zverev won 86% of the points behind his first serve, against his 74% average on hard. He was also the more clutch of the two on the big points.\n\nIt was not perfect but it did not need to be. It was not his best return performance and he let most of his break points go. Still, one break in each set was enough and the moment that decided it came when he held while serving for the first set. Shelton waits in his next match."
-   },
-   "fields": {
-    "score": "6-4, 6-4",
-    "round": null,
-    "retired": false,
-    "h2h": {
-     "a": 2,
-     "b": 0,
-     "n": 2
-    },
-    "durationMinutes": 87,
-    "standouts": [
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "servePointsLost",
-      "value": 10,
-      "total": 51
-     },
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "aces",
-      "value": 10
-     },
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "firstWon",
-      "value": 86,
-      "won": 37,
-      "total": 43,
-      "baseline": 74,
-      "scope": "last52",
-      "surface": "Hard",
-      "n": 49
-     }
-    ],
-    "winner": {
-     "aces": 10,
-     "winners": 21,
-     "unforcedErrors": 18,
-     "breakPointsSaved": 2,
-     "breakPointsFaced": 2,
-     "breakPointsSource": "box score"
-    },
-    "loser": {
-     "aces": 3,
-     "winners": 12,
-     "unforcedErrors": 10,
-     "breakPointsSaved": 5,
-     "breakPointsFaced": 7,
-     "breakPointsSource": "box score"
-    }
-   },
-   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
-   "sourceUrl": "pbp/12179707.json",
-   "language": "en",
-   "translated": false,
-   "sourceHash": "838d9fb9d62c59e7",
-   "publishedAt": "2026-11-15T15:18:15.690Z",
-   "revisedAt": "2026-11-15T18:01:39.448Z",
-   "revision": 2,
-   "file": "news-ticker/2794-2026.json"
   }
  ]
 }
