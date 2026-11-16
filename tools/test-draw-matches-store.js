@@ -88,6 +88,14 @@ const brd = [{ id: 'past-1', tag: 'board', finalScore: {} }];
 const st = { matches: { 'past-1': { match: { id: 'past-1', tag: 'store', finalScore: {} } }, 'past-2': { match: { id: 'past-2', tag: 'store', finalScore: {} } }, 'past-3': { match: { id: 'past-3' } } } };
 const look = matchById(brd, st);
 check('matchById: the board row wins (fresher); off the board → the store copy; unscored or unknown → null', look('past-1').tag === 'board' && look('past-2').tag === 'store' && look('past-3') === null && look('past-x') === null && matchById(brd, null)('past-2') === null);
+// Founder 2026-11-16: past the board and the store (an archived draw), the Draw tab's row from the draw's own result.
+{
+  const prev = global.window; global.window = { TTDraw: { rowById: id => ({ 'past-1': { id, tag: 'draw', finalScore: {} }, 'past-2': { id, tag: 'draw', finalScore: {} }, 'past-9': { id, tag: 'draw', finalScore: {} }, 'past-8': { id, tag: 'draw' } })[id] || null } };
+  const lk = matchById(brd, st);
+  check('matchById: board, then store, then the Draw tab\'s result row; an unscored draw row → null (control: without the fallback past-9 is null)',
+    lk('past-1').tag === 'board' && lk('past-2').tag === 'store' && lk('past-9').tag === 'draw' && lk('past-8') === null);
+  global.window = prev;
+}
 check('openAnalysisModal and the back-navigation reopen both use matchById', /function openAnalysisModal\(matchId, tab\)\{\n  const m = matchById\(matchId\);/.test(html) && html.includes('reopenModal(s){ if (matchById(s.id)) openAnalysisModal(s.id, s.tab); }'));
 check('the Key factors model card falls back to the store\'s model entry when model-output.json no longer holds the match', /const mo = \(typeof modelOutput[^\n]*modelOutput\.matches\[m\.id\] : null\) \|\| \(ds && ds\.model\) \|\| null;/.test(html));
 check('the store is declared beside the board (no use-before-declaration) and loaded with the Draw section (tournaments-draw.js since the 2026-11-15 rebuild)',

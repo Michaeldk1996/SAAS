@@ -154,6 +154,41 @@ function stageOf(M, F) {
   const r = M.rounds.find(x => x.done < x.total); return r ? r.name : DASH;
 }
 
+// ── a finished match opens the one Match Analysis (founder 2026-11-16: "clicking a match does nothing") ─────────────
+// The id is `past-<eventKey>`. The board's row (matches.json) or the draw store's copy (draw-matches.json, 16 days) is the
+// full row and always wins (the page's matchById). Past them — an archived draw, a match the store has aged out — the
+// row is built from the draw's own published result (tournament-progression / draws-archive): players, keys, set
+// scores, date, round, surface, event key. Nothing else is filled in: every tab reads its own shards by event key and
+// player key (Match Stats reads setstats/<eventKey>), and what it cannot find is a dash. Main draw only.
+const ROUND_FEED = { R128: '1/64-finals', R64: '1/32-finals', R32: '1/16-finals', R16: '1/8-finals', QF: '1/4-finals', SF: '1/2-finals', F: 'Final' };
+const ROWS = new Map();
+function resultRow(ev, pm) {
+  if (!pm || pm.eventKey == null || !pm.p1 || !pm.p2 || !Array.isArray(pm.score) || (pm.winner !== 1 && pm.winner !== 2)) return null;
+  const tour = 'ATP ' + ((ev.entry && ev.entry.feedName ? String(ev.entry.feedName).replace(/^ATP /, '') : '') || ev.entryName || cityOf(ev.draw));
+  const sets = pm.score.map(x => ({ p1: Number(x[0]), p2: Number(x[1]) }));
+  const p1Sets = sets.filter(x => x.p1 > x.p2).length, p2Sets = sets.filter(x => x.p2 > x.p1).length;
+  const sh = ev.draw && ev.draw.sheetHeader ? ev.draw.sheetHeader : {};
+  const key = k => (k != null && k !== '' && Number.isFinite(+k) ? +k : null);
+  return { id: 'past-' + pm.eventKey, date: pm.date || null, time: pm.time || null, p1: pm.p1.name, p2: pm.p2.name,
+    p1Key: key(pm.p1.playerKey), p2Key: key(pm.p2.playerKey), tour, tourBadge: 'ATP',
+    surface: sh.surface ? String(sh.surface).toLowerCase() : null,
+    tournamentRound: ROUND_FEED[pm.roundCode] ? tour + ' - ' + ROUND_FEED[pm.roundCode] : null, qualifying: false,
+    finalScore: { display: sets.map(x => x.p1 + '-' + x.p2).join(', '), sets, p1Sets, p2Sets, winner: pm.winner === 1 ? 'p1' : 'p2' },
+    retired: pm.status === 'retired', walkover: pm.status === 'walkover', live: false, interrupted: false, fromDrawResult: true };
+}
+// The id a finished bracket match opens, or null (no event key, qualifying, or no published result for it).
+function analysisId(ev, m) {
+  if (!m || m.eventKey == null || S.kind === 'qual') return null;
+  const id = 'past-' + m.eventKey;
+  if (!ROWS.has(id)) {
+    const pm = ev.entry && Array.isArray(ev.entry.matches) ? ev.entry.matches.find(x => String(x.eventKey) === String(m.eventKey)) : null;
+    const r = resultRow(ev, pm); if (!r) return null;
+    ROWS.set(id, r);
+  }
+  return id;
+}
+function openMatch(id) { if (typeof openAnalysisModal === 'function') openAnalysisModal(id, 'matchstats'); }
+
 // the path of one player through the main draw, round by round (no chance figure: founder ruling 3)
 function pathOf(M, F, key) {
   const me = F.byKey.get(key); if (!M || !me) return null;
@@ -441,8 +476,13 @@ function render(el) {
     <span style="flex:none; font-size:12px; color:${C.muted}; white-space:nowrap;">${esc(results)} · draw sheet ${esc(fmtWhen(M ? M.changedAt : ev.draw.contentChangedAt))}</span>
     ${showFrom ? `<div style="flex:none; display:flex; align-items:center; gap:10px;"><span style="${CAPS}">From</span><div style="display:flex; gap:3px; background:${C.inset}; border:1px solid ${W(6)}; border-radius:10px; padding:3px;">${fromOpts.map(n => pill(n, n === S.from, on(() => { S.from = n; repaint(); }), 'padding:6px 16px;')).join('')}</div></div>` : ''}</div>`;
   // kept from the live tab (founder 2026-10-21 round 3; post-dates the export): the W/UE sheet bar, Draw view only
-  if (view === 'draw' && ev.entryName && typeof tourxWueBarHtml === 'function') {
-    let wue = ''; try { wue = tourxWueBarHtml(ev.entryName) || ''; } catch (e) { wue = ''; }
+  // An archived draw's sheet reads draws-archive.json (WueSheet.prefetchArchive, loaded once; its arrival repaints).
+  const wueName = ev.entryName || (ev.arch ? cityOf(ev.draw) : null);
+  if (ev.arch && typeof window !== 'undefined' && window.WueSheet && window.WueSheet.prefetchArchive && !S._wueArch) {
+    S._wueArch = true; window.WueSheet.prefetchArchive().then(repaint, () => {});
+  }
+  if (view === 'draw' && wueName && typeof tourxWueBarHtml === 'function') {
+    let wue = ''; try { wue = tourxWueBarHtml(wueName) || ''; } catch (e) { wue = ''; }
     if (wue) h += `<div class="tt-draw-wue" style="margin-top:12px;">${wue}</div>`;
   }
   // ── Statistics ──
@@ -498,10 +538,12 @@ function bracketHtml(ev, M, F) {
       title = v != null ? `Price ${odd(v)}${p.book ? ' · ' + (typeof mxBookLabel === 'function' ? mxBookLabel(p.book) : p.book) : ''}` : 'No current price on Today’s Matches'; } }
     const tag = tagOf(s) + (dec && !win && m.status === 'retired' ? ' ret.' : dec && !win && m.status === 'walkover' ? ' w/o' : '');
     const ioc = s.ioc || (s.neutral ? 'NEU' : DASH);
+    const aid = dec ? analysisId(ev, m) : null;
+    const scoreAttrs = aid ? ` class="tt-draw-score" role="button" tabindex="0" title="Open match analysis" onclick="${on(() => openMatch(aid))}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); event.stopPropagation(); this.click();}"` : '';
     return `<div class="tt-draw-prow" data-tt-player="${esc(key || '')}" onclick="${on(() => pickPlayer(key, qual))}"${title ? ` title="${esc(title)}"` : ''} style="cursor:pointer; display:flex; align-items:center; gap:8px; height:26px; padding:0 6px; margin:0 -6px; border-radius:6px; background:${bg};">`
       + `<span style="flex:none; min-width:30px; text-align:center; ${MONO} font-size:9px; font-weight:700; letter-spacing:0.04em; color:${C.muted}; border:1px solid ${W(10)}; border-radius:5px; padding:2px 4px;">${esc(ioc)}</span>`
       + `<span style="flex:1; min-width:0; display:flex; align-items:baseline; gap:6px;"><span style="min-width:0; font-size:13px; font-weight:${w}; color:${color}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(nameOf(s))}</span><span style="flex:none; ${MONO} font-size:10px; color:${C.muted};">${esc(tag)}</span></span>`
-      + `<span style="flex:none; display:flex; gap:7px; ${MONO} font-size:12.5px; font-variant-numeric:tabular-nums;">${sets}${odds ? `<span style="font-size:11.5px; color:${C.muted};">${esc(odds)}</span>` : ''}</span></div>`;
+      + `<span${scoreAttrs} style="flex:none; display:flex; gap:7px; ${MONO} font-size:12.5px; font-variant-numeric:tabular-nums;${aid ? ' cursor:pointer; padding:2px 4px; margin:-2px -4px; border-radius:5px;' : ''}">${sets}${odds ? `<span style="font-size:11.5px; color:${C.muted};">${esc(odds)}</span>` : ''}</span></div>`;
   };
   const cols = vis.map((R, ci) => {
     const ri = fromIx + ci;
@@ -900,6 +942,7 @@ ${SCOPE} .tt-draw-hw8:hover{ background:${W(8)}; }
 ${SCOPE} .tt-draw-bbtn:hover{ background:${C.blueBtnHov} !important; }
 ${SCOPE} .tt-draw-vp:hover{ border-color:${W(40)} !important; }
 ${SCOPE} .tt-draw-prow:hover{ box-shadow:inset 0 0 0 999px ${W(4.5)}; }
+${SCOPE} .tt-draw-score:hover, ${SCOPE} .tt-draw-score:focus-visible{ background:${W(10)}; outline:none; }
 ${SCOPE} .tt-draw-sug:hover{ border-color:${C.blue} !important; color:${C.blueFav} !important; }
 ${SCOPE} .tt-draw-chg{ color:${C.muted}; } ${SCOPE} .tt-draw-chg:hover{ color:${C.text}; }
 ${SCOPE} .tt-draw-plink{ color:${C.text}; } ${SCOPE} .tt-draw-plink:hover{ color:${C.blueFav}; text-decoration:underline; text-underline-offset:3px; }
@@ -916,9 +959,11 @@ ${SCOPE} .tt-draw-av .sf-ph.sf-on{ background:${C.avatar}; }
 
 const TTDraw = {
   render(el) { render(el); },
+  // Match Analysis rows for finished draw matches the board and the draw store no longer hold (the page's matchById)
+  rowById(id) { return ROWS.get(String(id)) || null; },
   _h(i, ev) { const f = H[i]; if (typeof f !== 'function') return; if (ev && ev.type === 'click' && ev.stopPropagation) ev.stopPropagation(); f(ev); },
   // test hooks (Node): the pure parts and the state
-  _test: { S, events, modelOf, facts, pathOf, statsModel, seasonFigs, dbRowsOf, setFacts, stageOf, render, FILES, reset, boardPrice },
+  _test: { S, events, modelOf, facts, pathOf, statsModel, seasonFigs, dbRowsOf, setFacts, stageOf, render, FILES, reset, boardPrice, resultRow, analysisId, ROWS },
 };
 if (typeof module !== 'undefined' && module.exports) module.exports = TTDraw;
 if (typeof window !== 'undefined') window.TTDraw = TTDraw;

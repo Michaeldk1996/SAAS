@@ -105,6 +105,14 @@ check('round label resolved', out[0] && out[0].round === 'R1');
   global.fetch = async () => ({ ok: true, json: async () => ({ tournaments: { Almaty: { rounds: ['R1'], players: [] } } }) });
   try { await W.fetchLatest('Almaty'); } catch (e) { err = e; }
   check('published entry without sheet rows fails loudly, never an empty sheet', err && /no per-match sheet rows/.test(err.message), err && err.message);
+  // An archived draw (founder 2026-11-16): not in the progression any more → its final results from draws-archive.json.
+  const ARCH = { tournaments: { 7485: { city: 'Brussels', main: { status: 'posted', slots: [] }, results: FX } } };
+  const urls = [];
+  global.fetch = async (url) => { urls.push(url); return { ok: true, json: async () => (/draws-archive/.test(url) ? ARCH : { fetchedAt: '2026-11-16T11:00:00Z', tournaments: {}, drawResults: {} }) }; };
+  const arch = await W.fetchLatest('Brussels');
+  check('an archived draw: the sheet reads draws-archive.json results + its own sheet', arch.entry === FX && arch.draw === ARCH.tournaments[7485] && urls.some(u => /^\.\/draws-archive\.json\?_=\d+$/.test(u)), JSON.stringify(urls));
+  err = null; try { await W.fetchLatest('Nowhere'); } catch (e) { err = e; }
+  check('in neither file → the loud error, never an empty sheet', err && /no longer in the published progression/.test(err.message));
   check('file name carries tournament + season', W.fileName('Almaty', '2026-10-20T11:00:00Z') === 'Almaty 2026 W-UE.xlsx');
 
   // ── 7 · xlsx structure ──

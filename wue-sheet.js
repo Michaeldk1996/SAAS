@@ -31,6 +31,7 @@ const DASH = '—';
 const COLUMNS = ['Player', 'W', 'UE', 'TT points', 'W/P', 'UE/P', 'Ratio W/UE', 'Dominance Ratio'];
 const PROGRESSION_URL = './tournament-progression.json';
 const DRAWS_URL = './draws.json';
+const ARCHIVE_URL = './draws-archive.json';   // finished draws with their final results (draw-results, founder 2026-11-16)
 
 const r2 = (x) => Math.round(x * 100) / 100;
 const isNum = (x) => typeof x === 'number' && Number.isFinite(x);
@@ -320,14 +321,31 @@ function prefetchDraws() {
     .then(d => { _draws = d; if (d && typeof window !== 'undefined' && typeof window.renderTourxReports === 'function') { try { window.renderTourxReports(); } catch (e) { /* page not on Reports */ } } return d; });
   return _drawsP;
 }
-function cachedDraw(tour) { return drawFor(_draws, tour); }
+function cachedDraw(tour) { return drawFor(_draws, tour) || drawFor(_archive, tour); }
+// The archive (draws-archive.json): an archived draw's sheet + its final results (`results`, the progression entry's
+// shape). Loaded once in the background like draws.json; the export re-reads it at click time (fetchLatest).
+let _archive = null, _archiveP = null;
+function prefetchArchive() {
+  if (_archiveP) return _archiveP;
+  _archiveP = fetch(`${ARCHIVE_URL}?_=${Date.now()}`, { cache: 'no-store' })
+    .then(r => (r.ok ? r.json() : null)).catch(() => null).then(d => { _archive = d; return d; });
+  return _archiveP;
+}
+function archiveEntry(archive, tour) { const t = drawFor(archive, tour); return t && t.results && Array.isArray(t.results.matches) ? t.results : null; }
+function cachedArchiveEntry(tour) { return archiveEntry(_archive, tour); }
 
 async function fetchLatest(tour) {
   const res = await fetch(`${PROGRESSION_URL}?_=${Date.now()}`, { cache: 'no-store' });
   if (!res.ok) throw new Error(`tournament-progression.json HTTP ${res.status}`);
   const data = await res.json();
   // A finished draw's results live in `drawResults` once the event leaves the board (founder 2026-11-15).
-  const entry = (data && data.tournaments && data.tournaments[tour]) || (data && data.drawResults && data.drawResults[tour]) || null;
+  let entry = (data && data.tournaments && data.tournaments[tour]) || (data && data.drawResults && data.drawResults[tour]) || null;
+  // An archived draw (draws-archive.json): its final results and its own sheet, the same shapes.
+  if (!entry) {
+    const a = await fetch(`${ARCHIVE_URL}?_=${Date.now()}`, { cache: 'no-store' }).then(r => (r.ok ? r.json() : null)).catch(() => null);
+    const ae = archiveEntry(a, tour);
+    if (ae) return { entry: ae, draw: drawFor(a, tour), fetchedAt: data.fetchedAt || null };
+  }
   if (!entry) throw new Error(`${tour} is no longer in the published progression data`);
   if (!Array.isArray(entry.matches)) throw new Error(`${tour}: published data has no per-match sheet rows yet`);
   // The official draw is optional: absent / unreachable → the sheet stays in match order (no quarters), never invented.
@@ -382,7 +400,7 @@ async function copyRound(tour, round) {
   return text.split('\n').length;
 }
 
-const WUE_SHEET = { COLUMNS, DASH, BLANK, NO_STATS, drawFor, slotName, drawRounds, drawRoundTotals, quarterOfPos, playerQuarter, roundStatus, prefetchDraws, cachedDraw, dominanceRatio, playerRow, sheetRounds, roundTsv, workbookFiles, zipStore, crc32, buildXlsx, fileName, fetchLatest, download, copyRound };
+const WUE_SHEET = { COLUMNS, DASH, BLANK, NO_STATS, drawFor, slotName, drawRounds, drawRoundTotals, quarterOfPos, playerQuarter, roundStatus, prefetchDraws, cachedDraw, prefetchArchive, archiveEntry, cachedArchiveEntry, dominanceRatio, playerRow, sheetRounds, roundTsv, workbookFiles, zipStore, crc32, buildXlsx, fileName, fetchLatest, download, copyRound };
 if (typeof module !== 'undefined' && module.exports) module.exports = WUE_SHEET;
 if (typeof window !== 'undefined') window.WueSheet = WUE_SHEET;
 if (typeof window !== 'undefined' && typeof fetch === 'function') prefetchDraws();

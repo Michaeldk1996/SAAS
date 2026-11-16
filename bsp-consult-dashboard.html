@@ -21189,7 +21189,11 @@ function matchById(id){
   const b = matches.find(x => x.id === id);
   if (b) return b;
   const e = typeof _drawMatchStore !== 'undefined' && _drawMatchStore && _drawMatchStore.matches && _drawMatchStore.matches[id];
-  return e && e.match && e.match.finalScore ? e.match : null;
+  if (e && e.match && e.match.finalScore) return e.match;
+  // Past both (an archived draw, a match the store aged out): the Draw tab's row from the draw's published result
+  // (tournaments-draw.js resultRow — players, keys, set scores, date, round; founder 2026-11-16).
+  const d = typeof window !== 'undefined' && window.TTDraw && window.TTDraw.rowById ? window.TTDraw.rowById(id) : null;
+  return d && d.finalScore ? d : null;
 }
 // Brief 2026-10-26 item 4 · a match card from a pasted URL: #match/<id>[/<tab>]. Opening a card writes its link into the
 // address bar (replaceState: no history entry, no hashchange) so the URL can be copied; closing puts the page's own hash
@@ -27255,7 +27259,9 @@ function tourxCapsLbl(t, extra){ return `<span style="font-size:10.5px;letter-sp
 // The W/UE sheet's entry: this week's events, else a finished draw's results (`drawResults`, founder 2026-11-15).
 function tourxWueEntry(name){
   const p = tournamentProgression;
-  return (p && p.tournaments && p.tournaments[name]) || (p && p.drawResults && p.drawResults[name]) || null;
+  return (p && p.tournaments && p.tournaments[name]) || (p && p.drawResults && p.drawResults[name])
+    // an archived draw (draws-archive.json, loaded by WueSheet.prefetchArchive): its final results
+    || (typeof window !== 'undefined' && window.WueSheet && window.WueSheet.cachedArchiveEntry ? window.WueSheet.cachedArchiveEntry(name) : null) || null;
 }
 function tourxPartialText(name){
   const t = tourxWueEntry(name);

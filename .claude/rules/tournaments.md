@@ -155,13 +155,24 @@ Rationale: `BUILD-NOTES.md` "2026-11-15 — Tournaments tab rebuild".
 - **A bye** reads "Bye", no score, not a played match. **NEU** marks a blank country only on a sheet that prints countries.
   **A match in progress** shows the board's live set score oriented to the card. An unplayed pair on Today's Matches shows
   its card book's price (`_mcNowPair`).
-- **Clicking a player selects him** (route card), a finished match included; a qualifying row opens his profile.
-  (Supersedes "a finished match opens Match Analysis".)
+- **Clicking a player's name selects him** (route card), a finished match included; a qualifying row opens his profile.
+- **Clicking a finished main-draw match's set scores opens the one Match Analysis** (founder 2026-11-16, "clicking a match
+  does nothing — fix it"; reverses the 2026-11-15 "supersedes a finished match opens Match Analysis"): `openAnalysisModal(
+  'past-<eventKey>', 'matchstats')`, the scores a button (hover wash, Enter / Space). EVERY finished main-draw result is
+  clickable, archived draws included. The row is, in order: the board's row (`matches.json`), the draw store's copy
+  (`draw-matches.json`), else a row built from the draw's own published result (`resultRow`: players, keys, set scores,
+  date, round, surface, event key — nothing else filled in; every tab reads its own shards by event key and player key,
+  and a missing figure is a dash). Exact key, never a name. A qualifying match is not clickable. **Test:**
+  `tools/test-tt-draw.mjs` "a finished match opens Match Analysis" (every Paris and archived Brussels result; the row = the
+  feed result; qualifying never; mutant: no click), `tools/test-draw-matches-store.js` (board → store → draw result row).
 - **Finished draw matches stay openable elsewhere:** `draw-matches.json` keeps every finished main-draw match's board row +
   model entry 16 days from the match date (refreshed while on the board, frozen once off; the board's copy wins); read by
   `matchById`. **Test:** `tools/test-draw-matches-store.js`.
 - **The W/UE sheet bar lives on the Draw view only**, under the progress line (`tourxWueBarHtml`: "Download W/UE sheet",
-  one "Copy {round}" per round, the round status). Reports does not carry it. **Test:** `tools/test-wue-sheet.js`,
+  one "Copy {round}" per round, the round status). Reports does not carry it. An archived draw carries it too (founder
+  2026-11-16): its rows are the archive's final results (`draws-archive.json` `results`; `WueSheet.fetchLatest` falls back
+  to it, the bar reads `WueSheet.cachedArchiveEntry`). **Test:** `tools/test-tt-draw.mjs` "an archived draw shows its W/UE
+  sheet bar", `tools/test-wue-sheet.js`,
   `tools/test-wue-fixes.js`, `tools/test-wue-rounds.js`.
 - **How it plays may be shown to members** (founder 2026-11-16: we have an agreement covering the Sackmann data it is
   built from, 2016–24), on the Overview's 1st serve points won and the Draw Statistics Speed tiles.

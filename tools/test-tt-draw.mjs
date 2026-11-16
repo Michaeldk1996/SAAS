@@ -35,7 +35,7 @@ function boot(src) {
   const html = (state) => { T.reset(); Object.assign(T.S, { key: null, kind: 'main', view: 'draw', from: null, outTab: 't' }, state || {}); win.TTDraw.render(root); return root.innerHTML; };
   // first render picks the default event; then select Paris explicitly
   html({});
-  return { T, win, html, root };
+  return { T, win, html, root, ctx };
 }
 
 const checks = [];
@@ -116,6 +116,36 @@ check('no raw colour, scoped CSS (mutant: a hex colour)', ({ src }) => {
   ok(src.includes(".tabpage[data-page=\"tournaments\"] .tt-draw"), 'scoped selector');
 });
 
+// Founder 2026-11-16: "clicking a match does nothing" + "archived draws have no W/UE sheet". Paris = its real published
+// results (tournament-progression drawResults, 16 Nov); Brussels = its real archive entry (draws-archive.json, 16 Nov).
+check('a finished match opens Match Analysis from the draw result; qualifying never (mutant: no click)', ({ T, win, html, ctx }) => {
+  ctx.tournamentProgression.drawResults = fx('paris-results.json');
+  try {
+    const raw = html({ key: PARIS });
+    const n = (raw.match(/class="tt-draw-score"/g) || []).length;
+    ok(n === 2 * 55, `every finished Paris match has a clickable score on both rows: ${n} of ${2 * 55}`);
+    const fin = ctx.tournamentProgression.drawResults.Paris.matches.find(m => m.roundCode === 'F');
+    const r = win.TTDraw.rowById('past-' + fin.eventKey);
+    ok(r && r.finalScore && r.finalScore.sets.length === fin.score.length, 'the final has a row with its set scores');
+    ok(r.p1 === fin.p1.name && r.p2 === fin.p2.name && r.p1Key === +fin.p1.playerKey && r.p2Key === +fin.p2.playerKey, 'players and keys are the feed result');
+    ok(r.finalScore.winner === (fin.winner === 1 ? 'p1' : 'p2') && r.tour === 'ATP Paris' && /1\/|Final/.test(r.tournamentRound), 'winner, event, round');
+    ok(r.date === fin.date && !r.odds && !r.h2h && r.fromDrawResult === true, 'nothing filled in beyond the result');
+    const q = html({ key: PARIS, kind: 'qual' });
+    ok(/Qualifying round 1/.test(text(q)) && (q.match(/font-weight:700; color:[^;]+;">\d<\/span>/g) || []).length >= 10, 'the qualifying view draws its results (not an empty set)');
+    ok(!/tt-draw-score/.test(q), 'a qualifying match is clickable');
+  } finally { delete ctx.tournamentProgression.drawResults; }
+});
+check('an archived draw shows its W/UE sheet bar (mutant: archived draws skip the bar)', ({ T, win, html, ctx }) => {
+  T.FILES['draws-archive.json'] = fx('draws-archive.json');
+  const seen = [];
+  ctx.tourxWueBarHtml = name => { seen.push(name); return '<span>W/UE BAR ' + name + '</span>'; };
+  try {
+    const raw = html({ key: 'a:7485' });
+    ok(seen.includes('Brussels') && raw.includes('W/UE BAR Brussels'), 'the archived Brussels draw renders the W/UE bar for "Brussels": ' + JSON.stringify(seen));
+    ok((raw.match(/class="tt-draw-score"/g) || []).length === 2 * 27, 'archived Brussels: every result (26 played + 1 walkover) clickable: ' + (raw.match(/class="tt-draw-score"/g) || []).length);
+  } finally { T.FILES['draws-archive.json'] = null; delete ctx.tourxWueBarHtml; }
+});
+
 function run(src, quiet) {
   let env; try { env = boot(src); } catch (e) { if (!quiet) console.log('boot failed: ' + e.message); return checks.map(c => ({ name: c.name, err: 'boot: ' + e.message })); }
   env.src = src;
@@ -137,6 +167,8 @@ const MUT = [
   ['Lyon name map removed', "return c === 'Lyon' &&", 'return false &&'],
   ['From on qualifying', "const showFrom = S.kind !== 'qual' && view === 'draw' && !!M;", "const showFrom = view === 'draw' && !!M;"],
   ['a hex colour', "text: 'var(--tt-text)'", "text: '#E7E9EE'"],
+  ['no click', "const aid = dec ? analysisId(ev, m) : null;", "const aid = null;"],
+  ['archived draws skip the bar', "const wueName = ev.entryName || (ev.arch ? cityOf(ev.draw) : null);", "const wueName = ev.entryName;"],
 ];
 let survived = 0;
 for (const [name, a, b] of MUT) {
