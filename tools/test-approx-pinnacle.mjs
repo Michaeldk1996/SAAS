@@ -185,7 +185,7 @@ const oneHover = src => {
   const tags = F.fhB365Tag(A, true) + F.fhB365Tag(A, false) + F.fhB365Meta(A);
   // founder ruling 2026-10-25: every marker site draws through fhPxMark ('B' Bet365, 'E' the early cut) — an approx. snapshot none
   const PM = new Function(`${fn(src, 'fhPxMark')}\nreturn fhPxMark;`)();
-  const marks = [...src.matchAll(/hMark: (?:typeof fhPxMark === 'function' \? )?fhPxMark\(r\)/g)].map(() => PM(A) + '|' + PM(B));
+  const marks = [...src.matchAll(/hMark: (?:typeof fhPxMark === 'function' \? )?fhPxMark\(r\)|typeof fhPxMark === 'function' && fhPxMark\(r\) \? `<sup/g)].map(() => PM(A) + '|' + PM(B));
   return { ok: titles.every(t => t === 'Pinnacle (approx.) · ' + HOVER) && tags === '' && marks.length >= 4 && marks.every(m => m === '|B')
     && F.fhH2hSrcTitle(B) === B365H && F.h2hPriceTitle(B) === B365H, titles, tags, marks };
 };
