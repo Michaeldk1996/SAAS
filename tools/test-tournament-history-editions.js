@@ -49,9 +49,19 @@ async function history(rows) {
     assert.strictEqual(ed(2024).finish, 'Final', '2024 finish ' + ed(2024).finish);
     return t.name + ' ' + t.won + '–' + t.lost + ' · 2022 ' + ed(2022).finish + ' · 2024 ' + ed(2024).finish;
   });
-  await check('A. a team event\'s empty-round match stays out (Davis Cup)', async () => {
+  // 2026-11-16 (v10): a team event's tie with no round is its round robin too — 58 profiled players' only tour-level
+  // matches are such Davis Cup ties, and they had no Record per tournament at all.
+  await check('A. a team event\'s empty-round tie is kept as RR (Davis Cup: Fritz lost to Norrie, 2022)', async () => {
     const h = await history(FRITZ);
-    assert(!h.some((x) => /davis/i.test(x.name)), 'Davis Cup row from an empty round');
+    const d = h.find((x) => /davis/i.test(x.name));
+    assert(d, 'no Davis Cup row: ' + h.map((x) => x.name).join(', '));
+    assert.strictEqual(d.won + '-' + d.lost, '0-1', 'record ' + d.won + '-' + d.lost);
+    assert.deepStrictEqual(d.editions[0].matches.map((m) => m.round + ' ' + m.res + ' ' + m.opp), ['RR L C. Norrie']);
+    return d.name + ' ' + d.won + '–' + d.lost;
+  });
+  await check('A. [control] a non-team event with no round still stays out', async () => {
+    const h = await history([fx('2024-03-01', 'Acapulco', '', 'T. Fritz', 2832, 'X. Y', 10, 'First Player', '2 - 0')]);
+    assert(!h || !h.length, 'kept: ' + JSON.stringify(h));
   });
   await check('A. [control] without the rule the round robins are dropped (old filter: SF / F only)', async () => {
     const h = await history(FRITZ.filter((f) => f.tournament_round));
@@ -89,6 +99,29 @@ async function history(rows) {
       { year: 2018, matches: [{ res: 'L', round: 'R32', opp: 'D. Kudla', oppKey: '', score: '1 - 2' }] }] }];
     assert.strictEqual(B.crossEditionDuplicates(before).length, 1);
     return '1 found';
+  });
+  // 2026-11-16: the archive's per-tie Davis Cup rows and api-tennis's group rows are the same rubbers under two names.
+  const apiDc = [{ name: 'Davis Cup - Finals', editions: [{ year: 2025, matches: [{ res: 'W', round: 'RR', opp: 'F. Cerundolo', oppKey: '19', score: '2 - 0' }] }] }];
+  const tmlDc = (opp, won, y) => ({ tourney: 'Davis Cup Finals QF: ARG vs GER', year: y || 2025, date: (y || 2025) + '-11-20', round: 'RR',
+    oppName: opp, won, score: won ? '0 - 2' : '2 - 0' });
+  await check('C. an archive Davis Cup rubber the api-tennis tie holds is listed once (Zverev d. F. Cerundolo, 2025)', () => {
+    const r = B.mergePlayer(apiDc, [tmlDc('F. Cerundolo', true)]);
+    const dc = r.history.filter((x) => /davis/i.test(x.name));
+    assert.strictEqual(dc.reduce((n, t) => n + t.won + t.lost, 0), 1, dc.map((t) => t.name + ' ' + t.won + '-' + t.lost).join(', '));
+    assert.strictEqual(r.droppedDuplicates, 1);
+    assert.deepStrictEqual(dc.map((t) => t.name), ['Davis Cup - Finals'], 'an empty archive row is left behind');
+    return dc.map((t) => t.name).join(', ');
+  });
+  await check('C. an archive rubber the API side does not hold is kept (other opponent; other season)', () => {
+    const r = B.mergePlayer(apiDc, [tmlDc('J. Munar', true), tmlDc('F. Cerundolo', true, 2019)]);
+    const n = r.history.filter((x) => /davis/i.test(x.name)).reduce((k, t) => k + t.won + t.lost, 0);
+    assert.strictEqual(n, 3, 'davis matches ' + n);
+    assert.strictEqual(r.droppedDuplicates, 0);
+  });
+  await check('C. [control] without the Davis Cup guard the rubber is listed twice', () => {
+    const r = B.mergePlayer([], [tmlDc('F. Cerundolo', true)]);
+    const n = apiDc[0].editions[0].matches.length + r.history.reduce((k, t) => k + t.won + t.lost, 0);
+    assert.strictEqual(n, 2);
   });
   console.log('\n  ' + pass + ' passed, ' + fail + ' failed, 0 skipped (a skip is never a pass)');
   process.exit(fail ? 1 : 0);

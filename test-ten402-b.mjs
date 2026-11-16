@@ -476,7 +476,8 @@ test('items 3 + 10: Hot lines = the shared table; the ledger = the shared rows o
   assert.match(h2hCardSrc, /labels: \['Date', '', 'Event', 'Rd', 'Sets', 'Set scores', 'Home', 'Away'\], rowCols: MA_ROW_COLS_H2H, rowGap: MA_ROW_GAP_H2H, groupMono: true, headPad: '8px 14px 7px', groupPad: '11px 14px 5px', inset: 8/);
   assert.match(h2hCardSrc, /meta: w \+ '–' \+ \(Y\.rs\.length - w\) \+ ' · ' \+ Y\.rs\.length \+ \(Y\.rs\.length === 1 \? ' meeting' : ' meetings'\)/, 'year header "2024 1–2 · 3 meetings" (en dash)');
   assert.match(html, /#h2hRoot \.h2hp-row:hover\{ background:var\(--inner\) !important; \}/, 'rows hover on the inner tone');
-  assert.match(html, /function priceRows\(\)\{ return loadBase\(\)\.then\(function\(\)\{ return loadNames\(\); \}\)/, 'the Database tab exposes its own join; the ledger never builds a second one');
+  // 2026-11-16: the join's four files download together (Promise.all), still through the tab's own loaders
+  assert.match(html, /function priceRows\(\)\{ return Promise\.all\(\[loadBase\(\), loadNames\(\), loadX\(\), loadQ\(\)\]\)/, 'the Database tab exposes its own join (its four files fetched together); the ledger never builds a second one');
 });
 
 // ---------------------------------------------------------------- review fixes (TEN-402 lead, 2026-10-08)

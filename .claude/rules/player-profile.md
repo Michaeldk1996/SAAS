@@ -477,3 +477,8 @@ Supersedes the v3 values it restates. Reference = `Player Stat Boxes.dc.html` / 
     = 2019), and an archive copy of a match the adjacent season's api-tennis edition holds is left out; the pipeline logs
     every match still listed under two adjacent editions (`career-backfill.js` `crossEditionDuplicates`;
     `tools/test-tournament-history-editions.js`).
+  - **A team event's tie with no round is a match (2026-11-16, tournament-history v10):** api-tennis sends every Davis
+    Cup tie with an empty round; Record per tournament keeps it as `RR`, as it keeps the Finals' round robins. Test: is
+    any profiled player with a tour-level Davis Cup match left with no Record per tournament? (58 of 741 were.) An archive
+    Davis Cup rubber (named per tie) that the api-tennis tie holds — same season, result, opponent — is listed once
+    (`tools/test-tournament-history-editions.js` A + C).

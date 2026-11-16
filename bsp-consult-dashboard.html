@@ -33758,7 +33758,9 @@ window.DatabaseTab = (function(){
     return qPromise;
   }
   var PRICE_JOIN = null;
-  function priceRows(){ return loadBase().then(function(){ return loadNames(); }).then(function(){ return loadX(); }).then(function(){ return loadQ(); })
+  // The four files download together (2026-11-16): one after another, a slow connection paid each round trip in turn
+  // before the 2.8 MB era shard even started. loadNames waits on loadBase itself; any failure still fails the whole join.
+  function priceRows(){ return Promise.all([loadBase(), loadNames(), loadX(), loadQ()])
     .then(function(){ return PRICE_JOIN || (PRICE_JOIN = dbPriceJoinRows(RAW, RAW_NAMES, XDATA, QDATA)); }); }
   // the city the Database page groups a Tennis-Data event name under ("Adelaide International 2" → "Adelaide 2"), read by the
   // price join's event test (founder brief 2026-10-19 item 1); null for a name it does not list

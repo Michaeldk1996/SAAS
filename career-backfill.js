@@ -707,6 +707,7 @@ function finalizeTournament(name, byYear) {
 
 // Merges one player's pre-2021 TML matches into their existing history array.
 // Existing (API) editions win on any shared year; TML only fills missing years.
+const DAVIS_CUP = /davis\s*cup/i;
 function mergePlayer(history, tmlMatches) {
   // Group on canonical tournament identity, not display name, so an API "Toronto"
   // row and a TML "Canada Masters" row land in the same record. Existing (API)
@@ -766,6 +767,19 @@ function mergePlayer(history, tmlMatches) {
   }
 
   let addedEditions = 0, droppedDuplicates = 0;
+  // 2026-11-16: the archive names each Davis Cup tie on its own ("Davis Cup QLS R1: GER vs BRA"), api-tennis files the same
+  // rubber under its group ("Davis Cup - World Group"), so no identity joins them. Now that api-tennis's round-less ties are
+  // kept (tournament-history v10), an archive Davis Cup row the API side holds — same season, same result, an opponent name
+  // token in common — is that row, never a second one (the API copy wins, as on every shared year).
+  const apiDavis = [];
+  for (const t of (Array.isArray(history) ? history : [])) {
+    if (!DAVIS_CUP.test(String(t.name || ''))) continue;
+    for (const ed of (t.editions || [])) for (const m of (ed.matches || [])) {
+      if (!m.walkover) apiDavis.push({ y: playedYear(t.name, ed.year), res: m.res, toks: new Set(holeNameTokens(m.opp)) });
+    }
+  }
+  const heldDavis = (display, y, m) => DAVIS_CUP.test(display) && !m.walkover && apiDavis.some((o) => o.y === y
+    && o.res === m.res && holeNameTokens(m.opp).some((t) => o.toks.has(t)));
   for (const [id, e] of tml) {
     const g = group(id, e.display, false);
     for (const [yStr, ms0] of Object.entries(e.byYear)) {
@@ -773,7 +787,7 @@ function mergePlayer(history, tmlMatches) {
       if (g.apiYears.has(y) || (y in g.byYear)) continue; // existing/API year wins
       // The guard (founder 2026-11-15): an archive match already held by the API edition of the season before or after
       // — same result, round, score and opponent — is that edition's match, never a second one.
-      const ms = ms0.filter((m) => !sameMatchInAdjacentEdition(g.byYear, y, m));
+      const ms = ms0.filter((m) => !sameMatchInAdjacentEdition(g.byYear, y, m) && !heldDavis(e.display, y, m));
       droppedDuplicates += ms0.length - ms.length;
       if (!ms.length) continue;
       g.byYear[y] = ms;
@@ -782,7 +796,8 @@ function mergePlayer(history, tmlMatches) {
   }
 
   const hist = [];
-  for (const g of groups.values()) hist.push(finalizeTournament(g.display, g.byYear));
+  // a group whose archive rows were all dropped (2026-11-16 Davis Cup guard) has no edition: no row
+  for (const g of groups.values()) if (Object.keys(g.byYear).length) hist.push(finalizeTournament(g.display, g.byYear));
   hist.sort((a, b) => (b.won + b.lost) - (a.won + a.lost));
   return { history: hist, addedEditions, droppedDuplicates };
 }

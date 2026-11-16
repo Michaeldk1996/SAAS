@@ -5856,7 +5856,10 @@ function historyCacheFresh(cached, now, isSeed) {
 // first "1/N-finals" round of the edition is 'Q' (Ofner, Wimbledon 2021 read "Final" for a qualifying final). Busts the cache.
 // v9 (founder 2026-11-15): a season-ending Finals' group-stage match with no round is kept as 'RR' (Fritz's Turin 2022 and
 // 2024 round robins were missing). Busts the cache so every history rebuilds with them.
-const TOURNAMENT_HISTORY_SCHEMA_VERSION = 9;
+// v10 (2026-11-16): a team-event tie with no round (api-tennis sends every Davis Cup World Group / Group I-IV rubber with an
+// empty round) is kept as 'RR' like the Finals group stage — 58 profiled players had no Record per tournament at all
+// (their only tour-level matches are Davis Cup ties) and Zverev lost his 2025-26 ties. Busts the cache.
+const TOURNAMENT_HISTORY_SCHEMA_VERSION = 10;
 
 // Round depth ranking (higher = deeper run). Used to derive each player's best
 // result at a tournament. Covers both the word forms ("Quarter-finals") and the
@@ -5994,7 +5997,9 @@ async function fetchPlayerCareerHistory(playerKey) {
     // with an EMPTY round (Fritz, Turin 2022 and 2024: Nadal, Ruud, Auger-Aliassime / Medvedev, Sinner, de Minaur), so
     // the round test below dropped every one and the edition read SF / F only. A round-robin Finals match with no round
     // is its round robin ('RR', exempt from the qualifying nets like every RR row). Team events are out of this rule.
-    const rrFinals = !f.tournament_round && f.tournament_name && TOUR_FINALS_RR.test(f.tournament_name);
+    // 2026-11-16: the same for a team event's tie (Davis Cup, United Cup, ...: ROUND_ROBIN_NAMES) — its round is the tie.
+    const rrFinals = !f.tournament_round && f.tournament_name
+      && (TOUR_FINALS_RR.test(f.tournament_name) || ROUND_ROBIN_NAMES.test(f.tournament_name));
     if (!f.tournament_name || (!f.tournament_round && !rrFinals)) continue;
     // TEN-157/TEN-158 ROOT FIX: never derive a durable career-history row from a
     // NON-FINAL match. A live/in-play snapshot can carry a declared winner while
