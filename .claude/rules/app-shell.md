@@ -91,7 +91,7 @@ the 35b header of the 2026-10-08 reference export at 1512 night. Supersedes ever
 22×26, sub 13.5/1.55, stats gap 34, mono 17) and every caps line above a page title.
 
 - **One component, `.sfh`, on every page header card:** Today's Matches / Results, Live, Trading Report, Dropping Odds,
-  Series, Players, Head to Head (`.sfh--ctl`, below), Tournaments, Database (page + both overlay mounts), News, Playing Styles
+  Series, Players, Tournaments, Database (page + both overlay mounts), News, Playing Styles
   (TEN-408), Live (TEN-417), Stennisfy Model (TEN-418). Pages
   keep their root class as a hook (`mx-titlerow`, `pgh-card`, `h2h-head`, `tourx-head`, `db-headcard`, `tr-hdr`,
   `sr-head`, `do-head`, `news-head`, `ps-head`, `em-head-card`) but own **no rule that restyles the header** (H2H owns only its sticky shadow).
@@ -108,7 +108,7 @@ the 35b header of the 2026-10-08 reference export at 1512 night. Supersedes ever
   `.sfh__v--soft` = `--text-soft`; an unsourced value is a grey `—`, `.sfh__v--none`). A page with no stats draws none.
 - **Today's Matches live column** (first, Upcoming only): label over `.sfh__live` = 7px `--pos` dot `.sfh__dot` + the
   clock in mono 15/700 `--text-soft` (`mxHeaderStatusHtml`, ruling A words). The only status dot besides the serve ball.
-- **Controls under the row** (Head to Head pickers): `.sfh.sfh--ctl` (block, padding 18×26×22) wrapping `.sfh__row`
+- **Controls under the row** (no page uses it since the Head to Head design build, founder 2026-11-16 — that page draws its own sticky picker, `h2h.md`): `.sfh.sfh--ctl` (block, padding 18×26×22) wrapping `.sfh__row`
   (the row above, margin-bottom 16) then the controls (pickers, swap, Surface / Format strip); H2H stays sticky with its
   shadow and its line ends in the grey coverage tail.
 - **Mobile (<900px):** the row and the stats wrap.

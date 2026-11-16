@@ -47,45 +47,54 @@ function countryTable(src) {
 }
 const IOC = countryTable(TR);
 
-// ---------------------------------------------------------------- the Head-to-head card, executed
-const E = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const CARD = new Function('E', `
-  const FH_DASHC = '—', FH_HOT_MIN_ELIGIBLE = 3; let _h2hDbSt = 'ready', _fh = null;
-  const state = {}; const bindH = () => 0; const setState = () => {};
-  function sectionHead(t) { return '<h3>' + t + '</h3>'; } function h2hSeg() { return ''; } function fhEnsureStyles() {}
-  function fhScoreLines() { return { scored: [], covMap: {} }; } function fhH2hLineDefs() { return []; }
-  function fhHotModel() { return { mode: 'none', N: 0, note: 'No meetings', sc: { scored: [], covMap: {} } }; } function fhHotSub(H, b) { return b; }
-  function fhHotLinesTable() { return null; } function fhHotMoreHtml() { return ''; }
-  ${constLine('FH_B365_HOVER')}${constLine('MA_ROW_COLS')}${constLine('MA_ROW_GAP')}${constLine('MA_ROW_COLS_H2H')}${constLine('MA_ROW_GAP_H2H')}${constLine('H2H_HOT_FOOT')}${constLine('H2H_PX_NOTE')}
-  ${['escapeHtml', 'maMatchRowsHtml', 'fhSetTxt', 'fhH2hSetScores', 'fhDDMM', 'fhOdd', 'h2hTug', 'h2hPriceTitle', 'h2hPxNote', 'h2hCard'].map(slice).join('\n')}
-  return { h2hCard, maMatchRowsHtml };`)(E);
+// ---------------------------------------------------------------- the rebuilt ledgers, executed
+// tools/h2h-test-harness.js runs the shipped window.H2HPage module and slices the page helpers it reaches.
+const HX = createRequire(import.meta.url)(join(HERE, 'tools/h2h-test-harness.js'));
+const page = g => HX.load({ html, globals: g || {} });
+const PA = { key: '2382', short: 'C. Alcaraz', full: 'C. Alcaraz', mono: 'CA', ctry: 'Spain', rankTxt: '#1', eloTxt: '2250' };
+const PB = { key: '2072', short: 'J. Sinner', full: 'J. Sinner', mono: 'JS', ctry: 'Italy', rankTxt: '#2', eloTxt: '2210' };
 const meeting = (o) => Object.assign({ mid: 'm' + o.date, tourn: 'Monte Carlo', surface: 'Clay', round: 'F', won: false, pS: 0, oS: 2,
   sets: [[6, 7, 5], [3, 6]], price: 2.0, oppPrice: 1.8, book: 'P' }, o);
-const viewOf = (rows, S) => ({ h2h: { S: Object.assign({ pm: {} }, S || {}), all: rows, F: rows, surf: 'all', aS: 'Alcaraz', bS: 'Sinner', aName: 'C. Alcaraz', bName: 'J. Sinner', bFull: 'J. Sinner' } });
+const boxOf = (h, rows) => { h.state.h2hBox = true; return h.call(h.h2hBoxHTML, { a: PA, b: PB, h2h: { all: rows, F: rows, surf: 'all', aS: 'Alcaraz', bS: 'Sinner', aName: 'C. Alcaraz', bName: 'J. Sinner', aKey: '2382', bKey: '2072' } }); };
 
 // TEN-437 (founder 2026-10-16) supersedes fix 3's no-marker ledger: "show it on the H2H page meeting rows too, same as the tab".
-test('fix 3 + TEN-437: a Bet365 meeting row carries the tab\'s "B" marker; one footnote "Closing price · Pinnacle, else Bet365" under it', () => {
-  const rows = [meeting({ date: '2026-04-12', book: 'B' }), meeting({ date: '2025-11-16', tourn: 'Finals - Turin', surface: 'Hard', won: false, price: 2.8, oppPrice: 1.5, book: 'P' })];
-  const h = CARD.h2hCard(viewOf(rows));
-  assert.equal((h.match(/class="ma-row-mark"[^>]*>B</g) || []).length, 1, 'one B, on the Bet365 row only (the Pinnacle row carries none)');
-  assert.match(text(h), / 2\.00 ?B 1\.80 /, 'the Bet365 row keeps its prices, B after the H price');
-  assert.match(h, /title="Bet365 closing odds, Pinnacle not available"/, 'the hover names the book (founder 2026-10-16, TEN-437)');
-  const notes = h.match(/<div class="h2hp-pxnote"[^>]*>([^<]*)<\/div>/g) || [];
-  assert.equal(notes.length, 1, 'one footnote under the ledger');
-  assert.match(notes[0], />Closing price · Pinnacle, else Bet365<\/div>$/);
-  assert.match(notes[0], /font-family:var\(--font-nums\); font-size:10\.5px; color:var\(--text-label\);/);
-  assert.ok(h.indexOf('class="h2hp-ledger"') < h.indexOf('h2hp-pxnote'), 'under the ledger, not above it');
-  // control: the shared renderer still draws a mark for a host that asks for one (Match analysis keeps its B)
-  assert.match(CARD.maMatchRowsHtml([{ title: null, rows: [{ date: '1', opp: 'x', rd: 'F', sets: '2 - 0', scores: '', h: '2.00', a: '1.80', hMark: 'B' }] }], {}), /class="ma-row-mark"[^>]*>B</);
+// The rebuild (founder 2026-11-16) moved the "Closing price · Pinnacle, else Bet365" footnote onto the box's "?".
+test('fix 3 + TEN-437: a Bet365 meeting row carries the tab\'s "B" marker and the hover names the book; the "?" states the rule', () => {
+  const h = page({ loadSetStatsIndex: () => Promise.resolve(new Set()) });
+  const rows = [meeting({ date: '2026-04-12', book: 'B' }), meeting({ date: '2025-11-16', tourn: 'ATP Finals', surface: 'Hard', won: false, price: 2.8, oppPrice: 1.5, book: 'P' })];
+  const b = boxOf(h, rows);
+  assert.equal((b.match(/<sup style="font-size:8px; color:var\(--h2h-grey\);">B<\/sup>/g) || []).length, 1, 'one B, on the Bet365 row only (the Pinnacle row carries none)');
+  assert.match(text(b), /2\.00 B 1\.80/, 'the Bet365 row keeps its prices, B after A\'s price');
+  assert.match(b, /<span title="Bet365 closing odds, Pinnacle not available" style="[^"]*">2\.00<sup/, 'A\'s price carries the hover naming the book (founder 2026-10-16, TEN-437)');
+  assert.match(b, /<span title="Bet365 closing odds, Pinnacle not available" style="[^"]*">1\.80<\/span>/, 'and B\'s price');
+  // the "?" states the rule the old ledger footnote carried (no footnotes on this page): the books, the B mark when a row carries it
+  assert.match(b, /class="x-help" title="Newest first\. The result is shown from Alcaraz&#39;s side\. The two columns under the avatars are each player&#39;s closing price \(Pinnacle, else Bet365; a B marks a Bet365 price\)\. Hover a price for its source\. Click a meeting for its statistics\."/);
+  // a Pinnacle (approx.) price is named with its count in the same "?" (the old h2hPxNote disclosure)
+  const bA = boxOf(h, [meeting({ date: '2026-04-12', book: 'A', src: 'at' }), meeting({ date: '2025-11-16', book: 'P' })]);
+  assert.match(bA, /Pinnacle \(approx\.\) on 1: a snapshot, not a confirmed close/);
+  // control: the shared Match analysis renderer still draws a mark for a host that asks for one (Match analysis keeps its B)
+  const mr = new Function(`${slice('escapeHtml')}\nconst MA_ROW_COLS = '1fr', MA_ROW_GAP = '0';\n${slice('maMatchRowsHtml')}\nreturn maMatchRowsHtml;`)();
+  assert.match(mr([{ title: null, rows: [{ date: '1', opp: 'x', rd: 'F', sets: '2 - 0', scores: '', h: '2.00', a: '1.80', hMark: 'B' }] }], {}), /class="ma-row-mark"[^>]*>B</);
 });
 
-test('fix 3: the Playing styles and Tournament ledgers mark no row either; each carries the footnote; the old "B = Bet365" line is gone', () => {
-  const sty = slice('cStyleLedger'), tp = slice('cTourPanel'), tc = slice('tourneyCard');
-  assert.match(sty, /hTitle: h2hPriceTitle\(q\), aTitle: h2hPriceTitle\(q\), hMark: '' \};/);
-  assert.match(sty, /\$\{maMatchRowsHtml\(groups, C_LED_OPTS\)\}\$\{more\}<\/div>\n\s*\$\{h2hPxNote\('', px\)\}/, 'under the Playing styles ledger');
-  assert.match(tp, /Object\.assign\(trRowData\(r\), \{ hTitle: h2hPriceTitle\(r\), aTitle: h2hPriceTitle\(r\), hMark: '',/, 'trRowData\'s B is overridden on this page only');
-  assert.match(tp, /\$\{rows \? h2hPxNote\('padding:4px 14px 14px;', P\.all\) : ''\}/, 'under each Tournament ledger (none when the panel has no rows)');
-  assert.ok(!/trSrcLine\(/.test(tc), 'the Tournament card no longer prints "Closing odds · … · B = Bet365"');
+test('fix 3: the career-match and Tournament ledgers mark no row (the price, its hover names the book); their price column is the player\'s mini avatar titled "<name>’s closing price"', () => {
+  const h = page({ _careerHistoryShards: { 2382: [{ date: '2025-04-12', tournament: 'Monte Carlo', round: 'Semi-finals', opponent: 'L. Musetti', won: true, eventKey: 5, level: 'atp' }] },
+    _sfDbJoinSt: 'ready', _sfDbJoin: { meta: { rounds: ['Semifinals'] }, rows: [[20250412, 0, 1, 0, 0, 1.5, 2.6, 1, 1]], names: [['Alcaraz C.', 'Musetti L.']] } });
+  const tr = o => Object.assign({ wo: false, ret: false, sets: [[6, 4], [6, 4]], pS: 2, oS: 0, surface: 'clay' }, o);
+  const rows = [tr({ mid: 'x', date: '2025-04-12', won: true, round: 'SF', opp: 'L. Musetti', price: 1.5, oppPrice: 2.6, book: 'B', src: 'td' })];
+  const P = { eds: [{ year: '2025', won: 1, lost: 0, rows }], all: rows, n: 1, W: 1, L: 0, best: null, sT: 2, sW: 2, played: [], priced: rows, units: 0.5 };
+  const tc = h.call(h.tourneyCard, { a: PA, b: PB, tourney: { empty: false, query: '', listOpen: false, options: [], info: { name: 'Monte Carlo', initial: 'M', meta: [] }, cols: [{ p: PA, P, state: 'ready' }, { p: PB, P: null, state: 'none' }] } });
+  // one hover per price on this page: the Tournament ledger's price carries the page's own (h2hPriceTitle), as the meetings
+  assert.match(tc, /<span title="Bet365 closing odds, Pinnacle not available" style="font-family:'IBM Plex Mono',monospace; font-size:11\.5px; color:var\(--h2h-text\); text-align:right;">1\.50<\/span>/, 'the Bet365 price, unmarked, its hover the book');
+  assert.ok(!/<sup|ma-row-mark/.test(tc), 'no row mark on the Tournament ledger');
+  assert.match(tc, /<span class="x-av" title="C\. Alcaraz’s closing price"/, 'the column head names whose price it is');
+  assert.ok(!/B = Bet365|trSrcLine\(/.test(sliceAt(html, html.indexOf('  function tourneyCard('))), 'the old "Closing odds · … · B = Bet365" line is gone');
+  // the career-match ledger: the row's own price from the one join, unmarked
+  const sv = { a: PA, b: PB, styles: { sides: [{ p: PA, R: { state: 'ready', oppLab: 'Big Server', avg: 50, rows: [{ won: true, opponent: 'Lorenzo Musetti', surface: 'clay', tournament: 'Monte Carlo', result: '6-4 6-4', date: '2025-04-07', round: 'SF' }] } },
+    { p: PB, R: { state: 'ready', oppLab: 'Big Server', avg: 50, rows: [] } }], arch: ['x', 'y'] } };
+  const sc = h.call(h.stylesCard, sv);
+  assert.match(sc, /<span title="Bet365 closing odds, Pinnacle not available" style="font-family:'IBM Plex Mono',monospace; font-size:11\.5px; color:var\(--h2h-text\); text-align:right;">1\.50<\/span>/, 'the career row priced on the join (Bet365), its hover the book');
+  assert.ok(!/<sup|ma-row-mark/.test(sc), 'no row mark on the career-match ledger');
   // control: Match analysis's Tournament rows keep their B (the founder scoped the change to this page's ledgers)
   assert.match(slice('trRowData'), /hMark: fhPxMark\(r\),/);
 });
@@ -138,10 +147,11 @@ test('fix 4: country tags are IOC codes — ESP, ITA, MON, NED; a country the ta
   assert.equal(bare('Spain'), '—');
 });
 test('fix 4: the header tags and the picker rows print the code; the Trading report reads the same table', () => {
-  assert.match(html, /<span class="h2h-ctry">\$\{E\(h2hIoc\(v\.a\.ctry\)\)\}<\/span>/);
-  assert.match(html, /<span class="h2h-ctry">\$\{E\(h2hIoc\(v\.b\.ctry\)\)\}<\/span>/);
+  const h = page({ SfCountryIoc: IOC });
+  const bar = h.call(h.selectorBar, { aPicked: true, bPicked: true, a: PA, b: PB, hAChange: 1, hBChange: 2, hSwap: 3, ctxShow: false });
+  assert.deepEqual([...bar.matchAll(/border-radius:5px; padding:1px 6px;">([^<]+)<\/span>/g)].map(m => m[1]), ['ESP', 'ITA'], 'both picked boxes print the IOC code');
   assert.match(slice('pickerTag'), /const base = h2hIoc\(e\.ctry\) \+ ' · '/);
-  assert.equal((html.match(/h2h-ctry">\$\{E\(v\.[ab]\.ctry\)\}/g) || []).length, 0, 'control: no tag prints the raw name');
+  assert.ok(!/>Spain<|>Italy</.test(bar), 'control: no tag prints the raw name');
   assert.match(TR, /\n  var NAME2IOC = window\.SfCountryIoc\.NAME2IOC;\n  function iocOf\(country\)/, 'one table: the report\'s iocOf reads it');
   assert.equal((TR.match(/'Spain':'ESP'/g) || []).length, 1, 'no second copy');
 });
@@ -158,9 +168,11 @@ test('fix 7: avatar initials = first initial + the FIRST letter of the surname (
 });
 
 test('fix 7: records in sentences carry an en dash (U+2013), line names a true minus (U+2212) — executed', () => {
+  const h = page({ loadSetStatsIndex: () => Promise.resolve(new Set()) });
   const rows = [meeting({ date: '2024-06-07', won: true }), meeting({ date: '2025-05-18', won: true }), meeting({ date: '2026-04-12', won: false })];
-  const t = text(CARD.h2hCard(viewOf(rows)));
-  assert.match(t, /3 on record · Alcaraz leads 2–1/);
+  const t = text(boxOf(h, rows));
+  assert.match(t, /Meetings 3 on record · Alcaraz leads 2–1/);
+  assert.match(t, /2024 1–0 · 1 meeting/);
   assert.ok(!/leads \d+-\d+/.test(t), 'no hyphen in the record');
   const defs = new Function(`const FH_H2H_SET1_MIRROR = false;\n${slice('fhH2hLineDefs')}\n${slice('fhFormLineDefs')}\nreturn { fhH2hLineDefs, fhFormLineDefs };`)();
   const names = defs.fhH2hLineDefs('Alcaraz', 'Sinner').concat(defs.fhFormLineDefs('Sinner')).map(d => d.name);
@@ -168,13 +180,14 @@ test('fix 7: records in sentences carry an en dash (U+2013), line names a true m
   assert.deepEqual(names.filter(n => /-\d/.test(n)), [], 'no hyphen-minus before a number in any line name (Hot lines, Match analysis too)');
 });
 
-test('fix 7: the no-meetings card names the EARLIEST record the two loaded histories hold (Sinner 2019 v Vacherot 2021 → since 2019)', () => {
-  const none = (fy) => text(CARD.h2hCard(viewOf([], { firstYear: fy })));
-  assert.match(none([2019, 2021]), /Searched both players' match histories since 2019\./);
-  assert.match(none([2021, 2019]), /since 2019\./, 'either side');
-  assert.match(none([2022, null]), /since 2022\./, 'one history unread: the other still bounds the search');
-  assert.match(none([null, null]), /Searched both players' match histories\.$/, 'nothing read → no year');
-  assert.ok(!/since 2021/.test(none([2019, 2021])), 'control: never the later player\'s start');
+// OPEN QUESTION (reported, not decided here): founder r1 fix 7 (2026-10-09) had the no-meetings card name the earliest
+// record searched ("Searched both players' match histories since 2019."); the rebuild draws the design's one sentence
+// ("These two have never met on record. …", README §3 "Never met") and S.firstYear is computed but no longer printed.
+// Kept as a todo so the open question shows on every run until the founder rules.
+test('fix 7: the no-meetings card names the EARLIEST record the two loaded histories hold (Sinner 2019 v Vacherot 2021 → since 2019), after the design\'s sentence', () => {
+  const h = page();
+  const t = text(h.call(h.h2hCard, { a: PA, b: PB, h2h: { S: { firstYear: [2019, 2021] }, all: [], F: [], surf: 'all' } }));
+  assert.match(t, /These two have never met on record\. .* Searched both players’ match histories since 2019\./);
 });
 
 test('fix 7: the Tournament card location = "City, Country" ("London, UK", "New York, USA"), the city from the pipeline\'s venue table', () => {
@@ -221,5 +234,5 @@ test('nit: the Career profit chart labels every year (2019 … 2026), a short se
   const l52 = C(core, small, ser.slice(-60), 'l52');
   assert.deepEqual(l52.ticks.map(t => t.f), [0, 0.2, 0.4, 0.6, 0.8, 1]);
   // the labels align by position, not by index: first left, last right, the rest centred
-  assert.match(slice('curveSVG'), /transform:\$\{t\.f <= 0 \? 'none' : t\.f >= 1 \? 'translateX\(-100%\)' : 'translateX\(-50%\)'\};/);
+  assert.match(slice('marketCard'), /transform:\$\{t\.f <= 0 \? 'none' : t\.f >= 1 \? 'translateX\(-100%\)' : 'translateX\(-50%\)'\};/);
 });

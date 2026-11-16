@@ -13,6 +13,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { createRequire } from 'node:module';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const html = readFileSync(process.env.TEN402_HTML || join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
@@ -40,81 +41,83 @@ function rule(sel) {
 const px = v => { const m = /^(-?\d+(?:\.\d+)?)px$/.exec(String(v || '').trim()); return m ? +m[1] : (String(v).trim() === '0' ? 0 : NaN); };
 const box = v => { const p = String(v).trim().split(/\s+/).map(px); return { t: p[0], r: p[1] ?? p[0], b: p[2] ?? p[0], l: p[3] ?? p[1] ?? p[0] }; };
 
-// ── fix 1 · the strip above the sticky header ───────────────────────────────────────────────────────────────────────
-// Apply: scroll the page anywhere; every pixel between the viewport top and the header card is page tone. The window
-// scrolls; the header sticks `top` px down; the page's own top padding is that gap. A page-wide band in that padding
-// sticks at 0, exactly as tall as the gap, in --page, under the header (its shadow paints over the band).
-test('r4 fix 1: a sticky page-tone band fills the whole gap above the sticky header, under it', () => {
-  const page = rule('#h2hRoot .h2h-page'), stick = rule('#h2hRoot .h2h-stick'), band = rule('#h2hRoot .h2h-page::before');
-  const pad = box(page.padding), gap = px(stick.top);
-  assert.equal(stick.position, 'sticky', 'the header sticks');
-  assert.ok(gap > 0, 'the header sticks below the top — there IS a gap to fill');
-  assert.equal(band.position, 'sticky', 'the band sticks (it must stay at the top at every scroll position)');
-  assert.equal(band.content, "''");
-  assert.equal(band.display, 'block');
-  assert.equal(px(band.top), 0, 'the band sticks at the viewport top');
-  assert.ok(px(band.height) >= gap, `the band (${band.height}) covers the whole gap above the header (${gap}px)`);
-  assert.equal(px(band.height), pad.t, 'the band lives in the page\'s own top padding (no layout shift)');
-  const m = box(band.margin);
-  assert.equal(m.t, -pad.t, 'pulled up into the top padding');
-  assert.equal(m.b, 0, 'the content below starts where it did');
-  assert.ok(m.l <= -pad.l && m.r <= -pad.r, 'page-wide: the band spans the side padding too');
-  assert.equal(band.background, 'var(--page)', 'page tone (the html background behind the page)');
-  assert.ok(+band['z-index'] < +stick['z-index'], 'under the header: the card and its shadow paint over the band');
-  // control: the header card's own rules are untouched by the fix (TEN-403 replaces that card)
-  assert.ok(!/background/.test(rule('#h2hRoot .h2h-stick').background || ''), 'the stick wrapper stays transparent');
+// The rebuilt page (design_handoff_head_to_head, founder 2026-11-16), EXECUTED: tools/h2h-test-harness.js runs the shipped
+// window.H2HPage module and slices the page helpers it reaches. TEN402_CSS overrides h2h-page.css for the mutants.
+const HX = createRequire(import.meta.url)(join(HERE, 'tools/h2h-test-harness.js'));
+const H2H = sliceFrom(html.indexOf('(function () {', html.indexOf('HEAD-TO-HEAD PAGE')), 'H2HPage module');
+const CSS = readFileSync(process.env.TEN402_CSS || join(HERE, 'h2h-page.css'), 'utf8');
+const A = { key: '1', short: 'J. Sinner', full: 'J. Sinner', mono: 'JS', ctry: 'Italy', rankTxt: '#2', eloTxt: '—' }, B = { key: '2', short: 'C. Alcaraz', full: 'C. Alcaraz', mono: 'CA', ctry: 'Spain', rankTxt: '#1', eloTxt: '—' };
+const decl = st => Object.fromEntries(st.split(';').map(d => d.trim()).filter(Boolean).map(d => { const k = d.indexOf(':'); return [d.slice(0, k).trim(), d.slice(k + 1).trim()]; }));
+
+// ── fix 1 · nothing shows above the sticky header ──────────────────────────────────────────────────────────────────
+// Apply: scroll anywhere; every pixel between the viewport top and the picker card is page tone. The rebuild (DF L45)
+// sticks the picker's wrapper at top 0 and paints its own top padding (and 78% of its height) in the page tone, so a
+// section scrolling under it never shows above the card.
+test('r4 fix 1: the sticky picker sits at the viewport top on a page-tone band (its own padding), the card inside it, over the sections', () => {
+  const h = HX.load({ html });
+  const bar = h.call(h.selectorBar, { aPicked: true, bPicked: true, a: A, b: B, hAChange: 1, hBChange: 2, hSwap: 3, ctxShow: false });
+  const wrap = decl(/^<div class="x-stick" style="([^"]+)">/.exec(bar)[1]);
+  assert.equal(wrap.position, 'sticky', 'the header sticks');
+  assert.equal(wrap.top, '0', 'at the viewport top: no gap above it for a card to show through');
+  assert.ok(+wrap['z-index'] >= 30, 'over the sections (they carry no z-index)');
+  const pad = box(wrap.padding);
+  assert.ok(pad.t > 0, 'a band above the card');
+  assert.match(wrap.background, /^linear-gradient\(var\(--h2h-page\) 78%, /, 'the band is the page tone (opaque over its top 78%)');
+  assert.ok(pad.t / (pad.t + 60 + pad.b) < 0.78, 'the top padding lies inside the opaque 78% for any card ≥ 60px tall');
+  assert.match(bar, /<div id="h2h-sticky" style="background:var\(--h2h-card\);/, 'the card inside the band');
+  // the stylesheet carries the same band (the inline style and the class agree)
+  assert.match(CSS, /#h2hRoot \.x-stick \{ position: sticky; top: 0; z-index: 30; padding: 10px 40px 14px;\s*background: linear-gradient\(var\(--h2h-page\) 78%, color-mix\(in srgb, var\(--h2h-page\) 0%, transparent\)\); \}/);
+  assert.match(CSS, /\.tabpage\[data-page="h2h"\] \{ background: var\(--h2h-page\); \}/, 'the page behind it is the same tone');
 });
 
 // ── fix 2 · set scores never cut ────────────────────────────────────────────────────────────────────────────────────
-// Apply: on Head to Head open a Tournament / Playing styles ledger with a five-set row ("6-7(7), 7-6(2), 6-4, …"): the
-// whole score reads, wrapped between sets onto a second line; no ellipsis anywhere on a score.
-const rowsHtml = (() => {
-  const src = [fnSrc('escapeHtml'), "const MA_ROW_COLS = '1fr', MA_ROW_GAP = '0';", fnSrc('maMatchRowsHtml'), 'return maMatchRowsHtml;'].join('\n');
-  return new Function(src)();
-})();
-test('r4 fix 2: the page rule lets the score cell wrap; the shared row gives it a break point between every set', () => {
-  const r = rule('#h2hRoot .h2hc-led .ma-row-score');
-  assert.equal(r['white-space'], 'normal', 'the cell wraps');
-  assert.ok(!r['text-overflow'] || r['text-overflow'] === 'clip', 'no ellipsis');
-  assert.ok(!r.overflow || r.overflow === 'visible', 'nothing clipped');
-  // no other rule on the site cuts a score cell
-  assert.ok(!/ma-row-score[^{]*\{[^}]*(text-overflow:\s*ellipsis|white-space:\s*nowrap|overflow:\s*hidden)/.test(html), 'a score cell is cut somewhere');
-  const score = '6-7(7), 7-6(2), 6-4, 3-6, 7-6(10-8)';
-  const h = rowsHtml([{ title: null, rows: [{ date: '01.07.', won: true, opp: 'X', rd: 'F', sets: '3–2', scores: score, scoresTitle: score, h: '1.50', a: '2.60' }] }], {});
-  const cell = /<span class="ma-row-score"[^>]*>([\s\S]*?<\/span>)<\/span>/.exec(h);
-  assert.ok(cell, 'score cell rendered');
-  const parts = [...cell[1].matchAll(/<span style="white-space:nowrap;">([^<]*)<\/span>/g)].map(m => m[1]);
-  assert.deepEqual(parts, ['6-7(7),', '7-6(2),', '6-4,', '3-6,', '7-6(10-8)'], 'each set its own unbreakable piece');
-  assert.equal(text(cell[1]), score, 'the full score, joined by spaces (the break points)');
-  assert.ok(!/…/.test(h), 'no ellipsis character');
+// Apply: open the meetings box, a career-match ledger, a Tournament ledger, a hot line's meetings: a five-set score reads
+// whole, wrapped between sets; no ellipsis, no clipping on any score cell.
+const FIVE = [[6, 7], [7, 6], [6, 4], [3, 6], [7, 6]];
+test('r4 fix 2: every score cell on the page wraps (white-space normal) and is never cut — meetings box, career-match ledger, Tournament ledger', () => {
+  const h = HX.load({ html, globals: { loadSetStatsIndex: () => Promise.resolve(new Set()), _careerHistoryShards: {}, _sfDbJoinSt: 'loading', _sfDbJoinP: new Promise(() => {}) } });
+  const r = { mid: 'm1', date: '2025-09-07', won: true, tourn: 'US Open', surface: 'Hard', round: 'F', sets: FIVE, pS: 3, oS: 2, price: null, oppPrice: null, opp: 'C. Alcaraz', wo: false, ret: false };
+  h.state.h2hBox = true;
+  const cells = [];
+  const box = h.call(h.h2hBoxHTML, { a: A, b: B, h2h: { F: [r], all: [r], surf: 'all', aS: 'Sinner', bS: 'Alcaraz', aName: 'J. Sinner', bName: 'C. Alcaraz' } });
+  cells.push(...[...box.matchAll(/<span style="([^"]*)">(6-7, 7-6, 6-4, 3-6, 7-6)<\/span>/g)].map(m => ['box', m[1]]));
+  const sv = { a: A, b: B, styles: { sides: [{ p: A, R: { state: 'ready', oppLab: 'X', avg: 50, rows: [{ won: true, opponent: 'Carlos Alcaraz', surface: 'hard', tournament: 'US Open', result: '6-7 7-6 6-4 3-6 7-6', date: '2025-08-24', round: 'F' }] } }, { p: B, R: { state: 'ready', oppLab: 'X', avg: 50, rows: [] } }], arch: ['x', 'y'] } };
+  const st = h.call(h.stylesCard, sv);
+  cells.push(...[...st.matchAll(/<span title="[^"]*" style="([^"]*)">(6-7, 7-6, 6-4, 3-6, 7-6)<\/span>/g)].map(m => ['styles', m[1]]));
+  const P = { eds: [{ year: '2025', won: 1, lost: 0, rows: [r] }], all: [r], n: 1, W: 1, L: 0, best: null, sT: 5, sW: 3, played: [], priced: [], units: 0 };
+  const tc = h.call(h.tourneyCard, { a: A, b: B, tourney: { empty: false, query: '', listOpen: false, options: [], info: { name: 'US Open', initial: 'U', meta: [] }, cols: [{ p: A, P, state: 'ready' }, { p: B, P: null, state: 'none' }] } });
+  cells.push(...[...tc.matchAll(/<span title="[^"]*" style="([^"]*)">([^<]*6-7[^<]*)<\/span>/g)].map(m => ['tournament', m[1]]));
+  assert.deepEqual(cells.map(c => c[0]), ['box', 'styles', 'tournament'], 'one score cell from each ledger');
+  for (const [w, st2] of cells) {
+    const d = decl(st2);
+    assert.equal(d['white-space'], 'normal', w + ': the cell wraps');
+    assert.ok(!d['text-overflow'] && !d.overflow, w + ': no ellipsis, nothing clipped');
+  }
+  // (each cell above matched the WHOLE five-set score — nothing dropped, no ellipsis character)
+  // the page's stylesheet never cuts a score either (no score rule at all)
+  assert.ok(!/score[^{]*\{[^}]*(text-overflow:\s*ellipsis|overflow:\s*hidden)/.test(CSS));
 });
 
 // ── fix 3 · Sets "pS–oS" ────────────────────────────────────────────────────────────────────────────────────────────
-// Apply: every Sets cell on Head to Head (Meetings, Playing styles, Tournament) and in Match analysis → Tournament reads
-// "0–2" (U+2013, no spaces, never wrapped); a retirement reads "—" in Meetings / Playing styles; a walkover "—".
-const H0 = html.indexOf('HEAD-TO-HEAD PAGE');
-const H2H = sliceFrom(html.indexOf('(function () {', H0), 'H2HPage module');
-const exprAfter = (src, lead, stop) => {
-  const a = src.indexOf(lead); assert.ok(a >= 0, lead); assert.equal(src.indexOf(lead, a + 1), -1, `${lead} occurs once`);
-  const b = src.indexOf(stop, a); assert.ok(b > a, stop);
-  return src.slice(a + lead.length, b);
-};
-test('r4 fix 3: the Meetings ledger row — "pS–oS", a retirement "—"', () => {
-  const lead = '            sets: r.pS == null || r.ret ? ';
-  const sets = new Function('r', 'return r.pS == null || r.ret ? ' + exprAfter(H2H, lead, ', setsColor:') + ';');
-  assert.equal(sets({ pS: 0, oS: 2 }), '0–2');
-  assert.equal(sets({ pS: 3, oS: 1 }), '3–1');
-  assert.equal(sets({ pS: 1, oS: 0, ret: true }), '—', 'a retirement keeps the dash');
-  assert.equal(sets({ pS: null, oS: null }), '—');
-  assert.ok(!/ |-/.test(sets({ pS: 2, oS: 1 })), 'no space, no hyphen');
+// Apply: every Sets cell on Head to Head (meetings box, career-match ledger, Tournament ledger) and in Match analysis →
+// Tournament reads "0–2" (U+2013, no spaces); a retirement reads "—"; a walkover "—".
+test('r4 fix 3: the meetings box — Sets "pS–oS", a retirement "—"', () => {
+  const h = HX.load({ html, globals: { loadSetStatsIndex: () => Promise.resolve(new Set()) } });
+  const mk = (pS, oS, o) => Object.assign({ mid: 'm' + pS + oS, date: '2025-0' + (pS + 1) + '-0' + (oS + 1), won: pS > oS, tourn: 'Basel', surface: 'Hard', round: 'F', sets: [[6, 4]], pS, oS, price: null, oppPrice: null }, o || {});
+  const F = [mk(0, 2), mk(3, 1), mk(1, 0, { ret: true }), mk(null, null)];
+  h.state.h2hBox = true;
+  const box = h.call(h.h2hBoxHTML, { a: A, b: B, h2h: { F, all: F, surf: 'all', aS: 'Sinner', bS: 'Alcaraz', aName: 'J. Sinner', bName: 'C. Alcaraz' } });
+  const sets = [...box.matchAll(/<span style="font-family:'IBM Plex Mono',monospace; font-size:11\.5px; font-weight:700; color:[^;]+;">([^<]*)<\/span>/g)].map(m => m[1]);
+  assert.deepEqual(sets.sort(), ['0–2', '3–1', '—', '—'].sort());
+  assert.ok(!sets.some(x => / |-/.test(x)), 'no space, no hyphen');
 });
-test('r4 fix 3: the Playing styles ledger row — "pS–oS" from the real ps2Meeting, a retirement "—"', () => {
+test('r4 fix 3: the career-match ledger — "pS–oS" from the real ps2Meeting, a retirement "—"', () => {
   const ps2 = new Function([fnSrc('ps2SetDone'), "const FH_DASHC = '—';", fnSrc('ps2Meeting'), 'return ps2Meeting;'].join('\n'))();
-  const block = sliceFrom(html.indexOf('\n  function cStyleLedger(', H0) + 1, 'cStyleLedger');
-  const sets = new Function('m', 'return m.ret ? ' + exprAfter(block, "          sets: m.ret ? ", ', scores:') + ';');
-  assert.equal(sets(ps2({ result: '2-6 6-3 1-6 4-6' })), '1–3');
-  assert.equal(sets(ps2({ result: '7-6(4) 7-5' })), '2–0');
-  assert.equal(sets(ps2({ result: '0-5 RET' })), '—', 'a retirement keeps the dash');
+  const h = HX.load({ html, globals: { _careerHistoryShards: {}, _sfDbJoinSt: 'loading', _sfDbJoinP: new Promise(() => {}) } });
+  const rows = ['2-6 6-3 1-6 4-6', '7-6(4) 7-5', '6-4 3-1 RET'].map((result, i) => ({ won: i !== 0, opponent: 'Carlos Alcaraz', surface: 'hard', tournament: 'Basel', result, date: '2025-0' + (i + 1) + '-10', round: 'F' }));
+  const card = h.call(h.stylesCard, { a: A, b: B, styles: { sides: [{ p: A, R: { state: 'ready', oppLab: 'X', avg: 50, rows } }, { p: B, R: { state: 'ready', oppLab: 'X', avg: 50, rows: [] } }], arch: ['x', 'y'] } });
+  const sets = [...card.matchAll(/justify-self:center; font-family:'IBM Plex Mono',monospace; font-size:11\.5px; font-weight:700; color:[^;]+; background:[^;]+; border-radius:999px; padding:2px 9px; white-space:nowrap;">([^<]*)</g)].map(m => m[1]);
+  assert.deepEqual(sets, ['—', '2–0', '1–3'], 'newest first: the retirement (a set already won) "—", then "2–0", "1–3"');
   // control: ps2Meeting itself still says "1 - 3" for its other hosts (Match analysis → Playing style) — the en dash is
   // this ledger's, so the test above is not passing on an unchanged helper.
   assert.equal(ps2({ result: '2-6 6-3 1-6 4-6' }).sets, '1 - 3');
@@ -129,10 +132,16 @@ test('r4 fix 3: the shared Tournament row (H2H Tournament ledger + Match analysi
   assert.equal(tr({ date: '2025-09-07', won: true, opp: 'J. Sinner', round: 'F', pS: 3, oS: 1, sets: [[6, 2]] }).sets, '3–1');
   assert.equal(tr({ date: '2025-09-07', won: false, opp: 'X', round: 'R32', pS: 0, oS: 2, sets: [[3, 6]] }).sets, '0–2');
   assert.equal(tr({ date: '2025-09-07', wo: true, opp: 'X', round: 'R32', pS: 0, oS: 0 }).sets, '—', 'a walkover has no sets');
+  // the H2H Tournament ledger prints trRowData's Sets (executed)
+  const h = HX.load({ html });
+  const r = { mid: 'm', date: '2025-09-07', won: true, opp: 'C. Alcaraz', round: 'F', pS: 3, oS: 1, sets: [[6, 2], [3, 6], [6, 3], [6, 4]], price: null, oppPrice: null, wo: false, ret: false };
+  const P = { eds: [{ year: '2025', won: 1, lost: 0, rows: [r] }], all: [r], n: 1, W: 1, L: 0, best: null, sT: 4, sW: 3, played: [], priced: [], units: 0 };
+  const tc = h.call(h.tourneyCard, { a: A, b: B, tourney: { empty: false, query: '', listOpen: false, options: [], info: { name: 'US Open', initial: 'U', meta: [] }, cols: [{ p: A, P, state: 'ready' }, { p: B, P: null, state: 'none' }] } });
+  assert.match(tc, /padding:2px 9px; white-space:nowrap;">3–1<\/span>/);
 });
 test('r4 fix 3: no Sets value on Head to Head (or in trRowData) is built with " - "', () => {
-  const builders = [H2H, fnSrc('trRowData')].join('\n');
-  const hy = [...builders.matchAll(/\bsets: [^\n]*?' - '/g)].map(m => m[0].slice(0, 80));
+  const builders = [H2H.slice(H2H.indexOf('==== H2H REBUILD')), fnSrc('trRowData')].join('\n');
+  const hy = [...builders.matchAll(/\bsets = [^\n]*?' - '|\bsets: [^\n]*?' - '/g)].map(m => m[0].slice(0, 80));
   assert.deepEqual(hy, [], 'a hyphen sets builder is left');
   // control: the sweep can see one — the Match analysis H2H tab (outside this fix) still builds " - "
   assert.ok(/\bsets: [^\n]*?' - '/.test(fnSrc('fhH2hRowData')), 'control: the sweep regex finds a hyphen builder');

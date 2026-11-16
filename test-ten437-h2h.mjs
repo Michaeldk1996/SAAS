@@ -235,7 +235,13 @@ test('failed load (H2H page): the pair is "failed", never "ready" with no meetin
   env.fns.careerHistoryAnswered = () => true;
   X.h2hPairFor(a, b); await new Promise(r => setTimeout(r, 0));
   assert.equal(X.pairs['1093|1906'].st, 'ready'); assert.equal(loads, 4, 'both histories fetched again');
-  assert.match(slice('h2hCard'), /if \(h\.failed\) return card\([\s\S]*Head-to-head could not load[\s\S]*H2HPage\._h2hRetry\(\)/);
+  // the card (rebuilt), executed: the failed state is "could not load" naming the player + the Retry that drops the pair
+  const HX = require(join(HERE, 'tools/h2h-test-harness.js'));
+  const hx = HX.load({ html });
+  const failed = hx.call(hx.h2hCard, { a, b, h2h: { failed: true, names: ['S. Tsitsipas'] } });
+  assert.match(failed.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' '), /Head to head could not load: the match history for S\. Tsitsipas did not load\. Retry/);
+  assert.match(failed, /onclick="H2HPage\._h2hRetry\(\)"[^>]*>Retry</);
+  assert.doesNotMatch(failed, /never met/, 'a failed load is never "no meetings"');
   assert.match(slice('ensureInit'), /if \(visit && typeof _h2hPairs !== 'undefined'\) Object\.keys\(_h2hPairs\)\.forEach\(k => \{ if \(_h2hPairs\[k\] && _h2hPairs\[k\]\.st === 'failed'\) delete _h2hPairs\[k\]; \}\);/);
 });
 
@@ -630,7 +636,15 @@ test('a Bet365-priced meeting: "B" marker kept, hover "Bet365 closing odds, Pinn
   assert.match(slice('h2hPriceTitle'), /if \(r\.price != null\) return r\.book === 'B' \? \(typeof fhB365Approx === 'function' && fhB365Approx\(r\) \? \(r\.src === 'atb' \? FH_B365_AT_HOVER : r\.src === 'teb' \? FH_B365_TE_HOVER : FH_B365_APPROX_HOVER\) : FH_B365_HOVER\) : /, 'the H2H page reads the same hover (our captured Bet365: the approx. line, founder 2026-10-18; api-tennis Bet365 its own, 2026-10-19)');
   assert.match(slice('fhH2hRowData'), /hMark: fhPxMark\(r\)/, 'the tab\'s B marker in the H cell (fhPxMark: B, or E for the early cut — founder 2026-10-25)');
   // item 4 (founder 2026-10-16): "show it on the H2H page meeting rows too, same as the tab"
-  assert.match(html, /hTitle: h2hPriceTitle\(r\), aTitle: h2hPriceTitle\(r\), hMark: typeof fhPxMark === 'function' \? fhPxMark\(r\) : r\.price != null && r\.book === 'B' \? 'B' : '',\n\s*oppTitle: r\.tourn/, 'the H2H page meeting row carries the B marker');
+  // the H2H page meeting rows (the rebuilt meetings box), executed: the "B" after A's price, the hover on both prices
+  const HX = require(join(HERE, 'tools/h2h-test-harness.js'));
+  const hx = HX.load({ html, globals: { loadSetStatsIndex: () => Promise.resolve(new Set()) } });
+  const row = (o) => Object.assign({ mid: 'm' + o.date, date: o.date, won: true, tourn: 'Monte Carlo', surface: 'Clay', round: 'F', sets: [[6, 4], [6, 4]], pS: 2, oS: 0 }, o);
+  const F = [row({ date: '2026-04-12', price: 1.8, oppPrice: 2.0, book: 'B', src: 'td' }), row({ date: '2025-04-12', price: 1.7, oppPrice: 2.2, book: 'P', src: 'td' })];
+  hx.state.h2hBox = true;
+  const box = hx.call(hx.h2hBoxHTML, { a: { key: '1', short: 'A. One', mono: 'AO' }, b: { key: '2', short: 'B. Two', mono: 'BT' }, h2h: { F, all: F, surf: 'all', aS: 'One', bS: 'Two', aName: 'A. One', bName: 'B. Two' } });
+  assert.match(box, new RegExp(`<span title="${HOVER}" style="[^"]*">1\\.80<sup[^>]*>B</sup></span>\\s*<span title="${HOVER}" style="[^"]*">2\\.00</span>`), 'the H2H page meeting row carries the B marker and the hover');
+  assert.equal((box.match(/>B<\/sup>/g) || []).length, 1, 'control: the Pinnacle meeting carries no marker');
 });
 
 // ── 16 · nothing overrides the join on the H2H page (founder ruling 2026-10-17, ruling 5; REPLACES 2026-10-16 item 5) ──

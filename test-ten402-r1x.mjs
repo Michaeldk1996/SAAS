@@ -53,10 +53,22 @@ test('fix 1: Last played = the newest edition WITH a row, and that edition\'s ow
   assert.equal(trLastPlayed(null), null);
 });
 test('fix 1: both Last played tiles read trLastPlayed (Head to Head Tournament card + Match analysis Tournament tab)', () => {
-  const panel = sliceFrom(html.indexOf('function cTourPanel('), 'cTourPanel');
-  assert.match(panel, /const lp = trLastPlayed\(P\), lr = lp \? lp\.row : null;/);
-  assert.match(panel, /cTourTile\('Last played', lp \? lp\.year : '—'/);
-  assert.doesNotMatch(panel, /P\.played\[0\]/, 'the panel never reads the list position');
+  // the Head to Head Tournament record, EXECUTED (tools/h2h-test-harness.js runs the shipped module): the tile is
+  // trLastPlayed's year and that edition's own top row, whatever the edition order
+  const HX = createRequire(import.meta.url)(join(HERE, 'tools/h2h-test-harness.js'));
+  const h = HX.load({ html });
+  const r = o => Object.assign({ wo: false, ret: false, sets: [[6, 4], [6, 4]], pS: 2, oS: 0, price: null, oppPrice: null, surface: 'hard' }, o);
+  const eds = [ed(2024, [r({ mid: 'a', date: '2024-09-05', won: true, round: 'F', opp: 'T. Fritz' })]),
+    ed(2025, [r({ mid: 'b', date: '2025-09-07', won: false, round: 'F', opp: 'C. Alcaraz', pS: 1, oS: 3 })]), ed(2026, [])];
+  const P = { eds, all: eds.flatMap(e => e.rows), n: 2, W: 1, L: 1, best: null, sT: 6, sW: 3, priced: [], units: 0 };
+  P.played = eds.filter(e => e.rows.length);
+  const S = { key: '2072', full: 'J. Sinner', short: 'J. Sinner', mono: 'JS' }, Al = { key: '2382', full: 'C. Alcaraz', short: 'C. Alcaraz', mono: 'CA' };
+  const card = h.call(h.tourneyCard, { a: S, b: Al, tourney: { empty: false, query: '', listOpen: false, options: [], info: { name: 'US Open', initial: 'U', meta: [] },
+    cols: [{ p: S, P, state: 'ready' }, { p: Al, P: null, state: 'none' }] } });
+  const t = card.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ');
+  assert.match(t, /Last played 2025 lost F v Alcaraz /, 'the newest edition with a row (2025, not the empty 2026), its own top row');
+  assert.equal(P.played[0].year, '2024', 'control: the list position reads 2024');
+  assert.ok(/trLastPlayed\(P\)/.test(sliceFrom(html.indexOf('  function tourneyCard('), 'tourneyCard')), 'the card reads trLastPlayed');
   const tiles = fnSrc('trTilesHtml');
   assert.match(tiles, /const lp = trLastPlayed\(P\);/);
   assert.doesNotMatch(tiles, /P\.played\[0\]/);

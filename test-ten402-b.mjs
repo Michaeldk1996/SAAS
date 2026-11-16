@@ -10,6 +10,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { createRequire } from 'node:module';
+import { createHash } from 'node:crypto';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const html = readFileSync(process.env.TEN402_HTML || join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
@@ -31,6 +32,7 @@ const constLine = name => {
   assert.ok(m, `const ${name} not found`);
   return m[0].replace(/\/\/[^'\n]*$/, '');
 };
+
 const h2hCardSrc = slice('h2hCard');
 
 // ---------------------------------------------------------------- Data 1: the meetings
@@ -108,9 +110,7 @@ test('Data 2: Home = A\'s closing price, Away = B\'s, from the Database rows (bo
   assert.deepEqual([rows[0].price, rows[0].oppPrice, rows[0].book, rows[0].src], [1.63, 2.43, 'P', 'td']);
   // row 1: Bet365 (book 1), the favourite Sinner (A) won at 1.80
   assert.deepEqual([rows[1].price, rows[1].oppPrice, rows[1].book], [1.80, 2.00, 'B']);
-  // founder r1 fix 3 (2026-10-09): no per-row Bet365 mark; one footnote under the ledger (executed in test-ten402-r1y.mjs)
-  assert.match(h2hCardSrc, /hTitle: h2hPriceTitle\(r\), aTitle: h2hPriceTitle\(r\), hMark: typeof fhPxMark === 'function' \? fhPxMark\(r\) : r\.price != null && r\.book === 'B' \? 'B' : '',/, 'the ledger row carries the B marker on a Bet365 close (TEN-437)');
-  assert.match(h2hCardSrc, /\$\{h2hPxNote\('margin-top:-8px;', F\)\}/, 'one footnote under the Meetings ledger');
+  // the meetings row's B marker and its hover are executed in "TEN-437 item 4" below (the meetings box)
 });
 
 test('lower-level era rows never move a main-draw event (2026-11-01: pre-2021 qualifying filed under "Wimbledon")', () => {
@@ -411,7 +411,7 @@ test('ruling 2026-10-16: exact price ties ride BEHIND A FLAG — tieRows / tieNa
   assert.ok(zi >= 0 && b.tieRows[zi][0] === 20230609 && b.tieRows[zi][5] === 1.95, 'Ruud d. Zverev RG 2023 SF priced 1.95 / 1.95');
 });
 
-// ---------------------------------------------------------------- item 8: the match-stats sheet
+// ---------------------------------------------------------------- the match-stats sheet (shared with Match analysis)
 // the site's lower-is-better list (MATCH_STAT_ORDER) + its reader, sliced with fhSheetBetter (review 2, item 6)
 const LOWER_SRC = `${/\nconst MATCH_STAT_ORDER = \[[\s\S]*?\n\];/.exec(html)[0]}\n${slice('fhLowerIsBetter')}`;
 const rowHtml = tone => new Function('FH_MONO', 'MA_GREY', 'FH_DASH', 'fhEsc', 'FH_BAR_CAP', 'fhSheetTone',
@@ -420,113 +420,107 @@ const rowHtml = tone => new Function('FH_MONO', 'MA_GREY', 'FH_DASH', 'fhEsc', '
 const cell = (v, txt) => ({ v, txt: txt || String(v), sub: '', title: '' });
 const figs = h => [...h.matchAll(/font-size:15px; font-weight:(\d+); color:([^;]+);">([^<]*)</g)].map(m => [m[3], +m[1], m[2]]);
 const fills = h => [...h.matchAll(/class="fh-sbar" style="height:6px; width:[\d.]+%; background:([^;]+);"/g)].map(m => m[1]);
+const H2H_A = 'var(--h2h-blue)', H2H_B = 'var(--h2h-text)';
 
-test('item 8: on the Head to Head sheet the better figure is white 700, the other grey 500; both white on a tie (no blue A)', () => {
+// Founder 2026-11-16 (design_handoff_head_to_head, DF L470–476): the page's sheet is drawn BY PLAYER — player one blue,
+// player two white, figures and bars, both figures 700, whoever leads (replaces the white-bars / better-figure rule of
+// TEN-402 item 5 / item 8 and review 2 item 6 on this sheet). Every other host keeps its own rule (controls below).
+test('the Head to Head sheet is drawn by player: A\'s figure and bar --h2h-blue, B\'s --h2h-text, both 700, whoever leads', () => {
   const R = rowHtml('h2h');
-  assert.deepEqual(figs(R({ label: 'Dominance ratio', kind: 'ratio', a: cell(1.15, '1.15'), b: cell(0.87, '0.87') })),
-    [['1.15', 700, 'var(--text)'], ['0.87', 500, 'var(--text-label)']]);
-  assert.deepEqual(figs(R({ label: 'Unforced errors / total points', kind: 'pct', a: cell(12, '0.12'), b: cell(14, '0.14') })).map(f => f[1]), [700, 500], 'lower is better for errors');
-  assert.deepEqual(figs(R({ label: 'Double faults', kind: 'count', k: 15, a: cell(5), b: cell(2) })).map(f => f[1]), [500, 700]);
-  assert.deepEqual(figs(R({ label: 'Serve rating', kind: 'rating', k: 400, a: cell(296), b: cell(296) })).map(f => f[1]), [700, 700], 'a tie marks neither');
-  assert.deepEqual(figs(R({ label: 'Aces', kind: 'count', k: 30, a: cell(null, '—'), b: cell(4) })).map(f => f[1]), [700, 700], 'a dash marks neither');
-  // control: every other sheet (Match analysis, Match Stats tab, profile) is unchanged — both figures white 700
+  for (const s of [{ label: 'Dominance ratio', kind: 'ratio', a: cell(1.15, '1.15'), b: cell(0.87, '0.87') },
+    { label: 'Serve rating', kind: 'rating', k: 400, a: cell(266), b: cell(296) },
+    { label: 'Double faults', kind: 'count', k: 15, a: cell(5), b: cell(2) },
+    { label: 'Unforced errors / total points', kind: 'pct', a: cell(22, '0.22'), b: cell(27, '0.27') }]) {
+    assert.deepEqual(figs(R(s)).map(f => [f[1], f[2]]), [[700, H2H_A], [700, H2H_B]], s.label + ': figures by player');
+    if (s.kind !== 'ratio') assert.deepEqual(fills(R(s)), [H2H_A, H2H_B], s.label + ': bars by player, never by leader');
+  }
+  assert.deepEqual(figs(R({ label: 'Aces', kind: 'count', k: 30, a: cell(null, '—'), b: cell(4) })).map(f => f[2]), ['var(--text-label)', H2H_B], 'a dash stays grey');
+  // controls: Match analysis keeps the longer-bar pair and both figures white 700; the profile keeps --link / --text
+  assert.deepEqual(fills(rowHtml(null)({ label: 'Serve rating', kind: 'rating', k: 400, a: cell(296), b: cell(266) })), ['var(--bar)', 'var(--bar-2)']);
+  assert.deepEqual(fills(rowHtml(null)({ label: 'Double faults', kind: 'count', k: 15, a: cell(5), b: cell(2) })), ['var(--bar)', 'var(--bar-2)'], 'Match analysis: the longer bar leads (founder Q3)');
   assert.deepEqual(figs(rowHtml(null)({ label: 'Dominance ratio', kind: 'ratio', a: cell(1.15, '1.15'), b: cell(0.87, '0.87') })).map(f => [f[1], f[2]]), [[700, 'var(--text)'], [700, 'var(--text)']]);
-});
-
-test('item 5 on the sheet: bars are white — the leader --viz-white-lead, the trailer 70%; elsewhere the blue pair stays', () => {
-  const s = { label: 'Serve rating', kind: 'rating', k: 400, a: cell(296), b: cell(266) };
-  assert.deepEqual(fills(rowHtml('h2h')(s)), ['var(--viz-white-lead)', 'color-mix(in srgb, var(--viz-white-lead) 70%, transparent)']);
-  assert.deepEqual(fills(rowHtml(null)(s)), ['var(--bar)', 'var(--bar-2)'], 'control: Match analysis keeps --bar / --bar-2');
-});
-
-test('item 8: the tone is set only for a pop-up opened from this page; the frame adds --shadow-modal there; closers registered', () => {
-  assert.match(slice('fhSheetRender'), /_fhSheetToneNow = \(slot !== 'tab' && _fh && _fh\.m && _fh\.m\.h2hPage\) \? 'h2h'/);
-  // profile v2 (2026-11-09): the profile's own sheet takes 'pp2' (bars by player), else null
-  assert.match(slice('fhSheetRender'), /: \(slot !== 'tab' && _fh && _fh\.sheet && _fh\.sheet === _fhPp2Mid\) \? 'pp2' : null;/);
-  assert.match(slice('fhSheetRender'), /host\.innerHTML = fhSheetSeg\(tabs\) \+ body;\n  _fhSheetToneNow = null;/, 'reset after the paint');
-  assert.match(slice('fhOpenSheet'), /\$\{_fh\.m && _fh\.m\.h2hPage \? ' box-shadow:var\(--shadow-modal\);' : ''\}/);
-  assert.match(slice('fhOpenSheet'), /inset:0 0 0 var\(--sf-side, 0px\); z-index:110; background:var\(--backdrop\); backdrop-filter:blur\(3px\)/, 'scrim over the content area only');
-  assert.match(html, /pm: \{ h2hPage: true, p1: a\.short, p2: b\.short, p1Key: a\.key, p2Key: b\.key \}/, 'the page\'s pseudo match carries the flag');
-  assert.match(html, /\(window\.sfOverlayClosers = window\.sfOverlayClosers \|\| \[\]\)\.push\(\(\) => \{ if \(typeof _fh !== 'undefined' && _fh && _fh\.m && _fh\.m\.h2hPage && _fh\.sheet\) fhCloseSheet\(\); \}\);/);
-  assert.match(slice('fhMarkRow'), /#h2hRoot \.h2hp-row/, 'the open meeting\'s row keeps the selected wash');
-  // every row and every hot-line dot opens the sheet through the page's opener (registers the entry, then fhOpenSheet)
-  assert.match(h2hCardSrc, /click: ` onclick="H2HPage\._open\('\$\{E\(r\.mid\)\}'\)"`/);
-  assert.match(h2hCardSrc, /const toSheet = s => s\.replace\(\/fhOpenSheet\\\(\/g, 'H2HPage\._open\('\);/);
-});
-
-// ---------------------------------------------------------------- items 2–5, 10: the card
-test('items 2–5: a top-level card with no outline; panels --card + --edge-6; chips on the darker track; white tug bar (H8)', () => {
-  assert.match(h2hCardSrc, /background:var\(--card\); box-shadow:var\(--top-light\); border:1px solid transparent; border-radius:16px; padding:20px 22px;/);
-  assert.match(h2hCardSrc, /const panel = 'background:var\(--card\); border:1px solid var\(--edge-6\); border-radius:14px;';/);
-  assert.match(h2hCardSrc, /h2hSeg\(\[\['all', 'All'\], \['Hard', 'Hard'\], \['Clay', 'Clay'\], \['Grass', 'Grass'\]\]/, 'the page\'s darker-track control (builder a\'s h2hSeg = sfSegHtml: track --card + --edge-6, selected --inner + --edge-10)');
-  assert.match(h2hCardSrc, /\}\), 'chip', 'Head-to-head scope'\)/, 'the chip size');
-  assert.match(h2hCardSrc, /const head = sectionHead\('Head-to-head record', chips \? \{ html: chips \} : ''\);/, 'chips at the right end of the shared section head');
-  assert.doesNotMatch(h2hCardSrc, /maSeg\(/, 'control: no second segmented control on the card');
-  assert.match(h2hCardSrc, /background:var\(--viz-track\); border-radius:4px;/, 'tug track = the 6% white viz track');
-  assert.match(h2hCardSrc, /class="h2hp-tug-a"[^>]*width:\$\{tug\('a'\)\}; background:\$\{tugTone\('a'\)\};/, 'A\'s bar: h2hTug\'s width and tone');
-  assert.match(h2hCardSrc, /class="h2hp-tug-b"[^>]*width:\$\{tug\('b'\)\}; background:\$\{tugTone\('b'\)\};/, 'B\'s bar: h2hTug\'s width and tone');
-  assert.match(h2hCardSrc, /const T = h2hTug\(aw, bw\), side = T\.side, tug = s => T\[s\]\.w, tugTone = s => T\[s\]\.tone;/);
-  assert.doesNotMatch(h2hCardSrc, /var\(--bar\)|var\(--bar-2\)|var\(--link\)|var\(--hot-dot\)|var\(--amber\)/, 'no blue (or amber) of its own: the only blue is the hot-line dots inside the shared table');
-});
-
-test('items 3 + 10: Hot lines = the shared table; the ledger = the shared rows on the H2H grid, grouped by year; toggles white', () => {
-  assert.match(h2hCardSrc, /fhHotLinesTable\(F, sc, \{ colMin: '26px', colHead: 'year', fixedCols: 9,/);
-  assert.match(h2hCardSrc, /fhHotMoreHtml\(!!state\.h2hAllLines, sc\.scored\.length, 'H2HPage\._h2hAllLines\(\)'\)/, '"Show all lines (N)" (--text, the shared toggle)');
-  assert.match(h2hCardSrc, /class="seg h2hp-tolist"[^>]*color:var\(--text\);[^>]*>Meetings ↓</, '"Meetings ↓" is white');
-  assert.match(h2hCardSrc, /labels: \['Date', '', 'Event', 'Rd', 'Sets', 'Set scores', 'Home', 'Away'\], rowCols: MA_ROW_COLS_H2H, rowGap: MA_ROW_GAP_H2H, groupMono: true, headPad: '8px 14px 7px', groupPad: '11px 14px 5px', inset: 8/);
-  assert.match(h2hCardSrc, /meta: w \+ '–' \+ \(Y\.rs\.length - w\) \+ ' · ' \+ Y\.rs\.length \+ \(Y\.rs\.length === 1 \? ' meeting' : ' meetings'\)/, 'year header "2024 1–2 · 3 meetings" (en dash)');
-  assert.match(html, /#h2hRoot \.h2hp-row:hover\{ background:var\(--inner\) !important; \}/, 'rows hover on the inner tone');
-  // 2026-11-16: the join's four files download together (Promise.all), still through the tab's own loaders
-  assert.match(html, /function priceRows\(\)\{ return Promise\.all\(\[loadBase\(\), loadNames\(\), loadX\(\), loadQ\(\)\]\)/, 'the Database tab exposes its own join (its four files fetched together); the ledger never builds a second one');
-});
-
-// ---------------------------------------------------------------- review fixes (TEN-402 lead, 2026-10-08)
-// Fix 1 · item 5: the record bar's tone follows the LEADER, never the side.
-const h2hTug = new Function(`${slice('h2hTug')}\nreturn h2hTug;`)();
-const SOLID = 'var(--viz-white-lead)', SEVENTY = 'color-mix(in srgb, var(--viz-white-lead) 70%, transparent)';
-test('item 5 (fix 1): the leader\'s record bar is solid --viz-white-lead, a trailing segment 70% — B leading draws B solid', () => {
-  const bLeads = h2hTug(1, 3);   // e.g. the Clay scope: B 3–1 up
-  assert.equal(bLeads.side, 'b');
-  assert.deepEqual([bLeads.b.w, bLeads.b.tone], ['25.00%', SOLID], 'B leads: B\'s (only) bar is the solid lead bar');
-  assert.deepEqual([bLeads.a.w, bLeads.a.tone], ['0%', SEVENTY], 'A trails: no segment, and were there one it would be 70%');
-  const aLeads = h2hTug(10, 7);
-  assert.deepEqual([aLeads.a.w, aLeads.a.tone, aLeads.b.tone], ['8.82%', SOLID, SEVENTY]);
-  const lvl = h2hTug(2, 2);
-  assert.deepEqual([lvl.side, lvl.a.w, lvl.b.w], ['level', '0%', '0%']);
-  // the drawn bar is never a dimmed lone bar: whichever side has width carries the solid tone
-  for (const [x, y] of [[1, 3], [3, 1], [0, 5], [7, 0], [9, 8]]) { const t = h2hTug(x, y); const lead = t.a.w !== '0%' ? t.a : t.b; assert.equal(lead.tone, SOLID, x + '–' + y); }
-});
-
-// Review 2 item 6 (checked live: Monte Carlo 2026 F, Alcaraz 5 v Sinner 2 double faults — Sinner's 2 was white 700 but
-// Alcaraz's 5 carried the bright bar). On the Head to Head sheet the bright bar is the better figure's, on the site's own
-// lower-is-better list (MATCH_STAT_ORDER: Double Faults, Unforced Errors).
-test('review 2 item 6: lower-is-better rows light the SHORTER bar on the Head to Head sheet (double faults 5 v 2); other hosts unchanged', () => {
-  const df = { label: 'Double faults', kind: 'count', k: 15, a: cell(5), b: cell(2) };
-  assert.deepEqual(fills(rowHtml('h2h')(df)), [SEVENTY, SOLID], 'B (2) is better: B\'s bar solid, A\'s (5) 70%');
-  assert.deepEqual(figs(rowHtml('h2h')(df)).map(f => f[1]), [500, 700], 'and the figures agree');
-  const ue = { label: 'Unforced errors / total points', kind: 'pct', a: cell(22, '0.22'), b: cell(27, '0.27') };
-  assert.deepEqual(fills(rowHtml('h2h')(ue)), [SOLID, SEVENTY], 'A\'s 0.22 is better');
-  const aces = { label: 'Aces', kind: 'count', k: 30, a: cell(9), b: cell(3) };
-  assert.deepEqual(fills(rowHtml('h2h')(aces)), [SOLID, SEVENTY], 'higher is better: the longer bar, as before');
-  assert.deepEqual(fills(rowHtml(null)(df)), ['var(--bar)', 'var(--bar-2)'], 'control: Match analysis keeps the longer-bar rule (founder Q3)');
-  // the list is the site's: MATCH_STAT_ORDER's lowerBetter flag, read by fhLowerIsBetter
+  assert.deepEqual(fills(rowHtml('pp2')({ label: 'Aces', kind: 'count', k: 30, a: cell(3), b: cell(9) })), ['var(--link)', 'var(--text)'], 'profile v2: by player in its own colours');
+  // the site's lower-is-better list is unchanged (it still decides Match analysis' better figure elsewhere)
   const low = new Function(`${LOWER_SRC}; return fhLowerIsBetter;`)();
   assert.deepEqual(['Double faults', 'Unforced errors', 'Unforced errors / total points', 'Winners / unforced errors', 'Aces', 'Dominance ratio'].map(low), [true, true, true, false, false, false]);
 });
 
-// Profile v2 (founder 2026-11-09, "follow the design"): a sheet the Player Profile opens paints bars BY PLAYER —
-// A the export's link blue, B white — whoever leads; every other host keeps its rule.
-test('profile v2: the profile\'s sheet paints by player (A --link, B --text); Match analysis keeps the longer-bar pair', () => {
-  const ace = { label: 'Aces', kind: 'count', k: 30, a: cell(3), b: cell(9) };
-  assert.deepEqual(fills(rowHtml('pp2')(ace)), ['var(--link)', 'var(--text)'], 'A trails yet keeps the blue: by player');
-  assert.deepEqual(fills(rowHtml(null)(ace)), ['var(--bar-2)', 'var(--bar)'], 'control: Match analysis leader / trailer');
-  assert.match(slice('fhOpenSheet'), /fhSheetHeadHtml\(e, r, mid === _fhPp2Mid \? \{ noChips: true \} : undefined\)/, 'the profile sheet drops the set chips');
+test('the sheet\'s tone is set only for a sheet opened from this page; the page sheet = the design overlay + 9% edge, no set chips; closers registered', () => {
+  assert.match(slice('fhSheetRender'), /_fhSheetToneNow = \(slot !== 'tab' && _fh && _fh\.m && _fh\.m\.h2hPage\) \? 'h2h'/);
+  assert.match(slice('fhSheetRender'), /: \(slot !== 'tab' && _fh && _fh\.sheet && _fh\.sheet === _fhPp2Mid\) \? 'pp2' : null;/);
+  assert.match(slice('fhSheetRender'), /host\.innerHTML = fhSheetSeg\(tabs\) \+ body;\n  _fhSheetToneNow = null;/, 'reset after the paint');
+  const os = slice('fhOpenSheet');
+  assert.match(os, /const h2hx = !!\(_fh\.m && _fh\.m\.h2hPage\);/);
+  assert.match(os, /background:\$\{h2hx \? 'var\(--h2h-overlay\)' : 'var\(--backdrop\)'\};\$\{h2hx \? '' : ' backdrop-filter:blur\(3px\);'\}/, 'the design\'s overlay on this page only');
+  assert.match(os, /inset:0 0 0 var\(--sf-side, 0px\); z-index:110;/, 'scrim over the content area only');
+  assert.match(os, /fhSheetHeadHtml\(e, r, mid === _fhPp2Mid \|\| h2hx \? \{ noChips: true \} : undefined\)/, 'the profile and this page drop the set chips');
+  assert.match(os, /host\.classList\.toggle\('h2hx', !!\(_fh\.m && _fh\.m\.h2hPage\)\);/, 'the host class scopes the design CSS (#fhSheet.h2hx)');
+  assert.match(html, /pm: \{ h2hPage: true, p1: a\.short, p2: b\.short, p1Key: a\.key, p2Key: b\.key \}/, 'the page\'s pseudo match carries the flag');
+  assert.match(html, /\(window\.sfOverlayClosers = window\.sfOverlayClosers \|\| \[\]\)\.push\(\(\) => \{ if \(typeof _fh !== 'undefined' && _fh && _fh\.m && _fh\.m\.h2hPage && _fh\.sheet\) fhCloseSheet\(\); \}\);/);
+  const css = readFileSync(process.env.TEN402_CSS || join(HERE, 'h2h-page.css'), 'utf8');
+  assert.match(css, /#h2hRoot, #fhSheet\.h2hx, \.h2hx-pop \{[^}]*--card: var\(--h2h-card\);/, 'the page tokens reach the sheet only through #fhSheet.h2hx');
+  assert.doesNotMatch(css, /(^|[\s,}])#fhSheet(?!\.h2hx)[\s{.:]/m, 'no unscoped #fhSheet rule');
+});
+
+// The H2H-only branch of the shared sheet must leave Match analysis byte-identical. The outputs below were computed from
+// origin/main BEFORE the rebuild (bsp-consult-dashboard.html at 7bd4e930c = the merge base 40b31f1f8, unchanged) on the
+// same inputs: tone null (Match analysis, Match Stats tab) and 'pp2' (the profile) — sha256 prefix : length.
+const MA_FROZEN = { 'row|null': '2d6497f50f495bb1:6423', 'seg|null': 'baad2201a13f5e45:2880', 'dr|null': '40f154e2dddb0589:717',
+  'row|pp2': '6d0ff9a59d0c66c6:6424', 'seg|pp2': 'baad2201a13f5e45:2880', 'dr|pp2': '40f154e2dddb0589:717', head: '7ea58da2eeb468c1:13766', frame: '1db5b3ce03ec62eb:1494' };
+function maOutputs(src) {
+  const sl = name => { const start = src.indexOf(`function ${name}(`); assert.ok(start > 0, name); let d = 0, i = src.indexOf('{', start); for (; i < src.length; i++) { if (src[i] === '{') d++; else if (src[i] === '}' && --d === 0) break; } return src.slice(start, i + 1); };
+  const cst = name => { const a = src.indexOf(`\nconst ${name} = `) + 1; assert.ok(a > 0, name); let d = 0, i = a; for (; i < src.length; i++) { const c = src[i]; if ('{[('.includes(c)) d++; else if ('}])'.includes(c)) d--; else if (c === ';' && d === 0) break; } return src.slice(a, i + 1); };
+  const env = new Function('tone', '_fh', `
+    const FH_MONO = "font-family:'IBM Plex Mono',monospace;", MA_GREY = 'var(--text-label)', FH_DASH = 'var(--text-label)', FH_DASHC = '—', FH_BAR_CAP = 90;
+    const fhEsc = s => String(s == null ? '' : s), escapeHtml = s => String(s == null ? '' : s);
+    function fhSheetTone(){ return tone; } function fhSurname(n){ return String(n || '').split(/\\s+/).pop(); } function aAvatarHtml(n){ return '<i>' + n + '</i>'; }
+    ${cst('FH_BOOK')}${cst('FH_SRC')}${cst('FH_B365_HOVER')}${cst('FH_B365_APPROX_HOVER')}
+    ${/\nconst MATCH_STAT_ORDER = \[[\s\S]*?\n\];/.exec(src)[0]}
+    ${cst('MA_SEG')}
+    ${['fhLowerIsBetter', 'fhStatBarWidth', 'fhSheetBetter', 'fhSheetRowHtml', 'fhDDMM', 'fhB365Approx', 'fhPxMark', 'fhSrcTitle', 'fhB365Tag', 'fhB365Meta', 'fhSheetHeadHtml', 'maSeg'].map(sl).join('\n')}
+    const fhSheetSectionHead = t => '<h4>' + t + '</h4>', maSheetNaNote = () => '', maSheetGateNote = () => '';
+    function fhSheetModel(){ return { dr: [{ txt: '1.15', title: 'a' }, { txt: '0.87', title: 'b' }], sections: [], partial: false, gated: false }; }
+    ${sl('fhSheetStatsHtml')}
+    return { fhSheetRowHtml, fhSheetHeadHtml, maSeg, fhSheetStatsHtml };`);
+  const stats = [{ label: 'Serve rating', kind: 'rating', k: 400, a: cell(296), b: cell(266) }, { label: 'Double faults', kind: 'count', k: 15, a: cell(5), b: cell(2) },
+    { label: 'Aces', kind: 'count', k: 30, a: cell(null, '—'), b: cell(4) }, { label: '1st serve in', kind: 'pct', a: cell(62.5, '62.5%'), b: cell(58, '58.0%') },
+    { label: 'Dominance ratio', kind: 'ratio', a: cell(1.15, '1.15'), b: cell(0.87, '0.87') }];
+  const r = { tourn: 'Monte Carlo', surface: 'Clay', round: 'F', date: '2026-04-12', won: false, pS: 0, oS: 2, sets: [[6, 7], [3, 6]], price: 2.0, oppPrice: 1.8, book: 'B', src: 'td' };
+  const e = { aName: 'C. Alcaraz', bName: 'J. Sinner', aKey: 1, bKey: 2 };
+  const items = [{ label: 'Match', on: true, onclick: 'x()' }, { label: 'Set 1', onclick: 'y()' }, { label: 'Set 2', disabled: true, title: 'No per-set stats' }];
+  const out = {};
+  for (const tone of [null, 'pp2']) {
+    const M = env(tone, { m: { p1: 'A' } });
+    out['row|' + tone] = stats.map(M.fhSheetRowHtml).join('\n');
+    out['seg|' + tone] = M.maSeg('sheet', items, { center: true }) + M.maSeg('pbp', items) + M.maSeg('readme', items);
+    out['dr|' + tone] = M.fhSheetStatsHtml({ own: {}, opp: {} });
+  }
+  const M = env(null, { m: { p1: 'A' } });
+  out.head = M.fhSheetHeadHtml(e, r) + M.fhSheetHeadHtml(e, Object.assign({}, r, { book: 'P', won: true })) + M.fhSheetHeadHtml(e, r, { inline: true }) + M.fhSheetHeadHtml(e, r, { noChips: true });
+  out.frame = new Function(`
+    let _fh = null, _fhPp2Mid = 'pp2mid';
+    const host = { innerHTML: '', parentNode: null, id: '', classList: { add() {}, toggle() {} }, remove() {} };
+    const document = { getElementById: id => (id === 'fhSheet' && host.parentNode ? host : null), querySelector: () => null, createElement: () => host,
+      body: { appendChild: h => { h.parentNode = document.body; } } };
+    function fhEnsureStyles() {} function fhMarkRow() {} function fhSheetInit() {}
+    function fhSheetHeadHtml(e, r, o) { return '[head ' + JSON.stringify(o || null) + ']'; }
+    ${sl('fhOpenSheet')}
+    _fh = { m: { p1: 'A', p2: 'B' }, sheetMap: { x: { r: {}, aName: 'A', bName: 'B' }, pp2mid: { r: {}, aName: 'A', bName: 'B' } } };
+    fhOpenSheet('x'); const a = host.innerHTML; fhOpenSheet('pp2mid'); return a + host.innerHTML;`)();
+  return out;
+}
+const sha = s => createHash('sha256').update(s).digest('hex').slice(0, 16) + ':' + s.length;
+test('rule 4: Match analysis is unchanged by the H2H sheet branch — with the tone null (and the profile\'s pp2), the rows, the sheet head, maSeg(\'sheet\' | \'pbp\'), the Dominance card and the frame equal origin/main\'s', () => {
+  const got = Object.fromEntries(Object.entries(maOutputs(html)).map(([k, v]) => [k, sha(v)]));
+  assert.deepEqual(got, MA_FROZEN);
+  // control: the same generator sees the H2H branch — with the tone on 'h2h' the rows differ from the frozen ones
+  const h2hRows = new Function('fhSheetTone', `${LOWER_SRC}; const FH_MONO = '', MA_GREY = '', FH_DASH = '', FH_BAR_CAP = 90; const fhEsc = s => String(s); ${slice('fhStatBarWidth')}; ${slice('fhSheetBetter')}; ${slice('fhSheetRowHtml')}; return fhSheetRowHtml;`)(() => 'h2h');
+  assert.notEqual(h2hRows({ label: 'Aces', kind: 'count', k: 30, a: cell(9), b: cell(3) }), new Function('fhSheetTone', `${LOWER_SRC}; const FH_MONO = '', MA_GREY = '', FH_DASH = '', FH_BAR_CAP = 90; const fhEsc = s => String(s); ${slice('fhStatBarWidth')}; ${slice('fhSheetBetter')}; ${slice('fhSheetRowHtml')}; return fhSheetRowHtml;`)(() => null)({ label: 'Aces', kind: 'count', k: 30, a: cell(9), b: cell(3) }));
 });
 
 // Review 2 item 2: the Player Profile's hand-off (window.pp2OpenMatchSheet) never reuses the Head to Head page's sheet
-// state — its pseudo match carries h2hPage (white bars, Dominance emphasis, --shadow-modal). Runs the REAL opener and the
-// REAL fhStateFor / fhOpenSheet / fhCloseSheet with the DOM and the body painter stubbed; the tone is computed with
-// fhSheetRender's own line.
+// state — its pseudo match carries h2hPage (the page's overlay and colours). Runs the REAL opener and the REAL fhStateFor /
+// fhOpenSheet / fhCloseSheet with the DOM and the body painter stubbed; the tone is computed with fhSheetRender's own line.
 test('review 2 item 2: an H2H sheet opened and closed, then a profile recent-form chip → the profile sheet has no H2H tone', () => {
   const at = html.indexOf('window.pp2OpenMatchSheet = function(x){');
   let d = 0, i = html.indexOf('{', at); for (; i < html.length; i++) { if (html[i] === '{') d++; else if (html[i] === '}' && --d === 0) break; }
@@ -534,7 +528,7 @@ test('review 2 item 2: an H2H sheet opened and closed, then a profile recent-for
   const toneLine = /_fhSheetToneNow = (\([^\n]*?\)) \? 'h2h'/.exec(slice('fhSheetRender'))[1];
   const run = new Function(`
     let _fh = null, _fhSheetToneNow = null, painted = null, _fhPp2Mid = null;
-    const host = { innerHTML: '', parentNode: null, classList: { add() {} }, isConnected: true, remove() {} };
+    const host = { innerHTML: '', parentNode: null, classList: { add() {}, toggle() {} }, isConnected: true, remove() {} };
     const document = { getElementById: id => (id === 'fhSheet' && host.parentNode ? host : null), querySelector: () => null,
       createElement: () => host, body: { appendChild: h => { h.parentNode = document.body; } }, querySelectorAll: () => [] };
     const window = {}; function MutationObserver() { return { observe() {}, disconnect() {} }; }
@@ -551,14 +545,208 @@ test('review 2 item 2: an H2H sheet opened and closed, then a profile recent-for
   const P = run(), pm = { h2hPage: true, p1: 'J. Sinner', p2: 'C. Alcaraz' };
   const h = P.h2h(pm);
   assert.equal(h.tone, 'h2h', 'control: the H2H page\'s own sheet takes its tone');
-  assert.match(h.frame, /box-shadow:var\(--shadow-modal\)/);
+  assert.match(h.frame, /background:var\(--h2h-overlay\)/);
   P.close();
   const p = P.profile();
-  assert.equal(p.tone, null, 'the profile sheet: no white bars, no Dominance emphasis');
-  assert.doesNotMatch(p.frame, /--shadow-modal/);
-  // an open Match analysis modal's state is still shared with the profile (unchanged behaviour)
+  assert.equal(p.tone, null, 'the profile sheet: no H2H colours');
+  assert.doesNotMatch(p.frame, /--h2h-overlay|--h2h-white/);
   const P2 = run(); P2.modal({ p1: 'A', p2: 'B' }); assert.equal(P2.profile().tone, null);
   assert.match(html, /const st = _fh && !\(_fh\.m && _fh\.m\.h2hPage\) \? _fh : fhStateFor\(\{ pp2: true, key: x\.subjectKey \}\);/);
+});
+
+// ---------------------------------------------------------------- the Head to head record card + the meetings box, executed
+// tools/h2h-test-harness.js runs the shipped module; the meetings come through the REAL h2hPairFor → H2HCore.joinMeetings
+// → fhRowFromForm → h2hPriceJoin path from two career-history shards (stubbed loaders), so the card draws real rows.
+const HX = createRequire(import.meta.url)(join(HERE, 'tools/h2h-test-harness.js'));
+const text = h => String(h).replace(/<[^>]*>/g, ' ').replace(/&amp;/g, '&').replace(/&#39;/g, "'").replace(/\s+/g, ' ').trim();
+const PA = { key: '1', short: 'J. Sinner', full: 'J. Sinner', mono: 'JS' }, PB = { key: '2', short: 'C. Alcaraz', full: 'C. Alcaraz', mono: 'CA' };
+async function pairPage(meetings, o) {
+  const opt = o || {};
+  const ch = { 1: [], 2: [] };
+  meetings.forEach((m, i) => {
+    const sets = m.sets.map(s => ({ p: s[0], o: s[1] }));
+    const pS = m.sets.filter(s => s[0] > s[1]).length, oS = m.sets.length - pS;
+    const base = { date: m.date, tournament: m.t || 'Basel', round: m.round || 'F', level: 'atp', eventKey: 100 + i, surface: m.surface || 'hard' };
+    const res = m.ret ? (m.won ? '1 - 0 ret.' : '0 - 1 ret.') : pS + ' - ' + oS;
+    ch[1].push(Object.assign({}, base, { opponent: PB.short, oppKey: 2, won: m.won, sets, result: res, retired: !!m.ret }));
+    ch[2].push(Object.assign({}, base, { opponent: PA.short, oppKey: 1, won: !m.won, sets: sets.map(s => ({ p: s.o, o: s.p })), result: m.ret ? (m.won ? '0 - 1 ret.' : '1 - 0 ret.') : oS + ' - ' + pS, retired: !!m.ret }));
+  });
+  const sheets = [];
+  const h = HX.load({ html, globals: Object.assign({ loadCareerHistory: k => Promise.resolve(ch[k]), careerHistoryAnswered: () => true, fhLoadCloses: () => Promise.resolve(null),
+    sfH2hNkCount: () => ({}), careerHistoryIdOf: () => null, _sfDbJoinSt: 'ready', _sfDbJoin: opt.db || { rows: [], names: [], meta: { rounds: [] } },
+    loadSetStatsIndex: () => Promise.resolve(opt.statsIx || new Set()), loadSetStatsShard: ek => Promise.resolve((opt.shards || {})[ek] || null),
+    matchStatsFromShard: (sh) => sh, fhStateFor: () => ({ sheetMap: {} }), fhOpenSheet: mid => sheets.push(mid) }, opt.globals || {}) });
+  h.call(h.h2hPairFor, PA, PB);
+  await new Promise(r => setTimeout(r, 5));
+  h.call(h.h2hPairFor, PA, PB);   // the loads answered: the rows are built (joined, oriented, priced)
+  if (opt.price) h.X.__eval('_h2hPairs')['1|2'].rows.forEach(opt.price);
+  h.sheets = sheets;
+  h.view = () => ({ a: PA, b: PB, h2h: h.call(h.h2hViewFor, PA, PB) });
+  return h;
+}
+const runH = (h, hid) => h.X.handlers()[+hid]();
+const hidOf = (htmlText, marker) => { const i = htmlText.indexOf(marker); const t = htmlText.lastIndexOf('<', i); return /data-hid="(\d+)"/.exec(htmlText.slice(t, htmlText.indexOf('>', i)))[1]; };
+const M3 = [{ date: '2023-10-25', won: true, sets: [[6, 4], [6, 3]] }, { date: '2024-10-25', won: false, sets: [[4, 6], [7, 6], [3, 6]] }, { date: '2025-10-25', won: true, sets: [[7, 6], [6, 7], [6, 4]] }];
+
+test('the Head to head record (DF §3): the design card, the overall score 42 mono 800, player one blue / player two white, surface tabs with counts (a surface with none is dead)', async () => {
+  const h = await pairPage(M3);
+  const c = h.call(h.h2hCard, h.view());
+  assert.ok(c.startsWith('<div id="h2h-rec" class="x-sec" style="background:var(--h2h-card); border:1.25px solid color-mix(in srgb, var(--h2h-white) 6%, transparent); border-radius:14px; padding:24px 26px;'));
+  assert.match(c, /<span style="font-family:'IBM Plex Mono',monospace; font-size:42px; font-weight:800; line-height:1; white-space:nowrap; color:var\(--h2h-text\);">2<span style="color:var\(--h2h-grey\);"> – <\/span>1<\/span>/);
+  assert.match(text(c), /J\. Sinner 2 wins Overall 2 – 1 3 meetings C\. Alcaraz 1 win/);
+  const rings = [...c.matchAll(/class="x-av"[^>]*box-shadow:0 0 0 2px ([^;]+);/g)].map(m => m[1]);
+  assert.deepEqual(rings, [H2H_A, H2H_B], 'A ring blue, B ring white');
+  // one dot per meeting, oldest → newest: A's wins blue, B's white; the run sentence
+  const dots = [...c.matchAll(/<span title="[^"]* won" style="width:10px; height:10px; border-radius:50%; background:([^;]+);"><\/span>/g)].map(m => m[1]);
+  assert.deepEqual(dots, [H2H_A, H2H_B, H2H_A]);
+  assert.match(text(c), /Sinner won the last meeting All 3 meetings ›/);
+  assert.ok(!/h2hTug|--viz-white-lead|--white-bar/.test(c), 'no white tug bar: the record bar is gone with the rebuild');
+  // the surface tabs: counts from the meetings, a surface with no meeting drawn dead (no handler)
+  assert.match(text(c), /All 3 Hard 3 Clay 0 Grass 0/);
+  assert.match(c, /<span class="" style="display:flex; align-items:baseline; gap:6px; padding:5px 11px; border-radius:8px; font-size:12\.5px; font-weight:600; color:var\(--h2h-dead\);[^>]*><span>Clay<\/span>/);
+  assert.match(c, /<span class="seg" data-hid="\d+" style="[^"]*font-weight:700; color:var\(--h2h-text\); background:var\(--h2h-raised\); border:1px solid color-mix\(in srgb, var\(--h2h-white\) 16%, transparent\);[^"]*"><span>All<\/span>/);
+  // a scope: "On hard" and only its meetings
+  h.state.h2hSurf = 'Hard';
+  assert.match(text(h.call(h.h2hCard, h.view())), /Overall|On hard/);
+  assert.match(text(h.call(h.h2hCard, h.view())), /On hard 2 – 1 3 meetings/);
+});
+
+test('TEN-437 (5): a history that did not load is "could not load" + Retry (H2HPage._h2hRetry), never "never met"; no meetings at all = the design\'s sentence', async () => {
+  const h = await pairPage([]);
+  const f = text(h.call(h.h2hCard, { a: PA, b: PB, h2h: { failed: true, names: ['C. Alcaraz'] } }));
+  assert.match(f, /^Head to head record Meetings between the two players Head to head could not load: the match history for C\. Alcaraz did not load\. Retry$/);
+  assert.match(h.call(h.h2hCard, { a: PA, b: PB, h2h: { failed: true, names: [] } }), /<span class="seg" onclick="H2HPage\._h2hRetry\(\)"[^>]*>Retry<\/span>/);
+  assert.match(text(h.call(h.h2hCard, h.view())), /These two have never met on record\./);
+  assert.match(text(h.call(h.h2hCard, { a: PA, b: PB, h2h: { loading: true } })), /Loading head to head…/);
+});
+
+// Founder ruling 3 (2026-11-16, "follow the design"): the Hot lines are ranked once the scope has H2H_HOT_MIN_MEETINGS = 3
+// meetings (fewer → "Not enough meetings to rank lines (n=…)"); a line shows with H2H_HOT_MIN_LINE = 1 eligible meeting;
+// H2H_HOT_MIN_RATE = null (no rate floor); the Rate keeps the thin rule (maGate: under 5 no %, 5–9 grey).
+const hotRows = c => [...c.matchAll(/<div class="seg x-hl" data-hid="\d+" style="display:grid; grid-template-columns:([^;]+);[\s\S]*?(?=<div class="seg x-hl"|<\/div>\s*<div style="display:flex; align-items:center; justify-content:space-between)/g)].map(m => ({ cols: m[1], html: m[0], text: text(m[0]) }));
+test('founder ruling 3: Hot lines ranked from 3 meetings (H2H_HOT_MIN_MEETINGS), a line from 1 eligible meeting, no rate floor; under 3 → "Not enough meetings to rank lines (n=2)"', async () => {
+  const h = await pairPage(M3);
+  assert.equal(h.consts.H2H_HOT_MIN_MEETINGS, 3); assert.equal(h.consts.H2H_HOT_MIN_LINE, 1); assert.equal(h.consts.H2H_HOT_MIN_RATE, null);
+  const c = h.call(h.h2hCard, h.view());
+  const rows = hotRows(c);
+  // the shared scorer at the design's line floor (1 eligible meeting): one row per family that has a line
+  const defs = h.call(() => h.run('fhH2hLineDefs'))('Sinner', 'Alcaraz'), F = h.view().h2h.F;
+  const sc = h.call(() => h.run('fhScoreLines'))(F, defs, { min: 1 }).scored, famOf = h.call(() => h.run('fhFamOf'));
+  const famsWant = h.call(() => h.run('FH_HOT_FAM')).filter(f => sc.some(x => famOf(x.L.g) === f[0])).map(f => f[1]);
+  assert.ok(famsWant.length >= 2, 'the fixture has lines in two families or more');
+  assert.equal(rows.length, famsWant.length, 'the best line of each family at n = 3');
+  rows.forEach(r => assert.equal(r.cols, 'minmax(150px,0.8fr) 56px 72px minmax(234px,1.6fr) 10px', 'the design\'s hot-line grid'));
+  const top = rows.filter(r => /Most covered/.test(r.text));
+  assert.equal(top.length, 1, 'one line is marked "Most covered"');
+  assert.ok(top[0].text.includes(sc.slice().sort(h.call(() => h.run('fhHotLineRank')))[0].name), 'the ranked first line');
+  assert.match(top[0].html, /background:var\(--h2h-raised\); box-shadow:inset 0 0 0 1px color-mix\(in srgb, var\(--h2h-white\) 16%, transparent\);/);
+  const fam = [...c.matchAll(/<span style="font-family:'Hanken Grotesk',sans-serif; font-size:10\.5px; font-weight:700; letter-spacing:0\.10em; text-transform:uppercase; color:var\(--h2h-grey\);">([^<]+)<\/span><span style="font-size:13\.5px; font-weight:700;">/g)].map(m => m[1].replace('&amp;', '&'));
+  assert.deepEqual(fam, Array.from(famsWant));
+  const N = +/Show all lines \((\d+)\)/.exec(c)[1];
+  const elig = defs.filter(L => F.filter(r => h.call(() => h.run('fhEligible'))(r, L)).length >= 1).length;
+  assert.ok(elig > rows.length, 'more lines than families: the toggle has something to show');
+  assert.equal(N, elig, '"Show all lines (N)" counts every line with one eligible meeting (H2H_HOT_MIN_LINE = 1)');
+  // two meetings: one sentence, no ranking
+  const h2 = await pairPage(M3.slice(0, 2));
+  const c2 = h2.call(h2.h2hCard, h2.view());
+  assert.match(text(c2), /Not enough meetings to rank lines \(n=2\)/);
+  assert.equal(hotRows(c2).length, 0);
+  // the scope decides: three meetings on hard, one on clay → the clay scope is under 3
+  const h3 = await pairPage(M3.concat([{ date: '2026-05-10', won: true, sets: [[6, 2], [6, 2]], surface: 'clay', t: 'Rome' }]));
+  h3.state.h2hSurf = 'Clay';
+  assert.match(text(h3.call(h3.h2hCard, h3.view())), /Not enough meetings to rank lines \(n=1\)/);
+});
+test('founder ruling 3: the Rate keeps the thin rule — under 5 eligible "—" (the count in the hover), 5–9 grey "small sample", 10+ white; every row, all lines', async () => {
+  const mk = n => Array.from({ length: n }, (_, i) => ({ date: `20${10 + i}-10-25`, won: i % 3 !== 0, sets: i % 2 ? [[6, 4], [6, 4]] : [[4, 6], [6, 3], [6, 2]] }));
+  const seen = new Set();
+  for (const n of [4, 7, 12]) {
+    const h = await pairPage(mk(n)); h.state.h2hAllLines = true;
+    for (const r of hotRows(h.call(h.h2hCard, h.view()))) {
+      const [, c, e] = /(\d+) of (\d+)/.exec(r.text).map(Number);
+      const cellm = /<span title="([^"]*)" style="font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:700; color:([^;]+);">([^<]*)<\/span>/.exec(r.html);
+      assert.ok(cellm, 'rate cell');
+      const [, title, col, val] = cellm;
+      if (e < 5) { assert.deepEqual([val, col, title], ['—', 'var(--h2h-grey)', e + ' eligible: too few for a rate']); seen.add('lt5'); }
+      else if (e < 10) { assert.deepEqual([val, col, title], [Math.round(c / e * 100) + '%', 'var(--h2h-grey)', 'Small sample · n=' + e]); seen.add('5-9'); }
+      else { assert.deepEqual([val, col, title], [Math.round(c / e * 100) + '%', H2H_B, c + ' of ' + e + ' eligible']); seen.add('10+'); }
+    }
+  }
+  assert.deepEqual([...seen].sort(), ['10+', '5-9', 'lt5'], 'all three tiers exercised');
+});
+test('a hot line opens its meetings (newest first) with Covered / Last five / average tiles; a meeting row opens THE match sheet; ✕ closes', async () => {
+  const h = await pairPage(M3);
+  const c = h.call(h.h2hCard, h.view());
+  runH(h, /data-hid="(\d+)"/.exec(hotRows(c)[0].html)[1]);
+  const open = h.call(h.h2hCard, h.view());
+  assert.match(text(open), /Covered (—|\d+%) \d+ of \d+ meetings Last five \d of \d most recent meetings Average/);
+  const det = [...open.matchAll(/<div class="seg x-row" data-hid="(\d+)" title="Open the match statistics" style="display:grid; grid-template-columns:62px minmax\(0,1\.3fr\) minmax\(0,1fr\) 96px 84px 8px;[^>]*>([\s\S]*?)<\/div>/g)];
+  assert.ok(det.length >= 1);
+  assert.match(text(det[0][2]), /^25\.10\.25 /, 'newest first');
+  runH(h, det[0][1]);
+  assert.equal(h.sheets.length, 1, 'the row opened the shared sheet (fhOpenSheet)');
+  assert.equal(h.sheets[0], h.view().h2h.F[2].mid);
+  runH(h, hidOf(open, 'class="seg x-close"'));
+  assert.equal(h.state.hotOpen, null);
+});
+
+// ---------------------------------------------------------------- the meetings box (the Overall box opens it)
+const boxRows = c => [...c.matchAll(/<div class="row seg x-row" data-hid="(\d+)" data-fh-mid="([^"]+)" style="display:grid; grid-template-columns:([^;]+);[^>]*>([\s\S]*?)<\/div>/g)].map(m => ({ hid: m[1], mid: m[2], cols: m[3], html: m[4], text: text(m[4]) }));
+test('the meetings box: the design grid, newest first by year ("2025 1–0 · 1 meeting"), Sets "pS–oS", a retirement "—" + "5–0 ret.", scores never cut, a row opens THE sheet', async () => {
+  const ms = M3.concat([{ date: '2025-08-07', won: true, sets: [[5, 0]], ret: true, t: 'Cincinnati' }]);
+  const h = await pairPage(ms);
+  const c0 = h.call(h.h2hCard, h.view());
+  runH(h, hidOf(c0, 'class="seg x-ovbox"'));
+  assert.equal(h.state.h2hBox, true, 'the Overall box opens the meetings');
+  const box = h.call(h.h2hBoxHTML, h.view());
+  const rows = boxRows(box);
+  assert.equal(rows.length, 4);
+  rows.forEach(r => assert.equal(r.cols, '48px 12px minmax(0,1.4fr) 36px 40px minmax(0,1.3fr) 46px 46px', 'the design meetings grid'));
+  assert.deepEqual(rows.map(r => r.text.slice(0, 9)), ['25.10. Sw', '07.08. Ci', '25.10. Sw', '25.10. Sw'], 'newest first (2025-10, 2025-08, 2024, 2023)');
+  assert.match(text(box), /2025 2–0 · 2 meetings/);
+  assert.match(text(box), /2024 0–1 · 1 meeting/);
+  const ret = rows.find(r => /ret\./.test(r.text));
+  assert.match(ret.text, /^07\.08\. Cincinnati Open Hard F — 5–0 ret\. /, 'a retirement: sets "—", the score en-dashed with "ret."');
+  assert.match(rows[0].text, / 2–1 7-6, 6-7, 6-4 /, 'Sets "pS–oS" (en dash, no spaces); set scores in the site\'s "7-6" form');
+  assert.match(rows[3].text, /^25\.10\. Swiss Indoors Hard F 2–0 /, 'the 2023 win, under the event\'s one name');
+  rows.forEach(r => { const s = /<span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:var\(--h2h-grey\);([^"]*)">[^<]*<\/span>\s*<span title=/.exec(r.html); assert.ok(s, 'score cell'); assert.match(s[1], /white-space:normal;/); assert.doesNotMatch(s[1], /ellipsis|nowrap|overflow:hidden/); });
+  // the result square: A's win --h2h-up, a loss --h2h-down (from A's side)
+  assert.match(rows[2].html, /border-radius:2px; background:var\(--h2h-down\);/, 'the 2024 loss');
+  assert.match(rows[0].html, /border-radius:2px; background:var\(--h2h-up\);/);
+  // a row opens the shared sheet and stays selected (raised + 16% ring) while the box is open
+  runH(h, rows[2].hid);
+  assert.deepEqual(h.sheets, [rows[2].mid]);
+  assert.match(h.call(h.h2hBoxHTML, h.view()), new RegExp(`data-fh-mid="${rows[2].mid}" style="[^"]*background:var\\(--h2h-raised\\); box-shadow:inset 0 0 0 1px color-mix\\(in srgb, var\\(--h2h-white\\) 16%, transparent\\);`));
+  // the price columns' heads are the two players' mini avatars (A blue, B white, 1.5px rings)
+  assert.deepEqual([...box.matchAll(/<span title="([^"]+)'s closing price"[^>]*><span class="x-av"[^>]*box-shadow:0 0 0 1\.5px ([^;]+);/g)].map(m => [m[1], m[2]]), [['J. Sinner', H2H_A], ['C. Alcaraz', H2H_B]]);
+  assert.match(text(box), /Meetings 4 on record · Sinner leads 3–1/, 'the record in the sentence: en dash');
+});
+test('TEN-437 item 4: a Bet365-priced meeting keeps its "B" marker and the hover "Bet365 closing odds, Pinnacle not available"; a Pinnacle meeting carries none', async () => {
+  const h = await pairPage(M3, { price: (r, i) => Object.assign(r, i === 0 ? { price: 1.5, oppPrice: 2.7, book: 'B', src: 'td' } : i === 1 ? { price: 1.9, oppPrice: 1.95, book: 'P', src: 'td' } : { price: null, oppPrice: null, book: null }) });
+  h.state.h2hBox = true;
+  const rows = boxRows(h.call(h.h2hBoxHTML, h.view()));
+  const b = rows.find(r => r.text.startsWith('25.10.') && /1\.50/.test(r.text)), p = rows.find(r => /1\.90/.test(r.text)), d = rows[0];
+  assert.match(b.html, /<span title="Bet365 closing odds, Pinnacle not available" style="[^"]*">1\.50<sup style="font-size:8px; color:var\(--h2h-grey\);">B<\/sup><\/span>/);
+  assert.match(b.html, /title="Bet365 closing odds, Pinnacle not available"[^>]*>2\.70</, 'the opponent\'s price carries the same hover');
+  assert.doesNotMatch(p.html, /<sup/, 'a Pinnacle close: no marker');
+  assert.match(p.html, /title="Pinnacle closing price · Database join \(Tennis-Data\)"/);
+  assert.match(d.text, / — —$/, 'no price: dashes');
+  assert.match(d.html, /title="No Pinnacle or Bet365 closing price for this meeting in the Database"/);
+});
+test('the meetings box tiles: Total points won from the box scores over k of n meetings; On <surface>; Went to a deciding set; Favourite won with exact ties counted out', async () => {
+  const shard = (a, b) => ({ own: { raw: { 'Points:Total Points Won': { won: a, total: a + b } } }, opp: { raw: { 'Points:Total Points Won': { won: b, total: a + b } } } });
+  const h = await pairPage(M3, { statsIx: new Set(['100', '101']), shards: { 100: shard(60, 40), 101: shard(55, 65) },
+    price: (r, i) => Object.assign(r, i === 0 ? { price: 1.4, oppPrice: 3.0, book: 'P' } : i === 1 ? { price: 1.9, oppPrice: 1.9, book: 'P' } : { price: 2.2, oppPrice: 1.7, book: 'P' }) });
+  h.state.h2hBox = true;
+  assert.match(text(h.call(h.h2hBoxHTML, h.view())), /Total points won Loading the box scores…/, 'never a guess while the box scores load');
+  await new Promise(r => setTimeout(r, 5));
+  const t = text(h.call(h.h2hBoxHTML, h.view()));
+  assert.match(t, /Total points won 52\.3% Sinner · Alcaraz 47\.7% · over 2 of 3 meetings/, '115 of 220 points from the two box scores on file; the third meeting has none');
+  assert.match(t, /On hard 2–1 Clay 0–0 · Grass 0–0/);
+  assert.match(t, /Went to a deciding set 2 of 3 Sinner won 1 · Alcaraz won 1/);
+  assert.match(t, /Favourite won 1 of 2 The underdog won 1 · 1 level-priced, not counted/, 'an exact tie is no favourite');
+  // no box score at all → a dash and the reason, never estimated from games
+  const h0 = await pairPage(M3); h0.state.h2hBox = true; h0.call(h0.h2hBoxHTML, h0.view()); await new Promise(r => setTimeout(r, 5));
+  assert.match(text(h0.call(h0.h2hBoxHTML, h0.view())), /Total points won — No box score on record for these meetings/);
 });
 
 // Fix 2 · Data 2: ONE price join for the page — b = null prices each row against its own opponent.
@@ -687,21 +875,22 @@ test('fix 6: a blank round at the season finals is the round robin ("RR"); Davis
   assert.ok(pf.indexOf('h2hRoundOf(') < pf.indexOf('h2hPriceJoin('), 'the round is set before the price join');
 });
 
-// Fix 5 · item 8: the Match / Set scopes' Dominance ratio card on the Head to Head sheet.
+// The Match / Set scopes' Dominance ratio card on the Head to Head sheet: by player too (DF L459–463) — A's figure the
+// page blue, B's white, both 700 (replaces fix 5's better-figure emphasis). Every other host keeps both white 700.
 const drHtml = (tone, dr) => new Function('fhSheetModel', 'fhSheetTone', 'fhSheetBetter',
   `const FH_MONO = "font-family:'IBM Plex Mono',monospace;", FH_DASH = 'var(--text-label)', FH_DASHC = '—';
    const fhEsc = s => String(s), fhSheetSectionHead = t => t, fhSheetRowHtml = () => '', maSheetNaNote = () => '', maSheetGateNote = () => '';
    ${slice('fhSheetStatsHtml')}; return fhSheetStatsHtml;`)(
   () => ({ dr, sections: [], partial: false, gated: false }), () => tone, new Function(`${LOWER_SRC}; ${slice('fhSheetBetter')}; return fhSheetBetter;`)())({ own: {}, opp: {} });
 const drFigs = h => ['a', 'b'].map(s => { const m = new RegExp(`class="fh-dr-${s}"[^>]*font-size:24px; font-weight:(\\d+); color:([^;]+);[^>]*>([^<]*)<`).exec(h); return m && [m[3], +m[1], m[2]]; });
-test('item 8 (fix 5): the sheet\'s Match / Set Dominance ratio card — the better figure white 700, the other --text-label 500 (Head to Head only)', () => {
+test('the sheet\'s Match / Set Dominance ratio card on Head to Head: A --h2h-blue, B --h2h-text, both 700, whoever is better; a dash stays grey', () => {
   const d = (a, b) => [{ txt: a, title: '' }, { txt: b, title: '' }];
-  assert.deepEqual(drFigs(drHtml('h2h', d('1.15', '0.87'))), [['1.15', 700, 'var(--text)'], ['0.87', 500, 'var(--text-label)']]);
-  assert.deepEqual(drFigs(drHtml('h2h', d('0.92', '1.08'))), [['0.92', 500, 'var(--text-label)'], ['1.08', 700, 'var(--text)']], 'B better');
-  assert.deepEqual(drFigs(drHtml('h2h', d('1.00', '1.00'))).map(f => f[1]), [700, 700], 'a tie marks neither');
-  assert.deepEqual(drFigs(drHtml('h2h', d('—', '1.08'))), [['—', 700, 'var(--text-label)'], ['1.08', 700, 'var(--text)']], 'a dash marks neither');
+  assert.deepEqual(drFigs(drHtml('h2h', d('1.15', '0.87'))), [['1.15', 700, H2H_A], ['0.87', 700, H2H_B]]);
+  assert.deepEqual(drFigs(drHtml('h2h', d('0.92', '1.08'))), [['0.92', 700, H2H_A], ['1.08', 700, H2H_B]], 'B better: still by player');
+  assert.deepEqual(drFigs(drHtml('h2h', d('—', '1.08'))), [['—', 700, 'var(--text-label)'], ['1.08', 700, H2H_B]], 'a dash stays grey');
   // control: every other host (Match analysis, Match Stats tab, profile) keeps both figures white 700
   assert.deepEqual(drFigs(drHtml(null, d('1.15', '0.87'))).map(f => [f[1], f[2]]), [[700, 'var(--text)'], [700, 'var(--text)']]);
+  assert.deepEqual(drFigs(drHtml('pp2', d('1.15', '0.87'))).map(f => [f[1], f[2]]), [[700, 'var(--text)'], [700, 'var(--text)']]);
 });
 
 test('archive name table (2026-11-07): Tennis Explorer\'s spellings of Y. Bu, E. Moller, J. Barranco Cosano, Y. H. Hsu and G. Campana Lee meet their player; control: without the table each misses', () => {

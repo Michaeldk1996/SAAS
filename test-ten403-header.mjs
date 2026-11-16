@@ -8,6 +8,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { createRequire } from 'node:module';
 
 const read = f => fs.readFileSync(new URL('./' + f, import.meta.url), 'utf8');
 const DASH = read('bsp-consult-dashboard.html');
@@ -103,25 +104,32 @@ function checkPages(dash, js, css) {
   return null;
 }
 
-// ── 2b. Head to Head: the controls variant (.sfh.sfh--ctl) rendered by H2HPage's selectorBar — the row (title, one
-//      line with the coverage tail, no caps line, no stats), then the pickers + context strip under it in the same card;
-//      the page owns only the sticky shadow (no 29px title / 22x26 padding / caps line / sub rules). ──────────────────
+// ── 2b. Head to Head: rebuilt on its own design handoff (design_handoff_head_to_head, founder 2026-11-16, "pixel for
+//      pixel") — it no longer draws the 35b .sfh card: the design's page head (title 29/800, one sentence 13.5 soft, the
+//      coverage line on the "?"), no caps line above the title, then the sticky picker card (top 0, the design's sticky
+//      shadow) with the pickers and the context strip inside it. Rendered by the shipped module (tools/h2h-test-harness.js).
+const HX = createRequire(import.meta.url)(new URL('./tools/h2h-test-harness.js', import.meta.url).pathname);
 function checkH2H(dash) {
-  const bar = slice(dash, 'selectorBar');
-  const m = /^function selectorBar\(v\) \{\s*return `<div class="h2h-stick"><div class="sfh sfh--ctl h2h-head">\s*<div class="sfh__row"><div class="sfh__text">\s*<h1 class="sfh__title">Head to Head<\/h1>\s*<p class="sfh__sub">([^<$]+)<span class="sfh__tail">· \$\{E\(v\.coverageLine\)\}<\/span><\/p>\s*<\/div><\/div>\s*<div class="h2h-pick">/.exec(bar);
-  if (!m) return 'h2h: header is not .sfh.sfh--ctl with the row (title + one sentence + tail) first and the pickers under it';
-  if (m[1].trim().length > 120) return 'h2h: header copy is longer than one line';
-  // TEN-403 R1 nit (founder 2026-10-09): the tail reads "· a dash means not covered" (was "· Data honesty · em dash …")
+  const h = HX.load({ html: dash });
   const cov = /coverageLine: '([^']*)'/.exec(dash);
-  if (!cov || cov[1] !== 'a dash means not covered') return 'h2h: the coverage tail reads ' + JSON.stringify(cov && cov[1]);
-  if (/h2h-cap h2h-eyebrow|H2H_EYEBROW/.test(dash)) return 'h2h: a caps line above the title came back';
-  if (!/<div class="h2h-ctx">/.test(bar.slice(bar.indexOf('<div class="h2h-pick">')))) return 'h2h: the context strip left the card';
-  const head = rule(dash, '#h2hRoot .h2h-head');
-  if (!head || !/position:sticky/.test(rule(dash, '#h2hRoot .h2h-stick') || '')) return 'h2h: header not sticky';
-  if (!/box-shadow:var\(--top-light\), 0 12px 28px/.test(head)) return 'h2h: the sticky shadow is gone';
-  if (/padding|font-size|border-radius|background|display/.test(head)) return 'h2h: the page restyles the 35b card';
-  for (const sel of ['#h2hRoot .h2h-title', '#h2hRoot .h2h-headrow', '#h2hRoot .h2h-sub', '#h2hRoot .h2h-subs', '#h2hRoot .h2h-eyebrow', '#h2hRoot .h2h-honesty'])
-    if (rule(dash, sel) != null) return 'h2h: a page-owned header rule is back: ' + sel;
+  // TEN-403 R1 nit (founder 2026-10-09): "a dash means not covered"
+  if (!cov || cov[1] !== 'a dash means not covered') return 'h2h: the coverage line reads ' + JSON.stringify(cov && cov[1]);
+  const v = { coverageLine: cov[1], aPicked: false, bPicked: false, aSearching: true, bSearching: true, aListOpen: false, bListOpen: false, aQuery: '', bQuery: '',
+    a: {}, b: {}, ctxShow: true, nav: [{ id: 'h2h-model', label: 'Model' }], ctxGroups: [{ label: 'Surface', items: [{ label: 'Hard', on: true, hid: 1 }] }],
+    showEmpty: false, showLoading: false, showBody: false };
+  const pg = h.call(h.pageHTML, v);
+  const head = pg.slice(0, pg.indexOf('class="x-stick"'));
+  const m = /<h1 style="margin:0; font-size:29px; font-weight:800; letter-spacing:-0\.02em; line-height:1\.1;">Head to Head<\/h1>\s*<div style="font-size:13\.5px; color:var\(--h2h-soft\); text-wrap:pretty;">([^<]+)<\/div>/.exec(head);
+  if (!m) return 'h2h: the page head is not the design\'s (title 29/800 over one 13.5 soft sentence)';
+  if (m[1].trim().length > 120 || (m[1].match(/[.!?](\s|$)/g) || []).length > 1) return 'h2h: header copy is longer than one sentence';
+  if (!new RegExp(`<span class="x-help" title="${cov[1]}"`).test(head)) return 'h2h: the coverage line is not on the head\'s "?"';
+  if (/text-transform:uppercase/.test(head.slice(0, head.indexOf('<h1'))) || /h2h-cap h2h-eyebrow|H2H_EYEBROW/.test(dash)) return 'h2h: a caps line above the title came back';
+  const bar = pg.slice(pg.indexOf('class="x-stick"'));
+  if (!/^class="x-stick" style="position:sticky; top:0; z-index:30;/.test(bar)) return 'h2h: the picker is not sticky at the top';
+  if (!/<div id="h2h-sticky" style="[^"]*box-shadow:var\(--h2h-shadow-sticky\);">/.test(bar)) return 'h2h: the sticky shadow is gone';
+  const card = bar.slice(bar.indexOf('id="h2h-sticky"'));
+  if (!/class="x-pick"/.test(card) || !/data-h2h-jump="h2h-model"/.test(card) || !/>Surface</.test(card)) return 'h2h: the pickers / context strip left the sticky card';
+  if (/class="sfh/.test(pg)) return 'h2h: the 35b card is back on a page that draws its own design head';
   return null;
 }
 
@@ -176,7 +184,7 @@ function checkLive(src) {
 
 test('the 35b component: card, title, one-line sentence, stats, live dot, controls-under variant', () => assert.equal(checkComponent(DASH), null));
 test('every page header card is the component; no caps line; no page-owned header rule left', () => assert.equal(checkPages(DASH, JS, CSS), null));
-test('Head to Head: the .sfh--ctl card, pickers under the row, no caps line, only the sticky shadow page-owned', () => assert.equal(checkH2H(DASH), null));
+test('Head to Head (rebuilt on its design): the design head (29/800, one sentence, coverage on the "?"), no caps line, the sticky picker card with its shadow', () => assert.equal(checkH2H(DASH), null));
 test('one line per header (trimmed copy, at most 120 characters)', () => assert.equal(checkOneSentence(DASH, JS), null));
 test("Today's Matches: live column first (dot + soft mono clock), Completed puts Settled in the tail", () => assert.equal(checkLive(DASH), null));
 
@@ -196,12 +204,13 @@ test('CONTROL: each check goes red on its mutant', () => {
   assert.ok(red(() => checkPages(DASH, { ...JS, series: m(JS.series, "'<div class=\"sfh sr-head\">'", "'<div class=\"sr-head\">'") }, CSS)), 'series off the component');
   assert.ok(red(() => checkPages(m(DASH, '#tourListView .tourx-head{ margin-bottom:16px; }', '#tourListView .tourx-head h1{ font-size:29px; }'), JS, CSS)), 'page-owned title rule');
   assert.ok(red(() => checkPages(DASH, JS, { ...CSS, drops: CSS.drops + '\n[data-page="drops"] .do-head { padding: 22px 26px; }' })), 'drops restyles its header');
-  // head to head
-  assert.ok(red(() => checkH2H(m(DASH, '<div class="sfh sfh--ctl h2h-head">', '<div class="h2h-head">'))), 'h2h off the component');
-  assert.ok(red(() => checkH2H(m(DASH, "coverageLine: 'a dash means not covered'", "coverageLine: 'Data honesty · em dash means not covered'"))), 'h2h old coverage tail back');
-  assert.ok(red(() => checkH2H(m(DASH, '        <h1 class="sfh__title">Head to Head</h1>', '        <div class="h2h-cap h2h-eyebrow">ATP tour · all-level head to head</div><h1 class="sfh__title">Head to Head</h1>'))), 'h2h caps line back');
-  assert.ok(red(() => checkH2H(m(DASH, '  #h2hRoot .h2h-head{ min-width:0; box-shadow:', '  #h2hRoot .h2h-title{ font-size:29px; }\n  #h2hRoot .h2h-head{ min-width:0; padding:22px 26px; box-shadow:'))), 'h2h 29px / 22x26 back');
-  assert.ok(red(() => checkH2H(m(DASH, '  #h2hRoot .h2h-head{ min-width:0; box-shadow:var(--top-light), 0 12px 28px color-mix', '  #h2hRoot .h2h-head{ min-width:0; box-shadow:var(--top-light); --x:color-mix'))), 'h2h shadow gone');
+  // head to head (the rebuilt design head + sticky picker)
+  assert.ok(red(() => checkH2H(m(DASH, '<h1 style="margin:0; font-size:29px; font-weight:800;', '<h1 style="margin:0; font-size:24px; font-weight:800;'))), 'h2h title off the design');
+  assert.ok(red(() => checkH2H(m(DASH, "coverageLine: 'a dash means not covered'", "coverageLine: 'Data honesty · em dash means not covered'"))), 'h2h old coverage line back');
+  assert.ok(red(() => checkH2H(m(DASH, '          <h1 style="margin:0; font-size:29px;', '          <div style="font-size:10.5px; text-transform:uppercase;">ATP tour · all-level head to head</div><h1 style="margin:0; font-size:29px;'))), 'h2h caps line back');
+  assert.ok(red(() => checkH2H(m(DASH, '<div class="x-stick" style="position:sticky; top:0;', '<div class="x-stick" style="position:relative; top:0;'))), 'h2h picker not sticky');
+  assert.ok(red(() => checkH2H(m(DASH, 'padding:16px 18px; box-shadow:var(--h2h-shadow-sticky);">', 'padding:16px 18px;">'))), 'h2h sticky shadow gone');
+  assert.ok(red(() => checkH2H(m(DASH, '        ${xHelp(v.coverageLine)}\n      </div>\n      ${selectorBar(v)}', '      </div>\n      ${selectorBar(v)}'))), 'h2h coverage "?" dropped');
   // one sentence
   assert.ok(red(() => checkOneSentence(DASH, { ...JS, series: m(JS.series, "'Current streaks for players scheduled today and tomorrow, each with the pool it was drawn from and the date of its latest match.'", "'Current streaks for players scheduled today and tomorrow — runs of wins or losses against a playing style, on a surface, straight across all competitions.'") })), 'the old paragraph');
   // live column
