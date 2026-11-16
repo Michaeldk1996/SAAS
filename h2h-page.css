@@ -1,0 +1,79 @@
+/* Head to Head rebuild (design_handoff_head_to_head, founder 2026-11-16 "pixel for pixel, identical colours").
+   Night only. Every rule is scoped to #h2hRoot; inside it the foundation tokens read the export's own values
+   (--h2h-* in tokens.css). Values are read off reference/Head to Head.dc.html (its inline styles), never inferred.
+   The match sheet the page opens is the shared one (fhOpenSheet); its H2H look is scoped to #fhSheet.h2hx so
+   Match analysis never changes. */
+#h2hRoot, #fhSheet.h2hx, .h2hx-pop {
+  --card: var(--h2h-card);
+  --inner: var(--h2h-inner);
+  --selected: var(--h2h-raised);
+  --text: var(--h2h-text);
+  --text-soft: var(--h2h-soft);
+  --text-label: var(--h2h-grey);
+  --pos: var(--h2h-up);
+  --neg: var(--h2h-down);
+  --link: var(--h2h-blue);
+}
+.tabpage[data-page="h2h"] { background: var(--h2h-page); }
+
+/* ---- frame (DF L25–41) ---- */
+#h2hRoot .x-page { min-height: 100vh; display: flex; flex-direction: column; max-width: 1360px; color: var(--h2h-text);
+  font-family: 'Hanken Grotesk', sans-serif; background: var(--h2h-page); line-height: normal; }
+#h2hRoot .x-ph { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; padding: 30px 40px 16px; }
+#h2hRoot .x-ph__t { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+#h2hRoot .x-ph__title { margin: 0; font-size: 29px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+#h2hRoot .x-ph__sub { margin: 0; font-size: 13.5px; color: var(--h2h-soft); text-wrap: pretty; }
+#h2hRoot .x-stick { position: sticky; top: 0; z-index: 30; padding: 10px 40px 14px;
+  background: linear-gradient(var(--h2h-page) 78%, color-mix(in srgb, var(--h2h-page) 0%, transparent)); }
+#h2hRoot .x-stick__card { background: var(--h2h-card); border: 1px solid color-mix(in srgb, var(--h2h-white) 6%, transparent); border-radius: 14px;
+  padding: 16px 18px; box-shadow: var(--h2h-shadow-sticky); }
+
+/* ---- shared components ---- */
+#h2hRoot .x-cap, .h2hx-pop .x-cap { font-family: 'Hanken Grotesk', sans-serif; font-size: 10.5px; font-weight: 700; letter-spacing: 0.10em;
+  text-transform: uppercase; color: var(--h2h-grey); }
+#h2hRoot .x-help, .h2hx-pop .x-help { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--h2h-white) 16%, transparent); display: flex;
+  align-items: center; justify-content: center; font-family: 'Hanken Grotesk', sans-serif; font-size: 12px; font-weight: 700;
+  color: var(--h2h-grey); cursor: help; }
+#h2hRoot .seg, .h2hx-pop .seg { cursor: pointer; transition: background 120ms ease, color 120ms ease, border-color 120ms ease; }
+#h2hRoot .x-mono, .h2hx-pop .x-mono { font-family: 'IBM Plex Mono', monospace; }
+/* the avatar: fill --raised, 2px ring in the player's colour, initials under the photo */
+#h2hRoot .x-av, .h2hx-pop .x-av { flex: none; position: relative; border-radius: 50%; background: var(--h2h-raised); overflow: hidden;
+  box-shadow: 0 0 0 2px var(--x-ring, var(--h2h-blue)); }
+#h2hRoot .x-av.b, .h2hx-pop .x-av.b { --x-ring: var(--h2h-text); }
+#h2hRoot .x-av > .x-av__i, .h2hx-pop .x-av > .x-av__i { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-family: 'IBM Plex Mono', monospace; font-weight: 700; color: var(--h2h-text); letter-spacing: 0; }
+#h2hRoot .x-av > img, .h2hx-pop .x-av > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+#h2hRoot .x-av.mini, .h2hx-pop .x-av.mini { box-shadow: 0 0 0 1.5px var(--x-ring, var(--h2h-blue)); }
+/* pill switch (DF L140–142: track inner, 6% edge, r9, pad 2, gap 3; item 5/11, r7; on = raised + 16% ring) */
+#h2hRoot .x-sw, .h2hx-pop .x-sw { display: inline-flex; gap: 3px; background: var(--h2h-inner); border: 1px solid color-mix(in srgb, var(--h2h-white) 6%, transparent);
+  border-radius: 9px; padding: 2px; }
+#h2hRoot .x-sw > .x-sw__o, .h2hx-pop .x-sw > .x-sw__o { white-space: nowrap; padding: 5px 11px; border-radius: 7px; font-size: 11px; font-weight: 600;
+  color: var(--h2h-grey); background: transparent; border: 1px solid transparent; font-family: inherit; line-height: normal; }
+#h2hRoot .x-sw > .x-sw__o.on, .h2hx-pop .x-sw > .x-sw__o.on { font-weight: 700; color: var(--h2h-text); background: var(--h2h-raised);
+  border-color: color-mix(in srgb, var(--h2h-white) 16%, transparent); }
+#h2hRoot .x-sw.r8 { border-radius: 8px; }
+#h2hRoot .x-sw.r8 > .x-sw__o { padding: 5px 12px; border-radius: 6px; font-size: 12px; }
+#h2hRoot .x-sw.f12 > .x-sw__o { font-size: 12px; }
+#h2hRoot .x-chev, .h2hx-pop .x-chev { color: var(--h2h-blue); font-size: 14px; font-weight: 700; display: inline-block; transition: transform .2s; }
+
+/* ---- sections (DF L213 / L253 …) ---- */
+#h2hRoot .x-body { display: flex; flex-direction: column; gap: 16px; padding: 6px 40px 80px; }
+#h2hRoot .x-sec { background: var(--h2h-card); border: 1.25px solid color-mix(in srgb, var(--h2h-white) 6%, transparent); border-radius: 14px; padding: 24px 26px;
+  display: flex; flex-direction: column; min-width: 0; scroll-margin-top: var(--x-stick-h, 0px); }
+#h2hRoot .x-sh { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; }
+#h2hRoot .x-sh__t { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: -0.01em; color: var(--h2h-text); }
+#h2hRoot .x-sh__s { font-size: 12.5px; color: var(--h2h-grey); }
+#h2hRoot .x-grow { flex: 1; }
+#h2hRoot .x-inner { background: var(--h2h-inner); border: 1px solid color-mix(in srgb, var(--h2h-white) 6%, transparent); border-radius: 12px; min-width: 0; }
+
+/* ---- hover / focus states (the reference's style-hover attributes and its <style> block, DF L12–21) ---- */
+@keyframes h2hpulse { 0%,100% { opacity: 0.35; } 50% { opacity: 0.7; } }
+#h2hRoot a { color: var(--h2h-blue); text-decoration: none; }
+#h2hRoot a:hover { color: var(--h2h-blue-hov); }
+#h2hRoot .h2hin::placeholder, .h2hx-pop .h2hin::placeholder { color: var(--h2h-grey); }
+#h2hRoot .h2hin:focus, .h2hx-pop .h2hin:focus { outline: none; border-color: color-mix(in srgb, var(--h2h-white) 16%, transparent) !important; }
+#h2hRoot .x-change:hover { color: var(--h2h-text) !important; border-color: color-mix(in srgb, var(--h2h-white) 16%, transparent) !important; }
+#h2hRoot .x-swap:hover { color: var(--h2h-text) !important; border-color: color-mix(in srgb, var(--h2h-white) 28%, transparent) !important; }
+#h2hRoot .x-mrow:hover { background: color-mix(in srgb, var(--h2h-white) 5%, transparent); }
+#h2hRoot .x-nav:hover { color: var(--h2h-text) !important; background: color-mix(in srgb, var(--h2h-white) 5%, transparent); }
+#h2hRoot .x-sugg:hover { color: var(--h2h-text) !important; border-color: color-mix(in srgb, var(--h2h-white) 16%, transparent) !important; }

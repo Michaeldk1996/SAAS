@@ -202,6 +202,30 @@
   --tt-shadow-tip:     0 12px 26px rgba(0, 0, 0, 0.6);
 }
 
+/* Head to Head rebuild (handoff design_handoff_head_to_head, founder 2026-11-16 "pixel for pixel, identical colours"):
+   the export's own values, named apart from the foundation tokens. h2h-page.css maps them onto the page's surfaces
+   inside .tabpage[data-page="h2h"] only (night only); nothing else reads them. */
+:root {
+  --h2h-page:     #06070A;
+  --h2h-card:     #0E1019;   /* section card, sticky picker, pop-up boxes, column strips */
+  --h2h-inner:    #0C0E16;   /* inner card, switch tracks, tiles in pop-ups */
+  --h2h-raised:   #131623;   /* hover, selected row, active pill, avatar fill, dropdowns */
+  --h2h-text:     #E7E9EE;   /* primary; player two */
+  --h2h-soft:     #C6CCDB;   /* secondary figures, body copy */
+  --h2h-soft-2:   #C9CDD9;   /* Hot lines "n of n" */
+  --h2h-grey:     #8B96B5;   /* labels, sub lines, captions */
+  --h2h-dead:     #3A4256;   /* a surface tab with no meetings */
+  --h2h-chart-b:  #9AA3B5;   /* Market edge chart: player two when absent from the series */
+  --h2h-blue:     #5B9BFF;   /* player one, links, chevrons, primary button */
+  --h2h-blue-hov: #9EC4FF;   /* link hover */
+  --h2h-up:       #3DD68C;   /* positive signed figure, Won / Covered */
+  --h2h-down:     #E0616F;   /* negative signed figure, Lost / Missed */
+  --h2h-white:    #FFFFFF;   /* white alphas (hairlines, rings, washes) are color-mix of it */
+  --h2h-overlay:  rgba(3, 5, 9, 0.72);
+  --h2h-shadow-sticky: 0 12px 28px rgba(0, 0, 0, 0.35);
+  --h2h-shadow-menu:   0 18px 40px rgba(0, 0, 0, 0.5);
+}
+
 /* Player Profile v2 — founder 2026-11-10 ("fix the colours to match the design export", ruling 2026-11-09 "colours
    follow the design export"): the Player Stat Boxes export's own values, named apart from the foundation tokens. The
    profile maps them onto its surfaces inside .pp2-x (player-profile-v2.js PP2_PALETTE_CSS, night only); nothing else
