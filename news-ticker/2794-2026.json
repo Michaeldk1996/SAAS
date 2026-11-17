@@ -2,7 +2,7 @@
  "tournament": "Finals - Turin",
  "tournamentKey": "2794",
  "season": "2026",
- "updatedAt": "2026-11-17T05:26:20.338Z",
+ "updatedAt": "2026-11-17T10:10:06.924Z",
  "items": [
   {
    "id": "quote-fbe83f56ff7379",
@@ -181,10 +181,10 @@
       "tone": "good",
       "metric": "firstIn",
       "value": 76,
-      "baseline": 62,
+      "baseline": 66,
       "scope": "last52",
       "surface": "Hard",
-      "n": 52
+      "n": 54
      },
      {
       "player": "winner",
@@ -204,7 +204,7 @@
       "baseline": 50,
       "scope": "last52",
       "surface": "Hard",
-      "n": 52
+      "n": 54
      },
      {
       "player": "winner",
@@ -212,18 +212,6 @@
       "metric": "breakPoints",
       "saved": 0,
       "faced": 0
-     },
-     {
-      "player": "loser",
-      "tone": "bad",
-      "metric": "secondWon",
-      "value": 42,
-      "won": 10,
-      "total": 24,
-      "baseline": 52,
-      "scope": "last52",
-      "surface": "Hard",
-      "n": 31
      }
     ],
     "winner": {
@@ -247,10 +235,10 @@
    "sourceUrl": "pbp/12179701.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "b2966cae34d64a89",
+   "sourceHash": "32e693152c69eabb",
    "publishedAt": "2026-11-16T21:39:49.438Z",
-   "revisedAt": "2026-11-17T05:26:20.338Z",
-   "revision": 3
+   "revisedAt": "2026-11-17T10:10:06.924Z",
+   "revision": 4
   },
   {
    "id": "quote-0a079538e2173b",
@@ -487,10 +475,10 @@
       "tone": "good",
       "metric": "firstIn",
       "value": 78,
-      "baseline": 64,
+      "baseline": 69,
       "scope": "last52",
       "surface": "Hard",
-      "n": 49
+      "n": 42
      },
      {
       "player": "winner",
@@ -502,7 +490,7 @@
       "baseline": 34,
       "scope": "last52",
       "surface": "Hard",
-      "n": 49
+      "n": 42
      },
      {
       "player": "winner",
@@ -511,10 +499,10 @@
       "value": 100,
       "won": 12,
       "total": 12,
-      "baseline": 54,
+      "baseline": 55,
       "scope": "last52",
       "surface": "Hard",
-      "n": 49
+      "n": 42
      },
      {
       "player": "winner",
@@ -545,10 +533,10 @@
    "sourceUrl": "pbp/12179698.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "e7ba1724a9ba66bb",
+   "sourceHash": "3246615af0fa6bd7",
    "publishedAt": "2026-11-16T14:52:36.833Z",
-   "revisedAt": "2026-11-17T05:26:20.338Z",
-   "revision": 3
+   "revisedAt": "2026-11-17T10:10:06.924Z",
+   "revision": 4
   },
   {
    "id": "quote-df7f4ef2255f5b",
@@ -737,10 +725,22 @@
       "value": 68,
       "won": 17,
       "total": 25,
-      "baseline": 53,
+      "baseline": 57,
       "scope": "last52",
       "surface": "Hard",
-      "n": 37
+      "n": 42
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "ret1Won",
+      "value": 34,
+      "won": 24,
+      "total": 70,
+      "baseline": 26,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 42
      },
      {
       "player": "winner",
@@ -748,18 +748,6 @@
       "metric": "winnersErrors",
       "winners": 28,
       "unforcedErrors": 32
-     },
-     {
-      "player": "loser",
-      "tone": "bad",
-      "metric": "firstWon",
-      "value": 66,
-      "won": 46,
-      "total": 70,
-      "baseline": 76,
-      "scope": "last52",
-      "surface": "Hard",
-      "n": 43
      }
     ],
     "winner": {
@@ -783,10 +771,10 @@
    "sourceUrl": "pbp/12179703.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "aa0c60a59adf0d26",
+   "sourceHash": "aeacdb05824c985a",
    "publishedAt": "2026-11-15T22:09:59.550Z",
-   "revisedAt": "2026-11-17T05:26:20.338Z",
-   "revision": 3
+   "revisedAt": "2026-11-17T10:10:06.924Z",
+   "revision": 4
   },
   {
    "id": "quote-2fa1fb1434e63f",
@@ -944,14 +932,24 @@
      {
       "player": "winner",
       "tone": "good",
-      "metric": "firstWon",
-      "value": 86,
-      "won": 37,
-      "total": 43,
-      "baseline": 74,
+      "metric": "firstIn",
+      "value": 84,
+      "baseline": 71,
       "scope": "last52",
       "surface": "Hard",
       "n": 49
+     },
+     {
+      "player": "loser",
+      "tone": "bad",
+      "metric": "ret1Won",
+      "value": 14,
+      "won": 6,
+      "total": 43,
+      "baseline": 30,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 41
      }
     ],
     "winner": {
@@ -975,10 +973,10 @@
    "sourceUrl": "pbp/12179707.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "34b9d2eb32a706c0",
+   "sourceHash": "c30cd97c8a3581d2",
    "publishedAt": "2026-11-15T15:18:15.690Z",
-   "revisedAt": "2026-11-17T05:26:20.338Z",
-   "revision": 3
+   "revisedAt": "2026-11-17T10:10:06.924Z",
+   "revision": 4
   }
  ]
 }

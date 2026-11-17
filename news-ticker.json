@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-17T09:32:05.820Z",
+ "generatedAt": "2026-11-17T10:10:06.924Z",
  "tournaments": [
   {
    "key": "tour",
@@ -24,7 +24,7 @@
     "report": 4
    },
    "latestTimestamp": "2026-11-16T22:49:22.000Z",
-   "updatedAt": "2026-11-17T05:26:20.338Z"
+   "updatedAt": "2026-11-17T10:10:06.924Z"
   },
   {
    "key": "1681",
@@ -38,7 +38,7 @@
     "status": 7
    },
    "latestTimestamp": "2026-11-14T16:03:27.000Z",
-   "updatedAt": "2026-11-15T04:33:42.379Z"
+   "updatedAt": "2026-11-17T10:10:06.924Z"
   },
   {
    "key": "1725",
@@ -50,7 +50,7 @@
     "report": 1
    },
    "latestTimestamp": "2026-11-08T14:20:00.000Z",
-   "updatedAt": "2026-11-14T07:14:55.951Z"
+   "updatedAt": "2026-11-17T10:10:06.924Z"
   }
  ],
  "latest": [
@@ -705,10 +705,10 @@
       "tone": "good",
       "metric": "firstIn",
       "value": 76,
-      "baseline": 62,
+      "baseline": 66,
       "scope": "last52",
       "surface": "Hard",
-      "n": 52
+      "n": 54
      },
      {
       "player": "winner",
@@ -728,7 +728,7 @@
       "baseline": 50,
       "scope": "last52",
       "surface": "Hard",
-      "n": 52
+      "n": 54
      },
      {
       "player": "winner",
@@ -736,18 +736,6 @@
       "metric": "breakPoints",
       "saved": 0,
       "faced": 0
-     },
-     {
-      "player": "loser",
-      "tone": "bad",
-      "metric": "secondWon",
-      "value": 42,
-      "won": 10,
-      "total": 24,
-      "baseline": 52,
-      "scope": "last52",
-      "surface": "Hard",
-      "n": 31
      }
     ],
     "winner": {
@@ -771,10 +759,10 @@
    "sourceUrl": "pbp/12179701.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "b2966cae34d64a89",
+   "sourceHash": "32e693152c69eabb",
    "publishedAt": "2026-11-16T21:39:49.438Z",
-   "revisedAt": "2026-11-17T05:26:20.338Z",
-   "revision": 3,
+   "revisedAt": "2026-11-17T10:10:06.924Z",
+   "revision": 4,
    "file": "news-ticker/2794-2026.json"
   },
   {
@@ -1579,10 +1567,10 @@
       "tone": "good",
       "metric": "firstIn",
       "value": 78,
-      "baseline": 64,
+      "baseline": 69,
       "scope": "last52",
       "surface": "Hard",
-      "n": 49
+      "n": 42
      },
      {
       "player": "winner",
@@ -1594,7 +1582,7 @@
       "baseline": 34,
       "scope": "last52",
       "surface": "Hard",
-      "n": 49
+      "n": 42
      },
      {
       "player": "winner",
@@ -1603,10 +1591,10 @@
       "value": 100,
       "won": 12,
       "total": 12,
-      "baseline": 54,
+      "baseline": 55,
       "scope": "last52",
       "surface": "Hard",
-      "n": 49
+      "n": 42
      },
      {
       "player": "winner",
@@ -1637,10 +1625,10 @@
    "sourceUrl": "pbp/12179698.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "e7ba1724a9ba66bb",
+   "sourceHash": "3246615af0fa6bd7",
    "publishedAt": "2026-11-16T14:52:36.833Z",
-   "revisedAt": "2026-11-17T05:26:20.338Z",
-   "revision": 3,
+   "revisedAt": "2026-11-17T10:10:06.924Z",
+   "revision": 4,
    "file": "news-ticker/2794-2026.json"
   },
   {

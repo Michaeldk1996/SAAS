@@ -2,7 +2,7 @@
  "tournament": "Paris",
  "tournamentKey": "1725",
  "season": "2026",
- "updatedAt": "2026-11-14T07:14:55.951Z",
+ "updatedAt": "2026-11-17T10:10:06.924Z",
  "items": [
   {
    "id": "report-12178223",
@@ -57,24 +57,6 @@
      {
       "player": "winner",
       "tone": "good",
-      "metric": "firstIn",
-      "value": 72,
-      "baseline": 64,
-      "scope": "last52",
-      "surface": "Hard",
-      "n": 49
-     },
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "firstWon",
-      "value": 71,
-      "won": 40,
-      "total": 56
-     },
-     {
-      "player": "winner",
-      "tone": "good",
       "metric": "winnersErrors",
       "winners": 33,
       "unforcedErrors": 27
@@ -86,10 +68,10 @@
       "value": 64,
       "won": 33,
       "total": 52,
-      "baseline": 76,
+      "baseline": 77,
       "scope": "last52",
       "surface": "Hard",
-      "n": 37
+      "n": 42
      }
     ],
     "winner": {
@@ -113,10 +95,10 @@
    "sourceUrl": "pbp/12178223.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "be78d6518370bb85",
+   "sourceHash": "9b35c117e19cdc97",
    "publishedAt": "2026-11-11T18:39:24.726Z",
-   "revisedAt": "2026-11-14T07:14:55.951Z",
-   "revision": 3
+   "revisedAt": "2026-11-17T10:10:06.924Z",
+   "revision": 4
   }
  ]
 }
