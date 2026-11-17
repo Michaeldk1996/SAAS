@@ -40,6 +40,15 @@ const BUILT_DIR = process.env.PP2_BUILT_STORE ? path.resolve(process.env.PP2_BUI
 // A tick is ~10 min and a deploy ~26 min; an hour keeps a multi-tool run on one
 // consistent snapshot without ever reading something from a previous day.
 const DEFAULT_MAX_AGE_MS = 60 * 60 * 1000;
+// Founder 2026-11-16 ("fix both"): a slow link is not a dead one. On 16 Nov the deployed player-profiles.json (6.2 MB)
+// arrived at ~20 KB/s from this Mac and the old flat 120 s cap failed the suite twice mid-download (2.7 / 4.6 MB of 6.2 MB).
+// Now a download is abandoned only when it STALLS (under STALL_BYTES_PER_SEC for STALL_SEC), with a generous ceiling.
+// An explicit opts.timeoutSec still sets the ceiling (career-history probes keep their 30 s).
+const DEFAULT_TIMEOUT_SEC = 900, STALL_BYTES_PER_SEC = 1024, STALL_SEC = 60;
+function curlTimeArgs(opts = {}) {
+  return ['--max-time', String(opts.timeoutSec || DEFAULT_TIMEOUT_SEC),
+    '--speed-limit', String(STALL_BYTES_PER_SEC), '--speed-time', String(opts.stallSec || STALL_SEC)];
+}
 
 function cachePathFor(rel) {
   return path.join(CACHE_DIR, rel.replace(/[^A-Za-z0-9._-]+/g, '_'));
@@ -68,7 +77,7 @@ function fetchText(rel, opts = {}) {
   for (let attempt = 1; attempt <= 2 && body == null; attempt++) {
     try {
       body = execFileSync('curl', [
-        '-sS', '--fail', '--max-time', String(opts.timeoutSec || 120),
+        '-sS', '--fail', ...curlTimeArgs(opts),
         `${BASE}/${rel.replace(/^\/+/, '')}`,
       ], { maxBuffer: 256 << 20 }).toString();
     } catch (err) { body = null; }
@@ -193,7 +202,7 @@ function fetchShards(dirRel, keys, opts = {}) {
     // --parallel is what makes this practical: serially, 587 small shards off
     // Pages is ~15 min of round-trips; 20 at a time is under a minute.
     const args = ['-sS', '--parallel', '--parallel-max', String(opts.parallel || 20),
-      '--max-time', String(opts.timeoutSec || 120)];
+      ...curlTimeArgs(opts)];
     slice.forEach((k) => {
       args.push('-o', path.join(tmp, `${k}.json`), `${BASE}/${dirRel}/${k}.json`);
     });
@@ -215,7 +224,7 @@ function fetchShards(dirRel, keys, opts = {}) {
   for (const k of retried) {
     const f = path.join(tmp, `${k}.json`);
     try {
-      execFileSync('curl', ['-sS', '--max-time', String(opts.timeoutSec || 120), '-o', f, `${BASE}/${dirRel}/${k}.json`], { maxBuffer: 256 << 20 });
+      execFileSync('curl', ['-sS', ...curlTimeArgs(opts), '-o', f, `${BASE}/${dirRel}/${k}.json`], { maxBuffer: 256 << 20 });
     } catch (err) { /* checked below */ }
     const t = fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : '';
     if (fs.existsSync(f)) fs.unlinkSync(f);
@@ -303,7 +312,7 @@ function hydrateTournamentHistory(players, opts = {}) {
 }
 
 module.exports = {
-  BASE, BUILT_DIR, CACHE_DIR, fetchText, fetchJson, fetchShards,
+  BASE, BUILT_DIR, CACHE_DIR, fetchText, fetchJson, fetchShards, curlTimeArgs,
   playerProfiles, careerHistoryIndex, hydrateCareerHistory,
   tournamentHistoryIndex, hydrateTournamentHistory,
 };

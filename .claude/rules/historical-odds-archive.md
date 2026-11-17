@@ -74,7 +74,8 @@ file we hold is irreplaceable.
   TE shows when Pinnacle's price last CHANGED, never that it still stood at a verified start). Read on the Mac by
   `stennisfy-ops` `tools/te-odds-batch.mjs` (one page a match, 9–12 s apart, the first error page stops it; join = TE date ±1
   day, both names, one candidate both ways, else no row) into the private store `stennisfy-te-store/te-odds/`; stored only by
-  `tdarch.py te-import` (`historical-archive.yml` modes `te-dry-run` / `te-import`; every 3 h on its own through `te-import-scheduled.yml` →
+  `tdarch.py te-import` (`historical-archive.yml` modes `te-dry-run` / `te-import`; every 3 h on its own through `te-import-scheduled.yml` (founder 2026-11-16: it also rides every data-pipeline completion and
+imports when none started in the last 170 min, `tools/te-import-due.mjs`; GitHub fired the bare cron only every 4–9 h) →
   `te-import-new`, which imports only a batch the archive holds no row of and sends its line — rows stored, in-play dropped,
   no-timestamp kept and its share (flagged over 25%), coverage gained — to Telegram, a FAILED line on an error; founder
   2026-10-23) from COMPLETE batch files, the result and

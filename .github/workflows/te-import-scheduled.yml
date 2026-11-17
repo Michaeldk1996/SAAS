@@ -7,14 +7,40 @@ name: Tennis Explorer — scheduled import
 on:
   schedule:
     - cron: '41 */3 * * *'
+  # founder 2026-11-16 ("fix both"): GitHub fired the cron above only every 4–9 h (7–16 Nov). The data pipeline completes
+  # every 10–15 min off an external ping, so each completion also asks tools/te-import-due.mjs whether an import is due
+  # (none started in the last 170 min); the cron stays as a backstop.
+  workflow_run:
+    workflows: ['BSP data pipeline']
+    types: [completed]
   workflow_dispatch:
 permissions:
   contents: read
-concurrency:
-  group: historical-archive
-  cancel-in-progress: false
+  actions: read          # te-import-due.mjs reads this workflow's own runs
 jobs:
+  due:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      due: ${{ steps.d.outputs.due }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          sparse-checkout: tools/te-import-due.mjs
+          sparse-checkout-cone-mode: false
+      - id: d
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node tools/te-import-due.mjs
   import:
+    needs: due
+    if: needs.due.outputs.due == 'true'
+    # the archive lock lives on the JOB, so a pipeline ride that is not due never queues in it (a pending arrival would
+    # cancel historical-archive.yml's pending run)
+    concurrency:
+      group: historical-archive
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
