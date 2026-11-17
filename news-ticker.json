@@ -1,17 +1,17 @@
 {
- "generatedAt": "2026-11-17T18:39:02.883Z",
+ "generatedAt": "2026-11-17T19:00:16.357Z",
  "tournaments": [
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 160,
+   "items": 161,
    "byType": {
-    "quote": 160
+    "quote": 161
    },
    "latestTimestamp": "2026-11-17T18:00:00.000Z",
-   "updatedAt": "2026-11-17T18:39:02.883Z"
+   "updatedAt": "2026-11-17T19:00:16.357Z"
   },
   {
    "key": "2794",
@@ -83,6 +83,37 @@
    "topic": "On a possible private talk with Boris Becker",
    "sourceHash": "12067c4f7fd920ce",
    "publishedAt": "2026-11-17T18:39:02.883Z",
+   "file": "news-ticker/tour-2026.json"
+  },
+  {
+   "id": "quote-8d75eb5db990d6",
+   "type": "quote",
+   "playerId": "2973",
+   "opponentId": null,
+   "player": "B. Shelton",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-17T17:50:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "Munich will always remain a special place for me after I was able to win here this year. I am really looking forward to coming back, to feeling the special atmosphere again and hopefully being able to defend my title",
+   "originalText": "München wird für mich immer ein besonderer Ort bleiben, nachdem ich hier in diesem Jahr gewinnen konnte. Ich freue mich sehr auf die Rückkehr, darauf, die besondere Atmosphäre wieder zu spüren und hoffentlich meinen Titel verteidigen zu können",
+   "language": "de",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "tennisnet.com",
+   "sourceUrl": "https://www.tennisnet.com/news/alexander-zverev-fuehrt-top-trio-der-bmw-open-by-bitpanda-2027-an",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On returning to defend his Munich title",
+   "sourceHash": "7acdccf7c04c6a20",
+   "publishedAt": "2026-11-17T19:00:16.357Z",
    "file": "news-ticker/tour-2026.json"
   },
   {
@@ -1567,37 +1598,6 @@
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "topic": "On his physical ATP Finals win over Fils",
    "sourceHash": "d42b440fd91138f4",
-   "publishedAt": "2026-11-16T20:56:10.978Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-5d9b0207267fb1",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": null,
-   "player": "C. Alcaraz",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-16T16:56:37.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "Sometimes I feel really comfortable, … I feel like I&#039;m better than the opponent in every aspect of the game. If I qualify to the semi-final or not, I think it&#039;s a great experience, a great week, getting experience,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "Gulf Times",
-   "sourceUrl": "https://www.gulf-times.com/article/738354/sport/alcaraz-sweeps-aside-tiafoe-in-atp-finals-demonstration-of-force",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On feeling dominant at the ATP Finals",
-   "sourceHash": "3b364f7f3d751816",
    "publishedAt": "2026-11-16T20:56:10.978Z",
    "file": "news-ticker/tour-2026.json"
   }
