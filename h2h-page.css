@@ -15,6 +15,16 @@
   --link: var(--h2h-blue);
 }
 .tabpage[data-page="h2h"] { background: var(--h2h-page); }
+/* No pair picked (founder 2026-11-17: "it should be as the background color of the website"): the tab, the page and the
+   sticky bar's fade let the shell's page background (tokens.css --page-bg, the page tone + glow on <html>) show. */
+.tabpage[data-page="h2h"]:has(.x-wrap--empty) { background: transparent; }
+#h2hRoot .x-wrap--empty, #h2hRoot .x-wrap--empty .x-stick { background: transparent !important; }
+/* The match sheet the page opens (CHANGES 2026-11-17 §1, DF L431–520): every box in it is card tone — the caption strips
+   and the score box take the card colour with a 5% edge, the ✕ a 5% fill on a 12% edge. Its scope / set switches stay
+   wells (maSeg's own h2h tone). Scoped to #fhSheet.h2hx, so Match analysis never changes. */
+#fhSheet.h2hx { --inner: var(--h2h-card); }
+#fhSheet.h2hx .fh-band { border-color: color-mix(in srgb, var(--h2h-white) 5%, transparent) !important; }
+#fhSheet.h2hx [onclick="fhCloseSheet()"] { background: color-mix(in srgb, var(--h2h-white) 5%, transparent) !important; border-color: color-mix(in srgb, var(--h2h-white) 12%, transparent) !important; }
 
 /* ---- frame (DF L25–41) ---- */
 #h2hRoot .x-page { min-height: 100vh; display: flex; flex-direction: column; max-width: 1360px; color: var(--h2h-text);
@@ -43,7 +53,8 @@
 #h2hRoot .x-av > .x-av__i, .h2hx-pop .x-av > .x-av__i { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
   font-family: 'IBM Plex Mono', monospace; font-weight: 700; color: var(--h2h-text); letter-spacing: 0; }
 #h2hRoot .x-av > img, .h2hx-pop .x-av > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-#h2hRoot .x-av.mini, .h2hx-pop .x-av.mini { box-shadow: 0 0 0 1.5px var(--x-ring, var(--h2h-blue)); }
+/* the small avatar heading a price column has no ring (CHANGES 2026-11-17 §2): 22px Meetings, 20px career and tournament lists */
+#h2hRoot .x-av.mini, .h2hx-pop .x-av.mini { box-shadow: none; }
 /* pill switch (DF L140–142: track inner, 6% edge, r9, pad 2, gap 3; item 5/11, r7; on = raised + 16% ring) */
 #h2hRoot .x-sw, .h2hx-pop .x-sw { display: inline-flex; gap: 3px; background: var(--h2h-inner); border: 1px solid color-mix(in srgb, var(--h2h-white) 6%, transparent);
   border-radius: 9px; padding: 2px; }
@@ -64,7 +75,7 @@
 #h2hRoot .x-sh__t { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: -0.01em; color: var(--h2h-text); }
 #h2hRoot .x-sh__s { font-size: 12.5px; color: var(--h2h-grey); }
 #h2hRoot .x-grow { flex: 1; }
-#h2hRoot .x-inner { background: var(--h2h-inner); border: 1px solid color-mix(in srgb, var(--h2h-white) 6%, transparent); border-radius: 12px; min-width: 0; }
+#h2hRoot .x-inner { background: var(--h2h-card); border: 1px solid color-mix(in srgb, var(--h2h-white) 9%, transparent); border-radius: 12px; min-width: 0; }
 
 /* ---- hover / focus states (the reference's style-hover attributes and its <style> block, DF L12–21) ---- */
 @keyframes h2hpulse { 0%,100% { opacity: 0.35; } 50% { opacity: 0.7; } }

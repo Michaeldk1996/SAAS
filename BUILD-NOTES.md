@@ -2337,6 +2337,21 @@ plus resolution cuts keeping ~10% of matches per band (a 568-match career gets ~
 - **Head to Head hand-off:** `sfGoToH2H(keyA, keyB)` is the live receiver; `stn_h2h_pair` carries api-tennis keys (not the
   design's names) so the receiver never joins on a name.
 
+## 2026-11-17 · Head to Head: design changes of 17 Nov + founder rulings
+- Design change list `design_handoff_head_to_head/CHANGES_2026-11-17.md` (box tones, mini avatars without ring, Tournament
+  record filter box + group mode, Market edge one head + returns in %, one large switch, "Most covered" pill, stray
+  colours). Group mode runs over every event either player has on record, classified by the event's own court-speed
+  rating so the filter and the tournament row can never disagree; events with no rating are in no speed class.
+- Founder rulings the same day: the website's background when no pair is picked (the design's near-black kept once a
+  pair shows); the Model shows the Elo-only price beside the model price, so the layers' effect is visible; the box
+  tiles name what happened (the one decider, the underdog's win, "3 meetings") instead of counts that read as zero; the
+  Covered tile never shows a dash (the count under the rate floor, the meetings named); the Vs style average keeps its
+  sign colour under a filter.
+- Found while answering "why no Under pressure for Jodar": surface-ratings.json reads tour-level matches from Tennis
+  Abstract's TML file, whose 2026 season stops at the United Cup (early Jan). Players who broke through in 2026 (Jodar)
+  fall under the 11-match gate and leave the store; everyone's 2026 tour-level matches are missing from Serve, Return and
+  Under pressure, and the model's layer 15 reads "No data". Pipeline work, reported separately.
+
 ## 2026-11-16 — Head to Head: the Stennisfy Model card prices any pair (founder)
 Founder: "It shouldn't price the match, it should give the probability based on the Elo ratings etc. The head to head is
 actually to compare two players, to have a likely opening price based on our database, Elo ratings etc." → "do both for a

@@ -10,9 +10,22 @@ live calculation (Data below).
 
 ## Page
 - **Colours = the export's own values**, page-scoped tokens `--h2h-*` in `tokens.css` (`--h2h-card` #0E1019,
-  `--h2h-inner` #0C0E16, `--h2h-raised` #131623, `--h2h-text` #E7E9EE, `--h2h-soft` #C6CCDB, `--h2h-grey` #8B96B5,
+  `--h2h-layer` #121521, `--h2h-inner` #0C0E16, `--h2h-raised` #131623, `--h2h-text` #E7E9EE, `--h2h-soft` #C6CCDB, `--h2h-grey` #8B96B5,
   `--h2h-blue` #5B9BFF, `--h2h-up` / `--h2h-down`; white alphas = `color-mix` of `--h2h-white`). Nothing else reads them.
   **Test:** `tools/lint-raw-colours.mjs` (0 raw colours) and the H2H suites (each role's token).
+- **Box tones (design change 2026-11-17 §1):** a box inside a section (or a pop-up) is card tone (`--h2h-card`) defined
+  by its edge (9%, or 6% where the reference keeps it, e.g. the Model cards); a layer inside such a box (caps strips,
+  figure tiles, an opened hot-line panel) is `--h2h-layer`; `--h2h-inner` is a WELL only (switch tracks, inputs).
+  **Test:** is any box filled `--h2h-inner`? Then it is wrong. The match sheet takes the same rule when opened from this
+  page only (`#fhSheet.h2hx`). Mini avatars over a price column (≤ 22px) have no ring.
+- **No pair picked = the website's background** (founder 2026-11-17): the tab, the page and the sticky fade are
+  transparent (`x-wrap--empty`), so the shell's page tone and glow show; with a pair the page keeps the design's
+  `--h2h-page`. **Test:** with no pair, `.tabpage[data-page="h2h"]` and `.x-wrap` compute transparent.
+- **Switches:** the large one (`xSw` 'lg' / 'fill': r10 well, 8% edge, pad 3, tabs 6/14 r7 13px, on = inset 16% ring)
+  in the sticky picker (Surface / Format, labels 12.5 grey sentence case), the Tournament filters and both Market edge
+  window switches; Playing style, News and the box's scope tabs keep the reference's small ones.
+- **Returns read in %, never u** (2026-11-17 §4): "Return at a flat 1% stake" (1% of bankroll a match), its band rows,
+  totals, chart axis and line ends, and the Tournament Backing ("flat 1% stake · N bets").
 - **Player one is blue, player two white, everywhere on the page** (README): avatar rings, the radar polygons, the
   face-to-face lean, the bullets, the return chart, the sheet's figures and split bars. Green / red only on signed figures
   and results. *Exception (founder 2026-11-16, CLAUDE.md non-negotiables):* the Playing style face-to-face rows print the
@@ -35,7 +48,8 @@ live calculation (Data below).
 
 ## Sections (what the design build shows, on which live data)
 - **Stennisfy Model:** the pair estimate (Data → Model) in two inner cards; a Surface / Format switch flashes both prices
-  blue for 520 ms. The foot = the founder's ruled lines (win chances + context; Elo base, N of 10 layers, margin with n,
+  blue for 520 ms. Under each price, the **Elo-only price** (founder 2026-11-17: the engine's Elo base `cell[1]`, before
+  any layer, on the same margin), so the layers' effect reads directly. The foot = the founder's ruled lines (win chances + context; Elo base, N of 10 layers, margin with n,
   model run), drawn in the design's foot style.
 - **Playing style:** radar (both polygons solid, A blue on top) + ten face-to-face rows: Elo on <surface>, Serve, Return,
   Under pressure, Dominance ratio (DNA ratings) · 1st / 2nd serve points won, Service games held · Return games won,
@@ -51,23 +65,38 @@ live calculation (Data below).
   5 eligible no %, 5–9 grey). The lines are `fhH2hLineDefs` (12; the design's 13th, "B +3.5 games", is not added).
   A line opens its panel: Covered, Last five, the average behind the line, every eligible meeting newest first with its
   figure on the line and Covered / Missed. Match analysis keeps its own model (rule a0) and table.
+- **Hot-line panel, Covered tile** (founder 2026-11-17): under the rate floor (n < 5) the figure is the count ("1 of 3"),
+  never a dash, and the sub names the covered meetings ("At Barcelona Open 2026, …" / "Not covered yet"); from 5 the rate.
+  "Most covered" is a white pill (11/700 on white 7%, r999), the dots stay blue (design change 2026-11-17 §6).
 - **Head to head box:** four tiles — Total points won (the meetings' own box scores, `setstats/`, summed; the sub says
-  "over k of n meetings"; none → "—"), On <global surface> (+ the other two), Went to a deciding set, Favourite won (the
-  shorter closing price; an exact tie is counted out and named — no opening price exists for archive meetings) — then the
+  "N meetings" when every meeting has one, else "k of n meetings"; none → "—"), On <global surface> (+ the other two),
+  Went to a deciding set (one decider: "<Winner> 2–1 <event> <year>"; more: each player's deciders won), Favourite won (the
+  shorter closing price; the sub names the underdog's win — "<W> beat <L> as the underdog · <event> <year>", or the count
+  and the last one; an exact tie is counted out and named — no opening price exists for archive meetings; founder
+  2026-11-17) — then the
   meetings by year, prices under each player's mini avatar, "X leads a–b" in the count line.
 - **Record against each style:** each player's record against the other's archetype, filtered for real by Window (Last 52
   weeks · Last 24 months · Career — **Career by default**, founder 2026-11-16), Surface and Court speed (the profile's one
   speed rule, `speedRowOf` → `speedBandForRow`; a venue with no rating leaves a picked speed and the card says how many).
-  Win rate from `H2H_STYLE_FLOOR` = 5 matches (= the profile's Match-up record floor), greyed 5–9. **Vs style average** =
+  Win rate from `H2H_STYLE_FLOOR` = 5 matches (= the profile's Match-up record floor), greyed 5–9; the **Vs style average
+  keeps its sign colour at 5–9** (founder 2026-11-17: a filter never takes the green away), "—" under 5. **Vs style average** =
   his win rate minus the matchup-matrix cell for his own style against that style (career, all surfaces — the only
   population the matrix holds; it does not follow the filters, the label's title says so). Career match cards: 6 rows,
   "Show n more", opponents by surname, every row opens the sheet.
-- **Tournament record:** opens on an event of this week whose posted main draw lists both players
-  (`EntryListsTab.currentWeekRows`, by key), else the most recent event both have played, else the first listed. Tiles
-  Best result, Sets won, Last played, Backing (flat 1u on the one join, Data below); year groups.
+- **Tournament record (design change 2026-11-17 §3):** a filter box — Tournament search, then Window (Career default ·
+  Last 52 weeks = 364 days back · Last 24 months = the same day two years back, exact dates; a row with no date counts
+  under Career only), Surface, Court speed. Surface or Court speed set = **group mode**: the record over every event
+  either player has on record whose surface (catalog) and speed class fit; the class is the event's ONE rating
+  (`COURT_CONDITIONS` speed → `courtSpeedCategory`, Slow ≤ 43 · Medium ≤ 68 · Fast) — the figure the tournament row prints,
+  so the two never disagree; an event with no rating is in no speed class (the row's hover counts them). Picking a
+  tournament clears both; "Back to <tournament> ›" clears both. Single event: opens on an event of this week whose posted
+  main draw lists both players (`EntryListsTab.currentWeekRows`, by key), else the most recent event both have played,
+  else the first listed. Tiles Best result, Sets won, Last played, Backing (flat 1% stake on the one join, Data below)
+  over the window (`xTrAgg`); groups per year, or per tournament and year in group mode.
 - **Market edge:** windows Last 52 weeks · Last 24 months · Career; bands = `MarketEdgeCore.BANDS` (the ten-band
-  definition), named as the profile names them; a band click filters the chart. "Return at a flat 1% stake" = the live
-  flat-1u units (1u = 1% of bankroll), printed in u. The chart = the design's (`H2H_CHART_SMOOTH`: smoothed line, faint
+  definition), named as the profile names them; a band click filters the chart. One head row (title, scope, the window switch, the "?" holding the
+  band definition); the chart card carries the same switch (one state). "Return at a flat 1% stake" = the live flat-1u
+  result (1u = 1% of bankroll), printed in %. The chart = the design's (`H2H_CHART_SMOOTH`: smoothed line, faint
   tint below break even, vertical month ticks — flagged against the foundation's chart rule), x = each player's own
   priced matches.
 - **Latest news:** pills All · Match reports · Quotes · Injuries · Articles from the site's own fields — an ASAP item is a
