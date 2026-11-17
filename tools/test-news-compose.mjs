@@ -8,7 +8,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { styleEarned, factSheet, checkComposed, composeReport, assemble, setStory, tiebreakScores, pathLines, physicalParagraph, matchQuotes, roundCode, noCommaBefore, COMPOSE_VERSION } from './news-ticker/compose.mjs';
+import { styleEarned, occasionLines, factSheet, checkComposed, composeReport, assemble, setStory, tiebreakScores, pathLines, physicalParagraph, matchQuotes, roundCode, noCommaBefore, COMPOSE_VERSION } from './news-ticker/compose.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FX = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools/fixtures/news-compose/stockholm-sf.json'), 'utf8'));
@@ -205,6 +205,50 @@ await ok('how he felt may set up his own quotation; without a quotation it still
   const noQuote = GOOD.replace(/ He explained it himself: "[^"]*"/, ' He was angry at himself.');
   yes(noQuote !== GOOD); refuses(noQuote, /"angry"/);
 });
+await ok('founder corrections 2026-11-17: the verdict follows the numbers, the occasion is on the sheet, break points are told from where they were saved, a quote may stop at its own ellipsis', () => {
+  // a clean dominant win (straight sets, DR 2.10, rating 9.4): called that, with its numbers; never "not perfect"
+  const t = factSheet({ m: M, w, l, rep: null, shard: FX.pbp, round: 'semi-finals', card: FX.card }).text;
+  yes(/## VERDICT FROM THE NUMBERS\nA clean, dominant win\. [^\n]*a 9\.4 performance rating, a dominance ratio of 2\.10, just 12 unforced errors\./.test(t), t.split('## VERDICT')[1] || 'no verdict');
+  yes(!/It was not perfect|what he still has to do better/.test(t), 'no reservation is offered when no number shows a weakness');
+  const messy = factSheet({ m: { ...M, matchStats: { p1: { ...M.matchStats.p1, 'Points:Unforced errors': 54, 'Points:Winners': 47 }, p2: M.matchStats.p2 } }, w, l, rep: null }).text;
+  yes(!/VERDICT FROM THE NUMBERS/.test(messy) && /NOT GOOD IN THE WINNER/.test(messy), 'a weak point: no "dominant", the weak point is said');
+  const ok2 = factSheet({ m: { ...M, matchStats: { p1: { ...M.matchStats.p1, 'Points:Return Points Won': 38, 'Points:Service Points Won': 66 }, p2: M.matchStats.p2 } }, w, l, rep: null }).text;
+  yes(/No number shows a weakness in the match of Fritz\. Do not write "it was not perfect"/.test(ok2), 'an ordinary win without a weakness: no "but" either');
+  // the occasion: at home, first appearance at a big event, the defending champion
+  const mm = { ...M, tour: 'ATP Finals - Turin', venue: { city: 'Turin', country: 'IT' } }, row = (y, round, won) => ({ eventKey: y === 2026 ? 99 : y, tournament: 'Finals - Turin', year: String(y), round, won });
+  const occ = occasionLines({ m: mm, w, l, eventKey: 99, countryOf: (k) => (String(k) === String(M.p2Key) ? 'Italy' : 'USA'), hist: { p1: [row(2025, 'Final', true), row(2026, '', true)], p2: [row(2026, '', false)] } });
+  eq(occ, ['Fritz is the defending champion here.', 'Musetti was playing at home (Turin is in his own country).', 'It was the first appearance of Musetti at this event in our records.']);
+  eq(occasionLines({ m: mm, w, l, eventKey: 99, hist: { p1: [], p2: [] } }), [], 'no profile country and no history: nothing is claimed');
+  eq(occasionLines({ m: M, w, l, eventKey: 99, countryOf: () => 'Sweden', hist: { p1: [{ eventKey: 99, tournament: 'Stockholm', year: '2026' }], p2: [] } }).filter((x) => /first appearance/.test(x)), [], 'a debut is told only at a Grand Slam or the Finals');
+  // where the break points were saved from
+  const g = (n, server, winner, score, pts) => ({ g: n, server, winner, score, points: pts.map((x, i) => ({ n: i + 1, s: x })) });
+  const hold = ['15 - 0', '30 - 0', '40 - 0'], holdB = ['0 - 15', '0 - 30', '0 - 40'];
+  const games = [g(1, 'p1', 'p1', '1 - 0', hold), g(2, 'p2', 'p2', '1 - 1', ['15 - 0', '30 - 0', '40 - 0', '40 - 15', '40 - 30', '40 - 40', '40 - A']), g(3, 'p1', 'p1', '2 - 1', hold), g(4, 'p2', 'p2', '2 - 2', holdB), g(5, 'p1', 'p1', '3 - 2', hold), g(6, 'p2', 'p2', '3 - 3', holdB), g(7, 'p1', 'p1', '4 - 3', hold), g(8, 'p2', 'p1', '5 - 3', ['15 - 0', '30 - 0', '40 - 0']), g(9, 'p1', 'p1', '6 - 3', hold)];
+  const story = setStory({ sets: [{ games }] }, { p1: 'A. Alpha', p2: 'B. Beta', finalScore: { display: '6-3', sets: [{ p1: 6, p2: 3 }], winner: 'p1' } }).join('\n');
+  yes(story.includes('Beta saved 3 break points from 0–40 and held for 1–1.'), story);
+  // a quote may stop where it has its own ellipsis, and two parts of one quote may be used apart
+  const q2 = [{ id: 'q1', speaker: 'Fritz', topic: null, text: 'The knee is fine, I am taking care of it … Today I felt like everything was working for me' }];
+  const sh = factSheet({ m: M, w, l, rep: null, shard: FX.pbp, round: 'semi-finals', card: FX.card, quotes: q2, path: pathLines(M, w, FX.cards, rc, false) });
+  const two = GOOD.replace(/He explained it himself: "[^"]*"/, 'Fritz afterwards: "Today I felt like everything was working for me"').replace('\n\nAll in all,', '\n\nOn his knee, Fritz said: "The knee is fine, I am taking care of it" Something to follow up.\n\nAll in all,');
+  eq(checkComposed(two, sh, { surnames: SUR }).failures, [], 'two parts of one quote, the first stopping at the ellipsis, and "knee" from his own words');
+  yes(checkComposed(two.replace('I am taking care of it"', 'I am taking care"'), sh, { surnames: SUR }).failures.some((f) => /cut in the middle|word for word/.test(f)), 'a cut inside a sentence is still refused');
+  yes(checkComposed(GOOD.replace('All in all, a', 'His knee looked sore. All in all, a'), SHEET, { surnames: SUR }).failures.some((f) => /"knee"/.test(f)), 'the body in our own words still needs a sheet line');
+});
+await ok('our read of the match (founder 2026-11-17): how the points compare with the score, serves that did not come back, holds to love, the second serve, the rallies — from our own numbers only', () => {
+  const read = (t) => (t.split('## OUR READ OF THE MATCH')[1] || '').split('##')[0];
+  const base = read(SHEET.text.replace('', '')), withCard = read(factSheet({ m: M, w, l, rep: null, shard: FX.pbp, round: 'semi-finals', card: FX.card }).text);
+  yes(withCard.includes('Fritz held to love 3 times.') && withCard.includes('Fritz did not face a single break point.') && withCard.includes('Fritz won more points than Musetti in the short rallies and in the long ones.'), withCard);
+  void base;
+  // two 6–4 sets with a dominance ratio of 2.10: the points were more one-sided than the score
+  const tight = { ...M, finalScore: { ...M.finalScore, display: '6-4, 6-4', sets: [{ p1: 6, p2: 4 }, { p1: 6, p2: 4 }] } };
+  yes(/more one-sided than the score: Fritz won 60% of all points \(dominance ratio 2\.10\)\. You may say the score flattered Musetti\./.test(read(factSheet({ m: tight, w, l, rep: null }).text)), read(factSheet({ m: tight, w, l, rep: null }).text));
+  yes(!/more one-sided/.test(read(factSheet({ m: M, w, l, rep: null }).text)), 'a 6–4, 6–2 score already says it');
+  // every point against the second serve; a high unreturned figure; the loser kept alive by saved break points
+  const ms = JSON.parse(JSON.stringify(M.matchStats)); ms.p1.raw['Return:2nd return points won'] = { won: 12, total: 12 }; ms.p2.raw['Service:Break Points Saved'] = { won: 5, total: 7 };
+  const r2 = read(factSheet({ m: { ...M, matchStats: ms }, w, l, rep: null, card: { p1: { ...FX.card.p1, unreturnedPct: 54 }, p2: FX.card.p2 } }).text);
+  yes(r2.includes('Fritz won every single point against the second serve of Musetti (12 of 12).') && r2.includes('54% of the serves of Fritz did not come back.') && r2.includes('Musetti kept the score close by saving 5 of 7 break points.'), r2);
+  yes(!/did not come back/.test(withCard), '41% unreturned is not a standout');
+});
 await ok('refuses first person, a named source, an initial, a question, markdown and a missing "All in all"', () => {
   refuses(GOOD.replace('The second set was a different Fritz:', 'I think the second set was a different Fritz:'), /first person/);
   refuses(GOOD.replace('He ended with', 'According to the data he ended with'), /names a source/);
@@ -247,7 +291,7 @@ const mk = () => {
 // the writer of the test: GOOD for the fixture match (or BAD when told), an unusable text for every other match
 const run = (d, now, mode, max = '6') => JSON.parse(execFileSync('node', ['-e', `import(${JSON.stringify(path.join(ROOT, 'tools/news-ticker/build-news-ticker.mjs'))}).then(async (m) => {
   const fs = require('node:fs'); let calls = 0;
-  const writer = async (sheet) => { calls++; const mine = sheet.text.includes('Fritz beat Musetti'); return { status: 'ok', model: 'test', text: mine ? (${JSON.stringify(mode)} === 'bad' ? ${JSON.stringify(GOOD.replace('9.4', '9.6'))} : ${JSON.stringify(GOOD)}) : 'x' }; };
+  const writer = async (sheet) => { calls++; const mine = sheet.text.includes('Fritz beat Musetti'); return { status: 'ok', model: 'test', text: mine ? (${JSON.stringify(mode)} === 'bad' ? ${JSON.stringify(GOOD.replace('9.4', '9.6'))} : (sheet.quotes.length ? ${JSON.stringify(GOOD)} : ${JSON.stringify(GOOD.replace(/ He explained it himself: "[^"]*"/, ''))})) : 'x' }; };
   const s = await m.build({ nowIso: ${JSON.stringify(now)}, times: null, apiKey: null, writer: ${JSON.stringify(mode)} === 'off' ? null : writer });
   console.log(JSON.stringify({ calls, composed: s.composed || 0, failed: s.composeFailed || 0, reportsComposed: s.reportsComposed || 0, revised: s.revised, added: s.added }));
 })`, '--', '--dir', d], { cwd: d, encoding: 'utf8', env: { ...process.env, ANTHROPIC_API_KEY: '', NEWS_COMPOSE_MAX_CALLS: max } }).trim().split('\n').pop());
@@ -287,6 +331,23 @@ await ok('before the report is written the item is the result line and the closi
   const mineEarly = early.calls;
   const later = run(d, new Date(start + 76 * 60000).toISOString(), 'good');
   yes(later.calls >= 1 && item(d, '12179838').composed && item(d, '12179838').composed.runs === 1, `written at 76 minutes (calls ${mineEarly} then ${later.calls})`);
+});
+await ok('a report waits for the player\'s words: no quote on file = not written before 300 minutes; written without one, it is written again ONCE when a quote arrives (founder 2026-11-17)', () => {
+  const d = mk(), qf = path.join(d, 'news-quotes', '1681-2026.json'), start = Date.parse(`${M.date}T${M.time}:00+01:00`), at = (min) => new Date(start + min * 60000).toISOString();
+  fs.writeFileSync(qf, JSON.stringify({ items: FX.quotes.filter((q) => String(q.eventKey) !== '12179838') }));
+  run(d, at(120), 'good');
+  yes(!item(d, '12179838').composed, 'two hours after the start and no quote: still the result line');
+  run(d, at(120 + 300), 'good');
+  const first = item(d, '12179838');
+  yes(first.composed && first.composed.runs === 1 && !/"/.test(first.composed.body), 'after 300 minutes it is written without a quote');
+  eq(run(d, at(120 + 330), 'good').calls, 0, 'nothing new: not written again');
+  fs.writeFileSync(qf, JSON.stringify({ items: FX.quotes }));
+  run(d, at(120 + 360), 'good');
+  const second = item(d, '12179838');
+  yes(second.composed.runs === 2 && /"/.test(second.composed.body), 'the quote arrived: written again, now with it');
+  fs.writeFileSync(qf, JSON.stringify({ items: FX.quotes.concat({ ...FX.quotes[0], id: 'quote-late', text: 'One more sentence he said about this match a little later, long enough to count.' }) }));
+  run(d, at(120 + 420), 'good');
+  eq(item(d, '12179838').composed.runs, 2, 'a report that has its quote is never written again');
 });
 await ok('a report of the older version is written again once while its match is recent, and keeps its published text when it is not', () => {
   const d = mk(); run(d, '2026-11-13T19:00:00.000Z', 'good');

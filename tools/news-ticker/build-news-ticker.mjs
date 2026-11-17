@@ -24,7 +24,7 @@ import { reportText, statusItems, h2hAfter, roundWords, breakPoints, mtoSentence
 import { shotSentences } from './match-cards.mjs';
 import { pbpFacts, scoreFacts } from './pbp-facts.mjs';
 import { mergeItems, buildIndex, fileOf, observedTimes, tourKeep } from './ticker-core.mjs';
-import { factSheet, composeReport, assemble, pathLines, physicalParagraph, matchQuotes, roundCode, milestoneLines, COMPOSE_VERSION, MAX_COMPOSE_RUNS, COMPOSE_FRESH_HOURS, COMPOSE_WAIT_MIN, COMPOSE_WAIT_MAX_MIN, COMPOSE_UPGRADE_HOURS } from './compose.mjs';
+import { factSheet, composeReport, assemble, pathLines, physicalParagraph, matchQuotes, roundCode, milestoneLines, occasionLines, COMPOSE_VERSION, MAX_COMPOSE_RUNS, COMPOSE_FRESH_HOURS, COMPOSE_WAIT_MIN, COMPOSE_WAIT_MAX_MIN, COMPOSE_WAIT_QUOTE_MIN, COMPOSE_UPGRADE_HOURS } from './compose.mjs';
 
 const require = createRequire(import.meta.url);
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -198,7 +198,7 @@ export async function build({ nowIso, times, rewrite = null, writer = null, apiK
           const sheet = factSheet({ m, w, l, rep, shard: sp, round: rw, duration: obs && obs.minutes != null ? obs.minutes : null, card: cardsByMatch[ek(m)] || null,
             commentary: cm && cm.text ? cm.text : null, quotes: matchQuotes(m, ek(m), quoteItems, phys.sentences.join(' ')), physical: phys.facts,
             path: pathLines(m, w, allCards, (c) => roundCode(rwOf(c)), rw === 'final'), styles: { [w]: styleOf(m[w]), [l]: styleOf(m[l]) }, bestOf,
-            milestones: milestoneLines({ m, w, l, round: rw, eventKey: ek(m), histW: ((shard(m[w + 'Key']) || {}).matches) || [], histL: ((shard(m[l + 'Key']) || {}).matches) || [] }) });
+            milestones: milestoneLines({ m, w, l, round: rw, eventKey: ek(m), histW: ((shard(m[w + 'Key']) || {}).matches) || [], histL: ((shard(m[l + 'Key']) || {}).matches) || [] }) .concat(occasionLines({ m, w, l, eventKey: ek(m), countryOf: (k) => { const pl0 = ((index && index.players) || []).find((x) => String(x.key) === String(k)); return pl0 ? pl0.country : null; }, hist: { [w]: ((shard(m[w + 'Key']) || {}).matches) || [], [l]: ((shard(m[l + 'Key']) || {}).matches) || [] } })) });
           const pc = prev && prev.composed && prev.composed.version === COMPOSE_VERSION ? prev.composed : null;
           const ageH = (Date.parse(nowIso) - Date.parse(obs && obs.endedAt ? obs.endedAt : startIso(m))) / 3600000;
           const onlyEk = process.env.NEWS_COMPOSE_ONLY ? process.env.NEWS_COMPOSE_ONLY.split(',') : null;   // measurement runs (compose-probe): write this one match, whatever is stored
@@ -208,8 +208,12 @@ export async function build({ nowIso, times, rewrite = null, writer = null, apiK
           // whose write failed its check is tried once more. A report of an older version is written again once, while
           // its match is recent; older ones keep their text as published.
           const oldC = !pc && prev && prev.composed && prev.composed.body && prev.composed.version !== COMPOSE_VERSION ? prev.composed : null;
-          const ready = ageH * 60 >= (cm && cm.text ? COMPOSE_WAIT_MIN : COMPOSE_WAIT_MAX_MIN);
+          // it waits for the player's words: up to COMPOSE_WAIT_QUOTE_MIN with no quote on file (founder 2026-11-17)
+          const ready = ageH * 60 >= (!sheet.quotes.length ? COMPOSE_WAIT_QUOTE_MIN : (cm && cm.text ? COMPOSE_WAIT_MIN : COMPOSE_WAIT_MAX_MIN));
+          // a report that was written without any quotation is written again once when a quote has arrived
+          const quoteCameLater = !!pc && pc.status === 'ok' && !!pc.body && !/"/.test(pc.body) && sheet.quotes.length > 0 && (pc.runs || 0) < MAX_COMPOSE_RUNS && ageH <= COMPOSE_UPGRADE_HOURS;
           const frozen = onlyEk ? !onlyEk.includes(String(ek(m)))
+            : quoteCameLater ? false
             : pc ? (pc.status === 'ok' && !pc.keptAfterFailedRewrite) || pc.sheetHash === sheet.hash || (pc.runs || 0) >= MAX_COMPOSE_RUNS || !(ageH <= COMPOSE_FRESH_HOURS)
               : oldC ? oldC.upgradeFailed === COMPOSE_VERSION || !(ageH <= COMPOSE_UPGRADE_HOURS)
                 : !ready || !(ageH <= COMPOSE_UPGRADE_HOURS);   // an old match with no written report keeps what it shows: no call is spent on it
