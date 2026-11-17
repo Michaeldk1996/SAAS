@@ -331,6 +331,7 @@ Surface-specific rulings moved out of this file so they load only when relevant:
 | Picks store, roles (admin / Pro), who writes which figure | `.claude/rules/picks.md` |
 | Model value ledger — append-only snapshots / key marks / settlements, value tiers in one config, CSV export | `.claude/rules/value-ledger.md` |
 | Player photos — one resolver (ATP headshot by player ID, else monogram) on every avatar; alias map, manifest, probe | `.claude/rules/player-photos.md` |
+| Tournament logos — self-hosted ATP logos for the Database Tournament view, curated map, refusal rules, refresh | `.claude/rules/tournament-logos.md` |
 | Match analysis Form / H2H tabs — price order, display constants, all-level H2H, market-edge, odds alarms | `.claude/rules/modal-form-h2h.md` |
 | Market edge (Match analysis tab + player-profile basis) — data path, populations, settlement, today's price, Needs, floor, pill, shared basis | `.claude/rules/modal-market-edge.md` |
 | Odds archive (tennis-data closing prices): drop-in refresh, merge, never-thinner, readers | `.claude/rules/odds-archive.md` |

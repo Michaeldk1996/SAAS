@@ -94,7 +94,7 @@ const CASES = {
   },
   'site-code.sh = the code lines of pipeline.yml "Assemble site", line for line (no file in one list only)': (S) => {
     const asm = S.pipeline.slice(S.pipeline.indexOf('      - name: Assemble site'), S.pipeline.indexOf('      - name: Inject Supabase public config'));
-    const isCode = (l) => /\.(html|js|css)\b|assets\//.test(l) && !/\.json\b|node tools\//.test(l);
+    const isCode = (l) => /\.(html|js|css)\b|assets\/|tournament-logos/.test(l) && !/\.json\b|node tools\//.test(l);
     const norm = (l) => l.trim().replace(/"\$SITE\/?/g, '_site/').replace(/"/g, '').replace(/_site\/\s/g, '_site/ ').replace(/\s+/g, ' ');
     const fromPipe = asm.split('\n').filter((l) => /^\s+(cp|mkdir -p _site\/assets)/.test(l) && isCode(l)).map(norm).sort();
     const fromScript = S.code.split('\n').filter((l) => /^(cp|mkdir -p "\$SITE\/assets)/.test(l)).map(norm).sort();

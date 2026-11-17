@@ -1,0 +1,1332 @@
+{
+ "note": "One entry per Database tournament label (TOURN_SPLIT / TOURN_COMMON over database-yield.json meta.tournaments). pages = atptour.com tournament pages tried in order; match = words the logo alt or file name must hold, so a licence that moved city (its page now another event) is refused. Rules: .claude/rules/tournament-logos.md",
+ "events": {
+  "ATP Finals": {
+   "pages": [
+    {
+     "slug": "nitto-atp-finals",
+     "atpId": 605
+    }
+   ],
+   "match": [
+    "finals",
+    "turin",
+    "london"
+   ]
+  },
+  "Acapulco": {
+   "pages": [
+    {
+     "slug": "acapulco",
+     "atpId": 807
+    }
+   ],
+   "match": [
+    "acapulco",
+    "mexicano"
+   ]
+  },
+  "Adelaide": {
+   "pages": [
+    {
+     "slug": "adelaide",
+     "atpId": 8998
+    }
+   ],
+   "match": [
+    "adelaide"
+   ]
+  },
+  "Adelaide 1": {
+   "sameAs": "Adelaide",
+   "why": "same ATP tournament (ID 8998) as Adelaide"
+  },
+  "Adelaide 2": {
+   "pages": [
+    {
+     "slug": "adelaide",
+     "atpId": 2843
+    },
+    {
+     "slug": "adelaide",
+     "atpId": 9667
+    }
+   ],
+   "match": [
+    "adelaide"
+   ]
+  },
+  "Almaty": {
+   "pages": [
+    {
+     "slug": "almaty",
+     "atpId": 9410
+    }
+   ],
+   "match": [
+    "almaty"
+   ]
+  },
+  "Antalya": {
+   "pages": [
+    {
+     "slug": "antalya",
+     "atpId": 9426
+    },
+    {
+     "slug": "antalya",
+     "atpId": 7650
+    }
+   ],
+   "match": [
+    "antalya"
+   ]
+  },
+  "Antwerp": {
+   "pages": [
+    {
+     "slug": "brussels",
+     "atpId": 7485
+    }
+   ],
+   "match": [
+    "antwerp",
+    "european"
+   ]
+  },
+  "Athens": {
+   "pages": [
+    {
+     "slug": "athens",
+     "atpId": 5100
+    }
+   ],
+   "match": [
+    "athens"
+   ]
+  },
+  "Atlanta": {
+   "pages": [
+    {
+     "slug": "atlanta",
+     "atpId": 6116
+    }
+   ],
+   "match": [
+    "atlanta"
+   ]
+  },
+  "Auckland": {
+   "pages": [
+    {
+     "slug": "auckland",
+     "atpId": 301
+    }
+   ],
+   "match": [
+    "auckland"
+   ]
+  },
+  "Australian Open": {
+   "pages": [
+    {
+     "slug": "australian-open",
+     "atpId": 580
+    }
+   ],
+   "match": [
+    "australianopen",
+    "australian"
+   ]
+  },
+  "Bangkok": {
+   "pages": [
+    {
+     "slug": "bangkok",
+     "atpId": 1720
+    }
+   ],
+   "match": [
+    "bangkok",
+    "thailand"
+   ]
+  },
+  "Banja Luka": {
+   "pages": [
+    {
+     "slug": "banja-luka",
+     "atpId": 2841
+    }
+   ],
+   "match": [
+    "banjaluka",
+    "srpska"
+   ]
+  },
+  "Barcelona": {
+   "pages": [
+    {
+     "slug": "barcelona",
+     "atpId": 425
+    }
+   ],
+   "match": [
+    "barcelona",
+    "godo"
+   ]
+  },
+  "Basel": {
+   "pages": [
+    {
+     "slug": "basel",
+     "atpId": 328
+    }
+   ],
+   "match": [
+    "basel",
+    "swissindoors"
+   ]
+  },
+  "Bastad": {
+   "pages": [
+    {
+     "slug": "bastad",
+     "atpId": 316
+    }
+   ],
+   "match": [
+    "bastad"
+   ]
+  },
+  "Beijing": {
+   "pages": [
+    {
+     "slug": "beijing",
+     "atpId": 747
+    }
+   ],
+   "match": [
+    "beijing",
+    "chinaopen"
+   ]
+  },
+  "Belgrade · Belgrade Open": {
+   "pages": [
+    {
+     "slug": "belgrade",
+     "atpId": 4787
+    },
+    {
+     "slug": "belgrade",
+     "atpId": 9512
+    }
+   ],
+   "match": [
+    "belgrade"
+   ]
+  },
+  "Belgrade · Serbia Open": {
+   "pages": [
+    {
+     "slug": "belgrade",
+     "atpId": 5053
+    }
+   ],
+   "match": [
+    "belgrade",
+    "serbia"
+   ]
+  },
+  "Bogota": {
+   "pages": [
+    {
+     "slug": "bogota",
+     "atpId": 6718
+    }
+   ],
+   "match": [
+    "bogota"
+   ]
+  },
+  "Brisbane": {
+   "pages": [
+    {
+     "slug": "brisbane",
+     "atpId": 339
+    }
+   ],
+   "match": [
+    "brisbane"
+   ]
+  },
+  "Bucharest": {
+   "pages": [
+    {
+     "slug": "bucharest",
+     "atpId": 4462
+    },
+    {
+     "slug": "bucharest",
+     "atpId": 773
+    }
+   ],
+   "match": [
+    "bucharest",
+    "tiriac"
+   ]
+  },
+  "Budapest": {
+   "pages": [
+    {
+     "slug": "budapest",
+     "atpId": 7648
+    }
+   ],
+   "match": [
+    "budapest",
+    "hungarian"
+   ]
+  },
+  "Buenos Aires": {
+   "pages": [
+    {
+     "slug": "buenos-aires",
+     "atpId": 506
+    }
+   ],
+   "match": [
+    "buenosaires",
+    "argentinaopen"
+   ]
+  },
+  "Canada": {
+   "pages": [
+    {
+     "slug": "montreal",
+     "atpId": 421
+    }
+   ],
+   "match": [
+    "montreal",
+    "toronto",
+    "canad",
+    "nationalbank"
+   ]
+  },
+  "Chengdu": {
+   "pages": [
+    {
+     "slug": "chengdu",
+     "atpId": 7581
+    }
+   ],
+   "match": [
+    "chengdu"
+   ]
+  },
+  "Chennai": {
+   "pages": [
+    {
+     "slug": "pune",
+     "atpId": 891
+    }
+   ],
+   "match": [
+    "chennai"
+   ]
+  },
+  "Cincinnati": {
+   "pages": [
+    {
+     "slug": "cincinnati",
+     "atpId": 422
+    }
+   ],
+   "match": [
+    "cincinnati"
+   ]
+  },
+  "Cologne · Championship": {
+   "pages": [
+    {
+     "slug": "cologne-2",
+     "atpId": 9406
+    }
+   ],
+   "match": [
+    "cologne",
+    "koln"
+   ]
+  },
+  "Cologne · Indoors": {
+   "pages": [
+    {
+     "slug": "cologne",
+     "atpId": 9404
+    }
+   ],
+   "match": [
+    "cologne",
+    "koln"
+   ]
+  },
+  "Cordoba": {
+   "pages": [
+    {
+     "slug": "cordoba",
+     "atpId": 9158
+    }
+   ],
+   "match": [
+    "cordoba"
+   ]
+  },
+  "Dallas": {
+   "pages": [
+    {
+     "slug": "dallas",
+     "atpId": 424
+    }
+   ],
+   "match": [
+    "dallas"
+   ]
+  },
+  "Delray Beach": {
+   "pages": [
+    {
+     "slug": "delray-beach",
+     "atpId": 499
+    }
+   ],
+   "match": [
+    "delray"
+   ]
+  },
+  "Doha": {
+   "pages": [
+    {
+     "slug": "doha",
+     "atpId": 451
+    }
+   ],
+   "match": [
+    "doha",
+    "qatar"
+   ]
+  },
+  "Dubai": {
+   "pages": [
+    {
+     "slug": "dubai",
+     "atpId": 495
+    }
+   ],
+   "match": [
+    "dubai"
+   ]
+  },
+  "Dusseldorf": {
+   "pages": [
+    {
+     "slug": "dusseldorf",
+     "atpId": 6710
+    },
+    {
+     "slug": "dusseldorf",
+     "atpId": 615
+    }
+   ],
+   "match": [
+    "dusseldorf"
+   ]
+  },
+  "Eastbourne": {
+   "pages": [
+    {
+     "slug": "eastbourne",
+     "atpId": 741
+    }
+   ],
+   "match": [
+    "eastbourne"
+   ]
+  },
+  "Estoril": {
+   "pages": [
+    {
+     "slug": "estoril",
+     "atpId": 7290
+    },
+    {
+     "slug": "oeiras",
+     "atpId": 468
+    }
+   ],
+   "match": [
+    "estoril",
+    "oeiras"
+   ]
+  },
+  "Florence": {
+   "pages": [
+    {
+     "slug": "florence",
+     "atpId": 2805
+    }
+   ],
+   "match": [
+    "florence",
+    "firenze"
+   ]
+  },
+  "Geneva": {
+   "pages": [
+    {
+     "slug": "geneva",
+     "atpId": 322
+    }
+   ],
+   "match": [
+    "geneva",
+    "geneve"
+   ]
+  },
+  "Gijon": {
+   "pages": [
+    {
+     "slug": "gijon",
+     "atpId": 2807
+    }
+   ],
+   "match": [
+    "gijon"
+   ]
+  },
+  "Gstaad": {
+   "pages": [
+    {
+     "slug": "gstaad",
+     "atpId": 314
+    }
+   ],
+   "match": [
+    "gstaad"
+   ]
+  },
+  "Halle": {
+   "pages": [
+    {
+     "slug": "halle",
+     "atpId": 500
+    }
+   ],
+   "match": [
+    "halle"
+   ]
+  },
+  "Hamburg": {
+   "pages": [
+    {
+     "slug": "hamburg",
+     "atpId": 414
+    }
+   ],
+   "match": [
+    "hamburg"
+   ]
+  },
+  "Hangzhou": {
+   "pages": [
+    {
+     "slug": "hangzhou",
+     "atpId": 4713
+    }
+   ],
+   "match": [
+    "hangzhou"
+   ]
+  },
+  "Hong Kong": {
+   "pages": [
+    {
+     "slug": "hong-kong",
+     "atpId": 336
+    }
+   ],
+   "match": [
+    "hongkong"
+   ]
+  },
+  "Houston": {
+   "pages": [
+    {
+     "slug": "houston",
+     "atpId": 717
+    }
+   ],
+   "match": [
+    "houston"
+   ]
+  },
+  "Indian Wells": {
+   "pages": [
+    {
+     "slug": "indian-wells",
+     "atpId": 404
+    }
+   ],
+   "match": [
+    "indianwells"
+   ]
+  },
+  "Istanbul": {
+   "pages": [
+    {
+     "slug": "istanbul",
+     "atpId": 7163
+    }
+   ],
+   "match": [
+    "istanbul"
+   ]
+  },
+  "Johannesburg": {
+   "pages": [
+    {
+     "slug": "johannesburg",
+     "atpId": 5012
+    }
+   ],
+   "match": [
+    "johannesburg",
+    "southafrican"
+   ]
+  },
+  "Kitzbuhel": {
+   "pages": [
+    {
+     "slug": "kitzbuhel",
+     "atpId": 319
+    }
+   ],
+   "match": [
+    "kitzbuhel"
+   ]
+  },
+  "Kuala Lumpur": {
+   "pages": [
+    {
+     "slug": "kuala-lumpur",
+     "atpId": 6003
+    }
+   ],
+   "match": [
+    "kualalumpur",
+    "malaysia"
+   ]
+  },
+  "Los Angeles": {
+   "pages": [
+    {
+     "slug": "los-angeles",
+     "atpId": 423
+    }
+   ],
+   "match": [
+    "losangeles"
+   ]
+  },
+  "Los Cabos": {
+   "pages": [
+    {
+     "slug": "los-cabos",
+     "atpId": 7480
+    }
+   ],
+   "match": [
+    "loscabos",
+    "cabos"
+   ]
+  },
+  "Lyon": {
+   "pages": [
+    {
+     "slug": "lyon",
+     "atpId": 7694
+    }
+   ],
+   "match": [
+    "lyon"
+   ]
+  },
+  "Lyon (France)": {
+   "pages": [
+    {
+     "slug": "lyon",
+     "atpId": 496
+    }
+   ],
+   "match": [
+    "lyon"
+   ]
+  },
+  "Madrid": {
+   "pages": [
+    {
+     "slug": "madrid",
+     "atpId": 1536
+    }
+   ],
+   "match": [
+    "madrid"
+   ]
+  },
+  "Mallorca": {
+   "pages": [
+    {
+     "slug": "mallorca",
+     "atpId": 8994
+    }
+   ],
+   "match": [
+    "mallorca"
+   ]
+  },
+  "Marbella": {
+   "pages": [
+    {
+     "slug": "marbella",
+     "atpId": 9462
+    }
+   ],
+   "match": [
+    "marbella"
+   ]
+  },
+  "Marrakech": {
+   "pages": [
+    {
+     "slug": "marrakech",
+     "atpId": 360
+    }
+   ],
+   "match": [
+    "marrakech"
+   ]
+  },
+  "Marseille": {
+   "pages": [
+    {
+     "slug": "lyon",
+     "atpId": 496
+    }
+   ],
+   "match": [
+    "marseille",
+    "open13"
+   ]
+  },
+  "Melbourne · Great Ocean Road": {
+   "pages": [
+    {
+     "slug": "melbourne",
+     "atpId": 9428
+    }
+   ],
+   "match": [
+    "greatocean"
+   ]
+  },
+  "Melbourne · Murray River": {
+   "pages": [
+    {
+     "slug": "melbourne",
+     "atpId": 9429
+    },
+    {
+     "slug": "melbourne",
+     "atpId": 9428
+    }
+   ],
+   "match": [
+    "murrayriver"
+   ]
+  },
+  "Melbourne · Summer Set": {
+   "pages": [
+    {
+     "slug": "melbourne",
+     "atpId": 9665
+    }
+   ],
+   "match": [
+    "melbourne",
+    "summerset"
+   ]
+  },
+  "Memphis": {
+   "pages": [
+    {
+     "slug": "memphis",
+     "atpId": 402
+    },
+    {
+     "slug": "dallas",
+     "atpId": 424
+    }
+   ],
+   "match": [
+    "memphis"
+   ]
+  },
+  "Metz": {
+   "pages": [
+    {
+     "slug": "metz",
+     "atpId": 341
+    }
+   ],
+   "match": [
+    "metz",
+    "moselle"
+   ]
+  },
+  "Miami": {
+   "pages": [
+    {
+     "slug": "miami",
+     "atpId": 403
+    }
+   ],
+   "match": [
+    "miami"
+   ]
+  },
+  "Monte-Carlo": {
+   "pages": [
+    {
+     "slug": "monte-carlo",
+     "atpId": 410
+    }
+   ],
+   "match": [
+    "montecarlo",
+    "monaco"
+   ]
+  },
+  "Montpellier": {
+   "pages": [
+    {
+     "slug": "montpellier",
+     "atpId": 375
+    }
+   ],
+   "match": [
+    "montpellier",
+    "occitanie"
+   ]
+  },
+  "Moscow": {
+   "pages": [
+    {
+     "slug": "tbd",
+     "atpId": 438
+    }
+   ],
+   "match": [
+    "moscow",
+    "kremlin"
+   ]
+  },
+  "Munich": {
+   "pages": [
+    {
+     "slug": "munich",
+     "atpId": 308
+    }
+   ],
+   "match": [
+    "munich"
+   ]
+  },
+  "Naples": {
+   "pages": [
+    {
+     "slug": "naples",
+     "atpId": 2809
+    }
+   ],
+   "match": [
+    "naples",
+    "napoli"
+   ]
+  },
+  "New Haven": {
+   "pages": [
+    {
+     "slug": "new-haven",
+     "atpId": 3348
+    }
+   ],
+   "match": [
+    "newhaven"
+   ]
+  },
+  "New York": {
+   "pages": [
+    {
+     "slug": "dallas",
+     "atpId": 424
+    }
+   ],
+   "match": [
+    "newyork"
+   ]
+  },
+  "Newport": {
+   "pages": [
+    {
+     "slug": "newport",
+     "atpId": 315
+    }
+   ],
+   "match": [
+    "newport"
+   ]
+  },
+  "Nice": {
+   "pages": [
+    {
+     "slug": "nice",
+     "atpId": 6120
+    }
+   ],
+   "match": [
+    "nice"
+   ]
+  },
+  "Nottingham": {
+   "pages": [
+    {
+     "slug": "eastbourne",
+     "atpId": 741
+    }
+   ],
+   "match": [
+    "nottingham"
+   ]
+  },
+  "Paris": {
+   "pages": [
+    {
+     "slug": "paris",
+     "atpId": 352
+    }
+   ],
+   "match": [
+    "paris"
+   ]
+  },
+  "Parma": {
+   "pages": [
+    {
+     "slug": "parma",
+     "atpId": 9510
+    }
+   ],
+   "match": [
+    "parma",
+    "emilia"
+   ]
+  },
+  "Pune": {
+   "pages": [
+    {
+     "slug": "pune",
+     "atpId": 891
+    }
+   ],
+   "match": [
+    "pune",
+    "maharashtra"
+   ]
+  },
+  "Queen's Club": {
+   "pages": [
+    {
+     "slug": "london",
+     "atpId": 311
+    }
+   ],
+   "match": [
+    "london",
+    "queen"
+   ]
+  },
+  "Quito": {
+   "pages": [
+    {
+     "slug": "quito",
+     "atpId": 7161
+    }
+   ],
+   "match": [
+    "quito",
+    "ecuador"
+   ]
+  },
+  "Rio de Janeiro": {
+   "pages": [
+    {
+     "slug": "rio-de-janeiro",
+     "atpId": 6932
+    }
+   ],
+   "match": [
+    "rio"
+   ]
+  },
+  "Roland Garros": {
+   "pages": [
+    {
+     "slug": "roland-garros",
+     "atpId": 520
+    }
+   ],
+   "match": [
+    "roland",
+    "garros",
+    "frenchopen"
+   ]
+  },
+  "Rome": {
+   "pages": [
+    {
+     "slug": "rome",
+     "atpId": 416
+    }
+   ],
+   "match": [
+    "rome",
+    "roma",
+    "internazionali"
+   ]
+  },
+  "Rotterdam": {
+   "pages": [
+    {
+     "slug": "rotterdam",
+     "atpId": 407
+    }
+   ],
+   "match": [
+    "rotterdam"
+   ]
+  },
+  "San Diego": {
+   "pages": [
+    {
+     "slug": "san-diego",
+     "atpId": 9569
+    }
+   ],
+   "match": [
+    "sandiego"
+   ]
+  },
+  "San Jose": {
+   "pages": [
+    {
+     "slug": "dallas",
+     "atpId": 424
+    }
+   ],
+   "match": [
+    "sanjose"
+   ]
+  },
+  "Santiago": {
+   "pages": [
+    {
+     "slug": "santiago",
+     "atpId": 8996
+    }
+   ],
+   "match": [
+    "santiago",
+    "chile"
+   ]
+  },
+  "Sao Paulo": {
+   "pages": [
+    {
+     "slug": "sao-paulo",
+     "atpId": 533
+    }
+   ],
+   "match": [
+    "saopaulo",
+    "brasil"
+   ]
+  },
+  "Sardinia": {
+   "pages": [
+    {
+     "slug": "cagliari",
+     "atpId": 9481
+    },
+    {
+     "slug": "sardinia",
+     "atpId": 9408
+    }
+   ],
+   "match": [
+    "sardegna",
+    "sardinia",
+    "cagliari"
+   ]
+  },
+  "Seoul": {
+   "pages": [
+    {
+     "slug": "seoul",
+     "atpId": 4140
+    }
+   ],
+   "match": [
+    "seoul",
+    "korea"
+   ]
+  },
+  "Shanghai": {
+   "pages": [
+    {
+     "slug": "shanghai",
+     "atpId": 5014
+    }
+   ],
+   "match": [
+    "shanghai"
+   ]
+  },
+  "Shenzhen": {
+   "pages": [
+    {
+     "slug": "shenzhen",
+     "atpId": 6967
+    }
+   ],
+   "match": [
+    "shenzhen"
+   ]
+  },
+  "Singapore": {
+   "pages": [
+    {
+     "slug": "singapore",
+     "atpId": 9460
+    }
+   ],
+   "match": [
+    "singapore"
+   ]
+  },
+  "Sofia": {
+   "pages": [
+    {
+     "slug": "sofia",
+     "atpId": 7434
+    }
+   ],
+   "match": [
+    "sofia"
+   ]
+  },
+  "St. Petersburg": {
+   "pages": [
+    {
+     "slug": "st-petersburg",
+     "atpId": 568
+    }
+   ],
+   "match": [
+    "petersburg"
+   ]
+  },
+  "Stockholm": {
+   "pages": [
+    {
+     "slug": "stockholm",
+     "atpId": 429
+    }
+   ],
+   "match": [
+    "stockholm",
+    "nordic"
+   ]
+  },
+  "Stuttgart": {
+   "pages": [
+    {
+     "slug": "stuttgart",
+     "atpId": 321
+    }
+   ],
+   "match": [
+    "stuttgart"
+   ]
+  },
+  "Sydney": {
+   "pages": [
+    {
+     "slug": "sydney",
+     "atpId": 9663
+    },
+    {
+     "slug": "sydney",
+     "atpId": 338
+    }
+   ],
+   "match": [
+    "sydney"
+   ]
+  },
+  "Tel Aviv": {
+   "pages": [
+    {
+     "slug": "tel-aviv",
+     "atpId": 4138
+    }
+   ],
+   "match": [
+    "telaviv"
+   ]
+  },
+  "Tokyo": {
+   "pages": [
+    {
+     "slug": "tokyo",
+     "atpId": 329
+    }
+   ],
+   "match": [
+    "tokyo",
+    "japan"
+   ]
+  },
+  "US Open": {
+   "pages": [
+    {
+     "slug": "us-open",
+     "atpId": 560
+    }
+   ],
+   "match": [
+    "usopen"
+   ]
+  },
+  "Umag": {
+   "pages": [
+    {
+     "slug": "umag",
+     "atpId": 439
+    }
+   ],
+   "match": [
+    "umag",
+    "croatia"
+   ]
+  },
+  "Valencia": {
+   "pages": [
+    {
+     "slug": "valencia",
+     "atpId": 573
+    }
+   ],
+   "match": [
+    "valencia"
+   ]
+  },
+  "Vienna": {
+   "pages": [
+    {
+     "slug": "vienna",
+     "atpId": 337
+    }
+   ],
+   "match": [
+    "vienna",
+    "wien"
+   ]
+  },
+  "Washington": {
+   "pages": [
+    {
+     "slug": "washington",
+     "atpId": 418
+    }
+   ],
+   "match": [
+    "washington"
+   ]
+  },
+  "Wimbledon": {
+   "pages": [
+    {
+     "slug": "wimbledon",
+     "atpId": 540
+    }
+   ],
+   "match": [
+    "wimbledon"
+   ]
+  },
+  "Winston-Salem": {
+   "pages": [
+    {
+     "slug": "winston-salem",
+     "atpId": 6242
+    }
+   ],
+   "match": [
+    "winston"
+   ]
+  },
+  "Zagreb": {
+   "pages": [
+    {
+     "slug": "zagreb",
+     "atpId": 2276
+    }
+   ],
+   "match": [
+    "zagreb"
+   ]
+  },
+  "Zhuhai": {
+   "pages": [
+    {
+     "slug": "zhuhai",
+     "atpId": 9164
+    }
+   ],
+   "match": [
+    "zhuhai"
+   ]
+  },
+  "s-Hertogenbosch": {
+   "pages": [
+    {
+     "slug": "s-hertogenbosch",
+     "atpId": 440
+    }
+   ],
+   "match": [
+    "hertogenbosch",
+    "rosmalen"
+   ]
+  }
+ }
+}

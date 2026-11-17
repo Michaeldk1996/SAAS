@@ -42,3 +42,4 @@ cp picks-core.js picks-store.js picks-page.js picks-drawer.js picks-shell.js pic
 cp tournaments-overview.js tournaments-entry.js tournaments-reports.js tournaments-draw.js tournaments-tab.css h2h-page.css "$SITE/"
 cp sharp-drops-core.js sharp-drops-page.js sharp-drops-page.css "$SITE/"
 cp bettracker-math.js bettracker-store.js bettracker-page.js bettracker-page.css bettracker-import.js bettracker-seed.js "$SITE/"
+cp -r tournament-logos "$SITE/"
