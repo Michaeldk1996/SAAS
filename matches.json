@@ -3953,6 +3953,22 @@
               [
                 "2026-11-17T17:28:28.592Z",
                 1.495
+              ],
+              [
+                "2026-11-17T18:31:32.081Z",
+                1.493
+              ],
+              [
+                "2026-11-17T18:38:48.135Z",
+                1.488
+              ],
+              [
+                "2026-11-17T19:06:03.405Z",
+                1.478
+              ],
+              [
+                "2026-11-17T19:27:38.578Z",
+                1.481
               ]
             ],
             "p2": [
@@ -4015,6 +4031,18 @@
               [
                 "2026-11-17T17:28:28.610Z",
                 2.77
+              ],
+              [
+                "2026-11-17T18:31:32.089Z",
+                2.79
+              ],
+              [
+                "2026-11-17T18:38:48.142Z",
+                2.8
+              ],
+              [
+                "2026-11-17T19:06:03.414Z",
+                2.83
               ]
             ]
           }
@@ -4024,19 +4052,19 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-11-17T17:44:36.551Z"
+            "checkedAt": "2026-11-17T19:28:20.672Z"
           },
           "Napoleon Sports BE (odds-api.io)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-11-17T17:44:36.551Z"
+            "checkedAt": "2026-11-17T19:28:20.672Z"
           },
           "Bet105": {
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-11-17T17:43:17.000Z"
+            "checkedAt": "2026-11-17T19:39:00.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
@@ -7662,6 +7690,10 @@
               [
                 "2026-11-17T13:48:36.084Z",
                 3.75
+              ],
+              [
+                "2026-11-17T20:11:53.952Z",
+                3.8
               ]
             ]
           },
@@ -7815,19 +7847,19 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-11-17T17:44:36.551Z"
+            "checkedAt": "2026-11-17T21:24:43.748Z"
           },
           "Napoleon Sports BE (odds-api.io)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-11-17T17:44:36.551Z"
+            "checkedAt": "2026-11-17T21:24:43.748Z"
           },
           "Bet105": {
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-11-17T17:43:17.000Z"
+            "checkedAt": "2026-11-17T21:23:59.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
@@ -11233,19 +11265,19 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-11-17T17:44:36.551Z"
+            "checkedAt": "2026-11-17T21:24:43.748Z"
           },
           "Napoleon Sports BE (odds-api.io)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-11-17T17:44:36.551Z"
+            "checkedAt": "2026-11-17T21:24:43.748Z"
           },
           "Bet105": {
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-11-17T17:43:17.000Z"
+            "checkedAt": "2026-11-17T21:23:59.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
@@ -13870,7 +13902,97 @@
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2382_c-alcaraz.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/372_f-cobolli.jpg",
     "tournamentKey": "2794",
-    "oddsMovement": null
+    "oddsMovement": {
+      "chart": {
+        "books": {},
+        "meta": {
+          "Superbet": {
+            "source": "odds-api.io",
+            "group": "soft",
+            "clock": "vendor updatedAt",
+            "note": "no recorded event matched",
+            "checkedAt": "2026-11-17T21:24:43.748Z"
+          },
+          "Napoleon Sports BE (odds-api.io)": {
+            "source": "odds-api.io",
+            "group": "soft",
+            "clock": "vendor updatedAt",
+            "note": "no recorded event matched",
+            "checkedAt": "2026-11-17T21:24:43.748Z"
+          },
+          "Bet105": {
+            "source": "Kibl",
+            "group": "sharp",
+            "clock": "Kibl insert",
+            "note": "no Bet105 fixture matched",
+            "checkedAt": "2026-11-17T21:23:59.000Z"
+          },
+          "Pinnacle (api-tennis)": {
+            "source": "api-tennis",
+            "group": "sharp",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "Betano": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "1xBet": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "BetVictor": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "Betfair Sportsbook (api-tennis)": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "Marathon": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "bet365 (api-tennis)": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "Sbobet": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "William Hill": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          }
+        }
+      }
+    }
   },
   {
     "id": "upcoming-12179702",
@@ -17530,7 +17652,97 @@
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1093_d-medvedev.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2846_f-tiafoe.jpg",
     "tournamentKey": "2794",
-    "oddsMovement": null
+    "oddsMovement": {
+      "chart": {
+        "books": {},
+        "meta": {
+          "Superbet": {
+            "source": "odds-api.io",
+            "group": "soft",
+            "clock": "vendor updatedAt",
+            "note": "no recorded event matched",
+            "checkedAt": "2026-11-17T21:24:43.748Z"
+          },
+          "Napoleon Sports BE (odds-api.io)": {
+            "source": "odds-api.io",
+            "group": "soft",
+            "clock": "vendor updatedAt",
+            "note": "no recorded event matched",
+            "checkedAt": "2026-11-17T21:24:43.748Z"
+          },
+          "Bet105": {
+            "source": "Kibl",
+            "group": "sharp",
+            "clock": "Kibl insert",
+            "note": "no Bet105 fixture matched",
+            "checkedAt": "2026-11-17T21:23:59.000Z"
+          },
+          "Pinnacle (api-tennis)": {
+            "source": "api-tennis",
+            "group": "sharp",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "Betano": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "1xBet": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "BetVictor": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "Betfair Sportsbook (api-tennis)": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "Marathon": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "bet365 (api-tennis)": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "Sbobet": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "William Hill": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          }
+        }
+      }
+    }
   },
   {
     "id": "upcoming-12179704",
@@ -19664,7 +19876,97 @@
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2973_b-shelton.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/50323_r-jodar.jpg",
     "tournamentKey": "2794",
-    "oddsMovement": null
+    "oddsMovement": {
+      "chart": {
+        "books": {},
+        "meta": {
+          "Superbet": {
+            "source": "odds-api.io",
+            "group": "soft",
+            "clock": "vendor updatedAt",
+            "note": "no recorded event matched",
+            "checkedAt": "2026-11-17T21:24:43.748Z"
+          },
+          "Napoleon Sports BE (odds-api.io)": {
+            "source": "odds-api.io",
+            "group": "soft",
+            "clock": "vendor updatedAt",
+            "note": "no recorded event matched",
+            "checkedAt": "2026-11-17T21:24:43.748Z"
+          },
+          "Bet105": {
+            "source": "Kibl",
+            "group": "sharp",
+            "clock": "Kibl insert",
+            "note": "no Bet105 fixture matched",
+            "checkedAt": "2026-11-17T21:23:59.000Z"
+          },
+          "Pinnacle (api-tennis)": {
+            "source": "api-tennis",
+            "group": "sharp",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "Betano": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "1xBet": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "BetVictor": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "Betfair Sportsbook (api-tennis)": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "Marathon": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "bet365 (api-tennis)": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "Sbobet": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "William Hill": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          }
+        }
+      }
+    }
   },
   {
     "id": "upcoming-12179706",
@@ -22952,7 +23254,97 @@
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1980_a-zverev.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1759_a-fils.jpg",
     "tournamentKey": "2794",
-    "oddsMovement": null
+    "oddsMovement": {
+      "chart": {
+        "books": {},
+        "meta": {
+          "Superbet": {
+            "source": "odds-api.io",
+            "group": "soft",
+            "clock": "vendor updatedAt",
+            "note": "no recorded event matched",
+            "checkedAt": "2026-11-17T21:24:43.748Z"
+          },
+          "Napoleon Sports BE (odds-api.io)": {
+            "source": "odds-api.io",
+            "group": "soft",
+            "clock": "vendor updatedAt",
+            "note": "no recorded event matched",
+            "checkedAt": "2026-11-17T21:24:43.748Z"
+          },
+          "Bet105": {
+            "source": "Kibl",
+            "group": "sharp",
+            "clock": "Kibl insert",
+            "note": "no Bet105 fixture matched",
+            "checkedAt": "2026-11-17T21:23:59.000Z"
+          },
+          "Pinnacle (api-tennis)": {
+            "source": "api-tennis",
+            "group": "sharp",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "Betano": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "1xBet": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "BetVictor": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "Betfair Sportsbook (api-tennis)": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "Marathon": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "bet365 (api-tennis)": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "Sbobet": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "William Hill": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          }
+        }
+      }
+    }
   },
   {
     "id": "past-12179948",
