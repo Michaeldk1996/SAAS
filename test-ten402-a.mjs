@@ -291,10 +291,10 @@ test('founder ruling 1 (2026-11-16): the face-to-face rows print the better figu
   const rows = ftfRows(h.call(h.dnaCard, dnaView()));
   assert.deepEqual(rows.map(r => r.label), ['Elo on hard', 'Serve rating', 'Return rating', 'Under pressure', 'Dominance ratio', '1st serve points won', '2nd serve points won', 'Service games held', 'Return games won', 'Break points converted'], 'the ten rows in the design\'s order');
   const serve = rows[1];
-  assert.deepEqual([serve.a, serve.b], [['310', 800, 'var(--h2h-white)'], ['298', 500, 'var(--h2h-grey)']], 'A better: A white 800, B grey 500');
+  assert.deepEqual([serve.a, serve.b], [['310', 800, 'var(--h2h-text)'], ['298', 500, 'var(--h2h-grey)']], 'A better: A white (--h2h-text, CHANGES 2026-11-17 §7) 800, B grey 500');
   assert.deepEqual([serve.lean, serve.gap], ['var(--h2h-blue)', '12'], 'the bar leans to A in his colour, the chip = the difference');
   const ret = rows[2];
-  assert.deepEqual([ret.a, ret.b], [['152.4', 500, 'var(--h2h-grey)'], ['160.1', 800, 'var(--h2h-white)']], 'B better: B white 800');
+  assert.deepEqual([ret.a, ret.b], [['152.4', 500, 'var(--h2h-grey)'], ['160.1', 800, 'var(--h2h-text)']], 'B better: B white 800');
   assert.equal(ret.lean, 'var(--h2h-text)', 'leans to B in white');
   const tie = rows.find(r => r.label === 'Under pressure');
   assert.deepEqual([tie.a[1], tie.b[1], tie.gap, tie.lean], [500, 500, 'Level', 'var(--h2h-grey)'], 'a tie on the printed figures marks neither');
@@ -351,12 +351,14 @@ test('the sticky picker (DF L45–200): sticky at top 0 on a page-tone band, car
   assert.match(c, new RegExp(`<div id="h2h-sticky" style="background:var\\(--h2h-card\\); border:1px solid ${esc(W(6))}; border-radius:14px; padding:16px 18px; box-shadow:var\\(--h2h-shadow-sticky\\);">`));
   assert.match(c, /<div class="x-pick" style="display:grid; grid-template-columns:minmax\(0,1fr\) 54px minmax\(0,1fr\); gap:12px; align-items:start;">/);
   assert.equal(text(c), 'Change ITA Jannik Sinner RANK #2 ELO 2210 JS VS Change CA Carlos Alcaraz ESP RANK #1 ELO 2250 Model Meetings Surface Hard', 'A right-aligned (Change · country · name, avatar last), B mirrored');
-  // the picked box: --h2h-inner r12 11/14; avatar 44, A ring blue, B ring white; "Change" caps on a 10% border
-  assert.match(c, new RegExp(`<div style="display:flex; align-items:center; gap:13px; background:var\\(--h2h-inner\\); border:1px solid ${esc(W(6))}; border-radius:12px; padding:11px 14px; min-width:0;">`));
+  // the picked box (CHANGES 2026-11-17 §1): --h2h-card + 9% edge r12 11/14; avatar 44, A ring blue, B ring white; "Change" caps on a 10% border
+  assert.match(c, new RegExp(`<div style="display:flex; align-items:center; gap:13px; background:var\\(--h2h-card\\); border:1px solid ${esc(W(9))}; border-radius:12px; padding:11px 14px; min-width:0;">`));
   assert.deepEqual([...c.matchAll(/class="x-av"[^>]*width:44px; height:44px;[^>]*box-shadow:0 0 0 2px ([^;]+);/g)].map(m => m[1]), ['var(--h2h-blue)', 'var(--h2h-text)']);
   assert.match(c, new RegExp(`<span class="seg x-change" data-hid="1" style="${esc(CAP)} border:1px solid ${esc(W(10))}; border-radius:7px; padding:5px 9px;">Change</span>`));
   // the jump links (data-h2h-jump) and the global switches, under a 6% hairline
   assert.match(c, new RegExp(`margin-top:14px; padding-top:12px; border-top:1px solid ${esc(W(6))};`));
+  // the Surface / Format switches (CHANGES 2026-11-17 §5): sentence-case 12.5 grey label, the one large switch
+  assert.match(c, /<span style="font-size:12\.5px; color:var\(--h2h-grey\); white-space:nowrap;">Surface<\/span><div class="x-sw x-sw--lg" style="display:inline-flex; gap:3px; background:var\(--h2h-inner\);[^"]*border-radius:10px; padding:3px;">/);
   assert.match(c, /<span class="seg x-nav" data-h2h-jump="h2h-rec" style="white-space:nowrap; padding:6px 9px; border-radius:7px; font-size:12\.5px; font-weight:600; color:var\(--h2h-grey\);">Meetings<\/span>/);
   // the stylesheet keeps the same stick + its hover states (the reference's style-hover)
   assert.match(CSS, /#h2hRoot \.x-stick \{ position: sticky; top: 0; z-index: 30; padding: 10px 40px 14px;\s*background: linear-gradient\(var\(--h2h-page\) 78%/);
@@ -381,7 +383,7 @@ test('section cards (README "Sections"): --h2h-card, 1.25px 6% edge, r14, 24/26;
   const m = { priced: true, aMono: 'JS', bMono: 'CA', aName: 'J. Sinner', bName: 'C. Alcaraz', aPrice: '2.90', bPrice: '1.45', foot: null };
   const card = h.call(h.modelCard, { model: m, a: {}, b: {} });
   assert.ok(card.startsWith(`<div id="h2h-model" class="x-sec" data-h2h-model="priced" style="background:var(--h2h-card); border:1.25px solid ${W(6)}; border-radius:14px; padding:26px 26px 24px;`));
-  assert.equal((card.match(new RegExp(`border:1px solid ${esc(W(6))}; background:var\\(--h2h-inner\\); border-radius:12px; padding:18px 20px;`, 'g')) || []).length, 2, 'two inner boxes');
+  assert.equal((card.match(new RegExp(`border:1px solid ${esc(W(6))}; background:var\\(--h2h-card\\); border-radius:12px; padding:18px 20px;`, 'g')) || []).length, 2, 'two card-tone boxes (CHANGES 2026-11-17 §1; the Model cards keep the 6% edge)');
   // a Surface / Format switch flashes the prices blue (state.flash), else white
   h.state.flash = true;
   assert.match(h.call(h.modelCard, { model: m, a: {}, b: {} }), /font-weight:800; color:var\(--h2h-blue\); transition:color 260ms ease;/);

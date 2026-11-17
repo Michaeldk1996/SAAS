@@ -16,7 +16,7 @@ const MARK = 'HEAD-TO-HEAD PAGE  (ported from design_handoff_head_to_head';
 // the internals a suite may call (all are names declared inside the module)
 const EXPORTS = ['state', 'setState', 'bindH', 'E', 'xAv', 'xHelp', 'xSw', 'xHead', 'pageHTML', 'pickedCard', 'selectorBar', 'emptyState',
   'loadingState', 'modelCard', 'dnaCard', 'dnaExtraFor', 'h2hCard', 'xHotHTML', 'h2hBoxHTML', 'xPointsFor', 'stylesCard', 'xStyleFilter',
-  'xStyleSpeedOf', 'xSurOf', 'tourneyCard', 'xTourDefault', 'marketVals', 'marketCard', 'xBandName', 'xSmooth', 'newsCard', 'xNewsCat',
+  'xStyleSpeedOf', 'xSurOf', 'tourneyCard', 'xTourDefault', 'xTrEvent', 'xTrCut', 'xTrAgg', 'marketVals', 'marketCard', 'xBandName', 'xSmooth', 'newsCard', 'xNewsCat',
   'bodyHTML', 'renderVals', 'h2hViewFor', 'h2hPairFor', 'h2hPriceTitle', 'h2hLedgerJoin', 'h2hOpenMeeting', 'h2hRetryPair', 'xReadHandover',
   'xResolvePick', 'xKeepPairInUrl', 'applyPendingPair', 'ensureInit', 'triggerLoads', 'tourneyVals', 'stylesVals', 'dnaVals', 'newsVals',
   'modelVals', 'cLevel', 'cTourInfo', 'cChartModel', 'cStoresFor', 'h2hIoc', 'monoOf', 'suggestionPairs', 'h2hRoundOf'];

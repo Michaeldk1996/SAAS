@@ -32,7 +32,7 @@ const MUTANTS = [
   ["a caps line back above the title", "          <h1 style=\"margin:0; font-size:29px;", "          <div style=\"font-size:10.5px; text-transform:uppercase;\">ATP tour</div><h1 style=\"margin:0; font-size:29px;"],
   ["the title back at 24px (the 35b header)", "<h1 style=\"margin:0; font-size:29px; font-weight:800;", "<h1 style=\"margin:0; font-size:24px; font-weight:800;"],
   ["section cards on a 16% edge", "const X_SEC = 'background:var(--h2h-card); border:1.25px solid color-mix(in srgb, var(--h2h-white) 6%, transparent);", "const X_SEC = 'background:var(--h2h-card); border:1.25px solid color-mix(in srgb, var(--h2h-white) 16%, transparent);"],
-  ["the selected pill back on a blue fill", "color:${it.on ? 'var(--h2h-text)' : 'var(--h2h-grey)'}; background:${it.on ? 'var(--h2h-raised)' : 'transparent'}", "color:${it.on ? 'var(--h2h-text)' : 'var(--h2h-grey)'}; background:${it.on ? 'var(--h2h-blue)' : 'transparent'}"],
+  ["the selected pill back on a blue fill", "color:${it.on ? 'var(--h2h-text)' : 'var(--h2h-grey)'}; background:${it.on ? 'var(--h2h-raised)' : 'transparent'}; border:1px solid ${it.on ?", "color:${it.on ? 'var(--h2h-text)' : 'var(--h2h-grey)'}; background:${it.on ? 'var(--h2h-blue)' : 'transparent'}; border:1px solid ${it.on ?"],
   ["the Model price never flashes (Surface / Format)", "color:${state.flash ? 'var(--h2h-blue)' : 'var(--h2h-text)'};", "color:var(--h2h-text);"],
   ["the jump links lose data-h2h-jump", "<span class=\"seg x-nav\" data-h2h-jump=\"${n.id}\"", "<span class=\"seg x-nav\""],
   ["Ring blue back in the rebuild (the lean bar)", "const leadC = ld > 0 ? 'var(--h2h-blue)'", "const leadC = ld > 0 ? 'var(--bar)'"],

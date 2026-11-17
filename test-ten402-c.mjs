@@ -108,7 +108,7 @@ test('Market edge = the Match analysis maths: the site\'s ten MarketEdgeCore.BAN
   const fb = M.bands[core.bandOf(1.5)];
   const rowF = text(bandRows(card.slice(card.indexOf('F. Full')))[core.bandOf(1.5)]);
   const edge = Math.round((fb.won - fb.needs) * 100);
-  assert.match(rowF, new RegExp(`^Favourite 1\\.36–1\\.50 · 8–4 ${Math.round(fb.won * 100)}% ${edge > 0 ? '\\+' : edge < 0 ? '−' : ''}${Math.abs(edge)}pp 0\\.0u`));
+  assert.match(rowF, new RegExp(`^Favourite 1\\.36–1\\.50 · 8–4 ${Math.round(fb.won * 100)}% ${edge > 0 ? '\\+' : edge < 0 ? '−' : ''}${Math.abs(edge)}pp 0\\.0%`));
   assert.equal(Math.round(fb.needs * 1000), Math.round(12 / (12 * 1.5) * 1000), 'Needs = n / Σ price');
   assert.match(card, /12 priced matches/);
   // half-open bands in thousandths, 2.00 underdog
@@ -136,10 +136,10 @@ test('Market edge: 5–9 greyed (small sample), 10+ in the signed colour; A ring
   assert.deepEqual(ringOf(card).slice(0, 2), [BLUE, WHITE], 'player one blue, player two white');
   const M = core.playerModel(L._cSt.rows, { scope: 'l52', refDay: day0, winnerRows: L._cSt.rows.win });
   const u = M.priced.reduce((s2, r) => s2 + core.plCents(r), 0) / 100;
-  assert.match(text(card.slice(card.indexOf('L. Large'))), new RegExp(`^L\\. Large 12 priced matches \\+${u.toFixed(1)}u Total return`));
+  assert.match(text(card.slice(card.indexOf('L. Large'))), new RegExp(`^L\\. Large 12 priced matches \\+${u.toFixed(1)}% Total return`), 'every return in % (CHANGES 2026-11-17 §4)');
 });
 
-test('Market edge windows: Last 52 weeks (default) · Last 24 months (the same day two years back) · Career, on the design\'s r8 switch', () => {
+test('Market edge windows: Last 52 weeks (default) · Last 24 months (the same day two years back) · Career, on the one large switch, in the head AND on the chart card (CHANGES 2026-11-17 §4–5)', () => {
   const h = page();
   const A = playerWith(rowsOf([[20, 1.10, true], [500, 1.10, true], [800, 1.10, false], [900, 1.10, true]]));
   const n = S => h.call(h.marketVals, A, A, S).MM[0].priced.length;
@@ -147,10 +147,15 @@ test('Market edge windows: Last 52 weeks (default) · Last 24 months (the same d
   assert.equal(n({ mScope: 'm24' }), 2, 'Last 24 months: 20 and 500 days back, not 800');
   assert.equal(n({ mScope: 'career' }), 4);
   const card = marketOf(h, A, A, { mScope: 'm24' }).html;
-  const sw = /<div class="x-sw" style="display:inline-flex; gap:3px; background:var\(--h2h-inner\); border:1px solid color-mix\(in srgb, var\(--h2h-white\) 6%, transparent\); border-radius:8px; padding:2px;">([\s\S]*?)<\/div>/.exec(card);
-  assert.ok(sw, 'the design\'s pill switch (r8)');
-  assert.deepEqual([...sw[1].matchAll(/>([^<]+)<\/span>/g)].map(x => x[1]), ['Last 52 weeks', 'Last 24 months', 'Career']);
-  assert.match(sw[1], /class="seg x-sw__o on"[^>]*font-weight:700; color:var\(--h2h-text\); background:var\(--h2h-raised\); border:1px solid color-mix\(in srgb, var\(--h2h-white\) 16%, transparent\);[^>]*>Last 24 months</);
+  const sws = [...card.matchAll(/<div class="x-sw x-sw--lg" style="display:inline-flex; gap:3px; background:var\(--h2h-inner\); border:1px solid color-mix\(in srgb, var\(--h2h-white\) 8%, transparent\); border-radius:10px; padding:3px;">([\s\S]*?)<\/div>/g)];
+  assert.equal(sws.length, 2, 'the large switch (lg) in the head and again on the chart card');
+  for (const sw of sws) {
+    assert.deepEqual([...sw[1].matchAll(/>([^<]+)<\/span>/g)].map(x => x[1]), ['Last 52 weeks', 'Last 24 months', 'Career']);
+    assert.match(sw[1], /class="seg x-sw__o on"[^>]*padding:6px 14px; border-radius:7px; font-size:13px; font-weight:700; color:var\(--h2h-text\); background:var\(--h2h-raised\); box-shadow:inset 0 0 0 1px color-mix\(in srgb, var\(--h2h-white\) 16%, transparent\);[^>]*>Last 24 months</);
+  }
+  // both switches write the same state (meScope): the n-th tab of each carries the same handler
+  assert.deepEqual([...sws[0][1].matchAll(/data-hid="(\d+)"/g)].map(x => x[1]), [...sws[1][1].matchAll(/data-hid="(\d+)"/g)].map(x => x[1]));
+  assert.doesNotMatch(text(card), /Price sensitivity/, 'the sub-head is gone');
   assert.match(text(card), /^Market edge Last 24 months · closing prices/);
 });
 
@@ -205,7 +210,7 @@ test('founder ruling 2 (2026-11-16): Record against each style opens on Career; 
   assert.match(styleCards(h.call(h.stylesCard, styleView(rows, [])))[0], /^Record 2–1 /, 'Last 24 months = the same day two years back');
 });
 
-test('Record vs style: under 5 no rate, 5–9 grey "small sample", 10+ white; Vs style average = win % − the matrix cell, signed, a bar from the centre', () => {
+test('Record vs style: under 5 no rate, 5–9 grey "small sample", 10+ white; Vs style average = win % − the matrix cell, signed (its sign colour at 5–9 too, founder 2026-11-17), a bar from the centre', () => {
   const h = page({ db: DB });
   const four = [recRow(10, true), recRow(11, true), recRow(12, true), recRow(13, false)];
   assert.equal(styleCards(h.call(h.stylesCard, styleView(four, [])))[0], 'Record 3–1 Win rate — Vs style average —', 'n 4: record only');
@@ -214,7 +219,7 @@ test('Record vs style: under 5 no rate, 5–9 grey "small sample", 10+ white; Vs
   assert.equal(styleCards(c7)[0], 'Record 5–2 Win rate 71% Vs style average +21 pts');
   assert.match(c7, /title="Small sample · n=7"/);
   assert.match(c7, /font-size:20px; font-weight:700; line-height:1; color:var\(--h2h-grey\);">71%</, '5–9 greyed');
-  assert.match(c7, /color:var\(--h2h-grey\);">\+21 pts</, 'a small-sample gap is grey, never green');
+  assert.match(c7, /color:var\(--h2h-up\);">\+21 pts</, 'founder 2026-11-17: the gap keeps its sign colour at n 5–9 (only the win rate greys)');
   const twelve = Array.from({ length: 12 }, (_, i) => recRow(10 + i, i < 9));
   const c12 = h.call(h.stylesCard, styleView(twelve, [], { avgA: 50 }));
   assert.equal(styleCards(c12)[0], 'Record 9–3 Win rate 75% Vs style average +25 pts');
@@ -301,7 +306,9 @@ test('career-match card: the design\'s grid, six rows then "Show N more matches"
   assert.equal(ledgerRows(c).length, 6, 'six rows');
   assert.match(text(c), /Showing 6 of 8/);
   assert.match(text(c), /Show 2 more matches/);
-  assert.match(c, new RegExp(`grid-template-columns:${re(LEDGER_COLS)}; gap:0 10px; align-items:center; padding:8px 18px; background:var\\(--h2h-card\\);`), 'the column head on the design grid');
+  assert.match(c, new RegExp(`grid-template-columns:${re(LEDGER_COLS)}; gap:0 10px; align-items:center; padding:8px 18px; background:var\\(--h2h-layer\\);`), 'the column head on the design grid, a layer strip (CHANGES 2026-11-17 §1)');
+  // the price column head: the player's 20px mini avatar, no ring (CHANGES 2026-11-17 §2)
+  assert.match(c, /<span style="justify-self:end;"><span class="x-av mini" title="J\. Sinner’s closing price" style="[^"]*width:20px; height:20px; border-radius:50%; background:var\(--h2h-raised\); overflow:hidden;">/);
   assert.match(text(c), /Shanghai Masters Hard · Masters 1000/, 'the group header prints the one event name (sfEventName)');
   assert.ok(!/>Shanghai</.test(c), 'never the raw key');
   assert.deepEqual(ringOf(c).slice(0, 2), [BLUE, WHITE], 'card A ring blue, card B ring white');
@@ -318,18 +325,25 @@ test('Tournament: the record is the profile\'s per-event model (trProfileModel s
   assert.match(pm, /y\.won = y\.matches\.filter\(x => x\.won\)\.length; y\.lost = y\.matches\.length - y\.won;/);
   assert.match(pb, /const P = trProfileModel\(k, name, t\);/);
   assert.ok(!/trModelOf\(/.test(pb), 'one join: trProfileBacking no longer builds its own');
-  assert.match(h2h, /trProfileModel\(p\.key, p\.full, t\)/, 'the Tournament record reads that model');
+  assert.match(h2h, /trProfileModel\(p\.key, p\.full, x\.t\)/, 'the Tournament record reads that model, per event (single or group mode)');
 });
 const tmk = o => Object.assign({ wo: false, ret: false, sets: [[6, 4], [6, 4], [6, 4]], pS: 3, oS: 0, src: 'td', surface: 'hard' }, o);
-function tourView(P, o) {
+// one event's per-player model P (trProfileModel's shape) → the column the card draws: { p, state, agg } with agg the
+// shipped xTrAgg over that one event (single mode, Career window)
+const TR_FILTERS = [{ label: 'Window', items: [{ label: 'Last 52 weeks', hid: 11 }, { label: 'Last 24 months', hid: 12 }, { label: 'Career', on: true, hid: 13 }] },
+  { label: 'Surface', items: [{ label: 'All', on: true, hid: 14 }, { label: 'Hard', hid: 15 }, { label: 'Clay', hid: 16 }, { label: 'Grass', hid: 17 }] },
+  { label: 'Court speed', items: [{ label: 'All', on: true, hid: 18 }, { label: 'Slow', hid: 19 }, { label: 'Medium', hid: 20 }, { label: 'Fast', hid: 21 }] }];
+function tourView(P, o, h) {
   const opt = o || {};
-  return { a: SIN, b: ALC, tourney: { empty: false, selName: 'US Open', query: '', listOpen: !!opt.listOpen, hSearch: 1, hOpen: 2, noMatch: false,
+  const agg = P && h ? h.call(h.xTrAgg, [{ ev: { name: 'US Open', surface: 'Hard', speed: 'Medium' }, P }], null, false) : null;
+  return { a: SIN, b: ALC, tourney: { empty: false, selName: 'US Open', query: '', listOpen: !!opt.listOpen, hSearch: 1, hOpen: 2, noMatch: false, grp: false, gLbl: 'courts', TW: 'career',
+    backLabel: 'Back to US Open', hBack: 9, filters: TR_FILTERS,
     options: opt.options || [], info: { name: 'US Open', initial: 'U', location: 'New York, USA', surface: 'Hard', meta: [['Level', 'Grand Slam'], ['Draw', '128 · Bo5'], ['Dates', null], ['Court speed', 'Medium']] },
-    cols: [{ p: SIN, P, state: P ? 'ready' : 'loading' }, { p: ALC, P: null, state: 'none' }] } };
+    cols: [{ p: SIN, agg, state: P ? 'ready' : 'loading' }, { p: ALC, agg: null, state: 'none' }] } };
 }
 const J = x => JSON.parse(JSON.stringify(x));   // a value from the vm realm, compared by content
-const tiles = c => /Best result .*?priced/.exec(text(c))[0];
-test('ruling 2026-10-08: the Tournament panel draws ONE model — the ledger shows P.all\'s Database prices and Backing = flat 1u over exactly those priced rows', () => {
+const tiles = c => /Best result .*? bets?(?= )/.exec(text(c))[0];
+test('ruling 2026-10-08: the Tournament panel draws ONE model — the ledger shows P.all\'s Database prices and Backing = a flat 1% stake over exactly those priced rows', () => {
   const f = tmk({ mid: 'm1', date: '2025-09-07', won: false, round: 'F', opp: 'C. Alcaraz', sets: [[2, 6], [6, 3], [1, 6], [4, 6]], pS: 1, oS: 3, price: 1.81, oppPrice: 2.12, book: 'P' });
   const sf = tmk({ mid: 'm2', date: '2025-09-05', won: true, round: 'SF', opp: 'F. Auger-Aliassime', price: 1.50, oppPrice: 2.60, book: 'B' });
   const qf = tmk({ mid: 'm3', date: '2025-09-03', won: true, round: 'QF', opp: 'L. Musetti', price: null, oppPrice: null, book: null, src: null });
@@ -338,19 +352,20 @@ test('ruling 2026-10-08: the Tournament panel draws ONE model — the ledger sho
   const units = priced.reduce((t, r) => t + core.plCents(r), 0) / 100;   // −1 + 0.50 + 0.20 = −0.30
   const P = { eds: [{ year: '2025', won: 3, lost: 1, rows: all }], all, n: 4, W: 3, L: 1, best: null, sT: 9, sW: 8, played: [{ year: '2025', rows: all }], priced, units };
   const h = page({ db: null });   // no Database rows: the panel never re-joins, it shows P's prices
-  const c = h.call(h.tourneyCard, tourView(P));
+  const c = h.call(h.tourneyCard, tourView(P, null, h));
   const led = ledgerRows(c);
   assert.equal(led.length, 4);
   assert.match(led[0], / 1\.81 2\.12 ›$/, 'the final: the model row\'s Database price');
   assert.match(led[1], / 1\.50 2\.60 ›$/, 'the semi-final: Bet365');
   assert.match(led[2], / — — ›$/, 'a row the join lacks → dash');
   assert.match(led[3], / 1\.20 4\.50 ›$/, 'the retirement is priced');
-  assert.match(tiles(c), /Backing −0\.3u flat 1u · 3 priced$/);
+  assert.match(tiles(c), /Backing −0\.3% flat 1% stake · 3 bets$/, 'every return in % (CHANGES 2026-11-17 §4)');
   assert.equal(led.filter(t => !/ — — ›$/.test(t)).length, 3, 'tile "3 priced" = the ledger\'s priced rows');
-  assert.match(c, /color:var\(--h2h-down\); white-space:nowrap;">−0\.3u</, 'a loss in --h2h-down, true minus');
-  // control: a panel that summed only the completed rows (the retirement voided) would read −0.5u · 2 priced
-  const voided = Object.assign({}, P, { priced: priced.filter(r => !r.ret), units: -0.5 });
-  assert.match(tiles(h.call(h.tourneyCard, tourView(voided))), /Backing −0\.5u flat 1u · 2 priced$/);
+  assert.match(c, /color:var\(--h2h-down\); white-space:nowrap;">−0\.3%</, 'a loss in --h2h-down, true minus');
+  // control: the same edition with the retirement unpriced sums the two completed rows only: −0.5% · 2 bets
+  const r4u = Object.assign({}, r4, { price: null, oppPrice: null, book: null, src: null });
+  const P2 = { eds: [{ year: '2025', rows: [f, sf, qf, r4u] }] };
+  assert.match(tiles(h.call(h.tourneyCard, tourView(P2, null, h))), /Backing −0\.5% flat 1% stake · 2 bets$/);
   // the record head: W–L (en dash) and the rate through the gate (n 4 → the count, no %)
   assert.match(text(c), /J\. Sinner At US Open · since 2025 3–1 4 matches/);
   // the tournament rows: the design grid; Sets "pS–oS"; the score wraps, never cut
@@ -359,15 +374,13 @@ test('ruling 2026-10-08: the Tournament panel draws ONE model — the ledger sho
   assert.ok(sc.length >= 4 && sc.every(s => /white-space:normal;/.test(s) && !/ellipsis|overflow:hidden|nowrap/.test(s)), 'scores never cut');
   assert.match(text(c), /C\. Alcaraz has not played US Open\./);
 });
-test('Tournament tiles: Best result · Sets won · Last played (trLastPlayed: the newest edition with a row, its own top row) · Backing', () => {
-  const r = tmk({ mid: 'x', date: '2024-09-05', won: false, round: 'SF', opp: 'T. Fritz', price: 1.4, oppPrice: 3.1, book: 'P' });
+test('Tournament tiles (xTrAgg): Best result · Sets won · Last played (the newest PLAYED row by date, never the list position) · Backing', () => {
+  const r = tmk({ mid: 'x', date: '2024-09-05', won: false, round: 'SF', opp: 'T. Fritz', price: 1.4, oppPrice: 3.1, book: 'P', pS: 1, oS: 3 });
   const old = tmk({ mid: 'y', date: '2023-09-05', won: true, round: 'F', opp: 'D. Medvedev', price: 1.6, oppPrice: 2.4, book: 'P' });
-  const P = { eds: [{ year: '2023', won: 1, lost: 0, rows: [old] }, { year: '2024', won: 0, lost: 1, rows: [r] }, { year: '2026', won: 0, lost: 0, rows: [] }],
-    all: [old, r], n: 2, W: 1, L: 1, best: { code: 'W', year: 2023 }, sT: 6, sW: 3, played: [], priced: [old, r], units: -0.4 };
-  P.played = P.eds.filter(e => e.rows.length);
+  const P = { eds: [{ year: '2023', result: 'Won', rows: [old] }, { year: '2024', rows: [r] }, { year: '2026', rows: [] }] };
   const h = page({ db: null });
-  assert.equal(tiles(h.call(h.tourneyCard, tourView(P))), 'Best result W 2023 Sets won 3–3 50% of sets Last played 2024 lost SF v Fritz Backing −0.4u flat 1u · 2 priced');
-  assert.equal(P.played[0].year, '2023', 'control: the list position would read 2023');
+  assert.equal(tiles(h.call(h.tourneyCard, tourView(P, null, h))), 'Best result Won 2023 Sets won 4–3 57% of sets Last played 2024 lost SF v Fritz Backing −0.4% flat 1% stake · 2 bets');
+  assert.equal(P.eds[0].year, '2023', 'control: the list position would read 2023');
 });
 test('Tournament default (brief 2026-11-16): an event of THIS week whose posted main draw lists both players, else the most recent event both played; never hard-coded', () => {
   const list = [{ name: 'Wimbledon', a: 10, b: 8, la: 2025, lb: 2025 }, { name: 'Basel', a: 4, b: 2, la: 2023, lb: 2024 }, { name: 'Shanghai', a: 6, b: 5, la: 2025, lb: 2024 }, { name: 'Halle', a: 3, b: 0, la: 2025, lb: null }];
@@ -384,7 +397,7 @@ test('Tournament picker: a search input (no <select>) on the design menu — rai
   const h = page({ db: null });
   const c = h.call(h.tourneyCard, tourView(null, { listOpen: true, options: [{ name: 'US Open', label: 'US Open', meta: 'Hard · Grand Slam', selected: true, hPick: 5 }, { name: 'Halle', label: 'Halle', meta: '', selected: false, hPick: 6 }] }));
   assert.match(c, /<input class="h2hin" id="h2h-input-tour"[^>]*placeholder="Search a tournament…"[^>]*style="background:var\(--h2h-inner\); border:1px solid color-mix\(in srgb, var\(--h2h-white\) 8%, transparent\); border-radius:10px;/);
-  assert.match(c, /<div role="listbox" style="position:absolute; top:calc\(100% \+ 6px\); left:0; right:0; z-index:5; background:var\(--h2h-raised\); border:1px solid color-mix\(in srgb, var\(--h2h-white\) 10%, transparent\); border-radius:12px; padding:6px;[^"]*box-shadow:var\(--h2h-shadow-menu\); max-height:300px; overflow-y:auto;/);
+  assert.match(c, /<div role="listbox" style="position:absolute; top:calc\(100% \+ 6px\); left:0; right:0; z-index:5; background:var\(--h2h-raised\); border:1px solid color-mix\(in srgb, var\(--h2h-white\) 10%, transparent\); border-radius:12px; padding:6px;[^"]*box-shadow:var\(--h2h-shadow-menu\); max-height:300px; overflow:auto;/);
   assert.match(c, /role="option" aria-selected="true"[^>]*background:var\(--h2h-card\);/);
   assert.ok(!/<select/i.test(c) && !/<select/i.test(h2h.slice(h2h.indexOf('==== H2H REBUILD'))), 'no native <select> in the rebuilt page');
 });
@@ -395,12 +408,13 @@ test('Tournament levels read as the ledgers write them: the catalog\'s ATP 1000 
   assert.equal(h.cLevel({ category: 'ATP 500' }), 'ATP 500');
   assert.equal(h.cLevel(null), null);
 });
-test('formatting: true minus and an explicit sign on units, en dash in every record', () => {
+test('formatting: true minus and an explicit sign on returns (in %, never u — CHANGES 2026-11-17 §4), en dash in every record', () => {
   const h = page();
-  assert.equal(h.call(() => h.run("meSg(-0.4, 1, 'u')")), '−0.4u');
-  assert.equal(h.call(() => h.run("meSg(2, 1, 'u')")), '+2.0u');
+  assert.equal(h.call(() => h.run("meSg(-0.4, 1, '%')")), '−0.4%');
+  assert.equal(h.call(() => h.run("meSg(2, 1, '%')")), '+2.0%');
   const rebuilt = h2h.slice(h2h.indexOf('==== H2H REBUILD'));
-  assert.ok(rebuilt.includes("w + '–' + l") && rebuilt.includes("P.W + '–' + P.L"));
+  assert.ok(rebuilt.includes("w + '–' + l") && rebuilt.includes("A.W + '–' + A.L"));
+  assert.ok(!/(?:meSg|sg)\([^)]*'u'\)/.test(rebuilt), 'no return is signed in units anywhere in the rebuilt page');
   // set scores keep the site's "6-4" (house style); no other figure is built with a hyphen-minus
   const noScores = rebuilt.replace(/q\[0\] \+ '-' \+ q\[1\]|r\.sets\[0\]\[0\] \+ '-' \+ r\.sets\[0\]\[1\]|' - '/g, '');
   assert.ok(!/'-' \+ |\+ '-'/.test(noScores), 'no hyphen-minus built into a figure');

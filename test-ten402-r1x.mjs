@@ -52,7 +52,7 @@ test('fix 1: Last played = the newest edition WITH a row, and that edition\'s ow
   assert.equal(trLastPlayed({ eds: [ed(2026, [])] }), null, 'no row → no tile value (a dash)');
   assert.equal(trLastPlayed(null), null);
 });
-test('fix 1: both Last played tiles read trLastPlayed (Head to Head Tournament card + Match analysis Tournament tab)', () => {
+test('fix 1: both Last played tiles name the newest played row (Head to Head Tournament card via xTrAgg — CHANGES 2026-11-17 §3; Match analysis Tournament tab via trLastPlayed)', () => {
   // the Head to Head Tournament record, EXECUTED (tools/h2h-test-harness.js runs the shipped module): the tile is
   // trLastPlayed's year and that edition's own top row, whatever the edition order
   const HX = createRequire(import.meta.url)(join(HERE, 'tools/h2h-test-harness.js'));
@@ -60,15 +60,16 @@ test('fix 1: both Last played tiles read trLastPlayed (Head to Head Tournament c
   const r = o => Object.assign({ wo: false, ret: false, sets: [[6, 4], [6, 4]], pS: 2, oS: 0, price: null, oppPrice: null, surface: 'hard' }, o);
   const eds = [ed(2024, [r({ mid: 'a', date: '2024-09-05', won: true, round: 'F', opp: 'T. Fritz' })]),
     ed(2025, [r({ mid: 'b', date: '2025-09-07', won: false, round: 'F', opp: 'C. Alcaraz', pS: 1, oS: 3 })]), ed(2026, [])];
-  const P = { eds, all: eds.flatMap(e => e.rows), n: 2, W: 1, L: 1, best: null, sT: 6, sW: 3, priced: [], units: 0 };
-  P.played = eds.filter(e => e.rows.length);
+  const P = { eds };
+  const agg = h.call(h.xTrAgg, [{ ev: { name: 'US Open', surface: 'Hard', speed: null }, P }], null, false);
   const S = { key: '2072', full: 'J. Sinner', short: 'J. Sinner', mono: 'JS' }, Al = { key: '2382', full: 'C. Alcaraz', short: 'C. Alcaraz', mono: 'CA' };
   const card = h.call(h.tourneyCard, { a: S, b: Al, tourney: { empty: false, query: '', listOpen: false, options: [], info: { name: 'US Open', initial: 'U', meta: [] },
-    cols: [{ p: S, P, state: 'ready' }, { p: Al, P: null, state: 'none' }] } });
+    grp: false, gLbl: 'courts', TW: 'career', filters: [], cols: [{ p: S, agg, state: 'ready' }, { p: Al, agg: null, state: 'none' }] } });
   const t = card.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ');
   assert.match(t, /Last played 2025 lost F v Alcaraz /, 'the newest edition with a row (2025, not the empty 2026), its own top row');
-  assert.equal(P.played[0].year, '2024', 'control: the list position reads 2024');
-  assert.ok(/trLastPlayed\(P\)/.test(sliceFrom(html.indexOf('  function tourneyCard('), 'tourneyCard')), 'the card reads trLastPlayed');
+  assert.equal(eds.filter(e => e.rows.length)[0].year, '2024', 'control: the list position reads 2024');
+  assert.deepEqual([agg.last.year, agg.last.row.opp], ['2025', 'C. Alcaraz'], 'xTrAgg: the newest played row by date, its own edition year');
+  assert.match(sliceFrom(html.indexOf('  function tourneyCard('), 'tourneyCard'), /const lr = A\.last \? A\.last\.row : null;/, 'the card reads xTrAgg\'s last played');
   const tiles = fnSrc('trTilesHtml');
   assert.match(tiles, /const lp = trLastPlayed\(P\);/);
   assert.doesNotMatch(tiles, /P\.played\[0\]/);
@@ -144,6 +145,6 @@ test('fix 2: the shared rows / sheet / group headers print the one name; meta + 
 test('fix 2: the Head to Head Tournament picker and info box print the one name; the selection key stays the raw name', () => {
   const tv = sliceFrom(html.indexOf('function tourneyVals('), 'tourneyVals');
   assert.match(tv, /options: hits\.map\(t2 => \(\{ name: t2\.name, label: evName\(t2\.name\),/);
-  assert.match(tv, /info: Object\.assign\(cTourInfo\(selName, surfVote\), \{ name: evName\(selName\)/);
-  assert.match(sliceFrom(html.indexOf('function tourneyCard('), 'tourneyCard'), /\$\{E\(o\.label \|\| o\.name\)\}/);
+  assert.match(tv, /info: grp \? \{[\s\S]*?\n\s+: Object\.assign\(cTourInfo\(selName, surfVote\), \{ name: evName\(selName\)/, 'single mode: the info box under the one name (group mode names the condition)');
+  assert.match(sliceFrom(html.indexOf('function tourneyCard('), 'tourneyCard'), /\$\{E\(o\.label\)\}/);
 });

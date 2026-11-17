@@ -82,12 +82,13 @@ test('fix 3: the career-match and Tournament ledgers mark no row (the price, its
     _sfDbJoinSt: 'ready', _sfDbJoin: { meta: { rounds: ['Semifinals'] }, rows: [[20250412, 0, 1, 0, 0, 1.5, 2.6, 1, 1]], names: [['Alcaraz C.', 'Musetti L.']] } });
   const tr = o => Object.assign({ wo: false, ret: false, sets: [[6, 4], [6, 4]], pS: 2, oS: 0, surface: 'clay' }, o);
   const rows = [tr({ mid: 'x', date: '2025-04-12', won: true, round: 'SF', opp: 'L. Musetti', price: 1.5, oppPrice: 2.6, book: 'B', src: 'td' })];
-  const P = { eds: [{ year: '2025', won: 1, lost: 0, rows }], all: rows, n: 1, W: 1, L: 0, best: null, sT: 2, sW: 2, played: [], priced: rows, units: 0.5 };
-  const tc = h.call(h.tourneyCard, { a: PA, b: PB, tourney: { empty: false, query: '', listOpen: false, options: [], info: { name: 'Monte Carlo', initial: 'M', meta: [] }, cols: [{ p: PA, P, state: 'ready' }, { p: PB, P: null, state: 'none' }] } });
+  const agg = h.call(h.xTrAgg, [{ ev: { name: 'Monte Carlo', surface: 'Clay', speed: null }, P: { eds: [{ year: '2025', rows }] } }], null, false);
+  const tc = h.call(h.tourneyCard, { a: PA, b: PB, tourney: { empty: false, query: '', listOpen: false, options: [], info: { name: 'Monte Carlo', initial: 'M', meta: [] }, grp: false, gLbl: 'courts', TW: 'career', filters: [],
+    cols: [{ p: PA, agg, state: 'ready' }, { p: PB, agg: null, state: 'none' }] } });
   // one hover per price on this page: the Tournament ledger's price carries the page's own (h2hPriceTitle), as the meetings
   assert.match(tc, /<span title="Bet365 closing odds, Pinnacle not available" style="font-family:'IBM Plex Mono',monospace; font-size:11\.5px; color:var\(--h2h-text\); text-align:right;">1\.50<\/span>/, 'the Bet365 price, unmarked, its hover the book');
   assert.ok(!/<sup|ma-row-mark/.test(tc), 'no row mark on the Tournament ledger');
-  assert.match(tc, /<span class="x-av" title="C\. Alcaraz’s closing price"/, 'the column head names whose price it is');
+  assert.match(tc, /<span class="x-av mini" title="C\. Alcaraz’s closing price"/, 'the column head names whose price it is (a mini avatar, CHANGES 2026-11-17 §2)');
   assert.ok(!/B = Bet365|trSrcLine\(/.test(sliceAt(html, html.indexOf('  function tourneyCard('))), 'the old "Closing odds · … · B = Bet365" line is gone');
   // the career-match ledger: the row's own price from the one join, unmarked
   const sv = { a: PA, b: PB, styles: { sides: [{ p: PA, R: { state: 'ready', oppLab: 'Big Server', avg: 50, rows: [{ won: true, opponent: 'Lorenzo Musetti', surface: 'clay', tournament: 'Monte Carlo', result: '6-4 6-4', date: '2025-04-07', round: 'SF' }] } },

@@ -84,8 +84,9 @@ test('r4 fix 2: every score cell on the page wraps (white-space normal) and is n
   const sv = { a: A, b: B, styles: { sides: [{ p: A, R: { state: 'ready', oppLab: 'X', avg: 50, rows: [{ won: true, opponent: 'Carlos Alcaraz', surface: 'hard', tournament: 'US Open', result: '6-7 7-6 6-4 3-6 7-6', date: '2025-08-24', round: 'F' }] } }, { p: B, R: { state: 'ready', oppLab: 'X', avg: 50, rows: [] } }], arch: ['x', 'y'] } };
   const st = h.call(h.stylesCard, sv);
   cells.push(...[...st.matchAll(/<span title="[^"]*" style="([^"]*)">(6-7, 7-6, 6-4, 3-6, 7-6)<\/span>/g)].map(m => ['styles', m[1]]));
-  const P = { eds: [{ year: '2025', won: 1, lost: 0, rows: [r] }], all: [r], n: 1, W: 1, L: 0, best: null, sT: 5, sW: 3, played: [], priced: [], units: 0 };
-  const tc = h.call(h.tourneyCard, { a: A, b: B, tourney: { empty: false, query: '', listOpen: false, options: [], info: { name: 'US Open', initial: 'U', meta: [] }, cols: [{ p: A, P, state: 'ready' }, { p: B, P: null, state: 'none' }] } });
+  const agg = h.call(h.xTrAgg, [{ ev: { name: 'US Open', surface: 'Hard', speed: null }, P: { eds: [{ year: '2025', rows: [r] }] } }], null, false);
+  const tc = h.call(h.tourneyCard, { a: A, b: B, tourney: { empty: false, query: '', listOpen: false, options: [], info: { name: 'US Open', initial: 'U', meta: [] }, grp: false, gLbl: 'courts', TW: 'career', filters: [],
+    cols: [{ p: A, agg, state: 'ready' }, { p: B, agg: null, state: 'none' }] } });
   cells.push(...[...tc.matchAll(/<span title="[^"]*" style="([^"]*)">([^<]*6-7[^<]*)<\/span>/g)].map(m => ['tournament', m[1]]));
   assert.deepEqual(cells.map(c => c[0]), ['box', 'styles', 'tournament'], 'one score cell from each ledger');
   for (const [w, st2] of cells) {
@@ -135,8 +136,9 @@ test('r4 fix 3: the shared Tournament row (H2H Tournament ledger + Match analysi
   // the H2H Tournament ledger prints trRowData's Sets (executed)
   const h = HX.load({ html });
   const r = { mid: 'm', date: '2025-09-07', won: true, opp: 'C. Alcaraz', round: 'F', pS: 3, oS: 1, sets: [[6, 2], [3, 6], [6, 3], [6, 4]], price: null, oppPrice: null, wo: false, ret: false };
-  const P = { eds: [{ year: '2025', won: 1, lost: 0, rows: [r] }], all: [r], n: 1, W: 1, L: 0, best: null, sT: 4, sW: 3, played: [], priced: [], units: 0 };
-  const tc = h.call(h.tourneyCard, { a: A, b: B, tourney: { empty: false, query: '', listOpen: false, options: [], info: { name: 'US Open', initial: 'U', meta: [] }, cols: [{ p: A, P, state: 'ready' }, { p: B, P: null, state: 'none' }] } });
+  const agg = h.call(h.xTrAgg, [{ ev: { name: 'US Open', surface: 'Hard', speed: null }, P: { eds: [{ year: '2025', rows: [r] }] } }], null, false);
+  const tc = h.call(h.tourneyCard, { a: A, b: B, tourney: { empty: false, query: '', listOpen: false, options: [], info: { name: 'US Open', initial: 'U', meta: [] }, grp: false, gLbl: 'courts', TW: 'career', filters: [],
+    cols: [{ p: A, agg, state: 'ready' }, { p: B, agg: null, state: 'none' }] } });
   assert.match(tc, /padding:2px 9px; white-space:nowrap;">3–1<\/span>/);
 });
 test('r4 fix 3: no Sets value on Head to Head (or in trRowData) is built with " - "', () => {

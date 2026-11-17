@@ -678,7 +678,9 @@ test('a hot line opens its meetings (newest first) with Covered / Last five / av
   const c = h.call(h.h2hCard, h.view());
   runH(h, /data-hid="(\d+)"/.exec(hotRows(c)[0].html)[1]);
   const open = h.call(h.h2hCard, h.view());
-  assert.match(text(open), /Covered (—|\d+%) \d+ of \d+ meetings Last five \d of \d most recent meetings Average/);
+  // founder 2026-11-17: under the rate floor (3 meetings) the Covered tile prints the count as its figure and names the
+  // meetings it covered — Sinner −1.5 sets covered only the 2023 Swiss Indoors final
+  assert.match(text(open), /Covered 1 of 3 At Swiss Indoors 2023 Last five 1 of 3 most recent meetings Average/);
   const det = [...open.matchAll(/<div class="seg x-row" data-hid="(\d+)" title="Open the match statistics" style="display:grid; grid-template-columns:62px minmax\(0,1\.3fr\) minmax\(0,1fr\) 96px 84px 8px;[^>]*>([\s\S]*?)<\/div>/g)];
   assert.ok(det.length >= 1);
   assert.match(text(det[0][2]), /^25\.10\.25 /, 'newest first');
@@ -716,8 +718,10 @@ test('the meetings box: the design grid, newest first by year ("2025 1–0 · 1 
   runH(h, rows[2].hid);
   assert.deepEqual(h.sheets, [rows[2].mid]);
   assert.match(h.call(h.h2hBoxHTML, h.view()), new RegExp(`data-fh-mid="${rows[2].mid}" style="[^"]*background:var\\(--h2h-raised\\); box-shadow:inset 0 0 0 1px color-mix\\(in srgb, var\\(--h2h-white\\) 16%, transparent\\);`));
-  // the price columns' heads are the two players' mini avatars (A blue, B white, 1.5px rings)
-  assert.deepEqual([...box.matchAll(/<span title="([^"]+)'s closing price"[^>]*><span class="x-av"[^>]*box-shadow:0 0 0 1\.5px ([^;]+);/g)].map(m => [m[1], m[2]]), [['J. Sinner', H2H_A], ['C. Alcaraz', H2H_B]]);
+  // the price columns' heads are the two players' mini avatars (CHANGES 2026-11-17 §2: 22px, class "mini", no ring)
+  const minis = [...box.matchAll(/<span title="([^"]+)'s closing price"[^>]*><span class="x-av mini"\s*style="([^"]*)"/g)].map(m => [m[1], m[2]]);
+  assert.deepEqual(minis.map(m => m[0]), ['J. Sinner', 'C. Alcaraz']);
+  minis.forEach(m => { assert.match(m[1], /width:22px; height:22px;/); assert.doesNotMatch(m[1], /box-shadow/, 'no ring on a mini avatar'); });
   assert.match(text(box), /Meetings 4 on record · Sinner leads 3–1/, 'the record in the sentence: en dash');
 });
 test('TEN-437 item 4: a Bet365-priced meeting keeps its "B" marker and the hover "Bet365 closing odds, Pinnacle not available"; a Pinnacle meeting carries none', async () => {
@@ -740,10 +744,10 @@ test('the meetings box tiles: Total points won from the box scores over k of n m
   assert.match(text(h.call(h.h2hBoxHTML, h.view())), /Total points won Loading the box scores…/, 'never a guess while the box scores load');
   await new Promise(r => setTimeout(r, 5));
   const t = text(h.call(h.h2hBoxHTML, h.view()));
-  assert.match(t, /Total points won 52\.3% Sinner · Alcaraz 47\.7% · over 2 of 3 meetings/, '115 of 220 points from the two box scores on file; the third meeting has none');
+  assert.match(t, /Total points won 52\.3% Sinner · Alcaraz 47\.7% · 2 of 3 meetings/, '115 of 220 points from the two box scores on file; the third meeting has none');
   assert.match(t, /On hard 2–1 Clay 0–0 · Grass 0–0/);
   assert.match(t, /Went to a deciding set 2 of 3 Sinner won 1 · Alcaraz won 1/);
-  assert.match(t, /Favourite won 1 of 2 The underdog won 1 · 1 level-priced, not counted/, 'an exact tie is no favourite');
+  assert.match(t, /Favourite won 1 of 2 Sinner beat Alcaraz as the underdog · Swiss Indoors 2025 · 1 level-priced, not counted/, 'an exact tie is no favourite; the one underdog win is named (founder 2026-11-17)');
   // no box score at all → a dash and the reason, never estimated from games
   const h0 = await pairPage(M3); h0.state.h2hBox = true; h0.call(h0.h2hBoxHTML, h0.view()); await new Promise(r => setTimeout(r, 5));
   assert.match(text(h0.call(h0.h2hBoxHTML, h0.view())), /Total points won — No box score on record for these meetings/);
