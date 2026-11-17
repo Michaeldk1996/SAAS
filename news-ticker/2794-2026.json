@@ -2,8 +2,146 @@
  "tournament": "Finals - Turin",
  "tournamentKey": "2794",
  "season": "2026",
- "updatedAt": "2026-11-17T10:10:06.924Z",
+ "updatedAt": "2026-11-17T15:20:40.094Z",
  "items": [
+  {
+   "id": "report-12179700",
+   "type": "report",
+   "playerId": "1759",
+   "opponentId": "50323",
+   "player": "A. Fils",
+   "opponent": "R. Jodar",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "stage": "main draw",
+   "round": null,
+   "eventKey": "12179700",
+   "timestamp": "2026-11-17T15:04:27.681Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-17T15:04:27.681Z",
+    "startedAt": "2026-11-17T13:12:51.965Z",
+    "minutes": 112
+   },
+   "category": "Statistics",
+   "text": "Fils beat Jodar for the 2nd time in 4 meetings, 4-6, 6-2, 6-2.\n\nFils: W: 18 / UE: 19 | DR: 1.66\n\nJodar: W: 20 / UE: 33 | DR: 0.60",
+   "baseText": "Fils beat Jodar for the 2nd time in 4 meetings, 4-6, 6-2, 6-2.",
+   "rating": [
+    "Fils: W: 18 / UE: 19 | DR: 1.66",
+    "Jodar: W: 20 / UE: 33 | DR: 0.60"
+   ],
+   "mto": [
+    "Physically, it is something to follow.",
+    "Jodar took a medical timeout at 1–4 in the second set.",
+    "We do not know the reason.",
+    "Maybe something to follow up for the next tournaments of Jodar."
+   ],
+   "fields": {
+    "score": "4-6, 6-2, 6-2",
+    "round": null,
+    "retired": false,
+    "h2h": {
+     "a": 2,
+     "b": 2,
+     "n": 4
+    },
+    "durationMinutes": 112,
+    "facts": {
+     "fromSetDown": true,
+     "longestRun": {
+      "side": "p1",
+      "n": 5,
+      "set": 2,
+      "from": {
+       "me": 0,
+       "opp": 1
+      },
+      "afterBeingBroken": false,
+      "toTheEnd": false
+     }
+    },
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": null,
+      "metric": "firstIn",
+      "value": 50,
+      "baseline": 64,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 43
+     },
+     {
+      "player": "winner",
+      "tone": null,
+      "metric": "firstWon",
+      "value": 79,
+      "won": 26,
+      "total": 33
+     },
+     {
+      "player": "winner",
+      "tone": null,
+      "metric": "secondWon",
+      "value": 73,
+      "won": 24,
+      "total": 33,
+      "baseline": 57,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 43
+     },
+     {
+      "player": "winner",
+      "tone": "bad",
+      "metric": "watch",
+      "of": "firstIn"
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "ret1Won",
+      "value": 37,
+      "won": 21,
+      "total": 57,
+      "baseline": 27,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 43
+     },
+     {
+      "player": "loser",
+      "tone": "bad",
+      "metric": "winnersErrors",
+      "winners": 20,
+      "unforcedErrors": 33
+     }
+    ],
+    "winner": {
+     "aces": 4,
+     "winners": 18,
+     "unforcedErrors": 19,
+     "breakPointsSaved": 1,
+     "breakPointsFaced": 2,
+     "breakPointsSource": "box score"
+    },
+    "loser": {
+     "aces": 9,
+     "winners": 20,
+     "unforcedErrors": 33,
+     "breakPointsSaved": 5,
+     "breakPointsFaced": 9,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12179700.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "63b2708d9a8a187a",
+   "publishedAt": "2026-11-17T15:20:40.094Z"
+  },
   {
    "id": "quote-fbe83f56ff7379",
    "type": "quote",

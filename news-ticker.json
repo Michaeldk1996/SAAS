@@ -1,30 +1,30 @@
 {
- "generatedAt": "2026-11-17T14:59:39.815Z",
+ "generatedAt": "2026-11-17T15:20:40.094Z",
  "tournaments": [
-  {
-   "key": "tour",
-   "season": "2026",
-   "name": "ATP Tour",
-   "file": "news-ticker/tour-2026.json",
-   "items": 144,
-   "byType": {
-    "quote": 144
-   },
-   "latestTimestamp": "2026-11-17T14:30:39.000Z",
-   "updatedAt": "2026-11-17T14:59:39.815Z"
-  },
   {
    "key": "2794",
    "season": "2026",
    "name": "Finals - Turin",
    "file": "news-ticker/2794-2026.json",
-   "items": 10,
+   "items": 11,
    "byType": {
-    "quote": 6,
-    "report": 4
+    "report": 5,
+    "quote": 6
    },
-   "latestTimestamp": "2026-11-16T22:49:22.000Z",
-   "updatedAt": "2026-11-17T10:10:06.924Z"
+   "latestTimestamp": "2026-11-17T15:04:27.681Z",
+   "updatedAt": "2026-11-17T15:20:40.094Z"
+  },
+  {
+   "key": "tour",
+   "season": "2026",
+   "name": "ATP Tour",
+   "file": "news-ticker/tour-2026.json",
+   "items": 146,
+   "byType": {
+    "quote": 146
+   },
+   "latestTimestamp": "2026-11-17T14:52:41.000Z",
+   "updatedAt": "2026-11-17T15:20:40.094Z"
   },
   {
    "key": "1681",
@@ -54,6 +54,207 @@
   }
  ],
  "latest": [
+  {
+   "id": "report-12179700",
+   "type": "report",
+   "playerId": "1759",
+   "opponentId": "50323",
+   "player": "A. Fils",
+   "opponent": "R. Jodar",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "stage": "main draw",
+   "round": null,
+   "eventKey": "12179700",
+   "timestamp": "2026-11-17T15:04:27.681Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-17T15:04:27.681Z",
+    "startedAt": "2026-11-17T13:12:51.965Z",
+    "minutes": 112
+   },
+   "category": "Statistics",
+   "text": "Fils beat Jodar for the 2nd time in 4 meetings, 4-6, 6-2, 6-2.\n\nFils: W: 18 / UE: 19 | DR: 1.66\n\nJodar: W: 20 / UE: 33 | DR: 0.60",
+   "baseText": "Fils beat Jodar for the 2nd time in 4 meetings, 4-6, 6-2, 6-2.",
+   "rating": [
+    "Fils: W: 18 / UE: 19 | DR: 1.66",
+    "Jodar: W: 20 / UE: 33 | DR: 0.60"
+   ],
+   "mto": [
+    "Physically, it is something to follow.",
+    "Jodar took a medical timeout at 1–4 in the second set.",
+    "We do not know the reason.",
+    "Maybe something to follow up for the next tournaments of Jodar."
+   ],
+   "fields": {
+    "score": "4-6, 6-2, 6-2",
+    "round": null,
+    "retired": false,
+    "h2h": {
+     "a": 2,
+     "b": 2,
+     "n": 4
+    },
+    "durationMinutes": 112,
+    "facts": {
+     "fromSetDown": true,
+     "longestRun": {
+      "side": "p1",
+      "n": 5,
+      "set": 2,
+      "from": {
+       "me": 0,
+       "opp": 1
+      },
+      "afterBeingBroken": false,
+      "toTheEnd": false
+     }
+    },
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": null,
+      "metric": "firstIn",
+      "value": 50,
+      "baseline": 64,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 43
+     },
+     {
+      "player": "winner",
+      "tone": null,
+      "metric": "firstWon",
+      "value": 79,
+      "won": 26,
+      "total": 33
+     },
+     {
+      "player": "winner",
+      "tone": null,
+      "metric": "secondWon",
+      "value": 73,
+      "won": 24,
+      "total": 33,
+      "baseline": 57,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 43
+     },
+     {
+      "player": "winner",
+      "tone": "bad",
+      "metric": "watch",
+      "of": "firstIn"
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "ret1Won",
+      "value": 37,
+      "won": 21,
+      "total": 57,
+      "baseline": 27,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 43
+     },
+     {
+      "player": "loser",
+      "tone": "bad",
+      "metric": "winnersErrors",
+      "winners": 20,
+      "unforcedErrors": 33
+     }
+    ],
+    "winner": {
+     "aces": 4,
+     "winners": 18,
+     "unforcedErrors": 19,
+     "breakPointsSaved": 1,
+     "breakPointsFaced": 2,
+     "breakPointsSource": "box score"
+    },
+    "loser": {
+     "aces": 9,
+     "winners": 20,
+     "unforcedErrors": 33,
+     "breakPointsSaved": 5,
+     "breakPointsFaced": 9,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12179700.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "63b2708d9a8a187a",
+   "publishedAt": "2026-11-17T15:20:40.094Z",
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "quote-0721f6b05c9d53",
+   "type": "quote",
+   "playerId": "9909",
+   "opponentId": null,
+   "player": "G. Diallo",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-17T14:52:41.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "If we want to win, then we have to join forces with those who have ideas similar to ours",
+   "originalText": "Amennyiben győzni akarunk, akkor össze kell fognunk azokkal, akiknek hozzánk hasonló elképzeléseik vannak",
+   "language": "hu",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "Nemzeti Sport",
+   "sourceUrl": "https://www.nemzetisport.hu/minden-mas-foci/2026/11/fifa-elnokjeloltsegem-remenyt-keltett-a-valtozasokra-philippe-diallo",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On uniting with like-minded FIFA presidential challengers",
+   "sourceHash": "3f9f828f7d496138",
+   "publishedAt": "2026-11-17T15:20:40.094Z",
+   "file": "news-ticker/tour-2026.json"
+  },
+  {
+   "id": "quote-424aae7b88071f",
+   "type": "quote",
+   "playerId": "9909",
+   "opponentId": null,
+   "player": "G. Diallo",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-17T14:52:41.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "The values of our sport have been betrayed, and trust in our organization and its president has been shaken",
+   "originalText": "Sportágunk értékeit elárulták, megrendült a bizalom a szervezetünkben és annak elnökében",
+   "language": "hu",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "Nemzeti Sport",
+   "sourceUrl": "https://www.nemzetisport.hu/minden-mas-foci/2026/11/fifa-elnokjeloltsegem-remenyt-keltett-a-valtozasokra-philippe-diallo",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On loss of trust in FIFA and Infantino",
+   "sourceHash": "d67780548a6bdb7f",
+   "publishedAt": "2026-11-17T15:20:40.094Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-924bb0eaa1e87e",
    "type": "quote",
@@ -1387,103 +1588,6 @@
    "topic": "On his tactical preparation for Tiafoe",
    "sourceHash": "d9064037c70ef853",
    "publishedAt": "2026-11-16T15:37:28.086Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-62f475d950b99d",
-   "type": "quote",
-   "playerId": "9909",
-   "opponentId": null,
-   "player": "G. Diallo",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-16T14:38:58.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "invited...to stand as a candidate in the FIFA presidential election in March 2027 … unanimously pledged their full support",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "Gulf Times",
-   "sourceUrl": "https://www.gulf-times.com/article/738344/sport/uefa-backs-frances-diallo-to-stand-against-infantino-in-fifa-election",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On UEFA backing Diallo for FIFA presidency",
-   "sourceHash": "57864f69643b1778",
-   "publishedAt": "2026-11-16T19:00:10.786Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-c891e0e7049503",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": null,
-   "player": "C. Alcaraz",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-16T14:37:00.000Z",
-   "timestampKind": "observed (Tennis TV published the clip then)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "Never to be honest, I would say this is the best … that I felt so far in my career, you know, in this part of the season, which I'm really really happy with.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "On-court interview",
-   "sourceUrl": "https://www.tennistv.com/videos/4609948/turin-2026-rr-alcaraz-interview",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
-   "interview": "on-court",
-   "topic": "On his energy at this part of the season",
-   "sourceHash": "fd2150acddf2594d",
-   "publishedAt": "2026-11-16T15:56:20.689Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-cdf5bc493e6034",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": null,
-   "player": "C. Alcaraz",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-16T14:37:00.000Z",
-   "timestampKind": "observed (Tennis TV published the clip then)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "This year was kind of unusual for me that I just had a lot of months of the competition that I wasn't at home. So made made me coming here with a lot of energy, with a lot of ambition … and hungry for, you know, for the matches, and I'm hungry for more.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "On-court interview",
-   "sourceUrl": "https://www.tennistv.com/videos/4609948/turin-2026-rr-alcaraz-interview",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
-   "interview": "on-court",
-   "topic": "On his unusual year",
-   "sourceHash": "a2414e37810e1f8d",
-   "publishedAt": "2026-11-16T15:56:20.689Z",
-   "revisedAt": "2026-11-16T21:39:49.438Z",
-   "revision": 2,
    "file": "news-ticker/tour-2026.json"
   }
  ]
