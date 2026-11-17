@@ -298,7 +298,8 @@ const CHECKS = {
   },
 };
 
-const RETIRED_V2 = new Set(['rankedOf']);   // superseded: Database v2 (founder 2026-11-16, "follow the design") replaced this renderer; test-database-v2.mjs locks the new rules (the Mental Edge board is gone)
+const RETIRED_V2 = new Set(['rankedOf', 'edges', 'boundary', 'views', 'minimum', 'unresolved']);   // all paint the Mental Edge board (ratBoard 'mental'), which the founder removed from the page on 2026-11-16; they pinned live store figures (S. Kwon's PL -3, Mpetshi Perricard's ratio) that moved with ac0387e59's tour-season fill. 'retired' stays: it also checks the Serve / Return / Under pressure / Elo pools v2 shows.
+//   // superseded: Database v2 (founder 2026-11-16, "follow the design") replaced this renderer; test-database-v2.mjs locks the new rules (the Mental Edge board is gone)
 for (const [name, check] of Object.entries(CHECKS)) {
   test('TEN-260 Part A · ' + name, RETIRED_V2.has(name) ? { skip: 'superseded: Database v2 (founder 2026-11-16, "follow the design") replaced this renderer; test-database-v2.mjs locks the new rules' } : {}, (t) => {
     if (!HAVE) { t.skip('store or retired list absent — skipping OUT LOUD, not passing'); return; }
