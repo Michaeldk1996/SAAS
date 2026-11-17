@@ -1,17 +1,17 @@
 {
- "generatedAt": "2026-11-17T09:08:30.397Z",
+ "generatedAt": "2026-11-17T09:32:05.820Z",
  "tournaments": [
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 141,
+   "items": 142,
    "byType": {
-    "quote": 141
+    "quote": 142
    },
-   "latestTimestamp": "2026-11-17T08:28:00.000Z",
-   "updatedAt": "2026-11-17T09:08:30.397Z"
+   "latestTimestamp": "2026-11-17T08:37:00.000Z",
+   "updatedAt": "2026-11-17T09:32:05.820Z"
   },
   {
    "key": "2794",
@@ -54,6 +54,37 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-5f75dc257c9771",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": null,
+   "player": "C. Alcaraz",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-17T08:37:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "Well, I can't play it yet, because my team won't let me. The first thing I'll do after the end of the season will probably be to play golf",
+   "originalText": "Eh bien, je ne peux pas encore y jouer, parce que mon équipe ne me le permet pas. La première chose que je ferai après la fin de la saison, ce sera proba­ble­ment de jouer au golf",
+   "language": "fr",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "We Love Tennis",
+   "sourceUrl": "https://www.welovetennis.fr/atp/atp-finals-atp/carlos-alcaraz-devoile-la-premiere-chose-quil-fera-a-la-fin-de-la-saison-eh-bien-je-ne-peux-pas-encore-y-jouer-parce-que-mon-equipe-ne-me-le-permet-pas",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his team banning golf during the season",
+   "sourceHash": "9c49ea55e8abbfd0",
+   "publishedAt": "2026-11-17T09:32:05.820Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-611789d4998d31",
    "type": "quote",
@@ -1641,37 +1672,6 @@
    "topic": "On facing Rafael Jodar at the ATP Finals",
    "sourceHash": "817740b158bcd689",
    "publishedAt": "2026-11-16T14:52:36.833Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-17eff05739323b",
-   "type": "quote",
-   "playerId": "2973",
-   "opponentId": null,
-   "player": "B. Shelton",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-16T11:32:02.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "It's fast. Yes, it's very fast. They said in Paris that it was one of the fastest ever, but in Turín, with a bit of altitude, the ball flies even more",
-   "originalText": "Es rápida. Sí, es muy rápida. Dijeron en París que era una de las más rápidas de siempre, pero en Turín, con un poco de altitud, la pelota vuela incluso más",
-   "language": "es",
-   "translated": true,
-   "translationModel": "claude-opus-5-5",
-   "sourceName": "Mundo Deportivo",
-   "sourceUrl": "https://www.mundodeportivo.com/tenis/20261116/1004251595/shelton-ferrero-rompen-secreto-sabia-habra-cosas-les-gustaran-no.html",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On the fast court speed in Turin",
-   "sourceHash": "687f81515e95f32c",
-   "publishedAt": "2026-11-16T11:57:01.761Z",
    "file": "news-ticker/tour-2026.json"
   }
  ]
