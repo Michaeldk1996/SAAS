@@ -3194,22 +3194,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 2",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 7.7,
-        "p2": 6.4
-      },
-      {
-        "set": 2,
-        "p1": 1,
-        "p2": 2
-      }
-    ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p1",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1093_d-medvedev.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/372_f-cobolli.jpg",
     "tournamentKey": "2794",
@@ -4199,7 +4188,27 @@
       "edgeVsPinnacleP1": -0.0212,
       "edgeVsPinnacleP2": 0.0212,
       "ts": "2026-11-15T09:54:52.973Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "7-6(4), 6-3",
+      "sets": [
+        {
+          "p1": 7,
+          "p2": 6
+        },
+        {
+          "p1": 6,
+          "p2": 3
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12179700",
@@ -31489,7 +31498,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "5-7, 6-7",
+      "display": "5-7, 6-7(1)",
       "sets": [
         {
           "p1": 5,
@@ -41453,7 +41462,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-2, 4-6, 7-6",
+      "display": "6-2, 4-6, 7-6(3)",
       "sets": [
         {
           "p1": 6,
