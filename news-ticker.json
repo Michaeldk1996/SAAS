@@ -1,17 +1,17 @@
 {
- "generatedAt": "2026-11-17T20:02:26.976Z",
+ "generatedAt": "2026-11-17T20:21:34.204Z",
  "tournaments": [
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 161,
+   "items": 162,
    "byType": {
-    "quote": 161
+    "quote": 162
    },
-   "latestTimestamp": "2026-11-17T18:00:00.000Z",
-   "updatedAt": "2026-11-17T19:00:16.357Z"
+   "latestTimestamp": "2026-11-17T19:50:00.000Z",
+   "updatedAt": "2026-11-17T20:21:34.204Z"
   },
   {
    "key": "2794",
@@ -24,7 +24,7 @@
     "quote": 6
    },
    "latestTimestamp": "2026-11-17T15:04:27.681Z",
-   "updatedAt": "2026-11-17T20:02:26.976Z"
+   "updatedAt": "2026-11-17T20:21:34.204Z"
   },
   {
    "key": "1681",
@@ -54,6 +54,37 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-3cb7d284f1285e",
+   "type": "quote",
+   "playerId": "1093",
+   "opponentId": null,
+   "player": "D. Medvedev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-17T19:50:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "These conditions give me the best chance of beating him … You get a few free points with your serve or can hit winners because the court is so fast.",
+   "originalText": "Diese Bedingungen geben mir die besten Chancen, dass ich ihn schlage … Man bekommt ein paar freie Punkte mit dem Aufschlag oder kann Winner schlagen, weil der Court so schnell ist.",
+   "language": "de",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "tennisnet.com",
+   "sourceUrl": "https://www.tennisnet.com/news/atp-finals-darum-glaubt-medvedev-an-seine-chance-gegen-alcaraz",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On fast Turin court helping him against Alcaraz",
+   "sourceHash": "57f0773f12b4afbe",
+   "publishedAt": "2026-11-17T20:21:34.204Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-f0c3c24bd7725a",
    "type": "quote",
@@ -391,8 +422,8 @@
     "minutes": 112
    },
    "category": "Statistics",
-   "text": "Fils beat Jodar for the 2nd time in 4 meetings, 4-6, 6-2, 6-2.\n\nFils: performance rating 8.8 | W: 18 / UE: 19 | DR: 1.66\n\nJodar: performance rating 7.6 | W: 20 / UE: 33 | DR: 0.60",
-   "baseText": "Fils beat Jodar for the 2nd time in 4 meetings, 4-6, 6-2, 6-2.",
+   "text": "Fils beat Jodar 4–6, 6–2, 6–2 in Turin to get his first win at the ATP Finals and stay in the race for the semi-finals. It was the first appearance at this event for both players.\n\nThe first set could easily have gone the other way. Fils was the one with the chances: he had break points early on and again late in the set but Jodar saved every one of them. Then Jodar broke in the very last game and took the set 6–4. Fils was angry with himself for letting it slip and he was now a set down.\n\nFrom the second set the match changed. Fils broke early, broke again soon after and won 5 games in a row to take the set 6–2 and level at one set all. Once he was ahead, the set was fairly comfortable for him. The decider went the same way. He broke early, broke again late in the set and finished it 6–2.\n\nAfter that first set, Fils kept pressing until the end and hit the ball with pinpoint accuracy. He was clearly the better player from the baseline and on return he kept Jodar under pressure on almost every service game. It was not perfect: he landed only 50% of his first serves, something to watch in the next round.\n\nJodar called the physio in the middle of the second set, when Fils was already taking control of it.\n\nThat is a comeback worth noting, because it came on Fils's first appearance at this event. Once the first set was gone, he was the stronger player on both serve and return and he finished with a dominance ratio of 1.66. Up next: Zverev.\n\nFils: performance rating 8.8 | W: 18 / UE: 19 | DR: 1.66\n\nJodar: performance rating 7.6 | W: 20 / UE: 33 | DR: 0.60",
+   "baseText": "Fils beat Jodar 4–6, 6–2, 6–2 in Turin to get his first win at the ATP Finals and stay in the race for the semi-finals. It was the first appearance at this event for both players.\n\nThe first set could easily have gone the other way. Fils was the one with the chances: he had break points early on and again late in the set but Jodar saved every one of them. Then Jodar broke in the very last game and took the set 6–4. Fils was angry with himself for letting it slip and he was now a set down.\n\nFrom the second set the match changed. Fils broke early, broke again soon after and won 5 games in a row to take the set 6–2 and level at one set all. Once he was ahead, the set was fairly comfortable for him. The decider went the same way. He broke early, broke again late in the set and finished it 6–2.\n\nAfter that first set, Fils kept pressing until the end and hit the ball with pinpoint accuracy. He was clearly the better player from the baseline and on return he kept Jodar under pressure on almost every service game. It was not perfect: he landed only 50% of his first serves, something to watch in the next round.\n\nJodar called the physio in the middle of the second set, when Fils was already taking control of it.\n\nThat is a comeback worth noting, because it came on Fils's first appearance at this event. Once the first set was gone, he was the stronger player on both serve and return and he finished with a dominance ratio of 1.66. Up next: Zverev.",
    "rating": [
     "Fils: performance rating 8.8 | W: 18 / UE: 19 | DR: 1.66",
     "Jodar: performance rating 7.6 | W: 20 / UE: 33 | DR: 0.60"
@@ -470,6 +501,20 @@
     "text": "Jodar won the first set 6-4 even though his first serve percentage stayed in the low 40s and Fils was angry with himself for letting the set slip after he had been the one with break points. Fils took control in the second set, which was fairly comfortable for him once he broke, while Jodar looked to be struggling physically. Fils kept pressing to the end and hit with pinpoint accuracy, winning 4-6 6-2 6-2. It was his first win at the ATP Finals and it keeps him in contention for the semifinals.",
     "sourceName": "Tennis TV highlights commentary",
     "sourceUrl": "https://www.tennistv.com/videos/4610436/turin-2026-rr-fils-jodar-highlights"
+   },
+   "composed": {
+    "version": 3,
+    "sheetHash": "11f0786bf284e75d",
+    "status": "ok",
+    "model": "claude-opus-5-5",
+    "tries": 1,
+    "runs": 1,
+    "usage": {
+     "input": 7905,
+     "output": 2515,
+     "calls": 1
+    },
+    "body": "Fils beat Jodar 4–6, 6–2, 6–2 in Turin to get his first win at the ATP Finals and stay in the race for the semi-finals. It was the first appearance at this event for both players.\n\nThe first set could easily have gone the other way. Fils was the one with the chances: he had break points early on and again late in the set but Jodar saved every one of them. Then Jodar broke in the very last game and took the set 6–4. Fils was angry with himself for letting it slip and he was now a set down.\n\nFrom the second set the match changed. Fils broke early, broke again soon after and won 5 games in a row to take the set 6–2 and level at one set all. Once he was ahead, the set was fairly comfortable for him. The decider went the same way. He broke early, broke again late in the set and finished it 6–2.\n\nAfter that first set, Fils kept pressing until the end and hit the ball with pinpoint accuracy. He was clearly the better player from the baseline and on return he kept Jodar under pressure on almost every service game. It was not perfect: he landed only 50% of his first serves, something to watch in the next round.\n\nJodar called the physio in the middle of the second set, when Fils was already taking control of it.\n\nThat is a comeback worth noting, because it came on Fils's first appearance at this event. Once the first set was gone, he was the stronger player on both serve and return and he finished with a dominance ratio of 1.66. Up next: Zverev."
    },
    "fields": {
     "score": "4-6, 6-2, 6-2",
@@ -573,10 +618,10 @@
    "sourceUrl": "pbp/12179700.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "c5fbb9d15e3e2457",
+   "sourceHash": "3e3c99d6056c2b29",
    "publishedAt": "2026-11-17T15:20:40.094Z",
-   "revisedAt": "2026-11-17T20:02:26.976Z",
-   "revision": 3,
+   "revisedAt": "2026-11-17T20:21:34.204Z",
+   "revision": 4,
    "file": "news-ticker/2794-2026.json"
   },
   {
@@ -1631,37 +1676,6 @@
    "topic": "On feeling fresh after months away from competition",
    "sourceHash": "c02c4f83f341d983",
    "publishedAt": "2026-11-16T18:14:39.028Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-20b05e22ebd482",
-   "type": "quote",
-   "playerId": "2973",
-   "opponentId": null,
-   "player": "B. Shelton",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-16T16:56:37.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "That was really intense, especially in the first set, … I don&#039;t know that I&#039;ve played that many rallies out there on tour on a court this fast. So it was physical, really physical. A tough contest.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "Gulf Times",
-   "sourceUrl": "https://www.gulf-times.com/article/738354/sport/alcaraz-sweeps-aside-tiafoe-in-atp-finals-demonstration-of-force",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On his physical ATP Finals win over Fils",
-   "sourceHash": "d42b440fd91138f4",
-   "publishedAt": "2026-11-16T20:56:10.978Z",
    "file": "news-ticker/tour-2026.json"
   }
  ]
