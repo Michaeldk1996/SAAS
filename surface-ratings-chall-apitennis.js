@@ -46,8 +46,10 @@ const CHALL_EVENT_TYPE = 281;   // Challenger Men Singles
 //
 // ok:false is a REFUSAL (transport, HTTP, unparseable body, or success-falsy).
 // ok:true with rows:[] is a real, trustworthy "no Challenger matches in the window".
-async function fetchPlayerChallengerFixtures(apiKey, playerKey, dateStart, dateStop) {
-  const url = `${API_BASE}?method=get_fixtures&APIkey=${apiKey}&date_start=${dateStart}&date_stop=${dateStop}&player_key=${playerKey}&event_type_key=${CHALL_EVENT_TYPE}`;
+// `eventType` defaults to Challenger (281); surface-ratings-tour-apitennis.js passes 265
+// (ATP singles) for the tour-level fill of the seasons TML does not carry.
+async function fetchPlayerChallengerFixtures(apiKey, playerKey, dateStart, dateStop, eventType = CHALL_EVENT_TYPE) {
+  const url = `${API_BASE}?method=get_fixtures&APIkey=${apiKey}&date_start=${dateStart}&date_stop=${dateStop}&player_key=${playerKey}&event_type_key=${eventType}`;
   let res;
   try { res = await fetch(url); } catch (e) { return { ok: false, rows: null, reason: 'transport' }; }
   if (!res) return { ok: false, rows: null, reason: 'no-response' };

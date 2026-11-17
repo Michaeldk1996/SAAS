@@ -49,6 +49,10 @@ const LAST52_DAYS = 364;
 // build lives in surface-ratings-chall-apitennis.js, which emits contribs in the exact
 // addContribution shape, so the api sample flows through the identical discount + blend.
 const { fetchChallengerContribs } = require('./surface-ratings-chall-apitennis.js');
+// Tour-level fill for the seasons TML does not carry (TML 2026.csv stops 17 Jan 2026):
+// tour matches dated after TML's last date come from api-tennis ATP singles, one source
+// per match. See surface-ratings-tour-apitennis.js.
+const { fetchTourFillContribs, mergeTourContribs } = require('./surface-ratings-tour-apitennis.js');
 // TEN-254: the hand-confirmed api-tennis ID map (founder ruling 3). Loaded, never
 // inferred — see the file's own _doc/_rules for why it is IDs and not name strings.
 const PLAYER_MAP = (function () {
@@ -444,6 +448,7 @@ if (require.main === module) (async () => {
   // ---- read every CSV once → per-player list of match contributions {date, surface, ...}
   const byId = new Map();          // id -> { name, latest, contribs:[] }
   let scanned = 0;
+  let tmlEnd = 0;                  // the last date TML holds; api-tennis fills after it
   for (let y = FROM_YEAR; y <= TO_YEAR; y++) {
     const text = await getCsv(y);
     if (!text) { console.log(`  ${y}: missing`); continue; }
@@ -459,6 +464,7 @@ if (require.main === module) (async () => {
       const bestOf = parseInt(c[ix.best_of], 10) || null;
       const ps = parseScore(c[ix.score], bestOf);
       scanned++;
+      if (date && date > tmlEnd) tmlEnd = date;
 
       const W = {
         svpt: n(c[ix.w_svpt]), firstIn: n(c[ix.w_1stIn]), firstWon: n(c[ix.w_1stWon]),
@@ -501,6 +507,8 @@ if (require.main === module) (async () => {
     }
   }
   console.log(`Scanned ${scanned} surface matches → ${byId.size} distinct players.`);
+  if (!tmlEnd) throw new Error('TML scan found no dated match — refusing to build');
+  console.log(`TML holds tour matches to ${new Date(tmlEnd).toISOString().slice(0, 10)}; api-tennis fills after it.`);
 
   // ---- Challenger fold-in → parallel challById store, LIVE from api-tennis event 281.
   // Source replaces the retired static Sackmann mirror. We resolve each pool player's
@@ -622,6 +630,34 @@ if (require.main === module) (async () => {
       (challResult.maxRefusalRate * 100).toFixed(2) + '% — aborting before the store is written');
   }
 
+  // Tour-level fill: ATP singles (265) for every candidate, dated after tmlEnd.
+  // The fill's surface map = the committed map overlaid with the DEPLOYED one (the
+  // pipeline refreshes it every run; the committed copy lags — Lyon (France) 2026, key
+  // 14763, is only in the deployed map). Best-effort: unreachable -> committed only.
+  // The Challenger fold-in keeps the committed map, unchanged.
+  const tourSurfaceMap = new Map(surfaceMap);
+  try {
+    const dep = require('./tools/deployed-store.js').fetchJson('tournament-surfaces.json', { maxAgeMs: 0 });
+    const ds = (dep && dep.surfaces) || {};
+    let added = 0;
+    for (const k in ds) { const v = ds[k]; if ((v === 'clay' || v === 'hard' || v === 'grass') && !tourSurfaceMap.has(String(k))) { tourSurfaceMap.set(String(k), v); added++; } }
+    console.log(`Tour-fill surface map: ${tourSurfaceMap.size} entries (${added} from the deployed map).`);
+  } catch (e) { console.log('  deployed tournament-surfaces.json unreachable — tour fill uses the committed map:', e.message); }
+  // The fill is fetched for EVERY pool player by his profile key — player-profiles.json is
+  // keyed by api-tennis player_key, so no name resolution is needed (the standings name
+  // join leaves ~36 pool players unresolved, e.g. D. Vallejo, whom api-tennis lists as
+  // "Daniel Vallejo Adolfo").
+  const fillCandidates = pool.map(m => ({ playerKey: m.key, name: m.name }));
+  const tourFill = await fetchTourFillContribs(fillCandidates, {
+    apiKey, tmlEnd, dateStop, surfaceMap: tourSurfaceMap, concurrency: 8, log: console.log,
+  });
+  if (tourFill.refusalRate > tourFill.maxRefusalRate) {
+    const why = [...tourFill.reasons].map(([k, v]) => `${k}×${v}`).join(', ');
+    console.error(`::error::api-tennis refused ${tourFill.refusals} of ${tourFill.fetched} tour-fill fetches ` +
+      `(${(tourFill.refusalRate * 100).toFixed(2)}%). Reasons: ${why}. REFUSING to write surface-ratings.json — the previous store stays.`);
+    throw new Error('tour-fill refusal rate ' + (tourFill.refusalRate * 100).toFixed(2) + '% — aborting before the store is written');
+  }
+
   let challScanned = 0, surfResolvedC = 0;
   for (const { playerKey, name, contribs } of challContribs) {
     if (!contribs || !contribs.length) continue;
@@ -663,11 +699,18 @@ if (require.main === module) (async () => {
   for (const meta of pool) {
     // candidates share the first-initial + last surname token; then verify the
     // full surname suffix aligns (handles hyphens, middle initials, multi-word surnames).
-    const cands = tmlIndex.get(meta.fi + '|' + meta.lastTok); if (!cands || !cands.length) continue;
+    const cands = tmlIndex.get(meta.fi + '|' + meta.lastTok) || [];
     const matched = cands.filter(id => endsWithTokens(tmlTok.get(id).tokens, meta.surname));
-    if (!matched.length) continue;
     matched.sort((x, y) => byId.get(y).contribs.length - byId.get(x).contribs.length);
-    const a = byId.get(matched[0]);
+    const aTml = matched.length ? byId.get(matched[0]) : null;
+    // Tour contributions = TML up to tmlEnd + the api-tennis fill after it, one source per
+    // match. A player with no TML rows (a 2026 breakout) is rated from the fill alone.
+    const fill = tourFill.byKey.get(String(meta.key)) || [];
+    if (!aTml && !fill.length) continue;
+    const tourContribs = mergeTourContribs(aTml ? aTml.contribs : [], fill, tmlEnd);
+    let tourLatest = 0;
+    for (const c of tourContribs) if (c.date && c.date > tourLatest) tourLatest = c.date;
+    const a = { name: aTml ? aTml.name : meta.name, latest: tourLatest, contribs: tourContribs };
 
     // match the SAME player in the Challenger store (token-aligned, best coverage)
     let ac = null;
@@ -692,10 +735,13 @@ if (require.main === module) (async () => {
       chall.career[surf] = newBucket(); chall.last52[surf] = newBucket();
     }
     for (const c of a.contribs) {
-      addContribution(scopes.career[c.surface], c);
+      // TML rows always carry a surface; an api-tennis fill row whose tournament is not in
+      // the surface map counts in All only (the Challenger loop's rule).
+      const hasSurf = SURFACES.includes(c.surface);
+      if (hasSurf) addContribution(scopes.career[c.surface], c);
       addContribution(scopes.career.All, c);
       if (cutoff != null && c.date != null && c.date >= cutoff) {
-        addContribution(scopes.last52[c.surface], c);
+        if (hasSurf) addContribution(scopes.last52[c.surface], c);
         addContribution(scopes.last52.All, c);
       }
     }
@@ -794,7 +840,7 @@ if (require.main === module) (async () => {
   rows.sort((a, b) => a.rank - b.rank);
   const out = {
     generatedAt: new Date().toISOString(),
-    source: 'Self-derived — tour-level from Jeff Sackmann tennis_atp schema (Tennismylife/TML-Database), with a Challenger fallback sourced LIVE from api-tennis event_type_key=281 (Challenger Men Singles, dense 2024+, refreshed weekly) folded into serve, return AND under-pressure for players thin at tour level, Challenger success discounted x' + CHALL_DISCOUNT + ' — no ATP/Infosys data',
+    source: 'Self-derived — tour-level from Jeff Sackmann tennis_atp schema (Tennismylife/TML-Database) to ' + new Date(tmlEnd).toISOString().slice(0, 10) + ' and from api-tennis ATP singles box scores (event_type 265, main draw, Finished/Retired) after that date, one source per match, '+ 'with a Challenger fallback sourced LIVE from api-tennis event_type_key=281 (Challenger Men Singles, dense 2024+, refreshed weekly) folded into serve, return AND under-pressure for players thin at tour level, Challenger success discounted x' + CHALL_DISCOUNT + ' — no ATP/Infosys data',
     scopes: { career: `${FROM_YEAR}-${TO_YEAR} all qualifying matches`, last52: `matches within ${LAST52_DAYS} days of each player's most recent match` },
     surfaces: [...SURFACES, 'All'],
     method: {
@@ -803,6 +849,12 @@ if (require.main === module) (async () => {
       return: 'ATP-style Return Rating = 1stServeReturnWon% + 2ndServeReturnWon% + BPconverted% + returnGamesWon% (return points split by serve type to match the Infosys ATP Return leaderboard scale). Tour level is primary; players thin at tour level have their Challenger/qualifying return sample folded in per component with the success side discounted x' + CHALL_DISCOUNT + ' (return.inclChallenger flags those). rating is null (a dash) when any component has a zero denominator - above all 0 break-point chances in the bucket - and that component is emitted null rather than 0; founder ruling TEN-263, one rule across the product (matches dna-apitennis-ratings.js).',
       underPressure: 'ATP-style Under-Pressure Rating = sum of the components present scaled to the full 4-component equivalent (mean of BPsaved% / BPconverted% / tiebreak% / decidingSet% * 4, ~200-240); rated when >= 3 of 4 clear their floors so 3- and 4-component players share the ATP scale. Tour level is primary; any single component below its tour-level floor is topped up with the player\u2019s Challenger/qualifying sample (inclChallenger:true flags those buckets).',
       index: 'retained internally: 0-100 pool percentile within the same surface+scope bucket (serve/return rank the composite rating, under-pressure averages each component\u2019s own pool percentile). The board now displays the ATP-style ratings above, not this index.',
+    },
+    tourLevel: {
+      tmlThrough: new Date(tmlEnd).toISOString().slice(0, 10),
+      apiTennisFrom: tourFill.dateStart,
+      apiTennisPlayerMatches: [...tourFill.byKey.values()].reduce((t, v) => t + v.length, 0),
+      rule: 'one source per match: TML on or before tmlThrough, api-tennis ATP singles (265, main draw, Finished/Retired) after it',
     },
     inclusion: `rated if career-All matches >= ${INCLUDE_MIN_MATCHES} (i.e. more than 10 ATP-level matches)`,
     floors: { career: careerFloors, last52: l52Floors },
