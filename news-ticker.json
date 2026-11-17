@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-17T19:00:16.357Z",
+ "generatedAt": "2026-11-17T20:02:26.976Z",
  "tournaments": [
   {
    "key": "tour",
@@ -24,7 +24,7 @@
     "quote": 6
    },
    "latestTimestamp": "2026-11-17T15:04:27.681Z",
-   "updatedAt": "2026-11-17T16:46:30.596Z"
+   "updatedAt": "2026-11-17T20:02:26.976Z"
   },
   {
    "key": "1681",
@@ -391,12 +391,75 @@
     "minutes": 112
    },
    "category": "Statistics",
-   "text": "Fils beat Jodar for the 2nd time in 4 meetings, 4-6, 6-2, 6-2.\n\nFils: W: 18 / UE: 19 | DR: 1.66\n\nJodar: W: 20 / UE: 33 | DR: 0.60",
+   "text": "Fils beat Jodar for the 2nd time in 4 meetings, 4-6, 6-2, 6-2.\n\nFils: performance rating 8.8 | W: 18 / UE: 19 | DR: 1.66\n\nJodar: performance rating 7.6 | W: 20 / UE: 33 | DR: 0.60",
    "baseText": "Fils beat Jodar for the 2nd time in 4 meetings, 4-6, 6-2, 6-2.",
    "rating": [
-    "Fils: W: 18 / UE: 19 | DR: 1.66",
-    "Jodar: W: 20 / UE: 33 | DR: 0.60"
+    "Fils: performance rating 8.8 | W: 18 / UE: 19 | DR: 1.66",
+    "Jodar: performance rating 7.6 | W: 20 / UE: 33 | DR: 0.60"
    ],
+   "shotStats": {
+    "p1": {
+     "performance": 8.8,
+     "serveQuality": 7.8,
+     "unreturnedPct": 40,
+     "firstInPct": 50,
+     "firstWonPct": 79,
+     "secondWonPct": 73,
+     "secondSpeed": 158,
+     "returnQuality": 8.2,
+     "fhWinners": 7,
+     "bhWinners": 7,
+     "fhUnforced": 10,
+     "bhUnforced": 8,
+     "forcedErrors": 29,
+     "baselineWon": 46,
+     "under9Won": 76,
+     "over9Won": 9,
+     "bpWon": [
+      4,
+      9
+     ],
+     "netWon": [
+      6,
+      9
+     ]
+    },
+    "p2": {
+     "performance": 7.6,
+     "serveQuality": 8.5,
+     "unreturnedPct": 26,
+     "firstInPct": 66,
+     "firstWonPct": 63,
+     "secondWonPct": 53,
+     "secondSpeed": 156,
+     "returnQuality": 5.8,
+     "fhWinners": 7,
+     "bhWinners": 4,
+     "fhUnforced": 18,
+     "bhUnforced": 13,
+     "forcedErrors": 36,
+     "baselineWon": 34,
+     "under9Won": 59,
+     "over9Won": 9,
+     "bpWon": [
+      1,
+      2
+     ],
+     "netWon": [
+      7,
+      12
+     ]
+    },
+    "postedAt": "2026-11-17T15:09:05.000Z",
+    "readAt": "2026-11-17T19:45:32.895Z",
+    "sourceName": "ATP broadcast match statistics (via @ATP_Entry)",
+    "sourceUrl": "https://x.com/ATP_Entry/status/2122708609972785171",
+    "agreed": "6 of 6 serve figures within 3 points of ours; set scores and break points equal",
+    "wue": {
+     "compared": 4,
+     "maxDiff": 2
+    }
+   },
    "mto": [
     "Physically, it is something to follow.",
     "Jodar took a medical timeout at 1–4 in the second set.",
@@ -510,10 +573,10 @@
    "sourceUrl": "pbp/12179700.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "88932145e5211da9",
+   "sourceHash": "c5fbb9d15e3e2457",
    "publishedAt": "2026-11-17T15:20:40.094Z",
-   "revisedAt": "2026-11-17T16:46:30.596Z",
-   "revision": 2,
+   "revisedAt": "2026-11-17T20:02:26.976Z",
+   "revision": 3,
    "file": "news-ticker/2794-2026.json"
   },
   {
