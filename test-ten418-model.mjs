@@ -112,7 +112,8 @@ test('match header: avatars, shared names, step-9 style + Elo, the four pills, H
   assert.match(text(h), /^LD L\. Darderi Attacking Baseliner Elo 1830 vs S\. Tsitsipas Big Server \+ Complete Baseliner Elo 1884 ST Tournament Shanghai Masters Surface Hard Round Round of 64 Format Best of 3 Head to Head ›/);
   assert.match(h, /<span class="sm-av em-av s48 a">/, 'player one: the 48px avatar, blue ring');
   assert.match(h, /href="\?a=8781&amp;b=1906" onclick="edgeGoH2H\(event,'8781','1906'\)">Head to Head/);
-  assert.match(html, /sessionStorage\.setItem\('stn_h2h_pair', JSON\.stringify\(\{ a, b \}\)\)/);
+  assert.match(html, /sessionStorage\.setItem\('stn_h2h_pair', JSON\.stringify\(\[a, b\]\)\)/, 'the [a, b] shape the H2H page reads');
+  assert.match(html, /if \(Array\.isArray\(j\)\) \{ a = j\[0\]; b = j\[1\]; \}/, 'the H2H page reads an array');
   assert.ok(!/text-overflow:ellipsis/.test(CSS.slice(CSS.indexOf('.sm-mh-nm'), CSS.indexOf('.sm-mh-sub'))), 'names wrap, never an ellipsis');
 });
 

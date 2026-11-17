@@ -11727,7 +11727,7 @@ function edgeReasonText(e){
 // and in sessionStorage stn_h2h_pair (brief 2026-11-16).
 function edgeGoH2H(ev, a, b){
   if (ev) ev.preventDefault();
-  try { sessionStorage.setItem('stn_h2h_pair', JSON.stringify({ a, b })); } catch (x) {}
+  try { sessionStorage.setItem('stn_h2h_pair', JSON.stringify([a, b])); } catch (x) {}   // the H2H page reads [a, b] (xReadHandover)
   if (typeof sfGoToH2H === 'function') sfGoToH2H(a, b);
 }
 function edgeMatchHeadHtml(m, e){
