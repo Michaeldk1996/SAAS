@@ -38064,6 +38064,132 @@
     ]
    },
    "alerts": []
+  },
+  {
+   "at": "2026-11-17T00:27:58.262Z",
+   "activeTournaments": [
+    "Finals - Turin"
+   ],
+   "tournaments": [
+    {
+     "name": "Finals - Turin",
+     "key": "2794",
+     "sources": [],
+     "fromOutlets": 0,
+     "counts": {
+      "candidates": 0,
+      "droppedNotVerbatim": 0,
+      "droppedNoPlayer": 0,
+      "droppedAmbiguous": 0,
+      "notTranslatedNoKey": 0,
+      "notTranslatedApiError": 0,
+      "droppedTranslationCheck": 0,
+      "droppedEnglishExists": 0,
+      "mergedSameQuote": 0,
+      "alreadyHeld": 0,
+      "items": 0,
+      "tokens": {
+       "input": 0,
+       "output": 0
+      },
+      "modelError": null,
+      "retryUrls": 0
+     },
+     "added": 0,
+     "held": 6,
+     "byCategory": {
+      "Quotes": 5,
+      "Injuries": 1
+     },
+     "finishedMatches": 4,
+     "matchesWithWinnerQuote": 2
+    },
+    {
+     "name": "ATP Tour",
+     "key": "tour",
+     "sources": [],
+     "fromOutlets": 23,
+     "counts": {
+      "candidates": 23,
+      "droppedNotVerbatim": 0,
+      "droppedNoPlayer": 0,
+      "droppedAmbiguous": 0,
+      "notTranslatedNoKey": 0,
+      "notTranslatedApiError": 0,
+      "droppedTranslationCheck": 0,
+      "droppedEnglishExists": 0,
+      "mergedSameQuote": 1,
+      "alreadyHeld": 0,
+      "items": 22,
+      "tokens": {
+       "input": 550,
+       "output": 15
+      },
+      "modelError": null,
+      "retryUrls": 0,
+      "topicsAdded": 1
+     },
+     "added": 1,
+     "held": 134,
+     "byCategory": {
+      "Interviews": 127,
+      "Injuries": 7
+     },
+     "finishedMatches": 0,
+     "matchesWithWinnerQuote": 0
+    }
+   ],
+   "newItems": 1,
+   "tokens": {
+    "input": 550,
+    "output": 15
+   },
+   "press": {
+    "matchesLookedUp": 0,
+    "answers": 0
+   },
+   "ttvInbox": {
+    "held": 69,
+    "routed": 16
+   },
+   "atpInbox": {
+    "held": 18,
+    "routed": 6
+   },
+   "outlets": {
+    "read": 131,
+    "withCandidates": 1,
+    "blocked": [
+     "El Deber: the site refuses a plain request",
+     "Tenniskafe: the site refuses a plain request",
+     "TenisovySvet.cz: the site refuses a plain request",
+     "The Indian Express: the site refuses a plain request",
+     "ESPN México (Tenis): unexpected answer",
+     "AS (Diario AS): the site refuses a plain request",
+     "Aftonbladet: unexpected answer",
+     "ESPN: unexpected answer"
+    ],
+    "articlesFetched": 2,
+    "paywalled": 0,
+    "unnamed": 1,
+    "byOutlet": [
+     {
+      "outlet": "RTHK",
+      "country": "Hong Kong",
+      "language": "en",
+      "fetched": 1,
+      "candidates": 1
+     },
+     {
+      "outlet": "Ubitennis",
+      "country": "Italy",
+      "language": "it",
+      "fetched": 1,
+      "candidates": 0
+     }
+    ]
+   },
+   "alerts": []
   }
  ]
 }
