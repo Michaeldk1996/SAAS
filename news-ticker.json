@@ -1,17 +1,17 @@
 {
- "generatedAt": "2026-11-17T07:52:30.199Z",
+ "generatedAt": "2026-11-17T08:40:36.705Z",
  "tournaments": [
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 138,
+   "items": 139,
    "byType": {
-    "quote": 138
+    "quote": 139
    },
-   "latestTimestamp": "2026-11-17T06:59:00.000Z",
-   "updatedAt": "2026-11-17T07:52:30.199Z"
+   "latestTimestamp": "2026-11-17T07:51:00.000Z",
+   "updatedAt": "2026-11-17T08:40:36.705Z"
   },
   {
    "key": "2794",
@@ -54,6 +54,37 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-6428d419900b52",
+   "type": "quote",
+   "playerId": "1093",
+   "opponentId": null,
+   "player": "D. Medvedev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-17T07:51:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "But I think this court offers the best chance of beating Alcaraz. That doesn't mean you're going to manage it, because today he only lost four games. But, in my opinion, it's in these conditions that you have the best chance of beating him, because you can get a few free points on serve and hit a few winners thanks to the speed of the surface. Which isn't easy against him, because he's probably the best mover in history, along with Novak Djokovic. You just have to try to play your best tennis and take your opportunities.",
+   "originalText": "Mais je pense que ce court offre les meilleures chances de battre Alcaraz. Cela ne signifie pas que vous allez y parvenir, car aujourd’hui, il n’a perdu que quatre jeux. Mais, à mon avis, c’est dans ces condi­tions que vous avez le plus de chances de le battre, parce que vous pouvez obtenir quelques points gratuits au service et réussir quelques coups gagnants grâce à la rapi­dité de la surface. Ce qui n’est pas facile contre lui, car il est proba­ble­ment le meilleur joueur de l’histoire en matière de dépla­ce­ments, avec Novak Djokovic. Il faut simple­ment essayer de jouer son meilleur tennis et de saisir ses oppor­tu­nités",
+   "language": "fr",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "We Love Tennis",
+   "sourceUrl": "https://www.welovetennis.fr/atp/atp-finals-atp/medvedev-vainqueur-face-a-cobolli-compte-bien-enchainer-je-pense-que-ce-court-offre-les-meilleures-chances-de-battre-alcaraz",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his chances against Alcaraz in Turin",
+   "sourceHash": "64273e53ccb3b30a",
+   "publishedAt": "2026-11-17T08:40:36.705Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-1743cd78835834",
    "type": "quote",
@@ -1640,37 +1671,6 @@
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "topic": "On working with Ferrero alongside his father",
    "sourceHash": "8f21397b8d9eaeef",
-   "publishedAt": "2026-11-16T11:37:16.962Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-7f190792e7ff1d",
-   "type": "quote",
-   "playerId": "2072",
-   "opponentId": null,
-   "player": "J. Sinner",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-16T10:40:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "Even if he slips to number 700 in the world rankings, never leave him alone.",
-   "originalText": "Selbst wenn er auf Platz 700 der Weltrangliste abrutscht, lass ihn niemals allein.",
-   "language": "de",
-   "translated": true,
-   "translationModel": "claude-opus-5-5",
-   "sourceName": "tennisnet.com",
-   "sourceUrl": "https://www.tennisnet.com/news/harte-entscheidungen-mit-13-jahren-jannik-sinner-dankt-eltern-fuer-karriereweg",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On his parents' instruction to manager Alex Vittur",
-   "sourceHash": "4af029b7276a9906",
    "publishedAt": "2026-11-16T11:37:16.962Z",
    "file": "news-ticker/tour-2026.json"
   }
