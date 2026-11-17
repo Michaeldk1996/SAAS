@@ -1,17 +1,17 @@
 {
- "generatedAt": "2026-11-17T20:21:34.204Z",
+ "generatedAt": "2026-11-17T21:06:54.957Z",
  "tournaments": [
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 162,
+   "items": 163,
    "byType": {
-    "quote": 162
+    "quote": 163
    },
-   "latestTimestamp": "2026-11-17T19:50:00.000Z",
-   "updatedAt": "2026-11-17T20:21:34.204Z"
+   "latestTimestamp": "2026-11-17T20:30:00.000Z",
+   "updatedAt": "2026-11-17T21:06:54.957Z"
   },
   {
    "key": "2794",
@@ -54,6 +54,37 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-54bf04d2309cb4",
+   "type": "quote",
+   "playerId": "50323",
+   "opponentId": null,
+   "player": "R. Jodar",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-17T20:30:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "I think the first set was good, physically and also technically. I saw that the set could go either way. In the end, it came down to small details,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "TennisUpToDate",
+   "sourceUrl": "https://tennisuptodate.com/atp/we-are-not-robots-rafael-jodar-speaks-out-after-his-body-lets-him-down-against-arthur-fils",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On the close first set against Fils",
+   "sourceHash": "065cb65670909083",
+   "publishedAt": "2026-11-17T21:06:54.957Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-3cb7d284f1285e",
    "type": "quote",
@@ -1644,37 +1675,6 @@
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "topic": "On feeling his best ever at this stage",
    "sourceHash": "9bcfb728b92cd433",
-   "publishedAt": "2026-11-16T18:14:39.028Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-600890797c5d30",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": null,
-   "player": "C. Alcaraz",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-16T17:25:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "I have never experienced something like this, this year. It was unusual for me, having a lot of months off the competition at home. So coming here I have a lot of energy and ambition and I am hungry for more.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "Sky Sports",
-   "sourceUrl": "https://www.skysports.com/tennis/news/12110/13612924/atp-finals-carlos-alcaraz-dominates-frances-tiafoe-in-opener-to-extend-winning-streak-to-10-matches",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On feeling fresh after months away from competition",
-   "sourceHash": "c02c4f83f341d983",
    "publishedAt": "2026-11-16T18:14:39.028Z",
    "file": "news-ticker/tour-2026.json"
   }
