@@ -3464,6 +3464,10 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   [data-db-root] .db-prompt h3{ line-height:normal; margin:0; color:var(--db2-ink); }
   [data-db-root] .db-prompt p{ margin:10px 0 0; color:var(--db2-muted); }
   [data-db-root] .db2-lntile0{ cursor:default; }
+  [data-db-root] .db2-pophead{ display:flex; align-items:baseline; justify-content:space-between; padding:5px 9px 4px; font-family:var(--db-ui); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--db2-muted); line-height:normal; }
+  [data-db-root] .db2-pophead span{ font-family:var(--db-mono); font-size:10.5px; letter-spacing:0; text-transform:none; }
+  [data-db-root] .db-prow.db2-plrow{ font-weight:600; }
+  [data-db-root] .db2-popini{ flex:none; display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:var(--db2-inset); font-family:var(--db-mono); font-style:normal; font-size:8.5px; font-weight:700; color:var(--db2-ink-2); }
   [data-db-root] .db2-lntile.db2-lntile0:hover{ border-color:var(--db2-h6); }
   [data-db-root] .db2-lntile0 .db2-lntline, [data-db-root] .db2-lntile0 .db2-lntrate{ color:var(--db2-muted); }
   [data-db-root] .db2-q16:hover{ border-color:var(--db2-h16); color:var(--db2-muted); }
@@ -31008,12 +31012,19 @@ window.DatabaseTab = (function(){
       var hits=o.pending?[]:o.match(q);
       if(o.pending) pop.appendChild(el('div','db-pempty','Loading the ratings archive…'));
       else if(!hits.length) pop.appendChild(el('div','db-pempty','No '+o.noun+' matches that.'));
-      else hits.forEach(function(h){
-        var row=el('div','db-prow');
-        row.innerHTML='<span>'+esc(h.label)+'</span>'+(h.meta?('<em>'+esc(h.meta)+'</em>'):'');
-        row.onmousedown=function(ev){ ev.preventDefault(); o.onPick(h.value); render(); };
-        pop.appendChild(row);
-      });
+      else {
+        // Database v2 (design L128-140): a player search opens on a "Players  N" caps head; each row an initials disc,
+        // the name (600) and the rank.
+        var isPl = o.noun==='player';
+        if(isPl) pop.appendChild(el('div','db2-pophead','Players<span>'+fmtInt(hits.length)+'</span>'));
+        hits.forEach(function(h){
+          var row=el('div','db-prow'+(isPl?' db2-plrow':''));
+          var ini = isPl ? String(h.label).replace(/[^A-Za-z ]/g,'').split(' ').filter(Boolean).map(function(x){ return x[0]; }).join('').slice(0,2).toUpperCase() : '';
+          row.innerHTML=(isPl?'<i class="db2-popini">'+esc(ini)+'</i>':'')+'<span>'+esc(h.label)+'</span>'+(h.meta?('<em>'+esc(h.meta)+'</em>'):'');
+          row.onmousedown=function(ev){ ev.preventDefault(); o.onPick(h.value); render(); };
+          pop.appendChild(row);
+        });
+      }
       wrap.appendChild(pop);
     }
     return wrap;
@@ -31168,7 +31179,8 @@ window.DatabaseTab = (function(){
         onInput:function(v){ state.pq=v; },
         match:function(q){ if(!playerIndex) return []; var ql=q.toLowerCase();
           var hits=Object.keys(playerIndex).filter(function(n){ return n.toLowerCase().indexOf(ql)>=0 && _picks.indexOf(n)<0; }).sort();
-          return hits.slice(0,40).map(function(n){ return {label:n, value:n, meta:fmtInt(playerIndex[n].length)}; }); },
+          // Database v2 (design L2415): the meta is the player's ATP rank (this week's standings by identity), never a guess.
+          return hits.slice(0,40).map(function(n){ var w=db2Who(n); return {label:n, value:n, meta:(w && w.rank!=null)?('#'+w.rank):''}; }); },
         onPick:function(n){ if(!state.player){ state.player=n; state.ptourn=null; } else if(!state.player2 && n!==state.player) state.player2=n; state.pq=''; },
         onRemove:function(n){ if(n===state.player){ state.player=state.player2||null; state.player2=null; state.ptourn=null; } else if(n===state.player2) state.player2=null; }
       }));

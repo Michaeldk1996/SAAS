@@ -133,7 +133,7 @@ reference screenshots): `design_handoff_database_v2/step1/` (never published).
   "All" when none) · × once picked · the CSS chevron (`.db-caret`, 6px, 1.5px muted
   borders, rotated); transparent on a 6% edge, picked = `--db2-raised` + 16%. Year range = one transparent pill "Years
   2010 to 2026", mono 12 years. Menus `--db2-card` + 10% edge, radius 10, padding 4, `0 12px 28px` black 45%; rows
-  12.5/500, picked 6% white + 700, hover `--db2-inset`. Search with chips: inset box on a 6% edge (16% while nothing is picked, never on focus; result pop-up 260px), chips
+  12.5/500, picked 6% white + 700, hover `--db2-inset`. Search with chips: inset box on a 6% edge (16% while nothing is picked, never on focus; result pop-up 260px); a player search opens on a caps "Players  N" head (N = the hits) and each row is an initials disc, the name (600) and the player's ATP rank ("#12", this week's standings by identity; none when he is not ranked), chips
   `--db2-raised` + 16%, 26px, cap note grey ("Four events maximum", "Two players maximum", "Three players maximum").
 - Filters per view, as the reference draws them: Tour = Level · Surface · Round · Years; Tournament = event search ·
   Round · Years; Player = player search · Surface · Period · Tournament · Side; Lines and Ratings in their files.
