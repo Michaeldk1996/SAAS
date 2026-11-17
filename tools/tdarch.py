@@ -1128,6 +1128,25 @@ def lower_feed_rows(current):
         # founder 2026-11-03: another book, margin removed — last of all, it only fills a dash
         if k not in best or rank < best[k][0]:
             best[k] = (rank, r)
+    # 2026-11-17: a Tennis-Explorer-only row (negative TE match ID, te-pre21-import) is a match api-tennis's player fixtures
+    # missed — but api-tennis's own odds snapshot may hold the same match under its fixture's event key (Blockx v Draxl,
+    # Granby SF, 19 Jul 2025: book 2 at 1.79 / 2.11 and the TE copy at the same prices). Two rows for one match = two
+    # candidates = a dash on every page, so the TE copy steps aside: the same two players (by key, else by name) within a day.
+    def _pairs(r):
+        d = r.get('detail') or {}
+        ks = (str(d.get('winnerKey') or ''), str(d.get('loserKey') or ''))
+        out = [('n',) + tuple(sorted((P.td_name(r['winner']), P.td_name(r['loser']))))]
+        return out + [('k',) + tuple(sorted(ks))] if all(ks) else out
+    held_days = {}
+    for _, r in best.values():
+        if int(r['event_key']) > 0:
+            for pr in _pairs(r):
+                held_days.setdefault(pr, set()).add(str(r['match_date'])[:10])
+    def _api_holds(r):
+        d0 = dt.date.fromisoformat(str(r['match_date'])[:10])
+        near = {(d0 + dt.timedelta(days=i)).isoformat() for i in (-1, 0, 1)}
+        return any(held_days.get(pr, set()) & near for pr in _pairs(r))
+    best = {k: v for k, v in best.items() if not (int(v[1]['event_key']) < 0 and _api_holds(v[1]))}
     out = []
     for _, r in sorted(best.values(), key=lambda x: (str(x[1]['match_date']), x[1]['event_key'])):
         d = r['detail']

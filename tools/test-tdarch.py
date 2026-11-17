@@ -861,5 +861,29 @@ check('fast run: the lower levels too (Challenger, qualifying, ITF) — every 15
       'tools/tdarch.py lower-import --recent 1 --fresh' in _pm and '--unpriced' not in _pm.split('lower-import --recent')[1].split('\n')[0]
       and "_lt = _now.isoformat() if '--recent' in a" in _hsrc2 and 'targets = [r for r in targets if str(r[\'_f\'][\'event_key\']) not in have]' in _hsrc2)
 
+# ── 2026-11-17: a Tennis-Explorer-only row (negative TE match ID) steps aside for api-tennis's own snapshot of the same match ──
+def _dup(id_, ek, src, date, pw, pl, wk='39913', lk='3696', w='A. Blockx', l='L. Draxl'):
+    return {'id': id_, 'source': src, 'match_date': date, 'tournament': 'Granby', 'winner': w, 'loser': l, 'event_key': ek,
+            'price_winner': pw, 'price_loser': pl, 'detail': {'level': 'ch', 'winnerKey': wk, 'loserKey': lk}}
+_api = _dup(31, 12053999, T.APPROX_SOURCE, '2025-07-19', 2.11, 1.79)
+_teo = _dup(32, -2962151, T.TE_SOURCE, '2025-07-19', 2.11, 1.79)
+_save_on = T.TE_FEED_ON; T.TE_FEED_ON = True
+try:
+    _orig_ip = T.te_in_play; T.te_in_play = lambda r: False
+    dd = T.lower_feed_rows([_api, _teo])
+    check('TE-only copy dropped when api-tennis holds the same match (same keys, same day): one row, api-tennis\'s',
+          [r['eventKey'] for r in dd] == [12053999], dd)
+    dd1 = T.lower_feed_rows([_api, dict(_teo, match_date='2025-07-20', winner='Blockx A.', detail={'level': 'ch', 'winnerKey': '', 'loserKey': ''})])
+    check('...a day apart and by name when a key is missing', [r['eventKey'] for r in dd1] == [12053999], dd1)
+    keep = T.lower_feed_rows([_teo, _dup(33, 12000001, T.APPROX_SOURCE, '2025-07-25', 1.5, 2.6)])
+    check('a TE-only row with no api-tennis twin (another week) stays', sorted(r['eventKey'] for r in keep) == [-2962151, 12000001], keep)
+    two = T.lower_feed_rows([_teo, _dup(34, -2962999, T.TE_SOURCE, '2025-07-19', 1.6, 2.3)])
+    check('two TE-only rows are never dropped against each other (only an api-tennis row displaces one)', len(two) == 2, two)
+    _src_now = open(os.path.join(HERE, 'tdarch.py')).read()
+    check('control: without the guard both rows are fed (the dash on every page, 16 Nov)',
+          len([x for x in [_api, _teo]]) == 2 and 'best = {k: v for k, v in best.items() if not (int(v[1][\'event_key\']) < 0 and _api_holds(v[1]))}' in _src_now)
+finally:
+    T.TE_FEED_ON = _save_on; T.te_in_play = _orig_ip
+
 print(f'\ntest-tdarch: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)

@@ -112,6 +112,12 @@ file we hold is irreplaceable.
   close; Bet365 stays the fallback where api-tennis has no pair. The private CSV export does NOT carry it (its columns are
   closes).
 
+- **A Tennis-Explorer-only row never doubles an api-tennis row (2026-11-17).** A te-pre21-import row (negative TE match ID)
+  is not fed when api-tennis's own snapshot holds the same match — the same two players (by key, else by name) within a
+  day; two rows for one match made it a dash on every page (Blockx v Draxl, Granby 2025 SF: 1.79 / 2.11 twice). Only an
+  api-tennis row displaces one; two TE-only rows never displace each other. The archive keeps both (append-only).
+  **Test:** `tools/test-tdarch.py` "TE-only copy dropped" (+ the control).
+
 ## The install runs each migration once (founder 2026-10-20, item 9)
 - `historical-archive.yml` mode `install` runs `tools/archive_install.py`: each listed migration is applied ONCE and recorded in
   `archive_migrations` (name, sha256, how; append-only like the archive) in the same transaction; a recorded file is skipped,

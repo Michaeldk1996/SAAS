@@ -151,9 +151,9 @@ Where a ruling below reverses an older one in this file, the older one is supers
   the lower levels the master's snapshots), so a Challenger / ITF row prints the price every other surface prints. Test:
   does a lower-league player with matches on Tennis Explorer show 18 form rows? (Snoussi 15 → 18, Matthysen 17 → 18, 8
   of 18 priced each, 16 Nov.) `tools/test-pp-form-te.js` (control: without the record file, the feed rows alone).
-  *Open:* a Tennis-Explorer-only match has no price in the master yet (its odds import joins TE to an api-tennis fixture
-  only): 1,854 such rows since Jan 2025 on 256 players, mostly ITF qualifying — a price-source change, so the
-  price-source task's.
+  Tennis-Explorer-only matches are priced from their own Tennis Explorer page (te-pre21-import, 17 Nov: 604 added); about
+  1,100 TE pages list no bookmaker, so those rows stay a dash with their reason. No recurring TE run (founder 2026-11-17:
+  new matches come through our own feeds with Pinnacle closes).
 
 - **Per-event Backing = the ONE price join across the site (founder ruling 2026-10-08, TEN-402 card 01102d24;
   supersedes Q8's "the Match analysis Tournament tab's rows" and the 2026-10-07 "keep the tab join").** Record per

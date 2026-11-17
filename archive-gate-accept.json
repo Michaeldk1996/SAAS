@@ -11,19 +11,19 @@
   },
   {
    "key": "xRows",
-   "expect": 151211,
-   "reason": "price-all-matches 2026-11-07: one row per team-event match - (a) 56 Sep 2026 Davis Cup / Laver Cup matches our archive prices with a close were also held as an atp-x snapshot; (b) 39 Davis Cup rubbers (2021-26) the TE team import stored twice, keyed and keyless, at identical prices. The join dashed both copies; one stays (95 rows, live 151306 -> 151211)",
+   "expect": 154520,
+   "reason": "2026-11-17: Tennis-Explorer-only rows (te-pre21-import, negative TE match ID) that duplicate api-tennis's own snapshot of the same match (same players within a day) are no longer fed — two rows for one match made a dash on every page (~126-140 rows; Blockx v Draxl, Granby 2025 SF). Floor = 154,720 published - 200.",
    "by": "bsp-ceo-bot",
-   "at": "2026-11-06T21:28:26.321Z",
-   "check": "29b78bf6777edb9e"
+   "at": "2026-11-17T00:59:28.496Z",
+   "check": "2e958f659332b9a8"
   },
   {
    "key": "masterRows",
-   "expect": 193848,
-   "reason": "price-all-matches 2026-11-07: one row per team-event match - (a) 56 Sep 2026 Davis Cup / Laver Cup matches our archive prices with a close were also held as an atp-x snapshot; (b) 39 Davis Cup rubbers (2021-26) the TE team import stored twice, keyed and keyless, at identical prices. The join dashed both copies; one stays (95 rows, live 193943 -> 193848)",
+   "expect": 197300,
+   "reason": "2026-11-17: the same Tennis-Explorer-only duplicate rows leave the master (xRows entry, same change). Floor = 197,502 published - 200.",
    "by": "bsp-ceo-bot",
-   "at": "2026-11-06T21:28:26.368Z",
-   "check": "0d982c1d29754671"
+   "at": "2026-11-17T00:59:28.544Z",
+   "check": "636f11d961e7cc2b"
   }
  ]
 }
