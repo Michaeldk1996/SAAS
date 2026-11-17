@@ -1,17 +1,17 @@
 {
- "generatedAt": "2026-11-17T00:30:51.011Z",
+ "generatedAt": "2026-11-17T00:57:53.778Z",
  "tournaments": [
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 133,
+   "items": 134,
    "byType": {
-    "quote": 133
+    "quote": 134
    },
-   "latestTimestamp": "2026-11-16T23:45:21.000Z",
-   "updatedAt": "2026-11-17T00:30:51.011Z"
+   "latestTimestamp": "2026-11-17T00:07:55.000Z",
+   "updatedAt": "2026-11-17T00:57:53.778Z"
   },
   {
    "key": "2794",
@@ -54,6 +54,37 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-3a9b0072d4b86f",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": null,
+   "player": "C. Alcaraz",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-17T00:07:55.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "Sometimes I feel really comfortable,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "RTHK",
+   "sourceUrl": "https://news.rthk.hk/rthk/en/component/k2/1878066-20261117.htm",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On feeling superior to his opponents on court",
+   "sourceHash": "9a0fad89cf6a15e7",
+   "publishedAt": "2026-11-17T00:57:53.778Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-4b6d22a7895c51",
    "type": "quote",
@@ -1579,37 +1610,6 @@
    "sourceHash": "0553368e5720c8c0",
    "publishedAt": "2026-11-15T23:31:14.565Z",
    "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-b2f1172a530332",
-   "type": "quote",
-   "playerId": "2973",
-   "opponentId": null,
-   "player": "B. Shelton",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-15T22:45:27.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "I mean obviously I get a lot of questions, but I think it comes with the territory,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "Tennis365",
-   "sourceUrl": "https://www.tennis365.com/tennis-news/ben-shelton-juan-carlos-ferrero-atpfinals",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On the constant questions about coach Ferrero",
-   "sourceHash": "70efaf3ecda2586c",
-   "publishedAt": "2026-11-15T23:55:19.451Z",
-   "file": "news-ticker/tour-2026.json"
   }
  ]
 }
