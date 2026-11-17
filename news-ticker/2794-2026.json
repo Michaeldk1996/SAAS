@@ -2,8 +2,116 @@
  "tournament": "Finals - Turin",
  "tournamentKey": "2794",
  "season": "2026",
- "updatedAt": "2026-11-17T20:21:34.204Z",
+ "updatedAt": "2026-11-17T21:48:12.504Z",
  "items": [
+  {
+   "id": "report-12179705",
+   "type": "report",
+   "playerId": "1980",
+   "opponentId": "2973",
+   "player": "A. Zverev",
+   "opponent": "B. Shelton",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "stage": "main draw",
+   "round": null,
+   "eventKey": "12179705",
+   "timestamp": "2026-11-17T21:19:13.074Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-17T21:19:13.074Z",
+    "startedAt": "2026-11-17T19:44:31.403Z",
+    "minutes": 95
+   },
+   "category": "Statistics",
+   "text": "Zverev beat Shelton for the 7th time in 7 meetings, 6-2, 7-6.\n\nZverev: W: 25 / UE: 10 | DR: 2.14\n\nShelton: W: 23 / UE: 24 | DR: 0.47",
+   "baseText": "Zverev beat Shelton for the 7th time in 7 meetings, 6-2, 7-6.",
+   "rating": [
+    "Zverev: W: 25 / UE: 10 | DR: 2.14",
+    "Shelton: W: 23 / UE: 24 | DR: 0.47"
+   ],
+   "fields": {
+    "score": "6-2, 7-6",
+    "round": null,
+    "retired": false,
+    "h2h": {
+     "a": 7,
+     "b": 0,
+     "n": 7
+    },
+    "durationMinutes": 95,
+    "facts": {
+     "tiebreakSets": [
+      {
+       "set": 2,
+       "winner": "p1"
+      }
+     ]
+    },
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "servePointsLost",
+      "value": 10,
+      "total": 57
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "aces",
+      "value": 14
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "firstWon",
+      "value": 88,
+      "won": 38,
+      "total": 43,
+      "baseline": 78,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 49
+     },
+     {
+      "player": "loser",
+      "tone": "bad",
+      "metric": "secondWon",
+      "value": 40,
+      "won": 8,
+      "total": 20,
+      "baseline": 57,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 42
+     }
+    ],
+    "winner": {
+     "aces": 14,
+     "winners": 25,
+     "unforcedErrors": 10,
+     "breakPointsSaved": 2,
+     "breakPointsFaced": 2,
+     "breakPointsSource": "box score"
+    },
+    "loser": {
+     "aces": 15,
+     "winners": 23,
+     "unforcedErrors": 24,
+     "breakPointsSaved": 6,
+     "breakPointsFaced": 8,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12179705.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "41e4d6357ad3cd1d",
+   "publishedAt": "2026-11-17T21:48:12.504Z"
+  },
   {
    "id": "report-12179700",
    "type": "report",
