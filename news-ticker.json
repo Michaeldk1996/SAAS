@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-18T09:27:06.610Z",
+ "generatedAt": "2026-11-18T10:32:20.174Z",
  "tournaments": [
   {
    "key": "tour",
@@ -10,8 +10,8 @@
    "byType": {
     "quote": 177
    },
-   "latestTimestamp": "2026-11-18T08:44:00.000Z",
-   "updatedAt": "2026-11-18T09:27:06.610Z"
+   "latestTimestamp": "2026-11-18T09:44:48.000Z",
+   "updatedAt": "2026-11-18T10:32:20.174Z"
   },
   {
    "key": "2794",
@@ -54,6 +54,39 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-b52ffc7d9a01c3",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-18T09:44:48.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "First of all, this isn’t that kind of interview. Secondly, you know that the accusations have been proven false?",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Ubitennis",
+   "sourceUrl": "https://www.ubitennis.net/2026/11/alexander-zverev-faces-another-lawsuit-what-we-know-so-far/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On the domestic abuse allegations against him",
+   "sourceHash": "af12f36323353e82",
+   "publishedAt": "2026-11-14T14:44:36.468Z",
+   "revisedAt": "2026-11-18T10:32:20.174Z",
+   "revision": 1,
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-bae94d7483c898",
    "type": "quote",
@@ -1642,37 +1675,6 @@
    "publishedAt": "2026-11-17T08:40:36.705Z",
    "revisedAt": "2026-11-17T11:49:42.370Z",
    "revision": 2,
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-1743cd78835834",
-   "type": "quote",
-   "playerId": "1980",
-   "opponentId": null,
-   "player": "A. Zverev",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-17T06:59:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "A year ago, I could not have imagined standing here with this trophy … This is the biggest success of my career.",
-   "originalText": "Ich hätte mir vor einem Jahr nicht vorstellen können, hier mit dieser Trophäe zu stehen … Das ist der größte Erfolg meiner Karriere.",
-   "language": "de",
-   "translated": true,
-   "translationModel": "claude-opus-5-5",
-   "sourceName": "tennisnet.com",
-   "sourceUrl": "https://www.tennisnet.com/news/groesster-erfolg-meiner-karriere-zverev-als-nummer-eins-geehrt",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On receiving the year-end world number one trophy",
-   "sourceHash": "e9ac6b4abf826017",
-   "publishedAt": "2026-11-17T07:52:30.199Z",
    "file": "news-ticker/tour-2026.json"
   }
  ]
