@@ -360,7 +360,7 @@ Surface-specific rulings moved out of this file so they load only when relevant:
 | MTO (medical timeout) Telegram alerts + archive — source, never inferred, ATP scope, one post per MTO, player never guessed, archive row, chats, failure alert | `.claude/rules/mto.md` |
 | Foundation — colour tokens, theme switch, surfaces, text greys, meaning colours, badges, charts, shadows, type (TEN-376) | `.claude/rules/foundation.md` |
 | Layout 12a — layout reference, logo, brand pages | `.claude/rules/theme-12a.md` |
-| Database page (TEN-399) — one price join, header, control bar, Tour / Tournament / Player layout, compare events, charts | `.claude/rules/database.md` |
+| Database page (TEN-399; v3 export 2026-11-18) — one price join, header, filter bar (Tour, Swing), Tour / Tournament / Player / Fade finder, band box, compare events, the match-number chart | `.claude/rules/database.md` |
 | Database Ratings board / Lines tab rulings | `.claude/rules/ratings.md`, `.claude/rules/lines.md` |
 | Pre-match drops page — B′ Fly endpoint, what a row is, Dropped to vs Latest, 72 h window, freshness, watchdog; step 14 redesign (TEN-427: header + Updated, drop on shown prices, one Sharp/Soft grouping, one Bet105 chart source with Today's Matches, no Alerts / Refresh) | `.claude/rules/drops.md` |
 

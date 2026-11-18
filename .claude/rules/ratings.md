@@ -1,4 +1,4 @@
-# Ratings board — Database v2 (founder 2026-11-16, "follow the design")
+# Ratings board — Database v3 (export 2026-11-18; v2 founder 2026-11-16, "follow the design")
 
 Applies to the Database tab's Ratings view (`renderRatings`, `db2RatOverview`, `db2RatBoard`, `db2RatCompare` in
 `bsp-consult-dashboard.html`). Design = `design_handoff_database_v2/reference/Database.dc.html` L254-403. **Test:**
@@ -11,9 +11,14 @@ Applies to the Database tab's Ratings view (`renderRatings`, `db2RatOverview`, `
   Elo on Last 52 weeks: "it should be a dash").
 - **Boards: Overview · Elo · Serve · Return · Under pressure** — the Mental Edge board, its view pills, the 200-point
   ranking minimum and its count line are gone with it (the design has none).
-- The board lists the whole gated field while players are compared; a "Field median" row heads every table; the sorted
-  column is white 700, the others ink-2 400; places 1-3 white 700. The "+" in the first track picks a player (blue + 3px
-  halo, the row on a 9% blue wash; rotates to × in .22s; "Four players maximum").
+- The board lists the whole gated field while players are compared; the sorted column is white 700, the others ink-2 400;
+  places 1-3 white 700. **Consistency pass (export 2026-11-18, CHANGES §9):** no heavy line under the column heads; "Field
+  median" is a lifted strip (`--db2-layer` + 8% inset ring, radius 9, 40px, 4px under it); rows 54px on a 6% hairline, hover
+  `--db2-hover`, 30px avatars, names 14.5/700, rank mono 11. The "+" in the first track picks a player (blue + 3px halo,
+  rotates to × in .22s; hover edge 45% white; "Four players maximum"); **a picked row is lifted grey** (`--db2-layer` + 14%
+  inset ring), never a blue wash. The compare card carries **no remove buttons in its heads** (the filter chips and the
+  row button remove; "Clear all" stays); the pair's difference chip is the band chip (`--db2-layer` + 14% ring, radius 9,
+  mono 11/700).
 - Compare card above the board: exactly two players = face to face (tally "a – b ratings ahead", one row per rating, a
   4px line leaning to the better player with the difference on a chip, "Level" on a tie); one, three or four = columns,
   the row's best white 800, every other cell its gap in red ("−n"). Rows, always seven: Elo · Elo · hard · Elo · clay ·

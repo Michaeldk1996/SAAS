@@ -1,8 +1,8 @@
-# Lines tab — Database v2 (founder 2026-11-16, "follow the design")
+# Lines tab — Database v3 (founder export 2026-11-18; v2 2026-11-16)
 
-Applies to the Database tab's Lines view (`renderLines`, `db2Ln*` in `bsp-consult-dashboard.html`) and to
-`build-lines-field.js`. Design = `design_handoff_database_v2/reference/Database.dc.html` L163-206 and L406-665.
-**Test:** `test-database-v2.mjs` "ladders", "push", "field".
+Applies to the Database tab's Lines view (`renderLines`, `db2Ln*`, `db3LineBox` in `bsp-consult-dashboard.html`), to
+`build-lines-field.js` and to `tools/build-lines-field-cuts.mjs`. Design = `design_handoff_database_v3/` (CHANGES §8).
+**Test:** `test-database-v2.mjs` "ladders", "push", "field", "fieldCuts"; `tools/test-lines-field-cuts.mjs`.
 
 ## What the view is (founder 2026-11-16)
 - **Ladders** (`LN_LADDERS`, a literal — `build-lines-field.js` slices it, so the field file follows it on the next data
@@ -13,16 +13,31 @@ Applies to the Database tab's Lines view (`renderLines`, `db2Ln*` in `bsp-consul
   (covered–missed); the match list marks it "Void" (grey) and its head counts "· N void". Half lines cannot push. The field
   file is built from the same `lnHit` / `lnLine`, so its rates exclude pushes too. A rate needs LN_MIN_N (5) matches and is
   muted under 10 (DB2_LN_FULL).
-- **Field** = the field median from `lines-field.json` at the format · surface · period slice; **under any other filter
-  (side, price band, archetype, level) it is an en dash** — no field file holds those. Edge = Cover − Field, both as shown.
+- **Field** = the field median at the slice the view shows: `lines-field.json` (format · surface · period) with no other
+  filter on, else **`lines-field-cuts.json`** under the side (All / As favourite / As underdog), price band, opponent
+  archetype or level filter (founder review 2026-11-18: "Field / Edge empty under As favourite: not normal, fix it";
+  replaces "under any other filter it is an en dash"). Edge = Cover − Field, both as shown. The cut file is tallied by the
+  page's own `DatabaseTab.lnCutTally` (the one price join, the archetype table, the catalogue) over the lines-field roster in
+  headless Chrome by `tools/build-lines-field-cuts.mjs`, a pipeline step after the price guard (best-effort; a failed build
+  ships no file and the field reads a dash under those filters). Cut key `fmt|surf|scope|P|X` (P = fav / dog / fav:i / dog:i,
+  X = - / a:i / l:i); **archetype and level together have no cut** (a dash). A player is in a cut's field from LN_MIN_N (5)
+  matches on that line; **the field size n is on every Field figure's hover** and in the line box. The file is loaded only
+  while such a filter is on (measured 18 Nov: 168 players, 824 cuts, 112 KB gzip, 3:54 to build), so no view loads slower.
+- **Comparison works on a small sample** (founder review 2026-11-18): Edge prints from 5 matches (muted 5–9), and the two
+  answer tiles rank every line with an Edge, not only lines of 10+.
 - **As favourite / As underdog and price bands** (founder 2026-11-16, replacing "The Side control is not built"): the
   player's shorter Pinnacle closing price on the Database's one price join (`H2HPage.priceJoin`, the Player Profile's) =
   favourite; an exact tie is neither (no opening price on record); a row the join does not price is in no side view.
 - Opponent archetype = the eight locked classifier labels (`playing-styles.json`); Level = the tournament catalogue
   (Grand Slam only under Bo5; Masters 1000 / ATP 500 / ATP 250 only under Bo3). Never colour a cover rate green.
-- Layout: the Filters panel full width inside the filter card; answer tiles; per family two band cards (− lines / + lines,
-  Over / Under) with the match list directly under the clicked row (latest 12, All · Covered · Missed); 2-3 players = the
-  flat list.
+- **Layout (CHANGES §8):** stacked cards. Head card: 44px avatar (photo) + name 18/800 + grey rank over the scope line |
+  the two tiles "Most above / below the field" | "?". Per family a header card (name over "N lines · N matches" | the summary
+  pill with a green / red dot), then two section cards "Minus lines" / "Plus lines" ("Over" / "Under"): head title over
+  "N lines · Best of 3 · last 52 weeks" | the average edge 26px over "average edge on the field"; a row (60px) = the line 15px
+  mono | the edge line with its pp chip | cover over "field n%" | record | ›. **A line click opens the line box** (band box
+  anatomy: avatar + name + the line pill; four tiles Cover rate · Field median · Edge on the field · Rank; "Matches on this
+  line" with All · Covered · Missed, 12 then "Show 12 more matches"). Nothing opens inside the list. Two or three players =
+  one section card holding the flat table; a cell opens the line box for that player.
 
 ## Field / Vs field / Ranking come from the pipeline file (TEN-260 Part B)
 
