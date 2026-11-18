@@ -15,7 +15,7 @@ import { build } from './news-ticker/build-news-ticker.mjs';
 import { pbpFacts } from './news-ticker/pbp-facts.mjs';
 import { daysWithoutReports } from './news-ticker/ticker-alerts.mjs';
 import { processTournament, dueAlerts, siteConfig, outletsFor, switchedOff, activeTournaments, SILENT_HOURS } from './news-ticker/collect-quotes.mjs';
-import { speakerIn, speechOf, technicalBlock, paywalled, sectionLinks, readOutlet, candidatesFromOutletArticle, UA } from './news-ticker/outlet-reader.mjs';
+import { speakerIn, speechOf, technicalBlock, paywalled, sectionLinks, readOutlet, candidatesFromOutletArticle, UA, surnameOf } from './news-ticker/outlet-reader.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 let n = 0; const ok = async (name, fn) => { await fn(); n++; console.log('  ok  ' + name); };
@@ -507,6 +507,33 @@ await ok('tour-wide: an article that names no tournament still yields its quote;
   const named = await readOutlet({ ...base, tournamentNames: ['Testville'], cache: {}, sectionMemo: new Map() });
   assert.deepEqual(named.candidates[0].mentions, ['testville']);
 });
+await ok('tour-wide: another sport is never a tennis quote; a scrambled three-word name is never matched on a given name', async () => {
+  const SECTION = '<html>' + 'x'.repeat(700) + '<a href="/sport/hockey/nhl/joel-eriksson-ek-glodhet">Joel</a><a href="/sport/tennis/joel-on-his-long-season">Joel 2</a></html>';
+  const PAGE = (b) => `<html><head><script type="application/ld+json">{"datePublished":"2026-11-10T20:00:00Z"}</script></head><body><article><p>Match report.</p>${b}</article></body></html>` + 'x'.repeat(700);
+  const fetchFn = async (url) => ({ status: 200, url, text: async () => (url.endsWith('/sport/') ? SECTION : PAGE('<p>“The puck hit the stick and went into the net,” said Joel.</p>')) });
+  const outlet = { outlet: 'Outlet', country: 'Sweden', language: 'en', status: 'allowed', enabled: true, sectionUrl: 'https://o.example/sport/' };
+  const players = [{ key: '5', name: 'J. Joel', surname: 'joel', initial: 'j' }];
+  const r = await readOutlet({ outlet, players, tournamentNames: [], cache: {}, sectionMemo: new Map(), nowIso: '2026-11-10T21:00:00Z', since: Date.parse('2026-10-20'), fetchFn });
+  assert.deepEqual(r.candidates.map((c) => c.sourceUrl), ['https://o.example/sport/tennis/joel-on-his-long-season'], 'the hockey article is skipped, the tennis one read');
+  const { tourPlayers, notTennis } = await import('./news-ticker/collect-quotes.mjs');
+  const tp = tourPlayers({ players: [{ key: '1', name: 'Josef Schwaerzler Joel', rank: 169 }, { key: '2', name: 'Alex De Minaur', rank: 7 }, { key: '3', name: 'Jannik Sinner', rank: 2 }] });
+  assert.deepEqual(tp.map((p) => p.name), ['J. Schwaerzler Joel', 'A. De Minaur', 'J. Sinner'], 'CONTROL before the fix: "J. Joel"');
+  assert.equal(surnameOf(tp[0].name), 'schwaerzler joel');
+  assert.ok(notTennis('https://www.gulf-times.com/article/1/sport/football/diallo-fifa-bid') && !notTennis('https://www.ubitennis.net/2026/11/zverev'));
+});
+await ok('tour-wide: a held quote whose URL names a tournament now on moves to it (once, never copied); others stay', async () => {
+  const { rehomeTourItems, urlMentions, eventAliases } = await import('./news-ticker/collect-quotes.mjs');
+  const now = '2026-11-18T12:00:00.000Z', F = [{ key: '2794', folded: 'finals - turin', aliases: eventAliases('Finals - Turin'), since: Date.parse('2026-11-12'), fieldKeys: new Set(['1980', '2973']) }];
+  assert.deepEqual(urlMentions('https://gulfnews.com/sport/tennis/zverev-serves-up-emphatic-win-to-reach-atp-finals-last-four', F), ['atp finals']);
+  assert.deepEqual(urlMentions('https://www.tennistv.com/videos/4610536/turin-2026-rr-zverev-interview', F), ['turin']);
+  assert.deepEqual(urlMentions('https://example.com/news/zverev-finals-preview', F), [], 'the bare word "finals" names no event');
+  const q = (id, url, pl, ts = '2026-11-18T00:45:38.000Z') => ({ id, type: 'quote', playerId: pl, sourceUrl: url, timestamp: ts, timestampKind: 'observed (x)' });
+  const items = [q('a', 'https://gulfnews.com/sport/tennis/zverev-serves-up-emphatic-win-to-reach-atp-finals-last-four', '1980'),
+    q('b', 'https://www.ubitennis.net/2026/11/alexander-zverev-faces-another-lawsuit', '1980'),
+    q('c', 'https://www.tennistv.com/videos/4609109/stockholm-2026-final-taylor-fritz-interview', '9'),
+    q('d', 'https://x.com/turin-2026-rr-mensik', '777')];
+  assert.deepEqual(rehomeTourItems(items, F, new Set(['1980', '9', '777']), now).map((m) => m.item.id + '>' + m.to), ['a>2794'], 'only the Finals article said by a Finals player moves');
+});
 await ok('tour-wide: routing (field + article names the event -> that tournament; else a ranked player -> the tour file; else nowhere), field = top 200, tags', async () => {
   const { routeCandidate, tourPlayers, quoteCategory, TOUR_MAX_RANK } = await import('./news-ticker/collect-quotes.mjs');
   const now = '2026-11-10T21:00:00.000Z', T = [{ key: '77', folded: 'testville', since: Date.parse('2026-11-05'), fieldKeys: new Set(['1', '2']) }], tour = new Set(['1', '9']);
@@ -534,7 +561,7 @@ await ok('tour-wide: routing (field + article names the event -> that tournament
   assert.equal(TOUR_PER_ARTICLE, 2);
   assert.deepEqual(tourKeep([q(1, 'a', 'p'), q(2, 'a', 'p'), q(3, 'a', 'p'), q(4, 'a', 'z'), q(5, 'b', 'p'), q(6, 'c', 'p', 'collected (no time)')]).map((x) => x.id), [1, 2, 4, 5], 'two a player per article; undated out');
   const P = tourPlayers({ players: [{ key: 1, name: 'Alexander Zverev', rank: 1 }, { key: 2, name: 'Old Timer', rank: TOUR_MAX_RANK + 1 }, { key: 3, name: 'No Rank', rank: null }, { key: 4, name: 'Juan Manuel Cerundolo', rank: 200 }, { key: 5, name: 'Alex De Minaur', rank: 7 }] });
-  assert.deepEqual(P, [{ key: '1', name: 'A. Zverev' }, { key: '4', name: 'J. Cerundolo' }, { key: '5', name: 'A. De Minaur' }]);
+  assert.deepEqual(P, [{ key: '1', name: 'A. Zverev' }, { key: '4', name: 'J. Manuel Cerundolo' }, { key: '5', name: 'A. De Minaur' }], 'a three-word name keeps both last words (api-tennis scrambles some: missed, never misattributed)');
   assert.equal(quoteCategory({ text: 'My knee is finally pain free.' }), 'Injuries');
   assert.equal(quoteCategory({ text: 'I feel good.', originalText: 'Jag har varit skadad länge.' }), 'Injuries', 'the original-language text counts');
   assert.equal(quoteCategory({ text: 'I served well.', eventKey: '5' }), 'Quotes');

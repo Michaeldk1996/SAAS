@@ -145,6 +145,7 @@ export function candidatesFromOutletArticle({ url, html, outlet, language, playe
   return { candidates: out, unnamed, published: ts };
 }
 
+export const OTHER_SPORT_PATH = /\/(hockey|nhl|ishockey|fotboll|football|fussball|soccer|calcio|futbol|basket\w*|handball|nfl|nba|cricket|rugby|golf|f1|motorsport|cycling)\//i;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function get(url, fetchFn) {
   try {
@@ -188,6 +189,8 @@ export async function readOutlet({ outlet, players, tournamentName, tournamentNa
     const text = fold(a.body.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' '));
     const mentions = tns.filter((tn) => text.includes(tn));
     if (!wide && !mentions.length) { stats.offTopic++; cache[l.url].note = 'does not mention the tournament'; continue; }
+    // tour-wide: the article must be about tennis (a surname alone matched an NHL player on 18 Nov)
+    if (wide && (OTHER_SPORT_PATH.test(l.url) || !/\b(tennis|tenis|tennista|tenista|tenisz|tennispelare|atp)\b/.test(text + ' ' + fold(l.url.replace(/[-_/.]+/g, ' '))))) { stats.offTopic++; cache[l.url].note = 'not about tennis'; continue; }
     const got = candidatesFromOutletArticle({ url: l.url, html: a.body, outlet: outlet.outlet, language: outlet.language, players, published: l.published });
     if (got.published && since && Date.parse(got.published) < since) { stats.tooOld++; cache[l.url].note = 'published before this edition'; continue; }
     stats.unnamed += got.unnamed; stats.candidates += got.candidates.length;

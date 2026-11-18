@@ -24,7 +24,7 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { verbatimIn, resolvePlayer, foldText } from './news-core.mjs';
 import { collectQuotes, addContext } from './quote-sources.mjs';
-import { readOutlet, surnameOf, initialOf } from './outlet-reader.mjs';
+import { readOutlet, surnameOf, initialOf, OTHER_SPORT_PATH } from './outlet-reader.mjs';
 import { slamPressCandidates, slamTitle } from './slam-press.mjs';
 import { translateQuote, topicQuote } from './translate.mjs';
 import { mergeItems, dedupeQuotes, sameQuote, tourKeep } from './ticker-core.mjs';
@@ -85,8 +85,11 @@ export function tourPlayers(index) {
     .map((p) => {   // "I. Surname" from the standings' full name: the last word, with a particle before it kept ("A. De Minaur").
       // A double surname the press writes in full ("Carreno Busta") is then missed, never misattributed; a player on a
       // tournament board is matched on his card's own name instead.
+      // A three-word standings name is either a double surname ("Davidovich Fokina") or api-tennis's scrambled order
+      // ("Josef Schwaerzler Joel" = Joel Josef Schwaerzler): both last words are kept, so a scrambled name is never matched
+      // on a given name (measured 18 Nov: "J. Joel" took a hockey player's quote).
       const w = String(p.name).trim().split(/\s+/);
-      const sur = w.length > 2 && /^(de|del|della|di|da|van|von|der|la|le|mc|st)$/i.test(w[w.length - 2]) ? w.slice(-2).join(' ') : w[w.length - 1];
+      const sur = w.length > 2 ? w.slice(-2).join(' ') : w[w.length - 1];
       return { key: String(p.key), name: w.length > 1 ? `${w[0][0]}. ${sur}` : p.name };
     });
 }
@@ -100,6 +103,26 @@ export function eventAliases(name) {
   for (const part of full.split(/\s+-\s+/)) if (part.length >= 4 && !GENERIC.has(part)) out.add(part);
   if (/\bfinals\b/.test(full) && !/next gen|davis/.test(full)) { out.add('atp finals'); out.add('nitto atp finals'); }
   return [...out];
+}
+// An article from another sport's section is never a tennis quote (measured 18 Nov: an NHL and two FIFA articles).
+export const notTennis = (url) => OTHER_SPORT_PATH.test(String(url || ''));
+// The aliases of the tournaments a URL names in its own slug ("…/zverev-wins-to-reach-atp-finals-last-four").
+export function urlMentions(url, tournaments) {
+  let u = String(url || ''); try { u = decodeURIComponent(u); } catch (e) { /* keep the raw URL */ }
+  const hay = ' ' + u.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ') + ' ';
+  return [...new Set(tournaments.flatMap((t) => [t.folded, ...(t.aliases || [])]).filter((a) => a && hay.includes(' ' + a.replace(/[^a-z0-9]+/g, ' ').trim() + ' ')))];
+}
+// A quote held in the tour-wide file whose own URL names a tournament now on, said by a player of its field inside the
+// edition, belongs to that tournament (filed tour-wide before the event aliases existed): it is moved, never copied.
+export function rehomeTourItems(items, tournaments, tourKeys, nowIso) {
+  const moved = [];
+  for (const x of items || []) {
+    if (x.type !== 'quote') continue;
+    const c = { speakerKey: x.playerId, mentions: urlMentions(x.sourceUrl, tournaments), timestamp: x.timestamp, timestampKind: x.timestampKind };
+    const to = routeCandidate(c, tournaments, tourKeys, nowIso);
+    if (to && to !== TOUR_KEY) moved.push({ item: x, to });
+  }
+  return moved;
 }
 export function routeCandidate(c, tournaments, tourKeys, nowIso) {
   const ts = Date.parse(c.timestamp);
@@ -131,7 +154,7 @@ export async function processTournament({ t, got, translate = translateQuote, kn
     const id = quoteId(key, q.text);
     let text = q.text, original = null, translated = false, model = null;
     if (q.language !== 'en') {
-      const held = heldById.get(id);
+      const held = heldById.get(id) || q.heldItem;
       if (held) { c.alreadyHeld++; text = held.text; original = held.originalText; translated = true; model = held.translationModel; }   // never translate the same quote twice
       else {
         const tr = await translate(q.text, q.language);
@@ -268,13 +291,26 @@ async function main() {
   const off = switchedOff(registry);
   run.outlets = { read: outletStats.length, withCandidates: outletStats.filter((x) => x.candidates).length, blocked: outletStats.filter((x) => x.blocked).map((x) => `${x.outlet}: ${x.blocked}`), articlesFetched: outletStats.reduce((n, x) => n + x.fetched, 0), paywalled: outletStats.reduce((n, x) => n + x.paywalled, 0), unnamed: outletStats.reduce((n, x) => n + x.unnamed, 0), byOutlet: outletStats.filter((x) => x.candidates || x.fetched).map((x) => ({ outlet: x.outlet, country: x.country, language: x.language, fetched: x.fetched, candidates: x.candidates })) };
   const season = nowIso.slice(0, 4);
+  // held tour-wide quotes that belong to a tournament now on: back through that tournament's job, as candidates already checked
+  const tourFile = `news-quotes/${TOUR_KEY}-${season}.json`, movedIds = new Set();
+  for (const { item: x, to } of rehomeTourItems(((rd(tourFile) || {}).items) || [], prep, tourKeys, nowIso)) {
+    const hit = prep.find((p) => p.key === to), c = { id: x.id, speakerKey: String(x.playerId), text: x.originalText || x.text, spans: [x.originalText || x.text],
+      language: x.language || 'en', timestamp: x.timestamp, timestampKind: x.timestampKind, day: String(x.timestamp || '').slice(0, 10) || null,
+      sourceName: x.sourceName, sourceUrl: x.sourceUrl, checkedOn: x.verbatimCheckedOn, topic: x.topic || null, preVerified: true, heldItem: x,
+      ...(x.interview ? { interview: x.interview } : {}) };
+    c.speaker = (everyone.find((p) => p.key === c.speakerKey) || {}).name || x.player;
+    addContext(c, hit.main); hit.extra.push(c); movedIds.add(x.id);
+  }
+  run.rehomed = movedIds.size;
+  const inTournaments = new Set(prep.flatMap((x) => (((rd(`news-quotes/${x.key}-${x.t.season}.json`) || {}).items) || []).map((q) => q.id)));
   const jobs = prep.map((x) => ({ t: x.t, main: x.main, site: x.site, extra: x.extra }));
   jobs.push({ t: { key: TOUR_KEY, season, name: TOUR_NAME, cards: tour.map((p) => ({ p1Key: p.key, p1: p.name })) }, main: [], site: null, extra: tourCandidates });
   for (const { t, main, site, extra } of jobs) {
     const got = site ? await collectQuotes({ tournament: t.name, main, since: prep.find((x) => x.t === t).since, site }) : { sources: [], candidates: [] };
     got.candidates.push(...extra);
     const file = `news-quotes/${t.key}-${t.season}.json`, held = rd(file);
-    const heldItems = ((held && held.items) || []).filter((x) => !off.has(x.sourceName));
+    const heldItems = ((held && held.items) || []).filter((x) => !off.has(x.sourceName)
+      && !(t.key === TOUR_KEY && (movedIds.has(x.id) || inTournaments.has(x.id) || notTennis(x.sourceUrl))));
     const res = await processTournament({ t, got, known: heldItems });
     if (res.counts.modelError) modelError = res.counts.modelError;
     // a quote the model could not translate is not lost: its article is read again on a later run (at most RETRY_MAX times)
