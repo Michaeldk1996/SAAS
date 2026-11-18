@@ -624,9 +624,9 @@ test('TEN-437 (5): a history that did not load is "could not load" + Retry (H2HP
 // meetings (fewer → "Not enough meetings to rank lines (n=…)"); a line shows with H2H_HOT_MIN_LINE = 1 eligible meeting;
 // H2H_HOT_MIN_RATE = null (no rate floor); the Rate keeps the thin rule (maGate: under 5 no %, 5–9 grey).
 const hotRows = c => [...c.matchAll(/<div class="seg x-hl" data-hid="\d+" style="display:grid; grid-template-columns:([^;]+);[\s\S]*?(?=<div class="seg x-hl"|<\/div>\s*<div style="display:flex; align-items:center; justify-content:space-between)/g)].map(m => ({ cols: m[1], html: m[0], text: text(m[0]) }));
-test('founder ruling 3: Hot lines ranked from 3 meetings (H2H_HOT_MIN_MEETINGS), a line from 1 eligible meeting, no rate floor; under 3 → "Not enough meetings to rank lines (n=2)"', async () => {
+test('founder ruling 3 (2026-11-18): Hot lines ranked from 2 meetings (H2H_HOT_MIN_MEETINGS), a line from 1 eligible meeting, no rate floor; 0–1 → "Not enough meetings to rank lines (n=1)"', async () => {
   const h = await pairPage(M3);
-  assert.equal(h.consts.H2H_HOT_MIN_MEETINGS, 3); assert.equal(h.consts.H2H_HOT_MIN_LINE, 1); assert.equal(h.consts.H2H_HOT_MIN_RATE, null);
+  assert.equal(h.consts.H2H_HOT_MIN_MEETINGS, 2); assert.equal(h.consts.H2H_HOT_MIN_LINE, 1); assert.equal(h.consts.H2H_HOT_MIN_RATE, null);
   const c = h.call(h.h2hCard, h.view());
   const rows = hotRows(c);
   // the shared scorer at the design's line floor (1 eligible meeting): one row per family that has a line
@@ -646,12 +646,17 @@ test('founder ruling 3: Hot lines ranked from 3 meetings (H2H_HOT_MIN_MEETINGS),
   const elig = defs.filter(L => F.filter(r => h.call(() => h.run('fhEligible'))(r, L)).length >= 1).length;
   assert.ok(elig > rows.length, 'more lines than families: the toggle has something to show');
   assert.equal(N, elig, '"Show all lines (N)" counts every line with one eligible meeting (H2H_HOT_MIN_LINE = 1)');
-  // two meetings: one sentence, no ranking
+  // two meetings: ranked (founder ruling 3, 2026-11-18 — replaces the design's 3)
   const h2 = await pairPage(M3.slice(0, 2));
   const c2 = h2.call(h2.h2hCard, h2.view());
-  assert.match(text(c2), /Not enough meetings to rank lines \(n=2\)/);
-  assert.equal(hotRows(c2).length, 0);
-  // the scope decides: three meetings on hard, one on clay → the clay scope is under 3
+  assert.doesNotMatch(text(c2), /Not enough meetings/);
+  assert.ok(hotRows(c2).length >= 1, 'two meetings rank their lines');
+  // one meeting: one sentence, no ranking
+  const h1 = await pairPage(M3.slice(0, 1));
+  const c1 = h1.call(h1.h2hCard, h1.view());
+  assert.match(text(c1), /Not enough meetings to rank lines \(n=1\)/);
+  assert.equal(hotRows(c1).length, 0);
+  // the scope decides: three meetings on hard, one on clay → the clay scope is under 2
   const h3 = await pairPage(M3.concat([{ date: '2026-05-10', won: true, sets: [[6, 2], [6, 2]], surface: 'clay', t: 'Rome' }]));
   h3.state.h2hSurf = 'Clay';
   assert.match(text(h3.call(h3.h2hCard, h3.view())), /Not enough meetings to rank lines \(n=1\)/);
@@ -718,10 +723,12 @@ test('the meetings box: the design grid, newest first by year ("2025 1–0 · 1 
   runH(h, rows[2].hid);
   assert.deepEqual(h.sheets, [rows[2].mid]);
   assert.match(h.call(h.h2hBoxHTML, h.view()), new RegExp(`data-fh-mid="${rows[2].mid}" style="[^"]*background:var\\(--h2h-raised\\); box-shadow:inset 0 0 0 1px color-mix\\(in srgb, var\\(--h2h-white\\) 16%, transparent\\);`));
-  // the price columns' heads are the two players' mini avatars (CHANGES 2026-11-17 §2: 22px, class "mini", no ring)
-  const minis = [...box.matchAll(/<span title="([^"]+)'s closing price"[^>]*><span class="x-av mini"\s*style="([^"]*)"/g)].map(m => [m[1], m[2]]);
+  // the price columns' heads: each player's initials, 26px, 1px 16% edge, no ring, never a photo (DF L404; founder ruling 10)
+  const minis = [...box.matchAll(/<span class="x-avmini" title="([^"]+)&#39;s closing price" style="([^"]*)">([^<]*)<\/span>/g)].map(m => [m[1], m[2], m[3]]);
   assert.deepEqual(minis.map(m => m[0]), ['J. Sinner', 'C. Alcaraz']);
-  minis.forEach(m => { assert.match(m[1], /width:22px; height:22px;/); assert.doesNotMatch(m[1], /box-shadow/, 'no ring on a mini avatar'); });
+  assert.deepEqual(minis.map(m => m[2]), ['JS', 'CA'], 'initials');
+  minis.forEach(m => { assert.match(m[1], /width:26px; height:26px; border-radius:50%; border:1px solid color-mix\(in srgb, var\(--h2h-white\) 16%, transparent\);[^"]*font-size:10px;/); assert.doesNotMatch(m[1], /box-shadow/, 'no ring on a mini avatar'); });
+  assert.doesNotMatch(box, /<img/, 'no photo anywhere in the box (its head is initials too, DF L388)');
   assert.match(text(box), /Meetings 4 on record · Sinner leads 3–1/, 'the record in the sentence: en dash');
 });
 test('TEN-437 item 4: a Bet365-priced meeting keeps its "B" marker and the hover "Bet365 closing odds, Pinnacle not available"; a Pinnacle meeting carries none', async () => {
@@ -744,10 +751,12 @@ test('the meetings box tiles: Total points won from the box scores over k of n m
   assert.match(text(h.call(h.h2hBoxHTML, h.view())), /Total points won Loading the box scores…/, 'never a guess while the box scores load');
   await new Promise(r => setTimeout(r, 5));
   const t = text(h.call(h.h2hBoxHTML, h.view()));
-  assert.match(t, /Total points won 52\.3% Sinner · Alcaraz 47\.7% · 2 of 3 meetings/, '115 of 220 points from the two box scores on file; the third meeting has none');
-  assert.match(t, /On hard 2–1 Clay 0–0 · Grass 0–0/);
-  assert.match(t, /Went to a deciding set 2 of 3 Sinner won 1 · Alcaraz won 1/);
-  assert.match(t, /Favourite won 1 of 2 Sinner beat Alcaraz as the underdog · Swiss Indoors 2025 · 1 level-priced, not counted/, 'an exact tie is no favourite; the one underdog win is named (founder 2026-11-17)');
+  // founder ruling 9 (2026-11-18): ONE short sentence under each value; the counts it leaves out move to the hover
+  assert.match(t, /Total points won 52\.3% Sinner over 2 of 3 meetings, Alcaraz 47\.7%/, '115 of 220 points from the two box scores on file; the third meeting has none');
+  assert.match(t, /On hard 2–1 0–0 on clay, 0–0 on grass/);
+  assert.match(t, /Went to a deciding set 2 of 3 Sinner won 1, Alcaraz won 1/);
+  assert.match(t, /Favourite won 1 of 2 Sinner won as underdog at Swiss Indoors 2025 Meetings /, 'an exact tie is no favourite; the underdog win is named — the sentence ends there');
+  assert.match(h.call(h.h2hBoxHTML, h.view()), /<div title="1 level-priced, not counted" style="background:var\(--h2h-card\);[^"]*"><span[^>]*>Favourite won</, 'the level-priced meeting is in the hover, not the sentence');
   // no box score at all → a dash and the reason, never estimated from games
   const h0 = await pairPage(M3); h0.state.h2hBox = true; h0.call(h0.h2hBoxHTML, h0.view()); await new Promise(r => setTimeout(r, 5));
   assert.match(text(h0.call(h0.h2hBoxHTML, h0.view())), /Total points won — No box score on record for these meetings/);

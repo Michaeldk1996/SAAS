@@ -6,8 +6,8 @@ const ROOT = path.join(__dirname, '..');
 const html = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
 const MUTANTS = [
   ["Market edge: a band's Return printed under 5 matches (Won and Edge dash, the stake does not)",
-    "${rated ? sg(pl, 1, '%') : '—'}</span>",
-    "${n ? sg(pl, 1, '%') : '—'}</span>"],
+    "${x.rated ? sg(bd.units, 1, '%') : '—'}</span>",
+    "${n ? sg(bd.units, 1, '%') : '—'}</span>"],
   ["the record dots by winner colour swapped (player one white)",
     "background:${r.won ? X_BL : X_WH};\"></span>`).join('')}</div>",
     "background:${r.won ? X_WH : X_BL};\"></span>`).join('')}</div>"],
@@ -126,9 +126,9 @@ const MUTANTS = [
   ['r1 fix 6: the week set is not the Entry list\'s rule',
     "    const wkFn = fn('tourxThisWeekEvents'), wk = wkFn ? wkFn() : null;", "    const wkFn = null, wk = [{ name: 'Beijing' }, { name: 'Tokyo' }, { name: 'Shanghai' }];"],
   // ---- the design rebuild (founder 2026-11-16): rulings 1–3, the design grids, the meetings box, Match analysis untouched
-  ["ruling 3: Hot lines ranked from 2 meetings",
-    "  const H2H_HOT_MIN_MEETINGS = 3;",
-    "  const H2H_HOT_MIN_MEETINGS = 2;"],
+  ["ruling 3 (2026-11-18): Hot lines ranked from 1 meeting (0–1 must stay \"Not enough meetings\")",
+    "  const H2H_HOT_MIN_MEETINGS = 2;",
+    "  const H2H_HOT_MIN_MEETINGS = 1;"],
   ["ruling 3: a line needs 3 eligible meetings (the old FH_HOT_MIN_ELIGIBLE)",
     "  const H2H_HOT_MIN_LINE = 1;",
     "  const H2H_HOT_MIN_LINE = 3;"],
@@ -169,8 +169,8 @@ const MUTANTS = [
     "const keep = r => scope !== 'm24' || (r.day != null && r.day >= cut24);",
     "const keep = r => true;"],
   ["Market edge: a 5–9 band edge coloured",
-    "const ec = edge == null ? G : muted ? G : edge >= 0 ? UP : DN;",
-    "const ec = edge == null ? G : edge >= 0 ? UP : DN;"],
+    "ec: edge == null || muted ? G : edge >= 0 ? UP : DN };",
+    "ec: edge == null ? G : edge >= 0 ? UP : DN };"],
   ["Tournament default ignores this week's draw",
     "      if (hit) return { name: hit.name, why: 'week' };\n",
     ""],
@@ -184,8 +184,8 @@ const MUTANTS = [
     "const GRID = 'minmax(150px,0.8fr) 56px 72px minmax(234px,1.6fr) 10px';",
     "const GRID = 'minmax(150px,0.8fr) 60px 72px minmax(234px,1.6fr) 10px';"],
   ["the band grid off the design",
-    "const BCOLS = 'minmax(0,1.1fr) 46px minmax(0,1fr) 54px 60px 8px';",
-    "const BCOLS = 'minmax(0,1.1fr) 50px minmax(0,1fr) 54px 60px 8px';"],
+    "const BCOLS = '168px minmax(0,1fr) 54px 60px 8px';",
+    "const BCOLS = '160px minmax(0,1fr) 54px 60px 8px';"],
   ["the career-match grid off the design",
     "grid-template-columns:52px minmax(0,1fr) 34px minmax(0,1.1fr) 56px 44px 44px 8px; gap:0 10px; align-items:center; margin:0 10px 2px;",
     "grid-template-columns:56px minmax(0,1fr) 34px minmax(0,1.1fr) 56px 44px 44px 8px; gap:0 10px; align-items:center; margin:0 10px 2px;"],
@@ -244,9 +244,38 @@ const MUTANTS = [
   ["17 Nov: Market edge Total return back in units",
     "tot = M.priced.length ? sg(u, 1, '%') : '—';",
     "tot = M.priced.length ? sg(u, 1, 'u') : '—';"],
-  ["17 Nov: mini avatars keep a ring",
-    "${mini ? '' : ` box-shadow:0 0 0 2px ${ring};`}",
-    " box-shadow:0 0 0 2px ${ring};"],
+  // the 18 Nov 2026 snapshot + founder rulings 2–13 (test-h2h-1117.mjs, test-ten402-a/b/c)
+  ["ruling 3: hot lines ranked from 3 meetings again", "  const H2H_HOT_MIN_MEETINGS = 2;", "  const H2H_HOT_MIN_MEETINGS = 3;"],
+  ["ruling 4: the page filled with the near-black tone again",
+    "<div class=\"x-wrap\" style=\"display:flex; align-items:flex-start; min-height:100vh; background:transparent;",
+    "<div class=\"x-wrap\" style=\"display:flex; align-items:flex-start; min-height:100vh; background:var(--h2h-page);"],
+  ["ruling 4: the sticky band back on --h2h-page",
+    "background:linear-gradient(var(--page) 78%, color-mix(in srgb, var(--page) 0%, transparent));\">",
+    "background:linear-gradient(var(--h2h-page) 78%, var(--h2h-page-0));\">"],
+  ["ruling 5: a long Tournament list no longer folds", "let left = allR ? Infinity : H2H_TOUR_SHOWN;", "let left = Infinity;"],
+  ["ruling 6: the picker photo lazy again", "if (img && opt.eager) img = img.replace(", "if (false) img = img.replace("],
+  ["ruling 6: no repaint when the photo index lands late", "    xPhotoKick();\n", ""],
+  ["ruling 7: the Model explanation leaves the \"?\"", "${help ? '<span style=\"flex:1;\"></span>' + xHelp(help) : ''}", ""],
+  ["ruling 8: Career Elo = the current Elo, not the peak", "const r = rec && rec.peak ? rec.peak.rating : null;", "const r = rec && rec.all ? rec.all.rating : null;"],
+  ["ruling 8: Last 24 months reads another window", "      if (W.none) return { d:", "      if (false) return { d:"],
+  ["ruling 8: Career reads the DNA file", "      if (W.career) {\n", "      if (false) {\n"],
+  ["ruling 9: the level-priced count back in the Favourite sentence",
+    "sub: fav.length ? udTxt : 'No priced meeting', tip: favTip",
+    "sub: fav.length ? udTxt + (ties ? ' · ' + ties + ' level-priced, not counted' : '') : 'No priced meeting', tip: favTip"],
+  ["ruling 10: the Meetings column heads show photos", "const pmini = (p, s, nm) => xMini(p, 26, 10, nm + \"'s closing price\");", "const pmini = (p, s, nm) => xAv(p, s, 26, { fs: 10, title: nm + \"'s closing price\" });"],
+  ["ruling 10: the Career matches head shows a photo", "${xIni(p, sd, 38, 13)}<div style=\"flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;\"><span style=\"font-size:15px; font-weight:800; letter-spacing:-0.01em; white-space:normal; overflow-wrap:anywhere;\">${E(who)}", "${xAv(p, sd, 38)}<div style=\"flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;\"><span style=\"font-size:15px; font-weight:800; letter-spacing:-0.01em; white-space:normal; overflow-wrap:anywhere;\">${E(who)}"],
+  ["item 12: the news ticker unread", "    const tk = fn('newsTickerItems');", "    const tk = null;"],
+  ["ruling 2: the return chart drops the design's loss shading and month lines", "  const H2H_CHART_SMOOTH = true;", "  const H2H_CHART_SMOOTH = false;"],
+  ["18 Nov §6: the odds range back as one string",
+    "<span>${E(lo)}</span><span style=\"font-weight:500; color:${G};\">${sep}</span><span>${E(hi)}</span>", "${E(lab)}"],
+  ["18 Nov §6: the edge chip back in pp", "${E(x.edge == null ? '—' : sg(x.edge, 1, ''))}</span></div>", "${E(x.edge == null ? '—' : sg(x.edge, 1, 'pp'))}</span></div>"],
+  ["18 Nov §2: the title back in the plain 29/800 head", "<h1 style=\"margin:0; font-size:24px; font-weight:800; letter-spacing:-0.015em; line-height:1.15;\">", "<h1 style=\"margin:0; font-size:29px; font-weight:800; letter-spacing:-0.02em; line-height:1.1;\">"],
+  ["18 Nov §7: the opened news item back on the raised tone", "background:${it.open ? 'var(--h2h-layer)' : 'transparent'}", "background:${it.open ? 'var(--h2h-raised)' : 'transparent'}"],
+];
+// stylesheet mutants (h2h-page.css, read by the suites through TEN402_CSS)
+const CSS_MUTANTS = [
+  ["ruling 4: the tab filled with the near-black tone again", '.tabpage[data-page="h2h"] { background: transparent; }', '.tabpage[data-page="h2h"] { background: var(--h2h-page); }'],
+  ["18 Nov §8: LOST SERVE back to a square chip on the H2H sheet", "border-radius: 999px !important; padding: 2px 9px !important; }", "border-radius: 5px !important; padding: 2px 9px !important; }"],
 ];
 const SUITES = ['test-ten402-a.mjs', 'test-ten402-b.mjs', 'test-ten402-c.mjs', 'test-ten402-r1x.mjs', 'test-ten402-lead.mjs', 'test-h2h-1117.mjs'];
 const run = env => spawnSync(process.execPath, ['--test', ...SUITES.map(f => path.join(ROOT, f))], { env: Object.assign({}, process.env, env), encoding: 'utf8' });
@@ -261,6 +290,13 @@ for (const [name, from, to] of MUTANTS) {
   fs.writeFileSync(file, html.replace(from, to));
   if (run({ TEN402_HTML: file }).status === 0) { console.error(`✖ SURVIVED: ${name}`); survived++; } else console.log(`✔ caught: ${name}`);
 }
+const cssSrc = fs.readFileSync(path.join(ROOT, 'h2h-page.css'), 'utf8');
+for (const [name, from, to] of CSS_MUTANTS) {
+  if (cssSrc.split(from).length !== 2) { console.error(`✖ anchor not found exactly once: ${name}`); survived++; continue; }
+  const file = path.join(dir, 'm.css');
+  fs.writeFileSync(file, cssSrc.replace(from, to));
+  if (run({ TEN402_CSS: file }).status === 0) { console.error(`✖ SURVIVED: ${name}`); survived++; } else console.log(`✔ caught: ${name}`);
+}
 fs.rmSync(dir, { recursive: true, force: true });
-console.log(`mutants: ${MUTANTS.length - survived} caught, ${survived} survived`);
+console.log(`mutants: ${MUTANTS.length + CSS_MUTANTS.length - survived} caught, ${survived} survived`);
 process.exit(survived ? 1 : 0);

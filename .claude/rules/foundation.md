@@ -86,7 +86,9 @@ column draws a 7px `--pos` live dot before its clock (`app-shell.md` "Page heade
   `test-ten331-h2h.mjs` tug (`--white-bar`), `test-ten314-gate.mjs` (`var(--white-bar)`); the rest of this rule:
   guides `--viz-guide` dotted (`stroke-dasharray: 2 6`), horizontal only — no vertical gridlines; **no area fill under
   a line** (Database, Market edge, both profile equity charts, Drops price-move box, Odds sparklines and movement chart;
-  the reference draws none) and no loss wash; break-even rule `--viz-rule` (32%), solid. The no-fill rule is for LINE
+  the reference draws none) and no loss wash; break-even rule `--viz-rule` (32%), solid. *Named page exception (founder
+  ruling 2, 2026-11-18):* the Head to Head page's return chart keeps the design's style — the faint loss shading under
+  break even and the vertical month / year lines (`h2h.md` "Return chart"); no other chart. The no-fill rule is for LINE
   charts only (S2): a bar-type mark keeps its fill under the bar rules — the Live momentum ribbon (band thickness = the
   data) is player A `--viz-lead`, player B `--viz-second`, both from the centre line, break markers `--neg`, names white.
   Three or more series = no

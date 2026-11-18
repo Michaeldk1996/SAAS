@@ -107,7 +107,7 @@ test('H5: no fixture this week → no suggestions (the chips row is not drawn)',
   assert.ok(!/Suggested matchups/.test(none), 'no pair → no chips row');
   const one = h.call(h.emptyState, { emptyTitle: 'Pick two players to compare', suggestions: [{ label: 'J. Sinner vs C. Alcaraz', event: 'Shanghai Masters', hid: 3 }] });
   assert.match(one, /Suggested matchups/);
-  assert.match(one, /<span class="seg x-sugg" data-hid="3" title="Shanghai Masters" style="font-size:12\.5px; font-weight:600; color:var\(--h2h-grey\); background:var\(--h2h-card\); border:1px solid color-mix\(in srgb, var\(--h2h-white\) 8%, transparent\); border-radius:9px; padding:8px 13px;">J\. Sinner vs C\. Alcaraz<\/span>/, 'the design chip, the event on its hover');
+  assert.match(one, /<span class="seg x-sugg" data-hid="3" title="Shanghai Masters" style="font-size:12\.5px; font-weight:600; color:var\(--h2h-grey\); background:var\(--h2h-layer\); border:1px solid color-mix\(in srgb, var\(--h2h-white\) 8%, transparent\); border-radius:9px; padding:8px 13px;">J\. Sinner vs C\. Alcaraz<\/span>/, 'the design chip, the event on its hover');
 });
 
 // ── Data 6 / L-default H6: Latest news = the News page's feed, attributed the News page's way ───────────────────────
@@ -162,7 +162,7 @@ test('H6: BSP Intel / ASAP items join under their own key; nothing for either pl
 });
 test('H6: the card interleaves A, B, A, B … and shows at most H2H_NEWS_MAX rows', () => {
   const state = { newsOpen: null };
-  const nv = new Function('newsFor', 'state', 'bindH', 'setState', sliceConst('H2H_NEWS_MAX') + slice('xNewsCat') + slice('newsVals') + '\nreturn newsVals;')(
+  const nv = new Function('newsFor', 'state', 'bindH', 'setState', 'let _xTickerKick = true;\n' + sliceConst('H2H_NEWS_MAX') + slice('xNewsCat') + slice('newsVals') + '\nreturn newsVals;')(
     p => [1, 2, 3, 4, 5].map(i => ({ id: p.key + i, who: p.short })), state, () => 0, () => {});
   const v = nv({ key: 'a', short: 'A' }, { key: 'b', short: 'B' });
   assert.deepEqual(v.feed.map(x => x.id), ['a1', 'b1', 'a2', 'b2', 'a3', 'b3']);
@@ -179,7 +179,7 @@ async function modelHarness(files, { now = 0 } = {}) {
   const state = { aSel: '10', bSel: '20' };
   let renders = 0;
   const src = sliceConst('H2H_PAIR_RETRY_MS') + sliceConst('H2H_PAIR_LAYERS') + sliceConst('_pairPx') + sliceConst('X_CAP')
-    + slice('pairPxFor') + slice('pairClock') + slice('modelVals') + slice('modelCard');
+    + slice('pairPxFor') + slice('pairClock') + slice('modelVals') + slice('xHelp') + slice('modelCard');
   const mod = new Function('fetch', 'state', 'built', 'render', 'fn', 'E', 'Date',
     src + '\nreturn { modelVals, modelCard, pairPxFor };')(fetch, state, true, () => { renders++; }, () => null, E,
     Object.assign(function () { return new globalThis.Date(...arguments); }, { now: () => now, parse: globalThis.Date.parse }));
@@ -211,15 +211,15 @@ test('Model: any pair gets a price — p from the engine file, plus the margin: 
   const s = h.modelVals(B, A, { ctxSurface: 'Hard', ctxFormat: 3 });
   assert.equal(s.aPrice, '1.45'); assert.equal(s.bPrice, '2.90');
   assert.equal(h.calls.length, 2, 'one fetch per player per session');
-  // the card draws both boxes and the two grey lines
+  // the card draws both boxes; the explanation lives in the head's "?" (founder ruling 7, 2026-11-18), never the body
   const html2 = h.modelCard({ model: v });
   assert.match(html2, /data-h2h-model="priced"/);
   // the design's box (DF §1): caps "Likely opening price" over the price, mono 800 clamp(20px,2.2vw,28px), white
   assert.match(html2, /Likely opening price<\/span><span style="font-family:'IBM Plex Mono',monospace; font-size:clamp\(20px,2\.2vw,28px\); font-weight:800; color:var\(--h2h-text\);[^"]*">2\.90</);
-  const n = x => `<span style="font-family:'IBM Plex Mono',monospace; color:var\\(--h2h-grey\\);">${x}<\\/span>`;
-  assert.match(html2, new RegExp(`Win chance A\\. One ${n('33%')} · B\\. Two ${n('67%')} · Hard, best of ${n('3')}`));
-  assert.match(html2, new RegExp(`moved by ${n('6')} of ${n('10')} model layers`));
-  assert.match(html2, new RegExp(`opening margin, ${n('3\\.4%')} \\(n=${n('442')}\\)`));
+  const tip = (/<span class="x-help" title="([^"]*)"/.exec(html2) || [])[1] || '';
+  assert.match(tip, /^Win chance A\. One 33% · B\. Two 67% · Hard, best of 3\nElo base 35% for A\. One, moved by 6 of 10 model layers · plus Pinnacle’s typical opening margin, 3\.4% \(n=442\) · model run \d\d:\d\d$/);
+  const body = html2.replace(/title="[^"]*"/g, '');
+  assert.doesNotMatch(body, /Win chance|Elo base|model layers/, 'no explanation line in the card body');
 });
 test('Model: a context the engine could not price, a player outside the file, a failed load — a reason, never a price', async () => {
   const h = await modelHarness(FILES); h.modelVals(A, B, {}); await h.settle();
@@ -249,15 +249,18 @@ test('Data 3: the header Elo is the weekly Elo Database → Ratings shows (tourx
 });
 
 // ── Playing style DNA (Data 4) ────────────────────────────────────────────────────────────────────────────────────
-test('DNA: the windows are the file\'s two scopes, labelled by the data ("Since Mar 2024", never "Career")', () => {
-  const m = /const DNA_WIN = \{ w52: \{ scope: 'last52', label: 'Last 52 weeks'[^\n]*\n\s*since: \{ label: '([^']+)', scope: 'sinceBase'/.exec(html);
-  assert.ok(m, 'DNA_WIN not found');
-  assert.equal(m[1], 'Since Mar 2024');
-  assert.notEqual(m[1], 'Career');
-  // Under pressure has no since-Mar-2024 figure (founder Q14); Δ only on the last-52-weeks view
+test('DNA (founder ruling 8, 2026-11-18): the windows are Last 52 weeks · Last 24 months · Career — 52 weeks = the DNA file, 24 months has no source, Career = surface-ratings career + the Elo peak', () => {
+  const m = /const DNA_WIN = \{ w52: \{ scope: 'last52', label: 'Last 52 weeks'[^\n]*\n\s*m24: \{ scope: null, label: 'Last 24 months'[^\n]*none: true \},\n\s*career: \{ scope: 'career', label: 'Career'[^\n]*career: true \} \};/.exec(html);
+  assert.ok(m, 'DNA_WIN = the three windows');
+  assert.doesNotMatch(html.slice(H2H_AT), /Since Mar 2024'/, 'the since-Mar-2024 tab is gone from the page');
   const dv = slice('dnaVals');
-  assert.match(dv, /const upSince = W\.scope === 'sinceBase' && ax\.key === 'underPressure';/);
-  assert.match(dv, /delta: \(has && W\.scope === 'last52' && d\.deltas\)/);
+  assert.match(dv, /if \(W\.none\) return \{ d: \{ inPool: true, ok: false, none: true \}, vals: DNA_AXES\.map\(\(\) => \(\{ raw: null, pct: null, delta: null \}\)\)/, 'Last 24 months: every figure null');
+  assert.match(dv, /if \(W\.career\) \{\n\s*const c = dnaCareerFor\(p, surface\);/);
+  assert.match(dv, /delta: \(has && W\.scope === 'last52' && d\.deltas\)/, 'Δ only on the last-52-weeks view');
+  const dc = slice('dnaCareerFor');
+  assert.match(dc, /rec\.surfaces\[surface\]\.career/);
+  assert.match(dc, /const ratings = \[g\(nd\.serve, 'rating'\), g\(nd\.return, 'rating'\), g\(nd\.underPressure, 'rating'\), null, dnaEloPeak\(p\.full\)\];/);
+  assert.match(slice('dnaEloPeak'), /rec\.peak \? rec\.peak\.rating/);
 });
 // ── Playing style (design §2, DF L253–290): the radar and the ten face-to-face rows, executed ─────────────────────
 const SIN2 = { key: '2072', short: 'J. Sinner', full: 'J. Sinner', mono: 'JS' }, ALC2 = { key: '2382', short: 'C. Alcaraz', full: 'C. Alcaraz', mono: 'CA' };
@@ -334,12 +337,13 @@ function pageV(o) {
     hAChange: 1, hBChange: 2, hSwap: 3, ctxShow: true, nav: [{ id: 'h2h-model', label: 'Model' }, { id: 'h2h-rec', label: 'Meetings' }],
     ctxGroups: [{ label: 'Surface', items: [{ label: 'Hard', on: true, hid: 4 }] }], showEmpty: false, showLoading: false, showBody: false, aResults: [], bResults: [] }, o || {});
 }
-test('the page head (DF L25): title 29/800, one sentence 13.5 soft, the coverage note on the "?" — no caps line above the title', () => {
+test('the page head (CHANGES 2026-11-18 §2, DF L34–41): the header card — card tone, 1.25px 6% edge, r12, 18/26; title 24/800, one sentence 13 grey, the coverage note on the "?" — no caps line above the title', () => {
   const h = page({ SfCountryIoc: { of: c => ({ Italy: 'ITA', Spain: 'ESP' })[c] || null } });
   const c = h.call(h.pageHTML, pageV());
   const head = c.slice(0, c.indexOf('x-stick'));
-  assert.match(head, /<h1 style="margin:0; font-size:29px; font-weight:800; letter-spacing:-0\.02em; line-height:1\.1;">Head to Head<\/h1>/);
-  assert.match(head, /<div style="font-size:13\.5px; color:var\(--h2h-soft\); text-wrap:pretty;">Two players, side by side on every measure\.<\/div>/);
+  assert.match(head, /<div style="padding:30px 40px 6px;">\s*<div class="x-hcard" style="display:flex; align-items:center; justify-content:space-between; gap:16px; background:var\(--h2h-card\); border:1\.25px solid color-mix\(in srgb, var\(--h2h-white\) 6%, transparent\); border-radius:12px; padding:18px 26px;">/);
+  assert.match(head, /<h1 style="margin:0; font-size:24px; font-weight:800; letter-spacing:-0\.015em; line-height:1\.15;">Head to Head<\/h1>/);
+  assert.match(head, /<div style="font-size:13px; color:var\(--h2h-grey\); text-wrap:pretty;">Two players, side by side on every measure\.<\/div>/);
   assert.match(head, /<span class="x-help" title="a dash means not covered" style="flex:none; width:22px; height:22px; border-radius:50%;/, 'the "?" carries the coverage line (TEN-403 R1 nit wording)');
   assert.ok(!/text-transform:uppercase/.test(head.slice(0, head.indexOf('<h1'))), 'no caps line above the title');
   assert.ok(!/H2H_EYEBROW|h2h-eyebrow/.test(html));
@@ -347,8 +351,9 @@ test('the page head (DF L25): title 29/800, one sentence 13.5 soft, the coverage
 test('the sticky picker (DF L45–200): sticky at top 0 on a page-tone band, card --h2h-card + 6% edge r14 16/18 with the sticky shadow; pickers 1fr 54px 1fr; jump links + Surface / Format under a hairline', () => {
   const h = page({ SfCountryIoc: { of: c => ({ Italy: 'ITA', Spain: 'ESP' })[c] || null } });
   const c = h.call(h.selectorBar, pageV());
-  assert.match(c, /^<div class="x-stick" style="position:sticky; top:0; z-index:30; padding:10px 40px 14px; background:linear-gradient\(var\(--h2h-page\) 78%, var\(--h2h-page-0\)\);">/);
-  assert.match(c, new RegExp(`<div id="h2h-sticky" style="background:var\\(--h2h-card\\); border:1px solid ${esc(W(6))}; border-radius:14px; padding:16px 18px; box-shadow:var\\(--h2h-shadow-sticky\\);">`));
+  // the band = the website's page tone fading out (founder ruling 4, 2026-11-18; CHANGES 2026-11-18 §1), never --h2h-page
+  assert.match(c, /^<div class="x-stick" style="position:sticky; top:0; z-index:30; padding:10px 40px 14px; background:linear-gradient\(var\(--page\) 78%, color-mix\(in srgb, var\(--page\) 0%, transparent\)\);">/);
+  assert.match(c, new RegExp(`<div id="h2h-sticky" style="background:var\\(--h2h-card\\); border:1\\.25px solid ${esc(W(6))}; border-radius:14px; padding:16px 18px; box-shadow:var\\(--h2h-shadow-sticky\\);">`));
   assert.match(c, /<div class="x-pick" style="display:grid; grid-template-columns:minmax\(0,1fr\) 54px minmax\(0,1fr\); gap:12px; align-items:start;">/);
   assert.equal(text(c), 'Change ITA Jannik Sinner RANK #2 ELO 2210 JS VS Change CA Carlos Alcaraz ESP RANK #1 ELO 2250 Model Meetings Surface Hard', 'A right-aligned (Change · country · name, avatar last), B mirrored');
   // the picked box (CHANGES 2026-11-17 §1): --h2h-card + 9% edge r12 11/14; avatar 44, A ring blue, B ring white; "Change" caps on a 10% border
@@ -361,7 +366,7 @@ test('the sticky picker (DF L45–200): sticky at top 0 on a page-tone band, car
   assert.match(c, /<span style="font-size:12\.5px; color:var\(--h2h-grey\); white-space:nowrap;">Surface<\/span><div class="x-sw x-sw--lg" style="display:inline-flex; gap:3px; background:var\(--h2h-inner\);[^"]*border-radius:10px; padding:3px;">/);
   assert.match(c, /<span class="seg x-nav" data-h2h-jump="h2h-rec" style="white-space:nowrap; padding:6px 9px; border-radius:7px; font-size:12\.5px; font-weight:600; color:var\(--h2h-grey\);">Meetings<\/span>/);
   // the stylesheet keeps the same stick + its hover states (the reference's style-hover)
-  assert.match(CSS, /#h2hRoot \.x-stick \{ position: sticky; top: 0; z-index: 30; padding: 10px 40px 14px;\s*background: linear-gradient\(var\(--h2h-page\) 78%/);
+  assert.match(CSS, /#h2hRoot \.x-stick \{ position: sticky; top: 0; z-index: 30; padding: 10px 40px 14px;\s*background: linear-gradient\(var\(--page\) 78%/);
   assert.match(CSS, /#h2hRoot \.x-change:hover \{ color: var\(--h2h-text\) !important;/);
 });
 test('the player menu (DF L81): raised, 10% edge, radius 12, padding 6, max-height 280; rows 28px initials · name 13.5/600 · "CTRY · rank"; empty = "No player matches that search."', () => {
@@ -382,13 +387,13 @@ test('section cards (README "Sections"): --h2h-card, 1.25px 6% edge, r14, 24/26;
   assert.equal(head, '<div style="display:flex; align-items:center; flex-wrap:wrap; gap:6px 12px;"><span style="font-size:18px; font-weight:800; letter-spacing:-0.01em; color:var(--h2h-text);">Latest news</span><span style="font-size:12.5px; color:var(--h2h-grey);">Both players · newest first</span></div>');
   const m = { priced: true, aMono: 'JS', bMono: 'CA', aName: 'J. Sinner', bName: 'C. Alcaraz', aPrice: '2.90', bPrice: '1.45', foot: null };
   const card = h.call(h.modelCard, { model: m, a: {}, b: {} });
-  assert.ok(card.startsWith(`<div id="h2h-model" class="x-sec" data-h2h-model="priced" style="background:var(--h2h-card); border:1.25px solid ${W(6)}; border-radius:14px; padding:26px 26px 24px;`));
+  assert.ok(card.startsWith(`<div id="h2h-model" class="x-sec" data-h2h-model="priced" style="background:var(--h2h-card); border:1.25px solid ${W(6)}; border-radius:14px; padding:24px 26px; display:flex; flex-direction:column; gap:16px;">`), 'CHANGES 2026-11-18 §8: every section card 24/26, gap 16');
   assert.equal((card.match(new RegExp(`border:1px solid ${esc(W(6))}; background:var\\(--h2h-card\\); border-radius:12px; padding:18px 20px;`, 'g')) || []).length, 2, 'two card-tone boxes (CHANGES 2026-11-17 §1; the Model cards keep the 6% edge)');
   // a Surface / Format switch flashes the prices blue (state.flash), else white
   h.state.flash = true;
   assert.match(h.call(h.modelCard, { model: m, a: {}, b: {} }), /font-weight:800; color:var\(--h2h-blue\); transition:color 260ms ease;/);
   // the thin-data caveat is a section-tone card, never an amber banner
-  assert.match(slice('bodyHTML'), /\$\{v\.hasCaveat \? `<div style="display:flex; align-items:flex-start; gap:12px; background:var\(--h2h-card\); border:1\.25px solid color-mix\(in srgb, var\(--h2h-white\) 6%, transparent\); border-radius:13px;/);
+  assert.match(slice('bodyHTML'), /\$\{v\.hasCaveat \? `<div style="display:flex; align-items:flex-start; gap:12px; background:var\(--h2h-card\); border:1\.25px solid color-mix\(in srgb, var\(--h2h-white\) 6%, transparent\); border-radius:12px;/);
 });
 test('colour and type (foundation): the rebuilt page reads only --h2h-* tokens — no Ring blue, link blue, amber or surface colours; every weight in {400, 500, 600, 700, 800}', () => {
   const rebuilt = html.slice(html.indexOf('==== H2H REBUILD'), html.indexOf('window.H2HPage = {', html.indexOf('==== H2H REBUILD')));

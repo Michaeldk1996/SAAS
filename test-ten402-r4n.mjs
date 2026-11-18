@@ -62,12 +62,12 @@ test('r4 fix 1: the sticky picker sits at the viewport top on a page-tone band (
   assert.ok(+wrap['z-index'] >= 30, 'over the sections (they carry no z-index)');
   const pad = box(wrap.padding);
   assert.ok(pad.t > 0, 'a band above the card');
-  assert.match(wrap.background, /^linear-gradient\(var\(--h2h-page\) 78%, /, 'the band is the page tone (opaque over its top 78%)');
+  assert.match(wrap.background, /^linear-gradient\(var\(--page\) 78%, /, 'the band is the website\'s page tone (opaque over its top 78%; founder ruling 4, 2026-11-18)');
   assert.ok(pad.t / (pad.t + 60 + pad.b) < 0.78, 'the top padding lies inside the opaque 78% for any card ≥ 60px tall');
   assert.match(bar, /<div id="h2h-sticky" style="background:var\(--h2h-card\);/, 'the card inside the band');
   // the stylesheet carries the same band (the inline style and the class agree)
-  assert.match(CSS, /#h2hRoot \.x-stick \{ position: sticky; top: 0; z-index: 30; padding: 10px 40px 14px;\s*background: linear-gradient\(var\(--h2h-page\) 78%, color-mix\(in srgb, var\(--h2h-page\) 0%, transparent\)\); \}/);
-  assert.match(CSS, /\.tabpage\[data-page="h2h"\] \{ background: var\(--h2h-page\); \}/, 'the page behind it is the same tone');
+  assert.match(CSS, /#h2hRoot \.x-stick \{ position: sticky; top: 0; z-index: 30; padding: 10px 40px 14px;\s*background: linear-gradient\(var\(--page\) 78%, color-mix\(in srgb, var\(--page\) 0%, transparent\)\); \}/);
+  assert.match(CSS, /\.tabpage\[data-page="h2h"\] \{ background: transparent; \}/, 'the page behind it is the website\'s background (--page-bg on <html>), pair or no pair');
 });
 
 // ── fix 2 · set scores never cut ────────────────────────────────────────────────────────────────────────────────────

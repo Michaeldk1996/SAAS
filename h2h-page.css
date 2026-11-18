@@ -14,27 +14,30 @@
   --neg: var(--h2h-down);
   --link: var(--h2h-blue);
 }
-.tabpage[data-page="h2h"] { background: var(--h2h-page); }
-/* No pair picked (founder 2026-11-17: "it should be as the background color of the website"): the tab, the page and the
-   sticky bar's fade let the shell's page background (tokens.css --page-bg, the page tone + glow on <html>) show. */
-.tabpage[data-page="h2h"]:has(.x-wrap--empty) { background: transparent; }
-#h2hRoot .x-wrap--empty, #h2hRoot .x-wrap--empty .x-stick { background: transparent !important; }
+/* Page ground (CHANGES 2026-11-18 §1; founder ruling 4, 2026-11-18 "the site background, with players picked too"): the
+   page, the tab and the sticky picker band let the shell's page background show (tokens.css --page-bg: the page tone +
+   the blue glow on <html>, the design's "embedded" ground). The band behind the sticky card fades from --page
+   to transparent; cards keep their own tones. --h2h-page is no longer a fill on this page. */
+.tabpage[data-page="h2h"] { background: transparent; }
 /* The match sheet the page opens (CHANGES 2026-11-17 §1, DF L431–520): every box in it is card tone — the caption strips
    and the score box take the card colour with a 5% edge, the ✕ a 5% fill on a 12% edge. Its scope / set switches stay
    wells (maSeg's own h2h tone). Scoped to #fhSheet.h2hx, so Match analysis never changes. */
 #fhSheet.h2hx { --inner: var(--h2h-card); }
 #fhSheet.h2hx .fh-band { border-color: color-mix(in srgb, var(--h2h-white) 5%, transparent) !important; }
+/* CHANGES 2026-11-18 §8 (DF L495 / L500): LOST SERVE and BP are round red pills on this page's sheet */
+#fhSheet.h2hx .fh-lost { font-family: 'IBM Plex Mono', monospace !important; font-size: 10.5px !important; border-radius: 999px !important; padding: 2px 9px !important; }
+#fhSheet.h2hx .fh-bp { font-size: 10px !important; border-radius: 999px !important; padding: 1px 6px !important; }
 #fhSheet.h2hx [onclick="fhCloseSheet()"] { background: color-mix(in srgb, var(--h2h-white) 5%, transparent) !important; border-color: color-mix(in srgb, var(--h2h-white) 12%, transparent) !important; }
 
 /* ---- frame (DF L25–41) ---- */
 #h2hRoot .x-page { min-height: 100vh; display: flex; flex-direction: column; max-width: 1360px; color: var(--h2h-text);
-  font-family: 'Hanken Grotesk', sans-serif; background: var(--h2h-page); line-height: normal; }
+  font-family: 'Hanken Grotesk', sans-serif; background: transparent; line-height: normal; }
 #h2hRoot .x-ph { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; padding: 30px 40px 16px; }
 #h2hRoot .x-ph__t { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 #h2hRoot .x-ph__title { margin: 0; font-size: 29px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
 #h2hRoot .x-ph__sub { margin: 0; font-size: 13.5px; color: var(--h2h-soft); text-wrap: pretty; }
 #h2hRoot .x-stick { position: sticky; top: 0; z-index: 30; padding: 10px 40px 14px;
-  background: linear-gradient(var(--h2h-page) 78%, color-mix(in srgb, var(--h2h-page) 0%, transparent)); }
+  background: linear-gradient(var(--page) 78%, color-mix(in srgb, var(--page) 0%, transparent)); }
 #h2hRoot .x-stick__card { background: var(--h2h-card); border: 1px solid color-mix(in srgb, var(--h2h-white) 6%, transparent); border-radius: 14px;
   padding: 16px 18px; box-shadow: var(--h2h-shadow-sticky); }
 

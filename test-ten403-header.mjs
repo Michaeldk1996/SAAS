@@ -119,8 +119,9 @@ function checkH2H(dash) {
     showEmpty: false, showLoading: false, showBody: false };
   const pg = h.call(h.pageHTML, v);
   const head = pg.slice(0, pg.indexOf('class="x-stick"'));
-  const m = /<h1 style="margin:0; font-size:29px; font-weight:800; letter-spacing:-0\.02em; line-height:1\.1;">Head to Head<\/h1>\s*<div style="font-size:13\.5px; color:var\(--h2h-soft\); text-wrap:pretty;">([^<]+)<\/div>/.exec(head);
-  if (!m) return 'h2h: the page head is not the design\'s (title 29/800 over one 13.5 soft sentence)';
+  // the design's header card (CHANGES 2026-11-18 §2): title 24/800 over one 13px grey sentence, inside the card
+  const m = /<div class="x-hcard" style="[^"]*background:var\(--h2h-card\);[^"]*border-radius:12px; padding:18px 26px;">[\s\S]*?<h1 style="margin:0; font-size:24px; font-weight:800; letter-spacing:-0\.015em; line-height:1\.15;">Head to Head<\/h1>\s*<div style="font-size:13px; color:var\(--h2h-grey\); text-wrap:pretty;">([^<]+)<\/div>/.exec(head);
+  if (!m) return 'h2h: the page head is not the design\'s (the header card: title 24/800 over one 13px grey sentence)';
   if (m[1].trim().length > 120 || (m[1].match(/[.!?](\s|$)/g) || []).length > 1) return 'h2h: header copy is longer than one sentence';
   if (!new RegExp(`<span class="x-help" title="${cov[1]}"`).test(head)) return 'h2h: the coverage line is not on the head\'s "?"';
   if (/text-transform:uppercase/.test(head.slice(0, head.indexOf('<h1'))) || /h2h-cap h2h-eyebrow|H2H_EYEBROW/.test(dash)) return 'h2h: a caps line above the title came back';
@@ -205,12 +206,12 @@ test('CONTROL: each check goes red on its mutant', () => {
   assert.ok(red(() => checkPages(m(DASH, '#tourListView .tourx-head{ margin-bottom:16px; }', '#tourListView .tourx-head h1{ font-size:29px; }'), JS, CSS)), 'page-owned title rule');
   assert.ok(red(() => checkPages(DASH, JS, { ...CSS, drops: CSS.drops + '\n[data-page="drops"] .do-head { padding: 22px 26px; }' })), 'drops restyles its header');
   // head to head (the rebuilt design head + sticky picker)
-  assert.ok(red(() => checkH2H(m(DASH, '<h1 style="margin:0; font-size:29px; font-weight:800;', '<h1 style="margin:0; font-size:24px; font-weight:800;'))), 'h2h title off the design');
+  assert.ok(red(() => checkH2H(m(DASH, '<h1 style="margin:0; font-size:24px; font-weight:800;', '<h1 style="margin:0; font-size:29px; font-weight:800;'))), 'h2h title off the design');
   assert.ok(red(() => checkH2H(m(DASH, "coverageLine: 'a dash means not covered'", "coverageLine: 'Data honesty · em dash means not covered'"))), 'h2h old coverage line back');
-  assert.ok(red(() => checkH2H(m(DASH, '          <h1 style="margin:0; font-size:29px;', '          <div style="font-size:10.5px; text-transform:uppercase;">ATP tour · all-level head to head</div><h1 style="margin:0; font-size:29px;'))), 'h2h caps line back');
+  assert.ok(red(() => checkH2H(m(DASH, '          <h1 style="margin:0; font-size:24px;', '          <div style="font-size:10.5px; text-transform:uppercase;">ATP tour · all-level head to head</div><h1 style="margin:0; font-size:24px;'))), 'h2h caps line back');
   assert.ok(red(() => checkH2H(m(DASH, '<div class="x-stick" style="position:sticky; top:0;', '<div class="x-stick" style="position:relative; top:0;'))), 'h2h picker not sticky');
   assert.ok(red(() => checkH2H(m(DASH, 'padding:16px 18px; box-shadow:var(--h2h-shadow-sticky);">', 'padding:16px 18px;">'))), 'h2h sticky shadow gone');
-  assert.ok(red(() => checkH2H(m(DASH, '        ${xHelp(v.coverageLine)}\n      </div>\n      ${selectorBar(v)}', '      </div>\n      ${selectorBar(v)}'))), 'h2h coverage "?" dropped');
+  assert.ok(red(() => checkH2H(m(DASH, '        ${xHelp(v.coverageLine)}\n      </div>\n      </div>\n      ${selectorBar(v)}', '      </div>\n      </div>\n      ${selectorBar(v)}'))), 'h2h coverage "?" dropped');
   // one sentence
   assert.ok(red(() => checkOneSentence(DASH, { ...JS, series: m(JS.series, "'Current streaks for players scheduled today and tomorrow, each with the pool it was drawn from and the date of its latest match.'", "'Current streaks for players scheduled today and tomorrow — runs of wins or losses against a playing style, on a surface, straight across all competitions.'") })), 'the old paragraph');
   // live column

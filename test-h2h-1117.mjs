@@ -61,22 +61,23 @@ const shard = (a, b) => ({ own: { raw: { 'Points:Total Points Won': { won: a, to
 test('meetings box tiles (founder 2026-11-17): Total points won ends "· N meetings" when every meeting has a box score, else "· k of n meetings"', async () => {
   const M2 = [{ date: '2024-10-25', won: true, sets: [[6, 4], [6, 3]] }, { date: '2025-10-25', won: false, sets: [[4, 6], [3, 6]] }];
   const all = await boxTiles(M2, { statsIx: new Set(['100', '101']), shards: { 100: shard(60, 40), 101: shard(40, 60) } });
-  assert.match(all, /^Total points won 50\.0% Sinner · Alcaraz 50\.0% · 2 meetings /, 'every meeting has a box score: the plain count');
+  assert.match(all, /^Total points won 50\.0% Sinner over 2 meetings, Alcaraz 50\.0% /, 'every meeting has a box score: the plain count (one sentence, founder ruling 9, 2026-11-18)');
   const part = await boxTiles(M2, { statsIx: new Set(['100']), shards: { 100: shard(60, 40) } });
-  assert.match(part, /^Total points won 60\.0% Sinner · Alcaraz 40\.0% · 1 of 2 meetings /, 'one of two: "k of n"');
+  assert.match(part, /^Total points won 60\.0% Sinner over 1 of 2 meetings, Alcaraz 40\.0% /, 'one of two: "k of n"');
 });
 test('meetings box tiles (founder 2026-11-17): Went to a deciding set with exactly one decider names it — "<Winner> <x>–<y> <event> <year>"', async () => {
   const M = [{ date: '2024-10-25', won: true, sets: [[6, 4], [6, 3]] }, { date: '2025-10-25', won: false, sets: [[6, 4], [3, 6], [4, 6]] }];
-  assert.match(await boxTiles(M), /Went to a deciding set 1 of 2 Alcaraz 2–1 Swiss Indoors 2025 /);
+  assert.match(await boxTiles(M), /Went to a deciding set 1 of 2 Alcaraz won it 2–1 at Swiss Indoors 2025 /);
   const two = M.concat([{ date: '2023-10-25', won: true, sets: [[6, 7], [6, 3], [6, 4]] }]);
-  assert.match(await boxTiles(two), /Went to a deciding set 2 of 3 Sinner won 1 · Alcaraz won 1 /, 'two deciders: the split, as before');
+  assert.match(await boxTiles(two), /Went to a deciding set 2 of 3 Sinner won 1, Alcaraz won 1 /, 'two deciders: the split, one sentence');
 });
 test('meetings box tiles (founder 2026-11-17): Favourite won names the underdog\'s win — one, several (the last), none', async () => {
   const M3 = [{ date: '2023-10-25', won: true, sets: [[6, 4], [6, 3]] }, { date: '2024-10-25', won: false, sets: [[4, 6], [3, 6]] }, { date: '2025-10-25', won: true, sets: [[6, 4], [6, 4]] }];
   const px = prices => (r, i) => Object.assign(r, { price: prices[i][0], oppPrice: prices[i][1], book: 'P' });
   // Sinner the favourite in 2023 (won) and 2024 (lost), the underdog in 2025 (won)
-  assert.match(await boxTiles(M3, { price: px([[1.4, 3.0], [1.5, 2.6], [2.4, 1.6]]) }), /Favourite won 1 of 3 The underdog won 2 · last: Sinner at Swiss Indoors 2025/);
-  assert.match(await boxTiles(M3, { price: px([[1.4, 3.0], [1.5, 2.6], [1.6, 2.4]]) }), /Favourite won 2 of 3 Alcaraz beat Sinner as the underdog · Swiss Indoors 2024/);
+  // founder ruling 9 (2026-11-18): one sentence — the last underdog win, "<winner> won as underdog at <event> <year>"
+  assert.match(await boxTiles(M3, { price: px([[1.4, 3.0], [1.5, 2.6], [2.4, 1.6]]) }), /Favourite won 1 of 3 Sinner won as underdog at Swiss Indoors 2025 /);
+  assert.match(await boxTiles(M3, { price: px([[1.4, 3.0], [1.5, 2.6], [1.6, 2.4]]) }), /Favourite won 2 of 3 Alcaraz won as underdog at Swiss Indoors 2024 /);
   assert.match(await boxTiles(M3, { price: px([[1.4, 3.0], [2.6, 1.5], [1.6, 2.4]]) }), /Favourite won 3 of 3 The favourite won every one/);
 });
 
@@ -234,16 +235,161 @@ test('Market edge (CHANGES 2026-11-17 §4): every return reads in % — band row
   assert.doesNotMatch(t, /flat 1u|Cumulative units/);
 });
 
-// ── mini avatars (≤ 22px): no ring, class "mini" ──
-test('mini avatars (CHANGES 2026-11-17 §2): ≤ 22px carry class "mini" and no box-shadow ring; the large ones keep their 2px ring (A blue, B white)', () => {
-  const h = HX.load({ html });
-  for (const s of [20, 22]) {
-    const m = h.call(h.xAv, SIN, 'a', s);
-    assert.match(m, /^<span class="x-av mini"/, s + 'px');
-    assert.doesNotMatch(m, /box-shadow/, s + 'px: no ring');
-  }
-  assert.match(h.call(h.xAv, SIN, 'a', 38), /^<span class="x-av" [^>]*box-shadow:0 0 0 2px var\(--h2h-blue\);/);
+// ── avatars (CHANGES 2026-11-18 §4; founder rulings 6 and 10, 2026-11-18) ──
+test('avatars: xAv = ringed initials under the photo (A blue, B white); xIni = initials only, card fill; xMini = the price-column head, no ring, never a photo', () => {
+  const h = HX.load({ html, preload: ['escapeHtml', 'playerPhotoUrl', 'playerPhotoImg'], globals: { playerPhotoIndex: { 1: { s: 'abc' } }, _photoIndexLoaded: true } });
+  const big = h.call(h.xAv, SIN, 'a', 44, { eager: true });
+  assert.match(big, /^<span class="x-av" [^>]*box-shadow:0 0 0 2px var\(--h2h-blue\);/);
+  assert.match(big, /<img class="sf-ph" src="player-photos\/s\/1\.webp\?v=abc"[^>]*loading="eager" fetchpriority="high"/, 'ruling 6: the picker photo is fetched at once, never left lazy');
+  assert.match(h.call(h.xAv, SIN, 'a', 40), /loading="lazy"/, 'control: a photo below the fold stays lazy');
   assert.match(h.call(h.xAv, ALC, 'b', 44), /^<span class="x-av" [^>]*box-shadow:0 0 0 2px var\(--h2h-text\);/);
+  const ini = h.call(h.X.__eval('xIni'), SIN, 'a', 38, 13);
+  assert.equal(ini, `<span class="x-ini" style="flex:none; width:38px; height:38px; border-radius:50%; background:var(--h2h-card); box-shadow:0 0 0 2px var(--h2h-blue); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:700; letter-spacing:0; color:var(--h2h-text);">JS</span>`);
+  const mini = h.call(h.X.__eval('xMini'), SIN, 24, 9.5, 'J. Sinner’s closing price');
+  assert.match(mini, /^<span class="x-avmini" title="J\. Sinner’s closing price" style="justify-self:end; width:24px; height:24px; border-radius:50%; border:1px solid color-mix\(in srgb, var\(--h2h-white\) 16%, transparent\);[^"]*font-size:9\.5px;[^"]*">JS<\/span>$/);
+  assert.doesNotMatch(ini + mini, /<img|box-shadow:0 0 0 2px[^;]*;[^"]*<img/, 'no photo in xIni / xMini');
+});
+test('ruling 6: a render made before the photo index landed repaints once it lands (the picker never stays on initials while a photo exists)', async () => {
+  let loads = 0, renders = 0;
+  const h = HX.load({ html, globals: { playerPhotoIndex: {}, _photoIndexLoaded: false, loadPlayerPhotoIndex: () => { loads++; return Promise.resolve(); } } });
+  h.X.__eval('render = () => { ' + 'globalThis.__r = (globalThis.__r || 0) + 1; }; built = true; state.aSel = "1"; state.bSel = "2";');
+  h.call(h.xAv, SIN, 'a', 44, { eager: true }); h.call(h.xAv, ALC, 'b', 44, { eager: true });
+  await new Promise(r => setTimeout(r, 5));
+  renders = h.sb.__r || 0;
+  assert.equal(loads, 1, 'one index load, however many avatars');
+  assert.equal(renders, 1, 'one repaint when it lands');
+  // control: an index already in hand asks nothing
+  let l2 = 0; const h2 = HX.load({ html, globals: { playerPhotoIndex: {}, _photoIndexLoaded: true, loadPlayerPhotoIndex: () => { l2++; return Promise.resolve(); } } });
+  h2.call(h2.xAv, SIN, 'a', 44, { eager: true });
+  assert.equal(l2, 0);
+});
+
+// ── page ground (founder ruling 4, 2026-11-18): the website's background with a pair too ──
+test('ruling 4: the page, its tab and the sticky band read the website\'s background with players picked — never --h2h-page', () => {
+  const h = HX.load({ html, globals: { SfCountryIoc: { of: () => 'ITA' } } });
+  const v = { coverageLine: 'x', aPicked: true, bPicked: true, a: SIN, b: ALC, hAChange: 1, hBChange: 2, hSwap: 3, ctxShow: false, showEmpty: false, showLoading: false, showBody: false, aResults: [], bResults: [] };
+  const pg = h.call(h.pageHTML, v);
+  assert.match(pg, /^<div class="x-wrap" style="display:flex; align-items:flex-start; min-height:100vh; background:transparent;/);
+  assert.doesNotMatch(pg, /background:var\(--h2h-page\)|x-wrap--empty/);
+  const CSS = readFileSync(process.env.TEN402_CSS || join(HERE, 'h2h-page.css'), 'utf8');
+  assert.match(CSS, /\.tabpage\[data-page="h2h"\] \{ background: transparent; \}/);
+  assert.doesNotMatch(CSS, /background: var\(--h2h-page\)/, 'no rule fills the page with the near-black tone');
+});
+
+// ── hot lines from 2 meetings (founder ruling 3, 2026-11-18); Match analysis keeps rule a0 ──
+test('ruling 3: the page ranks its hot lines from 2 meetings; Match analysis (fhHotModel, rule a0) still shows 2 meetings as results, unchanged', async () => {
+  const M2 = [{ date: '2024-10-25', won: true, sets: [[6, 4], [6, 3]] }, { date: '2025-10-25', won: false, sets: [[4, 6], [6, 3], [3, 6]] }];
+  const h = await pairPage(M2);
+  const c = text(h.call(h.h2hCard, h.view()));
+  assert.doesNotMatch(c, /Not enough meetings/);
+  assert.match(c, /Most covered/, 'a ranked table, its top line marked');
+  const h1 = await pairPage(M2.slice(0, 1));
+  assert.match(text(h1.call(h1.h2hCard, h1.view())), /Not enough meetings to rank lines \(n=1\)/);
+  // Match analysis: its own model, untouched — 2 meetings = results mode (no ranking)
+  const F = h.view().h2h.F, defs = h.call(() => h.run('fhH2hLineDefs'))('Sinner', 'Alcaraz');
+  const HM = h.call(h.call(() => h.run('fhHotModel')), F, defs, null);
+  assert.equal(HM.mode, 'results', 'fhHotModel keeps a0: 1–2 meetings are results');
+});
+
+// ── Playing style windows (founder ruling 8, 2026-11-18) ──
+function dnaHarness(o) {
+  const sr = { players: [{ key: '1', name: 'J. Sinner', surfaces: { Hard: { career: { serve: { rating: 301.2, index: 97.5, firstWonPct: 77.1, secondWonPct: 56.2, holdPct: 89.9 }, return: { rating: 155.4, index: 96.1, breakPct: 29.8, bpConvPct: 41.7 }, underPressure: { rating: 241.3, index: 93.2 }, sample: { matches: (o && o.n) || 180 } } } } },
+    { key: '2', name: 'C. Alcaraz', surfaces: { Hard: { career: { serve: { rating: 284.3, index: 93.5, firstWonPct: 73.3, secondWonPct: 56.6, holdPct: 86.4 }, return: { rating: 157.1, index: 98.5, breakPct: 28.7, bpConvPct: 41.2 }, underPressure: { rating: 238.4, index: 91.6 }, sample: { matches: 226 } } } } }] };
+  const elo = { elo: { 'sinner|j': { all: { rating: 2210 }, peak: { rating: 2341, month: '2025-06' } }, 'alcaraz|c': { all: { rating: 2195 }, peak: { rating: 2309, month: '2026-03' } } } };
+  const h = HX.load({ html, globals: { surfaceRatings: sr, eloRatings: elo } });
+  h.call(() => h.need('psEloNorm'));
+  return h;
+}
+test('ruling 8: Career = surface-ratings career (Serve / Return / Under pressure + their pool percentile) and the Elo PEAK; Dominance ratio "—"', () => {
+  const h = dnaHarness();
+  h.state.dnaWin = 'career'; h.state.ctxSurface = 'Hard';
+  const D = h.call(h.dnaVals, SIN, ALC);
+  assert.deepEqual(J(D.tabs.map(t => t.label)), ['Last 52 weeks', 'Last 24 months', 'Career']);
+  assert.deepEqual(J(D.a.vals.map(x => x.raw)), [301.2, 155.4, 241.3, null, 2341], 'serve, return, under pressure, no DR, the Elo peak');
+  assert.deepEqual(J(D.a.vals.map(x => x.pct)), [97.5, 96.1, 93.2, null, null], 'the shape = the pool percentile; no percentile for the peak');
+  assert.deepEqual(J(D.extra.a), [77.1, 56.2, 89.9, 29.8, 41.7], 'the rows read the same career node (return games won = breakPct)');
+  const t = text(h.call(h.dnaCard, { a: SIN, b: ALC, dna: D }));
+  assert.match(t, /Elo peak 2341 · 2309/, 'the radar axis names the peak');
+  assert.match(t, /Ratings 2341 Elo peak 32 2309 /, 'the row is the peak, its gap on the line');
+  assert.match(t, /Dominance ratio — · —/);
+  // control: under the 10-match floor no figure but the peak
+  const t9 = h.call(h.dnaVals, Object.assign({}, SIN), ALC);
+  const h9 = dnaHarness({ n: 9 }); h9.state.dnaWin = 'career'; h9.state.ctxSurface = 'Hard';
+  assert.deepEqual(J(h9.call(h9.dnaVals, SIN, ALC).a.vals.map(x => x.raw)), [null, null, null, null, 2341]);
+  assert.ok(t9);
+});
+test('ruling 8: Last 24 months has no source — every figure "—" and the "?" says why; never another window\'s figure', () => {
+  const h = dnaHarness();
+  h.state.dnaWin = 'm24'; h.state.ctxSurface = 'Hard';
+  const D = h.call(h.dnaVals, SIN, ALC);
+  assert.ok(D.a.vals.every(x => x.raw == null) && D.b.vals.every(x => x.raw == null));
+  const card = h.call(h.dnaCard, { a: SIN, b: ALC, dna: D });
+  const figs = [...card.matchAll(/<span style="(?:text-align:right; )?font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:\d+; color:[^;]+;">([^<]*)<\/span>/g)].map(m => m[1]);
+  assert.equal(figs.length, 20, 'ten rows, two figures each');
+  assert.ok(figs.every(f => f === '—'), 'every figure a dash: ' + figs.join(' '));
+  assert.match(card, /title="[^"]*Last 24 months: no rating file holds a 24-month window/);
+});
+
+// ── Tournament record: a long list folds (founder ruling 5, 2026-11-18) ──
+test('ruling 5: a long Tournament list shows its newest 6 rows, then "Show N more matches"; the toggle shows them all and "Show fewer"', () => {
+  const h = HX.load({ html, globals: { _careerHistoryShards: {}, _sfDbJoinSt: 'loading', _sfDbJoinP: new Promise(() => {}) } });
+  const rows = Array.from({ length: 10 }, (_, i) => tmk('2025-0' + (1 + (i % 9)) + '-1' + i, i % 2 === 0, 'R32', 'X. Opp' + i));
+  const agg = h.call(h.xTrAgg, [{ ev: { name: 'Basel', surface: 'Hard', speed: 'Fast' }, P: { eds: [{ year: '2025', rows }] } }], null, true);
+  const view = { a: SIN, b: ALC, tourney: { empty: false, query: '', listOpen: false, options: [], info: { name: 'Hard courts', initial: '1', meta: [] }, grp: true, gLbl: 'hard courts', TW: 'career', filters: [],
+    cols: [{ p: SIN, agg, state: 'ready' }, { p: ALC, agg: null, state: 'none' }] } };
+  const rowsIn = c => (c.match(/class="seg x-row" data-hid="\d+" title="Open the match statistics"/g) || []).length;
+  const c = h.call(h.tourneyCard, view);
+  assert.equal(rowsIn(c), 6);
+  assert.match(text(c), /Show 4 more matches/);
+  runH(h, /data-tr-more="a" data-hid="(\d+)"/.exec(c)[1]);
+  const all = h.call(h.tourneyCard, view);
+  assert.equal(rowsIn(all), 10, 'all ten');
+  assert.match(text(all), /Show fewer/);
+  // control: a short list draws no toggle
+  const agg5 = h.call(h.xTrAgg, [{ ev: { name: 'Basel', surface: 'Hard', speed: 'Fast' }, P: { eds: [{ year: '2025', rows: rows.slice(0, 5) }] } }], null, true);
+  h.state.trAAll = false;
+  assert.doesNotMatch(h.call(h.tourneyCard, Object.assign({}, view, { tourney: Object.assign({}, view.tourney, { cols: [{ p: SIN, agg: agg5, state: 'ready' }, { p: ALC, agg: null, state: 'none' }] }) })), /data-tr-more/);
+});
+
+// ── Latest news: our own match reports and quotes (item 12, 2026-11-18) ──
+test('item 12: the news ticker\'s reports and quotes join the card by player key, kind from the item\'s own category', () => {
+  const h = HX.load({ html, globals: { _newsData: { articles: [] }, newsTickerItems: () => [
+    { kind: 'ticker', id: 'treport-1', ts: Date.now() - 3600e3, players: [{ key: '2', name: 'C. Alcaraz' }, { key: '9', name: 'F. Tiafoe' }], title: 'C. Alcaraz beat F. Tiafoe, 6-3, 6-2', bodyParas: ['Alcaraz beat Tiafoe.'], cat: 'Match Reports', source: 'Stennisfy' },
+    { kind: 'ticker', id: 'tquote-2', ts: Date.now() - 7200e3, players: [{ key: '1', name: 'J. Sinner' }], title: 'J. Sinner in the press', bodyParas: ['“I felt good.”'], cat: 'Quotes', source: 'Sky Sports' },
+    { kind: 'ticker', id: 'tquote-3', ts: Date.now() - 7200e3, players: [{ key: '9', name: 'F. Tiafoe' }], title: 'F. Tiafoe in the press', bodyParas: ['x'], cat: 'Quotes', source: 'x' }] } });
+  h.X.__eval('_xTickerKick = true');
+  const v = h.call(h.newsVals, SIN, ALC);
+  assert.deepEqual(J(v.feed.map(x => x.title)), ['C. Alcaraz beat F. Tiafoe, 6-3, 6-2', 'J. Sinner in the press'], 'each player\'s own items; Tiafoe\'s quote is no one\'s here');
+  assert.deepEqual(J(v.feed.map(x => h.call(h.xNewsCat, x))), ['reports', 'quotes']);
+  h.state.newsOpen = 'treport-1';
+  const card = h.call(h.newsCard, { a: SIN, b: ALC, news: h.call(h.newsVals, SIN, ALC) });
+  assert.match(text(card), /C\. Alcaraz beat F\. Tiafoe, 6-3, 6-2 C\. Alcaraz · Match report · Stennisfy · 1h ago › Alcaraz beat Tiafoe\. Match report Stennisfy · 1h ago Close/, 'the opened item: body, kind pill, source · time, Close (CHANGES 2026-11-18 §7)');
+  assert.match(card, /background:var\(--h2h-layer\); box-shadow:inset 0 0 0 1px color-mix\(in srgb, var\(--h2h-white\) 12%, transparent\);/);
+});
+
+// ── the return chart keeps the design's style (founder ruling 2, 2026-11-18) ──
+test('ruling 2: the return chart draws the loss shading and the vertical month lines (H2H_CHART_SMOOTH on)', () => {
+  const h = HX.load({ html, globals: { _careerHistoryShards: {}, PlayerProfileV2: { _internals: { MK_BANDS } } } });
+  assert.equal(h.consts.H2H_CHART_SMOOTH, true);
+  let k = 0;
+  const pl = (list, s) => { const rows = list.map(([ago, price, won], i) => ({ mid: 'r' + i, date: iso(day0 - ago), day: day0 - ago, won, price, oppPrice: 2.5, book: 'P', src: 'td', wo: false, round: 'R32' })); rows.win = rows;
+    return { key: 'q' + (++k), short: s, full: s, mono: 'XX', _cSt: { state: 'ready', me: 'ready', rows } }; };
+  const A = pl(Array.from({ length: 12 }, (_, i) => [10 + i * 20, 1.5, i < 4]), 'A. One'), B = pl(Array.from({ length: 12 }, (_, i) => [15 + i * 20, 2.4, i % 3 === 0]), 'B. Two');
+  const card = h.call(h.marketCard, { market: h.call(h.marketVals, A, B, {}), a: A, b: B });
+  assert.match(card, /<rect x="0" y="[\d.]+" width="1000" height="[\d.]+" fill="color-mix\(in srgb, var\(--h2h-white\) 1\.4%, transparent\)"><\/rect>/, 'the loss shading');
+  assert.ok((card.match(/stroke="color-mix\(in srgb, var\(--h2h-white\) 4\.5%, transparent\)"/g) || []).length >= 2, 'the vertical month lines');
+  assert.match(card, /Break even<\/span>/);
+  assert.match(card, /title="Cumulative return[^"]*Retirements settle on Pinnacle rules for all rows\.[^"]*Last 52 weeks\."/, 'the chart note in its "?" (ruling 13), the retirement words from RET_SETTLE_NOTE');
+  assert.match(card, /title="Each row is a band of closing prices[^"]*Retirements settle on Pinnacle rules for all rows\. Last 52 weeks\."/, 'the band card\'s "?" (ruling 13) ends on the window');
+});
+
+// ── the match sheet (CHANGES 2026-11-18 §8): LOST SERVE and BP round pills on this page only ──
+test('§8: on the Head to Head sheet LOST SERVE (Plex 10.5) and BP (10) are round red pills; Match analysis keeps its own', () => {
+  const CSS = readFileSync(process.env.TEN402_CSS || join(HERE, 'h2h-page.css'), 'utf8');
+  assert.match(CSS, /#fhSheet\.h2hx \.fh-lost \{ font-family: 'IBM Plex Mono', monospace !important; font-size: 10\.5px !important; border-radius: 999px !important; padding: 2px 9px !important; \}/);
+  assert.match(CSS, /#fhSheet\.h2hx \.fh-bp \{ font-size: 10px !important; border-radius: 999px !important; padding: 1px 6px !important; \}/);
+  assert.ok(CSS.split('\n').filter(l => /\.fh-(lost|bp)\b/.test(l)).every(l => l.startsWith('#fhSheet.h2hx ')), 'never unscoped');
+  assert.match(html, /const lost = `<span class="fh-lost" style="font-family:var\(--font-words\); font-size:10\.5px;[^`]*border-radius:5px; padding:3px 8px;/, 'Match analysis: its own LOST SERVE (radius 5) unchanged');
 });
 
 // ── cold Head to Head link (18 Nov 2026): the Style section reads only dna-apitennis-ratings.json; a page opened on a pair

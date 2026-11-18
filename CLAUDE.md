@@ -75,7 +75,13 @@ For current build state, open build state — do not rely on a snapshot in this 
 | Sackmann tennis_atp | Historical W/L, surface splits, tournament records | In progress |
 | Sackmann MatchCharting | Shot-by-shot, serve/return, rally length | In progress |
 
-**Model R&D mode (founder ruling TEN-8).** The h2h-model — every Stage-2 adjustment layer and the Layer #8 MCP archetype baseline — runs in internal R&D mode. The Sackmann CC BY-NC-SA non-commercial restriction gates **commercial serving to paying members**, not internal R&D. Do **not** flag the licence as a blocker on R&D builds. It re-engages at commercial deployment, when a commercially-licensed alternative or a clean-room Stage-1-only fair price is required.
+**Model R&D mode (founder ruling TEN-8).** The h2h-model — every Stage-2 adjustment layer and the Layer #8 MCP archetype baseline — runs in internal R&D mode. The Sackmann CC BY-NC-SA non-commercial restriction gates **commercial serving to paying members**, not internal R&D. Do **not** flag the licence as a blocker on R&D builds — nor, since the agreement below, at commercial deployment.
+
+**Tennis Abstract licence (founder ruling 2026-11-18).** Michael has an agreement with Tennis Abstract (Jeff Sackmann's
+tennis_atp / TML / MatchChartingProject). Since 26 Oct 2026 their files say commercial or prediction-model use needs
+written permission; that permission exists, so the licence is **never a blocker** — not for R&D, not for the model, not
+for a member-facing surface. **Test:** a task that would park or dash a figure because it reads Sackmann / TML data is
+wrong.
 
 **api-tennis is the spine** (founder ruling TEN-371, 2026-10-01; The Odds API, the price backup, retired 2026-10-16). Fixtures, player names, player keys, scores, results and status come from api-tennis.
 - **Test:** every board card's `p1`/`p2` is its api-tennis fixture's `event_first_player`/`event_second_player` (oriented by `fixtureFirstIsHome`), and every profile `name` is the spelling of that player in his most recent api-tennis fixture (TEN-372: one spelling on card and profile), whatever form The Odds API used ("Alexander Zverev" → "A. Zverev"). `tools/test-ten371-name-spine.js` drives `buildMatchObject`, `buildUpcomingMatchObject` and `buildOneProfile` with Odds API data present, absent and in full-name form; display names come out identical in all three.

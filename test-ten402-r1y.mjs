@@ -88,7 +88,7 @@ test('fix 3: the career-match and Tournament ledgers mark no row (the price, its
   // one hover per price on this page: the Tournament ledger's price carries the page's own (h2hPriceTitle), as the meetings
   assert.match(tc, /<span title="Bet365 closing odds, Pinnacle not available" style="font-family:'IBM Plex Mono',monospace; font-size:11\.5px; color:var\(--h2h-text\); text-align:right;">1\.50<\/span>/, 'the Bet365 price, unmarked, its hover the book');
   assert.ok(!/<sup|ma-row-mark/.test(tc), 'no row mark on the Tournament ledger');
-  assert.match(tc, /<span class="x-av mini" title="C\. Alcaraz’s closing price"/, 'the column head names whose price it is (a mini avatar, CHANGES 2026-11-17 §2)');
+  assert.match(tc, /<span class="x-avmini" title="C\. Alcaraz’s closing price"/, 'the column head names whose price it is (his initials, no photo — CHANGES 2026-11-18 §4, founder ruling 10)');
   assert.ok(!/B = Bet365|trSrcLine\(/.test(sliceAt(html, html.indexOf('  function tourneyCard('))), 'the old "Closing odds · … · B = Bet365" line is gone');
   // the career-match ledger: the row's own price from the one join, unmarked
   const sv = { a: PA, b: PB, styles: { sides: [{ p: PA, R: { state: 'ready', oppLab: 'Big Server', avg: 50, rows: [{ won: true, opponent: 'Lorenzo Musetti', surface: 'clay', tournament: 'Monte Carlo', result: '6-4 6-4', date: '2025-04-07', round: 'SF' }] } },
@@ -115,7 +115,7 @@ test('fix 3: the sheet\'s B365 stays, as grey mono in the header\'s meta line �
   const tag = /<span class="fh-b365"[^>]*style="([^"]*)">([^<]*)<\/span>/.exec(h2h);
   assert.ok(tag, 'the tag is drawn');
   assert.equal(tag[2], '· B365');
-  assert.equal(tag[1], "font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.06em; color:var(--text-label);", 'the meta line\'s own face, size, spacing and grey');
+  assert.equal(tag[1], "font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0; color:var(--text-label);", 'the meta line\'s own face, size, spacing (none: CHANGES 2026-11-18 §8) and grey');
   const meta = /class="fh-sheet-meta" style="([^"]*)"/.exec(h2h)[1];
   assert.equal(meta, tag[1], 'identical to the rest of the line');
   assert.ok(!/>B365</.test(h2h) && !/text-transform:uppercase/.test(tag[0]) && !/font-weight:700/.test(tag[0]), 'no caps chip, no bold');
