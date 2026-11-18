@@ -3777,33 +3777,33 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   [data-db-root] .db2-fbtn:hover{ border-color:color-mix(in srgb, var(--db2-white) 22%, transparent); color:var(--db2-ink); }
   [data-db-root] .db2-fbadge{ display:inline-flex; align-items:center; justify-content:center; min-width:18px; height:18px; box-sizing:border-box; padding:0 5px; border-radius:9px; background:var(--db2-blue);
     font-family:var(--db-mono); font-size:10.5px; font-weight:700; color:var(--db2-white); }
-  [data-db-root] .db2-fpanel{ order:99; flex:0 0 100%; box-sizing:border-box; margin-top:4px; background:var(--db2-inset); border:1px solid var(--db2-h10); border-radius:12px; padding:16px 18px 12px; line-height:normal; font-family:var(--db-ui); }
+  [data-db-root] .db2-fpanel{ order:99; flex:0 0 100%; box-sizing:border-box; margin-top:4px; background:var(--db2-card); border:1px solid var(--db2-h9); border-radius:12px; padding:16px 18px 12px; line-height:normal; font-family:var(--db-ui); }
   [data-db-root] .db2-fphead{ display:flex; align-items:center; gap:10px; padding:0 2px 14px; }
   [data-db-root] .db2-fpt{ font-size:15px; font-weight:800; letter-spacing:-0.01em; color:var(--db2-ink); }
   [data-db-root] .db2-fpn{ font-size:12px; color:var(--db2-muted); }
   [data-db-root] .db2-fpx{ margin-left:auto; width:24px; height:24px; font-size:13px; }
   [data-db-root] .db2-fpx:hover{ color:var(--db2-ink); border-color:color-mix(in srgb, var(--db2-white) 32%, transparent); }
-  [data-db-root] .db2-fpshow{ display:flex; align-items:center; flex-wrap:wrap; gap:8px 10px; padding:14px 2px 16px; border-top:1px solid var(--db2-h8); }
+  [data-db-root] .db2-fpshow{ display:flex; align-items:center; flex-wrap:wrap; gap:8px 10px; padding:14px 2px 16px; border-top:1px solid var(--db2-h6); }
   [data-db-root] .db2-fpcap{ flex:0 0 100%; padding-bottom:2px; }
   [data-db-root] .db2-fpchip{ flex:1 1 170px; box-sizing:border-box; min-width:0; display:flex; align-items:center; gap:9px; height:36px; padding:0 12px 0 11px; border-radius:9px; cursor:pointer; white-space:nowrap;
     font-family:var(--db-ui); font-size:13px; font-weight:500; color:var(--db2-muted); background:transparent; border:0; box-shadow:inset 0 0 0 1px var(--db2-h10); }
-  [data-db-root] .db2-fpchip.on{ font-weight:700; color:var(--db2-ink); background:color-mix(in srgb, var(--db2-blue) 10%, transparent); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--db2-blue) 45%, transparent); }
-  [data-db-root] .db2-fpchip:hover{ box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--db2-blue) 60%, transparent); }
+  [data-db-root] .db2-fpchip.on{ font-weight:700; color:var(--db2-ink); background:var(--db2-raised); box-shadow:inset 0 0 0 1px var(--db2-h16); }   /* v3 §1: lifted grey, a blue ticked box */
+  [data-db-root] .db2-fpchip:hover{ box-shadow:inset 0 0 0 1px var(--db2-h22); }
   [data-db-root] .db2-fpbox{ flex:none; width:16px; height:16px; border-radius:5px; display:inline-flex; align-items:center; justify-content:center; box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--db2-white) 28%, transparent); }
   [data-db-root] .db2-fpchip.on .db2-fpbox{ background:var(--db2-blue); box-shadow:inset 0 0 0 1.5px var(--db2-blue); }
   [data-db-root] .db2-fpcn{ margin-left:auto; font-family:var(--db-mono); font-size:11px; font-weight:400; color:var(--db2-muted); }
-  [data-db-root] .db2-fpgrid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:18px 22px; padding-top:16px; border-top:1px solid var(--db2-h8); }
+  [data-db-root] .db2-fpgrid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:18px 22px; padding-top:16px; border-top:1px solid var(--db2-h6); }
   [data-db-root] .db2-fpcol{ display:flex; flex-direction:column; gap:16px; min-width:0; }
   [data-db-root] .db2-fpg{ display:flex; flex-direction:column; gap:2px; min-width:0; }
   [data-db-root] .db2-fpgt{ padding:0 8px 7px; }
   [data-db-root] .db2-fprow{ display:flex; justify-content:space-between; align-items:center; gap:8px; cursor:pointer; padding:7px 9px; border-radius:7px; font-family:var(--db-ui); font-size:13px; font-weight:500;
     color:var(--db2-ink-2); background:transparent; border:0; text-align:left; }
-  [data-db-root] .db2-fprow:hover{ background:var(--db2-h5); }
-  [data-db-root] .db2-fprow.on{ font-weight:700; color:var(--db2-ink); background:var(--db2-h6); }
+  [data-db-root] .db2-fprow:hover{ background:var(--db2-hover); }
+  [data-db-root] .db2-fprow.on{ font-weight:700; color:var(--db2-ink); background:var(--db2-raised); }   /* v3 §1: chosen = #131623, hover #171B28 */
   [data-db-root] .db2-fprl{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   [data-db-root] .db2-fprm{ display:flex; gap:8px; align-items:center; flex:none; }
   [data-db-root] .db2-fprm span{ font-family:var(--db-mono); font-size:10.5px; color:var(--db2-muted); font-weight:400; white-space:nowrap; }
-  [data-db-root] .db2-fpfoot{ display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--db2-h8); margin-top:16px; padding-top:12px; }
+  [data-db-root] .db2-fpfoot{ display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--db2-h6); margin-top:16px; padding-top:12px; }
   [data-db-root] .db2-fpfoot .db2-link:hover{ color:var(--db2-blue-hv2); }
   [data-db-root] .db2-done{ display:inline-flex; align-items:center; height:34px; padding:0 18px; border-radius:9px; background:var(--db2-blue); color:var(--db2-dark); font-family:var(--db-ui); font-size:13px; font-weight:700; border:0; cursor:pointer; }
   [data-db-root] .db2-done:hover{ background:var(--db2-blue-hov); }
