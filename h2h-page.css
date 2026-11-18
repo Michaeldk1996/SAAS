@@ -55,7 +55,7 @@
 #h2hRoot .x-av.b, .h2hx-pop .x-av.b { --x-ring: var(--h2h-text); }
 #h2hRoot .x-av > .x-av__i, .h2hx-pop .x-av > .x-av__i { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
   font-family: 'IBM Plex Mono', monospace; font-weight: 700; color: var(--h2h-text); letter-spacing: 0; }
-#h2hRoot .x-av > img, .h2hx-pop .x-av > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+#h2hRoot .x-mav > img, #h2hRoot .x-av > img, .h2hx-pop .x-av > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 /* the small avatar heading a price column has no ring (CHANGES 2026-11-17 §2): 22px Meetings, 20px career and tournament lists */
 #h2hRoot .x-av.mini, .h2hx-pop .x-av.mini { box-shadow: none; }
 /* pill switch (DF L140–142: track inner, 6% edge, r9, pad 2, gap 3; item 5/11, r7; on = raised + 16% ring) */

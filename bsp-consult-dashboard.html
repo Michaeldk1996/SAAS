@@ -28164,7 +28164,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
     const dash = { rankTxt: '—', eloTxt: '—', short: '—', full: '—', mono: '—', ctry: '—' };
     // TEN-402 item 9: the current pick of a side is the menu's selected row (--selected + white tick).
     const mkList = (side, other) => results(side === 'a' ? S.aQuery : S.bQuery, other).map(k => ({
-      full: P[k].full, mono: P[k].mono, ctry: P[k].ctry, rankTxt: P[k].rank != null ? '#' + P[k].rank : '—', tag: pickerTag(k),
+      key: k, full: P[k].full, mono: P[k].mono, ctry: P[k].ctry, rankTxt: P[k].rank != null ? '#' + P[k].rank : '—', tag: pickerTag(k),
       sel: k === (side === 'a' ? S.aSel : S.bSel),
       hid: bindH(() => pick(side, k)),
     }));
@@ -28763,20 +28763,16 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
   // file holds no career scope — its second scope is since 2024-03-06 — so the tab is labelled by the data, the same
   // words as the Match analysis Playing style tab (PS2_WIN). Flip: DNA_WIN.since.label. Under pressure has no
   // since-Mar-2024 figure (founder Q14) → "—"; Δ prints on the last-52-weeks view only.
-  // Founder ruling 8 (2026-11-18): the windows are Last 52 weeks · Last 24 months · Career (the design's three, DF L1104).
-  // What each reads (a window with no source is a dash with a note, never a figure from another window):
+  // Founder ruling 8 (2026-11-18), re-ruled the same day ("skip Last 24 months": no file holds that window): the windows
+  // are Last 52 weeks · Career. What each reads:
   //  · Last 52 weeks = the DNA file's last52 scope (unchanged; Surface Elo = the current weekly Elo on that surface).
-  //  · Last 24 months = no file holds it (the DNA file holds last 52 weeks and since 6 Mar 2024; surface-ratings career
-  //    and last 52) → every figure "—", the "?" says why.
   //  · Career = surface-ratings.json `career` (2010–now, the Database → Ratings figures): Serve, Return, Under pressure
   //    ratings and their pool-percentile `index` for the shape; Dominance ratio has no career figure ("—"); the Elo axis is
   //    the PEAK (elo-ratings.json `peak`, all surfaces — a career figure that is a peak, ruling 8), with no percentile.
   //    The rows read the same node (1st / 2nd serve points won, service games held, return games won = breakPct, break
   //    points converted). The 10-match floor reads the node's own sample.
   const DNA_WIN = { w52: { scope: 'last52', label: 'Last 52 weeks', lc: 'last 52 weeks' },
-    m24: { scope: null, label: 'Last 24 months', lc: 'last 24 months', none: true },
     career: { scope: 'career', label: 'Career', lc: 'career', career: true } };
-  const DNA_NO_M24 = 'Last 24 months: no rating file holds a 24-month window (the DNA file holds the last 52 weeks and since March 2024; Database → Ratings holds career and the last 52 weeks), so every figure is a dash.';
   function dnaEloPeak(full) {
     const EL = DV('eloRatings'), norm = fn('psEloNorm');
     if (!EL || !norm || !full) return null;
@@ -28802,7 +28798,6 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
   function dnaVals(a, b) {
     const W = DNA_WIN[state.dnaWin] || DNA_WIN.w52, surface = state.ctxSurface || DNA_SURFACE;
     const side = p => {
-      if (W.none) return { d: { inPool: true, ok: false, none: true }, vals: DNA_AXES.map(() => ({ raw: null, pct: null, delta: null })), name: p.short, key: p.key, extra: DNA_EXTRA.map(() => null) };
       if (W.career) {
         const c = dnaCareerFor(p, surface);
         // Elo peak shows whatever the sample (it is no match-sample figure); every other value waits on the floor
@@ -28820,7 +28815,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
       return { d, vals, name: p.short, key: p.key, extra: d.ok ? dnaExtraFor(p.key, surface, W.scope) : DNA_EXTRA.map(() => null) };
     };
     const sA = side(a), sB = side(b);
-    return { W, surface, a: sA, b: sB, extra: { a: sA.extra, b: sB.extra }, loading: W.career ? !!sA.d.loading : W.none ? false : !_dna, prof: !!state.dnaProf,
+    return { W, surface, a: sA, b: sB, extra: { a: sA.extra, b: sB.extra }, loading: W.career ? !!sA.d.loading : !_dna, prof: !!state.dnaProf,
       tabs: Object.keys(DNA_WIN).map(k => ({ label: DNA_WIN[k].label, on: (state.dnaWin || 'w52') === k, hid: bindH(() => setState({ dnaWin: k })) })),
       hProf: bindH(() => setState(s2 => ({ dnaProf: !s2.dnaProf }))) };
   }
@@ -29304,6 +29299,15 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
     if (img && opt.eager) img = img.replace('loading="lazy"', 'loading="eager" fetchpriority="high"');
     return `<span class="x-av" ${opt.title ? `title="${E(opt.title)}"` : ''} style="display:inline-block; vertical-align:middle; flex:none; position:relative; width:${size}px; height:${size}px; border-radius:50%; background:var(--h2h-raised); box-shadow:0 0 0 2px ${ring}; overflow:hidden;${opt.style || ''}"><span class="x-av__i" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:${fs}px; font-weight:700; letter-spacing:0; color:var(--h2h-text);">${E((p && p.mono) || '—')}</span>${img}</span>`;
   }
+  // The photo over an initials circle that is not an xAv (the Model boxes, the search rows): founder 2026-11-18 (ruling 6,
+  // follow-up): every avatar beside a picked or picker player shows his stored photo; initials only when none is stored.
+  function xPhotoOver(p, eager) {
+    const key = p && p.key != null ? String(p.key) : null;
+    xPhotoKick();
+    let img = key && typeof playerPhotoImg === 'function' ? playerPhotoImg(key, p.full || '') : '';
+    if (img && eager) img = img.replace('loading="lazy"', 'loading="eager" fetchpriority="high"');
+    return img;
+  }
   // Initials only, ringed (CHANGES 2026-11-18 §4; ruling 10): the career-matches and tournament card heads, the Market edge
   // cards (38 / 13) and the head to head pop-up head (52 / 16) — card fill, no photo.
   function xIni(p, side, size, fs) {
@@ -29392,7 +29396,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
     const list = side === 'a' ? v.aResults : v.bResults, none = side === 'a' ? v.aNoResults : v.bNoResults;
     return `<div role="listbox" aria-label="Players" style="position:absolute; left:0; right:0; top:calc(100% + 6px); background:var(--h2h-raised); border:1px solid color-mix(in srgb, var(--h2h-white) 10%, transparent); border-radius:12px; padding:6px; z-index:40; max-height:280px; overflow:auto;">
       ${list.map(r => `<div class="seg x-mrow" role="option" aria-selected="${r.sel ? 'true' : 'false'}" data-hid="${r.hid}" style="display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:9px;">
-        <span style="width:28px; height:28px; border-radius:50%; background:color-mix(in srgb, var(--h2h-white) 5%, transparent); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--h2h-grey); flex:none;">${E(r.mono)}</span>
+        <span class="x-mav" style="position:relative; overflow:hidden; width:28px; height:28px; border-radius:50%; background:color-mix(in srgb, var(--h2h-white) 5%, transparent); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--h2h-grey); flex:none;">${E(r.mono)}${xPhotoOver(r, true)}</span>
         <span style="flex:1; font-size:13.5px; font-weight:600;">${E(r.full)}</span>
         <span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--h2h-grey);">${E(r.tag)}</span>
       </div>`).join('')}
@@ -29465,7 +29469,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
   function modelCard(v) {
     const m = v.model, G = 'var(--h2h-grey)';
     const box = (p, sd, name, price, base) => `<div style="display:flex; flex-direction:column; align-items:center; gap:14px; border:1px solid color-mix(in srgb, var(--h2h-white) 6%, transparent); background:var(--h2h-card); border-radius:12px; padding:18px 20px;">
-      <div style="display:flex; align-items:center; gap:12px;"><span style="width:34px; height:34px; border-radius:50%; background:var(--h2h-raised); border:1px solid color-mix(in srgb, var(--h2h-white) 8%, transparent); display:inline-flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:var(--h2h-text);">${E(sd === 'b' ? m.bMono : m.aMono)}</span><span style="font-size:15px; font-weight:800; color:var(--h2h-text);">${E(name)}</span></div>
+      <div style="display:flex; align-items:center; gap:12px;"><span class="x-mav" style="position:relative; overflow:hidden; flex:none; width:34px; height:34px; border-radius:50%; background:var(--h2h-raised); border:1px solid color-mix(in srgb, var(--h2h-white) 8%, transparent); display:inline-flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:var(--h2h-text);">${E(sd === 'b' ? m.bMono : m.aMono)}${xPhotoOver(p, true)}</span><span style="font-size:15px; font-weight:800; color:var(--h2h-text);">${E(name)}</span></div>
       <div style="display:flex; flex-direction:column; align-items:center; gap:3px;"><span style="${X_CAP}">Likely opening price</span><span style="font-family:'IBM Plex Mono',monospace; font-size:clamp(20px,2.2vw,28px); font-weight:800; color:${state.flash ? 'var(--h2h-blue)' : 'var(--h2h-text)'}; transition:color 260ms ease; line-height:1.05;">${E(price)}</span>${base ? `<span title="The price from Elo alone (overall and surface Elo, no model layer), on the same Pinnacle opening margin" style="margin-top:3px; font-size:11px; color:${G};">Elo only <span style="font-family:'IBM Plex Mono',monospace;">${E(base)}</span></span>` : ''}</div>
     </div>`;
     // The explanation (founder ruling 7, 2026-11-18): each player's win chance and the context, then how the price is built,
@@ -29555,10 +29559,9 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
       </div>`;
     }).join('');
     const scope = D.surface + ' · Best of ' + (state.ctxFormat || 3) + ' · ' + D.W.label;
-    const why = s => (D.loading || D.W.none ? '' : !s.d.inPool ? ' ' + s.name + ': no rating on record.'
+    const why = s => (D.loading ? '' : !s.d.inPool ? ' ' + s.name + ': no rating on record.'
       : !s.d.ok ? ' ' + s.name + ': ' + (s.d.matches || 0) + ' ' + D.surface + (s.d.matches === 1 ? ' match' : ' matches') + ' in the window, under the ' + DNA_FLOOR + '-match floor, so no shape and no figures.' : '');
-    const winNote = D.W.none ? ' ' + DNA_NO_M24
-      : D.W.career ? ' Career: Serve, Return and Under pressure are the career ratings of Database → Ratings (2010–now), the shape their percentile among the players rated there; Dominance ratio has no career figure (—); Elo is each player’s peak Elo, all surfaces.'
+    const winNote = D.W.career ? ' Career: Serve, Return and Under pressure are the career ratings of Database → Ratings (2010–now), the shape their percentile among the players rated there; Dominance ratio has no career figure (—); Elo is each player’s peak Elo, all surfaces.'
       : ' Last 52 weeks: the ratings from our own box scores (since March 2024); Surface Elo is the current weekly Elo on ' + surfLc + '.';
     const help = 'Blue line and blue ring: ' + D.a.name + '. White line and white ring: ' + D.b.name + '. The shape shows where each player stands against the tour on five ratings (percentile). The rows give the raw figures: the line leans toward the better player and the number on it is the difference.' + winNote + why(D.a) + why(D.b);
     return `<div id="h2h-dna" class="x-sec" style="${X_SEC} gap:16px;">
@@ -30139,9 +30142,10 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
   function marketCard(v) {
     const m = v.market, core = m.core;
     const G = 'var(--h2h-grey)', W = 'var(--h2h-text)', UP = 'var(--h2h-up)', DN = 'var(--h2h-down)';
-    // "?" (CHANGES 2026-11-18 §6 + founder ruling 13): the design's band text, then the thin-sample rule, the retirement
-    // settlement (MarketEdgeCore.RET_SETTLE_NOTE, never spelled out here) and the selected window.
-    const bandHelp = 'Each row is a band of closing prices (Pinnacle, else Bet365). The line shows his edge: how many points his win rate in the band sits above or below the break-even rate at the band\'s average price. Green to the right is above break even, red to the left is below. The tiles give his edge as favourite, as underdog, and in his best and worst band. Return is the result of backing him with 1% of bankroll on every match in the band. Grey = small sample (5–9 matches); under 5, no rate. Click a band to filter the chart below. ' + (core ? core.RET_SETTLE_NOTE + ' ' : '') + m.scopeLbl + '.';
+    // "?" = the founder's own help text (ruling 13, 2026-11-18, re-ruled the same day: "start from my text; reword only
+    // what the 18 Nov design removed"). His "Bar = … ; tick = …" named the old bar and tick: the line and its chip now carry
+    // that gap, so only those words changed. The book rule, the sample rule, RET_SETTLE_NOTE and the window stay.
+    const bandHelp = 'Win rate = his win rate at closing odds in the band (Pinnacle, else Bet365); break even = the win rate he needs at the band\'s average price. Edge = the gap between them, in points: the line runs from the centre, green to the right when he is above break even, red to the left when below, and the chip on it is the edge. The tiles give that edge as favourite, as underdog, and in his best and worst band. Record = his wins and losses in the band. Return = profit backing him 1u (1% of bankroll) on every match in the band. Grey = small sample (5–9 matches); under 5, no rate. Click a band to filter the chart below. ' + (core ? core.RET_SETTLE_NOTE + ' ' : '') + m.scopeLbl + '.';
     // CHANGES 2026-11-17 §4 (DF L655–663): one head row — title, scope, spacer, the large window switch, the "?".
     const head = `<div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;"><span style="font-size:18px; font-weight:800; letter-spacing:-0.01em; color:var(--h2h-text);">Market edge</span><span style="font-size:12.5px; color:var(--h2h-grey);">${E(m.scopeLbl + ' · closing prices')}</span><span style="flex:1;"></span>${xSw(m.tabs, 'lg')}${xHelp(bandHelp)}</div>`;
     const sec = inner => `<div id="h2h-market" class="x-sec" style="${X_SEC} gap:16px;">${head}${inner}</div>`;
@@ -30206,7 +30210,8 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
     // the chart
     const C = m.chart, H = 260;
     const selLbl = m.band != null ? 'Priced ' + core.BANDS[m.band].label.replace(/\s/g, '') : '';
-    const chartNote = (m.band != null ? 'Cumulative return, a flat 1% stake at closing odds on every match priced ' + core.BANDS[m.band].label.replace(/\s/g, '') : 'Cumulative return, a flat 1% stake at closing odds on every priced match') + ', oldest to newest; each line spans that player\'s own matches' + (C ? ' (the dates follow ' + m.names[C.dateOf] + '’s)' : '') + '. The bright rule is break even. ' + (core ? core.RET_SETTLE_NOTE + ' ' : '') + m.scopeLbl + '.';
+    // the founder's chart text (ruling 13): his words, the units read in % on this axis (1u = 1% of bankroll, 17 Nov §4)
+    const chartNote = 'Cumulative units, flat 1u (1% of bankroll, so the axis reads in %) at closing odds on every ' + (m.band != null ? 'match priced ' + core.BANDS[m.band].label.replace(/\s/g, '') : 'priced match') + ', oldest to newest; each line spans that player\'s own matches' + (C ? ' (the dates follow ' + m.names[C.dateOf] + '’s)' : '') + '. The bright rule is break even. ' + (core ? core.RET_SETTLE_NOTE + ' ' : '') + m.scopeLbl + '.';
     let plot;
     if (!C) plot = `<div style="display:flex; gap:12px;"><div style="width:52px; height:${H}px; flex:none;"></div><div style="flex:1; min-width:0; height:${H}px; display:flex; align-items:center; justify-content:center; font-size:12.5px; color:${G};">${m.loading ? 'Loading…' : 'No priced matches in this window.'}</div></div>`;
     else {

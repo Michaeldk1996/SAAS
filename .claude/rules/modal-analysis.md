@@ -205,8 +205,10 @@ this file wins.
   every other match (`odds.md` "The lower levels in the master"); a dash only where the join holds none.
 - **N9:** News empty state = the file's copy: "No recent news for {A} or {B}." + "View all news →".
   `SAMPLE_NEWS` and the sample fallback are deleted, never hidden.
-- **N10:** the Key factors "Dimension edge" card uses the **5-axis DNA** data. The MCP / Sackmann radar
-  (CC BY-NC-SA) is not used on any paid surface. **Test:** the modal never fetches `style-radar.json`.
+- **N10:** the Key factors "Dimension edge" card and the radar use the **5-axis DNA** data, because we hold that data
+  ourselves (our own api-tennis box scores). The licence is not a blocker: the Tennis Abstract agreement covers the
+  MCP / Sackmann data (founder 2026-11-18, `CLAUDE.md` "Tennis Abstract licence"). **Test:** the modal never fetches
+  `style-radar.json`.
 
 ## Tournament tab (TEN-332, built 2026-09-29)
 - **Structure = the design file** (DF L216–331, `tournamentFor` / `tourRecFor`): header card (tile, name, location, surface

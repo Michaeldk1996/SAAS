@@ -264,6 +264,28 @@ test('ruling 6: a render made before the photo index landed repaints once it lan
   assert.equal(l2, 0);
 });
 
+// ── ruling 6 follow-up (2026-11-18): every avatar beside the picker shows the photo — the Model boxes and the search rows ──
+test('ruling 6 follow-up: the Stennisfy Model boxes and the player search rows draw the stored photo over the initials (eager)', () => {
+  const h = HX.load({ html, preload: ['escapeHtml', 'playerPhotoUrl', 'playerPhotoImg'], globals: { playerPhotoIndex: { 1: { s: 'abc' }, 2: { s: 'def' } }, _photoIndexLoaded: true } });
+  const m = { priced: true, aMono: 'JS', bMono: 'CA', aName: 'J. Sinner', bName: 'C. Alcaraz', aPrice: '2.90', bPrice: '1.45', foot: null };
+  const card = h.call(h.modelCard, { model: m, a: SIN, b: ALC });
+  const mav = [...card.matchAll(/<span class="x-mav" style="([^"]*)">(\w+)(<img [^>]*>)?<\/span>/g)];
+  assert.equal(mav.length, 2, 'two Model avatars');
+  assert.deepEqual(mav.map(x => x[2]), ['JS', 'CA'], 'the initials under the photo');
+  mav.forEach(x => { assert.ok(x[3], 'a photo layer'); assert.match(x[3], /loading="eager"/); assert.match(x[1], /position:relative; overflow:hidden;/); });
+  assert.match(mav[0][3], /player-photos\/s\/1\.webp\?v=abc/);
+  const v = { aPicked: false, bPicked: true, aSearching: true, bSearching: false, aListOpen: true, bListOpen: false, aQuery: 'sin', a: {}, b: ALC,
+    aResults: [{ key: '1', full: 'Jannik Sinner', mono: 'JS', tag: 'ITA · #2', sel: false, hid: 1 }, { key: '9', full: 'No Photo', mono: 'NP', tag: '—', sel: false, hid: 2 }], aNoResults: false,
+    hAChange: 1, hBChange: 2, hSwap: 3, ctxShow: false };
+  const bar = h.call(h.selectorBar, v);
+  const rows = [...bar.matchAll(/<span class="x-mav" style="[^"]*">(\w+)(<img [^>]*>)?<\/span>/g)];
+  assert.equal(rows.length, 2);
+  assert.ok(rows[0][2] && /player-photos\/s\/1\.webp/.test(rows[0][2]), 'a search row with a stored photo shows it');
+  assert.ok(!rows[1][2], 'initials only for a player with no stored photo');
+  const CSS = readFileSync(process.env.TEN402_CSS || join(HERE, 'h2h-page.css'), 'utf8');
+  assert.match(CSS, /#h2hRoot \.x-mav > img, #h2hRoot \.x-av > img/, 'the photo fills the circle');
+});
+
 // ── page ground (founder ruling 4, 2026-11-18): the website's background with a pair too ──
 test('ruling 4: the page, its tab and the sticky band read the website\'s background with players picked — never --h2h-page', () => {
   const h = HX.load({ html, globals: { SfCountryIoc: { of: () => 'ITA' } } });
@@ -304,7 +326,7 @@ test('ruling 8: Career = surface-ratings career (Serve / Return / Under pressure
   const h = dnaHarness();
   h.state.dnaWin = 'career'; h.state.ctxSurface = 'Hard';
   const D = h.call(h.dnaVals, SIN, ALC);
-  assert.deepEqual(J(D.tabs.map(t => t.label)), ['Last 52 weeks', 'Last 24 months', 'Career']);
+  assert.deepEqual(J(D.tabs.map(t => t.label)), ['Last 52 weeks', 'Career'], 'two windows (ruling 8 re-ruled: Last 24 months skipped)');
   assert.deepEqual(J(D.a.vals.map(x => x.raw)), [301.2, 155.4, 241.3, null, 2341], 'serve, return, under pressure, no DR, the Elo peak');
   assert.deepEqual(J(D.a.vals.map(x => x.pct)), [97.5, 96.1, 93.2, null, null], 'the shape = the pool percentile; no percentile for the peak');
   assert.deepEqual(J(D.extra.a), [77.1, 56.2, 89.9, 29.8, 41.7], 'the rows read the same career node (return games won = breakPct)');
@@ -318,18 +340,6 @@ test('ruling 8: Career = surface-ratings career (Serve / Return / Under pressure
   assert.deepEqual(J(h9.call(h9.dnaVals, SIN, ALC).a.vals.map(x => x.raw)), [null, null, null, null, 2341]);
   assert.ok(t9);
 });
-test('ruling 8: Last 24 months has no source — every figure "—" and the "?" says why; never another window\'s figure', () => {
-  const h = dnaHarness();
-  h.state.dnaWin = 'm24'; h.state.ctxSurface = 'Hard';
-  const D = h.call(h.dnaVals, SIN, ALC);
-  assert.ok(D.a.vals.every(x => x.raw == null) && D.b.vals.every(x => x.raw == null));
-  const card = h.call(h.dnaCard, { a: SIN, b: ALC, dna: D });
-  const figs = [...card.matchAll(/<span style="(?:text-align:right; )?font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:\d+; color:[^;]+;">([^<]*)<\/span>/g)].map(m => m[1]);
-  assert.equal(figs.length, 20, 'ten rows, two figures each');
-  assert.ok(figs.every(f => f === '—'), 'every figure a dash: ' + figs.join(' '));
-  assert.match(card, /title="[^"]*Last 24 months: no rating file holds a 24-month window/);
-});
-
 // ── Tournament record: a long list folds (founder ruling 5, 2026-11-18) ──
 test('ruling 5: a long Tournament list shows its newest 6 rows, then "Show N more matches"; the toggle shows them all and "Show fewer"', () => {
   const h = HX.load({ html, globals: { _careerHistoryShards: {}, _sfDbJoinSt: 'loading', _sfDbJoinP: new Promise(() => {}) } });
@@ -379,8 +389,13 @@ test('ruling 2: the return chart draws the loss shading and the vertical month l
   assert.match(card, /<rect x="0" y="[\d.]+" width="1000" height="[\d.]+" fill="color-mix\(in srgb, var\(--h2h-white\) 1\.4%, transparent\)"><\/rect>/, 'the loss shading');
   assert.ok((card.match(/stroke="color-mix\(in srgb, var\(--h2h-white\) 4\.5%, transparent\)"/g) || []).length >= 2, 'the vertical month lines');
   assert.match(card, /Break even<\/span>/);
-  assert.match(card, /title="Cumulative return[^"]*Retirements settle on Pinnacle rules for all rows\.[^"]*Last 52 weeks\."/, 'the chart note in its "?" (ruling 13), the retirement words from RET_SETTLE_NOTE');
-  assert.match(card, /title="Each row is a band of closing prices[^"]*Retirements settle on Pinnacle rules for all rows\. Last 52 weeks\."/, 'the band card\'s "?" (ruling 13) ends on the window');
+  // ruling 13 (re-ruled 2026-11-18): the founder's own words; only the removed bar / tick were reworded
+  assert.match(card, /title="Cumulative units, flat 1u \(1% of bankroll, so the axis reads in %\) at closing odds on every priced match, oldest to newest; each line spans that player&#39;s own matches \(the dates follow [^)]*\)\. The bright rule is break even\. Retirements settle on Pinnacle rules for all rows\. Last 52 weeks\."/, 'the chart "?" = his text, the retirement words from RET_SETTLE_NOTE, the window');
+  const band = (/<span class="x-help" title="(Win rate = [^"]*)"/.exec(card) || [])[1] || '';
+  assert.match(band, /^Win rate = his win rate at closing odds in the band \(Pinnacle, else Bet365\); break even = the win rate he needs at the band&#39;s average price\. Edge = the gap between them/, 'his book rule and his "Edge = the gap between them"');
+  assert.match(band, /Grey = small sample \(5–9 matches\); under 5, no rate\./, 'his sample rule');
+  assert.match(band, /Retirements settle on Pinnacle rules for all rows\. Last 52 weeks\.$/, 'RET_SETTLE_NOTE and the window, last');
+  assert.doesNotMatch(band, /Bar = |tick = /, 'nothing names the removed bar or tick');
 });
 
 // ── the match sheet (CHANGES 2026-11-18 §8): LOST SERVE and BP round pills on this page only ──

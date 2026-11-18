@@ -16,7 +16,7 @@ const MUTANTS = [
   ['Model: a failed load reads as not covered', "    if (sa.st === 'failed' || sb.st === 'failed') { out.emptyText = 'The estimate couldn’t load. It will try again.'; return out; }\n", ""],
   ['Model: a file with no margin still priced', "    if (!(m >= 0 && m < 0.2)) { out.emptyText = 'The estimate file carries no margin, so no price is shown.'; return out; }\n", "    if (!(m >= 0 && m < 0.2)) { }\n"],
   ['Model: a refetch on every render', "    if (c && (c.st !== 'failed' || Date.now() - c.at < H2H_PAIR_RETRY_MS)) return c;", "    if (c && c.st === 'ready') return c;"],
-  ['DNA (ruling 8): Last 24 months back on the since-2024 scope', "m24: { scope: null, label: 'Last 24 months', lc: 'last 24 months', none: true },", "m24: { scope: 'sinceBase', label: 'Last 24 months', lc: 'last 24 months' },"],
+  ['DNA (ruling 8 re-ruled): Last 24 months back as a third window', "    career: { scope: 'career', label: 'Career', lc: 'career', career: true } };", "    m24: { scope: 'sinceBase', label: 'Last 24 months', lc: 'last 24 months' },\n    career: { scope: 'career', label: 'Career', lc: 'career', career: true } };"],
   // ---- the design rebuild (founder 2026-11-16)
   ["H6: an empty news card loses its sentence (a blank card)", "        ${!list.length ? `<div style=\"padding:16px 0; text-align:center; font-size:12.5px; color:${G};\">${E(emptyTxt)}</div>` : ''}", ""],
   ["H6: an ASAP item filed as an article", "    if (n.kind === 'asap') return 'quotes';\n", ""],

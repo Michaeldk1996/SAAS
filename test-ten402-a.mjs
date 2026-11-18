@@ -179,7 +179,7 @@ async function modelHarness(files, { now = 0 } = {}) {
   const state = { aSel: '10', bSel: '20' };
   let renders = 0;
   const src = sliceConst('H2H_PAIR_RETRY_MS') + sliceConst('H2H_PAIR_LAYERS') + sliceConst('_pairPx') + sliceConst('X_CAP')
-    + slice('pairPxFor') + slice('pairClock') + slice('modelVals') + slice('xHelp') + slice('modelCard');
+    + slice('pairPxFor') + slice('pairClock') + slice('modelVals') + slice('xHelp') + 'function xPhotoOver() { return \'\'; }\n' + slice('modelCard');
   const mod = new Function('fetch', 'state', 'built', 'render', 'fn', 'E', 'Date',
     src + '\nreturn { modelVals, modelCard, pairPxFor };')(fetch, state, true, () => { renders++; }, () => null, E,
     Object.assign(function () { return new globalThis.Date(...arguments); }, { now: () => now, parse: globalThis.Date.parse }));
@@ -249,12 +249,11 @@ test('Data 3: the header Elo is the weekly Elo Database → Ratings shows (tourx
 });
 
 // ── Playing style DNA (Data 4) ────────────────────────────────────────────────────────────────────────────────────
-test('DNA (founder ruling 8, 2026-11-18): the windows are Last 52 weeks · Last 24 months · Career — 52 weeks = the DNA file, 24 months has no source, Career = surface-ratings career + the Elo peak', () => {
-  const m = /const DNA_WIN = \{ w52: \{ scope: 'last52', label: 'Last 52 weeks'[^\n]*\n\s*m24: \{ scope: null, label: 'Last 24 months'[^\n]*none: true \},\n\s*career: \{ scope: 'career', label: 'Career'[^\n]*career: true \} \};/.exec(html);
-  assert.ok(m, 'DNA_WIN = the three windows');
-  assert.doesNotMatch(html.slice(H2H_AT), /Since Mar 2024'/, 'the since-Mar-2024 tab is gone from the page');
+test('DNA (founder ruling 8, re-ruled 2026-11-18): the windows are Last 52 weeks · Career only — 52 weeks = the DNA file, Career = surface-ratings career + the Elo peak; no Last 24 months, no dashed state', () => {
+  const m = /const DNA_WIN = \{ w52: \{ scope: 'last52', label: 'Last 52 weeks'[^\n]*\n\s*career: \{ scope: 'career', label: 'Career'[^\n]*career: true \} \};/.exec(html);
+  assert.ok(m, 'DNA_WIN = the two windows');
+  assert.doesNotMatch(html.slice(H2H_AT), /Since Mar 2024'|DNA_NO_M24|W\.none/, 'no since-Mar-2024 tab, no Last 24 months dashed state');
   const dv = slice('dnaVals');
-  assert.match(dv, /if \(W\.none\) return \{ d: \{ inPool: true, ok: false, none: true \}, vals: DNA_AXES\.map\(\(\) => \(\{ raw: null, pct: null, delta: null \}\)\)/, 'Last 24 months: every figure null');
   assert.match(dv, /if \(W\.career\) \{\n\s*const c = dnaCareerFor\(p, surface\);/);
   assert.match(dv, /delta: \(has && W\.scope === 'last52' && d\.deltas\)/, 'Δ only on the last-52-weeks view');
   const dc = slice('dnaCareerFor');

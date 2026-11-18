@@ -47,7 +47,10 @@ live calculation (Data below).
   with a 2px ring — blue player one, white player two. The photo (the one resolver, `playerPhotoImg`) covers the initials
   in the picker (44 / 13), Playing style (40 / 12), the overall box (46 / 12), the style record cards (38 / 11.5) and news
   (34 / 10.5) (`xAv`). **The picker's photo is loaded eagerly** and a render made before the photo index landed repaints
-  once it lands (ruling 6: the header pickers never stay on initials when a photo exists). Initials only (`xIni`, card
+  once it lands (ruling 6: the header pickers never stay on initials when a photo exists). **Every avatar beside the picker
+  shows the stored photo too** (founder ruling 6 follow-up, 2026-11-18, overriding the design's initials-only circles): the
+  Stennisfy Model boxes (34) and the player search rows (28) layer the photo over their initials (`xPhotoOver`, eager);
+  initials only for a player with no stored photo. Suggested matchups draw no avatar (the design's text chips). Initials only (`xIni`, card
   fill): the head to head pop-up head (52 / 16), the Career matches and Tournament card heads and the Market edge cards
   (38 / 13). **The column-head avatars over a price** (Meetings 26 / 10, career and tournament lists 24 / 9.5) are
   initials, 1px 16% edge, no ring, never a photo (`xMini`; ruling 10). **Test:** the picker's `<img>` carries
@@ -72,19 +75,17 @@ live calculation (Data below).
   "Win chance" or "Elo base" text; the "?" title holds both lines.
 - **Playing style:** radar (both polygons solid, A blue on top) + ten face-to-face rows: Elo, Serve, Return, Under
   pressure, Dominance ratio · 1st / 2nd serve points won, Service games held · Return games won, Break points converted.
-  **Windows Last 52 weeks · Last 24 months · Career** (founder ruling 8, 2026-11-18; the design's three; "Since Mar 2024"
-  is gone). What each reads — a window with no source is "—" and the "?" says why, never another window's figure:
+  **Windows Last 52 weeks · Career** (founder ruling 8, 2026-11-18, re-ruled the same day: "skip Last 24 months" — no
+  file holds that window, so the option is gone; "Since Mar 2024" is gone too). What each reads:
   - Last 52 weeks = the DNA file's `last52` (ratings, percentiles, `serve.firstWonPct` / `secondWonPct` / `holdPct`,
     `return.returnGamesWonPct` / `bpConvPct`); Elo = the current weekly Elo on the surface.
-  - Last 24 months = **no source** (the DNA file holds last 52 weeks and since 6 Mar 2024; surface-ratings career and last
-    52): every figure "—".
   - Career = `surface-ratings.json` `career` (2010–now, the Database → Ratings figures): Serve, Return, Under pressure
     ratings, the shape their pool-percentile `index`; Dominance ratio "—" (no career figure); **Elo = the peak**
     (`elo-ratings.json` `peak`, all surfaces, labelled "Elo peak", no percentile); the rows read the same node (return
     games won = `breakPct`).
   Under the 10-match floor (that window's own sample): no shape, "—" on every row except the Elo peak, the reason in the
-  "?". The lean and its chip read the printed figures. **Test:** Last 24 months prints no digit in the rows; Career prints
-  the surface-ratings career rating and the Elo peak.
+  "?". The lean and its chip read the printed figures. **Test:** the switch reads exactly Last 52 weeks · Career; Career
+  prints the surface-ratings career rating and the Elo peak.
 - **Head to head record:** surface tabs with counts (a surface with no meeting is inert, `--h2h-dead`); the Overall box
   (score all white, one bullet per meeting oldest → newest, blue = A won, white = B; "X won the last n meetings";
   "All n meetings ›" opens the box). Never met: the design's one sentence.
@@ -135,8 +136,11 @@ live calculation (Data below).
   signed edge, one decimal, no unit), Record, Return (%), a blue ›. **Edge = his win rate in the band − 100 / the band's
   average closing price** (MarketEdgeCore `needs`), in points; a group tile = the same over the group's priced matches.
   The page's thin gate holds (under 5 no edge, 5–9 grey); Best / Worst band = the bands that print an edge. A band click
-  filters the chart; again clears it. The "?" = the design's text + thin rule + `RET_SETTLE_NOTE` + the window (ruling
-  13). **Test:** no band row prints "1.01–1.20" as one string; no Won / Needs column.
+  filters the chart; again clears it. **The band "?" and the chart "?" are the founder's own help text** (ruling 13, re-ruled 2026-11-18): "Win rate =
+  his win rate at closing odds in the band (Pinnacle, else Bet365); break even = … Edge = the gap between them …" and
+  "Cumulative units, flat 1u … each line spans that player's own matches …"; only the words naming the removed bar / tick
+  changed, and the units say they read in % (1u = 1% of bankroll). **Test:** no band row prints "1.01–1.20" as one string;
+  no Won / Needs column; neither "?" names a bar or a tick.
 - **Return chart = the design's style, a named page exception** (founder ruling 2, 2026-11-18, "follow the design"):
   the smoothed line, the faint loss shading under break even and the vertical month / year lines stay
   (`H2H_CHART_SMOOTH`), against `foundation.md` Charts (no area fill / no vertical gridlines) — this chart only. x = each

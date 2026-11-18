@@ -254,10 +254,10 @@ const MUTANTS = [
     "background:linear-gradient(var(--h2h-page) 78%, var(--h2h-page-0));\">"],
   ["ruling 5: a long Tournament list no longer folds", "let left = allR ? Infinity : H2H_TOUR_SHOWN;", "let left = Infinity;"],
   ["ruling 6: the picker photo lazy again", "if (img && opt.eager) img = img.replace(", "if (false) img = img.replace("],
-  ["ruling 6: no repaint when the photo index lands late", "    xPhotoKick();\n", ""],
+  ["ruling 6: no repaint when the photo index lands late", "    xPhotoKick();\n    let img = key && typeof playerPhotoImg === 'function' ? playerPhotoImg(key, p.full || '') : '';\n    if (img && opt.eager)", "    let img = key && typeof playerPhotoImg === 'function' ? playerPhotoImg(key, p.full || '') : '';\n    if (img && opt.eager)"],
   ["ruling 7: the Model explanation leaves the \"?\"", "${help ? '<span style=\"flex:1;\"></span>' + xHelp(help) : ''}", ""],
   ["ruling 8: Career Elo = the current Elo, not the peak", "const r = rec && rec.peak ? rec.peak.rating : null;", "const r = rec && rec.all ? rec.all.rating : null;"],
-  ["ruling 8: Last 24 months reads another window", "      if (W.none) return { d:", "      if (false) return { d:"],
+  ["ruling 8 re-ruled: Last 24 months back on the switch", "    career: { scope: 'career', label: 'Career', lc: 'career', career: true } };", "    m24: { scope: 'sinceBase', label: 'Last 24 months', lc: 'last 24 months' },\n    career: { scope: 'career', label: 'Career', lc: 'career', career: true } };"],
   ["ruling 8: Career reads the DNA file", "      if (W.career) {\n", "      if (false) {\n"],
   ["ruling 9: the level-priced count back in the Favourite sentence",
     "sub: fav.length ? udTxt : 'No priced meeting', tip: favTip",
@@ -270,6 +270,10 @@ const MUTANTS = [
     "<span>${E(lo)}</span><span style=\"font-weight:500; color:${G};\">${sep}</span><span>${E(hi)}</span>", "${E(lab)}"],
   ["18 Nov §6: the edge chip back in pp", "${E(x.edge == null ? '—' : sg(x.edge, 1, ''))}</span></div>", "${E(x.edge == null ? '—' : sg(x.edge, 1, 'pp'))}</span></div>"],
   ["18 Nov §2: the title back in the plain 29/800 head", "<h1 style=\"margin:0; font-size:24px; font-weight:800; letter-spacing:-0.015em; line-height:1.15;\">", "<h1 style=\"margin:0; font-size:29px; font-weight:800; letter-spacing:-0.02em; line-height:1.1;\">"],
+  ["ruling 6 follow-up: the Model boxes back on initials only", "${E(sd === 'b' ? m.bMono : m.aMono)}${xPhotoOver(p, true)}</span>", "${E(sd === 'b' ? m.bMono : m.aMono)}</span>"],
+  ["ruling 6 follow-up: the search rows back on initials only", "${E(r.mono)}${xPhotoOver(r, true)}</span>", "${E(r.mono)}</span>"],
+  ["ruling 13: the band \"?\" back on the design's own sentence", "const bandHelp = 'Win rate = his win rate at closing odds in the band (Pinnacle, else Bet365);", "const bandHelp = 'Each row is a band of closing prices (Pinnacle, else Bet365);"],
+  ["ruling 13: the chart \"?\" back on returns", "const chartNote = 'Cumulative units, flat 1u (1% of bankroll, so the axis reads in %) at closing odds on every '", "const chartNote = 'Cumulative return, a flat 1% stake at closing odds on every '"],
   ["18 Nov §7: the opened news item back on the raised tone", "background:${it.open ? 'var(--h2h-layer)' : 'transparent'}", "background:${it.open ? 'var(--h2h-raised)' : 'transparent'}"],
 ];
 // stylesheet mutants (h2h-page.css, read by the suites through TEN402_CSS)
