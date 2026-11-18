@@ -74,6 +74,7 @@ function makeDoc() {
         toggle(c, on) { if (on) this.add(c); else this.remove(c); } }; },
       setAttribute(k, v) { this.attrs[k] = String(v); }, getAttribute(k) { return k in this.attrs ? this.attrs[k] : null; },
       appendChild(c) { this.children.push(c); return c; },
+      insertAdjacentHTML(pos, h) { this._html += String(h); },
       set innerHTML(v) { this._html = String(v); this.children = []; }, get innerHTML() { return this._html; },
       set textContent(v) { this._html = String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;'); this.children = []; },
       get textContent() { return this._html.replace(/<[^>]*>/g, '') + this.children.map(c => c.textContent).join(''); },
@@ -93,7 +94,8 @@ const BAR_FNS = ['el', 'esc', 'yr', 'trigger', 'foldedOpts', 'allOpts', 'tourLev
   'multiMenu', 'singleMenu', 'presentYears', 'yearControl', 'countOf', 'resetFilters', 'renderFilters'];
 const BAR_VARS = ['DB_CARET', 'ROUND_ORDER', 'LEVELS_EXPECTED', 'FOLDED_LEVELS', 'ROUNDS_EXPECTED', 'FOLDED_ROUNDS'];
 function renderTourBar(src, menu) {
-  const code = BAR_VARS.map(v => varLine(src, v)).join('\n') + '\nvar _foldWarned={}; var lastTotal=0;\n' +
+  const code = BAR_VARS.map(v => varLine(src, v)).join('\n') + '\n' + varLine(src, 'DB3_CIRCUITS') + '\n' + (/var DB3_SWINGS=[\s\S]*?\]\];/.exec(src) || [''])[0] +
+    '\nvar _foldWarned={}; var lastTotal=0;\n' +
     BAR_FNS.map(f => fnSource(src, f)).join('\n') + '\nrenderFilters();';
   const doc = makeDoc(), bar = doc.createElement('div');
   const M = { levels: ['Grand Slam', 'Masters 1000', 'ATP 500', 'ATP 250', 'Finals'], surfaces: ['Hard', 'Clay', 'Grass'],
@@ -132,11 +134,12 @@ CHECKS.caret = (src) => {
   if (!caret || (caret.match(/▼/g) || []).length !== 1) return 'DB_CARET is not one ▼ element: ' + caret;
   const { bar } = renderTourBar(src, null);
   const trigs = bar.all().filter(n => n.tagName === 'BUTTON' && has(n, 'db-trig'));
-  if (trigs.length !== 5) return `the Tour bar has ${trigs.length} drop-down triggers, not 5`;
+  // Database v3 (CHANGES §1): Tour · Level · Surface · Round · Swing · the two Years ends
+  if (trigs.length !== 7) return `the Tour bar has ${trigs.length} drop-down triggers, not 7`;
   const bad = trigs.filter(t => !t.innerHTML.endsWith(caret));
   if (bad.length) return `${bad.length} trigger(s) do not end with the shared caret: ${bad.map(t => t.innerHTML).join(' | ')}`;
   const n = (bar.html().match(/▼/g) || []).length;
-  if (n !== 5) return `the bar paints ${n} ▼, not 5`;
+  if (n !== 7) return `the bar paints ${n} ▼, not 7`;
   // one CSS rule styles the caret: no per-trigger size / colour override
   const rules = [...src.matchAll(/\n\s*([^{}\n]*db-caret[^{}\n]*)\{/g)].map(m => m[1].trim());
   if (rules.length !== 1 || rules[0] !== '.db-caret') return 'the caret is styled by more than one rule: ' + JSON.stringify(rules);
@@ -145,8 +148,7 @@ CHECKS.caret = (src) => {
   return null;
 };
 // the pre-TEN-399 year range: its own chevron (the sfDd glyph), not the bar's caret
-MUTANTS.caret = s => s.replace("      (clear && active ? '<span class=\"db-clear\" title=\"Clear\">×</span>' : '')+DB_CARET;",
-  "      (clear && active ? '<span class=\"db-clear\" title=\"Clear\">×</span>' : '')+(label ? DB_CARET : '<span class=\"sf-dd-chev\">▼</span>');");
+MUTANTS.caret = s => s.replace("'<i>'+esc(countTxt)+'</i>'+DB_CARET+", "'<i>'+esc(countTxt)+'</i>'+(label ? DB_CARET : '<span class=\"sf-dd-chev\">▼</span>')+");
 
 // ---- Tour bands, executed on the published archive -------------------------
 function paintTour(src) {
@@ -201,50 +203,47 @@ CHECKS.bands = (src) => {
 };
 const MUTANTS_BANDS3 = s => s.replace("    arow.appendChild(el('div','db-gft', topTo!=null ? topTo : fmtP(a.hi)));",
   "    arow.appendChild(el('div','db-gft',bandTo(sideKey, a.lo, a.hi)));");   // the pre-r1 lowest-price "+"
-const MUTANTS_SEAM2 = s => s.replace("COL_DOG='var(--viz-white-lead)'", "COL_DOG='color-mix(in srgb, var(--viz-white-lead) 45%, transparent)'");
 MUTANTS.bands = s => s.replace("    arow.appendChild(el('div','db-gft',fmtP(a.lo)));", "    arow.appendChild(el('div','db-gft',''));");
 const MUTANTS_BANDS2 = s => s.replace("  function bandTo(sideKey, lo, hi){ return (DB_DOG_OPEN_TOP && sideKey==='dog') ? fmtP(lo)+'+' : fmtP(hi); }",
   "  function bandTo(sideKey, lo, hi){ return fmtP(hi); }");
 
 // ---- the profit chart, executed --------------------------------------------
+// Database v3 (export 2026-11-18, CHANGES §4, LOCKED): x = match number, y in %, seasons a segment bar above the plot, plain
+// background (the zero line is the only line behind the curves), Favourites blue 2.4px over Underdogs ink-2 2px.
 function paintCurve(src) {
   const j = JSON.parse(readFileSync(STORE, 'utf8'));
-  const code = ['DB_PLOT_H', 'N_TOUR', 'N_TOURN', 'SMOOTH_MODE', 'COL_FAV'].map(v => v === 'N_TOUR' || v === 'N_TOURN' ? '' : varLine(src, v)).join('\n') +
-    '\nvar N_TOUR=260, N_TOURN=240;\n' +
-    ['el', 'esc', 'yr', 'fmtInt', 'fmtU', 'smoothVals', 'sampleKeep', 'paintSeries', 'poly', 'seasonIndexTicks',
-      'dbGuide', 'dbBreakEven', 'dbSeries', 'dbLegend', 'dbEndDot', 'renderCurveCard', 'db2Ms', 'db2SeasonTicks'].map(f => fnSource(src, f)).join('\n') +
+  const code = 'var N_TOUR=260, N_TOURN=240, HARD_GATE=30;\n' + varLine(src, 'SMOOTH_MODE') + '\n' + varLine(src, 'DB3_HELP') + '\n' +
+    ['el', 'esc', 'fmtInt', 'smoothVals', 'sampleKeep', 'paintSeries', 'poly', 'db3EndLab', 'db3Chart', 'db3Seasons', 'renderCurveCard'].map(f => fnSource(src, f)).join('\n') +
     '\nreturn renderCurveCard(ROWS, false);';
   const doc = makeDoc();
-  const card = new Function('document', 'M', 'ROWS', code)(doc, j.meta, j.rows);
+  const card = new Function('document', 'M', 'ROWS', code)(Object.assign(doc, { documentElement: { clientWidth: 1440 } }), j.meta, j.rows);
   return { card, doc, html: card.html() };
 }
 CHECKS.seam = (src) => {
   const { card, html } = paintCurve(src);
   const all = card.all();
-  if (all.some(n => /seam/.test(n.className))) return 'a seam element is painted: ' + all.filter(n => /seam/.test(n.className)).map(n => n.className);
   if (/book artefact|Book change|BET365|>Bet365</i.test(html)) return 'the chart still names the book change';
   const svg = (/<svg[\s\S]*<\/svg>/.exec(html) || [''])[0];
   if (/<path|<rect|<polygon/.test(svg)) return 'an area fill / loss wash is drawn';
   const lines = [...svg.matchAll(/<line [^>]*>/g)].map(m => m[0]);
-  if (lines.some(l => !/x1="0"[^>]*x2="1000"/.test(l))) return 'a vertical line is drawn: ' + lines.find(l => !/x2="1000"/.test(l));
-  const guides = lines.filter(l => /stroke="var\(--viz-guide\)"/.test(l)), rule = lines.filter(l => /stroke="var\(--viz-rule\)"/.test(l));
-  if (!guides.length || guides.some(l => !/stroke-dasharray="2 6"/.test(l))) return 'guides are not dotted 2 6';
-  if (rule.length !== 1 || !/stroke-width="1.25"/.test(rule[0])) return 'break-even is not one 1.25px --viz-rule line';
-  if (guides.length + rule.length !== lines.length) return 'an unexpected line is drawn';
+  if (lines.length !== 1 || !/x1="0"[^>]*x2="1000"[^>]*stroke="var\(--db2-h32\)" stroke-width="1.25"/.test(lines[0])) return 'the zero line is not the only line behind the curves: ' + lines.join(' | ');
+  if (/stroke-dasharray/.test(svg)) return 'a dashed or dotted line is drawn';
   const pl = [...svg.matchAll(/<polyline [^>]*>/g)].map(m => m[0]);
   if (pl.length !== 2) return `${pl.length} series`;
-  if (!/stroke="var\(--viz-lead\)" stroke-width="2.4"/.test(pl[1])) return 'lead series is not --viz-lead 2.4px: ' + pl[1].slice(-200);
-  // TEN-401 r1 founder fix 3: Underdogs = white (--viz-white-lead) 2px; legend swatch and end dot follow.
-  if (!/stroke="var\(--viz-white-lead\)" stroke-width="2"/.test(pl[0])) return 'Underdogs series is not white (--viz-white-lead) 2px: ' + pl[0].slice(-160);
-  const dots = all.filter(n => has(n, 'db-enddot')).map(n => n.style.background);
-  if (dots.join('|') !== 'var(--viz-lead)|var(--viz-white-lead)') return 'end dots do not match their series: ' + dots;
-  if (!/<i style="background:var\(--viz-white-lead\)"><\/i>Underdogs/.test(html)) return 'Underdogs legend swatch is not white';
-  // Database v2 (founder 2026-11-16, design L1076-1093): the plot is 400px tall again.
-  if (!/var DB_PLOT_H=400;/.test(src)) return 'plot height constant is not 400';
-  for (const sel of ['.db-yaxis', '.db-plotarea', '.db-endcol']) if (!/height:400px/.test(cssRule(src, sel) || '')) return sel + ' is not 400px tall';
+  if (!/stroke="var\(--db2-blue\)" stroke-width="2.4"/.test(pl[1])) return 'Favourites is not blue 2.4px, painted last';
+  if (!/stroke="var\(--db2-ink-2\)" stroke-width="2"/.test(pl[0])) return 'Underdogs is not ink-2 2px';
+  const ticks = all.filter(n => has(n, 'db3-x'))[0];
+  const tl = ticks ? ticks.children.map(c => c.textContent) : [];
+  if (tl[0] !== 'Match 1' || !/ matches$/.test(tl[tl.length - 1]) || tl.length !== 5) return 'x axis is not the match number in quarters: ' + tl;
+  const seas = all.filter(n => has(n, 'db3-seas'))[0];
+  if (!seas || !seas.children.some(c => c.tagName === 'U')) return 'no season segment bar above the plot';
+  if (!/Matches, in the order played/.test(html)) return 'the caption is not "Matches, in the order played"';
+  const ylab = all.filter(n => has(n, 'db3-y'))[0].children.map(c => c.textContent);
+  if (!ylab.includes('0') || ylab.some(t => t !== '0' && !/%$/.test(t))) return 'the y axis is not in %: ' + ylab;
   return null;
 };
-MUTANTS.seam = s => s.replace("    s+=dbBreakEven(zeroY);\n", "    s+=dbBreakEven(zeroY);\n    s+='<line x1=\"500\" y1=\"0\" x2=\"500\" y2=\"300\" stroke=\"var(--text-label)\" stroke-dasharray=\"4 4\"/>';\n");
+MUTANTS.seam = s => s.replace("vector-effect=\"non-scaling-stroke\"/>';\n    live.slice()", "vector-effect=\"non-scaling-stroke\"/><line x1=\"0\" y1=\"10\" x2=\"1000\" y2=\"10\" stroke=\"var(--db2-h12)\" stroke-dasharray=\"2 6\"/>';\n    live.slice()");
+const MUTANTS_SEAM2 = s => s.replace("label:'Favourites', color:'var(--db2-blue)', w:2.4", "label:'Favourites', color:'var(--db2-blue)', w:2");
 
 // ---- CSS + source rulings --------------------------------------------------
 CHECKS.css = (src) => {

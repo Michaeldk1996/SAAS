@@ -59,7 +59,38 @@ const CHECKS = {
     if (ticks.map(t => t.label).join(',') !== '2010,2014,2018,2022,2026') return 'ticks ' + ticks.map(t => t.label);
     const x22 = ticks.find(t => t.label === '2022').x, want = (Date.UTC(2022, 0, 1) - t0) / (t1 - t0);
     if (Math.abs(x22 - want) > 1e-12) return '2022 tick is not at 1 Jan 2022';
-    if (!/xs\.push\(db2DateX\(r\[0\]\)\)/.test(fnSource(src, 'renderCurveCard'))) return 'the Tour chart x is not the match date';
+    // Database v3 (export 2026-11-18, CHANGES §4, LOCKED): x = the match number, never the date; seasons are a segment bar
+    // placed at each season's first match (db3Seasons over the date-ordered matches).
+    const rc = fnSource(src, 'renderCurveCard');
+    if (/db2DateX|db2Ms/.test(rc)) return 'the Tour chart x is the match date again';
+    if (!/db3Seasons\(ordered\.map/.test(rc)) return 'the season bar is not built from the ordered matches';
+    const db3Seasons = new Function(fnSource(src, 'db3Seasons') + '\nreturn db3Seasons;')();
+    const ss = db3Seasons([20240105, 20240601, 20250110, 20250120, 20260101]);
+    if (JSON.stringify(ss) !== JSON.stringify([{ y: 2024, i0: 0, i1: 2 }, { y: 2025, i0: 2, i1: 4 }, { y: 2026, i0: 4, i1: 5 }])) return 'season segments ' + JSON.stringify(ss);
+    return null;
+  },
+  // Founder review 2026-11-18: a shown yield is green / red at every sample size; only the hard gate (30) is a grey dash.
+  yieldColour(src) {
+    const bc = fnSource(src, 'bandCard2'), yl = fnSource(src, 'db3YieldLine');
+    if (/SOFT_GATE/.test(bc) || /SOFT_GATE/.test(yl)) return 'the band card still mutes a yield under the soft gate';
+    if (!/hard=!g \|\| g\.n<HARD_GATE/.test(yl)) return 'the hard gate is not the dash';
+    return null;
+  },
+  // Founder review 2026-11-18: the Tour column is recomputed under the same round / years / level / surface filters.
+  tourUnderFilters(src) {
+    if (!/function tbKey\(\)\{ return \[tbSet\(state\.rounds\), state\.yearMin, state\.yearMax, tbSet\(state\.levels\), tbSet\(state\.surfaces\)/.test(src)) return 'the tour index is not keyed on the filters';
+    if (!/if\(tbFiltered\(\)\) rows=rows\.filter/.test(fnSource(src, 'tourBaseIndex'))) return 'the tour index does not filter its rows';
+    if (!/var baseKnown = isPl \? \(opts\.baseKnown!==false\) : true;/.test(fnSource(src, 'bandCard2'))) return 'the Tournament Tour column is withheld under a filter';
+    return null;
+  },
+  // Founder review 2026-11-18: the Lines field exists under the side / band / archetype / level filters (lines-field-cuts.json).
+  fieldCuts(src) {
+    if (!/db2LnFieldOK\(\) \? lnFieldStats\(state\.lnFmt, spec\[0\], Math\.round\(rate\*1000\)\/1000, name\) : db2LnCutStats\(spec\[0\]\)/.test(fnSource(src, 'db2LnMetric'))) return 'Field under a filter does not read the cuts';
+    const k = new Function('state', 'DB2_LN_ARCH', 'DB2_LN_LEVELS', fnSource(src, 'db2LnCutKey') + '\nreturn db2LnCutKey();');
+    const st = { lnFmt: 'bo3', lnSurf: 'All', lnScope: 'l52', lnSide: 'fav', lnBand: null, lnArch: null, lnLevel: null };
+    if (k(st, ['A'], ['L']) !== 'bo3|All|l52|fav|-') return 'side cut key ' + k(st, ['A'], ['L']);
+    if (k(Object.assign({}, st, { lnBand: 'dog|2', lnArch: 'A' }), ['A'], ['L']) !== 'bo3|All|l52|dog:2|a:0') return 'band + archetype cut key';
+    if (k(Object.assign({}, st, { lnArch: 'A', lnLevel: 'L' }), ['A'], ['L']) !== null) return 'archetype and level together have a field';
     return null;
   },
   // LN_LADDERS stays a literal (build-lines-field.js slices it) and carries the design's ladders.
@@ -126,10 +157,10 @@ const CHECKS = {
     if (Math.abs(tcProfit(r, 'all') - (0.5 + -1) / 2) > 1e-12) return 'All matches is not (fav + dog) / 2';
     return null;
   },
-  // The view switch: Tour · Tournament · Player · Lines · Ratings.
+  // The view switch (Database v3, CHANGES §1): Tour · Tournament · Player · Fade finder · Lines · Ratings.
   tabs(src) {
-    const m = [...src.matchAll(/<button(?: class="active")? data-dbview="(\w+)">([^<]+)<\/button>/g)].slice(0, 5).map(x => x[2]);
-    if (m.join('|') !== 'Tour|Tournament|Player|Lines|Ratings') return 'tabs ' + m.join(', ');
+    const m = [...src.matchAll(/<button(?: class="active")? data-dbview="(\w+)">([^<]+)<\/button>/g)].slice(0, 6).map(x => x[2]);
+    if (m.join('|') !== 'Tour|Tournament|Player|Fade finder|Lines|Ratings') return 'tabs ' + m.join(', ');
     return null;
   },
   // The design's own colours, read through tokens.css (identical colours).
@@ -144,7 +175,12 @@ const CHECKS = {
 const MUTANTS = [
   ['band edges inclusive', 'bands', s => s.replace("function db2InBand(B, p){ return p>=B[3]-1e-9 && p<B[4]-1e-9; }", "function db2InBand(B, p){ return p>=B[3]-1e-9 && p<=B[4]+1e-9; }")],
   ['terciles back', 'bands', s => s.replace("['Clear favourite','1.21','1.35',1.21,1.36]", "['Firm favourite','1.21','1.35',1.21,1.36]")],
-  ['match index back', 'dates', s => s.replace("favV.push(cf); dogV.push(cd); xs.push(db2DateX(r[0]));", "favV.push(cf); dogV.push(cd); xs.push(i/(nPts-1));")],
+  ['dates back', 'dates', s => s.replace("{ N:n, seasons:db3Seasons(ordered.map(function(r){ return r[0]; }))", "{ N:n, xs:ordered.map(function(r){ return db2Ms(r[0]); }), seasons:db3Seasons(ordered.map(function(r){ return r[0]; }))")],
+  ['soft gate mutes', 'yieldColour', s => s.replace("var c=hard ? 'var(--db2-muted)' : y>0", "var c=hard||g.n<SOFT_GATE ? 'var(--db2-muted)' : y>0")],
+  ['tour column withheld', 'tourUnderFilters', s => s.replace("var baseKnown = isPl ? (opts.baseKnown!==false) : true;", "var baseKnown = isPl ? (opts.baseKnown!==false) : baselineAllowed();")],
+  ['tour index unfiltered', 'tourUnderFilters', s => s.replace("if(tbFiltered()) rows=rows.filter", "if(false) rows=rows.filter")],
+  ['no field under a cut', 'fieldCuts', s => s.replace(" : db2LnCutStats(spec[0]);", " : null;")],
+  ['field for archetype + level', 'fieldCuts', s => s.replace("    if(state.lnArch && state.lnLevel) return null;\n", "")],
   ['ticks off 1 January', 'dates', s => s.replace("var x=(Date.UTC(y,0,1)-t0)/(t1-t0);", "var x=(Date.UTC(y,6,1)-t0)/(t1-t0);")],
   ['ladder computed', 'ladders', s => s.replace("  var LN_LADDERS = {", "  var LN_LADDERS = (function(){ return {").replace("  var LN_GROUPS = ['Games", "  var LN_GROUPS_X = 1; var LN_GROUPS = ['Games")],
   ['match shape back', 'ladders', s => s.replace("var LN_GROUPS = ['Games handicap','Set handicap','Total games'];", "var LN_GROUPS = ['Games handicap','Set handicap','Total games','Match shape'];")],

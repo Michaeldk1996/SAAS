@@ -33442,7 +33442,7 @@ window.DatabaseTab = (function(){
   // The line box (CHANGES §8.3): band box anatomy; four tiles + "Matches on this line" with All · Covered · Missed, 12 + 12 more.
   function db3LineBox(p, fam, spec, from, t, more){
     t=t||'all'; more=more||0;
-    var root=(from && from.isConnected && from.closest && from.closest('[data-db-root]')) || document.querySelector('[data-db-root]');
+    var root=db3Root(from);
     var old=root.querySelector(':scope > .db3-ov'), keep=old?old.scrollTop:0; if(old) old.remove();
     var m=db2LnMetric(p.pool, spec, p.nm), all=db2LnMatches(p.pool, spec, fam);
     var list=all.filter(function(x){ return t==='all' || (t==='hit' ? x.ok===true : x.ok===false); }), shown=Math.min(list.length, DB2_LN_SHOWN+more*DB2_LN_SHOWN);
@@ -33486,7 +33486,7 @@ window.DatabaseTab = (function(){
   }
   function db3SwLocal(items, cur, onPick){
     var sw=el('span','db3-sw');
-    items.forEach(function(t){ var b=el('button', cur===t[0]?'on':null, t[1]); b.type='button'; b.onclick=function(e){ e.stopPropagation(); var o=document.querySelector('[data-db-root] > .db3-ov'); if(o && o._db3Close) o._db3Close(); onPick(t[0]); }; sw.appendChild(b); });
+    items.forEach(function(t){ var b=el('button', cur===t[0]?'on':null, t[1]); b.type='button'; b.onclick=function(e){ e.stopPropagation(); var o=sw.closest('.db3-ov'); if(o && o._db3Close) o._db3Close(); onPick(t[0]); }; sw.appendChild(b); });
     return sw;
   }
   function db2LnCompare(host, P, fams){
@@ -33920,7 +33920,7 @@ window.DatabaseTab = (function(){
     panel.appendChild(head);
     if(!res.all){ panel.appendChild(el('div','db-note','No matches on this side.')); return panel; }
 
-    var showBase = isTourn;  // founder 2026-11-18: the tour baseline follows the filters (tourBaseIndex)
+    var showBase = isTourn && baselineAllowed();
     var g=el('div','db-grid');
     // From / To are five mono characters wide (Plex Mono 15px: 0.6em x 5 = 45px), the same
     // track in both tables, so "86.00", "3.75+" and "1.88+" line up across Favourites | Underdogs.
@@ -33979,6 +33979,7 @@ window.DatabaseTab = (function(){
     g.appendChild(arow);
     panel.appendChild(g);
 
+    if(isTourn && !showBase) panel.appendChild(el('div','db-note','Tour baselines are not computed for this round or year range.'));
     if(res.bands.concat([res.all]).some(function(b){ return b && b.n<HARD_GATE; }))
       panel.appendChild(el('div','db-note db-hardnote','— fewer than '+HARD_GATE+' matches: too few for a yield.'));
     if(res.single) panel.appendChild(el('div','db-note','Fewer than three matches — shown as one band rather than split into terciles.'));
@@ -34052,8 +34053,10 @@ window.DatabaseTab = (function(){
   }
   // The one pop-up box (CHANGES §3 / §7.10): head, four centred tiles, the match list (12, then 12 more). spec:
   // { head:html, tiles:[[label, value, colour, sub]], listTitle, n, ms:[{d, backed, opp, ev, rd, p, won}] newest first, reopen(more) }
+  // the box mounts on the instance root (q(): two mounts never share a node); `from` names the mount a click came from
+  function db3Root(from){ return (from && from.isConnected && from.closest && from.closest('[data-db-root]')) || q('body').closest('[data-db-root]'); }
   function db3OpenBox(spec, from, more){
-    var root=(from && from.isConnected && from.closest && from.closest('[data-db-root]')) || document.querySelector('[data-db-root]');
+    var root=db3Root(from);
     var old=root.querySelector(':scope > .db3-ov'), keep=old ? old.scrollTop : 0; if(old) old.remove();
     function sg(v,d,u){ return (v>0?'+':v<0?'\u2212':'')+Math.abs(v).toFixed(d)+u; }
     var ms=spec.ms, shown=Math.min(ms.length, 12+(more||0)*12), COLS='76px minmax(0,1.5fr) minmax(0,1fr) 36px 104px 50px 62px 62px';
@@ -34263,7 +34266,7 @@ window.DatabaseTab = (function(){
     if(pinned){ var ch=el('span','db3-chip', db3Ava(pinned.name,20,8.5)+'<span>'+esc(pinned.name)+'</span>'); var xb=el('button','db3-xs'); xb.type='button'; xb.title='Unpin';
       xb.onclick=function(e){ e.stopPropagation(); state.fadePin=null; render(); }; ch.appendChild(xb); well.appendChild(ch); }
     var inp=el('input'); inp.type='text'; inp.placeholder=pinned?'Pin another player\u2026':'Search a player to pin\u2026'; inp.value=state.fadeQ||'';
-    inp.oninput=function(){ state.fadeQ=inp.value; render(); var n=document.querySelector('[data-db-root] .db3-well input'); if(n){ n.focus(); n.setSelectionRange(n.value.length,n.value.length); } };
+    inp.oninput=function(){ state.fadeQ=inp.value; render(); var n=q('body') && q('body').querySelector('.db3-well input'); if(n){ n.focus(); n.setSelectionRange(n.value.length,n.value.length); } };
     well.appendChild(inp); pin.appendChild(well);
     var fq=(state.fadeQ||'').trim().toLowerCase();
     if(fq){ var hits=F.list.filter(function(x){ return x.name.toLowerCase().indexOf(fq)>=0; }).slice(0,8), hp=el('div','db3-hits');

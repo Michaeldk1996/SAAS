@@ -138,8 +138,9 @@ test('CHARACTERISATION: yieldCell — all three TEN-243 sample-gate states', () 
 
   // SOFT: the yield, muted, and NO sign colour in the ink.
   const soft = F.yieldCell({ n: SOFT_GATE - 1, yield: 0.1234 });
-  assert.equal(soft, '<span class="db-yieldcell soft">+12.34%</span>');
-  assert.ok(!/color:/.test(soft), 'a soft-gated yield keeps its sign in the glyph, not the ink');
+  // founder review 2026-11-18: a soft-gated yield keeps its sign colour ("60 matches are still an interesting sample"); only the weight drops
+  assert.equal(soft, '<span class="db-yieldcell soft" style="color:var(--pos)">+12.34%</span>');
+  assert.ok(/font-weight|soft/.test(soft), 'a soft-gated yield keeps the soft class (weight 500)');
 
   // FULL: the yield with the sign colour.
   assert.equal(F.yieldCell({ n: SOFT_GATE, yield: 0.1234 }), `<span class="db-yieldcell" style="color:${POS}">+12.34%</span>`);
@@ -275,7 +276,7 @@ test('the Database module still exposes init(), whatever else it gains', () => {
   assert.match(DASH, /window\.DatabaseTab = \(function\(\)\{/);
   // TEN-401 r1: the old pattern (no extra members) matched window.EntryListsTab's `return { init: init };`, not the
   // Database module's — it went vacuous once the Database module gained instanceCount. Pinned to the Database line now.
-  assert.match(DASH, /return \{ (mount: mount, )?init: init(, instanceCount: function\(\)\{ return INSTANCES\.length; \})?(, priceRows: priceRows)?(, tdCity: tdCity)? \};/);   // TEN-402: + the price-join reader
+  assert.match(DASH, /return \{ (mount: mount, )?init: init(, instanceCount: function\(\)\{ return INSTANCES\.length; \})?(, priceRows: priceRows)?(, tdCity: tdCity)?(,\s*lnCutTally: db2LnCutTally, lnLoadField: loadLinesField)? \};/);   // Database v3: + the Lines field cut builder's hooks   // TEN-402: + the price-join reader
   assert.match(DASH, /if \(tab === 'database'\) \{ if \(window\.DatabaseTab\) window\.DatabaseTab\.init\(\); \}/,
     'the standalone nav call site must keep working exactly as today');
 });
