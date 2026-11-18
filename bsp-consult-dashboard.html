@@ -3654,7 +3654,7 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   [data-db-root] .db-fctl .db-pills:not(.lines) button.active{ font-weight:600; }   /* the Ratings surface pills stay 600 (L152) */
   /* ratings (L254-403) */
   [data-db-root] .db2-rcol{ display:flex; flex-direction:column; gap:16px; line-height:normal; }
-  [data-db-root] .db2-rboard{ padding:22px 24px 12px; }
+  [data-db-root] .db2-rboard{ padding:24px 26px 12px; }
   [data-db-root] .db2-rbhead{ display:flex; align-items:center; justify-content:space-between; gap:12px 14px; flex-wrap:wrap; }
   [data-db-root] .db2-rbhr{ display:flex; align-items:center; gap:10px; min-width:0; max-width:100%; }
   [data-db-root] .db2-rbtrack{ flex:0 1 auto; min-width:0; overflow-x:auto; scrollbar-width:none; }
@@ -3683,27 +3683,27 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   [data-db-root] .db2-lntile0 .db2-lntline, [data-db-root] .db2-lntile0 .db2-lntrate{ color:var(--db2-muted); }
   [data-db-root] .db2-q16:hover{ border-color:var(--db2-h16); color:var(--db2-muted); }
   [data-db-root] .db2-rscroll{ overflow-x:auto; margin-top:16px; }
-  [data-db-root] .db2-rgh{ display:grid; gap:8px; padding:0 8px 9px; border-bottom:1px solid var(--db2-h10); }
+  [data-db-root] .db2-rgh{ display:grid; gap:8px; padding:0 10px 10px; }   /* v3 §9: no heavy line under the column heads */
   [data-db-root] .db2-rh{ font-family:var(--db-ui); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--db2-muted); }
   [data-db-root] .db2-rh.r{ text-align:right; }
   [data-db-root] .db2-rhs{ text-align:right; line-height:1.4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; background:none; border:0; padding:0; cursor:pointer; }
   [data-db-root] .db2-rhs.on{ color:var(--db2-ink); }
   [data-db-root] .db2-rhs span{ color:var(--db2-ink); }
-  [data-db-root] .db2-rmed{ display:grid; gap:8px; align-items:center; padding:9px 8px; background:var(--db2-inset); border-bottom:1px solid var(--db2-h6); }
+  [data-db-root] .db2-rmed{ display:grid; gap:8px; align-items:center; min-height:40px; padding:0 10px; margin-bottom:4px; background:var(--db2-layer); box-shadow:inset 0 0 0 1px var(--db2-h8); border-radius:9px; }   /* v3 §9: the lifted Field median strip */
   [data-db-root] .db2-rq{ text-align:right; font-family:var(--db-mono); font-size:13px; font-variant-numeric:tabular-nums; color:var(--db2-muted); }
-  [data-db-root] .db2-rrow{ display:grid; gap:8px; align-items:center; padding:10px 8px; border-bottom:1px solid var(--db2-h6); transition:background .15s; }
-  [data-db-root] .db2-rrow:hover{ background:color-mix(in srgb, var(--db2-white) 3.5%, transparent); }
-  [data-db-root] .db2-rrow.on{ background:color-mix(in srgb, var(--db2-blue) 9%, transparent); }
+  [data-db-root] .db2-rrow{ display:grid; gap:8px; align-items:center; min-height:54px; padding:0 10px; border-radius:8px; border-top:1px solid var(--db2-h6); }
+  [data-db-root] .db2-rrow:hover{ background:var(--db2-hover); }
+  [data-db-root] .db2-rrow.on{ background:var(--db2-layer); border-top-color:transparent; box-shadow:inset 0 0 0 1px var(--db2-h14); }   /* v3 §9: lifted grey, never a blue wash */
   [data-db-root] .db2-rrank{ font-family:var(--db-mono); font-size:12px; font-weight:400; color:var(--db2-muted); }
   [data-db-root] .db2-rrank.top{ font-weight:700; color:var(--db2-ink); }
   [data-db-root] .db2-rpl{ display:flex; align-items:center; gap:10px; min-width:0; }
-  [data-db-root] .db2-rpl .db-av{ flex:none; display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; box-sizing:border-box; border-radius:50%; position:relative; overflow:hidden;
-    background:var(--db2-raised); border:1px solid var(--db2-h16); font-family:var(--db-mono); font-size:9.5px; font-weight:700; color:var(--db2-ink); }
+  [data-db-root] .db2-rpl .db-av{ flex:none; display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; box-sizing:border-box; border-radius:50%; position:relative; overflow:hidden;
+    background:var(--db2-raised); border:1px solid var(--db2-h16); font-family:var(--db-mono); font-size:10px; font-weight:700; color:var(--db2-ink); }
   [data-db-root] .db2-rpl .db-av img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
-  [data-db-root] .db2-rnm{ font-size:13.5px; font-weight:600; color:var(--db2-ink); text-decoration:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  [data-db-root] .db2-ratp{ flex:none; font-family:var(--db-mono); font-size:10px; color:var(--db2-muted); }
+  [data-db-root] .db2-rnm{ font-size:14.5px; font-weight:700; color:var(--db2-ink); text-decoration:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  [data-db-root] .db2-ratp{ flex:none; font-family:var(--db-mono); font-size:11px; color:var(--db2-muted); }
   [data-db-root] .db2-rv{ text-align:right; font-family:var(--db-mono); font-size:13px; font-weight:400; color:var(--db2-ink-2); font-variant-numeric:tabular-nums; white-space:nowrap; }
-  [data-db-root] .db2-rv.rtg{ font-weight:700; color:var(--db2-ink); }
+  [data-db-root] .db2-rv.rtg{ font-weight:400; color:var(--db2-ink-2); }   /* v3 §9: only the sorted column is white 700 */
   [data-db-root] .db2-rv.on{ font-weight:700; color:var(--db2-white); }
   [data-db-root] .db2-rv.dash{ color:var(--db2-muted); }
   [data-db-root] .db2-rv.vspk{ font-weight:700; color:var(--db2-muted); }
@@ -3712,7 +3712,7 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   [data-db-root] .db2-plus{ order:-1; justify-self:start; width:24px; height:24px; box-sizing:border-box; border-radius:50%; border:1px solid color-mix(in srgb, var(--db2-white) 14%, transparent);
     background:transparent; box-shadow:none; display:inline-flex; align-items:center; justify-content:center; color:var(--db2-muted); padding:0; cursor:pointer;
     transition:background .18s ease, border-color .18s ease, box-shadow .18s ease, color .18s ease, transform .12s ease; }
-  [data-db-root] .db2-plus:hover{ border-color:var(--db2-blue); color:var(--db2-white); }
+  [data-db-root] .db2-plus:hover{ border-color:color-mix(in srgb, var(--db2-white) 45%, transparent); color:var(--db2-white); }
   [data-db-root] .db2-plus:active{ transform:scale(0.84); }
   [data-db-root] .db2-plus.on{ background:var(--db2-blue); border-color:var(--db2-blue); color:var(--db2-white); box-shadow:0 0 0 3px color-mix(in srgb, var(--db2-blue) 22%, transparent); }
   [data-db-root] .db2-plus.full{ color:color-mix(in srgb, var(--db2-muted) 45%, transparent); cursor:default; }
@@ -3721,7 +3721,7 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   [data-db-root] .db2-plus.on .db2-plusx{ transform:rotate(45deg); }
   [data-db-root] .db2-plusx i{ position:absolute; left:0; top:4.25px; width:10px; height:1.5px; border-radius:1px; background:currentColor; }
   [data-db-root] .db2-plusx i + i{ transform:rotate(90deg); }
-  [data-db-root] .db2-rcmp{ padding:22px 24px 10px; }
+  [data-db-root] .db2-rcmp{ padding:24px 26px 10px; }
   [data-db-root] .db2-rchead{ display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; }
   [data-db-root] .db2-link{ font-family:var(--db-ui); font-size:12.5px; font-weight:600; color:var(--db2-blue); white-space:nowrap; background:none; border:0; padding:0; cursor:pointer; }
   [data-db-root] .db2-link:hover{ color:var(--db2-blue-hov); }
@@ -3747,15 +3747,15 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   [data-db-root] .db2-f2ftally{ text-align:center; }
   [data-db-root] .db2-f2fn{ font-family:var(--db-mono); font-size:24px; font-weight:700; letter-spacing:-0.02em; white-space:nowrap; }
   [data-db-root] .db2-f2fns{ font-size:11.5px; color:var(--db2-muted); margin-top:2px; white-space:nowrap; }
-  [data-db-root] .db2-f2frow{ display:grid; grid-template-columns:96px minmax(0,1fr) 96px; align-items:center; gap:20px; padding:14px 0 16px; border-top:1px solid var(--db2-h7); }
+  [data-db-root] .db2-f2frow{ display:grid; grid-template-columns:96px minmax(0,1fr) 96px; align-items:center; gap:20px; padding:14px 0 16px; border-top:1px solid var(--db2-h6); }
   [data-db-root] .db2-f2fv{ font-family:var(--db-mono); font-size:22px; letter-spacing:-0.02em; font-variant-numeric:tabular-nums; }
   [data-db-root] .db2-f2fv.r{ text-align:right; }
   [data-db-root] .db2-f2fmid{ display:flex; flex-direction:column; align-items:center; gap:13px; }
   [data-db-root] .db2-f2fmid .db2-caps{ white-space:nowrap; }
   [data-db-root] .db2-f2fline{ position:relative; width:100%; height:4px; border-radius:2px; background:var(--db2-h7); }
   [data-db-root] .db2-f2fseg{ position:absolute; top:0; height:4px; border-radius:2px; }
-  [data-db-root] .db2-f2fchip{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-family:var(--db-mono); font-size:12px; font-weight:700; background:var(--db2-card);
-    border:1px solid; border-radius:10px; padding:2px 9px; white-space:nowrap; }
+  [data-db-root] .db2-f2fchip{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-family:var(--db-mono); font-size:11px; font-weight:700; line-height:18px; background:var(--db2-layer);
+    border:0; box-shadow:0 0 0 1px var(--db2-h14); border-radius:9px; padding:0 7px; white-space:nowrap; }
   [data-db-root] .db2-ccols{ overflow-x:auto; margin-top:18px; }
   [data-db-root] .db2-cch{ display:grid; gap:0 8px; align-items:end; padding-bottom:14px; }
   [data-db-root] .db2-ccp{ display:flex; flex-direction:column; align-items:center; gap:8px; min-width:0; }
@@ -32395,8 +32395,7 @@ window.DatabaseTab = (function(){
     function av(p, ring){ var a=el('span','db2-cav'+(ring?' '+ring:'')); a.innerHTML=ratAvatar(p,false).replace('class="db-av"','class="db-av db2-cavi"'); return a; }
     function nameLine(p, right){
       var w=el('div','db2-cnl'+(right?' r':'')), a=el('a','db2-cnm',esc(p.name)); a.href='#'; a.onclick=function(ev){ ev.preventDefault(); ratOpenPlayer(p.name); };
-      var x=el('button','db2-x db2-xr','×'); x.type='button'; x.title='Remove'; x.onclick=function(){ state.ratSel=state.ratSel.filter(function(n){ return n!==p.name; }); render(); };
-      w.appendChild(a); w.appendChild(x); return w;
+      w.appendChild(a); return w;   // v3 §9: no remove button in the compare heads (filter chips and the row button remove)
     }
     if(pair){
       var A=players[0], Bp=players[1], box=el('div','db2-f2f'), top=el('div','db2-f2fhead');
@@ -32427,7 +32426,7 @@ window.DatabaseTab = (function(){
     var h=el('div','db2-cch'); h.style.gridTemplateColumns=cols; h.appendChild(el('span'));
     players.forEach(function(p){ var c=el('span','db2-ccp'); c.appendChild(av(p,'')); var nl=el('span','db2-ccpn'); var a=el('a','db2-cnm db2-cnm15',esc(p.name)); a.href='#'; a.onclick=function(ev){ ev.preventDefault(); ratOpenPlayer(p.name); };
       nl.appendChild(a); nl.appendChild(el('span','db2-catp2',p.rank!=null?'#'+p.rank:'—'));
-      var x=el('button','db2-x db2-xr','×'); x.type='button'; x.title='Remove'; x.onclick=function(){ state.ratSel=state.ratSel.filter(function(n){ return n!==p.name; }); render(); }; nl.appendChild(x);
+
       c.appendChild(nl); h.appendChild(c); });
     t.appendChild(h);
     M7.forEach(function(m){
