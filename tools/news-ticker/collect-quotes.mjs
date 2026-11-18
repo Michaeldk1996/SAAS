@@ -92,9 +92,18 @@ export function tourPlayers(index) {
 }
 // Where a tour-wide candidate belongs: a tournament whose field holds the speaker AND whose name the article mentions
 // (published inside that edition), else the tour-wide file (published in the last TOUR_DAYS days), else nowhere.
+// The names a tournament goes by (measured 2026-11-18: api-tennis calls the ATP Finals "Finals - Turin", Tennis TV and
+// the press say "Turin" or "ATP Finals", so every on-court interview of the week was filed without its match).
+const GENERIC = new Set(['finals', 'open', 'masters', 'cup', 'atp', 'international', 'championships']);
+export function eventAliases(name) {
+  const f = (x) => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim(), full = f(name), out = new Set([full]);
+  for (const part of full.split(/\s+-\s+/)) if (part.length >= 4 && !GENERIC.has(part)) out.add(part);
+  if (/\bfinals\b/.test(full) && !/next gen|davis/.test(full)) { out.add('atp finals'); out.add('nitto atp finals'); }
+  return [...out];
+}
 export function routeCandidate(c, tournaments, tourKeys, nowIso) {
   const ts = Date.parse(c.timestamp);
-  for (const t of tournaments) if (t.fieldKeys.has(String(c.speakerKey)) && (c.mentions || []).includes(t.folded) && !(Number.isFinite(ts) && ts < t.since)) return t.key;
+  for (const t of tournaments) if (t.fieldKeys.has(String(c.speakerKey)) && (c.mentions || []).some((mn) => mn === t.folded || (t.aliases || []).includes(mn)) && !(Number.isFinite(ts) && ts < t.since)) return t.key;
   if (tourKeys.has(String(c.speakerKey)) && /^observed/.test(String(c.timestampKind || '')) && !(Number.isFinite(ts) && ts < Date.parse(nowIso) - TOUR_DAYS * 86400000)) return TOUR_KEY;
   return null;
 }
@@ -203,7 +212,7 @@ async function main() {
   const mk = (pairs) => [...new Map(pairs).entries()].map(([key, name]) => ({ key, name, surname: surnameOf(name), initial: initialOf(name) })).filter((p) => p.surname.length >= 3);
   const prep = active.map((t) => {
     const first = Math.min(...t.cards.map((m) => Date.parse(m.date + 'T00:00:00Z')).filter(Number.isFinite));
-    return { t, key: t.key, folded: foldName(t.name), since: first - 3 * 86400000, fieldKeys: new Set(t.cards.flatMap((m) => [String(m.p1Key), String(m.p2Key)])),
+    return { t, key: t.key, folded: foldName(t.name), aliases: eventAliases(t.name), since: first - 3 * 86400000, fieldKeys: new Set(t.cards.flatMap((m) => [String(m.p1Key), String(m.p2Key)])),
       main: t.cards.filter((m) => m.finalScore && m.finalScore.winner), site: siteConfig(registry, t), extra: [] };
   });
   const everyone = mk([...tour.map((p) => [p.key, p.name]), ...active.flatMap((t) => t.cards.flatMap((m) => [[String(m.p1Key), m.p1], [String(m.p2Key), m.p2]]))]);
@@ -213,7 +222,7 @@ async function main() {
   await Promise.all(Array.from({ length: 6 }, async () => {
     while (oi < outlets.length) {
       const o = outlets[oi++];
-      const r = await readOutlet({ outlet: o, players: everyone, tournamentNames: prep.map((x) => x.t.name), cache: fetched, nowIso, since: Date.parse(nowIso) - 21 * 86400000, sectionMemo });
+      const r = await readOutlet({ outlet: o, players: everyone, tournamentNames: prep.flatMap((x) => [x.t.name, ...x.aliases.filter((a) => a !== x.folded)]), cache: fetched, nowIso, since: Date.parse(nowIso) - 21 * 86400000, sectionMemo });
       for (const c of r.candidates) {
         c.speaker = (everyone.find((p) => p.key === c.speakerKey) || {}).name;
         const to = routeCandidate(c, prep, tourKeys, nowIso), hit = prep.find((x) => x.key === to);

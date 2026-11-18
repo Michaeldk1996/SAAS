@@ -249,6 +249,18 @@ await ok('our read of the match (founder 2026-11-17): how the points compare wit
   yes(r2.includes('Fritz won every single point against the second serve of Musetti (12 of 12).') && r2.includes('54% of the serves of Fritz did not come back.') && r2.includes('Musetti kept the score close by saving 5 of 7 break points.'), r2);
   yes(!/did not come back/.test(withCard), '41% unreturned is not a standout');
 });
+await ok('the ATP Finals group stage (founder 2026-11-18): the sheet says which group match it was, and the next group match is never a semi-final', () => {
+  const card = (id, date, p1, p2, k1, k2, winner) => ({ id, date, time: '14:00', p1, p2, p1Key: k1, p2Key: k2, tour: 'ATP Finals - Turin', tournamentRound: '', finalScore: winner ? { winner, sets: [{ p1: 6, p2: 2 }, { p1: 7, p2: 6 }] } : null });
+  const all = [card('past-1', '2026-11-15', 'A. Zverev', 'R. Jodar', 1, 2, 'p1'), card('past-2', '2026-11-17', 'A. Zverev', 'B. Shelton', 1, 3, 'p1'), card('upcoming-3', '2026-11-19', 'A. Zverev', 'A. Fils', 1, 4, null)];
+  const grc = () => roundCode('group stage');
+  const t = pathLines(all[1], 'p1', all, grc, false);
+  yes(t[0].startsWith('This was a GROUP match, not a knockout match: the second of the 3 group matches of Zverev. He has won 2 of 2.'), t[0]);
+  yes(t[1] === 'Next for Zverev: Fils, in another GROUP match. It is not a semi-final, whatever else the sheet says about reaching the semi-finals.', t[1]);
+  yes(pathLines(all[0], 'p1', all, grc, false)[0].includes('the first of the 3 group matches'), 'the first group match');
+  // a knockout card keeps the plain wording
+  eq(pathLines(M, w, FX.cards, rc, false), ['Next for Fritz: Tirante in the final.']);
+  yes(factSheet({ m: all[1], w: 'p1', l: 'p2', rep: null, round: 'group stage', path: t }).text.includes('Zverev beat Shelton 6–2, 7–6 in the group stage.'), 'the result line names the group stage');
+});
 await ok('refuses first person, a named source, an initial, a question, markdown and a missing "All in all"', () => {
   refuses(GOOD.replace('The second set was a different Fritz:', 'I think the second set was a different Fritz:'), /first person/);
   refuses(GOOD.replace('He ended with', 'According to the data he ended with'), /names a source/);

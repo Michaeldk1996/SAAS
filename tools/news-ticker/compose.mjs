@@ -55,7 +55,8 @@ const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
 const other = (k) => (k === 'p1' ? 'p2' : 'p1');
 const pl = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 const SET_WORD = { 1: 'first', 2: 'second', 3: 'third', 4: 'fourth', 5: 'fifth' };
-const ROUND_CODE = { 'first round': 'R1', 'second round': 'R2', 'third round': 'R3', 'fourth round': 'R4', 'quarter-finals': 'the QF', 'semi-finals': 'the SF', final: 'the final',
+export const GROUP_CODE = 'the group stage';
+const ROUND_CODE = { 'group stage': GROUP_CODE, 'first round': 'R1', 'second round': 'R2', 'third round': 'R3', 'fourth round': 'R4', 'quarter-finals': 'the QF', 'semi-finals': 'the SF', final: 'the final',
   'round of 128': 'R1', 'round of 64': 'the round of 64', 'round of 32': 'the round of 32', 'round of 16': 'the round of 16' };
 export const roundCode = (words) => (words ? ROUND_CODE[String(words).toLowerCase()] || String(words) : null);
 const hdr = (s) => { const m = /^\s*(\d+)\s*-\s*(\d+)\s*$/.exec(String(s || '')); return m ? { p1: +m[1], p2: +m[2] } : null; };
@@ -200,10 +201,20 @@ export function pathLines(m, w, all, rc, isFinal) {
   const out = [], wKey = m[w + 'Key'], me = startKey(m), W = surnameOf(m[w]);
   // no recap of anybody's week (founder 2026-11-15: "we know it from the earlier match reports"): the title, or the next opponent
   if (isFinal) { out.push(`This was the final: ${W} wins the title.`); return out; }
+  // A group stage (the ATP Finals): which group match this was and how he stands. A group match is never a round, and
+  // the next group match is never a semi-final (founder 2026-11-18: "these are faults we can't make").
+  const group = rc(m) === GROUP_CODE, NTH = ['', 'first', 'second', 'third'];
+  if (group) {
+    const before = all.filter((c) => c.id !== m.id && has(c, wKey) && startKey(c) < me && c.finalScore && c.finalScore.winner && rc(c) === GROUP_CODE);
+    const n = before.length + 1, wins = before.filter((c) => c.finalScore.winner === sideOf(c, wKey)).length + 1;
+    if (NTH[n]) out.push(`This was a GROUP match, not a knockout match: the ${NTH[n]} of the 3 group matches of ${W}. He has won ${wins} of ${n}. Say "group match" and "his next match", never "round".`);
+  }
+  // the next match that is really his: a card that is still a placeholder for a semi-final slot is not on the board
   const next = all.filter((c) => c.id !== m.id && has(c, wKey) && startKey(c) > me).sort((a, b) => startKey(a).localeCompare(startKey(b)))[0];
   if (!next) return out;
   const O = surnameOf(next[other(sideOf(next, wKey))]);
-  out.push(`Next for ${W}: ${O}${rc(next) ? ` in ${rc(next)}` : ''}.`);
+  if (rc(next) === GROUP_CODE) out.push(`Next for ${W}: ${O}, in another GROUP match. It is not a semi-final, whatever else the sheet says about reaching the semi-finals.`);
+  else out.push(`Next for ${W}: ${O}${rc(next) ? ` in ${rc(next)}` : ''}.`);
   return out;
 }
 
@@ -589,6 +600,7 @@ How it reads:
 - Plain words for who was better ("was the better player in the first set and took it 6–2"), but do not repeat one praise phrase: not always "very solid behind his serve", not always "clutch". Say what the number or the moment actually shows.
 - When the sheet has a NOT GOOD IN THE WINNER'S MATCH section, say it plainly in one clause or one sentence ("It was not perfect: he made 54 unforced errors."). A win does not hide a low serve number or a lot of errors.
 - A point he saved in a game he then lost anyway is not told: say he was broken, or that he lost the set.
+- At the ATP Finals a player plays three group matches before the semi-finals. "Reached the semi-finals" means he qualified from his group: his next opponent in the group is still a group match. Write "his next match" or "his last group match", never "the semi-final" for it and never "the next round".
 - Vary how the same kind of moment is told ("broke him at the last moment", "broke back just in time", "Shelton was not done yet", "Alcaraz did not give up").
 - One idea per sentence. A sentence with three actions joined by "and" is too hard to read. Wrong: "He made a very fast start, broke Tiafoe in the opening game and again soon after and the first set was his 6–2." Right: "He made a very fast start. He broke Tiafoe in the opening game, broke again soon after and took the first set 6–2." Still no chain of three very short sentences: vary the rhythm.
 - Never these formulas: "did what he had to do", "the more dangerous of the two", "the more clutch of the two", "the more reliable of the two", "That was enough to win ...", "it was not perfect but it did not need to be".

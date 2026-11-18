@@ -134,7 +134,10 @@ export async function build({ nowIso, times, rewrite = null, writer = null, apiK
     // a card the draw page cannot place (a walkover has no row there) takes the page round of the other cards of its own feed round
     const feedRound = new Map();
     for (const c of g.cards.concat(g.offBoard || [])) { if (c.qualifying) continue; const pr = pageRound(c, 'p1') || pageRound(c, 'p2'); if (pr) feedRound.set(String(c.tournamentRound), pr); }
-    const rwOf = (m) => (m.qualifying ? `${roundWords(m.tournamentRound) === 'final' ? 'final round' : roundWords(m.tournamentRound)} of qualifying` : (pageRound(m, m.finalScore && m.finalScore.winner ? m.finalScore.winner : 'p1') || pageRound(m, 'p2') || pageRound(m, 'p1') || feedRound.get(String(m.tournamentRound)) || roundWords(m.tournamentRound)));
+    // The ATP Finals: three group matches each, then the semi-finals. api-tennis sends no round for a group match, so a
+    // Finals card with no round IS a group match (founder 2026-11-18: "it's still the third match of the group, you need to know that").
+    const groupStage = (c) => (/\bfinals\b/i.test(String(c.tour || '')) && !/next gen|davis/i.test(String(c.tour || '')) && !roundWords(c.tournamentRound) ? 'group stage' : null);
+    const rwOf = (m) => (m.qualifying ? `${roundWords(m.tournamentRound) === 'final' ? 'final round' : roundWords(m.tournamentRound)} of qualifying` : (pageRound(m, m.finalScore && m.finalScore.winner ? m.finalScore.winner : 'p1') || pageRound(m, 'p2') || pageRound(m, 'p1') || feedRound.get(String(m.tournamentRound)) || roundWords(m.tournamentRound) || groupStage(m)));
     const allCards = g.cards.concat(g.offBoard || []);
     const fresh = [];
     const done = g.cards.filter((m) => m.finalScore && m.finalScore.winner).concat(g.offBoard || []);
@@ -153,7 +156,7 @@ export async function build({ nowIso, times, rewrite = null, writer = null, apiK
         const prev = old.get(id);
         const obs = (times && times.get(ek(m))) || (prev && prev.observed) || null;
         const stage = m.qualifying ? 'qualifying' : null;
-        const rw = m.qualifying ? `${roundWords(m.tournamentRound) === 'final' ? 'final round' : roundWords(m.tournamentRound)} of qualifying` : (pageRound(m, w) || pageRound(m, l) || roundWords(m.tournamentRound));
+        const rw = m.qualifying ? `${roundWords(m.tournamentRound) === 'final' ? 'final round' : roundWords(m.tournamentRound)} of qualifying` : (pageRound(m, w) || pageRound(m, l) || roundWords(m.tournamentRound) || groupStage(m));
         const baselines = { [w]: baselineFor(ratings, m[w + 'Key'], m.surface), [l]: baselineFor(ratings, m[l + 'Key'], m.surface) };
         const rep = reportText(m, w, l, { baselines, h2h, pbp, score: scoreFacts(m.finalScore, w), round: rw, duration: obs && obs.minutes != null ? obs.minutes : null });
         // Michael's voice: the template sentences rewritten one for one, each checked against its own facts; a sentence

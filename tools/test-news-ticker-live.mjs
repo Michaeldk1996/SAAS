@@ -512,6 +512,16 @@ await ok('tour-wide: routing (field + article names the event -> that tournament
   const now = '2026-11-10T21:00:00.000Z', T = [{ key: '77', folded: 'testville', since: Date.parse('2026-11-05'), fieldKeys: new Set(['1', '2']) }], tour = new Set(['1', '9']);
   const c = (o) => ({ speakerKey: '1', mentions: ['testville'], timestamp: '2026-11-10T10:00:00Z', ...o });
   assert.equal(routeCandidate(c({}), T, tour, now), '77');
+  // measured 2026-11-18: api-tennis calls the ATP Finals "Finals - Turin"; Tennis TV and the press say "Turin" or "ATP Finals",
+  // so every on-court interview of the week was filed without its match
+  const { eventAliases } = await import('./news-ticker/collect-quotes.mjs');
+  assert.deepEqual(eventAliases('Finals - Turin'), ['finals - turin', 'turin', 'atp finals', 'nitto atp finals']);
+  assert.deepEqual(eventAliases('Stockholm'), ['stockholm']);
+  const F = [{ key: '2794', folded: 'finals - turin', aliases: eventAliases('Finals - Turin'), since: Date.parse('2026-11-05'), fieldKeys: new Set(['1', '2']) }];
+  assert.equal(routeCandidate(c({ mentions: ['turin'] }), F, tour, now), '2794', 'a Tennis TV clip titled "Turin 2026 RR ..." belongs to the ATP Finals');
+  assert.equal(routeCandidate(c({ mentions: ['atp finals'] }), F, tour, now), '2794');
+  assert.notEqual(routeCandidate(c({ mentions: ['finals'] }), F, tour, now), '2794', 'the bare word "finals" names no event');
+  assert.notEqual(routeCandidate(c({ mentions: ['turin'] }), [{ ...F[0], aliases: undefined }], tour, now), '2794', 'CONTROL: without the aliases the interview is filed without its match');
   assert.equal(routeCandidate(c({ mentions: [], timestampKind: 'observed (x)' }), T, tour, now), 'tour', 'in the field but the article is not about the event');
   assert.equal(routeCandidate(c({ speakerKey: '2', mentions: [] }), T, tour, now), null, 'not ranked and not about the event');
   assert.equal(routeCandidate(c({ speakerKey: '9', timestamp: '2026-11-06T10:00:00Z' }), T, tour, now), null, 'older than 3 days is not news');
