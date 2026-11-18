@@ -3248,6 +3248,7 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   /* ===== Database v2 shell (design_handoff_database_v2, founder brief 2026-11-16). Night only: inside every mount
      ([data-db-root]) the foundation surfaces read the export's own values (--db2-* in tokens.css). Values are the
      reference's inline styles (Database.dc.html L44-135), unrounded. ===== */
+  [data-db-root]{ line-height:normal; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }   /* as the export renders: line-height normal on every element, antialiased text (without it every glyph draws heavier) */
   [data-db-root]{ --card:var(--db2-card); --inner:var(--db2-inset); --selected:var(--db2-raised);
     --text:var(--db2-ink); --text-soft:var(--db2-ink-2); --text-label:var(--db2-muted);
     --pos:var(--db2-green); --neg:var(--db2-red); --link:var(--db2-blue);
@@ -3298,7 +3299,10 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   [data-db-root] .db3-sw{ display:inline-flex; gap:3px; background:var(--db2-inset); border:1px solid var(--db2-h8); border-radius:10px; padding:3px; }
   [data-db-root] .db3-sw button{ white-space:nowrap; cursor:pointer; padding:6px 14px; border-radius:7px; font:600 13px var(--db-ui); background:transparent; border:1px solid transparent; color:var(--db2-muted); }
   [data-db-root] .db3-sw button.on{ font-weight:700; background:var(--db2-raised); border-color:var(--db2-h16); color:var(--db2-ink); }
-  [data-db-root] .db-ctl{ background:var(--db2-card); border:1.25px solid var(--db2-h6); border-radius:14px; padding:4px 18px; box-shadow:none; }
+  /* the Fade finder's two switches ring the chosen tab with a shadow, as the export (29px tabs, 37px track) */
+  [data-db-root] .db3-sw.sh button{ border:0; }
+  [data-db-root] .db3-sw.sh button.on{ box-shadow:0 0 0 1px var(--db2-h16); }
+  [data-db-root] .db-ctl{ background:var(--db2-card); border:1.25px solid var(--db2-h6); border-radius:14px; padding:6px 26px; box-shadow:none; }
   [data-db-root] .db-ctltop{ display:grid; grid-template-columns:104px minmax(0,1fr) auto; align-items:center; gap:14px; padding:12px 0; background:none; border-radius:0; }
   [data-db-root] .db-ctlbot{ display:grid; grid-template-columns:104px minmax(0,1fr); align-items:start; gap:14px; padding:12px 0;
     background:none; border-top:1px solid var(--db2-h6); border-radius:0; }
@@ -3540,7 +3544,7 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   /* compare page (L850-1015) */
   [data-db-root] .db2-cmp{ display:flex; flex-direction:column; gap:16px; line-height:normal; }
   [data-db-root] .db2-card{ background:var(--db2-card); border:1.25px solid var(--db2-h6); border-radius:14px; min-width:0; font-family:var(--db-ui); color:var(--db2-ink); line-height:normal; }
-  [data-db-root] .db2-sum{ padding:26px 28px; }
+  [data-db-root] .db2-sum{ padding:24px 26px; }
   [data-db-root] .db2-sumhead{ display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:16px; padding-bottom:20px; border-bottom:1px solid var(--db2-h7); }
   [data-db-root] .db2-sumside{ display:flex; align-items:center; gap:10px; min-width:0; }
   [data-db-root] .db2-sumside.r{ justify-content:flex-end; text-align:right; }
@@ -33456,17 +33460,17 @@ window.DatabaseTab = (function(){
     var tiles=[
       ['Cover rate', m.show?m.rate.toFixed(1)+'%':'\u2014', m.show?'var(--db2-ink)':'var(--db2-muted)', m.n ? m.hit+' of '+m.n+' matches'+(m.voids?' \u00b7 '+m.voids+' void':'') : 'No matches on record'],
       ['Field median', m.field==null?'\u2014':m.field.toFixed(1)+'%', 'var(--db2-ink)', m.size!=null?'median of '+m.size+' players':'No field under these filters'],
-      ['Edge on the field', m.delta==null?'\u2014':lnSgn(m.delta)+'pp', m.delta==null?'var(--db2-muted)':lnSgnCol(m.delta), 'cover minus the field median'],
+      ['Edge on the field', m.delta==null?'\u2014':lnSgn(m.delta)+'pp', m.delta==null?'var(--db2-muted)':lnSgnCol(m.delta), 'cover rate against the field'],
       ['Rank', m.rank!=null?m.rank+' of '+m.size:'\u2014', 'var(--db2-ink)', 'by cover rate on this line']];
     var ov=el('div','db3-ov'), bx=el('div','db3-box'); ov.innerHTML='<div class="bg"></div>';
     bx.innerHTML='<div class="db3-boxh"><span class="t" style="flex-direction:row;align-items:center;gap:14px">'+db3Ava(p.nm,44,12).replace('class="db3-ava"','class="db3-ava ava44"')+
       '<span style="display:flex;flex-direction:column;gap:6px;min-width:0"><span style="display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px"><span class="nm">'+esc(p.nm)+'</span><span class="db3-pill" style="padding:3px 10px;font-family:var(--db-mono);font-size:12.5px;font-weight:700;color:var(--db2-ink)">'+esc(bet)+'</span></span>'+
-      '<span class="sc">'+esc('Line coverage'+' \u00b7 '+(state.lnFmt==='bo3'?'Best of 3':'Best of 5')+' \u00b7 '+(state.lnScope==='l52'?'last 52 weeks':'career'))+'</span></span></span>'+
+      '<span class="sc">'+esc(db2LnSub(0).replace(/^0 lines \u00b7 /,''))+'</span></span></span>'+
       '<button type="button" class="db3-close" title="Close"></button></div>'+
       '<div class="db3-tiles">'+tiles.map(function(x){ return '<div class="db3-tile"><span class="l">'+x[0]+'</span><span class="v" style="color:'+x[2]+'">'+x[1]+'</span><span class="s">'+esc(x[3])+'</span></div>'; }).join('')+'</div>';
     var lst=el('div','db3-list'), inn=el('div'); lst.appendChild(inn);
-    var lh=el('div','db3-lh'); lh.style.alignItems='center'; lh.style.flexWrap='wrap';
-    lh.innerHTML='<span style="display:flex;flex-direction:column;gap:3px"><b>Matches on this line</b><span>Showing '+shown+' of '+list.length+' \u00b7 newest first</span></span>';
+    var lh=el('div','db3-lh'); lh.style.alignItems='center'; lh.style.flexWrap='wrap'; lh.style.padding='12px 16px';
+    lh.innerHTML='<span style="display:flex;flex-direction:column;gap:3px"><b>Matches on this line</b><span>'+(m.n ? 'Covered '+m.hit+' of '+m.n+' matches \u00b7 latest '+shown+' shown' : 'No matches on record')+'</span></span>';
     lh.appendChild(db3SwLocal([['all','All'],['hit','Covered'],['miss','Missed']], t, function(v){ db3LineBox(p, fam, spec, from, v, 0); }));
     inn.appendChild(lh);
     inn.appendChild(el('div','db3-lr hd','<span>Date</span><span>Opponent</span><span>Event</span><span>Rd</span><span>Score</span><span style="text-align:right">'+valHead+'</span><span style="text-align:right">Result</span>')).style.gridTemplateColumns=COLS;
@@ -34146,7 +34150,8 @@ window.DatabaseTab = (function(){
         var f0=q.i0/N, f1=q.i1/N, last=k===ss.length-1;
         var u=el('u'); u.style.left=(f0*100).toFixed(2)+'%'; u.style.width='calc('+((f1-f0)*100).toFixed(2)+'% - '+(last?0:3)+'px)'; sb.appendChild(u);
         // a year label needs ~34px of its own segment, or it would run into the next one
-        if(k%thin===0 && (ss.length===1 || (f1-f0)*plotW>=34)){ var t=el('span',null,String(q.y)); t.style.left=((f0+f1)/2*100).toFixed(2)+'%'; sb.appendChild(t); }
+        var fRoom=ss[Math.min(k+thin, ss.length)-1].i1/N - f0;   // a thinned label has the room of the years it stands for
+        if(k%thin===0 && (ss.length===1 || fRoom*plotW>=34)){ var t=el('span',null,String(q.y)); t.style.left=((f0+f1)/2*100).toFixed(2)+'%'; sb.appendChild(t); }
       });
       card.appendChild(sb);
     }
@@ -34257,7 +34262,7 @@ window.DatabaseTab = (function(){
     return parts.join(' \u00b7 ');
   }
   function db3Sw(items, cur, onPick){
-    var sw=el('span','db3-sw');
+    var sw=el('span','db3-sw sh');
     items.forEach(function(t){ var b=el('button', cur===t[0]?'on':null, t[1]); b.type='button'; b.onclick=function(e){ e.stopPropagation(); onPick(t[0]); render(); }; sw.appendChild(b); });
     return sw;
   }
