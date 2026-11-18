@@ -1,6 +1,19 @@
 {
- "generatedAt": "2026-11-18T13:44:26.285Z",
+ "generatedAt": "2026-11-18T14:45:43.925Z",
  "tournaments": [
+  {
+   "key": "2794",
+   "season": "2026",
+   "name": "Finals - Turin",
+   "file": "news-ticker/2794-2026.json",
+   "items": 32,
+   "byType": {
+    "report": 7,
+    "quote": 25
+   },
+   "latestTimestamp": "2026-11-18T14:25:28.062Z",
+   "updatedAt": "2026-11-18T14:45:43.925Z"
+  },
   {
    "key": "tour",
    "season": "2026",
@@ -12,19 +25,6 @@
    },
    "latestTimestamp": "2026-11-18T12:45:16.000Z",
    "updatedAt": "2026-11-18T13:44:26.285Z"
-  },
-  {
-   "key": "2794",
-   "season": "2026",
-   "name": "Finals - Turin",
-   "file": "news-ticker/2794-2026.json",
-   "items": 31,
-   "byType": {
-    "quote": 25,
-    "report": 6
-   },
-   "latestTimestamp": "2026-11-17T21:29:00.000Z",
-   "updatedAt": "2026-11-18T12:04:07.855Z"
   },
   {
    "key": "1681",
@@ -54,6 +54,156 @@
   }
  ],
  "latest": [
+  {
+   "id": "report-12179696",
+   "type": "report",
+   "playerId": "2382",
+   "opponentId": "1093",
+   "player": "C. Alcaraz",
+   "opponent": "D. Medvedev",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "stage": "main draw",
+   "round": "group stage",
+   "eventKey": "12179696",
+   "timestamp": "2026-11-18T14:25:28.062Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-18T14:25:28.062Z",
+    "startedAt": "2026-11-18T13:13:49.160Z",
+    "minutes": 72
+   },
+   "category": "Statistics",
+   "text": "Alcaraz beat Medvedev for the 8th time in 11 meetings, 6-2, 6-4 in the group stage.\n\nAlcaraz: W: 16 / UE: 13 | DR: 1.53\n\nMedvedev: W: 15 / UE: 21 | DR: 0.65",
+   "baseText": "Alcaraz beat Medvedev for the 8th time in 11 meetings, 6-2, 6-4 in the group stage.",
+   "rating": [
+    "Alcaraz: W: 16 / UE: 13 | DR: 1.53",
+    "Medvedev: W: 15 / UE: 21 | DR: 0.65"
+   ],
+   "mto": [
+    "Physically, it is something to follow.",
+    "Alcaraz took a medical timeout at 2–1 in the second set.",
+    "We do not know the reason.",
+    "Something to follow up for the next round."
+   ],
+   "fields": {
+    "score": "6-2, 6-4",
+    "round": "group stage",
+    "retired": false,
+    "h2h": {
+     "a": 8,
+     "b": 3,
+     "n": 11
+    },
+    "durationMinutes": 72,
+    "facts": {
+     "longestRun": {
+      "side": "p1",
+      "n": 7,
+      "set": 1,
+      "from": {
+       "me": 1,
+       "opp": 2
+      },
+      "afterBeingBroken": false,
+      "toTheEnd": false
+     }
+    },
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": null,
+      "metric": "firstIn",
+      "value": 56,
+      "baseline": 69,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 42
+     },
+     {
+      "player": "winner",
+      "tone": null,
+      "metric": "firstWon",
+      "value": 74,
+      "won": 20,
+      "total": 27
+     },
+     {
+      "player": "winner",
+      "tone": null,
+      "metric": "secondWon",
+      "value": 76,
+      "won": 16,
+      "total": 21,
+      "baseline": 55,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 42
+     },
+     {
+      "player": "winner",
+      "tone": "bad",
+      "metric": "watch",
+      "of": "firstIn"
+     },
+     {
+      "player": "winner",
+      "tone": "bad",
+      "metric": "ret1Won",
+      "value": 24,
+      "won": 7,
+      "total": 29,
+      "baseline": 34,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 42
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "breakPoints",
+      "saved": 0,
+      "faced": 0
+     },
+     {
+      "player": "loser",
+      "tone": "bad",
+      "metric": "secondWon",
+      "value": 39,
+      "won": 7,
+      "total": 18,
+      "baseline": 50,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 54
+     }
+    ],
+    "winner": {
+     "aces": 3,
+     "winners": 16,
+     "unforcedErrors": 13,
+     "breakPointsSaved": 0,
+     "breakPointsFaced": 0,
+     "breakPointsSource": "point-by-point"
+    },
+    "loser": {
+     "aces": 5,
+     "winners": 15,
+     "unforcedErrors": 21,
+     "breakPointsSaved": 1,
+     "breakPointsFaced": 4,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12179696.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "114467840c295efa",
+   "publishedAt": "2026-11-18T14:45:43.925Z",
+   "file": "news-ticker/2794-2026.json"
+  },
   {
    "id": "quote-21dc4d07e6fffc",
    "type": "quote",
@@ -1647,37 +1797,6 @@
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "topic": "On his injury in the loss to Fils",
    "sourceHash": "bfa3c4d88d2fb0f8",
-   "publishedAt": "2026-11-17T18:39:02.883Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-c215cc58bc9d36",
-   "type": "quote",
-   "playerId": "1759",
-   "opponentId": null,
-   "player": "A. Fils",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-17T14:35:16.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "I played a great match against Ben, I was just unlucky,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "Gulf Times",
-   "sourceUrl": "https://www.gulf-times.com/article/738453/sport/tennis/fils-edges-injury-hit-jodar-at-atp-finals",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On his opening loss to Ben Shelton",
-   "sourceHash": "4f38b34f58575393",
    "publishedAt": "2026-11-17T18:39:02.883Z",
    "file": "news-ticker/tour-2026.json"
   }
