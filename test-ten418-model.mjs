@@ -341,32 +341,50 @@ test('Bet105 line: isolation — the derived price lives on the Model page only'
 });
 
 // ── gates, empty states ───────────────────────────────────────────────────
-test('no model price (R1 fix 14): header + Market context book rows, model base a dash, one line; never an Elo-only price', () => {
-  const t = text(boot().api.render('upcoming-12169534'));
-  assert.match(t, /Market context/);
-  assert.match(t, /Y\. Bu — Model base — · — CR C\. Ruud —/, 'no model base price without a model');
-  assert.match(t, /No model price for this match yet\.$/);
-  assert.ok(!/Fair price|Value layers|Biggest movers/.test(t));
-});
-test('anchor stale gate: a Pinnacle read older than 120 min dashes the model price and says how old; the Bet105 line never stands in', () => {
-  const old = JSON.parse(JSON.stringify(FIX.m1)); old.bookNow.Pncl.seenAt = '2026-10-10T01:50:00.000Z';
-  const t = text(boot({ m: old, kibl: B105(3.0, 1.42) }).api.render());
-  assert.match(t, /Pinnacle quote stale \(3h 10m\)\. No model price until the next read\.$/, t);
-  assert.doesNotMatch(t, /Value layers|Adjusted fair/);
-  const edge = (min) => { const x = JSON.parse(JSON.stringify(FIX.m1)); x.bookNow.Pncl.seenAt = new Date(NOW - min * 60000).toISOString(); return x; };
-  assert.match(text(boot({ m: edge(120) }).api.render()), /Adjusted fair/, 'exactly 120 min: priced');
-  assert.match(text(boot({ m: edge(121) }).api.render()), /Pinnacle quote stale \(2h 1m\)/, '121 min: dashed');
-  assert.match(html, /^const EDGE_PIN_STALE_MIN = 120;/m);
-});
-test('display gate: a state-3 match is not priced', () => {
-  const e = JSON.parse(JSON.stringify(FIX.e1)); e.stage1.baseState.state = 3;
-  assert.match(text(boot({ e }).api.render()), /No model price for this match yet\.$/);
-});
 test('analysis: OFF = no section for anyone (the switch is model-output.json analysisOn)', () => {
   const e = JSON.parse(JSON.stringify(FIX.e1)); e.summary = { ok: true, text: 'One.\n\nTwo.', generatedAt: '2026-10-10T05:12:00Z' };
   for (const free of [false, true]) assert.ok(!/Stennisfy Analysis/.test(boot({ e, free }).api.render()));
   assert.match(boot({ analysisOn: true }).api.render(), /Generate Stennisfy Analysis/, 'the switch still works when turned on');
 });
+
+// Founder 2026-11-18: "It should never hide the model sections." The old gates only add a note to Market context.
+test('never hidden: a stale Pinnacle read, an Elo-only base and a started match all keep every model section, with a note', () => {
+  const secs = t => ['Market context', 'Value layers', 'Fair price & value', 'Biggest movers'].every(x => t.includes(x));
+  const old = JSON.parse(JSON.stringify(FIX.m1)); old.bookNow.Pncl.seenAt = '2026-10-10T01:50:00.000Z';   // 3h 10m before NOW
+  let t = text(boot({ m: old, kibl: B105(3.0, 1.42) }).api.render());
+  assert.ok(secs(t), 'stale read: every section');
+  assert.match(t, /Match winner · the model base price against each book · Pinnacle read 3h 10m ago/);
+  const edge = min => { const x = JSON.parse(JSON.stringify(FIX.m1)); x.bookNow.Pncl.seenAt = new Date(NOW - min * 60000).toISOString(); return x; };
+  assert.doesNotMatch(text(boot({ m: edge(120) }).api.render()), /Pinnacle read/, 'exactly 120 min: no note');
+  assert.match(text(boot({ m: edge(121) }).api.render()), /Pinnacle read 2h 1m ago/, '121 min: the note');
+  assert.match(html, /^const EDGE_PIN_STALE_MIN = 120;/m);
+  const e3 = JSON.parse(JSON.stringify(FIX.e1)); e3.stage1.baseState.state = 3;
+  t = text(boot({ e: e3 }).api.render());
+  assert.ok(secs(t), 'Elo-only base: every section');
+  assert.match(t, /against each book · Elo-only base, no Pinnacle line yet/);
+  const started = JSON.parse(JSON.stringify(FIX.m1)); started.date = '2026-10-09';
+  t = text(boot({ m: started }).api.render());
+  assert.ok(secs(t), 'started: every section');
+  assert.match(t, /pre-match price, the match has started/);
+  assert.ok(!/Match in play|quote stale/.test(BLOCK.slice(BLOCK.indexOf('function renderEdgeModel'))), 'no hiding path left in the render, beyond a missing run');
+});
+test('no model run at all: header + Market context book rows, one line — the only case with no model sections', () => {
+  const b = boot(); delete b.ctx.modelOutput.matches['upcoming-12169478'];
+  const t = text(b.api.render());
+  assert.match(t, /Model base — · —/);
+  assert.match(t, /No model price for this match yet\.$/);
+  assert.ok(!/Value layers|Fair price|Biggest movers/.test(t));
+});
+test('rail: a match with no round in the feed shows the day and time only, never a dash first', () => {
+  const b = boot(); b.api.render();
+  const r = b.els.edgeRail.innerHTML.match(/X\. A87 <span class="v">v<\/span> Y\. B87<\/span>\s*<span class="sm-mrow-m">([^]*?)<\/span><\/span>/);
+  assert.ok(r, 'row found');
+  b.ctx.matches.forEach(m => { m.tournamentRound = null; });
+  b.api.render();
+  const r2 = b.els.edgeRail.innerHTML.match(/X\. A87 <span class="v">v<\/span> Y\. B87<\/span>\s*<span class="sm-mrow-m">([^]*?)<\/span><\/span>/)[1];
+  assert.equal(text(r2), 'Today 08:30');
+});
+
 const boardPredicate = (st, all) => all.filter(m => {
   if (st.view === 'completed') return /^past-/.test(m.id);
   if (/^past-/.test(m.id)) return false;

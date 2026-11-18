@@ -11716,10 +11716,10 @@ function edgeRenderRail(){
     const rows = by[t];
     const meta = [edgeCap(rows[0].surface || ''), String(rows.length)].filter(Boolean).join(' · ');
     return `<div class="sm-grp"><div class="sm-grp-h"><span class="sm-caps">${edgeEsc(edgeEventName(t))}</span><span class="sm-grp-m">${edgeEsc(meta)}</span></div>${rows.map(m => {
-      const w = edgeWhenParts(m), rd = edgeRoundCode(m, null) || '—';
+      const w = edgeWhenParts(m), rd = edgeRoundCode(m, null);   // no round in the feed (e.g. ATP Finals groups): nothing, never a dash
       return `<div class="sm-mrow sm-seg${m.id === edgeCurrentId ? ' on' : ''}" role="button" tabindex="0" onclick="edgeRailPick('${edgeJs(m.id)}')" onkeydown="if(event.key==='Enter')edgeRailPick('${edgeJs(m.id)}')">
           <span class="sm-mrow-x"><span class="sm-mrow-nm">${edgeEsc(edgePlayerName(m, null, 'p1'))} <span class="v">v</span> ${edgeEsc(edgePlayerName(m, null, 'p2'))}</span>
-          <span class="sm-mrow-m">${edgeEsc(rd)}${w.day ? ' · ' + edgeEsc(w.day) : ''}${w.clock ? ` <span class="sm-mono">${edgeEsc(w.clock)}</span>` : ''}</span></span>
+          <span class="sm-mrow-m">${[rd, w.day].filter(Boolean).map(edgeEsc).join(' · ')}${w.clock ? ` <span class="sm-mono">${edgeEsc(w.clock)}</span>` : ''}</span></span>
           <span class="sm-mrow-c">›</span></div>`; }).join('')}</div>`; }).join('')
     : `<span class="sm-rail-empty">${matches.length && edgeUpcomingAll().length && !edgeScopeAll ? 'No matches in this view.' : 'No matches on the board right now.'}</span>`;
   const shownN = shown.reduce((n, t) => n + (by[t] ? by[t].length : 0), 0);
@@ -11780,7 +11780,7 @@ function edgeSoftNow(m, s){
   const typed = edgeParseOdd((edgeOddEdits[edgeCurrentId] || {})['soft:' + s]);
   return typed ? Object.assign({}, soft.now, { [s]: typed }) : soft.now;
 }
-function edgeMarketHtml(m, e, names, keys, noModel){
+function edgeMarketHtml(m, e, names, keys, noModel, notes){
   // noModel (R1 fix 14): no model price for this match — the book rows only; no model base, edges read —.
   const st1 = (!noModel && e && e.stage1) || {};
   const base = { p1: st1.baseP1, p2: st1.baseP2 };
@@ -11833,7 +11833,7 @@ function edgeMarketHtml(m, e, names, keys, noModel){
   const softNames = books2(softA ? softA.name : '', softB ? softB.name : '');
   return `
     <div class="sm-card sm-mk">
-      ${smHead('Market context', 'Match winner · the model base price against each book',
+      ${smHead('Market context', 'Match winner · the model base price against each book' + ((notes && notes.length) ? ' · ' + edgeEsc(notes.join(' · ')) : ''),
         `<span class="sm-mk-show">Show prices as</span><div class="sm-sw" role="tablist">${seg('odds', 'Odds', 'Decimal prices as the book lists them')}${seg('pct', 'Implied %', 'Win probability with the book margin removed')}</div>${smQ(help)}`)}
       <div class="sm-ic">
         <div class="sm-ich">${head('p1')}<div class="sm-ich-c" title="The model base price, before the value layers. No margin."><span class="sm-caps">Model base</span><span class="sm-mono">${alt}</span></div>${head('p2')}</div>
@@ -12171,38 +12171,21 @@ function renderEdgeModel(id){
   const noModel = () => { edgeSetHeader(null); body.innerHTML = edgeMatchHeadHtml(m, e && e.ok ? e : null) + (m ? edgeMarketHtml(m, null, names0, keys0, true) : '') + edgeEmptyCard('No model price for this match yet.'); };
   if (!e || !e.ok){ noModel(); return; }
 
-  // ── State-2-confirmed display gate (founder decision 2026-07-25) ──────────
-  // The full model shows ONLY when the match is State-2 confirmed (a Pinnacle line exists, stage1.baseState.state === 2)
-  // AND it starts within 0–30 h, evaluated against the live clock. Display only: the engine computes in every state.
-  // TEN-295 (founder 2026-09-26, card f8b311c9): the REAL start (aOddsStartMs), never date+time read as UTC.
+  // Founder 2026-11-18: the model sections are never hidden. The old gates (state 2 within 0–30 h, the 120-min stale
+  // Pinnacle read, in play) now only add a plain note to Market context's scope line; every figure is the run's own.
   const gateState = e.stage1 && e.stage1.baseState && e.stage1.baseState.state;
   const startMsGate = m ? aOddsStartMs(m) : NaN;
-  const hoursToStart = Number.isFinite(startMsGate) ? (startMsGate - Date.now()) / 3.6e6 : null;
-  const stateConfirmed = gateState === 2 && hoursToStart != null && hoursToStart > 0 && hoursToStart <= 30;
-  if (!stateConfirmed){
-    if (hoursToStart != null && hoursToStart <= 0){
-      edgeSetHeader(null);
-      body.innerHTML = edgeMatchHeadHtml(m, e) + edgeEmptyCard('Match in play. The Stennisfy Model shows no price once a match has started.');
-      return;
-    }
-    noModel(); return;
-  }
-
-  // Stale gate (threshold = EDGE_PIN_STALE_MIN, Michael's call): a Pinnacle quote read longer ago than that dashes the
-  // model price and says how old it is.
   const pinAt = edgePinRead(m);
-  if (EDGE_PIN_STALE_MIN != null && pinAt && Date.now() - Date.parse(pinAt) > EDGE_PIN_STALE_MIN * 60000){
-    edgeSetHeader(null);
-    body.innerHTML = edgeMatchHeadHtml(m, e) + edgeMarketHtml(m, null, names0, keys0, true)
-      + edgeEmptyCard('Pinnacle quote stale (' + edgeAgeText(Date.now() - Date.parse(pinAt)) + '). No model price until the next read.');
-    return;
-  }
+  const notes = [];
+  if (Number.isFinite(startMsGate) && startMsGate <= Date.now()) notes.push('pre-match price, the match has started');
+  if (gateState !== 2) notes.push('Elo-only base, no Pinnacle line yet');
+  else if (EDGE_PIN_STALE_MIN != null && pinAt && Date.now() - Date.parse(pinAt) > EDGE_PIN_STALE_MIN * 60000) notes.push('Pinnacle read ' + edgeAgeText(Date.now() - Date.parse(pinAt)) + ' ago');
   edgeSetHeader(e);
   const names = { p1: edgePlayerName(m, e, 'p1'), p2: edgePlayerName(m, e, 'p2') };
   const keys = { p1: edgePlayerKey(m, e, 'p1'), p2: edgePlayerKey(m, e, 'p2') };
   const free = edgeIsFree();
   body.innerHTML = edgeMatchHeadHtml(m, e)
-    + edgeMarketHtml(m, e, names, keys)
+    + (m ? edgeMarketHtml(m, e, names, keys, false, notes) : '')
     + edgeLayersHtml(e, names, keys)
     + edgeFairHtml(m, e, names, keys)
     + edgeMoversHtml(e, names, keys, free)

@@ -30,11 +30,13 @@ Founder rulings: TEN-418 card 7a80b6fe, R1 review and R2 review 73f754f9 (2026-1
   engine hides or can't read is an inactive row with its reason — the format split on a best-of-three reads `—` / `—`,
   Favours "Gated", Why "Best of 3: this layer applies to best-of-five only". No placeholder rows for layers the engine
   lacks (Round performance, H2H trend, Tournament surface speed). The engine's "Subjective input" is named "Manual context".
-- **No model price** (state ≠ 2, no run, or a failed run, before the start): match header + Market context book rows
-  (no Model base tile, edges `—`) + one grey line "No model price for this match yet." in place of Value layers, Fair
-  price and Biggest movers; Layers active / Updated read `—`. **Never an Elo-only price as the model price.** *(This page only: the Head to Head page's pair estimate is a separate, labelled product — `h2h.md` "Model", founder 2026-11-16.)* In play:
-  match header + "Match in play…". Display gate (founder 2026-07-25): a price shows only for state 2 inside 0–30 h of
-  the real start (`aOddsStartMs`).
+- **The model sections are never hidden (founder 2026-11-18, replacing the 0–30 h state-2 display gate of 2026-07-25,
+  the 120-min stale-Pinnacle dash of 2026-11-01 and the in-play line).** Every match with a model run shows Market
+  context, Value layers, Fair price & value and Biggest movers from that run. Market context's scope line adds a plain
+  note instead: "Elo-only base, no Pinnacle line yet" (state ≠ 2), "Pinnacle read Xh Ym ago" (read older than
+  `EDGE_PIN_STALE_MIN` = 120), "pre-match price, the match has started". Only a match with no model run at all keeps the
+  header + book rows + "No model price for this match yet." **Test:** `test-ten418-model.mjs` "never hidden".
+- **Rail rows:** round · day time; with no round in the feed (ATP Finals groups) the day and time only, never a dash.
 - **No stat header and no Updated on this page** (founder 2026-11-16: "follow the design"); the rail head carries the
   match count, the Value layers pill the active-layer count. Times read `stennisfy.tz`,
   else the browser zone.
