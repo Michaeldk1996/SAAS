@@ -3560,7 +3560,7 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   [data-db-root] .db2-sumrange{ display:inline-flex; align-items:center; gap:10px; font-size:12px; color:var(--db2-muted); white-space:nowrap; }
   [data-db-root] .db2-halves{ display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:20px; margin-top:20px; }
   [data-db-root] .db2-half{ display:grid; grid-template-columns:1fr 1fr; gap:10px; min-width:0; }
-  [data-db-root] .db2-tile{ background:var(--db2-inset); border:1px solid var(--db2-h5); border-radius:11px; padding:14px 16px; min-width:0; }
+  [data-db-root] .db2-tile{ background:var(--db2-card); border:1px solid var(--db2-h9); border-radius:11px; padding:14px 16px; min-width:0; }   /* v3 §0/§6: one colour for every tile */
   [data-db-root] .db2-tilev{ margin-top:9px; font-family:var(--db-mono); font-size:21px; letter-spacing:-0.02em; }
   [data-db-root] .db2-best{ grid-column:1 / -1; display:flex; align-items:center; justify-content:space-between; gap:12px; }
   [data-db-root] .db2-bestn{ margin-top:8px; font-size:15px; font-weight:800; letter-spacing:-0.01em; }
@@ -3624,10 +3624,12 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
     background:var(--db2-raised); border:1px solid var(--db2-h16); white-space:nowrap; }
   [data-db-root] .db-chip span{ font-family:var(--db-ui); font-size:12.5px; font-weight:600; color:var(--db2-ink); }
   [data-db-root] .db-chip button{ font-family:var(--db-ui); font-size:11px; line-height:1; color:var(--db2-muted); background:none; border:0; padding:0; width:auto; height:auto; }
+  [data-db-root] .db-chip .db3-xs{ width:18px; height:18px; }
+  [data-db-root] .db3-cava{ margin-left:-6px; }
   [data-db-root] .db-capnote{ font-family:var(--db-ui); font-size:12px; color:var(--db2-muted); white-space:nowrap; padding:0; }
   [data-db-root] .db-chipin input{ flex:1 1 110px; min-width:110px; height:26px; background:transparent; border:none; padding:0 3px; color:var(--db2-ink); font-size:13px; font-family:var(--db-ui); outline:none; }
   /* player head card (L823-848) */
-  [data-db-root] .db2-phead{ padding:22px 28px; display:flex; align-items:center; flex-wrap:wrap; gap:16px 22px; }
+  [data-db-root] .db2-phead{ padding:24px 26px; display:flex; align-items:center; flex-wrap:wrap; gap:16px 22px; }
   [data-db-root] .db2-pav{ flex:none; width:60px; height:60px; border-radius:50%; background:var(--db2-inset); box-shadow:0 0 0 2px var(--db2-blue); overflow:hidden; position:relative; }
   [data-db-root] .db2-pav img{ position:relative; width:60px; height:60px; object-fit:cover; display:block; }
   [data-db-root] .db2-pavi{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:var(--db-mono); font-size:17px; font-weight:700; color:var(--db2-muted); }
@@ -3637,12 +3639,12 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   [data-db-root] .db2-ptiles{ display:grid; grid-template-columns:repeat(2,minmax(150px,1fr)); gap:10px; flex:0 1 380px; min-width:0; }
   [data-db-root] .db2-ptv{ margin-top:9px; font-family:var(--db-mono); font-size:21px; font-weight:700; letter-spacing:-0.02em; }
   [data-db-root] .db2-pts{ margin-top:6px; font-size:12px; color:var(--db2-muted); white-space:nowrap; }
-  [data-db-root] .db2-pcw{ flex:1 1 100%; min-width:0; display:flex; align-items:center; flex-wrap:wrap; gap:8px 10px; padding-top:16px; border-top:1px solid var(--db2-h7); }
+  [data-db-root] .db2-pcw{ flex:1 1 100%; min-width:0; display:flex; align-items:center; flex-wrap:wrap; gap:8px 10px; padding-top:16px; border-top:1px solid var(--db2-h6); }
   [data-db-root] .db2-pcwl{ margin-right:4px; }
-  [data-db-root] .db2-pill2{ display:flex; align-items:center; gap:8px; height:34px; box-sizing:border-box; padding:0 13px 0 5px; border-radius:17px; background:var(--db2-inset);
-    border:1px solid var(--db2-h10); font-family:var(--db-ui); font-size:12.5px; font-weight:600; color:var(--db2-ink); white-space:nowrap; cursor:pointer; }
-  [data-db-root] .db2-pill2:hover{ border-color:var(--db2-blue); background:color-mix(in srgb, var(--db2-blue) 10%, transparent); }
-  [data-db-root] .db2-pill2i{ flex:none; width:24px; height:24px; border-radius:50%; background:var(--db2-avatar); display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;
+  [data-db-root] .db2-pill2{ display:flex; align-items:center; gap:8px; height:34px; box-sizing:border-box; padding:0 13px 0 5px; border-radius:17px; background:var(--db2-layer);
+    border:1px solid var(--db2-h8); font-family:var(--db-ui); font-size:12.5px; font-weight:600; color:var(--db2-ink); white-space:nowrap; cursor:pointer; }
+  [data-db-root] .db2-pill2:hover{ border-color:var(--db2-h22); background:var(--db2-hover); }   /* v3 §6: no blue wash */
+  [data-db-root] .db2-pill2i{ flex:none; width:24px; height:24px; border-radius:50%; background:var(--db2-inset); display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;
     font-family:var(--db-mono); font-size:9.5px; font-weight:700; color:var(--db2-muted); }
   [data-db-root] .db2-pill2i img{ position:absolute; inset:0; width:24px; height:24px; object-fit:cover; }
   [data-db-root] .db2-pcwmore{ margin-left:auto; font-family:var(--db-ui); font-size:12.5px; font-weight:600; color:var(--db2-blue); white-space:nowrap; background:none; border:0; padding:0; cursor:pointer; }
@@ -3678,7 +3680,7 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   [data-db-root] .db2-pophead{ display:flex; align-items:baseline; justify-content:space-between; padding:5px 9px 4px; font-family:var(--db-ui); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--db2-muted); line-height:normal; }
   [data-db-root] .db2-pophead span{ font-family:var(--db-mono); font-size:10.5px; letter-spacing:0; text-transform:none; }
   [data-db-root] .db-prow.db2-plrow{ font-weight:600; }
-  [data-db-root] .db2-popini{ position:relative; overflow:hidden; flex:none; display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:var(--db2-inset); font-family:var(--db-mono); font-style:normal; font-size:8.5px; font-weight:700; color:var(--db2-ink-2); }
+  [data-db-root] .db2-popini{ position:relative; overflow:hidden; flex:none; display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:50%; background:var(--db2-inset); box-shadow:0 0 0 1px var(--db2-h12); font-family:var(--db-mono); font-style:normal; font-size:9.5px; font-weight:700; color:var(--db2-ink-2); }
   [data-db-root] .db2-lntile.db2-lntile0:hover{ border-color:var(--db2-h6); }
   [data-db-root] .db2-lntile0 .db2-lntline, [data-db-root] .db2-lntile0 .db2-lntrate{ color:var(--db2-muted); }
   [data-db-root] .db2-q16:hover{ border-color:var(--db2-h16); color:var(--db2-muted); }
@@ -31351,9 +31353,10 @@ window.DatabaseTab = (function(){
     var box=el('div','db-chipin'+(o.picks.length?'':' hot'));
     box.setAttribute('data-search','');   // TEN-399 item 3: chips-and-search box - --inner, no edge
     o.picks.forEach(function(name){
-      var chip=el('div','db-chip','<span>'+esc(name)+'</span>');
+      // Database v3 (CHANGES §1/§6): a player chip carries the 20px avatar (his photo when he has one); the remove cross is drawn
+      var chip=el('div','db-chip', (o.noun==='player' ? db3Ava(name,20,8.5).replace('class="db3-ava"','class="db3-ava db3-cava"') : '')+'<span>'+esc(name)+'</span>');
       if(!o.fixed){
-        var x=el('button',null,'×'); x.title='Remove '+name;
+        var x=el('button','db3-xs',''); x.title='Remove '+name; x.style.marginRight='-3px';
         x.onclick=function(){ o.onRemove(name); render(); };
         chip.appendChild(x);
       }
