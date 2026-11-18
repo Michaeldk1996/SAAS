@@ -33443,7 +33443,7 @@ window.DatabaseTab = (function(){
   function db3LineBox(p, fam, spec, from, t, more){
     t=t||'all'; more=more||0;
     var root=db3Root(from);
-    var old=root.querySelector(':scope > .db3-ov'), keep=old?old.scrollTop:0; if(old) old.remove();
+    var old=root.querySelector(':scope > .db3-ov'), keep=old?old.scrollTop:0; if(old) (old._close ? old._close() : old.remove());
     var m=db2LnMetric(p.pool, spec, p.nm), all=db2LnMatches(p.pool, spec, fam);
     var list=all.filter(function(x){ return t==='all' || (t==='hit' ? x.ok===true : x.ok===false); }), shown=Math.min(list.length, DB2_LN_SHOWN+more*DB2_LN_SHOWN);
     var bet=fam==='Total games' ? db2LnBet(fam, spec[0]) : db2LnFam(fam)+' '+db2LnBet(fam, spec[0]);
@@ -33477,16 +33477,12 @@ window.DatabaseTab = (function(){
     if(!list.length) inn.appendChild(el('div','db3-lr', m.n ? 'No match in this list.' : 'No matches on record for these filters.')).style.color='var(--db2-muted)';
     if(shown<list.length){ var mo=el('div','db3-more','Show 12 more matches'); mo.onclick=function(){ db3LineBox(p, fam, spec, from, t, more+1); }; inn.appendChild(mo); }
     bx.appendChild(lst); ov.appendChild(bx); root.appendChild(ov); ov.scrollTop=keep;
-    function close(){ ov.remove(); document.removeEventListener('keydown', esc1); }
-    function esc1(e){ if(e.key==='Escape') close(); }
-    document.addEventListener('keydown', esc1);
+    var close=db3Opened(ov);
     ov.querySelector('.bg').onclick=close; bx.querySelector('.db3-close').onclick=close;
-    // a re-open (switch, more) replaces this overlay: drop this one's Escape listener first
-    ov._db3Close=function(){ document.removeEventListener('keydown', esc1); };
   }
   function db3SwLocal(items, cur, onPick){
     var sw=el('span','db3-sw');
-    items.forEach(function(t){ var b=el('button', cur===t[0]?'on':null, t[1]); b.type='button'; b.onclick=function(e){ e.stopPropagation(); var o=sw.closest('.db3-ov'); if(o && o._db3Close) o._db3Close(); onPick(t[0]); }; sw.appendChild(b); });
+    items.forEach(function(t){ var b=el('button', cur===t[0]?'on':null, t[1]); b.type='button'; b.onclick=function(e){ e.stopPropagation(); onPick(t[0]); }; sw.appendChild(b); });
     return sw;
   }
   function db2LnCompare(host, P, fams){
@@ -34053,11 +34049,18 @@ window.DatabaseTab = (function(){
   }
   // The one pop-up box (CHANGES §3 / §7.10): head, four centred tiles, the match list (12, then 12 more). spec:
   // { head:html, tiles:[[label, value, colour, sub]], listTitle, n, ms:[{d, backed, opp, ev, rd, p, won}] newest first, reopen(more) }
+  // Escape belongs to esc-nav.js: the open boxes are ONE registered layer (sheet z), the newest closes first
+  var DB3_OPEN=[];
+  function db3Opened(ov){
+    function close(){ var i=DB3_OPEN.indexOf(close); if(i>=0) DB3_OPEN.splice(i,1); ov.remove(); }
+    ov._close=close; DB3_OPEN.push(close); return close;
+  }
+  (window.sfEscLayers = window.sfEscLayers || []).push({ id:'database-box', z:80, isOpen:function(){ return DB3_OPEN.length>0; }, close:function(){ var c=DB3_OPEN[DB3_OPEN.length-1]; if(c) c(); } });
   // the box mounts on the instance root (q(): two mounts never share a node); `from` names the mount a click came from
   function db3Root(from){ return (from && from.isConnected && from.closest && from.closest('[data-db-root]')) || q('body').closest('[data-db-root]'); }
   function db3OpenBox(spec, from, more){
     var root=db3Root(from);
-    var old=root.querySelector(':scope > .db3-ov'), keep=old ? old.scrollTop : 0; if(old) old.remove();
+    var old=root.querySelector(':scope > .db3-ov'), keep=old ? old.scrollTop : 0; if(old) (old._close ? old._close() : old.remove());
     function sg(v,d,u){ return (v>0?'+':v<0?'\u2212':'')+Math.abs(v).toFixed(d)+u; }
     var ms=spec.ms, shown=Math.min(ms.length, 12+(more||0)*12), COLS='76px minmax(0,1.5fr) minmax(0,1fr) 36px 104px 50px 62px 62px';
     var ov=el('div','db3-ov'), bx=el('div','db3-box');
@@ -34072,11 +34075,9 @@ window.DatabaseTab = (function(){
           '<span class="pr">'+fmtP(m.p)+'</span><span class="rp '+(m.won?'w':'l')+'">'+(m.won?'Won':'Lost')+'</span><span class="rt" style="color:'+c+'">'+(m.won?sg(m.p-1,2,'%'):'\u22121.00%')+'</span></div>'; }).join('')+
       (shown<ms.length?'<div class="db3-more">Show 12 more matches</div>':'')+'</div></div>';
     ov.appendChild(bx); root.appendChild(ov); ov.scrollTop=keep;
-    function close(){ ov.remove(); document.removeEventListener('keydown', esc1); }
-    function esc1(e){ if(e.key==='Escape') close(); }
-    document.addEventListener('keydown', esc1);
+    var close=db3Opened(ov);
     ov.querySelector('.bg').onclick=close; bx.querySelector('.db3-close').onclick=close;
-    var mo=bx.querySelector('.db3-more'); if(mo) mo.onclick=function(){ document.removeEventListener('keydown', esc1); db3OpenBox(spec, from, (more||0)+1); };
+    var mo=bx.querySelector('.db3-more'); if(mo) mo.onclick=function(){ db3OpenBox(spec, from, (more||0)+1); };
     if(spec.wire) spec.wire(bx, close);
   }
   function db3BandBox(ctx, from){
