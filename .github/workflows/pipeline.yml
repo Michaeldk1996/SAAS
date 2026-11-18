@@ -1754,6 +1754,17 @@ jobs:
             echo "::error title=Close coverage report did not run::tools/close-coverage.mjs exited non-zero; no _site/close-coverage.json this run (the data-alarms watch reports the missing file)"
           fi
 
+      # Founder review 2026-11-18 (Database Lines: "Field / Edge empty under As favourite, fix it"): the Lines field under the
+      # side / price band / opponent archetype / level filters, tallied by the page's own DatabaseTab.lnCutTally over the
+      # lines-field roster in headless Chrome. Best-effort: with no file those filters show the field as a dash, as before.
+      - name: Lines field under the side / band / archetype / level filters (best-effort)
+        run: |
+          if CHROME_BIN=google-chrome node tools/build-lines-field-cuts.mjs --site _site --out _site/lines-field-cuts.json; then
+            echo "lines-field-cuts: written"
+          else
+            echo "::error title=Lines field cuts not built::tools/build-lines-field-cuts.mjs exited non-zero; no _site/lines-field-cuts.json this run (the Lines field reads a dash under those filters)"
+          fi
+
       # Founder 2026-10-28: the guard above checks Market edge on 2026 and a 1-in-10 player sample. This report compares
       # EVERY priced Market edge shard row with its Database row on the site that will publish (report only: the step
       # summary, a ::warning:: on a difference; it never fails the run and changes no threshold).

@@ -159,6 +159,7 @@ node_modules
 # TEN-260: built every pipeline run by build-lines-field.js from the (gitignored)
 # career-history store, like career-history/ itself. Never committed.
 lines-field.json
+lines-field-cuts.json
 
 # TEN-304: Weather tab files — built each pipeline run by build-weather.js, never committed.
 # EXCEPT weather/archive/ (completed-match archived forecasts): committed by the pipeline's

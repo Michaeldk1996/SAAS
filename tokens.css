@@ -276,6 +276,10 @@
   --db2-avatar:   #161A27;   /* the Compare-with pill's initials circle */
   --db2-dark:     #07080D;   /* text on a solid blue button, the tick in a picked box */
   --db2-shadow-menu: 0 12px 28px rgba(0, 0, 0, 0.45);
+  --db2-layer:    #121521;   /* layer inside a card: pills, chips on a line, lifted rows, Field median strip (2026-11-18) */
+  --db2-hover:    #171B28;   /* row and tile hover (2026-11-18) */
+  --db2-scrim:    #030509;   /* the pop-up box overlay ground, at 72% (2026-11-18) */
+  --db2-shadow-box: 0 24px 60px rgba(0, 0, 0, 0.5);
 }
 
 /* Stennisfy Model page (handoff design_handoff_stennisfy_model, founder brief 2026-11-16 "pixel for pixel, identical

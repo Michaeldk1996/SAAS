@@ -3254,7 +3254,49 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
     --db2-h10:color-mix(in srgb, var(--db2-white) 10%, transparent); --db2-h16:color-mix(in srgb, var(--db2-white) 16%, transparent);
     --db2-h18:color-mix(in srgb, var(--db2-white) 18%, transparent); --db2-h20:color-mix(in srgb, var(--db2-white) 20%, transparent);
     --db2-h5:color-mix(in srgb, var(--db2-white) 5%, transparent); --db2-h7:color-mix(in srgb, var(--db2-white) 7%, transparent);
-    --db2-h13:color-mix(in srgb, var(--db2-white) 13%, transparent); }
+    --db2-h13:color-mix(in srgb, var(--db2-white) 13%, transparent);
+    --db2-h9:color-mix(in srgb, var(--db2-white) 9%, transparent); --db2-h12:color-mix(in srgb, var(--db2-white) 12%, transparent);
+    --db2-h14:color-mix(in srgb, var(--db2-white) 14%, transparent); --db2-h22:color-mix(in srgb, var(--db2-white) 22%, transparent);
+    --db2-h32:color-mix(in srgb, var(--db2-white) 32%, transparent); }
+  /* Database v3 (export 2026-11-18, CHANGES §4): the one cumulative-return chart (Tour, Tournament, Player, compare). */
+  [data-db-root] .db3-card{ background:var(--db2-card); border:1.25px solid var(--db2-h6); border-radius:14px; padding:24px 26px; min-width:0; }
+  [data-db-root] .db3-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px 20px; flex-wrap:wrap; }
+  [data-db-root] .db3-tt{ min-width:0; display:flex; flex-direction:column; gap:4px; }
+  [data-db-root] .db3-tt b{ font-size:18px; font-weight:800; letter-spacing:-0.01em; line-height:1.15; color:var(--db2-ink); }
+  [data-db-root] .db3-tt span{ font-size:13px; color:var(--db2-muted); text-wrap:pretty; }
+  [data-db-root] .db3-leg{ display:flex; align-items:center; gap:18px; font-size:12.5px; color:var(--db2-muted); }
+  [data-db-root] .db3-leg i{ display:inline-flex; align-items:center; gap:7px; font-style:normal; }
+  [data-db-root] .db3-leg i u{ width:18px; height:3px; border-radius:2px; }
+  [data-db-root] .db3-seas{ margin:22px 116px 0 64px; position:relative; height:26px; }
+  [data-db-root] .db3-seas u{ position:absolute; bottom:0; height:4px; border-radius:2px; background:var(--db2-h16); }
+  [data-db-root] .db3-seas span{ position:absolute; top:0; transform:translateX(-50%); font-family:var(--db-mono); font-size:11px; font-weight:500; color:var(--db2-ink-2); white-space:nowrap; }
+  [data-db-root] .db3-row{ margin-top:20px; display:flex; gap:12px; }
+  [data-db-root] .db3-row.cmp{ margin-top:28px; }
+  [data-db-root] .db3-y{ position:relative; width:52px; height:360px; flex:none; }
+  [data-db-root] .db3-y span{ position:absolute; right:0; transform:translateY(-50%); font-family:var(--db-mono); font-size:11.5px; font-weight:500; color:var(--db2-muted); white-space:nowrap; }
+  [data-db-root] .db3-plot{ position:relative; flex:1; min-width:0; height:360px; }
+  [data-db-root] .db3-row.cmp .db3-plot{ min-width:220px; }
+  [data-db-root] .db3-plot svg{ width:100%; height:100%; display:block; overflow:visible; }
+  [data-db-root] .db3-be{ position:absolute; right:10px; padding:5px 0; font-family:var(--db-ui); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--db2-muted); white-space:nowrap; }
+  [data-db-root] .db3-dot{ position:absolute; width:9px; height:9px; margin:-4.5px 0 0 -4.5px; border-radius:50%; box-shadow:0 0 0 3px var(--db2-card); }
+  [data-db-root] .db3-gut{ position:relative; width:104px; height:360px; flex:none; }
+  [data-db-root] .db3-row.cmp .db3-gut{ width:180px; }
+  [data-db-root] .db3-plate{ position:absolute; left:0; right:0; transform:translateY(-50%); padding:7px 9px; border-radius:9px; background:var(--db2-raised); border:1px solid var(--db2-h16); }
+  [data-db-root] .db3-plate b{ display:block; font-size:11px; font-weight:700; white-space:nowrap; }
+  [data-db-root] .db3-plate span{ display:block; margin-top:3px; font-family:var(--db-mono); font-size:16px; font-weight:700; line-height:1; }
+  [data-db-root] .db3-row.cmp .db3-plate{ display:flex; align-items:center; gap:8px; padding:8px 10px; }
+  [data-db-root] .db3-row.cmp .db3-plate u{ width:14px; height:3px; border-radius:2px; flex:none; }
+  [data-db-root] .db3-row.cmp .db3-plate b{ font-size:11.5px; font-weight:600; color:var(--db2-ink-2); overflow:hidden; text-overflow:ellipsis; }
+  [data-db-root] .db3-row.cmp .db3-plate span{ margin:0 0 0 auto; font-size:13.5px; line-height:normal; }
+  [data-db-root] .db3-x{ margin:12px 116px 0 64px; position:relative; height:18px; }
+  [data-db-root] .db3-x.cmp{ margin:12px 192px 0 64px; }
+  [data-db-root] .db3-x span{ position:absolute; font-family:var(--db-mono); font-size:11.5px; color:var(--db2-muted); white-space:nowrap; }
+  [data-db-root] .db3-cap{ margin:6px 116px 0 64px; text-align:center; font-size:12px; color:var(--db2-muted); }
+  [data-db-root] .db3-cap.cmp{ margin:6px 192px 0 64px; }
+  [data-db-root] .db3-few{ margin-top:18px; font-size:13px; color:var(--db2-muted); }
+  [data-db-root] .db3-sw{ display:inline-flex; gap:3px; background:var(--db2-inset); border:1px solid var(--db2-h8); border-radius:10px; padding:3px; }
+  [data-db-root] .db3-sw button{ white-space:nowrap; cursor:pointer; padding:6px 14px; border-radius:7px; font:600 13px var(--db-ui); background:transparent; border:1px solid transparent; color:var(--db2-muted); }
+  [data-db-root] .db3-sw button.on{ font-weight:700; background:var(--db2-raised); border-color:var(--db2-h16); color:var(--db2-ink); }
   [data-db-root] .db-ctl{ background:var(--db2-card); border:1.25px solid var(--db2-h6); border-radius:14px; padding:4px 18px; box-shadow:none; }
   [data-db-root] .db-ctltop{ display:grid; grid-template-columns:104px minmax(0,1fr) auto; align-items:center; gap:14px; padding:12px 0; background:none; border-radius:0; }
   [data-db-root] .db-ctlbot{ display:grid; grid-template-columns:104px minmax(0,1fr); align-items:start; gap:14px; padding:12px 0;
@@ -3305,7 +3347,69 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   [data-db-root] .db-menu.year .db-mrow{ justify-content:space-between; gap:10px; font-family:var(--db-mono); font-size:12px; color:var(--db2-ink); }
   /* band cards (L1017-1060) */
   [data-db-root] .db2-caps{ font-family:var(--db-ui); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--db2-muted); }
-  [data-db-root] .db2-bands{ display:grid; grid-template-columns:repeat(auto-fit,minmax(440px,1fr)); grid-auto-rows:1fr; gap:16px; align-items:stretch; }
+  [data-db-root] .db2-bands{ display:grid; grid-template-columns:repeat(auto-fit,minmax(min(440px,100%),1fr)); grid-auto-rows:1fr; gap:16px; align-items:stretch; }
+  /* Database v3 (CHANGES §2): band cards. Section card 24/26/10, odds lead, the yield line with a chip on its centre. */
+  [data-db-root] .db3-bcard{ background:var(--db2-card); border:1.25px solid var(--db2-h6); border-radius:14px; padding:24px 26px 10px; min-width:0; display:flex; flex-direction:column; font-family:var(--db-ui); color:var(--db2-ink); line-height:normal; }
+  [data-db-root] .db3-bhead{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px; }
+  [data-db-root] .db3-bhead .t{ min-width:0; display:flex; flex-direction:column; gap:4px; }
+  [data-db-root] .db3-bhead .t b{ font-size:18px; font-weight:800; letter-spacing:-0.01em; line-height:1.15; }
+  [data-db-root] .db3-bhead .t span{ font-size:13px; color:var(--db2-muted); text-wrap:pretty; }
+  [data-db-root] .db3-bhead .a{ flex:none; display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+  [data-db-root] .db3-bhead .a b{ font-family:var(--db-mono); font-size:26px; font-weight:700; line-height:1; letter-spacing:-0.02em; }
+  [data-db-root] .db3-bhead .a span{ font-size:12px; color:var(--db2-muted); white-space:nowrap; }
+  [data-db-root] .db3-bcols{ display:grid; gap:0 16px; align-items:end; margin-top:20px; padding-bottom:10px; font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--db2-muted); white-space:nowrap; }
+  [data-db-root] .db3-brow{ flex:1 1 auto; display:grid; gap:0 16px; align-items:center; min-height:64px; margin:0 -10px; padding:0 10px; border-radius:8px; border-top:1px solid var(--db2-h6); cursor:pointer; }
+  [data-db-root] .db3-brow:hover{ background:var(--db2-hover); }
+  [data-db-root] .db3-odds{ display:flex; flex-direction:column; gap:6px; min-width:0; }
+  [data-db-root] .db3-odds .o{ display:flex; align-items:baseline; gap:9px; font-family:var(--db-mono); font-size:19px; font-weight:700; line-height:1; white-space:nowrap; color:var(--db2-ink); }
+  [data-db-root] .db3-odds .o i{ font-style:normal; font-weight:500; color:var(--db2-muted); }
+  [data-db-root] .db3-odds .n{ font-size:12px; color:var(--db2-muted); white-space:nowrap; }
+  [data-db-root] .db3-yl{ position:relative; height:4px; border-radius:2px; background:var(--db2-h7); }
+  [data-db-root] .db3-yl u{ position:absolute; top:0; height:4px; border-radius:2px; }
+  [data-db-root] .db3-yl span{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-family:var(--db-mono); font-size:11px; font-weight:700; line-height:18px; background:var(--db2-layer); box-shadow:0 0 0 1px var(--db2-h14); border-radius:9px; padding:0 7px; white-space:nowrap; }
+  [data-db-root] .db3-bm{ text-align:right; font-family:var(--db-mono); font-size:14px; font-weight:700; color:var(--db2-ink); }
+  [data-db-root] .db3-bt{ text-align:right; font-family:var(--db-mono); font-size:13px; font-weight:500; }
+  [data-db-root] .db3-chev{ color:var(--db2-blue); font-size:14px; font-weight:700; }
+  /* Database v3 (CHANGES §3): the pop-up box (band box, fade box, line box) */
+  [data-db-root] .db3-ov{ position:fixed; inset:0; z-index:80; background:color-mix(in srgb, var(--db2-scrim) 72%, transparent); display:flex; align-items:flex-start; justify-content:center; padding:40px 24px; overflow-y:auto; font-family:var(--db-ui); color:var(--db2-ink); line-height:normal; }
+  [data-db-root] .db3-ov > .bg{ position:absolute; inset:0; }
+  [data-db-root] .db3-box{ position:relative; width:100%; max-width:900px; background:var(--db2-card); border:1.25px solid var(--db2-h10); border-radius:14px; box-shadow:var(--db2-shadow-box); padding:24px 26px 18px; display:flex; flex-direction:column; gap:16px; }
+  [data-db-root] .db3-boxh{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
+  [data-db-root] .db3-boxh .t{ min-width:0; display:flex; flex-direction:column; gap:6px; }
+  [data-db-root] .db3-boxh .t > span:first-child{ display:flex; align-items:baseline; flex-wrap:wrap; gap:6px 12px; }
+  [data-db-root] .db3-boxh .o{ display:flex; align-items:baseline; gap:9px; font-family:var(--db-mono); font-size:22px; font-weight:700; line-height:1; white-space:nowrap; }
+  [data-db-root] .db3-boxh .o i{ font-style:normal; font-weight:500; color:var(--db2-muted); }
+  [data-db-root] .db3-boxh .nm{ font-size:18px; font-weight:800; letter-spacing:-0.01em; }
+  [data-db-root] .db3-boxh .sc{ font-size:13px; color:var(--db2-muted); text-wrap:pretty; }
+  [data-db-root] .db3-close{ flex:none; position:relative; width:28px; height:28px; border-radius:8px; color:var(--db2-muted); background:transparent; border:0; cursor:pointer; padding:0; }
+  [data-db-root] .db3-close:hover{ background:var(--db2-h10); color:var(--db2-ink); }
+  [data-db-root] .db3-close::before, [data-db-root] .db3-close::after{ content:''; position:absolute; left:8px; top:13.25px; width:12px; height:1.5px; border-radius:1px; background:currentColor; transform:rotate(45deg); }
+  [data-db-root] .db3-close::after{ transform:rotate(-45deg); }
+  [data-db-root] .db3-tiles{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px; }
+  [data-db-root] .db3-tile{ background:var(--db2-card); border:1px solid var(--db2-h9); border-radius:10px; padding:13px 8px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px; min-width:0; }
+  [data-db-root] .db3-tile .l{ font-size:12px; font-weight:600; color:var(--db2-muted); white-space:nowrap; }
+  [data-db-root] .db3-tile .v{ font-family:var(--db-mono); font-size:20px; font-weight:700; line-height:1; white-space:nowrap; }
+  [data-db-root] .db3-tile .s{ font-size:11.5px; color:var(--db2-muted); text-wrap:balance; }
+  [data-db-root] .db3-list{ border:1px solid var(--db2-h9); border-radius:12px; overflow-x:auto; }
+  [data-db-root] .db3-list > div{ min-width:700px; }
+  [data-db-root] .db3-lh{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:14px 16px 12px; }
+  [data-db-root] .db3-lh b{ font-size:15px; font-weight:700; }
+  [data-db-root] .db3-lh span{ font-size:12px; color:var(--db2-muted); }
+  [data-db-root] .db3-lr{ display:grid; gap:0 12px; align-items:center; padding:11px 16px; border-top:1px solid var(--db2-h6); font-size:13px; }
+  [data-db-root] .db3-lr.hd{ padding:9px 16px; font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--db2-muted); white-space:nowrap; }
+  [data-db-root] .db3-lr:not(.hd):hover{ background:var(--db2-raised); }
+  [data-db-root] .db3-lr .d, [data-db-root] .db3-lr .rd{ font-family:var(--db-mono); font-size:12px; color:var(--db2-muted); white-space:nowrap; }
+  [data-db-root] .db3-lr .sc{ font-family:var(--db-mono); font-size:12px; color:var(--db2-ink-2); white-space:nowrap; }
+  [data-db-root] .db3-lr .ev{ min-width:0; color:var(--db2-ink-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  [data-db-root] .db3-lr .m{ min-width:0; text-wrap:pretty; }
+  [data-db-root] .db3-lr .m b{ font-weight:700; color:var(--db2-ink); } [data-db-root] .db3-lr .m i{ font-style:normal; color:var(--db2-muted); } [data-db-root] .db3-lr .m span{ color:var(--db2-ink-2); }
+  [data-db-root] .db3-lr .pr{ text-align:right; font-family:var(--db-mono); font-weight:700; color:var(--db2-ink); }
+  [data-db-root] .db3-lr .rp{ justify-self:end; padding:2px 9px; border-radius:999px; font-size:11.5px; font-weight:700; }
+  [data-db-root] .db3-lr .rp.w{ color:var(--db2-green); background:color-mix(in srgb, var(--db2-green) 12%, transparent); }
+  [data-db-root] .db3-lr .rp.l{ color:var(--db2-red); background:color-mix(in srgb, var(--db2-red) 12%, transparent); }
+  [data-db-root] .db3-lr .rt{ text-align:right; font-family:var(--db-mono); font-weight:700; }
+  [data-db-root] .db3-more{ padding:12px 16px; border-top:1px solid var(--db2-h6); text-align:center; font-size:13px; font-weight:600; color:var(--db2-blue); cursor:pointer; }
+  [data-db-root] .db3-more:hover{ background:var(--db2-raised); }
   [data-db-root] .db2-bcard{ line-height:normal; background:var(--db2-card); border:1.25px solid var(--db2-h6); border-radius:12px; padding:18px 20px 8px; min-width:0; display:flex; flex-direction:column; font-family:var(--db-ui); color:var(--db2-ink); }
   [data-db-root] .db2-bhead{ display:flex; align-items:flex-end; justify-content:space-between; gap:14px; }
   [data-db-root] .db2-btitle{ font-size:18px; font-weight:800; letter-spacing:-0.01em; margin-top:5px; }
@@ -3477,7 +3581,7 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   [data-db-root] .db2-pophead{ display:flex; align-items:baseline; justify-content:space-between; padding:5px 9px 4px; font-family:var(--db-ui); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--db2-muted); line-height:normal; }
   [data-db-root] .db2-pophead span{ font-family:var(--db-mono); font-size:10.5px; letter-spacing:0; text-transform:none; }
   [data-db-root] .db-prow.db2-plrow{ font-weight:600; }
-  [data-db-root] .db2-popini{ flex:none; display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:var(--db2-inset); font-family:var(--db-mono); font-style:normal; font-size:8.5px; font-weight:700; color:var(--db2-ink-2); }
+  [data-db-root] .db2-popini{ position:relative; overflow:hidden; flex:none; display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:var(--db2-inset); font-family:var(--db-mono); font-style:normal; font-size:8.5px; font-weight:700; color:var(--db2-ink-2); }
   [data-db-root] .db2-lntile.db2-lntile0:hover{ border-color:var(--db2-h6); }
   [data-db-root] .db2-lntile0 .db2-lntline, [data-db-root] .db2-lntile0 .db2-lntrate{ color:var(--db2-muted); }
   [data-db-root] .db2-q16:hover{ border-color:var(--db2-h16); color:var(--db2-muted); }
@@ -3736,7 +3840,7 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
      the 14px size and drops to weight 500 in the muted ink — it is still a yield, so
      it must not read as a label. Hard-gated is NOT a yield at all: 11px, and it
      prints the count in place of the number. */
-  .db-yieldcell.soft{ font-weight:500; color:var(--db-mute) !important; }
+  .db-yieldcell.soft{ font-weight:500; }
   .db-yieldcell.hard{ font-size:11px; font-weight:500; color:var(--db-mute) !important; letter-spacing:0; white-space:nowrap; }
   .db-ga .db-yieldcell.hard{ font-size:11px; }
   .db-tourcell{ font-family:var(--db-mono); font-size:13px; font-weight:500; color:var(--db-sec) !important; }
@@ -30645,8 +30749,8 @@ window.DatabaseTab = (function(){
     for(var i=0;i<rows.length;i++){
       var r=rows[i], w=nm[i][0], l=nm[i][1], favWon=r[7];
       // p = the player's own closing price, op = his opponent's — the fade stake.
-      pushPlayer(w, { p: favWon? r[5]:r[6], op: favWon? r[6]:r[5], w:1, b:r[8], d:r[0], fav:favWon===1, surf:r[2], rnd:r[3], tour:r[4], lev:r[1] });
-      pushPlayer(l, { p: favWon? r[6]:r[5], op: favWon? r[5]:r[6], w:0, b:r[8], d:r[0], fav:favWon===0, surf:r[2], rnd:r[3], tour:r[4], lev:r[1] });
+      pushPlayer(w, { o:l, p: favWon? r[5]:r[6], op: favWon? r[6]:r[5], w:1, b:r[8], d:r[0], fav:favWon===1, surf:r[2], rnd:r[3], tour:r[4], lev:r[1] });
+      pushPlayer(l, { o:w, p: favWon? r[6]:r[5], op: favWon? r[5]:r[6], w:0, b:r[8], d:r[0], fav:favWon===0, surf:r[2], rnd:r[3], tour:r[4], lev:r[1] });
     }
   }
   function pushPlayer(name, rec){ if(!name) return; (playerIndex[name]||(playerIndex[name]=[])).push(rec); }
@@ -30656,10 +30760,18 @@ window.DatabaseTab = (function(){
   // of any [lo,hi] price window is two binary searches. The population is the whole
   // archive: C2's gate only lets a baseline show while Round and the year range are
   // untouched, and the Tournaments tab carries no other filter (C11).
-  var TB=null;
+  // Founder review 2026-11-18 ("compare vs tour, fix it"): under a round or year filter the index is rebuilt over the
+  // tour rows that pass the SAME round and year filter (same rows, bands and settlement), cached per filter key.
+  var TB=null, TBK=null;
+  function tbKey(){ return state.rounds ? Array.from(state.rounds).sort().join(',')+'|'+state.yearMin+'|'+state.yearMax : '|'+state.yearMin+'|'+state.yearMax; }
   function tourBaseIndex(){
-    if(TB) return TB;
-    var rows=DATA.rows, n=rows.length;
+    var key=tbKey();
+    if(TB && TBK===key) return TB;
+    TBK=key;
+    var rows=DATA.rows;
+    if(!baselineAllowed()) rows=rows.filter(function(r){ var y=yr(r[0]);
+      return !(state.rounds && !state.rounds.has(r[3])) && !(state.yearMin!=null && y<state.yearMin) && !(state.yearMax!=null && y>state.yearMax); });
+    var n=rows.length;
     function side(pi, favSide){
       var idx=new Array(n);
       for(var i=0;i<n;i++) idx[i]=i;
@@ -30680,7 +30792,7 @@ window.DatabaseTab = (function(){
     var s=tourBaseIndex()[key], i=lowerBound(s.prices,lo), j=upperBound(s.prices,hi), n=j-i;
     return n ? { n:n, yield:(s.ps[j]-s.ps[i])/n } : null;
   }
-  function baseAll(key){ var s=tourBaseIndex()[key]; return { n:s.n, yield:s.ps[s.n]/s.n }; }
+  function baseAll(key){ var s=tourBaseIndex()[key]; return s.n ? { n:s.n, yield:s.ps[s.n]/s.n } : null; }
   // Tour baselines for the Players tab, recomputed over the archive under the same
   // period / surface / tournament filter the player figures use, so the comparison
   // is like-for-like and never has to be withheld.
@@ -30816,17 +30928,17 @@ window.DatabaseTab = (function(){
   function fixedBands(values, sideKey){
     // One pass: each price goes to its band (half-open edges), profit summed on the way; medians from typed-array sorts
     // (no comparator). Measured 16 Nov over the 42k-row archive: an object sort cost ~150ms, this ~10ms.
-    var D=DB2_BANDS[sideKey], nb=D.length, acc=D.map(function(){ return { ps:[], pr:0 }; }), all={ ps:new Float64Array(values.length), pr:0 };
+    var D=DB2_BANDS[sideKey], nb=D.length, acc=D.map(function(){ return { ps:[], pr:0, vs:[] }; }), all={ ps:new Float64Array(values.length), pr:0 };
     for(var i=0;i<values.length;i++){
       var v=values[i], pr=v.w?(v.p-1):-1; all.ps[i]=v.p; all.pr+=pr;
-      for(var k=0;k<nb;k++){ if(db2InBand(D[k], v.p)){ acc[k].ps.push(v.p); acc[k].pr+=pr; break; } }
+      for(var k=0;k<nb;k++){ if(db2InBand(D[k], v.p)){ acc[k].ps.push(v.p); acc[k].pr+=pr; acc[k].vs.push(v); break; } }
     }
     function fin(ps, pr){
       var n=ps.length; if(!n) return null;
       var a=(ps instanceof Float64Array) ? ps : Float64Array.from(ps); a.sort();
       var m=n>>1; return { n:n, median: n%2 ? a[m] : (a[m-1]+a[m])/2, yield:pr/n, lo:a[0], hi:a[n-1] };
     }
-    return { all:fin(all.ps, all.pr), bands:D.map(function(B,k){ return { def:B, agg:fin(acc[k].ps, acc[k].pr) }; }) };
+    return { all:fin(all.ps, all.pr), bands:D.map(function(B,k){ return { def:B, agg:fin(acc[k].ps, acc[k].pr), vs:acc[k].vs }; }) };
   }
   // The tour figure for one fixed band (Tournament / Player "Tour" column): the same half-open edges.
   function db2TourBand(sideKey, B){
@@ -31154,7 +31266,9 @@ window.DatabaseTab = (function(){
         hits.forEach(function(h){
           var row=el('div','db-prow'+(isPl?' db2-plrow':''));
           var ini = isPl ? String(h.label).replace(/[^A-Za-z ]/g,'').split(' ').filter(Boolean).map(function(x){ return x[0]; }).join('').slice(0,2).toUpperCase() : '';
-          row.innerHTML=(isPl?'<i class="db2-popini">'+esc(ini)+'</i>':'')+'<span>'+esc(h.label)+'</span>'+(h.meta?('<em>'+esc(h.meta)+'</em>'):'');
+          // Founder review 2026-11-18: the player's photo (the one resolver, joined by db2Who) over the initials.
+          var ph=''; if(isPl && typeof playerPhotoImg==='function'){ try{ var w=h.key!=null?{key:h.key}:db2Who(h.label); if(w) ph=playerPhotoImg(w.key, h.label); }catch(_){} }
+          row.innerHTML=(isPl?'<i class="db2-popini">'+esc(ini)+ph+'</i>':'')+'<span>'+esc(h.label)+'</span>'+(h.meta?('<em>'+esc(h.meta)+'</em>'):'');
           row.onmousedown=function(ev){ ev.preventDefault(); o.onPick(h.value); render(); };
           pop.appendChild(row);
         });
@@ -31189,7 +31303,7 @@ window.DatabaseTab = (function(){
           // board, so offering him to compare would put him back on it.
           return ratRoster().filter(function(p){
             return p.name.toLowerCase().indexOf(ql)>=0 && state.ratSel.indexOf(p.name)<0;
-          }).slice(0,40).map(function(p){ return {label:p.name, value:p.name, meta:p.rank!=null?('#'+p.rank):''}; });
+          }).slice(0,40).map(function(p){ return {label:p.name, value:p.name, key:p.key, meta:p.rank!=null?('#'+p.rank):''}; });
         },
         onPick:function(n){ if(state.ratSel.length<4) state.ratSel=state.ratSel.concat([n]); state.ratQ=''; },
         onRemove:function(n){ state.ratSel=state.ratSel.filter(function(x){ return x!==n; }); }
@@ -31227,7 +31341,7 @@ window.DatabaseTab = (function(){
           var ql=qs.toLowerCase();
           return (RAT.players||[]).filter(function(p){
             return p.name.toLowerCase().indexOf(ql)>=0 && state.lnSel.indexOf(p.name)<0;
-          }).slice(0,40).map(function(p){ return {label:p.name, value:p.name, meta:p.rank!=null?('#'+p.rank):''}; });
+          }).slice(0,40).map(function(p){ return {label:p.name, value:p.name, key:p.key, meta:p.rank!=null?('#'+p.rank):''}; });
         },
         onPick:function(n){ if(state.lnSel.length<3 && state.lnSel.indexOf(n)<0) state.lnSel=state.lnSel.concat([n]); state.lnQ=''; },
         onRemove:function(n){ state.lnSel=state.lnSel.filter(function(x){ return x!==n; }); }
@@ -32922,14 +33036,60 @@ window.DatabaseTab = (function(){
     return { pending:false, pool:out };
   }
   function db2LnFieldOK(){ return state.lnSide==='all' && state.lnBand==null && !state.lnArch && !state.lnLevel; }
+  // Founder review 2026-11-18 ("Field / Edge empty under As favourite: not normal, fix it"): the field under the side, price
+  // band, opponent archetype and level filters. lines-field-cuts.json (tools/build-lines-field-cuts.mjs, pipeline) runs
+  // db2LnCutTally below over every roster player in headless Chrome, so a cut is counted by the page's own join, archetype
+  // and level rules. Cut key = fmt|surf|scope|P|X: P = fav / dog / fav:i / dog:i (the band, DB2_BANDS index), X = - /
+  // a:i (DB2_LN_ARCH) / l:i (DB2_LN_LEVELS). Archetype AND level together have no cut: a dash. Loaded only while a cut is on.
+  var LNC=null, lncPromise=null, LNC_URL='./lines-field-cuts.json';
+  function loadLinesFieldCuts(){
+    if(LNC) return Promise.resolve(LNC);
+    if(lncPromise) return lncPromise;
+    lncPromise=fetch(LNC_URL,{cache:'no-cache'}).then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(j){ if(j && j.cuts) LNC=j; lncPromise=null; return LNC; }).catch(function(){ lncPromise=null; return null; });
+    return lncPromise;
+  }
+  function db2LnCutKey(){
+    if(state.lnArch && state.lnLevel) return null;
+    var P = state.lnBand!=null ? state.lnBand.replace('|',':') : state.lnSide!=='all' ? state.lnSide : 'all';
+    var X = state.lnArch ? 'a:'+DB2_LN_ARCH.indexOf(state.lnArch) : state.lnLevel ? 'l:'+DB2_LN_LEVELS.indexOf(state.lnLevel) : '-';
+    return state.lnFmt+'|'+state.lnSurf+'|'+state.lnScope+'|'+P+'|'+X;
+  }
+  function db2LnCutStats(label){
+    if(!LNC){ loadLinesFieldCuts().then(function(j){ if(j) render(); }); return null; }
+    var k=db2LnCutKey(), sl=k && LNC.cuts[k], d=sl && sl[label];
+    return d ? { median:d[0], size:d[1], rank:null } : null;
+  }
+  // One player's tally under every cut: { key: { lineLabel: [hit, n] } }, voids out (lnHit). Exported for the builder.
+  function db2LnCutTally(name, rows){
+    var px=db2LnPrice(name, rows||[]); if(!px) return null;
+    var out={}, cut=lnCutoff(), pools=lnPools(rows||[], 'All', 'career');
+    ['bo3','bo5'].forEach(function(fmt){
+      pools.byFmt[fmt].forEach(function(r){
+        var q=px.get(r), Ps=[], Xs=['-'];
+        if(q && q.p!==q.op){ var sd=q.p<q.op?'fav':'dog'; Ps.push(sd); DB2_BANDS[sd].forEach(function(B,i){ if(db2InBand(B,q.p)) Ps.push(sd+':'+i); }); }
+        var ai=DB2_LN_ARCH.indexOf(db2LnArchOf(r)), li=DB2_LN_LEVELS.indexOf(db2LnLevelOf(r));
+        if(ai>=0) Xs.push('a:'+ai); if(li>=0) Xs.push('l:'+li);
+        var surfs=['All'], sf=String(r.surface||'').toLowerCase(); ['Hard','Clay','Grass'].forEach(function(S){ if(S.toLowerCase()===sf) surfs.push(S); });
+        var scopes=['career']; if(r.date && String(r.date)>=cut) scopes.push('l52');
+        var hits=[]; LN_GROUPS.forEach(function(g){ (LN_LADDERS[fmt][g]||[]).forEach(function(spec){ var h=lnHit(r, spec[1], spec[2]); if(h && h.hit!==null) hits.push([spec[0], h.hit?1:0]); }); });
+        ['all'].concat(Ps).forEach(function(P){ Xs.forEach(function(X){ if(P==='all' && X==='-') return;
+          surfs.forEach(function(S){ scopes.forEach(function(sc){
+            var c=out[fmt+'|'+S+'|'+sc+'|'+P+'|'+X] || (out[fmt+'|'+S+'|'+sc+'|'+P+'|'+X]={});
+            hits.forEach(function(h){ var t=c[h[0]]||(c[h[0]]=[0,0]); t[0]+=h[1]; t[1]++; });
+          }); }); }); });
+      });
+    });
+    return out;
+  }
   function db2LnMetric(pool, spec, name){
     var L=lnLine(pool, spec[1], spec[2]), n=L.n, rate=n ? L.hit/n*100 : null;
     var g = n===0 ? 'zero' : n<LN_MIN_N ? 'hard' : n<DB2_LN_FULL ? 'soft' : 'full';
-    var fs = db2LnFieldOK() && rate!=null ? lnFieldStats(state.lnFmt, spec[0], Math.round(rate*1000)/1000, name) : null;
+    var fs = rate==null ? null : db2LnFieldOK() ? lnFieldStats(state.lnFmt, spec[0], Math.round(rate*1000)/1000, name) : db2LnCutStats(spec[0]);
     var fm = fs ? fs.median : null;
     var show = g==='full' || g==='soft';
     var delta = (show && fm!=null) ? (Math.round(rate*10)/10 - Math.round(fm*10)/10) : null;
-    return { spec:spec, n:n, hit:L.hit, voids:L.voids||0, rate:rate, g:g, show:show, field:fm, delta:delta, dv: g==='full' ? delta : null,
+    return { spec:spec, n:n, hit:L.hit, voids:L.voids||0, rate:rate, g:g, show:show, field:fm, delta:delta, dv: delta,   /* founder 2026-11-18: comparison works on a small sample too (5-9 matches, muted) */
              rank: fs ? fs.rank : null, size: fs ? fs.size : null, marg: L.margN ? L.marg/L.margN : null };
   }
   function db2LnPills(items, cur, onPick){
@@ -32999,7 +33159,7 @@ window.DatabaseTab = (function(){
     return nLines+' lines · '+(state.lnFmt==='bo3'?'Best of 3':'Best of 5')+' · '+(state.lnSurf==='All'?'all surfaces':state.lnSurf.toLowerCase())+' · '+
       (state.lnScope==='l52'?'last 52 weeks':'career')+' · '+(state.lnSide==='all'?'all matches':state.lnSide==='fav'?'as favourite':'as underdog')+ftxt;
   }
-  var DB2_LN_HELP='How often the player covered each line. Lines are written as a bookmaker lists them: handicap lines read −2.5 or +2.5 under their family name, totals read Over or Under. Cover is his share of matches that covered the line; Field is the median cover of the tour field on that line (format, surface and period only; under any other filter it is a dash); Edge is Cover minus Field, in points. Lines are worked out from set scores, not from settled bets. Best of 3 and best of 5 are counted apart. A rate needs '+LN_MIN_N+' matches and is muted under '+DB2_LN_FULL+'. Click a line to see the matches behind it. Hover a row for his rank and average margin.';
+  var DB2_LN_HELP='How often the player covered each line. Lines are written as a bookmaker lists them: handicap lines read −2.5 or +2.5 under their family name, totals read Over or Under. Cover is his share of matches that covered the line; Field is the median cover of the tour field on that line, under the same filters (a player is in the field from '+LN_MIN_N+' matches on the line; the field size is on hover; archetype and level together have no field); Edge is Cover minus Field, in points. Lines are worked out from set scores, not from settled bets. Best of 3 and best of 5 are counted apart. A rate needs '+LN_MIN_N+' matches and is muted under '+DB2_LN_FULL+'. Click a line to see the matches behind it. Hover a row for his rank and average margin.';
   function db2LnMatches(pool, spec, fam){
     var rows=pool.map(function(r){ var h=lnHit(r, spec[1], spec[2]); return { r:r, ok: h ? h.hit : false }; })   // ok: true / false / null (push, void)
       .sort(function(a,b){ return String(b.r.date).localeCompare(String(a.r.date)); });
@@ -33092,7 +33252,7 @@ window.DatabaseTab = (function(){
       [['Most above the field',hi],['Most below the field',lo]].forEach(function(t){
         var m=t[1].m, fam=t[1].g.fam, d=m.delta;
         var tl=el('div','db2-lntile','<div class="db2-lntl"><div class="db2-caps">'+t[0]+'</div><div class="db2-lntline">'+(fam==='Total games'?'':db2LnFam(fam)+' ')+db2LnBet(fam, m.spec[0])+'</div>'+
-          '<div class="db2-lntsub">'+m.hit+'–'+(m.n-m.hit)+' · field '+(m.field==null?'—':m.field.toFixed(1)+'%')+'</div></div>'+
+          '<div class="db2-lntsub">'+m.hit+'–'+(m.n-m.hit)+' · field '+(m.field==null?'—':m.field.toFixed(1)+'% (n='+m.size+')')+'</div></div>'+
           '<div class="db2-lntr"><div class="db2-lntrate">'+m.rate.toFixed(1)+'%</div><div class="db2-lntd" style="color:'+lnSgnCol(d)+'">'+lnSgn(d)+'pp</div></div><span class="db2-chev">›</span>');
         tl.onclick=function(){ openLine(fam, m.spec); }; tg.appendChild(tl);
       });
@@ -33130,7 +33290,7 @@ window.DatabaseTab = (function(){
           r.title=p.nm+' · '+db2LnBet(fam, m.spec[0])+' · '+(m.n ? 'covered '+m.hit+' of '+m.n+' matches'+(m.g==='soft'?' (small sample)':m.g==='hard'?' (fewer than '+LN_MIN_N+' matches, no rate shown)':'')+(m.rank==null?'':' · ranked '+m.rank+' of '+m.size)+(m.marg==null?'':' · average margin '+lnSgn(m.marg)+(fam==='Set handicap'?' sets':' games')) : 'no matches on record');
           r.innerHTML='<span class="db2-lnbet">'+db2LnBet(fam, m.spec[0])+'</span>'+
             '<span class="db2-lnrate" style="font-weight:'+(m.g==='full'?700:500)+';color:'+(m.show?(m.g==='full'?'var(--db2-ink)':'var(--db2-muted)'):'color-mix(in srgb, var(--db2-muted) 55%, transparent)')+'">'+(m.show?m.rate.toFixed(1)+'%':'–')+'</span>'+
-            '<span class="db2-lnq">'+(m.field==null?'–':m.field.toFixed(1)+'%')+'</span><span class="db2-lnq nw">'+(m.n?m.hit+'–'+(m.n-m.hit):'–')+'</span>'+
+            '<span class="db2-lnq"'+(m.size!=null?' title="Field median over '+m.size+' players (n='+m.size+')"':'')+'>'+(m.field==null?'–':m.field.toFixed(1)+'%')+'</span><span class="db2-lnq nw">'+(m.n?m.hit+'–'+(m.n-m.hit):'–')+'</span>'+
             '<span class="db2-lnedge" style="color:'+(m.delta==null?'color-mix(in srgb, var(--db2-muted) 55%, transparent)':lnSgnCol(m.delta))+'">'+(m.delta==null?'–':lnSgn(m.delta)+'pp')+'</span><span class="db2-chev r">›</span>';
           r.onclick=function(){ openLine(fam, m.spec); };
           c.appendChild(r);
@@ -33525,8 +33685,8 @@ window.DatabaseTab = (function(){
       body.appendChild(e); db2FootIntoQ(body); return;
     }
 
-    var favVals=rows.map(function(r){ return {p:r[5], w:r[7], b:r[8]}; });
-    var dogVals=rows.map(function(r){ return {p:r[6], w:r[7]?0:1, b:r[8]}; });
+    var favVals=rows.map(function(r){ return {p:r[5], w:r[7], b:r[8], r:r}; });
+    var dogVals=rows.map(function(r){ return {p:r[6], w:r[7]?0:1, b:r[8], r:r}; });
     var isTourn = state.view==='tournaments';
     // Database v2: two band cards side by side (design L1017-1060).
     var grid=el('div','db2-bands');
@@ -33551,7 +33711,7 @@ window.DatabaseTab = (function(){
     // panel states the gate once under the table (bandPanel), so the sentence never spills out of its column.
     if(a.n<HARD_GATE) return '<span class="db-yieldcell hard">—</span>';
     var txt=fmtPct(a.yield);
-    if(a.n<SOFT_GATE && !allRow) return '<span class="db-yieldcell soft">'+txt+'</span>';
+    if(a.n<SOFT_GATE && !allRow) return '<span class="db-yieldcell soft" style="color:'+signCol(txt)+'">'+txt+'</span>';  // founder 2026-11-18: always sign-coloured
     return '<span class="db-yieldcell" style="color:'+signCol(txt)+'">'+txt+'</span>';
   }
   // The "Split by book" sentence lives on the Player tab only (playerBookSplit; TEN-399 ruling). TEN-262
@@ -33574,7 +33734,7 @@ window.DatabaseTab = (function(){
     panel.appendChild(head);
     if(!res.all){ panel.appendChild(el('div','db-note','No matches on this side.')); return panel; }
 
-    var showBase = isTourn && baselineAllowed();
+    var showBase = isTourn;  // founder 2026-11-18: the tour baseline follows the filters (tourBaseIndex)
     var g=el('div','db-grid');
     // From / To are five mono characters wide (Plex Mono 15px: 0.6em x 5 = 45px), the same
     // track in both tables, so "86.00", "3.75+" and "1.88+" line up across Favourites | Underdogs.
@@ -33633,7 +33793,6 @@ window.DatabaseTab = (function(){
     g.appendChild(arow);
     panel.appendChild(g);
 
-    if(isTourn && !showBase) panel.appendChild(el('div','db-note','Tour baselines are not computed for this round or year range.'));
     if(res.bands.concat([res.all]).some(function(b){ return b && b.n<HARD_GATE; }))
       panel.appendChild(el('div','db-note db-hardnote','— fewer than '+HARD_GATE+' matches: too few for a yield.'));
     if(res.single) panel.appendChild(el('div','db-note','Fewer than three matches — shown as one band rather than split into terciles.'));
@@ -33646,54 +33805,101 @@ window.DatabaseTab = (function(){
   // Gates: SOFT_GATE / HARD_GATE (the design's soft 100 / hard 30). Under the hard floor a Tour / Tournament cell reads
   // "n=N — too few matches for a yield" (11px), a Player cell an en dash; under the soft floor the yield is muted / 500
   // (Player keeps its sign colour). The Tour column shows only while round and years are untouched (baselineAllowed).
+  // Database v3 (CHANGES §2): two section cards; odds lead (low · dash · high over the band name), the yield line with its
+  // chip on the centre, Matches bold, the Tour column when a baseline is shown; no Median column. Every row opens the band
+  // box (§3). A shown yield is green / red at every sample size; under HARD_GATE (30) the chip is a grey dash.
+  // mode: 'tour' | 'tourn' | 'player'. opts: { fade, baseKnown, baseAll, baseFor, player, evName }
+  function db3OddsHtml(B){ return '<span>'+B[1]+'</span>'+(B[2]==='+' ? '<i>+</i>' : '<i>\u2013</i><span>'+B[2]+'</span>'); }
+  function db3YieldLine(g){
+    var hard=!g || g.n<HARD_GATE, y=hard?0:g.yield*100, w=hard||Math.abs(y)<0.005 ? 0 : 14+Math.min(Math.abs(y)/30,1)*32;
+    var c=hard ? 'var(--db2-muted)' : y>0 ? 'var(--db2-green)' : y<0 ? 'var(--db2-red)' : 'var(--db2-muted)';
+    return '<div class="db3-yl"><u style="left:'+(y>=0?50:50-w).toFixed(1)+'%;width:'+w.toFixed(1)+'%;background:'+c+'"></u><span style="color:'+c+'">'+(hard?'\u2014':fmtPct(g.yield))+'</span></div>';
+  }
   function bandCard2(sideKey, res, mode, opts){
     opts=opts||{};
     var isPl = mode==='player', withBase = mode==='tourn' || (isPl && !opts.fade);
-    var baseKnown = isPl ? (opts.baseKnown!==false) : baselineAllowed();
+    var baseKnown = isPl ? (opts.baseKnown!==false) : true;
     var title = isPl ? (sideKey==='fav'?'As favourite':'As underdog') : (sideKey==='fav'?'Favourites':'Underdogs');
     var hint = isPl ? (sideKey==='fav' ? (opts.fade?'He is the shorter price \u00b7 opponent backed':'He is the shorter price')
                                        : (opts.fade?'He is the longer price \u00b7 opponent backed':'He is the longer price'))
                     : (sideKey==='fav'?'Back the shorter price':'Back the longer price');
-    var cols = withBase ? 'minmax(96px,1fr) 46px 50px 50px 54px 66px 62px' : 'minmax(120px,1fr) 50px 52px 52px 58px 70px';
-    var card=el('div','db2-bcard'); card.setAttribute('data-side', sideKey);
-    var a=res.all;
-    var allTxt = !a ? '\u2014' : (a.n<HARD_GATE ? '\u2014' : fmtPct(a.yield));
-    var allCol = allTxt.charAt(0)==='+' ? 'var(--pos)' : allTxt.charAt(0)==='\u2212' ? 'var(--neg)' : 'var(--text-label)';
+    var cols = withBase ? '150px minmax(0,1fr) 64px 62px 8px' : '168px minmax(0,1fr) 64px 8px';
+    var card=el('div','db3-bcard'); card.setAttribute('data-side', sideKey);
+    var a=res.all, allTxt = !a || a.n<HARD_GATE ? '\u2014' : fmtPct(a.yield);
+    var allCol = allTxt.charAt(0)==='+' ? 'var(--db2-green)' : allTxt.charAt(0)==='\u2212' ? 'var(--db2-red)' : 'var(--db2-muted)';
     var tourAll = withBase ? (baseKnown ? (opts.baseAll!==undefined ? opts.baseAll : (function(){ var b=baseAll(sideKey); return b?fmtPct(b.yield):'\u2014'; })()) : '\u2014') : null;
-    card.innerHTML='<div class="db2-bhead"><div><div class="db2-caps">'+esc(hint)+'</div><div class="db2-btitle">'+esc(title)+'</div></div>'+
-      '<div class="db2-ball"><div class="db2-ballv" style="color:'+allCol+'">'+allTxt+'</div><div class="db2-balls">'+
-      (a?fmtInt(a.n):'0')+' matches \u00b7 median '+(a?fmtP(a.median):'\u2014')+(tourAll!=null?' \u00b7 tour '+tourAll:'')+'</div></div></div>';
-    var hd=el('div','db2-bcols db2-caps'); hd.style.gridTemplateColumns=cols;
-    ['Band','From','To','Median','Matches', isPl?'Player':(mode==='tourn'?'Event':'Yield')].concat(withBase?['Tour']:[])
-      .forEach(function(c,i){ var sp=el('span',null,c); if(i) sp.style.textAlign='right'; hd.appendChild(sp); });
+    card.innerHTML='<div class="db3-bhead"><span class="t"><b>'+esc(title)+'</b><span>'+esc(hint)+'</span></span>'+
+      '<span class="a"><b style="color:'+allCol+'">'+allTxt+'</b><span>'+(a?fmtInt(a.n):'0')+' matches \u00b7 median price '+(a?fmtP(a.median):'\u2014')+(tourAll!=null?' \u00b7 tour '+tourAll:'')+'</span></span></div>';
+    var hd=el('div','db3-bcols'); hd.style.gridTemplateColumns=cols;
+    hd.innerHTML='<span>Odds</span><span style="text-align:center">'+(isPl?'Player':mode==='tourn'?'Event':'Yield')+'</span><span style="text-align:right">Matches</span>'+(withBase?'<span style="text-align:right">Tour</span>':'')+'<span></span>';
     card.appendChild(hd);
-    res.bands.forEach(function(b){
-      var B=b.def, g=b.agg, n=g?g.n:0, row=el('div','db2-brow'); row.style.gridTemplateColumns=cols;
-      var yt, yc, yw, ys='14px', tip='';
-      if(n<HARD_GATE){
-        tip=fmtInt(n)+' matches, too few for a yield';
-        // DESIGN GAP: the export's "n=N — too few matches for a yield" wraps to five lines in the 66-70px yield
-        // column and stretches every row of both cards; the cell is the Player card's dash, the words on hover.
-        yt='\u2014'; yc='var(--text-label)'; yw=500;
-        if(!isPl) tip='n='+fmtInt(n)+' \u2014 too few matches for a yield';
-      } else {
-        yt=fmtPct(g.yield);
-        var sc=yt.charAt(0)==='+'?'var(--pos)':'var(--neg)';
-        if(n<SOFT_GATE){ yc=isPl?sc:'var(--text-label)'; yw=500; } else { yc=sc; yw=700; }
-      }
-      var h='<span class="db2-bband">'+esc(B[0])+'</span><span class="db2-bft">'+B[1]+'</span><span class="db2-bft">'+B[2]+'</span>'+
-        '<span class="db2-bq">'+(g?fmtP(g.median):'\u2014')+'</span><span class="db2-bq">'+fmtInt(n)+'</span>'+
-        '<span class="db2-by" style="font-size:'+ys+';font-weight:'+yw+';color:'+yc+'"'+(tip?' title="'+esc(tip)+'"':'')+'>'+yt+'</span>';
+    res.bands.forEach(function(b, bi){
+      var B=b.def, g=b.agg, n=g?g.n:0, row=el('div','db3-brow'); row.style.gridTemplateColumns=cols;
+      if(n<HARD_GATE) row.title=fmtInt(n)+' matches, too few for a yield';
+      var h='<span class="db3-odds"><span class="o">'+db3OddsHtml(B)+'</span><span class="n">'+esc(B[0])+'</span></span>'+db3YieldLine(g)+'<span class="db3-bm">'+fmtInt(n)+'</span>';
       if(withBase){
-        var tb = baseKnown ? (opts.baseFor ? opts.baseFor(B) : db2TourBand(sideKey, B)) : null;
-        var tv = tb ? fmtPct(tb.yield) : '\u2014';
-        var tc = (isPl && tb && baseKnown) ? (tv.charAt(0)==='+'?'var(--pos)':'var(--neg)') : 'var(--text-label)';
-        h+='<span class="db2-bt" style="color:'+tc+'">'+tv+'</span>';
+        var tb = baseKnown ? (opts.baseFor ? opts.baseFor(B) : db2TourBand(sideKey, B)) : null, tv = tb ? fmtPct(tb.yield) : '\u2014';
+        var tc = tb ? (tv.charAt(0)==='+'?'var(--db2-green)':tv.charAt(0)==='\u2212'?'var(--db2-red)':'var(--db2-muted)') : 'var(--db2-muted)';
+        h+='<span class="db3-bt" style="color:'+tc+'"'+(tb?' title="Tour, same filters: n='+fmtInt(tb.n)+'"':'')+'>'+tv+'</span>';
       }
-      row.innerHTML=h; card.appendChild(row);
+      row.innerHTML=h+'<span class="db3-chev">\u203a</span>';
+      row.onclick=function(){ db3BandBox({ sideKey:sideKey, bi:bi, res:res, title:title, hint:hint, mode:mode, player:opts.player, fade:opts.fade, evName:opts.evName, more:0 }, card); };
+      card.appendChild(row);
     });
     if(withBase && !baseKnown) card.appendChild(el('div','db2-bnote','Tour baselines are not computed for these filters.'));
     return card;
+  }
+  // ---- the band box (CHANGES §3) ----
+  var DB3_RD={'1st Round':'R1','2nd Round':'R2','3rd Round':'R3','4th Round':'R4','Quarterfinals':'QF','Semifinals':'SF','The Final':'F','Round Robin':'RR'};
+  var DB3_MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function db3Date(d){ return String(d%100).padStart(2,'0')+' '+DB3_MON[Math.floor(d/100)%100-1]+' '+Math.floor(d/10000); }
+  var DB3_RIX=null, DB3_RIXOF=null;
+  function db3RowIx(r){ if(DB3_RIXOF!==DATA.rows){ DB3_RIX=new Map(); DATA.rows.forEach(function(x,i){ DB3_RIX.set(x,i); }); DB3_RIXOF=DATA.rows; } return DB3_RIX.get(r); }
+  // one band value -> the match as the box lists it: { d, backed, opp, ev, rd, p, won }
+  function db3MatchOf(v, ctx){
+    if(v.r){
+      var r=v.r, nm=NAMES && NAMES.names[db3RowIx(r)], fn=nm?(r[7]?nm[0]:nm[1]):null, dn=nm?(r[7]?nm[1]:nm[0]):null;
+      return { d:r[0], backed:ctx.sideKey==='fav'?fn:dn, opp:ctx.sideKey==='fav'?dn:fn, ev:tournLabel(r[4]), rd:M.rounds[r[3]], p:v.p, won:!!v.w };
+    }
+    var f=!!ctx.fade;   // a Player rec: his price p, the opponent's op; fading backs the opponent
+    return { d:v.d, backed:f?v.o:ctx.player, opp:f?ctx.player:v.o, ev:tournLabel(v.tour), rd:M.rounds[v.rnd], p:f?v.op:v.p, won:f?!v.w:!!v.w };
+  }
+  function db3BandBox(ctx, from){
+    var root=(from && from.closest && from.closest('[data-db-root]')) || document.querySelector('[data-db-root]');
+    var old=root.querySelector(':scope > .db3-ov'); if(old) old.remove();
+    if(!NAMES && !ctx.player){ loadNames().then(function(){ db3BandBox(ctx, from); }); }
+    var b=ctx.res.bands[ctx.bi], B=b.def, g=b.agg, n=g?g.n:0, ok=n>=HARD_GATE;
+    var ms=(b.vs||[]).map(function(v){ return db3MatchOf(v, ctx); }).sort(function(x,y){ return y.d-x.d; });
+    var wins=ms.filter(function(m){ return m.won; }).length, wr=n?wins/n:0, imp=g&&g.median?1/g.median:null;
+    var ranked=ctx.res.bands.map(function(x,i){ return { i:i, y:x.agg?x.agg.yield:0, n:x.agg?x.agg.n:0 }; }).filter(function(x){ return x.n>=HARD_GATE; }).sort(function(p,q){ return q.y-p.y; });
+    var rk=ranked.findIndex(function(x){ return x.i===ctx.bi; })+1, low=ctx.title.toLowerCase();
+    function sg(v,d,u){ return (v>0?'+':v<0?'\u2212':'')+Math.abs(v).toFixed(d)+u; }
+    var tiles=[
+      ['Yield', ok?fmtPct(g.yield):'\u2014', ok?(g.yield>0?'var(--db2-green)':g.yield<0?'var(--db2-red)':'var(--db2-ink)'):'var(--db2-muted)', ok?'Flat 1% stake on every match':'Too few matches for a yield'],
+      ['Win rate', ok?(wr*100).toFixed(1)+'%':'\u2014', ok?'var(--db2-ink)':'var(--db2-muted)', ok?fmtInt(wins)+' won \u00b7 '+fmtInt(n-wins)+' lost':fmtInt(n)+' matches'],
+      ['Market expected', imp!=null?(imp*100).toFixed(1)+'%':'\u2014', 'var(--db2-ink)', ok&&imp!=null?'Won '+sg((wr-imp)*100,1,' pts')+' against the price':'From the median price '+(g?fmtP(g.median):'\u2014')],
+      ['Rank', rk?rk+' of '+ranked.length:'\u2014', 'var(--db2-ink)', !rk?'Not ranked under '+HARD_GATE+' matches':rk===1?'Best '+low+' band':rk===ranked.length?'Worst '+low+' band':'By yield, among '+low+' bands']
+    ];
+    var shown=Math.min(ms.length, 12+ctx.more*12), COLS='76px minmax(0,1.5fr) minmax(0,1fr) 36px 104px 50px 62px 62px';
+    var ov=el('div','db3-ov'), bx=el('div','db3-box');
+    ov.innerHTML='<div class="bg"></div>';
+    bx.innerHTML='<div class="db3-boxh"><span class="t"><span><span class="o">'+db3OddsHtml(B)+'</span><span class="nm">'+esc(B[0])+'</span></span>'+
+      '<span class="sc">'+esc((ctx.evName?ctx.evName+' \u00b7 ':'')+ctx.title+' \u00b7 '+ctx.hint.toLowerCase()+' \u00b7 '+fmtInt(n)+' matches \u00b7 median price '+(g?fmtP(g.median):'\u2014'))+'</span></span>'+
+      '<button type="button" class="db3-close" title="Close"></button></div>'+
+      '<div class="db3-tiles">'+tiles.map(function(t){ return '<div class="db3-tile"><span class="l">'+t[0]+'</span><span class="v" style="color:'+t[2]+'">'+t[1]+'</span><span class="s">'+esc(t[3])+'</span></div>'; }).join('')+'</div>'+
+      '<div class="db3-list"><div><div class="db3-lh"><b>Matches in this band</b><span>Showing '+fmtInt(shown)+' of '+fmtInt(n)+' \u00b7 newest first</span></div>'+
+      '<div class="db3-lr hd" style="grid-template-columns:'+COLS+'"><span>Date</span><span>Match</span><span>Event</span><span>Rd</span><span>Score</span><span style="text-align:right">Price</span><span style="text-align:right">Result</span><span style="text-align:right">Return</span></div>'+
+      ms.slice(0,shown).map(function(m){ var c=m.won?'var(--db2-green)':'var(--db2-red)';
+        return '<div class="db3-lr" style="grid-template-columns:'+COLS+'"><span class="d">'+db3Date(m.d)+'</span><span class="m"><b>'+esc(m.backed||'\u2014')+'</b><i> v </i><span>'+esc(m.opp||'\u2014')+'</span></span>'+
+          '<span class="ev">'+esc(m.ev||'\u2014')+'</span><span class="rd">'+esc(DB3_RD[m.rd]||m.rd||'\u2014')+'</span><span class="sc" title="No set score in the Database archive">\u2014</span>'+
+          '<span class="pr">'+fmtP(m.p)+'</span><span class="rp '+(m.won?'w':'l')+'">'+(m.won?'Won':'Lost')+'</span><span class="rt" style="color:'+c+'">'+(m.won?sg(m.p-1,2,'%'):'\u22121.00%')+'</span></div>'; }).join('')+
+      (shown<ms.length?'<div class="db3-more">Show 12 more matches</div>':'')+'</div></div>';
+    ov.appendChild(bx); root.appendChild(ov);
+    function close(){ ov.remove(); document.removeEventListener('keydown', esc1); }
+    function esc1(e){ if(e.key==='Escape') close(); }
+    document.addEventListener('keydown', esc1);
+    ov.querySelector('.bg').onclick=close; bx.querySelector('.db3-close').onclick=close;
+    var mo=bx.querySelector('.db3-more'); if(mo) mo.onclick=function(){ close(); ctx.more++; db3BandBox(ctx, from); var o2=root.querySelector(':scope > .db3-ov'); if(o2) o2.scrollTop=ov.scrollTop; };
   }
 
   // ---------- cumulative profit chart ----------
@@ -33701,267 +33907,99 @@ window.DatabaseTab = (function(){
   // C3 date basis). The season ticks and the book seam sit on that same basis, which
   // is what puts the seam ON the tick it marks rather than beside it — full note
   // inside the function.
-  function renderCurveCard(rows, isTourn){
-    var card=el('div','db-card');
-    var head=el('div','db-charthead');
-    // TEN-399 item 4: legend swatches Ring blue (Favourites) · white 45% (Underdogs).
-    // Database v2 (design L1063-1117): "Cumulative return, flat 1% stake" + the 22px "?" (its hover is the design's words).
-    // One unit = 1% of bankroll, so the units ARE the per cent of bankroll: the figures are unchanged, only the words.
-    head.innerHTML='<span class="db2-ctitle"><h3>Cumulative return, flat 1% stake</h3><span class="db2-q" title="Every match is settled at the Pinnacle closing price, from '+(M.dateRange?String(M.dateRange[0]).slice(0,4):'2010')+' to '+(M.dateRange?String(M.dateRange[1]).slice(0,4):'2026')+'. One unit is 1% of the bankroll, staked flat on every match. Below zero is a loss.">?</span></span>'+dbLegend([['Favourites',COL_FAV],['Underdogs',COL_DOG]]);
-    card.appendChild(head);
-    card.appendChild(el('div','db-subline','Return as % of bankroll at a flat 1% stake per match, cumulative \u2014 below zero is a loss.'));
 
-    var ordered=rows.slice().sort(function(a,b){ return a[0]-b[0]; });
-    // x is MATCH INDEX, not calendar date — founder ruling TEN-196 2026-09-13 item 2.
-    //
-    // The charts read as "a child's drawing" on the Tournaments tab, and the cause
-    // was measured before anything was changed: the Australian Open series carries
-    // 2,130 real points (one per match), drawn as a plain polyline with no step
-    // function and no smoothing anywhere. But a one-week-a-year event on a CALENDAR
-    // axis puts all 2,130 of them into 58 of the viewBox's 1,000 columns and leaves
-    // 942 empty — median across all 169 chartable events, 21 occupied columns and a
-    // 200-column longest gap.
-    //
-    // AND THAT STARVED THE DOWN-SAMPLER, which is the half that made it look drawn
-    // by hand. `poly()` buckets by x, so with every point crammed into 58 columns
-    // only ~21 of its 119 buckets ever received one: the deployed page PAINTED 42
-    // vertices out of 2,130, with a 65-column gap in the line. On match index the
-    // same curve paints 240 across 235 columns, widest gap 10.8. (An earlier report
-    // of mine said the sampler was not involved. It was measuring the median event,
-    // which is under budget and drawn point-for-point; the Australian Open is not.)
-    //
-    // Match index draws the SAME points in the SAME order and invents nothing — it
-    // only removes the dead air. It also FIXES conflict C3 rather than regressing
-    // it: with season ticks at match-index positions the book seam lands exactly on
-    // the season tick it marks — MEASURED 0.0000pp against 0.0496pp on the calendar
-    // axis, because the first Bet365 row and the first 2026 row are today the same
-    // row (both index 40,002).
-    //
-    // That is a MEASUREMENT, not a structural guarantee, and the difference matters.
-    // The seam keys on r[8], which `build-database-yield.js` assigns from the CSV's
-    // FILENAME season; the tick keys on yr(r[0]), the DATE year. The archive already
-    // holds 101 rows where those two disagree (40 in 2014.csv dated 2013, 27 in
-    // 2025.csv dated 2024, ...). None in 2026, so they coincide today. The probe
-    // asserts the painted gap directly, so a future divergence fails loudly rather
-    // than drifting in silence.
-    //
-    // The honest cost, and why the caption had to change: the axis is no longer
-    // linear in time. A busier season takes more width and an idle stretch takes
-    // none. It is captioned "Match index (chronological)" — the export's own wording
-    // on its other profit chart — and must never be captioned "Season" again while
-    // it is an index axis.
-    //
-    // ===== FOUNDER RULING TEN-243, gate `2ebfa608` (2026-09-19): `season-axis`. =====
-    // THE ROUND-3 MATCH-INDEX RULING ABOVE IS OVERTURNED. x is a CALENDAR position
-    // again, per the design handoff's CHARTS.md §2, and the caption is "Season". The
-    // whole comment above is kept as the measured record of what the calendar axis
-    // costs — it is history, not the live rule.
-    //
-    // Two things carried over from that record so the known defect does not come back
-    // with the axis:
-    //   1. `sampleKeep` now buckets by INDEX, so the calendar axis no longer starves
-    //      the down-sampler. That starvation — not the dead air — is what painted 42
-    //      of the Australian Open's 2,130 vertices. See the note there.
-    //   2. The seam keys on `r[8]` (book, assigned from the CSV FILENAME season) while
-    //      the ticks key on `yr(r[0])` (the DATE year), and the archive holds 101 rows
-    //      where those disagree. On a calendar axis the seam sits at the first
-    //      Bet365-priced row's own date, so it no longer coincides with the 2026 tick
-    //      by construction. That is expected, not a bug: the seam marks where the BOOK
-    //      changes, which is a different fact from where the season starts.
-    //
-    // Dead air is the remaining honest cost of a calendar axis, and it is the reason
-    // the founder was shown this choice: a one-week-a-year event occupies one week of
-    // the width. That is now a true statement about time rather than a drawing defect.
-    var favV=[], dogV=[], xs=[], cf=0, cd=0;
-    // The domain starts at 1 JANUARY of the first season in view, not at the first
-    // match's own date. `calendarTicks` drops any tick outside [0,1] rather than
-    // clamping it (a clamped tick is a label pointing at a date it does not mark), so
-    // anchoring on the first match would silently lose the opening season's label —
-    // its 1 Jan would sit at a negative x. Anchoring on 1 Jan puts that tick at exactly
-    // x=0 and costs only a few days of empty lead-in, which on a calendar axis is a
-    // true statement about time.
-    // ===== FOUNDER RULING 2026-09-20, gate `33f71aab`: MATCH INDEX. =====
-    // This supersedes the TEN-243 `season-axis` ruling recorded below. The two
-    // of us had each been reading a DIFFERENT CHARTS.md: the ZIP bundle
-    // (.ten243-design/design_handoff_database/CHARTS.md, "Geometry helpers")
-    // specifies `x = (x0 + (1 − x0) · i/(n−1)) × 1000` — evenly spaced by i —
-    // while design-export/database-handoff-4/CHARTS.md §10 "Retired — do not
-    // build" retires the match-index panel outright. The ZIP is the
-    // authoritative bundle, so index wins and the calendar axis was the mistake.
-    //
-    // Why it matters on real data: the Australian Open is ~42 matches inside one
-    // January fortnight. On a calendar axis each season is a near-vertical burst
-    // with eleven empty months after it — the staircase the founder saw. On an
-    // index axis match 41 sits one step after match 40 whether they were a day
-    // or a year apart, and the curve reads as a line at any match count.
-    //
-    // x0 is kept as the spec's offset for a series that STARTS after the domain
-    // does; both series here share one row set and therefore one domain, so it
-    // is 0 today. It exists so a late series stays late rather than being
-    // stretched across the full width.
-    var x0=0, nPts=ordered.length;
-    // Database v2: x is the real match date (design "Season" axis, dated). Domain = 1 Jan of the first year shown to the
-    // last match shown; season ticks sit on 1 January (db2SeasonTicks).
-    var _t0=Date.UTC(yr(ordered[0][0]),0,1), _t1=db2Ms(ordered[nPts-1][0]); if(_t1<=_t0) _t1=_t0+864e5;
-    var _xc={}; function db2DateX(d){ var x=_xc[d]; if(x===undefined) x=_xc[d]=(db2Ms(d)-_t0)/(_t1-_t0); return x; }   // one Date.UTC per match day
-    for(var i=0;i<nPts;i++){
-      var r=ordered[i];
-      cf += r[7] ? (r[5]-1) : -1;
-      cd += r[7] ? -1 : (r[6]-1);
-      favV.push(cf); dogV.push(cd); xs.push(db2DateX(r[0]));
-      // TEN-399 item 1 (override): no book seam. One join per match (Pinnacle closing, else
-      // Bet365) in every season, so there is no book change to mark on the curve.
+  // ===== Database v3 (export 2026-11-18, CHANGES §4, LOCKED): ONE cumulative-return chart for Tour, Tournament, Player and
+  // the pair compare. x = match number (one equal step per match, in the order played), never the date; y in % of the
+  // bankroll at a flat 1% stake (1 unit = 1%); seasons a segment bar above the plot (none on the compare); the zero line
+  // the only line behind the curves; under 30 settled matches on every line, one sentence instead of the chart.
+  // series: [{ label, color, dash, w, idx:[match index per point] (optional), vals:[cumulative %], n:settled matches }]
+  // o: { cmp, N (axis length), seasons:[{y, i0, i1}], scope, legend, help, sw (switch element) }
+  function db3EndLab(v){ var a=Math.abs(v); return (v>0?'+':v<0?'\u2212':'')+(a<10 ? a.toFixed(1) : fmtInt(Math.round(a)))+'%'; }
+  function db3Chart(series, o){
+    var card=el('div','db3-card'), head=el('div','db3-head');
+    head.innerHTML='<span class="db3-tt"><b>Cumulative return</b><span>'+esc(o.scope)+'</span></span>';
+    if(o.sw) head.appendChild(o.sw);
+    else head.insertAdjacentHTML('beforeend','<span class="db3-leg">'+series.map(function(s){ return '<i><u style="background:'+s.color+'"></u>'+esc(s.label)+'</i>'; }).join('')+
+      '<span class="db2-q" title="'+esc(o.help||'')+'">?</span></span>');
+    card.appendChild(head);
+    var live=series.filter(function(s){ return s.vals.length; });
+    if(!live.length || live.every(function(s){ return s.n<HARD_GATE; })){
+      card.appendChild(el('div','db3-few','Too few matches for a return line. Widen the filters.'));
+      return card;
     }
-    var rawHi=Math.max.apply(null,[Math.max.apply(null,favV), Math.max.apply(null,dogV)]);
-    var rawLo=Math.min.apply(null,[Math.min.apply(null,favV), Math.min.apply(null,dogV)]);
-    var sp=rawHi-rawLo;
-    // §8: "Step is chosen so the span carries at most ten gridlines." Choosing the
-    // step from the RAW span is not enough, because hi and lo are then rounded
-    // OUTWARD by `rnd` and the drawn span grows: clean-context review measured
-    // Brisbane International at 12 labels (+30u … -80u) and the Australian Open at
-    // 11, on 13 Tour/Tournament views in all. So the ladder is walked and each
-    // candidate is judged on the span it actually produces, not the one it started
-    // from. The first candidate that fits wins, so nothing widens unnecessarily.
-    //
-    // Export rule inside the loop, kept literally: only a Tournaments chart that
-    // spends time in profit gets a full labelled positive band. Measured: the Tour
-    // curves peak at +26.3u against a 2,316u span, so a data-driven "rawHi>0" test
-    // would hand the Tour chart 250u of empty headroom for a 26u blip.
-    // ===== FOUNDER RULING TEN-196, gate `b6f04a43` (2026-09-14): `keep-as-is`. =====
-    // THIS PAGE KEEPS TWO LADDERS. `CHARTS.md` §8 — in this repo at
-    // design-export/database-handoff-4/CHARTS.md:221-222 — asks for ONE shared ladder
-    // `[10…2500]` across all five charts. THAT WAS BUILT, PUT TO THE FOUNDER, AND
-    // REJECTED. Do not conform this to §8 as a spec fix; that is the exact revert the
-    // ruling exists to stop. §8 is one file against three: README.md:273 and
-    // Database.dc.html:935 specify this ladder `else 5000`, and README.md:343 /
-    // Database.dc.html:821 give the Players panels a deliberately different one.
-    // The cost that decided it: §8 takes 699 of 1,129 player panels to an axis whose
-    // only label is `0`. Full rule + measurements in CLAUDE.md; locked by
-    // .probe-ten196h/verify-r8.mjs (S1-S7). Same marker sits above PSTEPS.
-    var STEPS=[10,25,50,100,250,500,1000,2500,5000];
-    var step, rnd, hi, lo;
-    for(var si=0; si<STEPS.length; si++){
-      step=STEPS[si];
-      if(si<STEPS.length-1 && sp/step>10) continue;   // can't fit even before rounding
-      rnd=Math.max(10, step/10);
-      hi = (isTourn && rawHi>0) ? Math.ceil(rawHi/step)*step : Math.max(rnd, Math.ceil(rawHi/rnd)*rnd);
-      lo = Math.floor(rawLo/rnd)*rnd;
-      if(hi===lo){ hi=lo+rnd; }
-      // The zero line must be INSIDE the plot. §5.1 sizes the loss tint as
-      // `viewBoxHeight - zeroY`, and §4 sets overflow:visible, so a zero line
-      // off-scale gives a rect taller than the plot that spills out of the card —
-      // the exact symptom §5.1 says it prevents. On THIS path `hi` is structurally
-      // positive (both branches floor at `rnd >= 10`), so only the `lo` guard can
-      // ever fire here; the pair is kept together because the Players path runs the
-      // same two lines and there they are load-bearing (204 of 1,129 panels).
-      if(lo>0) lo=0;
-      if(hi===lo){ hi=lo+rnd; }
-      if(Math.floor(hi/step) - Math.ceil(lo/step) + 1 <= 10) break;
-    }
-    var H=300;
+    var N=Math.max(2, o.N||0), H=300, PH=360, all=[0];
+    live.forEach(function(s){ all=all.concat(s.vals); });
+    var rawHi=Math.max.apply(null,all), rawLo=Math.min.apply(null,all), span=Math.max(1e-9, rawHi-rawLo);
+    var step=[0.5,1,2,5,10,25,50,100,250,500,1000,2500].filter(function(v){ return span/v<=8; })[0] || 5000;
+    var hi=Math.ceil(rawHi/step)*step, lo=Math.floor(rawLo/step)*step; if(hi===lo) hi=lo+step;
     function Y(v){ return ((hi-v)/(hi-lo))*H; }
     var zeroY=Y(0);
-
-    var gy=[], v;
-    for(v=Math.floor(hi/step)*step; v>0; v-=step) gy.push({y:Y(v), label:'+'+fmtInt(v)+'u'});
-    for(v=0; v>=lo; v-=step) gy.push({y:Y(v), label: v===0?'0':fmtU(v)});
-
-    // TEN-243 `season-axis`: calendar ticks off the same d0/span the curve is drawn
-    // on, so a label sits at that season's actual 1 January. CHARTS.md §2's pitch rule
-    // — "4 years when the span is over 12, 2 years over 6, otherwise 1" — is expressed
-    // as the ladder's starting rung, and `calendarTicks` keeps walking it until it has
-    // at least three labels, so a two-season event still gets both.
-    // Season labels sit at the match index where that season STARTS, not at a
-    // uniform slice of the width. The spec's own year-filter maths assumes a
-    // linear year->index map (`a = round((y0 − 2010)/16 × (n − 1))`), which is
-    // true of the prototype's synthetic uniform data and false of ours — matches
-    // cluster in tournament weeks — so the label is placed from the real rows.
-    var spanYears=(yr(ordered[nPts-1][0]) - yr(ordered[0][0])) + 1;
-    var tickSteps = spanYears>12 ? [4,2,1] : (spanYears>6 ? [2,1] : [1]);
-    var ticks=db2SeasonTicks(yr(ordered[0][0]), yr(ordered[nPts-1][0]), tickSteps[0], _t0, _t1);
-
-    var plot=el('div','db-plot');
-    var yax=el('div','db-yaxis');
-    gy.forEach(function(g){ var d=el('div',null,g.label); d.style.top=(g.y/H*100).toFixed(2)+'%'; yax.appendChild(d); });
-    plot.appendChild(yax);
-
-    var area=el('div','db-plotarea');
-    var NV = isTourn ? N_TOURN : N_TOUR;   // the export's own per-chart vertex budget
-    // Layer order, bottom to top: dotted horizontal guides, break-even rule,
-    // lines (underdogs then favourites on top).
-    var s='<svg viewBox="0 0 1000 '+H+'" preserveAspectRatio="none" role="img" aria-label="Cumulative profit by match index, ticks mark season starts">';
-    // README §5.8 "Dotted guides" (founder R6.3, TEN-376): no area fill, no loss wash, no vertical gridlines —
-    // dotted 12% horizontal guides only and the 32% break-even rule.
-    gy.forEach(function(g){ s+=dbGuide(g.y); });
-    s+=dbBreakEven(zeroY);
-    s+=dbSeries(poly(xs,dogV,Y,NV), COL_DOG, false);
-    s+=dbSeries(poly(xs,favV,Y,NV), COL_FAV, true);
-    s+='</svg>';
-    area.innerHTML=s;
-
-    // §6 — HTML overlays, positioned against the PLOT div (not a padded parent).
-    var be=el('div','db-ovl db-belab','Break even');
-    be.style.top=(zeroY/H*100).toFixed(2)+'%';
-    area.appendChild(be);
-
-    // The end value is the LAST PAINTED vertex, which `poly` pins to the true last
-    // point under every smoothing mode — so the dot, the plate and the line always
-    // agree. §7: the plate may be nudged to avoid a collision; THE DOT NEVER MOVES.
-    var ends=[
-      { cls:'fav', name:'Favourites', col:COL_FAV, v:favV[favV.length-1] },
-      { cls:'dog', name:'Underdogs',  col:COL_DOG, v:dogV[dogV.length-1] }
-    ];
-    ends.forEach(function(e){
-      e.pct = Y(e.v)/H*100;
-      area.appendChild(dbEndDot(e.pct, e.col));
-    });
-    plot.appendChild(area);
-
-    // §7 collision handling. A plate is ~54px; on the 340px plot (TEN-399) that is 15.88% of the height.
-    // Measured across 207 views, 39 collide — the tightest is Open Sud de France at
-    // 0.42% (fav -15.7u, dog -15.9u), so this branch is exercised by real data and the
-    // probe asserts it THERE, not on a chart whose ends are far apart.
-    var endcol=el('div','db-endcol');
-    var MINGAP=54/DB_PLOT_H*100, tops=[ends[0].pct, ends[1].pct];
-    if(Math.abs(tops[0]-tops[1]) < MINGAP){
-      var mid=(tops[0]+tops[1])/2, half=MINGAP/2;
-      var hiFirst = tops[0] <= tops[1];
-      tops[0] = hiFirst ? mid-half : mid+half;
-      tops[1] = hiFirst ? mid+half : mid-half;
+    if(o.seasons && !o.cmp){
+      var sb=el('div','db3-seas'), ss=o.seasons, plotW=Math.max(300, Math.min(1360, (document.documentElement.clientWidth||1440)-92-80)-52-104-24-52);
+      var thin = ss.length>=13 && plotW<1000 ? 2 : 1;
+      ss.forEach(function(q,k){
+        var f0=q.i0/N, f1=q.i1/N, last=k===ss.length-1;
+        var u=el('u'); u.style.left=(f0*100).toFixed(2)+'%'; u.style.width='calc('+((f1-f0)*100).toFixed(2)+'% - '+(last?0:3)+'px)'; sb.appendChild(u);
+        // a year label needs ~34px of its own segment, or it would run into the next one
+        if(k%thin===0 && (ss.length===1 || (f1-f0)*plotW>=34)){ var t=el('span',null,String(q.y)); t.style.left=((f0+f1)/2*100).toFixed(2)+'%'; sb.appendChild(t); }
+      });
+      card.appendChild(sb);
     }
-    // THE CLAMP IS UNCONDITIONAL, and that is a deliberate departure from §7's wording.
-    // §7 describes 4%..96% as the last step of the collision path, so a first reading
-    // puts it inside the `if`. Two ends that are far apart but one of which sits near
-    // an edge then get no clamp at all, and a 54px plate centred at 98.45% runs from
-    // 368px to 419.5px in a 400px column — past the bottom of the plot and into the
-    // season-label row, which starts at +410px. Clean-context review measured it on the
-    // built page: Shanghai Masters overlaps the x-axis labels by ~9.5px, Hall of Fame
-    // Championships by ~10.8px, and 12 of 169 tournaments are outside 4..96 without it.
-    // TEN-399: on the 340px plot the bottom bound is derived, not typed - a ~50px plate centred
-    // on it must end above the season-label row (+10px under the plot).
-    var CLAMP_HI=(DB_PLOT_H+10-27)/DB_PLOT_H*100;
-    tops[0]=Math.max(4,Math.min(CLAMP_HI,tops[0]));
-    tops[1]=Math.max(4,Math.min(CLAMP_HI,tops[1]));
-    ends.forEach(function(e,i){
-      var pl=el('div','db-plate '+e.cls,'<b>'+e.name+'</b><span>'+fmtU(e.v)+'</span>');
-      pl.style.top=tops[i].toFixed(2)+'%';
-      endcol.appendChild(pl);
+    var row=el('div','db3-row'+(o.cmp?' cmp':'')), yax=el('div','db3-y'), plot=el('div','db3-plot'), gut=el('div','db3-gut');
+    for(var v=hi; v>=lo-1e-9; v-=step){
+      var lab=Math.abs(v)<1e-9 ? '0' : (v>0?'+':'\u2212')+(step<1 ? Math.abs(v).toFixed(1) : fmtInt(Math.abs(Math.round(v))))+'%';
+      var g=el('span',null,lab); g.style.top=(Y(v)/H*100).toFixed(2)+'%'; yax.appendChild(g);
+    }
+    function X(s, k){ var i=s.idx ? s.idx[k] : k; return N>1 ? i/(N-1) : 0; }
+    var svg='<svg viewBox="0 0 1000 '+H+'" preserveAspectRatio="none" aria-hidden="true">'+
+      '<line x1="0" y1="'+zeroY.toFixed(1)+'" x2="1000" y2="'+zeroY.toFixed(1)+'" stroke="var(--db2-h32)" stroke-width="1.25" vector-effect="non-scaling-stroke"/>';
+    live.slice().reverse().forEach(function(s){
+      var xs=s.vals.map(function(_,k){ return X(s,k); });
+      svg+='<polyline points="'+poly(xs, s.vals, Y, N_TOURN)+'" fill="none" stroke="'+s.color+'"'+(s.dash?' stroke-dasharray="'+s.dash+'"':'')+
+        ' stroke-width="'+(s.w||2)+'" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>';
     });
-    plot.appendChild(endcol);
-    card.appendChild(plot);
-
-    var xax=el('div','db-xaxis');
-    ticks.forEach(function(t){ var d=el('div',null,t.label); d.style.left=(t.x*100).toFixed(2)+'%'; xax.appendChild(d); });
-    card.appendChild(xax);
-    // The ZIP bundle's CHARTS.md pairs an INDEX x with the bare eyebrow "SEASON".
-    // Both halves are kept, but not the bare word: the tick labels really are
-    // seasons and sit at that season's own first match, while the SPACING is
-    // match count, not time. A busy season takes more width than a quiet one.
-    // Captioning that "Season" alone invites the reader to measure durations off
-    // an axis that does not carry them — the objection recorded when the axis
-    // last changed. Naming both is the honest form and costs nothing.
-    card.appendChild(el('div','db-xcap','<span class="db-eyebrow">Season</span>'));
+    plot.innerHTML=svg+'</svg>';
+    // Break even: right end, above the zero line with 30px+ of plot over it and no curve there, else under, else hidden
+    var band=(hi-lo)*30/PH, tail=[];
+    live.forEach(function(s){ s.vals.forEach(function(v,k){ if(X(s,k)>0.78) tail.push(v); }); });
+    var up=tail.some(function(v){ return v>=0 && v<band; }), dn=tail.some(function(v){ return v<=0 && v>-band; });
+    var beSide = !up && zeroY/H*PH>=30 ? 'above' : !dn && (H-zeroY)/H*PH>=30 ? 'below' : '';
+    if(beSide){ var be=el('span','db3-be','Break even'); be.style.top=(zeroY/H*100).toFixed(2)+'%'; be.style.transform=beSide==='below'?'translateY(0)':'translateY(-100%)'; plot.appendChild(be); }
+    var plates=live.map(function(s){ var end=s.vals[s.vals.length-1], dot=el('span','db3-dot');
+      dot.style.left=(X(s, s.vals.length-1)*100).toFixed(2)+'%'; dot.style.top=(Y(end)/H*100).toFixed(2)+'%'; dot.style.background=s.color; plot.appendChild(dot);
+      return { s:s, end:end, p:Y(end)/H*100 }; }).sort(function(a,b){ return a.p-b.p; });
+    var gap=(o.cmp?36:54)/PH*100;
+    for(var k=1;k<plates.length;k++) if(plates[k].p-plates[k-1].p<gap) plates[k].p=plates[k-1].p+gap;
+    plates.forEach(function(q){
+      var col=q.end>0?'var(--db2-green)':q.end<0?'var(--db2-red)':'var(--db2-muted)', pl=el('div','db3-plate');
+      pl.innerHTML = o.cmp ? '<u style="background:'+(q.s.swatch||q.s.color)+'"></u><b>'+esc(q.s.label)+'</b><span style="color:'+col+'">'+db3EndLab(q.end)+'</span>'
+                           : '<b style="color:'+q.s.color+'">'+esc(q.s.label)+'</b><span style="color:'+col+'">'+db3EndLab(q.end)+'</span>';
+      pl.style.top=Math.min(o.cmp?93:96, Math.max(o.cmp?7:4, q.p)).toFixed(2)+'%'; gut.appendChild(pl);
+    });
+    row.appendChild(yax); row.appendChild(plot); row.appendChild(gut); card.appendChild(row);
+    var xt=el('div','db3-x'+(o.cmp?' cmp':''));
+    (N<5 ? [0,1] : [0,0.25,0.5,0.75,1]).forEach(function(f){
+      var t=el('span',null, f===0 ? 'Match 1' : fmtInt(Math.max(1, Math.round(N*f)))+(f===1?' matches':''));
+      t.style.left=(f*100)+'%'; t.style.transform='translateX('+(f===0?'0':f===1?'-100%':'-50%')+')'; xt.appendChild(t);
+    });
+    card.appendChild(xt);
+    card.appendChild(el('div','db3-cap'+(o.cmp?' cmp':''),'Matches, in the order played'));
     return card;
+  }
+  // Seasons over a date-ordered list: [{y, i0, i1}] (i1 exclusive), one per season present
+  function db3Seasons(dates){
+    var out=[]; dates.forEach(function(d,i){ var y=Math.floor(d/10000), q=out[out.length-1]; if(!q || q.y!==y) out.push({y:y, i0:i, i1:i+1}); else q.i1=i+1; });
+    return out;
+  }
+  var DB3_HELP='Every match is settled at the Pinnacle closing price. 1% of the bankroll is staked flat on every match and the returns are added up; below zero is a loss. The line moves one equal step per match, in the order played, and the years mark where each season starts.';
+
+  function renderCurveCard(rows, isTourn){
+    // Database v3 (CHANGES §4): x = match number, sorted by date with a stable tie-break (Array.sort is stable)
+    var ordered=rows.slice().sort(function(a,b){ return a[0]-b[0]; }), favV=[], dogV=[], cf=0, cd=0;
+    ordered.forEach(function(r){ cf += r[7] ? (r[5]-1) : -1; cd += r[7] ? -1 : (r[6]-1); favV.push(cf); dogV.push(cd); });
+    var n=ordered.length;
+    return db3Chart([{ label:'Favourites', color:'var(--db2-blue)', w:2.4, vals:favV, n:n }, { label:'Underdogs', color:'var(--db2-ink-2)', w:2, vals:dogV, n:n }],
+      { N:n, seasons:db3Seasons(ordered.map(function(r){ return r[0]; })), scope:'Flat 1% stake on every match, as % of bankroll', help:DB3_HELP });
   }
   function db2Ms(d){ return Date.UTC(Math.floor(d/10000), Math.floor(d/100)%100-1, d%100); }
   function db2SeasonTicks(y0, y1, step, t0, t1){
@@ -34175,7 +34213,7 @@ window.DatabaseTab = (function(){
     var role=recs.filter(function(v){ return sideKey==='fav' ? v.fav : !v.fav; });
     var mk=function(rs){ if(!rs.length) return null; var a=aggRecs(rs, fading); return { n:a.n, yield:a.yield, median:a.median }; };
     return { all:mk(role), recs:role, bands:DB2_BANDS[sideKey].map(function(B){
-      return { def:B, agg:mk(role.filter(function(v){ return db2InBand(B, v.p); })) }; }) };
+      var rs=role.filter(function(v){ return db2InBand(B, v.p); }); return { def:B, agg:mk(rs), vs:rs }; }) };
   }
   // The tour figure beside the player's: the whole archive under the SAME surface / period / tournament filter
   // (PLAYER_BASELINE_SCOPE 'recompute', founder TEN-196), per fixed band of the side's price.
@@ -34311,7 +34349,7 @@ window.DatabaseTab = (function(){
     ['fav','dog'].forEach(function(sk){
       var res = sk==='fav' ? ev.favB : ev.dogB;
       var tAll=TT.all(sk);
-      grid.appendChild(bandCard2(sk, res, 'player', { fade:fading, baseKnown:true,
+      grid.appendChild(bandCard2(sk, res, 'player', { fade:fading, baseKnown:true, player:state.player,
         baseAll: tAll ? fmtPct(tAll.yield) : '—', baseFor:function(B){ return TT.band(sk, B); } }));
     });
     body.appendChild(grid);
@@ -34319,45 +34357,12 @@ window.DatabaseTab = (function(){
     db2FootIntoQ(body);
   }
   function db2PlayerChart(ev, fading){
-    var card=el('div','db-card'), head=el('div','db-charthead');
-    head.innerHTML='<span class="db2-ctitle"><h3>Cumulative return, flat 1% stake</h3><span class="db2-q" title="Every match is settled at the Pinnacle closing price. One unit is 1% of the bankroll, staked flat on every match. Below zero is a loss.">?</span></span>'+
-      dbLegend([['As favourite',COL_FAV],['As underdog',COL_DOG]]);
-    card.appendChild(head);
-    card.appendChild(el('div','db-subline','Return as % of bankroll at a flat 1% stake per match, cumulative — below zero is a loss.'));
+    // Database v3 (CHANGES §4): x = his match number over every match in view; each line steps on its own matches
     var ord=ev.rows.slice().sort(function(a,b){ return a.d-b.d; });
-    var t0=Date.UTC(Math.floor(ord[0].d/10000),0,1), t1=db2Ms(ord[ord.length-1].d); if(t1<=t0) t1=t0+864e5;
-    function ser(fav){ var xs=[], vs=[], c=0; ord.forEach(function(v){ if(!!v.fav!==fav) return; c+=ev.profit(v); xs.push((db2Ms(v.d)-t0)/(t1-t0)); vs.push(c); }); return {xs:xs, vs:vs, end: vs.length ? c : null}; }
-    var F=ser(true), D=ser(false), all=[0].concat(F.vs, D.vs);
-    var rawHi=Math.max.apply(null,all), rawLo=Math.min.apply(null,all), sp=rawHi-rawLo;
-    var step=[1,2,5,10,25,50,100,250,500,1000,2500].filter(function(s){ return sp/s<=10; })[0] || 5000, rnd=Math.max(1, step/10);
-    var hi = rawHi>0 ? Math.ceil(rawHi/step)*step : Math.max(rnd, Math.ceil(rawHi/rnd)*rnd), lo=Math.floor(rawLo/rnd)*rnd; if(hi===lo) hi=lo+rnd;
-    var H=300; function Y(v){ return ((hi-v)/(hi-lo))*H; }
-    var plot=el('div','db-plot'), yax=el('div','db-yaxis'), area=el('div','db-plotarea');
-    var svg='<svg viewBox="0 0 1000 300" preserveAspectRatio="none" aria-hidden="true">', v;
-    for(v=Math.floor(hi/step)*step; v>0; v-=step){ svg+=dbGuide(Y(v)); var d1=el('div',null,'+'+fmtInt(v)+'u'); d1.style.top=(Y(v)/H*100).toFixed(2)+'%'; yax.appendChild(d1); }
-    for(v=0; v>=lo; v-=step){ svg+=dbGuide(Y(v)); var d2=el('div',null, v===0?'0':fmtU(v)); d2.style.top=(Y(v)/H*100).toFixed(2)+'%'; yax.appendChild(d2); }
-    svg+=dbBreakEven(Y(0));
-    if(D.vs.length) svg+=dbSeries(poly(D.xs,D.vs,Y,N_PMAIN), COL_DOG, false);
-    if(F.vs.length) svg+=dbSeries(poly(F.xs,F.vs,Y,N_PMAIN), COL_FAV, true);
-    area.innerHTML=svg+'</svg>';
-    var be=el('div','db-ovl db-belab','Break even'); be.style.top=(Y(0)/H*100).toFixed(2)+'%'; area.appendChild(be);
-    var ends=[{cls:'fav', name:'As favourite', col:COL_FAV, s:F},{cls:'dog', name:'As underdog', col:COL_DOG, s:D}].filter(function(e){ return e.s.end!=null; });
-    ends.forEach(function(e){ e.pct=Y(e.s.end)/H*100; area.appendChild(dbEndDot(e.pct, e.col)); });
-    plot.appendChild(yax); plot.appendChild(area);
-    var endcol=el('div','db-endcol'), MINGAP=54/DB_PLOT_H*100;
-    if(ends.length===2 && Math.abs(ends[0].pct-ends[1].pct)<MINGAP){ var mid=(ends[0].pct+ends[1].pct)/2, h=MINGAP/2, f=ends[0].pct>=ends[1].pct;
-      ends[0].pct=f?mid+h:mid-h; ends[1].pct=f?mid-h:mid+h; }
-    ends.forEach(function(e){
-      var val=e.s.end, txt=(val>0?'+':val<0?'−':'')+Math.abs(val).toFixed(1)+'u';
-      var pl=el('div','db-plate '+e.cls,'<b>'+e.name+'</b><span style="color:'+db2PcCol(val)+'">'+txt+'</span>');
-      pl.style.top=Math.max(4,Math.min(96,e.pct)).toFixed(2)+'%'; endcol.appendChild(pl);
-    });
-    plot.appendChild(endcol); card.appendChild(plot);
-    var xax=el('div','db-xaxis'), y0=Math.floor(ord[0].d/10000), y1=Math.floor(ord[ord.length-1].d/10000), stp=(y1-y0)>12?4:(y1-y0)>6?2:1;
-    db2SeasonTicks(y0, y1, stp, t0, t1).forEach(function(t){ var d=el('div',null,t.label); d.style.left=(t.x*100).toFixed(2)+'%'; xax.appendChild(d); });
-    card.appendChild(xax);
-    card.appendChild(el('div','db-xcap','<span class="db-eyebrow">Season</span>'));
-    return card;
+    function ser(fav, label, color, w){ var idx=[], vs=[], c=0; ord.forEach(function(v,i){ if(!!v.fav!==fav) return; c+=ev.profit(v); idx.push(i); vs.push(c); });
+      return { label:label, color:color, w:w, idx:idx, vals:vs, n:vs.length }; }
+    return db3Chart([ser(true,'As favourite','var(--db2-blue)',2.4), ser(false,'As underdog','var(--db2-ink-2)',2)],
+      { N:ord.length, seasons:db3Seasons(ord.map(function(v){ return v.d; })), scope:'Flat 1% stake on every match, as % of bankroll'+(fading?', opponent backed':''), help:DB3_HELP });
   }
 
   function playerBookSplit(book, bl){
@@ -34388,7 +34393,7 @@ window.DatabaseTab = (function(){
     var yfig = (a.n<HARD_GATE)
       ? '<b style="font-size:12.5px;font-weight:500;color:var(--db-mute);">too few matches</b>'
       : (a.n<SOFT_GATE
-        ? '<b style="font-weight:500;color:var(--db-mute);">'+ytxt+'</b>'
+        ? '<b style="font-weight:500;color:'+signCol(ytxt)+'">'+ytxt+'</b>'
         : '<b style="color:'+signCol(ytxt)+'">'+ytxt+'</b>');
     var figs=el('div','db-figs');
     figs.appendChild(el('div','db-fig','<b>'+fmtInt(a.n)+'</b><span>Matches</span>'));
@@ -34776,7 +34781,7 @@ window.DatabaseTab = (function(){
     if(!a) return { html:'—', col:'var(--text-label)' };
     if(a.n<HARD_GATE) return { html:'<span class="db-tchard">n='+fmtInt(a.n)+' — too few matches for a yield</span>', col:'var(--text-label)' };
     var t=fmtPct(a.yield);
-    if(a.n<SOFT_GATE) return { html:'<span class="db-tcsoft">'+t+'</span>', col:'var(--text-label)' };
+    if(a.n<SOFT_GATE) return { html:'<span class="db-tcsoft">'+t+'</span>', col:tcSignCol(t) };
     return { html:t, col:tcSignCol(t) };
   }
   function tcUnits(v){
@@ -34801,7 +34806,7 @@ window.DatabaseTab = (function(){
   function db2Gy(a){ return (a && a.n>=HARD_GATE) ? a.yield : null; }
   function db2Ev(ev){
     if(ev.favB) return ev;   // the Player view hands its bands over ready (his price, per role)
-    var fv=ev.rows.map(function(r){ return {p:r[5], w:r[7], b:r[8]}; }), dv=ev.rows.map(function(r){ return {p:r[6], w:r[7]?0:1, b:r[8]}; });
+    var fv=ev.rows.map(function(r){ return {p:r[5], w:r[7], b:r[8], r:r}; }), dv=ev.rows.map(function(r){ return {p:r[6], w:r[7]?0:1, b:r[8], r:r}; });
     ev.favB=fixedBands(fv,'fav'); ev.dogB=fixedBands(dv,'dog');
     ev.fav=ev.favB.all; ev.dog=ev.dogB.all; ev.n=ev.rows.length;
     return ev;
@@ -34944,57 +34949,22 @@ window.DatabaseTab = (function(){
   }
   // The shared chart (tournCurves): x = real match date on one domain for every series, y = cumulative units at the side.
   function cmpChart2(evs, side, PM){
-    var card=el('div','db2-card db2-cchart');
-    var hd=el('div','db2-cchead'); hd.appendChild(el('span','db2-ttl','Cumulative return, flat 1% stake'));
-    var trk=el('span','db2-track');
+    // Database v3 (CHANGES §4 rule 11): no season bar; the axis scales to the event or player with the most matches and a
+    // shorter line STOPS where its matches run out
+    var sw=el('span','db3-sw');
     [['all','All matches'],['fav',PM?'As favourite':'Favourites'],['dog',PM?'As underdog':'Underdogs']].forEach(function(t){
-      var b=el('button','db2-pill'+(side===t[0]?' on':''), t[1]); b.type='button';
-      b.onclick=function(e){ e.stopPropagation(); state.tcSide=t[0]; render(); }; trk.appendChild(b);
+      var b=el('button',side===t[0]?'on':null, t[1]); b.type='button';
+      b.onclick=function(e){ e.stopPropagation(); state.tcSide=t[0]; render(); }; sw.appendChild(b);
     });
-    hd.appendChild(trk); card.appendChild(hd);
-    var t0=Infinity, t1=-Infinity;
-    evs.forEach(function(e){ var D=e.date||function(r){ return r[0]; }; e.rows.forEach(function(r){ var ms=db2Ms(D(r)); if(ms<t0) t0=ms; if(ms>t1) t1=ms; }); });
-    if(!isFinite(t0)){ card.appendChild(el('div','db2-bnote','No matches for these '+(PM?'players':'events')+' under the current filters.')); return card; }
-    var y0=new Date(t0).getUTCFullYear(), y1=new Date(t1).getUTCFullYear(); t0=Date.UTC(y0,0,1); if(t1<=t0) t1=t0+864e5;
-    var series=evs.map(function(e,i){
+    var N=0, series=evs.map(function(e,i){
       var D=e.date||function(r){ return r[0]; }, inc=e.inc||function(){ return true; };
-      var ord=e.rows.filter(function(r){ return inc(r, side); }).sort(function(a,b){ return D(a)-D(b); }), xs=[], vs=[], c=0;
-      ord.forEach(function(r){ c+=(e.profit||tcProfit)(r, side); xs.push((db2Ms(D(r))-t0)/(t1-t0)); vs.push(c); });
-      return { e:e, i:i, xs:xs, vs:vs, end: ord.length ? c : null };
+      var ord=e.rows.filter(function(r){ return inc(r, side); }).sort(function(a,b){ return D(a)-D(b); }), vs=[], c=0;
+      ord.forEach(function(r){ c+=(e.profit||tcProfit)(r, side); vs.push(c); });
+      N=Math.max(N, vs.length);
+      return { label:e.label, color:DB2_SERIES[i%4].c, dash:DB2_SERIES[i%4].d, swatch:db2Swatch(i), w:2, vals:vs, n:vs.length };
     });
-    var all=[0]; series.forEach(function(s){ all=all.concat(s.vs); });
-    var rawHi=Math.max.apply(null,all), rawLo=Math.min.apply(null,all), span=Math.max(1, rawHi-rawLo);
-    var step=(PM?[1,2]:[]).concat([5,10,25,50,100,250,500]).filter(function(v){ return span/v<=8; })[0] || 1000;
-    var hi=Math.ceil(rawHi/step)*step, lo=Math.floor(rawLo/step)*step; if(hi===lo) hi=lo+step;
-    var H=300; function Y(v){ return ((hi-v)/(hi-lo))*H; }
-    var row=el('div','db2-ccrow'), yax=el('div','db2-ccy'), area=el('div','db2-ccarea'), pc=el('div','db2-ccplates');
-    var svg='<svg viewBox="0 0 1000 300" preserveAspectRatio="none" aria-hidden="true">';
-    for(var v=hi; v>=lo; v-=step){
-      var y=Y(v); svg+=dbGuide(y);
-      var lab=el('span',null,(v>0?'+':v<0?'−':'')+fmtInt(Math.abs(Math.round(v)))+'u'); lab.style.top=(y/H*100).toFixed(2)+'%'; yax.appendChild(lab);
-    }
-    svg+=dbBreakEven(Y(0));
-    series.forEach(function(s){
-      if(!s.vs.length) return;
-      svg+='<polyline points="'+poly(s.xs,s.vs,Y,N_TOURN)+'" fill="none" stroke="'+DB2_SERIES[s.i].c+'"'+(DB2_SERIES[s.i].d?' stroke-dasharray="'+DB2_SERIES[s.i].d+'"':'')+
-        ' stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>';
-    });
-    area.innerHTML=svg+'</svg>';
-    var plates=series.filter(function(s){ return s.end!=null; }).map(function(s){ return { s:s, p:Y(s.end)/H*100 }; }).sort(function(a,b){ return a.p-b.p; });
-    var gap=36/300*100; for(var k=1;k<plates.length;k++) if(plates[k].p-plates[k-1].p<gap) plates[k].p=plates[k-1].p+gap;
-    plates.forEach(function(o){
-      var s=o.s, dt=el('span','db2-ccdot'); dt.style.top=(Y(s.end)/H*100).toFixed(2)+'%'; dt.style.background=DB2_SERIES[s.i].c; area.appendChild(dt);
-      var end=(s.end>0?'+':s.end<0?'−':'')+fmtInt(Math.abs(Math.round(s.end)))+'u';
-      var pl=el('div','db2-ccplate','<span class="db2-sw" style="background:'+db2Swatch(s.i)+'"></span><span class="db2-ccpn">'+esc(s.e.label)+'</span>'+
-        '<span class="db2-ccpv" style="color:'+db2PcCol(s.end)+'">'+end+'</span>');
-      pl.style.top=Math.min(93,Math.max(7,o.p)).toFixed(2)+'%'; pc.appendChild(pl);
-    });
-    row.appendChild(yax); row.appendChild(area); row.appendChild(pc); card.appendChild(row);
-    var xt=el('div','db2-ccx'), ys=y1-y0, stp=ys>12?4:ys>6?2:1;
-    for(var yy=y0; yy<=y1; yy+=stp){ var x=(Date.UTC(yy,0,1)-t0)/(t1-t0); if(x<0||x>1) continue; var d=el('span',null,String(yy)); d.style.left=(x*100).toFixed(2)+'%'; xt.appendChild(d); }
-    card.appendChild(xt);
-    card.appendChild(el('div','db2-cccap','Season · flat 1% stake · '+(side==='fav'?'backing the favourite':side==='dog'?'backing the underdog':'both sides of every match')));
-    return card;
+    return db3Chart(series, { cmp:true, N:N, sw:sw,
+      scope:'Flat 1% stake on '+(side==='fav'?'the favourite':side==='dog'?'the underdog':'both sides')+' of every match, as % of bankroll' });
   }
   function renderCompare(body){
     var picks=tournPicks().slice(0,TC_MAX);
@@ -35303,7 +35273,8 @@ window.DatabaseTab = (function(){
   // The player profile's event names (founder 2026-11-14): a Tennis-Data sponsor name → its city, by this page's own name
   // map; a name TOURN_SPLIT shares between events by season needs the row's date, so it reads null here.
   window.sfSponsorCity = function (n) { return Object.prototype.hasOwnProperty.call(TOURN_SPLIT, n) ? null : tdCity(n); };
-  return { mount: mount, init: init, instanceCount: function(){ return INSTANCES.length; }, priceRows: priceRows, tdCity: tdCity };
+  return { mount: mount, init: init, instanceCount: function(){ return INSTANCES.length; }, priceRows: priceRows, tdCity: tdCity,
+    lnCutTally: db2LnCutTally, lnLoadField: loadLinesField };
 })();
 </script>
 
