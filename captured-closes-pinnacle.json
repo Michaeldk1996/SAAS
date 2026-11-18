@@ -1,31 +1,31 @@
 {
- "generatedAt": "2026-11-18T19:39:00.205Z",
+ "generatedAt": "2026-11-18T20:01:49.857Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (the earlier of Oddspapi trueStart and the card-state start: Oddspapi, the live-flip lower bound, the Bet105 switch or the first point — founder 2026-11-08; a cut at Oddspapi start before a verified start counts at the verified start only when the same tick, seen within 60 min and within 1.5pp of the Bet105 close, else it stays held back); both sides required; dropped when no unique actual start. seenAt = our last capture read before the start that confirmed the close (founder 2026-10-28); age = start - (seenAt or at)",
  "scannedThrough": {
-  "commit": "f17400e8b78411746460c92e43bd4fe382937483",
-  "at": "2026-11-18T19:26:27Z"
+  "commit": "facef9b5cced461fb7afd6d43b4bc1dc7922168b",
+  "at": "2026-11-18T19:56:33Z"
  },
- "commitsScanned": 7042,
+ "commitsScanned": 7044,
  "lastRun": {
-  "from": "2026-11-18T14:45:09Z",
-  "snapshots": 14,
-  "added": 0,
+  "from": "2026-11-18T19:26:27Z",
+  "snapshots": 3,
+  "added": 1,
   "replaced": 0,
   "seenBackfilled": 0,
   "earlierCutBackfilled": 0,
-  "series": 8,
-  "kept": 7,
+  "series": 10,
+  "kept": 8,
   "bySource": {
    "first-point": 1,
-   "bet105-switch": 3,
+   "bet105-switch": 4,
    "oddspapi": 3
   },
   "byBook": {
-   "Pinnacle +30s": 7
+   "Pinnacle +30s": 8
   },
   "dropped": {
-   "noStart": 1
+   "noStart": 2
   }
  },
  "stats": {
@@ -16272,6 +16272,27 @@
    "oAt": "2026-11-17T11:59:35.801Z",
    "winner": "p1",
    "seenAt": "2026-11-18T11:04:00.000Z"
+  },
+  {
+   "eventKey": 12179699,
+   "date": "2026-11-18",
+   "p1Key": 372,
+   "p2Key": 2846,
+   "p1Name": "F. Cobolli",
+   "p2Name": "F. Tiafoe",
+   "p1": 2.35,
+   "p2": 1.671,
+   "at": "2026-11-18T19:26:15.791Z",
+   "trueStart": "2026-11-18T19:33:03.000Z",
+   "startSource": "bet105-switch",
+   "book": "Pinnacle +30s",
+   "round": "",
+   "qualifying": false,
+   "event": "ATP Finals - Turin",
+   "o1": 2.21,
+   "o2": 1.735,
+   "oAt": "2026-11-17T12:00:33.695Z",
+   "winner": null
   }
  ]
 }
