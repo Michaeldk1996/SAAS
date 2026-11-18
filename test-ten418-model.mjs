@@ -419,7 +419,7 @@ test('look: the export’s colours as --sm-* tokens only; no sample data; player
   assert.ok(!/sample data/i.test(PAGE + BLOCK + CSS), 'no "sample data" note');
   assert.ok(!/#[0-9a-fA-F]{3,8}\b|rgba?\(/.test(CSS), 'no raw colours in the page CSS');
   const tok = readFileSync(join(HERE, 'tokens.css'), 'utf8');
-  for (const [k, v] of [['--sm-page', '#0D0E16'], ['--sm-card', '#0E1019'], ['--sm-inner', '#0C0E16'], ['--sm-raised', '#131623'], ['--sm-text', '#E7E9EE'], ['--sm-soft', '#C6CCDB'], ['--sm-body', '#C9CDD9'], ['--sm-muted', '#8B96B5'], ['--sm-blue', '#5B9BFF'], ['--sm-blue-hov', '#82B4FF'], ['--sm-pos', '#3DD68C'], ['--sm-neg', '#E0616F'], ['--sm-q-good', '#5CCB84'], ['--sm-q-med', '#E8A84E'], ['--sm-q-poor', '#E06266']])
+  for (const [k, v] of [['--sm-card', '#0E1019'], ['--sm-inner', '#0C0E16'], ['--sm-pill', '#121521'], ['--sm-raised', '#131623'], ['--sm-text', '#E7E9EE'], ['--sm-soft', '#C6CCDB'], ['--sm-body', '#C9CDD9'], ['--sm-muted', '#8B96B5'], ['--sm-blue', '#5B9BFF'], ['--sm-blue-hov', '#82B4FF'], ['--sm-pos', '#3DD68C'], ['--sm-neg', '#E0616F'], ['--sm-q-good', '#5CCB84'], ['--sm-q-med', '#E8A84E'], ['--sm-q-poor', '#E06266']])
     assert.match(tok, new RegExp(k + ':\\s+' + v + ';'), k);
   assert.match(CSS, /\.sm-av\.a\{ box-shadow:0 0 0 2px var\(--sm-blue\); \}/);
   assert.match(CSS, /\.sm-av\{[^}]*box-shadow:0 0 0 2px var\(--sm-text\);/);
@@ -427,6 +427,24 @@ test('look: the export’s colours as --sm-* tokens only; no sample data; player
   assert.match(CSS, /\.sm-odd:focus\{ border-color:var\(--sm-blue\) !important; \}/);
   assert.match(CSS, /\.sm-card\{ background:var\(--sm-card\); border:1\.25px solid color-mix\(in srgb, var\(--sm-white\) 6%, transparent\); border-radius:14px; padding:24px 26px;/);
   assert.match(CSS, /\.sm-rail\{ width:244px;/);
+  // Colour pass 2026-11-18 (CHANGES_2026-11-18.md): the page shows the shell's Today's Matches ground; every inner box is
+  // ONE colour with a 9% edge; pills #121521 + 8% edge at 5px 12px; no wash on the "now" rows; the title sits in a card.
+  const W = n => `color-mix\\(in srgb, var\\(--sm-white\\) ${n}%, transparent\\)`;
+  assert.match(CSS, /\[data-page="edge"\]\{ background:transparent;/, 'page ground = the shell\'s --page-bg');
+  assert.match(CSS, new RegExp(`\\.sm-ic\\{ background:var\\(--sm-card\\); border:1px solid ${W(9)};`), 'inner box = card colour, 9% edge');
+  assert.match(CSS, /\.sm-cs\{[^}]*background:var\(--sm-card\);/, 'caps strip = the box colour');
+  for (const c of ['pill', 'tag']) assert.match(CSS, new RegExp(`\\.sm-${c}\\{[^}]*background:var\\(--sm-pill\\); border:1px solid ${W(8)}; border-radius:999px; padding:5px 12px;`), c);
+  assert.match(CSS, new RegExp(`\\.sm-tog\\{[^}]*background:var\\(--sm-pill\\); border:1px solid ${W(9)};`));
+  assert.match(CSS, new RegExp(`\\.sm-sw\\{[^}]*background:var\\(--sm-inner\\); border:1px solid ${W(8)};`));
+  assert.match(CSS, new RegExp(`\\.sm-lp-in\\{ background:var\\(--sm-card\\); border:1px solid ${W(9)}; border-radius:10px;`));
+  assert.match(CSS, new RegExp(`\\.sm-ep\\.zero\\{ background:${W(5)}; \\}`));
+  assert.ok(!/\.sm-row\.now\{[^}]*background/.test(CSS), 'no wash on the now rows');
+  assert.ok(!/--sm-inner/.test(CSS.replace(/\.sm-(dd-t|sw)\{[^}]*\}/g, '')), 'the well colour only on wells');
+  assert.match(CSS, new RegExp(`\\.sm-head\\{ background:var\\(--sm-card\\); border:1\\.25px solid ${W(6)}; border-radius:12px; padding:18px 26px; display:flex; align-items:center; justify-content:space-between; gap:28px; \\}`));
+  assert.match(CSS, /\.sm-title\{ font-size:24px; font-weight:800; letter-spacing:-0\.015em; line-height:1\.1;/);
+  const pp = new Function(fn('edgePP') + '\n' + fn('smPP') + '\nreturn smPP;')();
+  assert.deepEqual([pp(null).c, pp(0.01).c, pp(1.2).c, pp(-1.2).c], ['', 'zero', 'pos', 'neg'], 'a real 0.0pp takes the neutral pill, a dash none');
+  assert.match(CSS, /\.sm-sub\{ font-size:13px; line-height:1\.5; color:var\(--sm-muted\);/);
 });
 test('the analysis generator reads the page’s own rules, character for character', () => {
   const src = readFileSync(join(HERE, 'h2h-model/summary.js'), 'utf8');

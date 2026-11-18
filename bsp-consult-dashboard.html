@@ -4745,7 +4745,7 @@ window.EntryListsTab = (function(){
   /* ── Stennisfy Model page — handoff design_handoff_stennisfy_model (founder brief 2026-11-16, pixel for pixel).
      Reference: reference/Stennisfy Model.dc.html (its inline styles are the spec); colours = the export's own values,
      named --sm-* in tokens.css. Night only. Rules: .claude/rules/stennisfy-model.md. ── */
-  [data-page="edge"]{ background:var(--sm-page); font-family:'Hanken Grotesk', sans-serif; color:var(--sm-text); -webkit-font-smoothing:antialiased; }
+  [data-page="edge"]{ background:transparent; font-family:'Hanken Grotesk', sans-serif; color:var(--sm-text); -webkit-font-smoothing:antialiased; }
   [data-page="edge"].active{ min-height:100vh; }
   [data-page="edge"] .sm-page, [data-page="edge"] .sm-page *, .sm-pop, .sm-pop *{ box-sizing:border-box; }
   .sm-page{ max-width:1360px; font-size:16px; padding:30px 40px 70px; display:flex; flex-direction:column; gap:18px; line-height:normal; font-family:'Hanken Grotesk', sans-serif; color:var(--sm-text); }
@@ -4758,10 +4758,10 @@ window.EntryListsTab = (function(){
   .sm-seg{ cursor:pointer; transition:background .14s ease, color .14s ease, border-color .14s ease; }
 
   /* page head */
-  .sm-head{ display:flex; align-items:flex-end; justify-content:space-between; gap:16px; }
-  .sm-head-t{ min-width:0; display:flex; flex-direction:column; gap:6px; }
-  .sm-title{ font-size:29px; font-weight:800; letter-spacing:-0.02em; line-height:1.1; margin:0; }
-  .sm-sub{ font-size:13.5px; color:var(--sm-soft); text-wrap:pretty; margin:0; }
+  .sm-head{ background:var(--sm-card); border:1.25px solid color-mix(in srgb, var(--sm-white) 6%, transparent); border-radius:12px; padding:18px 26px; display:flex; align-items:center; justify-content:space-between; gap:28px; }
+  .sm-head-t{ flex:1; min-width:0; display:flex; flex-direction:column; gap:5px; }
+  .sm-title{ font-size:24px; font-weight:800; letter-spacing:-0.015em; line-height:1.1; margin:0; }
+  .sm-sub{ font-size:13px; line-height:1.5; color:var(--sm-muted); text-wrap:pretty; margin:0; }
   .sm-head .sm-q{ align-self:center; }
   .sm-cols{ display:flex; align-items:flex-start; gap:18px; min-width:0; }
   .sm-main{ flex:1; min-width:0; display:flex; flex-direction:column; gap:14px; }
@@ -4814,7 +4814,7 @@ window.EntryListsTab = (function(){
   .sm-sh-s{ font-size:12.5px; color:var(--sm-muted); text-wrap:pretty; }
   .sm-sh-r{ display:flex; align-items:center; gap:12px; margin-left:auto; }
   .sm-mk .sm-sh-r{ align-self:center; flex-wrap:wrap; justify-content:flex-end; }
-  .sm-pill{ font-size:12.5px; color:var(--sm-muted); background:var(--sm-inner); border-radius:999px; padding:6px 13px; white-space:nowrap; }
+  .sm-pill{ font-size:12.5px; color:var(--sm-muted); background:var(--sm-pill); border:1px solid color-mix(in srgb, var(--sm-white) 8%, transparent); border-radius:999px; padding:5px 12px; white-space:nowrap; }
   .sm-pill .sm-mono.b{ color:var(--sm-text); font-weight:700; }
   .sm-pill .w{ color:var(--sm-text); font-weight:700; }
 
@@ -4841,7 +4841,7 @@ window.EntryListsTab = (function(){
   .sm-mh-sub .sm-mono{ white-space:nowrap; }
   .sm-mh-vs{ flex:none; }
   .sm-mh-f{ display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin:0 -26px; padding:14px 26px; border-top:1px solid color-mix(in srgb, var(--sm-white) 6%, transparent); }
-  .sm-tag{ display:inline-flex; align-items:baseline; gap:8px; background:var(--sm-inner); border-radius:999px; padding:6px 13px; font-size:12.5px; white-space:nowrap; }
+  .sm-tag{ display:inline-flex; align-items:baseline; gap:8px; background:var(--sm-pill); border:1px solid color-mix(in srgb, var(--sm-white) 8%, transparent); border-radius:999px; padding:5px 12px; font-size:12.5px; white-space:nowrap; }
   .sm-tag .l{ color:var(--sm-muted); } .sm-tag .v{ font-weight:700; color:var(--sm-text); }
   .sm-mh-links{ margin-left:auto; display:flex; align-items:center; gap:18px; }
   .sm-mh-links a{ display:inline-flex; align-items:center; gap:5px; font-size:12.5px; font-weight:600; color:var(--sm-blue); text-decoration:none; white-space:nowrap; cursor:pointer; }
@@ -4849,7 +4849,7 @@ window.EntryListsTab = (function(){
   .sm-mh-links a .c{ font-size:13px; }
 
   /* inner cards */
-  .sm-ic{ background:var(--sm-inner); border:1px solid color-mix(in srgb, var(--sm-white) 6%, transparent); border-radius:12px; overflow:hidden; display:flex; flex-direction:column; min-width:0; }
+  .sm-ic{ background:var(--sm-card); border:1px solid color-mix(in srgb, var(--sm-white) 9%, transparent); border-radius:12px; overflow:hidden; display:flex; flex-direction:column; min-width:0; }
   .sm-scroll{ display:flex; flex-direction:column; overflow-x:auto; }
   .sm-scroll.cq{ container-type:inline-size; }
   .sm-ich{ display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:14px; align-items:center; padding:18px; }
@@ -4868,19 +4868,19 @@ window.EntryListsTab = (function(){
   .sm-ep{ text-align:center; font-family:'IBM Plex Mono', monospace; font-size:12px; font-weight:700; border-radius:999px; padding:4px 0; white-space:nowrap; color:var(--sm-muted); background:transparent; }
   .sm-ep.pos{ color:var(--sm-pos); background:color-mix(in srgb, var(--sm-pos) 12%, transparent); }
   .sm-ep.neg{ color:var(--sm-neg); background:color-mix(in srgb, var(--sm-neg) 12%, transparent); }
+  .sm-ep.zero{ background:color-mix(in srgb, var(--sm-white) 5%, transparent); }   /* a figure that is neither + nor − (2026-11-18); a dash stays bare */
   .sm-bk{ display:flex; flex-direction:column; gap:2px; min-width:0; }
   .sm-bk-l{ font-size:13px; font-weight:600; color:var(--sm-soft); }
   .sm-bk-s{ font-size:11.5px; color:var(--sm-muted); line-height:1.3; text-wrap:balance; }
 
   /* 2 · market context */
   .sm-mk-show{ font-size:12.5px; color:var(--sm-muted); white-space:nowrap; }
-  .sm-sw{ display:inline-flex; gap:2px; background:var(--sm-inner); border:1px solid color-mix(in srgb, var(--sm-white) 6%, transparent); border-radius:10px; padding:3px; }
+  .sm-sw{ display:inline-flex; gap:2px; background:var(--sm-inner); border:1px solid color-mix(in srgb, var(--sm-white) 8%, transparent); border-radius:10px; padding:3px; }
   .sm-sw-t{ text-align:start; padding:6px 16px; border-radius:7px; font-size:13px; font-weight:600; color:var(--sm-muted); background:transparent; box-shadow:inset 0 0 0 1px transparent; white-space:nowrap; border:0; font-family:'Hanken Grotesk', sans-serif; }
   .sm-sw-t:hover{ color:var(--sm-text); }
   .sm-sw-t.on{ font-weight:700; color:var(--sm-text); background:var(--sm-raised); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--sm-white) 16%, transparent); }
   .sm-mk .sm-cs, .sm-mk .sm-row{ grid-template-columns:minmax(0,1fr) 62px 56px minmax(104px,190px) 56px 62px minmax(0,1fr); }
   .sm-mk .sm-row{ padding:12px 14px; background:transparent; }
-  .sm-mk .sm-row.now{ background:color-mix(in srgb, var(--sm-white) 3%, transparent); }
   .sm-mk-px{ text-align:center; font-family:'IBM Plex Mono', monospace; font-size:15px; font-weight:500; color:var(--sm-soft); }
   .sm-mk .sm-row.now .sm-mk-px{ font-weight:700; color:var(--sm-text); }
   .sm-mk .sm-row.now .sm-bk-l{ font-weight:700; color:var(--sm-text); }
@@ -4901,7 +4901,7 @@ window.EntryListsTab = (function(){
   .sm-legend > span{ display:inline-flex; align-items:center; gap:7px; white-space:nowrap; }
   .sm-legend .sm-dot{ width:8px; height:8px; border-radius:50%; }
   .sm-legend .sm-mono{ font-weight:700; color:var(--sm-text); }
-  .sm-tog{ text-align:start; display:flex; align-items:center; justify-content:center; gap:8px; background:var(--sm-inner); border:1px solid color-mix(in srgb, var(--sm-white) 6%, transparent); border-radius:10px; padding:11px 14px; font-size:13px; font-weight:600; color:var(--sm-blue); font-family:'Hanken Grotesk', sans-serif; width:100%; }
+  .sm-tog{ text-align:start; display:flex; align-items:center; justify-content:center; gap:8px; background:var(--sm-pill); border:1px solid color-mix(in srgb, var(--sm-white) 9%, transparent); border-radius:10px; padding:11px 14px; font-size:13px; font-weight:600; color:var(--sm-blue); font-family:'Hanken Grotesk', sans-serif; width:100%; }
   .sm-tog:hover{ background:var(--sm-raised); border-color:color-mix(in srgb, var(--sm-white) 16%, transparent); }
   .sm-tog .c{ display:inline-block; font-size:10px; transition:transform 0.2s; }
   .sm-ich-fav{ font-size:12px; color:var(--sm-muted); }
@@ -4931,7 +4931,7 @@ window.EntryListsTab = (function(){
   .sm-chev{ justify-self:end; width:14px; height:14px; display:inline-flex; align-items:center; justify-content:center; font-size:14px; line-height:1; color:var(--sm-blue); transition:transform .16s; }
   .sm-lr.open .sm-chev{ transform:rotate(90deg); }
   .sm-lp{ position:sticky; left:0; width:100cqw; max-width:100%; padding:2px 16px 16px; }
-  .sm-lp-in{ background:var(--sm-card); border-radius:10px; padding:14px 16px; display:grid; grid-template-columns:repeat(auto-fit, minmax(min(200px,100%),1fr)); gap:14px 24px; text-align:left; }
+  .sm-lp-in{ background:var(--sm-card); border:1px solid color-mix(in srgb, var(--sm-white) 9%, transparent); border-radius:10px; padding:14px 16px; display:grid; grid-template-columns:repeat(auto-fit, minmax(min(200px,100%),1fr)); gap:14px 24px; text-align:left; }
   .sm-lp-c{ display:flex; flex-direction:column; gap:6px; }
   .sm-lp-h{ display:flex; align-items:center; flex-wrap:wrap; gap:6px 8px; min-height:22px; }
   .sm-lp-h.dq{ flex-wrap:nowrap; gap:8px; }
@@ -5031,7 +5031,7 @@ window.EntryListsTab = (function(){
 </style>
 <div class="tabpage" data-page="edge">
   <div class="sm-page">
-    <!-- Handoff design_handoff_stennisfy_model (2026-11-16): the page head is the reference's own; "?" filled by edgeSetHeader. -->
+    <!-- Handoff design_handoff_stennisfy_model (2026-11-16; title card 2026-11-18): the page head is the reference's own; "?" filled by edgeSetHeader. -->
     <div class="sm-head">
       <div class="sm-head-t">
         <h1 class="sm-title">Stennisfy Model</h1>
@@ -11629,7 +11629,7 @@ function smHead(title, scope, right, cls){
 function smName(name, key, cls){ return edgeHasProfile(key) ? `<a class="sm-plink ${cls || ''}" onclick="openPlayerProfileFromMatch('${edgeJs(key)}')">${edgeEsc(name)}</a>` : `<span class="${cls || ''}">${edgeEsc(name)}</span>`; }
 // A sub line only breaks after a separator: inside a part, spaces and hyphens do not break (handoff README).
 function smNb(s){ return String(s).split(' · ').map(x => edgeEsc(x).replace(/ /g, '\u00a0').replace(/-/g, '\u2011')).join('\u00a0· '); }
-function smPP(v){ const p = edgePP(v); return { t: p.t, c: p.c === 'em-pos' ? 'pos' : p.c === 'em-neg' ? 'neg' : '' }; }
+function smPP(v){ const p = edgePP(v); return { t: p.t, c: p.c === 'em-pos' ? 'pos' : p.c === 'em-neg' ? 'neg' : p.t === '—' ? '' : 'zero' }; }
 
 // ── Match rail ─────────────────────────────────────────────────────────────
 // The same list as Today's Matches (getFiltered: same feed, same order, same count), grouped by tournament in the

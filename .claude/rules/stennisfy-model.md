@@ -123,6 +123,13 @@ Founder rulings: TEN-418 card 7a80b6fe, R1 review and R2 review 73f754f9 (2026-1
   `--sm-white` / `--sm-black` at the export's %). Player one = blue ring (`--sm-blue`), player two = white; names white,
   underline on hover; links and chevrons `--sm-blue`; green / red only on signed figures and verdict pills; amber only on
   the medium-quality strip segment, dot and pill. **Test:** `test-ten418-model.mjs` "look".
+- **Colour pass 2026-11-18** (`design_handoff_stennisfy_model/CHANGES_2026-11-18.md`): the page paints no ground of
+  its own (the shell's `--page-bg` = the Today's Matches background shows); the page title, sub line and "?" sit in a
+  header card (`--sm-card`, 1.25px 6% edge, r12, 18/26; title 24/800, sub 13px muted); every inner box, its caps strip and
+  the opened layer panel are ONE colour (`--sm-card`) with a 9% edge; pills `--sm-pill` (#121521) + 8% edge at 5px 12px;
+  the "Show all 14 layers" row `--sm-pill` + 9%; `--sm-inner` (#0C0E16) is for wells only (dropdown, switch track, 8% edge);
+  no wash on the "now" rows (white 700 text only); a real 0.0pp takes the neutral 5% pill, a dash none. **Test:**
+  `test-ten418-model.mjs` "look" (+ mutants `colours 11-18: …`).
 - **Sections:** page head · matches rail (244, one tournament dropdown, no search / day switch / Reset) · Match header
   (48 avatars, Tournament · Surface · Round · Format pills, Match card › = the Match analysis modal, Head to Head › =
   `sfGoToH2H` + `?a=&b=` + sessionStorage `stn_h2h_pair`) · Market context (four rows: Soft open · Soft now · Pinnacle

@@ -66,6 +66,12 @@ const MUTANTS = [
   ['look: a raw colour in the page CSS', ".sm-card{ background:var(--sm-card);", ".sm-card{ background:#0E1019;"],
   ['look: player one ring white', ".sm-av.a{ box-shadow:0 0 0 2px var(--sm-blue); }", ".sm-av.a{ box-shadow:0 0 0 2px var(--sm-text); }"],
   ['look: names link-blue', ".sm-plink{ cursor:pointer; color:var(--sm-text) !important;", ".sm-plink{ cursor:pointer; color:var(--sm-blue) !important;"],
+  ['colours 11-18: inner box back on the well colour', ".sm-ic{ background:var(--sm-card);", ".sm-ic{ background:var(--sm-inner);"],
+  ['colours 11-18: the now-row wash back', "  .sm-mk .sm-row.now .sm-mk-px{", "  .sm-mk .sm-row.now{ background:color-mix(in srgb, var(--sm-white) 3%, transparent); }\n  .sm-mk .sm-row.now .sm-mk-px{"],
+  ['colours 11-18: pills on the well colour', ".sm-pill{ font-size:12.5px; color:var(--sm-muted); background:var(--sm-pill);", ".sm-pill{ font-size:12.5px; color:var(--sm-muted); background:var(--sm-inner);"],
+  ['colours 11-18: title out of its card', ".sm-head{ background:var(--sm-card);", ".sm-head{ background:transparent;"],
+  ['colours 11-18: page paints its own ground', '[data-page="edge"]{ background:transparent;', '[data-page="edge"]{ background:var(--sm-card);'],
+  ['colours 11-18: a zero reads as a dash', "p.t === '—' ? '' : 'zero'", "''"],
   ['generator: the page rule drifts from summary.js', "  return Object.keys((m && m.bookNow) || {}).filter(k => k !== 'Pncl'", "  return Object.keys((m && m.bookOpens) || {}).filter(k => k !== 'Pncl'"],
 ];
 const SUITES = ['test-ten418-model.mjs'];

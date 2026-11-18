@@ -283,9 +283,9 @@
    surfaces inside [data-page="edge"] (night only); nothing else reads them. White and black alphas are color-mix of
    --sm-white / --sm-black at the export's own percentage. */
 :root {
-  --sm-page:      #0D0E16;   /* page */
-  --sm-card:      #0E1019;   /* section card, caps strips, opened-row panel, pop-ups, dropdown menu */
-  --sm-inner:     #0C0E16;   /* inner card, pills, field tracks, dropdown trigger */
+  --sm-card:      #0E1019;   /* section card, page title card, inner boxes + their caps strips, opened-row panel, pop-ups, dropdown menu */
+  --sm-inner:     #0C0E16;   /* wells only: dropdown trigger, switch track (2026-11-18) */
+  --sm-pill:      #121521;   /* pills, "Show all 14 layers" row (2026-11-18) */
   --sm-raised:    #131623;   /* lifted / selected / hover, avatar fill, odd fields */
   --sm-text:      #E7E9EE;   /* text, player two ring */
   --sm-soft:      #C6CCDB;   /* secondary */
