@@ -35,6 +35,16 @@ window.__sfEarly = (function () {
     }
     o[q].catch(function () {});
   } catch (e) {}
+  // A Head to Head link (?a=&b=, or the stn_h2h_pair handover) waits on DOMContentLoaded before the page opens; its Style
+  // section reads only the DNA file, so start that read here too (ensureDna takes it through sfEarlyFetch).
+  try {
+    var hq = new URLSearchParams(location.search), hp = null;
+    try { hp = JSON.parse(sessionStorage.getItem('stn_h2h_pair') || 'null'); } catch (e) {}
+    if ((hq.get('a') && hq.get('b')) || (Array.isArray(hp) && hp[0] && hp[1])) {
+      q = './dna-apitennis-ratings.json';
+      o[q] = fetch(q, { cache: 'no-cache' }); o[q].catch(function () {});
+    }
+  } catch (e) {}
   return o;
 })();
 window.sfEarlyFetch = function (u, init) {
@@ -27503,7 +27513,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
   function ensureDna() {
     if (_dna || _dnaLoading) return;
     _dnaLoading = true;
-    fetch('./dna-apitennis-ratings.json', { cache: 'no-cache' })
+    (typeof sfEarlyFetch === 'function' ? sfEarlyFetch : fetch)('./dna-apitennis-ratings.json', { cache: 'no-cache' })   // a Head to Head link starts it early (__sfEarly)
       .then(r => r.ok ? r.json() : null)
       .then(d => {
         const byKey = {};

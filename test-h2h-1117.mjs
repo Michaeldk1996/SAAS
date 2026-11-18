@@ -245,3 +245,32 @@ test('mini avatars (CHANGES 2026-11-17 §2): ≤ 22px carry class "mini" and no 
   assert.match(h.call(h.xAv, SIN, 'a', 38), /^<span class="x-av" [^>]*box-shadow:0 0 0 2px var\(--h2h-blue\);/);
   assert.match(h.call(h.xAv, ALC, 'b', 44), /^<span class="x-av" [^>]*box-shadow:0 0 0 2px var\(--h2h-text\);/);
 });
+
+// ── cold Head to Head link (18 Nov 2026): the Style section reads only dna-apitennis-ratings.json; a page opened on a pair
+// (?a=&b= or the stn_h2h_pair handover) starts that read in the head's early-fetch block, and ensureDna takes it ──
+test('cold link: a page opened on a pair starts the DNA file in the head (__sfEarly) and ensureDna takes that answer', async () => {
+  const vm = await import('node:vm');
+  const s0 = html.indexOf('window.__sfEarly = (function'), s1 = html.indexOf('</script>', s0);
+  assert.ok(s0 > 0 && s1 > s0, 'early-fetch block found');
+  const head = html.slice(s0, s1);
+  const run = (search, pair) => {
+    const asked = [], ss = pair ? { stn_h2h_pair: JSON.stringify(pair) } : {};
+    const sb = { location: { search }, URLSearchParams, JSON, Array,
+      sessionStorage: { getItem: k => (k in ss ? ss[k] : null), removeItem: k => { delete ss[k]; } },
+      fetch: (u, init) => { asked.push([u, init && init.cache]); return Promise.resolve({ ok: true }); } };
+    sb.window = sb; vm.runInNewContext(head, sb);
+    return { asked, ss, early: sb.__sfEarly };
+  };
+  const DNA = './dna-apitennis-ratings.json';
+  const link = run('?a=2382&b=1093');
+  assert.deepEqual(link.asked.find(x => x[0] === DNA), [DNA, 'no-cache'], '?a=&b= starts the DNA read, same URL and cache mode as ensureDna');
+  const hand = run('', ['2382', '1093']);
+  assert.ok(hand.asked.some(x => x[0] === DNA), 'the stn_h2h_pair handover starts it too');
+  assert.ok('stn_h2h_pair' in hand.ss, 'the head leaves the handover for xReadHandover');
+  for (const [q, p] of [['', null], ['?a=2382', null], ['', ['2382']]]) assert.ok(!run(q, p).asked.some(x => x[0] === DNA), 'no pair → no DNA read: ' + q + JSON.stringify(p));
+  // ensureDna reads through sfEarlyFetch (one request: the early answer when there is one)
+  const used = [];
+  const h = HX.load({ html, globals: { sfEarlyFetch: (u, init) => { used.push([u, init && init.cache]); return Promise.resolve({ ok: true, json: () => ({ players: [{ playerKey: 2382 }], _meta: {} }) }); } } });
+  h.X.__eval('ensureDna()');
+  assert.deepEqual(used, [[DNA, 'no-cache']]);
+});
