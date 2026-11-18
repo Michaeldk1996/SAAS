@@ -3576,7 +3576,10 @@ const STORES = [
       const v = I.buildBoxVals(PLAYERS[k], { rows: I.ledgerMatches(PLAYERS[k]), archetype: null });
       return v.market && v.market.headline != null;
     }).length,
-    universe: () => Object.keys(MARKET).length,
+    // Profiled players only (the careerSplits precedent): market-edge/ is built for every indexed player, the eager
+    // roster is today's board. 18 Nov the board shrank at the day change (216 -> 190) and 181/365 tripped the floor
+    // although 181 of the 190 profiled players resolve.
+    universe: () => Object.keys(MARKET).filter(k => PLAYERS[k]).length,
     floor: 0.5,
   },
   {
@@ -7337,6 +7340,13 @@ check('fx3 D10 · (roster) the Live trading tile with no in-play state at ten sh
 });
 // item 7 (founder ruling, step 4 ships WITH the rank cap): no career-splits entry -> "Splits not built".
 check('fx3 item 7 · a profiled player with no career-splits entry reads "Splits not built for this player yet"', () => {
+  // Rule 8: when today's roster has every split built (18 Nov: 190 of 190), manufacture the 404 state on one player.
+  let made = null;
+  if (!Object.values(PLAYERS).some(p => !SPLITS[p.key])) {
+    const p = Object.values(PLAYERS).find(q => SPLITS[q.key]);
+    if (p) { made = [p.key, SPLITS[p.key]]; SPLITS[p.key] = null; console.log(`        (no roster player lacks splits today — ${p.name} set to not-built)`); }
+  }
+  try {
   const none = Object.values(PLAYERS).filter(p => !SPLITS[p.key]);
   const some = Object.values(PLAYERS).filter(p => SPLITS[p.key]);
   assert(none.length > 0 && some.length > 0, 'the store holds no player on one side of the rule');
@@ -7355,6 +7365,7 @@ check('fx3 item 7 · a profiled player with no career-splits entry reads "Splits
     assert(!/Splits not built/.test(I.insightsEmptyText(p)), `${p.name}: Key insights claims not built`);
   }
   console.log(`        ${none.length} profiled players without a splits entry, ${some.length} with`);
+  } finally { if (made) SPLITS[made[0]] = made[1]; }
 });
 // D11 · the mark sits UNDER the rate in Record per tournament (fx2 printed it after the event name).
 // Profile v2 (founder 2026-11-09, "I need no mark"; supersedes fx3 D11 on the profile): Record per tournament prints
