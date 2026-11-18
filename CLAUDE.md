@@ -74,6 +74,7 @@ For current build state, open build state — do not rely on a snapshot in this 
 | Open-Meteo (free endpoint, licence accepted by founder — TEN-304) | Venue weather | Live; rules in `.claude/rules/modal-weather.md` |
 | Sackmann tennis_atp | Historical W/L, surface splits, tournament records | In progress |
 | Sackmann MatchCharting | Shot-by-shot, serve/return, rally length | In progress |
+| TennisMyLife TML-Database | Tour-level match stats up to its last date (17 Jan 2026), read by `surface-ratings.js`; later tour matches come from api-tennis box scores, one source per match | Live; commercial use covered by the founder's agreement with TennisMyLife (2026-11-18) |
 
 **Model R&D mode (founder ruling TEN-8).** The h2h-model — every Stage-2 adjustment layer and the Layer #8 MCP archetype baseline — runs in internal R&D mode. The Sackmann CC BY-NC-SA non-commercial restriction gates **commercial serving to paying members**, not internal R&D. Do **not** flag the licence as a blocker on R&D builds — nor, since the agreement below, at commercial deployment.
 

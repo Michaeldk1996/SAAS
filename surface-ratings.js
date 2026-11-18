@@ -431,18 +431,42 @@ function pctOf(sortedArr, v) {
 // unchanged, while a require/import from a test or a tool is now inert.
 // Locked by tools/test-surface-ratings-no-autorun.js, which requires this file and
 // fails if any network call is attempted.
-if (require.main === module) (async () => {
-  // ---- current-ATP pool from player-profiles.json
-  // Each entry carries the surname tokens + first-initial for robust reconciliation.
-  const prof = require('./player-profiles.json').players;
+// The pool = every player the site serves a profile for (deployed player-index.json,
+// hasProfile), named as his profile names him (profiles/<key>.json) and ranked by the
+// live standings in the index. Founder 2026-11-18: the committed July player-profiles.json
+// left current top-200 players (F. Balshaw, M. Brunold, ...) out of the store.
+const POOL_MIN = 500;                 // a smaller index is a broken fetch, not a roster
+const POOL_MAX_SHARD_FAIL = 0.02;     // same fail-loud share as the api-tennis fetches
+function buildPool(indexPlayers, profileTexts) {
   const seen = new Set();
   const pool = [];
-  for (const k in prof) {
-    const nm = prof[k].name; if (!nm || seen.has(nm)) continue; seen.add(nm);
+  for (const p of indexPlayers || []) {
+    if (!p || !p.hasProfile) continue;
+    const text = profileTexts.get(String(p.key));
+    if (!text) continue;
+    const nm = (JSON.parse(text).profile || {}).name; if (!nm || seen.has(nm)) continue; seen.add(nm);
     const t = normTokens(nm); if (!t.length) continue;
     const sur = profileSurname(t);
-    pool.push({ key: String(k), name: nm, rank: parseInt(prof[k].rank, 10) || 9999, fi: t[0][0], surname: sur, lastTok: sur[sur.length - 1] });
+    pool.push({ key: String(p.key), name: nm, rank: parseInt(p.rank, 10) || 9999, fi: t[0][0], surname: sur, lastTok: sur[sur.length - 1] });
   }
+  return pool;
+}
+function loadPool() {
+  const store = require('./tools/deployed-store.js');
+  const idx = store.fetchJson('player-index.json', { maxAgeMs: 0 });
+  const withProfile = ((idx && idx.players) || []).filter(p => p && p.hasProfile);
+  if (withProfile.length < POOL_MIN) throw new Error(`deployed player-index.json lists ${withProfile.length} players with a profile (< ${POOL_MIN}) — refusing to build`);
+  const keys = withProfile.map(p => String(p.key));
+  const { ok, failed } = store.fetchShards('profiles', keys);
+  if (failed.length > keys.length * POOL_MAX_SHARD_FAIL) throw new Error(`${failed.length} of ${keys.length} profiles/<key>.json unreadable — refusing to build`);
+  if (failed.length) console.log(`  ${failed.length} profile shard(s) unreadable, left out: ${failed.join(', ')}`);
+  return buildPool(withProfile, ok);
+}
+
+if (require.main === module) (async () => {
+  // ---- current-ATP pool: every served profile (loadPool)
+  // Each entry carries the surname tokens + first-initial for robust reconciliation.
+  const pool = loadPool();
   console.log(`Pool: ${pool.length} current-ATP players.`);
 
   // ---- read every CSV once → per-player list of match contributions {date, surface, ...}
@@ -874,3 +898,5 @@ if (require.main === module) (async () => {
   fs.renameSync(tmp, dest);
   console.log(`\nWrote surface-ratings.json (${rows.length} players).`);
 })();
+
+module.exports = { buildPool };
