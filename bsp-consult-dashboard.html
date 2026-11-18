@@ -33993,10 +33993,10 @@ window.DatabaseTab = (function(){
   // box (§3). A shown yield is green / red at every sample size; under HARD_GATE (30) the chip is a grey dash.
   // mode: 'tour' | 'tourn' | 'player'. opts: { fade, baseKnown, baseAll, baseFor, player, evName }
   function db3OddsHtml(B){ return '<span>'+B[1]+'</span>'+(B[2]==='+' ? '<i>+</i>' : '<i>\u2013</i><span>'+B[2]+'</span>'); }
-  function db3YieldLine(g, scale){
+  function db3YieldLine(g, scale, dp){
     var hard=!g || g.n<HARD_GATE, y=hard?0:g.yield*100, w=hard||Math.abs(y)<0.005 ? 0 : 14+Math.min(Math.abs(y)/(scale||30),1)*32;
     var c=hard ? 'var(--db2-muted)' : y>0 ? 'var(--db2-green)' : y<0 ? 'var(--db2-red)' : 'var(--db2-muted)';
-    return '<div class="db3-yl"><u style="left:'+(y>=0?50:50-w).toFixed(1)+'%;width:'+w.toFixed(1)+'%;background:'+c+'"></u><span style="color:'+c+'">'+(hard?'\u2014':fmtPct(g.yield))+'</span></div>';
+    return '<div class="db3-yl"><u style="left:'+(y>=0?50:50-w).toFixed(1)+'%;width:'+w.toFixed(1)+'%;background:'+c+'"></u><span style="color:'+c+'">'+(hard?'\u2014':dp===1?(y>0?'+':y<0?'\u2212':'')+Math.abs(y).toFixed(1)+'%':fmtPct(g.yield))+'</span></div>';
   }
   function bandCard2(sideKey, res, mode, opts){
     opts=opts||{};
@@ -34033,7 +34033,9 @@ window.DatabaseTab = (function(){
     return card;
   }
   // ---- the band box (CHANGES §3) ----
-  var DB3_RD={'1st Round':'R1','2nd Round':'R2','3rd Round':'R3','4th Round':'R4','Quarterfinals':'QF','Semifinals':'SF','The Final':'F','Round Robin':'RR'};
+  var DB3_RD={'1st Round':'1R','2nd Round':'2R','3rd Round':'3R','4th Round':'4R','Quarterfinals':'QF','Semifinals':'SF','The Final':'F','Round Robin':'RR'};   // the export's own codes
+  // a match list names the EVENT (the city / common name), never the search label with its season range
+  function db3Ev(ti){ var n=M.tournaments[ti]; return (typeof tdCity==='function' && tdCity(n)) || n; }
   var DB3_MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   function db3Date(d){ return String(d%100).padStart(2,'0')+' '+DB3_MON[Math.floor(d/100)%100-1]+' '+Math.floor(d/10000); }
   var DB3_RIX=null, DB3_RIXOF=null;
@@ -34042,10 +34044,10 @@ window.DatabaseTab = (function(){
   function db3MatchOf(v, ctx){
     if(v.r){
       var r=v.r, nm=NAMES && NAMES.names[db3RowIx(r)], fn=nm?(r[7]?nm[0]:nm[1]):null, dn=nm?(r[7]?nm[1]:nm[0]):null;
-      return { d:r[0], backed:ctx.sideKey==='fav'?fn:dn, opp:ctx.sideKey==='fav'?dn:fn, ev:tournLabel(r[4]), rd:M.rounds[r[3]], p:v.p, won:!!v.w };
+      return { d:r[0], backed:ctx.sideKey==='fav'?fn:dn, opp:ctx.sideKey==='fav'?dn:fn, ev:db3Ev(r[4]), rd:M.rounds[r[3]], p:v.p, won:!!v.w };
     }
     var f=!!ctx.fade;   // a Player rec: his price p, the opponent's op; fading backs the opponent
-    return { d:v.d, backed:f?v.o:ctx.player, opp:f?ctx.player:v.o, ev:tournLabel(v.tour), rd:M.rounds[v.rnd], p:f?v.op:v.p, won:f?!v.w:!!v.w };
+    return { d:v.d, backed:f?v.o:ctx.player, opp:f?ctx.player:v.o, ev:db3Ev(v.tour), rd:M.rounds[v.rnd], p:f?v.op:v.p, won:f?!v.w:!!v.w };
   }
   // The one pop-up box (CHANGES §3 / §7.10): head, four centred tiles, the match list (12, then 12 more). spec:
   // { head:html, tiles:[[label, value, colour, sub]], listTitle, n, ms:[{d, backed, opp, ev, rd, p, won}] newest first, reopen(more) }
@@ -34226,10 +34228,13 @@ window.DatabaseTab = (function(){
         var x=P[me]||(P[me]={ name:me, n:0, pr:0, bw:0, imp:0, sp:0, n24:0, pr24:0, ms:[] });
         x.n++; x.pr+=pr; x.bw+=bw?1:0; x.imp+=1/bp; x.sp+=bp;
         if(r[0]>cut24){ x.n24++; x.pr24+=pr; }
-        x.ms.push({ d:r[0], backed:back?me:op, opp:back?op:me, ev:tournLabel(r[4]), rd:M.rounds[r[3]], p:bp, won:bw });
+        x.ms.push({ d:r[0], backed:back?me:op, opp:back?op:me, ev:db3Ev(r[4]), rd:M.rounds[r[3]], p:bp, won:bw });
       });
     });
-    var list=Object.keys(P).map(function(k){ var x=P[k]; x.y=x.pr/x.n; x.gated=x.n<HARD_GATE; return x; })
+    // the list = players with a Database match in the 24 months to the archive's end (the export lists the current tour,
+    // not retired players): his whole filtered record still counts
+    var active=function(nm){ var rs=playerIndex && playerIndex[nm]; if(!rs) return false; for(var i=rs.length-1;i>=0;i--) if(rs[i].d>cut24) return true; return false; };
+    var list=Object.keys(P).filter(active).map(function(k){ var x=P[k]; x.y=x.pr/x.n; x.gated=x.n<HARD_GATE; return x; })
       .sort(function(a,b){ return (a.gated-b.gated) || (b.y-a.y) || (b.n-a.n); });
     list.forEach(function(x,i){ x.rank = x.gated ? null : i+1; });
     return { list:list, ranked:list.filter(function(x){ return !x.gated; }).length, back:back, role:role };
@@ -34258,7 +34263,7 @@ window.DatabaseTab = (function(){
     var card=el('div','db3-fcard');
     var help='Yield of a flat 1% stake '+(back?'on the player':'on his opponent')+' in every match under the chosen filters, at Pinnacle closing prices. '+
       'A blue dot with a time means he plays today; click it to open the match. Search a player to pin him above the list with his real rank. '+
-      'Players with fewer than '+HARD_GATE+' matches are not ranked and sit at the bottom. 24 months is the same bet over the 24 months to the archive\u2019s last match ('+fmtDate(M.dateRange[1])+'), to show whether the edge is still alive. '+
+      'The list holds the players with a Database match in the 24 months to the archive\u2019s last match. Players with fewer than '+HARD_GATE+' matches are not ranked and sit at the bottom. 24 months is the same bet over the 24 months to the archive\u2019s last match ('+fmtDate(M.dateRange[1])+'), to show whether the edge is still alive. '+
       'Vs price is how many points more often the backed side won than its closing price implied. Click a row to see his matches.';
     card.innerHTML='<div class="db3-fhead"><span class="db3-tt"><b>'+(back?'Players to back':'Players to fade')+'</b><span>'+esc(db3FadeScope(role))+'</span></span>'+
       '<span style="flex:none;margin-left:auto;display:flex;align-items:center;gap:10px"><span class="db3-pill">'+fmtInt(F.ranked)+' of '+fmtInt(F.list.length)+' players ranked</span><span class="db2-q" title="'+esc(help)+'">?</span></span></div>';
@@ -34283,12 +34288,12 @@ window.DatabaseTab = (function(){
     inner.appendChild(el('div','db3-fr hd','<span>#</span><span>Player</span><span style="text-align:center">'+(back?'Back yield':'Fade yield')+'</span><span style="text-align:right">24 months</span><span style="text-align:right">Vs price</span><span style="text-align:right">'+(back?'His price':'Opp. price')+'</span><span style="text-align:right">Matches</span><span></span>'));
     function row(x, isPin){
       var r=el('div','db3-fr'+(isPin?' pin':'')), bw=x.bw/x.n, imp=x.imp/x.n, td=db3Today(x.name), top=x.rank && x.rank<=3;
-      var g24=x.n24<HARD_GATE, y24=g24?null:x.pr24/x.n24, ylr=db3YieldLine(x.gated?{n:0}:{n:x.n, yield:x.y}, 20);
+      var g24=x.n24<HARD_GATE, y24=g24?null:x.pr24/x.n24, ylr=db3YieldLine(x.gated?{n:0}:{n:x.n, yield:x.y}, 20, 1);
       var sub = (isPin?'<span class="pn">Pinned</span>':'')+(td?'<span class="td" title="'+esc('Plays '+td.opp+' today at '+td.time+' \u00b7 '+sfEventName(td.m.tour||''))+'">Today<b>'+esc(td.time)+'</b></span>':'');
       r.innerHTML='<span class="rk" style="font-weight:'+(top?700:500)+';color:'+(top?'var(--db2-ink)':'var(--db2-muted)')+'">'+(x.rank||'\u2014')+'</span>'+
         '<span class="pl">'+db3Ava(x.name,30,10.5)+'<span><span class="nm" style="color:'+(x.gated?'var(--db2-muted)':'var(--db2-ink)')+'">'+esc(x.name)+'</span>'+(sub?'<span class="sub">'+sub+'</span>':'')+'</span></span>'+
         ylr+
-        '<span class="st"><b style="color:'+(y24==null?'var(--db2-muted)':y24>0?'var(--db2-green)':y24<0?'var(--db2-red)':'var(--db2-muted)')+'">'+(y24==null?'\u2014':sg(y24*100,1,'%'))+'</b><span>'+fmtInt(x.n24)+' matches</span></span>'+
+        '<span class="st"><b style="color:'+(y24==null?'var(--db2-muted)':y24>0?'var(--db2-green)':y24<0?'var(--db2-red)':'var(--db2-muted)')+'">'+(y24==null?'\u2014':sg(y24*100,1,'%'))+'</b><span>'+fmtInt(x.n24)+' '+dbMatchWord(x.n24)+'</span></span>'+
         '<span class="st"><b style="color:'+(x.gated?'var(--db2-muted)':bw>imp?'var(--db2-green)':bw<imp?'var(--db2-red)':'var(--db2-muted)')+'">'+(x.gated?'\u2014':sg((bw-imp)*100,1,' pts'))+'</b><span>'+(back?'won ':'lost ')+Math.round(bw*100)+'% \u00b7 priced '+Math.round(imp*100)+'%</span></span>'+
         '<span class="pr">'+fmtP(x.sp/x.n)+'</span><span class="db3-bm">'+fmtInt(x.n)+'</span>';
       if(isPin){ var xb=el('button','db3-xs'); xb.type='button'; xb.title='Unpin'; xb.style.marginLeft='-4px'; xb.onclick=function(e){ e.stopPropagation(); state.fadePin=null; render(); }; r.appendChild(xb); }

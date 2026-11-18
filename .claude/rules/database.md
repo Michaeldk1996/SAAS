@@ -211,7 +211,9 @@ inside every mount (`[data-db-root]`). Ratings and Lines rules: `ratings.md`, `l
 - "Which players should I bet against in this round?" Sixth tab, after Player; opening it with no round chosen presets
   Round = 1st Round. The Tour filter bar. **Every figure is the Database's own rows** under those filters (Pinnacle closing):
   per player, a flat 1% stake on his opponent (To fade) or on him (To back), All · As favourite · As underdog by the shorter
-  price of the match. Players under HARD_GATE (30) are unranked, grey, at the bottom. **24 months** = the same filters over the
+  price of the match. **The list = players with a Database match in the 24 months to the archive's end** (the export lists the
+  current tour; built 2026-11-18, the founder to confirm); his whole filtered record counts. Players under HARD_GATE (30) are
+  unranked, grey, at the bottom. **24 months** = the same filters over the
   24 months to the archive's last match. **Vs price** = the backed side's win rate minus the mean implied chance of its
   closing price, in points ("lost 41% · priced 33%"). Opp. price / His price = the backed side's mean closing price.
 - The card: "Players to fade / back" over the scope line (filters only) | "n of N players ranked" + "?" (every explanation).
