@@ -136,7 +136,8 @@ inside every mount (`[data-db-root]`). Ratings and Lines rules: `ratings.md`, `l
 - **Swing** = the 11 swings of the Player Profile's swing calendar ("Team / other" left out), ONE rule with the profile:
   `PlayerProfileV2._internals.calSwingOf` over the match month, its surface and the tournament catalog's indoor flag and
   country (`db3SwingOf`). **Tour** = ATP · Challenger · ITF; the Database holds ATP main draw only (founder 2026-10-30), so
-  Challenger and ITF are listed and disabled with that reason on hover (`DB3_LOWER_IN_DB`, pending the founder's ruling).
+  Challenger and ITF are listed and disabled with that reason on hover (`DB3_LOWER_IN_DB` false; founder ruling 2026-11-18:
+  "ATP only, others greyed" — no methodology change). **Test:** the Tour menu's Challenger and ITF rows are `off` and do nothing.
 - Search with chips: well `--db2-inset`, radius 9; chips 26px, radius 6, `--db2-raised` + 16%, **a player chip carries a
   20px avatar** and every remove cross is drawn (18px). The player search pop-up: a caps "Players  N" head, each row a 24px
   ringed avatar, the name and "#rank". **Every player avatar is his photo when he has one** (founder review 2026-11-18): the
