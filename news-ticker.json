@@ -1,18 +1,18 @@
 {
- "generatedAt": "2026-11-18T14:45:43.925Z",
+ "generatedAt": "2026-11-18T15:10:22.441Z",
  "tournaments": [
   {
    "key": "2794",
    "season": "2026",
    "name": "Finals - Turin",
    "file": "news-ticker/2794-2026.json",
-   "items": 32,
+   "items": 38,
    "byType": {
     "report": 7,
-    "quote": 25
+    "quote": 31
    },
    "latestTimestamp": "2026-11-18T14:25:28.062Z",
-   "updatedAt": "2026-11-18T14:45:43.925Z"
+   "updatedAt": "2026-11-18T15:10:22.441Z"
   },
   {
    "key": "tour",
@@ -50,7 +50,7 @@
     "report": 1
    },
    "latestTimestamp": "2026-11-08T14:20:00.000Z",
-   "updatedAt": "2026-11-17T10:10:06.924Z"
+   "updatedAt": "2026-11-18T15:10:22.441Z"
   }
  ],
  "latest": [
@@ -116,10 +116,10 @@
       "tone": null,
       "metric": "firstIn",
       "value": 56,
-      "baseline": 69,
+      "baseline": 68,
       "scope": "last52",
       "surface": "Hard",
-      "n": 42
+      "n": 43
      },
      {
       "player": "winner",
@@ -136,10 +136,10 @@
       "value": 76,
       "won": 16,
       "total": 21,
-      "baseline": 55,
+      "baseline": 56,
       "scope": "last52",
       "surface": "Hard",
-      "n": 42
+      "n": 43
      },
      {
       "player": "winner",
@@ -157,7 +157,7 @@
       "baseline": 34,
       "scope": "last52",
       "surface": "Hard",
-      "n": 42
+      "n": 43
      },
      {
       "player": "winner",
@@ -173,10 +173,10 @@
       "value": 39,
       "won": 7,
       "total": 18,
-      "baseline": 50,
+      "baseline": 49,
       "scope": "last52",
       "surface": "Hard",
-      "n": 54
+      "n": 55
      }
     ],
     "winner": {
@@ -200,8 +200,10 @@
    "sourceUrl": "pbp/12179696.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "114467840c295efa",
+   "sourceHash": "809718c7bf378c91",
    "publishedAt": "2026-11-18T14:45:43.925Z",
+   "revisedAt": "2026-11-18T15:10:22.441Z",
+   "revision": 1,
    "file": "news-ticker/2794-2026.json"
   },
   {
@@ -265,6 +267,99 @@
    "sourceHash": "9cc87ad156b4b2d1",
    "publishedAt": "2026-11-18T13:44:26.285Z",
    "file": "news-ticker/tour-2026.json"
+  },
+  {
+   "id": "quote-3c496f49e7141e",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": "2973",
+   "player": "A. Zverev",
+   "opponent": "B. Shelton",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-18T11:37:29.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating B. Shelton",
+   "eventKey": "12179705",
+   "won": true,
+   "text": "I don&#039;t care how I win the match point as long as I win it. But it was a highlight a little bit,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Gulf Times",
+   "sourceUrl": "https://www.gulf-times.com/article/738530/sport/tennis/zverev-serves-up-emphatic-win-to-reach-atp-finals-last-four",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On winning match point with a forehand pass",
+   "sourceHash": "4ef4f67fade081d7",
+   "publishedAt": "2026-11-18T15:10:22.441Z",
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "quote-81038774dc54bb",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": "2973",
+   "player": "A. Zverev",
+   "opponent": "B. Shelton",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-18T11:37:29.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating B. Shelton",
+   "eventKey": "12179705",
+   "won": true,
+   "text": "If I focus on myself and play good tennis the results will take care of themselves,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Gulf Times",
+   "sourceUrl": "https://www.gulf-times.com/article/738530/sport/tennis/zverev-serves-up-emphatic-win-to-reach-atp-finals-last-four",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On focusing on his own game",
+   "sourceHash": "342e0b26710ff993",
+   "publishedAt": "2026-11-18T15:10:22.441Z",
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "quote-999083727b02a3",
+   "type": "quote",
+   "playerId": "50323",
+   "opponentId": "1759",
+   "player": "R. Jodar",
+   "opponent": "A. Fils",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-18T11:37:29.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after losing to A. Fils",
+   "eventKey": "12179700",
+   "won": false,
+   "text": "I&#039;m better now, but it was tough obviously, because I felt that I couldn&#039;t compete and physically, I wasn&#039;t at the level today, especially in the last two sets,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Gulf Times",
+   "sourceUrl": "https://www.gulf-times.com/article/738530/sport/tennis/zverev-serves-up-emphatic-win-to-reach-atp-finals-last-four",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his physical problems in defeat to Fils",
+   "sourceHash": "6433e89cf990b487",
+   "publishedAt": "2026-11-18T15:10:22.441Z",
+   "file": "news-ticker/2794-2026.json"
   },
   {
    "id": "quote-b52ffc7d9a01c3",
@@ -898,10 +993,10 @@
       "value": 88,
       "won": 38,
       "total": 43,
-      "baseline": 78,
+      "baseline": 79,
       "scope": "last52",
       "surface": "Hard",
-      "n": 49
+      "n": 50
      },
      {
       "player": "loser",
@@ -913,7 +1008,7 @@
       "baseline": 57,
       "scope": "last52",
       "surface": "Hard",
-      "n": 42
+      "n": 43
      }
     ],
     "winner": {
@@ -937,10 +1032,10 @@
    "sourceUrl": "pbp/12179705.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "e493eeeea8f62699",
+   "sourceHash": "47ea2d7d8571d2bb",
    "publishedAt": "2026-11-17T21:48:12.504Z",
-   "revisedAt": "2026-11-18T12:04:07.855Z",
-   "revision": 3,
+   "revisedAt": "2026-11-18T15:10:22.441Z",
+   "revision": 4,
    "file": "news-ticker/2794-2026.json"
   },
   {
@@ -1161,6 +1256,99 @@
    "file": "news-ticker/tour-2026.json"
   },
   {
+   "id": "quote-64e0ce634a49fc",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": "2973",
+   "player": "A. Zverev",
+   "opponent": "B. Shelton",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-17T16:00:31.592Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating B. Shelton",
+   "eventKey": "12179705",
+   "won": true,
+   "text": "I was very clear-minded of what I wanted to do with that ball and it was perfect,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "TSN",
+   "sourceUrl": "https://www.tsn.ca/tennis/article/fils-beats-jodar-for-first-win-at-atp-finals/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his match-winning forehand passing shot",
+   "sourceHash": "6b0b3eed56ce8670",
+   "publishedAt": "2026-11-18T15:10:22.441Z",
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "quote-9bd02be01c737d",
+   "type": "quote",
+   "playerId": "50323",
+   "opponentId": "1759",
+   "player": "R. Jodar",
+   "opponent": "A. Fils",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-17T16:00:31.592Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after losing to A. Fils",
+   "eventKey": "12179700",
+   "won": false,
+   "text": "I felt that I couldn’t compete,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "TSN",
+   "sourceUrl": "https://www.tsn.ca/tennis/article/fils-beats-jodar-for-first-win-at-atp-finals/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his physical struggles in the last two sets",
+   "sourceHash": "e1991a74e0ac40bc",
+   "publishedAt": "2026-11-18T15:10:22.441Z",
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "quote-c21bdbdb6ba96c",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": "2973",
+   "player": "A. Zverev",
+   "opponent": "B. Shelton",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-17T16:00:31.592Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating B. Shelton",
+   "eventKey": "12179705",
+   "won": true,
+   "text": "The first set was almost perfect, … That helps when two big servers are playing each other. ... In the second-set tiebreak I played a few fantastic points, especially the match point was the highlight.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "TSN",
+   "sourceUrl": "https://www.tsn.ca/tennis/article/fils-beats-jodar-for-first-win-at-atp-finals/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his ATP Finals win over Shelton",
+   "sourceHash": "663b0d430bd5c95e",
+   "publishedAt": "2026-11-18T15:10:22.441Z",
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
    "id": "quote-7ae38bcff83008",
    "type": "quote",
    "playerId": "1980",
@@ -1321,8 +1509,17 @@
    "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
    "interview": "on-court",
    "topic": "On the first set",
-   "sourceHash": "a94209f3c95c4c60",
+   "alsoReportedBy": [
+    {
+     "sourceName": "Gulf Times",
+     "sourceUrl": "https://www.gulf-times.com/article/738530/sport/tennis/zverev-serves-up-emphatic-win-to-reach-atp-finals-last-four",
+     "language": "en"
+    }
+   ],
+   "sourceHash": "d6dc0f420ddbb61e",
    "publishedAt": "2026-11-18T12:04:07.855Z",
+   "revisedAt": "2026-11-18T15:10:22.441Z",
+   "revision": 1,
    "file": "news-ticker/2794-2026.json"
   },
   {
@@ -1420,385 +1617,6 @@
    "sourceHash": "209069bc46e42338",
    "publishedAt": "2026-11-18T12:04:07.855Z",
    "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-d50e0b08a67089",
-   "type": "quote",
-   "playerId": "1759",
-   "opponentId": null,
-   "player": "A. Fils",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-17T15:21:00.000Z",
-   "timestampKind": "observed (Tennis TV published the clip then)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "It means a lot to me. It means a lot after a tough start. Of course, I played a great match against Ben, actually. Just unlucky.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "On-court interview",
-   "sourceUrl": "https://www.tennistv.com/videos/4610434/turin-2026-rr-fils-interview",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
-   "interview": "on-court",
-   "topic": "On his first win at the ATP Finals",
-   "sourceHash": "c0b0ef732334f371",
-   "publishedAt": "2026-11-17T16:25:01.354Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-8415cad9c02327",
-   "type": "quote",
-   "playerId": "9909",
-   "opponentId": null,
-   "player": "G. Diallo",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-17T15:20:06.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "I couldn't stand by and watch while no one said stop. Stop to the way Fifa is being run today",
-   "originalText": "Jeg kunne ikke se på at ingen sa stopp. Stopp til måten Fifa blir drevet på i dag",
-   "language": "no",
-   "translated": true,
-   "translationModel": "claude-opus-5-5",
-   "sourceName": "NRK Sport",
-   "sourceUrl": "https://www.nrk.no/sport/philippe-diallo-utfordrer-gianni-infantino-_-bestemte-seg-for-a-stille-etter-at-arsene-wenger-sa-nei-1.18083460",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On challenging Infantino over how FIFA is run",
-   "sourceHash": "53fe9ed436713e37",
-   "publishedAt": "2026-11-17T16:04:59.441Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "report-12179700",
-   "type": "report",
-   "playerId": "1759",
-   "opponentId": "50323",
-   "player": "A. Fils",
-   "opponent": "R. Jodar",
-   "tournament": "Finals - Turin",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "stage": "main draw",
-   "round": "group stage",
-   "eventKey": "12179700",
-   "timestamp": "2026-11-17T15:04:27.681Z",
-   "timestampKind": "observed",
-   "observed": {
-    "endedAt": "2026-11-17T15:04:27.681Z",
-    "startedAt": "2026-11-17T13:12:51.965Z",
-    "minutes": 112
-   },
-   "category": "Statistics",
-   "text": "Fils beat Jodar 4–6, 6–2, 6–2 in the group stage to get his first win at the ATP Finals and stay in contention for the semi-finals. It was the first appearance at this event for both players.\n\nThe first set could easily have gone the other way. Fils was the one with the break points but Jodar saved two of them early in the set and another one late. Then, in the very last game, Jodar broke to take it 6–4 and lead by a set. Fils was angry with himself for letting that set slip and the win brought him relief: \"Here the first set was a bit so-so. I was struggling a little bit, a bit of frustration. … A little bit of relief now.\"\n\nFrom there he took control. He broke early in the second set and won 5 games in a row to take it 6–2 and level at one set all. The deciding set went the same way. He got an early break, added a second one late and took it 6–2.\n\nThat turnaround came from the way he kept pressing to the end. He was clearly the better player from the baseline, hit his targets with real accuracy and kept putting Jodar's serve under pressure. Over the whole match, it added up to a dominance ratio of 1.66.\n\nOn the other side of the net, Jodar called the physio in the middle of the second set.\n\nThat is a good win with one clear thing to fix. Fils landed only 50% of his first serves, well below his 63% average on hard and he will need more of them in his last group match. Up next: Zverev.\n\nFils: performance rating 8.8 | W: 18 / UE: 19 | DR: 1.66\n\nJodar: performance rating 7.6 | W: 20 / UE: 33 | DR: 0.60",
-   "baseText": "Fils beat Jodar 4–6, 6–2, 6–2 in the group stage to get his first win at the ATP Finals and stay in contention for the semi-finals. It was the first appearance at this event for both players.\n\nThe first set could easily have gone the other way. Fils was the one with the break points but Jodar saved two of them early in the set and another one late. Then, in the very last game, Jodar broke to take it 6–4 and lead by a set. Fils was angry with himself for letting that set slip and the win brought him relief: \"Here the first set was a bit so-so. I was struggling a little bit, a bit of frustration. … A little bit of relief now.\"\n\nFrom there he took control. He broke early in the second set and won 5 games in a row to take it 6–2 and level at one set all. The deciding set went the same way. He got an early break, added a second one late and took it 6–2.\n\nThat turnaround came from the way he kept pressing to the end. He was clearly the better player from the baseline, hit his targets with real accuracy and kept putting Jodar's serve under pressure. Over the whole match, it added up to a dominance ratio of 1.66.\n\nOn the other side of the net, Jodar called the physio in the middle of the second set.\n\nThat is a good win with one clear thing to fix. Fils landed only 50% of his first serves, well below his 63% average on hard and he will need more of them in his last group match. Up next: Zverev.",
-   "rating": [
-    "Fils: performance rating 8.8 | W: 18 / UE: 19 | DR: 1.66",
-    "Jodar: performance rating 7.6 | W: 20 / UE: 33 | DR: 0.60"
-   ],
-   "shotStats": {
-    "p1": {
-     "performance": 8.8,
-     "serveQuality": 7.8,
-     "unreturnedPct": 40,
-     "firstInPct": 50,
-     "firstWonPct": 79,
-     "secondWonPct": 73,
-     "secondSpeed": 158,
-     "returnQuality": 8.2,
-     "fhWinners": 7,
-     "bhWinners": 7,
-     "fhUnforced": 10,
-     "bhUnforced": 8,
-     "forcedErrors": 29,
-     "baselineWon": 46,
-     "under9Won": 76,
-     "over9Won": 9,
-     "bpWon": [
-      4,
-      9
-     ],
-     "netWon": [
-      6,
-      9
-     ]
-    },
-    "p2": {
-     "performance": 7.6,
-     "serveQuality": 8.5,
-     "unreturnedPct": 26,
-     "firstInPct": 66,
-     "firstWonPct": 63,
-     "secondWonPct": 53,
-     "secondSpeed": 156,
-     "returnQuality": 5.8,
-     "fhWinners": 7,
-     "bhWinners": 4,
-     "fhUnforced": 18,
-     "bhUnforced": 13,
-     "forcedErrors": 36,
-     "baselineWon": 34,
-     "under9Won": 59,
-     "over9Won": 9,
-     "bpWon": [
-      1,
-      2
-     ],
-     "netWon": [
-      7,
-      12
-     ]
-    },
-    "postedAt": "2026-11-17T15:09:05.000Z",
-    "readAt": "2026-11-17T19:45:32.895Z",
-    "sourceName": "ATP broadcast match statistics (via @ATP_Entry)",
-    "sourceUrl": "https://x.com/ATP_Entry/status/2122708609972785171",
-    "agreed": "6 of 6 serve figures within 3 points of ours; set scores and break points equal",
-    "wue": {
-     "compared": 4,
-     "maxDiff": 2
-    }
-   },
-   "mto": [
-    "Physically, it is something to follow.",
-    "Jodar took a medical timeout at 1–4 in the second set.",
-    "We do not know the reason.",
-    "Maybe something to follow up for the next tournaments of Jodar."
-   ],
-   "commentary": {
-    "text": "Jodar won the first set 6-4 even though his first serve percentage stayed in the low 40s and Fils was angry with himself for letting the set slip after he had been the one with break points. Fils took control in the second set, which was fairly comfortable for him once he broke, while Jodar looked to be struggling physically. Fils kept pressing to the end and hit with pinpoint accuracy, winning 4-6 6-2 6-2. It was his first win at the ATP Finals and it keeps him in contention for the semifinals.",
-    "sourceName": "Tennis TV highlights commentary",
-    "sourceUrl": "https://www.tennistv.com/videos/4610436/turin-2026-rr-fils-jodar-highlights"
-   },
-   "composed": {
-    "version": 3,
-    "sheetHash": "6ad78ed26ff197fa",
-    "status": "ok",
-    "model": "claude-opus-5-5",
-    "tries": 1,
-    "runs": 2,
-    "usage": {
-     "input": 16208,
-     "output": 5141,
-     "calls": 2
-    },
-    "body": "Fils beat Jodar 4–6, 6–2, 6–2 in the group stage to get his first win at the ATP Finals and stay in contention for the semi-finals. It was the first appearance at this event for both players.\n\nThe first set could easily have gone the other way. Fils was the one with the break points but Jodar saved two of them early in the set and another one late. Then, in the very last game, Jodar broke to take it 6–4 and lead by a set. Fils was angry with himself for letting that set slip and the win brought him relief: \"Here the first set was a bit so-so. I was struggling a little bit, a bit of frustration. … A little bit of relief now.\"\n\nFrom there he took control. He broke early in the second set and won 5 games in a row to take it 6–2 and level at one set all. The deciding set went the same way. He got an early break, added a second one late and took it 6–2.\n\nThat turnaround came from the way he kept pressing to the end. He was clearly the better player from the baseline, hit his targets with real accuracy and kept putting Jodar's serve under pressure. Over the whole match, it added up to a dominance ratio of 1.66.\n\nOn the other side of the net, Jodar called the physio in the middle of the second set.\n\nThat is a good win with one clear thing to fix. Fils landed only 50% of his first serves, well below his 63% average on hard and he will need more of them in his last group match. Up next: Zverev."
-   },
-   "fields": {
-    "score": "4-6, 6-2, 6-2",
-    "round": "group stage",
-    "retired": false,
-    "h2h": {
-     "a": 2,
-     "b": 2,
-     "n": 4
-    },
-    "durationMinutes": 112,
-    "facts": {
-     "fromSetDown": true,
-     "longestRun": {
-      "side": "p1",
-      "n": 5,
-      "set": 2,
-      "from": {
-       "me": 0,
-       "opp": 1
-      },
-      "afterBeingBroken": false,
-      "toTheEnd": false
-     }
-    },
-    "standouts": [
-     {
-      "player": "winner",
-      "tone": null,
-      "metric": "firstIn",
-      "value": 50,
-      "baseline": 63,
-      "scope": "last52",
-      "surface": "Hard",
-      "n": 44
-     },
-     {
-      "player": "winner",
-      "tone": null,
-      "metric": "firstWon",
-      "value": 79,
-      "won": 26,
-      "total": 33
-     },
-     {
-      "player": "winner",
-      "tone": null,
-      "metric": "secondWon",
-      "value": 73,
-      "won": 24,
-      "total": 33,
-      "baseline": 57,
-      "scope": "last52",
-      "surface": "Hard",
-      "n": 44
-     },
-     {
-      "player": "winner",
-      "tone": "bad",
-      "metric": "watch",
-      "of": "firstIn"
-     },
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "ret1Won",
-      "value": 37,
-      "won": 21,
-      "total": 57,
-      "baseline": 27,
-      "scope": "last52",
-      "surface": "Hard",
-      "n": 44
-     },
-     {
-      "player": "loser",
-      "tone": "bad",
-      "metric": "winnersErrors",
-      "winners": 20,
-      "unforcedErrors": 33
-     }
-    ],
-    "winner": {
-     "aces": 4,
-     "winners": 18,
-     "unforcedErrors": 19,
-     "breakPointsSaved": 1,
-     "breakPointsFaced": 2,
-     "breakPointsSource": "box score"
-    },
-    "loser": {
-     "aces": 9,
-     "winners": 20,
-     "unforcedErrors": 33,
-     "breakPointsSaved": 5,
-     "breakPointsFaced": 9,
-     "breakPointsSource": "box score"
-    }
-   },
-   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
-   "sourceUrl": "pbp/12179700.json",
-   "language": "en",
-   "translated": false,
-   "sourceHash": "c30524ea34888b7c",
-   "publishedAt": "2026-11-17T15:20:40.094Z",
-   "revisedAt": "2026-11-18T12:04:07.855Z",
-   "revision": 5,
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-0721f6b05c9d53",
-   "type": "quote",
-   "playerId": "9909",
-   "opponentId": null,
-   "player": "G. Diallo",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-17T14:52:41.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "If we want to win, then we have to join forces with those who have ideas similar to ours",
-   "originalText": "Amennyiben győzni akarunk, akkor össze kell fognunk azokkal, akiknek hozzánk hasonló elképzeléseik vannak",
-   "language": "hu",
-   "translated": true,
-   "translationModel": "claude-opus-5-5",
-   "sourceName": "Nemzeti Sport",
-   "sourceUrl": "https://www.nemzetisport.hu/minden-mas-foci/2026/11/fifa-elnokjeloltsegem-remenyt-keltett-a-valtozasokra-philippe-diallo",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On uniting with like-minded FIFA presidential challengers",
-   "sourceHash": "3f9f828f7d496138",
-   "publishedAt": "2026-11-17T15:20:40.094Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-424aae7b88071f",
-   "type": "quote",
-   "playerId": "9909",
-   "opponentId": null,
-   "player": "G. Diallo",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-17T14:52:41.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "The values of our sport have been betrayed, and trust in our organization and its president has been shaken",
-   "originalText": "Sportágunk értékeit elárulták, megrendült a bizalom a szervezetünkben és annak elnökében",
-   "language": "hu",
-   "translated": true,
-   "translationModel": "claude-opus-5-5",
-   "sourceName": "Nemzeti Sport",
-   "sourceUrl": "https://www.nemzetisport.hu/minden-mas-foci/2026/11/fifa-elnokjeloltsegem-remenyt-keltett-a-valtozasokra-philippe-diallo",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On loss of trust in FIFA and Infantino",
-   "sourceHash": "d67780548a6bdb7f",
-   "publishedAt": "2026-11-17T15:20:40.094Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-999083727b02a3",
-   "type": "quote",
-   "playerId": "50323",
-   "opponentId": null,
-   "player": "R. Jodar",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-17T14:35:16.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "I&#039;m better now, but it was tough obviously, because I felt that I couldn&#039;t compete and physically, I wasn&#039;t at the level today, especially in the last two sets,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "Gulf Times",
-   "sourceUrl": "https://www.gulf-times.com/article/738453/sport/tennis/fils-edges-injury-hit-jodar-at-atp-finals",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On his injury in the loss to Fils",
-   "sourceHash": "bfa3c4d88d2fb0f8",
-   "publishedAt": "2026-11-17T18:39:02.883Z",
-   "file": "news-ticker/tour-2026.json"
   }
  ]
 }

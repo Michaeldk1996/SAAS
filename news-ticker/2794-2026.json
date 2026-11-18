@@ -2,7 +2,7 @@
  "tournament": "Finals - Turin",
  "tournamentKey": "2794",
  "season": "2026",
- "updatedAt": "2026-11-18T14:45:43.925Z",
+ "updatedAt": "2026-11-18T15:10:22.441Z",
  "items": [
   {
    "id": "report-12179696",
@@ -66,10 +66,10 @@
       "tone": null,
       "metric": "firstIn",
       "value": 56,
-      "baseline": 69,
+      "baseline": 68,
       "scope": "last52",
       "surface": "Hard",
-      "n": 42
+      "n": 43
      },
      {
       "player": "winner",
@@ -86,10 +86,10 @@
       "value": 76,
       "won": 16,
       "total": 21,
-      "baseline": 55,
+      "baseline": 56,
       "scope": "last52",
       "surface": "Hard",
-      "n": 42
+      "n": 43
      },
      {
       "player": "winner",
@@ -107,7 +107,7 @@
       "baseline": 34,
       "scope": "last52",
       "surface": "Hard",
-      "n": 42
+      "n": 43
      },
      {
       "player": "winner",
@@ -123,10 +123,10 @@
       "value": 39,
       "won": 7,
       "total": 18,
-      "baseline": 50,
+      "baseline": 49,
       "scope": "last52",
       "surface": "Hard",
-      "n": 54
+      "n": 55
      }
     ],
     "winner": {
@@ -150,8 +150,100 @@
    "sourceUrl": "pbp/12179696.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "114467840c295efa",
-   "publishedAt": "2026-11-18T14:45:43.925Z"
+   "sourceHash": "809718c7bf378c91",
+   "publishedAt": "2026-11-18T14:45:43.925Z",
+   "revisedAt": "2026-11-18T15:10:22.441Z",
+   "revision": 1
+  },
+  {
+   "id": "quote-3c496f49e7141e",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": "2973",
+   "player": "A. Zverev",
+   "opponent": "B. Shelton",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-18T11:37:29.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating B. Shelton",
+   "eventKey": "12179705",
+   "won": true,
+   "text": "I don&#039;t care how I win the match point as long as I win it. But it was a highlight a little bit,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Gulf Times",
+   "sourceUrl": "https://www.gulf-times.com/article/738530/sport/tennis/zverev-serves-up-emphatic-win-to-reach-atp-finals-last-four",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On winning match point with a forehand pass",
+   "sourceHash": "4ef4f67fade081d7",
+   "publishedAt": "2026-11-18T15:10:22.441Z"
+  },
+  {
+   "id": "quote-81038774dc54bb",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": "2973",
+   "player": "A. Zverev",
+   "opponent": "B. Shelton",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-18T11:37:29.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating B. Shelton",
+   "eventKey": "12179705",
+   "won": true,
+   "text": "If I focus on myself and play good tennis the results will take care of themselves,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Gulf Times",
+   "sourceUrl": "https://www.gulf-times.com/article/738530/sport/tennis/zverev-serves-up-emphatic-win-to-reach-atp-finals-last-four",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On focusing on his own game",
+   "sourceHash": "342e0b26710ff993",
+   "publishedAt": "2026-11-18T15:10:22.441Z"
+  },
+  {
+   "id": "quote-999083727b02a3",
+   "type": "quote",
+   "playerId": "50323",
+   "opponentId": "1759",
+   "player": "R. Jodar",
+   "opponent": "A. Fils",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-18T11:37:29.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after losing to A. Fils",
+   "eventKey": "12179700",
+   "won": false,
+   "text": "I&#039;m better now, but it was tough obviously, because I felt that I couldn&#039;t compete and physically, I wasn&#039;t at the level today, especially in the last two sets,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Gulf Times",
+   "sourceUrl": "https://www.gulf-times.com/article/738530/sport/tennis/zverev-serves-up-emphatic-win-to-reach-atp-finals-last-four",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his physical problems in defeat to Fils",
+   "sourceHash": "6433e89cf990b487",
+   "publishedAt": "2026-11-18T15:10:22.441Z"
   },
   {
    "id": "quote-1bfe28c7bb6572",
@@ -366,10 +458,10 @@
       "value": 88,
       "won": 38,
       "total": 43,
-      "baseline": 78,
+      "baseline": 79,
       "scope": "last52",
       "surface": "Hard",
-      "n": 49
+      "n": 50
      },
      {
       "player": "loser",
@@ -381,7 +473,7 @@
       "baseline": 57,
       "scope": "last52",
       "surface": "Hard",
-      "n": 42
+      "n": 43
      }
     ],
     "winner": {
@@ -405,10 +497,100 @@
    "sourceUrl": "pbp/12179705.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "e493eeeea8f62699",
+   "sourceHash": "47ea2d7d8571d2bb",
    "publishedAt": "2026-11-17T21:48:12.504Z",
-   "revisedAt": "2026-11-18T12:04:07.855Z",
-   "revision": 3
+   "revisedAt": "2026-11-18T15:10:22.441Z",
+   "revision": 4
+  },
+  {
+   "id": "quote-64e0ce634a49fc",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": "2973",
+   "player": "A. Zverev",
+   "opponent": "B. Shelton",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-17T16:00:31.592Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating B. Shelton",
+   "eventKey": "12179705",
+   "won": true,
+   "text": "I was very clear-minded of what I wanted to do with that ball and it was perfect,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "TSN",
+   "sourceUrl": "https://www.tsn.ca/tennis/article/fils-beats-jodar-for-first-win-at-atp-finals/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his match-winning forehand passing shot",
+   "sourceHash": "6b0b3eed56ce8670",
+   "publishedAt": "2026-11-18T15:10:22.441Z"
+  },
+  {
+   "id": "quote-9bd02be01c737d",
+   "type": "quote",
+   "playerId": "50323",
+   "opponentId": "1759",
+   "player": "R. Jodar",
+   "opponent": "A. Fils",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-17T16:00:31.592Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after losing to A. Fils",
+   "eventKey": "12179700",
+   "won": false,
+   "text": "I felt that I couldn’t compete,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "TSN",
+   "sourceUrl": "https://www.tsn.ca/tennis/article/fils-beats-jodar-for-first-win-at-atp-finals/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his physical struggles in the last two sets",
+   "sourceHash": "e1991a74e0ac40bc",
+   "publishedAt": "2026-11-18T15:10:22.441Z"
+  },
+  {
+   "id": "quote-c21bdbdb6ba96c",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": "2973",
+   "player": "A. Zverev",
+   "opponent": "B. Shelton",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-17T16:00:31.592Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating B. Shelton",
+   "eventKey": "12179705",
+   "won": true,
+   "text": "The first set was almost perfect, … That helps when two big servers are playing each other. ... In the second-set tiebreak I played a few fantastic points, especially the match point was the highlight.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "TSN",
+   "sourceUrl": "https://www.tsn.ca/tennis/article/fils-beats-jodar-for-first-win-at-atp-finals/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his ATP Finals win over Shelton",
+   "sourceHash": "663b0d430bd5c95e",
+   "publishedAt": "2026-11-18T15:10:22.441Z"
   },
   {
    "id": "quote-01019dc796c0db",
@@ -438,8 +620,17 @@
    "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
    "interview": "on-court",
    "topic": "On the first set",
-   "sourceHash": "a94209f3c95c4c60",
-   "publishedAt": "2026-11-18T12:04:07.855Z"
+   "alsoReportedBy": [
+    {
+     "sourceName": "Gulf Times",
+     "sourceUrl": "https://www.gulf-times.com/article/738530/sport/tennis/zverev-serves-up-emphatic-win-to-reach-atp-finals-last-four",
+     "language": "en"
+    }
+   ],
+   "sourceHash": "d6dc0f420ddbb61e",
+   "publishedAt": "2026-11-18T12:04:07.855Z",
+   "revisedAt": "2026-11-18T15:10:22.441Z",
+   "revision": 1
   },
   {
    "id": "quote-c4c48f61af2990",
@@ -1056,10 +1247,10 @@
       "tone": "good",
       "metric": "firstIn",
       "value": 76,
-      "baseline": 66,
+      "baseline": 65,
       "scope": "last52",
       "surface": "Hard",
-      "n": 54
+      "n": 55
      },
      {
       "player": "winner",
@@ -1076,10 +1267,10 @@
       "value": 69,
       "won": 9,
       "total": 13,
-      "baseline": 50,
+      "baseline": 49,
       "scope": "last52",
       "surface": "Hard",
-      "n": 54
+      "n": 55
      },
      {
       "player": "winner",
@@ -1110,10 +1301,10 @@
    "sourceUrl": "pbp/12179701.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "e9fdcb167461cbd0",
+   "sourceHash": "c414da8aa0d14a0e",
    "publishedAt": "2026-11-16T21:39:49.438Z",
-   "revisedAt": "2026-11-18T12:04:07.855Z",
-   "revision": 5
+   "revisedAt": "2026-11-18T15:10:22.441Z",
+   "revision": 6
   },
   {
    "id": "quote-0a079538e2173b",
@@ -1443,10 +1634,10 @@
       "tone": "good",
       "metric": "firstIn",
       "value": 78,
-      "baseline": 69,
+      "baseline": 68,
       "scope": "last52",
       "surface": "Hard",
-      "n": 42
+      "n": 43
      },
      {
       "player": "winner",
@@ -1458,7 +1649,7 @@
       "baseline": 34,
       "scope": "last52",
       "surface": "Hard",
-      "n": 42
+      "n": 43
      },
      {
       "player": "winner",
@@ -1470,7 +1661,7 @@
       "baseline": 55,
       "scope": "last52",
       "surface": "Hard",
-      "n": 42
+      "n": 43
      },
      {
       "player": "winner",
@@ -1501,10 +1692,10 @@
    "sourceUrl": "pbp/12179698.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "191f7b75f889132a",
+   "sourceHash": "b7aaa32f34ef82d7",
    "publishedAt": "2026-11-16T14:52:36.833Z",
-   "revisedAt": "2026-11-18T12:04:07.855Z",
-   "revision": 5
+   "revisedAt": "2026-11-18T15:10:22.441Z",
+   "revision": 6
   },
   {
    "id": "quote-df7f4ef2255f5b",
@@ -1789,7 +1980,7 @@
       "baseline": 57,
       "scope": "last52",
       "surface": "Hard",
-      "n": 42
+      "n": 43
      },
      {
       "player": "winner",
@@ -1801,7 +1992,7 @@
       "baseline": 26,
       "scope": "last52",
       "surface": "Hard",
-      "n": 42
+      "n": 43
      },
      {
       "player": "winner",
@@ -1832,10 +2023,10 @@
    "sourceUrl": "pbp/12179703.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "7d070a46fd73c4e1",
+   "sourceHash": "b827078734dd6797",
    "publishedAt": "2026-11-15T22:09:59.550Z",
-   "revisedAt": "2026-11-18T12:04:07.855Z",
-   "revision": 5
+   "revisedAt": "2026-11-18T15:10:22.441Z",
+   "revision": 6
   },
   {
    "id": "quote-2fa1fb1434e63f",
@@ -2088,10 +2279,10 @@
       "tone": "good",
       "metric": "firstIn",
       "value": 84,
-      "baseline": 71,
+      "baseline": 72,
       "scope": "last52",
       "surface": "Hard",
-      "n": 49
+      "n": 50
      },
      {
       "player": "loser",
@@ -2127,10 +2318,10 @@
    "sourceUrl": "pbp/12179707.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "cc67572ac77772f0",
+   "sourceHash": "b904950a89853080",
    "publishedAt": "2026-11-15T15:18:15.690Z",
-   "revisedAt": "2026-11-18T12:04:07.855Z",
-   "revision": 6
+   "revisedAt": "2026-11-18T15:10:22.441Z",
+   "revision": 7
   }
  ]
 }
