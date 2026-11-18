@@ -1,18 +1,18 @@
 {
- "generatedAt": "2026-11-18T21:19:47.810Z",
+ "generatedAt": "2026-11-18T21:42:20.669Z",
  "tournaments": [
   {
    "key": "2794",
    "season": "2026",
    "name": "Finals - Turin",
    "file": "news-ticker/2794-2026.json",
-   "items": 126,
+   "items": 128,
    "byType": {
-    "quote": 119,
-    "report": 7
+    "report": 8,
+    "quote": 120
    },
-   "latestTimestamp": "2026-11-18T18:10:00.000Z",
-   "updatedAt": "2026-11-18T21:19:47.810Z"
+   "latestTimestamp": "2026-11-18T21:12:49.390Z",
+   "updatedAt": "2026-11-18T21:42:20.669Z"
   },
   {
    "key": "tour",
@@ -24,7 +24,7 @@
     "quote": 96
    },
    "latestTimestamp": "2026-11-18T12:45:16.000Z",
-   "updatedAt": "2026-11-18T21:19:47.810Z"
+   "updatedAt": "2026-11-18T21:42:20.669Z"
   },
   {
    "key": "1681",
@@ -54,6 +54,156 @@
   }
  ],
  "latest": [
+  {
+   "id": "report-12179699",
+   "type": "report",
+   "playerId": "2846",
+   "opponentId": "372",
+   "player": "F. Tiafoe",
+   "opponent": "F. Cobolli",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "stage": "main draw",
+   "round": "group stage",
+   "eventKey": "12179699",
+   "timestamp": "2026-11-18T21:12:49.390Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-18T21:12:49.390Z",
+    "startedAt": "2026-11-18T19:42:48.014Z",
+    "minutes": 90
+   },
+   "category": "Statistics",
+   "text": "Tiafoe beat Cobolli for the 5th time in 6 meetings, 7-6, 6-0 in the group stage.\n\nTiafoe: W: 20 / UE: 11 | DR: 1.64\n\nCobolli: W: 17 / UE: 29 | DR: 0.61",
+   "baseText": "Tiafoe beat Cobolli for the 5th time in 6 meetings, 7-6, 6-0 in the group stage.",
+   "rating": [
+    "Tiafoe: W: 20 / UE: 11 | DR: 1.64",
+    "Cobolli: W: 17 / UE: 29 | DR: 0.61"
+   ],
+   "fields": {
+    "score": "7-6, 6-0",
+    "round": "group stage",
+    "retired": false,
+    "h2h": {
+     "a": 5,
+     "b": 1,
+     "n": 6
+    },
+    "durationMinutes": 90,
+    "facts": {
+     "tiebreakSets": [
+      {
+       "set": 1,
+       "winner": "p2"
+      }
+     ],
+     "longestRun": {
+      "side": "p2",
+      "n": 7,
+      "set": 1,
+      "from": {
+       "me": 6,
+       "opp": 6
+      },
+      "afterBeingBroken": false,
+      "toTheEnd": true
+     }
+    },
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "firstWon",
+      "value": 85,
+      "won": 28,
+      "total": 33,
+      "baseline": 75,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 44
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "ret1Won",
+      "value": 36,
+      "won": 16,
+      "total": 44,
+      "baseline": 26,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 44
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "ret2Won",
+      "value": 63,
+      "won": 17,
+      "total": 27,
+      "baseline": 51,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 44
+     }
+    ],
+    "winner": {
+     "aces": 6,
+     "winners": 20,
+     "unforcedErrors": 11,
+     "breakPointsSaved": 2,
+     "breakPointsFaced": 3,
+     "breakPointsSource": "box score"
+    },
+    "loser": {
+     "aces": 5,
+     "winners": 17,
+     "unforcedErrors": 29,
+     "breakPointsSaved": 4,
+     "breakPointsFaced": 8,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12179699.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "1d8ba9dab18c8fc2",
+   "publishedAt": "2026-11-18T21:42:20.669Z",
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "quote-08f755d91dd4c8",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": "1093",
+   "player": "C. Alcaraz",
+   "opponent": "D. Medvedev",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-18T20:58:56.782Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating D. Medvedev",
+   "eventKey": "12179696",
+   "won": true,
+   "text": "I just have to give 100 percent and try to stay away from this fear",
+   "originalText": "Ich muss einfach 100 Prozent geben und versuchen, mich von dieser Angst fernzuhalten",
+   "language": "de",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "Sportschau (ARD)",
+   "sourceUrl": "https://www.sportschau.de/tennis/atp/wie-carlos-alcaraz-sein-spiel-veraendert-hat,alcaraz-atp-finals-neuer-stil-100.html",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On fear after his wrist injury comeback",
+   "sourceHash": "983995857a4ea6b6",
+   "publishedAt": "2026-11-18T21:42:20.669Z",
+   "file": "news-ticker/2794-2026.json"
+  },
   {
    "id": "quote-d7eb9bc6d39310",
    "type": "quote",
@@ -1668,68 +1818,6 @@
    "publishedAt": "2026-11-17T21:48:12.504Z",
    "revisedAt": "2026-11-18T15:10:22.441Z",
    "revision": 4,
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-54bf04d2309cb4",
-   "type": "quote",
-   "playerId": "50323",
-   "opponentId": null,
-   "player": "R. Jodar",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-17T20:30:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "I think the first set was good, physically and also technically. I saw that the set could go either way. In the end, it came down to small details,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "TennisUpToDate",
-   "sourceUrl": "https://tennisuptodate.com/atp/we-are-not-robots-rafael-jodar-speaks-out-after-his-body-lets-him-down-against-arthur-fils",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On the close first set against Fils",
-   "sourceHash": "065cb65670909083",
-   "publishedAt": "2026-11-17T21:06:54.957Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-3cb7d284f1285e",
-   "type": "quote",
-   "playerId": "1093",
-   "opponentId": "372",
-   "player": "D. Medvedev",
-   "opponent": "F. Cobolli",
-   "tournament": "Finals - Turin",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-17T19:50:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Quotes",
-   "context": "after beating F. Cobolli",
-   "eventKey": "12179701",
-   "won": true,
-   "text": "These conditions give me the best chance of beating him … You get a few free points with your serve or can hit winners because the court is so fast.",
-   "originalText": "Diese Bedingungen geben mir die besten Chancen, dass ich ihn schlage … Man bekommt ein paar freie Punkte mit dem Aufschlag oder kann Winner schlagen, weil der Court so schnell ist.",
-   "language": "de",
-   "translated": true,
-   "translationModel": "claude-opus-5-5",
-   "sourceName": "tennisnet.com",
-   "sourceUrl": "https://www.tennisnet.com/news/atp-finals-darum-glaubt-medvedev-an-seine-chance-gegen-alcaraz",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On fast Turin court helping him against Alcaraz",
-   "sourceHash": "b70c476b6ca2b87a",
-   "publishedAt": "2026-11-18T16:08:21.478Z",
    "file": "news-ticker/2794-2026.json"
   }
  ]

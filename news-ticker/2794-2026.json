@@ -2,8 +2,156 @@
  "tournament": "Finals - Turin",
  "tournamentKey": "2794",
  "season": "2026",
- "updatedAt": "2026-11-18T21:19:47.810Z",
+ "updatedAt": "2026-11-18T21:42:20.669Z",
  "items": [
+  {
+   "id": "report-12179699",
+   "type": "report",
+   "playerId": "2846",
+   "opponentId": "372",
+   "player": "F. Tiafoe",
+   "opponent": "F. Cobolli",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "stage": "main draw",
+   "round": "group stage",
+   "eventKey": "12179699",
+   "timestamp": "2026-11-18T21:12:49.390Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-18T21:12:49.390Z",
+    "startedAt": "2026-11-18T19:42:48.014Z",
+    "minutes": 90
+   },
+   "category": "Statistics",
+   "text": "Tiafoe beat Cobolli for the 5th time in 6 meetings, 7-6, 6-0 in the group stage.\n\nTiafoe: W: 20 / UE: 11 | DR: 1.64\n\nCobolli: W: 17 / UE: 29 | DR: 0.61",
+   "baseText": "Tiafoe beat Cobolli for the 5th time in 6 meetings, 7-6, 6-0 in the group stage.",
+   "rating": [
+    "Tiafoe: W: 20 / UE: 11 | DR: 1.64",
+    "Cobolli: W: 17 / UE: 29 | DR: 0.61"
+   ],
+   "fields": {
+    "score": "7-6, 6-0",
+    "round": "group stage",
+    "retired": false,
+    "h2h": {
+     "a": 5,
+     "b": 1,
+     "n": 6
+    },
+    "durationMinutes": 90,
+    "facts": {
+     "tiebreakSets": [
+      {
+       "set": 1,
+       "winner": "p2"
+      }
+     ],
+     "longestRun": {
+      "side": "p2",
+      "n": 7,
+      "set": 1,
+      "from": {
+       "me": 6,
+       "opp": 6
+      },
+      "afterBeingBroken": false,
+      "toTheEnd": true
+     }
+    },
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "firstWon",
+      "value": 85,
+      "won": 28,
+      "total": 33,
+      "baseline": 75,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 44
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "ret1Won",
+      "value": 36,
+      "won": 16,
+      "total": 44,
+      "baseline": 26,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 44
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "ret2Won",
+      "value": 63,
+      "won": 17,
+      "total": 27,
+      "baseline": 51,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 44
+     }
+    ],
+    "winner": {
+     "aces": 6,
+     "winners": 20,
+     "unforcedErrors": 11,
+     "breakPointsSaved": 2,
+     "breakPointsFaced": 3,
+     "breakPointsSource": "box score"
+    },
+    "loser": {
+     "aces": 5,
+     "winners": 17,
+     "unforcedErrors": 29,
+     "breakPointsSaved": 4,
+     "breakPointsFaced": 8,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12179699.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "1d8ba9dab18c8fc2",
+   "publishedAt": "2026-11-18T21:42:20.669Z"
+  },
+  {
+   "id": "quote-08f755d91dd4c8",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": "1093",
+   "player": "C. Alcaraz",
+   "opponent": "D. Medvedev",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-18T20:58:56.782Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating D. Medvedev",
+   "eventKey": "12179696",
+   "won": true,
+   "text": "I just have to give 100 percent and try to stay away from this fear",
+   "originalText": "Ich muss einfach 100 Prozent geben und versuchen, mich von dieser Angst fernzuhalten",
+   "language": "de",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "Sportschau (ARD)",
+   "sourceUrl": "https://www.sportschau.de/tennis/atp/wie-carlos-alcaraz-sein-spiel-veraendert-hat,alcaraz-atp-finals-neuer-stil-100.html",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On fear after his wrist injury comeback",
+   "sourceHash": "983995857a4ea6b6",
+   "publishedAt": "2026-11-18T21:42:20.669Z"
+  },
   {
    "id": "quote-d7eb9bc6d39310",
    "type": "quote",
@@ -1606,11 +1754,11 @@
    "sourceUrl": "https://www.atptour.com/en/news/jodar-nitto-atp-finals-2026-top-10-trophy",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "topic": "On a successful, hard-working season on Tour",
-   "sourceHash": "bac228a168ec00e0",
+   "topic": "On his hard work and success this season",
+   "sourceHash": "8618cc7250d23d90",
    "publishedAt": "2026-11-18T19:05:51.359Z",
-   "revisedAt": "2026-11-18T21:19:47.810Z",
-   "revision": 4
+   "revisedAt": "2026-11-18T21:42:20.669Z",
+   "revision": 5
   },
   {
    "id": "quote-62b3f2f8bf9099",
@@ -1638,11 +1786,11 @@
    "sourceUrl": "https://www.atptour.com/en/news/alcaraz-nitto-atp-finals-2026-wednesday-reaction",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "topic": "On staying calm and relaxed on court",
-   "sourceHash": "80353ef1c2b7b482",
+   "topic": "On playing with less stress on court",
+   "sourceHash": "eccab2bfb81cc937",
    "publishedAt": "2026-11-18T19:05:51.359Z",
-   "revisedAt": "2026-11-18T21:19:47.810Z",
-   "revision": 4
+   "revisedAt": "2026-11-18T21:42:20.669Z",
+   "revision": 5
   },
   {
    "id": "quote-b7fe4694c49380",
@@ -1670,11 +1818,11 @@
    "sourceUrl": "https://www.atptour.com/en/news/alcaraz-nitto-atp-finals-2026-wednesday-reaction",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "topic": "On what the injury taught about priorities",
-   "sourceHash": "88b2d970672e75c5",
+   "topic": "On what an injury taught about priorities",
+   "sourceHash": "4e62368dbacd5414",
    "publishedAt": "2026-11-18T19:05:51.359Z",
-   "revisedAt": "2026-11-18T21:19:47.810Z",
-   "revision": 3
+   "revisedAt": "2026-11-18T21:42:20.669Z",
+   "revision": 4
   },
   {
    "id": "quote-7ae38bcff83008",
@@ -3027,11 +3175,11 @@
    "sourceUrl": "https://www.atptour.com/en/news/fils-jodar-nitto-atp-finals-2026-tuesday",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "topic": "On bouncing back after a frustrating first set",
-   "sourceHash": "223416580631f79b",
+   "topic": "On bouncing back after a shaky first set",
+   "sourceHash": "350395891330acb8",
    "publishedAt": "2026-11-18T16:08:21.478Z",
-   "revisedAt": "2026-11-18T21:19:47.810Z",
-   "revision": 7
+   "revisedAt": "2026-11-18T21:42:20.669Z",
+   "revision": 8
   },
   {
    "id": "quote-01bda8950d7078",
