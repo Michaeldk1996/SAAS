@@ -164,6 +164,21 @@ export function msRows(m, w, l, card) {
     .filter((r) => r[1] != null && r[2] != null);
 }
 
+// a stored report whose match left the board and the draw store: its stats box from the published box score file
+// (setstats/<ek>.json, the board's p1/p2 orientation), the winner by player key, the sets from its own score line.
+// A broadcast card is used only when it agrees with that orientation (same 1st serve %); no key match = no box.
+export function msFromStore(st, x, card) {
+  if (!st || !st.match || !x) return null;
+  const w = String(st.p1Key) === String(x.playerId) ? 'p1' : String(st.p2Key) === String(x.playerId) ? 'p2' : null;
+  if (!w) return null;
+  const l = w === 'p1' ? 'p2' : 'p1', f = (o) => num(o && o['Service:1st serve percentage']);
+  const sameWay = card && card.p1 && card.p1.firstInPct != null && f(st.match.p1) != null ? card.p1.firstInPct === f(st.match.p1) : true;
+  const rows = msRows({ matchStats: st.match }, w, l, sameWay ? card : null);
+  if (!rows.length) return null;
+  const sets = [...String((x.fields && x.fields.score) || '').matchAll(/(\d+)-(\d+)/g)].map((t) => [+t[1], +t[2]]);
+  return { a: x.player, b: x.opponent, sets, rows };
+}
+
 export function reportText(m, w, l, opts = {}) {
   const { h2h = null, pbp = null, score: sf = null, duration = null } = opts;
   const ms = m.matchStats || {};

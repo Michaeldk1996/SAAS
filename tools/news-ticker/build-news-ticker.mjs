@@ -21,7 +21,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
-import { reportText, statusItems, h2hAfter, roundWords, breakPoints, mtoSentences, ratingLines, msRows } from './news-core.mjs';
+import { reportText, statusItems, h2hAfter, roundWords, breakPoints, mtoSentences, ratingLines, msRows, msFromStore } from './news-core.mjs';
 import { shotSentences } from './match-cards.mjs';
 import { pbpFacts, scoreFacts } from './pbp-facts.mjs';
 import { mergeItems, buildIndex, fileOf, observedTimes, tourKeep } from './ticker-core.mjs';
@@ -263,9 +263,11 @@ export async function build({ nowIso, times, rewrite = null, writer = null, apiK
       for (const x of (existing && existing.items) || []) {
         if (x.type !== 'report' || built.has(x.id) || !x.player || !x.opponent) continue;
         const t = plainNames(String(x.text), [{ card: x.player }, { card: x.opponent }]);
-        if (t === x.text) continue;
+        const ms = x.ms || (x.eventKey ? msFromStore(readJson(`setstats/${x.eventKey}.json`), x, cardsByMatch[x.eventKey]) : null);
+        if (t === x.text && ms === (x.ms || null)) continue;
         const { sourceHash, publishedAt, revisedAt, revision, ...rest } = x;
-        fresh.push({ ...rest, text: t }); summary.namesOnly = (summary.namesOnly || 0) + 1;
+        fresh.push({ ...rest, text: t, ...(ms ? { ms } : {}) }); summary.namesOnly = (summary.namesOnly || 0) + 1;
+        if (ms && !x.ms) summary.msFromStore = (summary.msFromStore || 0) + 1;
       } }
     for (const s of statusItems(g.cards, { ek, startIso, tournament: g.name, base: '' })) {
       // a walkover's reason, when the official result post gave one (never guessed)

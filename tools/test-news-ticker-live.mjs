@@ -565,6 +565,22 @@ await ok('stats box rows: ours where we hold the figure, else the verified card;
   const oneSide = msRows({ matchStats: { p1: st({}), p2: {} } }, 'p1', 'p2', null);
   assert.equal(oneSide.length, 0, 'a figure one side lacks drops the row');
 });
+await ok('stats box for a stored report off the board: from its box score file, winner by key, sets from its score line', async () => {
+  const { msFromStore } = await import('./news-ticker/news-core.mjs');
+  const side = (fi, w) => ({ 'Service:1st serve percentage': fi, 'Service:1st serve points won': 70, 'Service:2nd serve points won': 50, 'Points:Winners': w, 'Points:Unforced errors': 20,
+    'Points:Service Points Won': 70, 'Points:Return Points Won': 35, raw: { 'Points:Total Points Won': { won: 60, total: 110 } } });
+  const st = { p1Key: 1980, p2Key: 50323, match: { p1: side(84, 21), p2: side(63, 12) } };
+  const x = { playerId: '50323', player: 'R. Jodar', opponent: 'A. Zverev', fields: { score: '7-6(5), 6-4' } };
+  const b = msFromStore(st, x, { p1: { firstInPct: 84, serveQuality: 8 }, p2: { serveQuality: 7 } });
+  assert.deepEqual([b.a, b.b, b.sets], ['R. Jodar', 'A. Zverev', [[7, 6], [6, 4]]]);
+  const r = Object.fromEntries(b.rows.map((y) => [y[0], y.slice(1)]));
+  assert.deepEqual(r['1st serve in'], [63, 84, '%'], 'the winner (p2 by key) first');
+  assert.deepEqual(r['Serve quality'], [7, 8, '1']);
+  const flipped = msFromStore(st, x, { p1: { firstInPct: 63, serveQuality: 8 }, p2: { serveQuality: 7 } });
+  assert.ok(!flipped.rows.some((y) => y[0] === 'Serve quality'), 'a card the other way round is not used');
+  assert.equal(msFromStore(st, { ...x, playerId: '1' }, null), null, 'no player key match: no box');
+  assert.equal(msFromStore(null, x, null), null);
+});
 await ok('tour-wide: another sport is never a tennis quote; a scrambled three-word name is never matched on a given name', async () => {
   const SECTION = '<html>' + 'x'.repeat(700) + '<a href="/sport/hockey/nhl/joel-eriksson-ek-glodhet">Joel</a><a href="/sport/tennis/joel-on-his-long-season">Joel 2</a></html>';
   const PAGE = (b) => `<html><head><script type="application/ld+json">{"datePublished":"2026-11-10T20:00:00Z"}</script></head><body><article><p>Match report.</p>${b}</article></body></html>` + 'x'.repeat(700);
