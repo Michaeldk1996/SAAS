@@ -1,19 +1,19 @@
 {
- "generatedAt": "2026-11-19T20:55:11.475Z",
+ "generatedAt": "2026-11-19T21:17:27.820Z",
  "tournaments": [
   {
    "key": "2794",
    "season": "2026",
    "name": "Finals - Turin",
    "file": "news-ticker/2794-2026.json",
-   "items": 196,
+   "items": 199,
    "byType": {
-    "digest": 23,
-    "quote": 164,
+    "digest": 24,
+    "quote": 166,
     "report": 9
    },
-   "latestTimestamp": "2026-11-19T19:38:16.215Z",
-   "updatedAt": "2026-11-19T20:55:11.475Z"
+   "latestTimestamp": "2026-11-19T20:30:00.000Z",
+   "updatedAt": "2026-11-19T21:17:27.820Z"
   },
   {
    "key": "tour",
@@ -26,7 +26,7 @@
     "digest": 23
    },
    "latestTimestamp": "2026-11-19T18:43:47.000Z",
-   "updatedAt": "2026-11-19T20:55:11.475Z"
+   "updatedAt": "2026-11-19T21:17:27.820Z"
   },
   {
    "key": "1681",
@@ -56,6 +56,112 @@
   }
  ],
  "latest": [
+  {
+   "id": "digest-2fe98118ffca6f",
+   "type": "digest",
+   "version": 1,
+   "playerId": "50323",
+   "player": "R. Jodar",
+   "opponentId": "2973",
+   "opponent": "B. Shelton",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "eventKey": "12179704",
+   "context": "after losing to B. Shelton",
+   "category": "Quotes",
+   "timestamp": "2026-11-19T20:30:00.000Z",
+   "members": [
+    "quote-1c8bda4d41e99c",
+    "quote-1d02e89afb0a85",
+    "quote-4c5f052d318a48"
+   ],
+   "memberHash": "7b803c123bb7ade7",
+   "digestedAt": "2026-11-19T20:52:49.697Z",
+   "blocks": [
+    {
+     "label": "on being coached by his father",
+     "text": "I think it has gone pretty well, to be honest, this first year with just my dad. Everything has worked for both of us. Obviously, it's not easy when he has to travel every week, but it has worked. As I always say, I don't see any reason to change anything. But I also have to say that we have one month to think about the things we can improve for next season. I'm super grateful for everything he has done for me. So we'll have time in December to talk about those topics, but I'm not sure what's going to happen next year yet.",
+     "from": [
+      "quote-1d02e89afb0a85",
+      "quote-1c8bda4d41e99c"
+     ]
+    },
+    {
+     "label": "on his fighting spirit this season",
+     "text": "I've given everything on court in every match I've played this season. That is something I'm very proud of: not giving up in any match.",
+     "from": [
+      "quote-4c5f052d318a48"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "345f35837f6a2277",
+   "publishedAt": "2026-11-19T21:17:27.820Z",
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "quote-1d02e89afb0a85",
+   "type": "quote",
+   "playerId": "50323",
+   "opponentId": "2973",
+   "player": "R. Jodar",
+   "opponent": "B. Shelton",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-19T20:30:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after losing to B. Shelton",
+   "eventKey": "12179704",
+   "won": false,
+   "text": "I think it has gone pretty well, to be honest, this first year with my dad. Everything has worked for both of us. Obviously, it's not easy when he has to travel every week, but it has worked, … As I always say, I don't see any reason to change anything. But I also have to say that we have one month to think about the things we can improve for next season.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "TennisUpToDate",
+   "sourceUrl": "https://tennisuptodate.com/atp/rafael-jodar-hints-at-possible-changes-with-father-we-have-one-month-to-think",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his first season coached by his father",
+   "sourceHash": "b709d559b55f142c",
+   "publishedAt": "2026-11-19T21:17:27.820Z",
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "quote-4c5f052d318a48",
+   "type": "quote",
+   "playerId": "50323",
+   "opponentId": "2973",
+   "player": "R. Jodar",
+   "opponent": "B. Shelton",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-19T20:30:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after losing to B. Shelton",
+   "eventKey": "12179704",
+   "won": false,
+   "text": "I've given everything on court in every match I've played this season. That is something I'm very proud of: not giving up in any match.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "TennisUpToDate",
+   "sourceUrl": "https://tennisuptodate.com/atp/rafael-jodar-hints-at-possible-changes-with-father-we-have-one-month-to-think",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his fighting spirit in his first season",
+   "sourceHash": "436b3fdc457105b0",
+   "publishedAt": "2026-11-19T21:17:27.820Z",
+   "file": "news-ticker/2794-2026.json"
+  },
   {
    "id": "digest-1d2844491a0a98",
    "type": "digest",
@@ -1685,116 +1791,6 @@
    "sourceHash": "2501a3c7cb774748",
    "publishedAt": "2026-11-18T22:47:09.263Z",
    "revisedAt": "2026-11-19T00:11:17.409Z",
-   "revision": 1,
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-e66fc6e0639600",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": "1093",
-   "player": "C. Alcaraz",
-   "opponent": "D. Medvedev",
-   "tournament": "Finals - Turin",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-18T23:17:27.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Quotes",
-   "context": "after beating D. Medvedev",
-   "eventKey": "12179696",
-   "won": true,
-   "text": "A little bit of problems, you know, physically, in the match,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "RTHK",
-   "sourceUrl": "https://news.rthk.hk/rthk/en/component/k2/1878374-20261119.htm",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On his physical problems during the Medvedev match",
-   "sourceHash": "e3dcc670a881cb69",
-   "publishedAt": "2026-11-18T15:38:04.057Z",
-   "revisedAt": "2026-11-19T00:11:17.409Z",
-   "revision": 2,
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "digest-1c26fe4cd890bc",
-   "type": "digest",
-   "version": 1,
-   "playerId": "2846",
-   "player": "F. Tiafoe",
-   "opponentId": null,
-   "opponent": null,
-   "tournament": "Finals - Turin",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "eventKey": null,
-   "context": null,
-   "category": "Quotes",
-   "timestamp": "2026-11-18T21:36:36.000Z",
-   "members": [
-    "quote-aa73d8afedc991",
-    "quote-bae94d7483c898",
-    "quote-c0e65d7801ab3b"
-   ],
-   "memberHash": "3decde41b0318562",
-   "digestedAt": "2026-11-19T03:16:57.592Z",
-   "blocks": [
-    {
-     "label": "on facing Medvedev at the ATP Finals",
-     "text": "I'm gonna have to take it from him. He's gonna make me earn it. He's gonna make me execute at the highest level, and if I do that, I like my chances. If I don't, he'll get it done. It's pretty much that simple.",
-     "from": [
-      "quote-aa73d8afedc991",
-      "quote-c0e65d7801ab3b"
-     ]
-    },
-    {
-     "label": "on Alcaraz's level in their Turin match",
-     "text": "There are moments when he's definitely Superman and plays pretty crazy.",
-     "from": [
-      "quote-bae94d7483c898"
-     ]
-    }
-   ],
-   "model": "claude-opus-5-5",
-   "sourceHash": "67bb3a697f71e82d",
-   "publishedAt": "2026-11-19T03:47:45.956Z",
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-aa73d8afedc991",
-   "type": "quote",
-   "playerId": "2846",
-   "opponentId": null,
-   "player": "F. Tiafoe",
-   "opponent": null,
-   "tournament": "Finals - Turin",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-18T21:36:36.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "I’m gonna have to take it from him,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "Ubitennis",
-   "sourceUrl": "https://www.ubitennis.net/2026/11/frances-tiafoe-downs-lacklustre-cobolli-to-keep-atp-finals-dream-alive/",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On his decisive group match against Medvedev",
-   "sourceHash": "40a60f615568f70b",
-   "publishedAt": "2026-11-18T22:03:42.409Z",
-   "revisedAt": "2026-11-19T03:22:53.598Z",
    "revision": 1,
    "file": "news-ticker/2794-2026.json"
   }
