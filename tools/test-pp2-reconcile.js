@@ -2552,18 +2552,17 @@ mustFail('[neg] the Tier check would catch the retired Tier control', () => {
   const html = '<button data-pp2="career-tier" data-v="atp">ATP</button>';
   assert(!/data-pp2="career-tier"/.test(html), 'a Tier control is drawn');
 });
-// v4 §5 (handoff 2026-11-14) replaces the "Faster courts … Slower courts" axis line with a 16px spacer; order kept.
-checkCareer('bands run Fast · Medium · Slow, three side by side under a 16px spacer, no Faster / Slower axis line (v4 §5)', () => {
+// v5 §3 (handoff 2026-11-19): three rows Fast · Medium · Slow that open in place, no Faster / Slower axis line.
+checkCareer('bands run Fast · Medium · Slow as three rows that open in place, no Faster / Slower axis line (v5 §3)', () => {
   let n = 0;
   for (const p of spdSample()) {
     I.state.spdSurf = 'all'; I.state.spdBand = null;
     assert.deepStrictEqual(I.spdData(p).bands.map(b => b.key), ['fast', 'medium', 'slow'], `${p.name}: the bands are not in the export's order`);
     const html = I.renderSpeedModal(p);
     assert(!/Faster courts|Slower courts/.test(html), `${p.name}: the retired Faster … Slower axis line is drawn`);
-    assert(/<div style="height:16px;"><\/div><div style="display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\);gap:8px;">/.test(html), `${p.name}: the tiles are not three side by side under the 16px spacer`);
-    const grid = html.slice(html.indexOf('<div style="height:16px;">'));
-    const order = ['Fast', 'Medium', 'Slow'].map(k => grid.indexOf('>' + k + '</span>'));
-    assert(order[0] > -1 && order[0] < order[1] && order[1] < order[2], `${p.name}: the band tiles are not drawn Fast · Medium · Slow`);
+    const rows = (html.match(/data-pp2-spdrow="(\w+)"/g) || []).map(x => x.replace(/.*="(\w+)"/, '$1'));
+    assert.deepStrictEqual(rows, ['fast', 'medium', 'slow'], `${p.name}: the rows are not Fast · Medium · Slow`);
+    assert((html.match(/data-pp2-spd="detail"/g) || []).length <= 1, `${p.name}: more than one row open`);
     n++;
   }
   assert(n > 0, 'no sampled player had a rated ATP match — this check never ran');
