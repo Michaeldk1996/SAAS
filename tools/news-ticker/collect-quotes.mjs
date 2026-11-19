@@ -28,6 +28,7 @@ import { readOutlet, surnameOf, initialOf, OTHER_SPORT_PATH } from './outlet-rea
 import { slamPressCandidates, slamTitle } from './slam-press.mjs';
 import { translateQuote, topicQuote } from './translate.mjs';
 import { mergeItems, dedupeQuotes, sameQuote, tourKeep } from './ticker-core.mjs';
+import { buildDigests, decodeEntities } from './quote-digest.mjs';
 import { sendTelegram } from '../price-alert-send.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -177,7 +178,7 @@ export async function processTournament({ t, got, translate = translateQuote, kn
     out.push({ id, type: 'quote', playerId: key, opponentId: opp, player: entrants.get(key), opponent: opp ? entrants.get(opp) : null,
       tournament: t.name, tournamentKey: t.key, season: t.season, round: null, timestamp: q.timestamp, timestampKind: q.timestampKind,
       category: 'Quotes', context: q.context || null, eventKey: q.matchId ? String(q.matchId).split('-').slice(1).join('-') : null, won: q.matchId ? !!q.won : null,
-      text, originalText: original, language: q.language, translated, translationModel: model,
+      text: decodeEntities(text), originalText: original == null ? null : decodeEntities(original), language: q.language, translated, translationModel: model,
       sourceName: q.sourceName, sourceUrl: q.sourceUrl, verbatimCheck: 'passed', verbatimCheckedOn: q.checkedOn || (q.preVerified ? 'the fetched ATP page, by the ATP reader' : 'the original-language text of the fetched page'),
       ...(q.interview ? { interview: q.interview } : {}), ...(topic ? { topic: String(topic).slice(0, 60) } : {}) });
   }
@@ -318,7 +319,8 @@ async function main() {
     res.counts.retryUrls = res.counts.retryUrls.length;
     if (res.items.some((x) => x.translated)) translatedOk = true;
     // tour-wide: dated articles only, at most two quotes a player per article (ticker-core tourKeep), counted over what is held too
-    const tourWide = t.key === TOUR_KEY, baseItems = tourWide ? tourKeep(heldItems) : heldItems;
+    const tourWide = t.key === TOUR_KEY, heldDigests = heldItems.filter((x) => x.type === 'digest'), heldQuotes = heldItems.filter((x) => x.type !== 'digest');
+    const baseItems = tourWide ? tourKeep(heldQuotes) : heldQuotes;
     const keepIds = tourWide ? new Set(tourKeep([...baseItems, ...res.items.filter((r) => !baseItems.some((h) => h.id === r.id))]).map((x) => x.id)) : null;
     const merged = mergeItems(baseItems, tourWide ? res.items.filter((r) => keepIds.has(r.id)) : res.items, nowIso);
     // quotes held from before the labels existed (their articles are not read again): label a few each run, from the quote alone
@@ -332,11 +334,16 @@ async function main() {
       if (tp.status === 'ok') x.topic = tp.topic; else x.topicTried = true;
       labelled++;
     }
-    if (labelled || merged.added || merged.revised || (tourWide && merged.items.length !== heldItems.length) || (held && heldItems.length !== (held.items || []).length) || (!held && merged.items.length)) wr(file, { tournament: t.name, tournamentKey: t.key, season: t.season, updatedAt: nowIso, items: merged.items });
+    // the digest of each card (one player, one match): rebuilt only when its quotes changed (quote-digest.mjs)
+    const dg = await buildDigests(merged.items, { held: heldDigests, nowIso });
+    run.tokens.input += dg.usage.input; run.tokens.output += dg.usage.output;
+    const digestsChanged = JSON.stringify(dg.digests) !== JSON.stringify(heldDigests);
+    merged.items = merged.items.concat(dg.digests);
+    if (digestsChanged || labelled || merged.added || merged.revised || (tourWide && merged.items.length !== heldItems.length) || (held && heldItems.length !== (held.items || []).length) || (!held && merged.items.length)) wr(file, { tournament: t.name, tournamentKey: t.key, season: t.season, updatedAt: nowIso, items: merged.items });
     run.newItems += merged.added; run.tokens.input += res.counts.tokens.input; run.tokens.output += res.counts.tokens.output;
     const finished = main.filter((m) => !m.walkover), quoted = new Set(merged.items.filter((x) => x.won && x.eventKey).map((x) => x.eventKey));
     run.tournaments.push({ name: t.name, key: t.key, sources: got.sources.map((s) => ({ name: s.name, articles: s.articles, candidates: s.candidates, robotsStatus: s.robotsStatus, skippedByRobots: s.skippedByRobots, unnamed: s.unnamedSpeakerParagraphs })),
-      fromOutlets: extra.length, counts: res.counts, added: merged.added, held: merged.items.length, byCategory: merged.items.reduce((a, x) => (a[x.category] = (a[x.category] || 0) + 1, a), {}),
+      fromOutlets: extra.length, counts: res.counts, digests: dg.counts, added: merged.added, held: merged.items.length, byCategory: merged.items.reduce((a, x) => (a[x.category] = (a[x.category] || 0) + 1, a), {}),
       finishedMatches: finished.length, matchesWithWinnerQuote: finished.filter((m) => quoted.has(String(m.id).split('-').slice(1).join('-'))).length });
   }
   for (const [u, v] of Object.entries(fetched)) if (Date.parse(nowIso) - Date.parse(v.at) > 45 * 86400000) delete fetched[u];

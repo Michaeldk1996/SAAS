@@ -5483,7 +5483,10 @@ document.addEventListener('DOMContentLoaded', function () {
 // TEN-409 step 10 (founder 2026-10-09): one feed (news-feed.json, the Match analysis → News feed), player-attributed
 // articles only (player_key), filters that combine (tournament AND categories AND window AND search), Reading / Compact.
 // Rules: .claude/rules/news.md.
-const NEWS_WINDOWS = [[6, 'Last 6h'], [24, 'Last 24h'], [48, 'Last 48h'], [168, 'Last 7 days']];
+// founder 2026-11-18: our match reports and quotes are kept for good ("they will be needed next years"); "All time"
+// loads every tournament file of the ticker (the 8-day default reads only the recent ones)
+const NEWS_ALL_HOURS = 24 * 365 * 30;
+const NEWS_WINDOWS = [[6, 'Last 6h'], [24, 'Last 24h'], [48, 'Last 48h'], [168, 'Last 7 days'], [NEWS_ALL_HOURS, 'All time']];
 let _newsData = null;
 let _newsState = 'load';   // 'load' | 'ok' | 'unavailable' — the page's own fetch of news-feed.json
 let _newsTicker = [];      // the news ticker's items (match reports, player quotes, status) — news-ticker.json + its tournament files
@@ -5827,7 +5830,7 @@ function newsToggleComposer(){ _composerOpen = !_composerOpen; if (!_composerOpe
 function newsCancelComposer(){ _composerOpen = false; _intelEditingId = null; newsRenderComposer(); }
 
 function newsOnSearch(v){ _newsSearch = String(v || ''); renderNews(); }
-function newsOnRange(v){ _newsRangeHours = parseInt(v, 10) || 168; renderNews(); }
+function newsOnRange(v){ _newsRangeHours = parseInt(v, 10) || 168; if (_newsRangeHours > 168 && !_newsTickerAll) loadNewsTicker(true); renderNews(); }
 // TEN-376 README §5.5 — sfDd: the site's one dropdown. sfDdRender(hostId, { options:[{value,label}], value, onChange, ariaLabel }).
 // The host keeps the old <select>'s id, so callers and tests find it where they always did; host.value mirrors the choice.
 function sfDdRender(id, cfg){
@@ -5926,11 +5929,13 @@ async function loadNews(){
 // The news ticker (founder 2026-11-12: "it needs to be there in news"): our own match reports, the players' quotes
 // (verbatim, translated ones marked, each with its outlet and link) and status items. The index names the tournament
 // files; only those with an item in the last 8 days are read. A failed read shows no ticker item, never a placeholder.
-async function loadNewsTicker(){
+let _newsTickerAll = false;   // every tournament file read (the All time range), not only the last 8 days
+async function loadNewsTicker(all){
+  if (all) _newsTickerAll = true;
   try {
     const res = await fetch('./news-ticker.json', { cache: 'no-cache' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const ix = JSON.parse(await res.text()), since = Date.now() - 8 * 864e5;
+    const ix = JSON.parse(await res.text()), since = _newsTickerAll ? -Infinity : Date.now() - 8 * 864e5;
     const files = (ix.tournaments || []).filter(t => t && t.file && Date.parse(t.latestTimestamp) >= since).map(t => t.file);
     const got = await Promise.all(files.map(f => fetch('./' + f, { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).catch(() => null)));
     _newsTicker = got.filter(Boolean).flatMap(d => Array.isArray(d.items) ? d.items : []);
@@ -6141,7 +6146,7 @@ function newsTickerItems(){
       return Object.assign(base, { players: both, title: both.length === 2 ? `${both[0].name} beat ${both[1].name}${score}` : String(x.text).split('. ')[0],
         bodyParas: newsSplitParas(x.text), cat: 'Match Reports', source: 'Stennisfy' });
     }
-    if (x.type === 'quote') return null;   // quotes are grouped below: one card per player per match
+    if (x.type === 'quote' || x.type === 'digest') return null;   // quotes are grouped below: one card per player per match
     return Object.assign(base, { players: both, title: String(x.text), bodyParas: [], source: 'Stennisfy',
       cat: /withdraw|injur|retire/i.test(String(x.category)) ? 'Withdrawals & Injuries' : 'Draws & Schedules' });
   }).filter(x => x && x.players.length).concat(newsQuoteCards(_newsTicker || []));
@@ -6164,18 +6169,20 @@ function newsTopicRank(topic){
   return 7;   // the tournament, the city, the crowd, the surface, anything else
 }
 function newsQuoteCards(items){
+  // The digest (founder 2026-11-18): the card's quotes edited into at most 6 subject blocks, the fullest version of each
+  // answer, never twice — built in the quote job (quote-digest.mjs). A card without one shows its quotes as collected.
+  const digests = new Map();
+  for (const d of items) if (d && d.type === 'digest' && Array.isArray(d.blocks) && d.blocks.length) digests.set(d.playerId + '|' + (d.eventKey ? 'm' + d.eventKey : 'd' + String(d.timestamp || '').slice(0, 10)), d);
   const groups = new Map();
   for (const x of items){
     if (!x || x.type !== 'quote' || !x.id || !x.text || !x.player || x.playerId == null) continue;
     const ts = Date.parse(x.timestamp), inj = /injur/i.test(String(x.category));
+    const dkey = x.playerId + '|' + (x.eventKey ? 'm' + x.eventKey : 'd' + String(x.timestamp || '').slice(0, 10));
     const key = x.playerId + '|' + (x.eventKey ? 'm' + x.eventKey : 'd' + (isFinite(ts) ? localDayKey(ts) : '')) + '|' + (inj ? 'i' : 'q');
-    if (!groups.has(key)) groups.set(key, { inj, list: [] });
+    if (!groups.has(key)) groups.set(key, { inj, list: [], digest: inj ? null : (digests.get(dkey) || null) });
     groups.get(key).list.push(x);
   }
   const words = t => new Set(String(t).toLowerCase().match(/[a-z'’]{3,}/g) || []);
-  const link = q => /^https?:\/\//.test(String(q.sourceUrl || ''))
-    ? `<a class="news-cardsource" href="${newsAttr(q.sourceUrl)}" target="_blank" rel="noopener nofollow" onclick="event.stopPropagation()">${newsEscape(q.sourceName || 'source')}</a>`
-    : newsEscape(q.sourceName || '');
   const out = [];
   for (const g of groups.values()){
     const list = g.list.slice().sort((a, b) => String(b.text).length - String(a.text).length || String(a.id).localeCompare(String(b.id)));
@@ -6195,18 +6202,14 @@ function newsQuoteCards(items){
     const ctx = (g.list.find(q => q.context) || {}).context;
     const tsMax = Math.max.apply(null, g.list.map(q => Date.parse(q.timestamp)).filter(isFinite));
     const tour = first.tournament && first.tournamentKey !== 'tour' ? (typeof sfEventName === 'function' ? sfEventName(first.tournament) : String(first.tournament)) : '';
-    const outlets = []; g.list.forEach(q => { if (q.sourceName && outlets.indexOf(q.sourceName) < 0) outlets.push(q.sourceName); });
     out.push({ kind: 'ticker', id: 't' + first.id, ts: isFinite(tsMax) ? tsMax : NaN, tour, tourKey: '', tourFrom: '',
       players: name ? [{ key: String(first.playerId), name }] : [],
       title: name + (ctx ? ' ' + ctx : (g.inj ? ' on his fitness' : ' in the press')),
-      bodyParas: kept.map(k => (k.q.topic ? k.q.topic + ': ' : '') + '“' + String(k.q.text).trim() + '”'),
-      parasHtml: kept.map(k => {
-        const lang = k.q.translated ? newsLangName(k.q.language) : '';
-        // an on-court answer carries its topic ("On the first set") in front of the quote
-        return (k.q.topic ? '<span class="news-qtopic">' + newsEscape(k.q.topic) + ':</span> ' : '') + newsEscape('“' + String(k.q.text).trim() + '”') + ' <span class="news-qsrc">' + [k.q].concat(k.also).map(link).join(', ')
-          + (k.q.translated ? ' · translated' + (lang ? ' from ' + newsEscape(lang) : '') : '') + '</span>';
-      }),
-      cat: g.inj ? 'Withdrawals & Injuries' : 'Quotes', source: outlets.join(', '), sourceUrl: '' });
+      // founder 2026-11-18: no outlet or translation line under a quote; one block per subject ("on the physical scare: “…”")
+      bodyParas: g.digest ? g.digest.blocks.map(b => b.label + ': “' + String(b.text).trim() + '”') : kept.map(k => (k.q.topic ? k.q.topic + ': ' : '') + '“' + String(k.q.text).trim() + '”'),
+      parasHtml: g.digest ? g.digest.blocks.map(b => '<span class="news-qtopic">' + newsEscape(b.label) + ':</span> ' + newsEscape('“' + String(b.text).trim() + '”'))
+        : kept.map(k => (k.q.topic ? '<span class="news-qtopic">' + newsEscape(k.q.topic) + ':</span> ' : '') + newsEscape('“' + String(k.q.text).trim() + '”')),
+      cat: g.inj ? 'Withdrawals & Injuries' : 'Quotes', source: '', sourceUrl: '' });
   }
   return out.filter(x => x.players.length);
 }
@@ -6292,7 +6295,7 @@ function newsPasses(x, o){
 // wider window has results and "Clear search" only when a search is set — never an action that changes nothing.
 function newsEmptyState(all){
   const q = _newsSearch.trim().toLowerCase(), cats = _newsCats, tour = _newsTourKey, win = _newsRangeHours;
-  const winWord = { 6: '6 hours', 24: '24 hours', 48: '48 hours', 168: '7 days' }[win] || '7 days';
+  const winWord = { 6: '6 hours', 24: '24 hours', 48: '48 hours', 168: '7 days' }[win] || '7 days', winPhrase = win >= NEWS_ALL_HOURS ? ' on record' : ' in the last ' + winWord;
   const noFilters = !q && !cats.length && !tour && win >= 168;
   const canWiden = win < 168 && all.some(x => newsPasses(x, { hours: 168, tour, cats, q }));
   let title, detail = '', widen = false, clear = false;
@@ -6303,13 +6306,13 @@ function newsEmptyState(all){
   } else {
     title = 'No articles match these filters.';
     const catPart = cats.length ? newsEscape(cats.join(' / ')) + ' articles' : 'articles';
-    if (q){ detail = 'No results for “' + newsEscape(_newsSearch.trim()) + '”' + (canWiden ? ' in the last ' + winWord : '') + '.'; clear = true; widen = canWiden; }
+    if (q){ detail = 'No results for “' + newsEscape(_newsSearch.trim()) + '”' + (canWiden ? winPhrase : '') + '.'; clear = true; widen = canWiden; }
     else if (tour){
       const hit = all.find(x => newsTourKey(x.tour) === tour), tName = newsEscape(hit ? hit.tour : 'this tournament');
       if (!hit) detail = 'No articles for ' + tName + '.';
-      else { detail = 'No ' + catPart + ' for ' + tName + ' in the last ' + winWord + '.'; widen = canWiden; }
-    } else if (cats.length){ detail = 'No ' + catPart + ' in the last ' + winWord + '.'; widen = canWiden; }
-    else { detail = 'No articles in the last ' + winWord + '.'; widen = canWiden; }
+      else { detail = 'No ' + catPart + ' for ' + tName + winPhrase + '.'; widen = canWiden; }
+    } else if (cats.length){ detail = 'No ' + catPart + winPhrase + '.'; widen = canWiden; }
+    else { detail = 'No articles' + winPhrase + '.'; widen = canWiden; }
   }
   return `<div class="news-empty"><span class="news-empty-t">${title}</span><span class="news-empty-d">${detail}`
     + (widen ? `${detail ? ' ' : ''}<button type="button" class="news-link" onclick="newsWiden()">Try a wider date range.</button>` : '')

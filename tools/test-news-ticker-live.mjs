@@ -507,6 +507,40 @@ await ok('tour-wide: an article that names no tournament still yields its quote;
   const named = await readOutlet({ ...base, tournamentNames: ['Testville'], cache: {}, sectionMemo: new Map() });
   assert.deepEqual(named.candidates[0].mentions, ['testville']);
 });
+await ok('digest: one block per subject from his own words; an added fact, a repeated answer or a dropped on-court answer is refused; HTML codes decoded', async () => {
+  const { checkDigest, buildDigests, decodeEntities, DIGEST_MAX_BLOCKS } = await import('./news-ticker/quote-digest.mjs');
+  assert.equal(decodeEntities('I didn&#039;t, I&#x27;m &amp; &quot;ok&quot;'), 'I didn\'t, I\'m & "ok"');
+  const { nameCase } = await import('./news-ticker/quote-digest.mjs');
+  assert.equal(nameCase('on whether faster courts help against alcaraz at the atp finals', [{ text: 'The court is fast. You need a perfect game to beat Carlos Alcaraz at the ATP Finals in Turin.', topic: 'On Alcaraz' }], 'D. Medvedev'),
+    'on whether faster courts help against Alcaraz at the ATP Finals', 'the model lowercased the names; the quotes give them back');
+  const M = [
+    { id: 'i1', interview: 'on-court', text: 'I think I did everything well. I returned really well, especially in the second set.' },
+    { id: 'p1', text: 'I had some minor physical problems during the match. But everyone saw that I was still able to play good tennis and move well around the court.' },
+    { id: 'p2', text: 'Yes, I had some physical discomfort during the match, but I think everyone was able to see that I was still able to keep playing good tennis. I kept moving well.' },
+    { id: 'p3', text: 'To beat him, you have to play a perfect match or nearly perfect.' }];
+  const good = [{ label: 'after his win over Medvedev', text: 'I think I did everything well. I returned really well, especially in the second set.', from: ['i1'] },
+    { label: 'on the physical scare vs Medvedev', text: 'I had some minor physical problems during the match. But everyone saw that I was still able to play good tennis and move well around the court.', from: ['p1', 'p2'] }];
+  assert.deepEqual(checkDigest(good, M), { ok: true, reasons: [] });
+  const bad = (b, why) => assert.ok(!checkDigest(b, M).ok, why);
+  bad([good[1]], 'the on-court answer is dropped');
+  bad([...good, { ...good[1], label: 'on his thigh' }], 'the same answer twice');
+  bad([good[0], { ...good[1], text: good[1].text + ' My hamstring is torn and I will withdraw tomorrow from the tournament.' }], 'an added fact');
+  bad([good[0], { ...good[1], from: [] }], 'a block that names no quote');
+  bad([good[0], { ...good[1], label: 'Physical' }], 'a label that does not start "on" / "after"');
+  bad(Array.from({ length: DIGEST_MAX_BLOCKS + 1 }, (x, i) => ({ label: 'on ' + i, text: M[i % 4].text, from: [M[i % 4].id] })), 'more than six blocks');
+  // buildDigests: a card of one quote gets none; an unchanged card keeps its digest (no call); a failed card is not sent again
+  const Q = (id, o = {}) => ({ id, type: 'quote', playerId: '2382', player: 'C. Alcaraz', eventKey: '9', timestamp: '2026-11-18T20:00:00Z', text: M.find((m) => m.id === id).text, ...o });
+  const items = [Q('i1', { interview: 'on-court' }), Q('p1'), Q('p2'), { ...Q('p3'), playerId: '1093', player: 'D. Medvedev' }];
+  let calls = 0; const dg = async () => { calls++; return { status: 'ok', blocks: good, model: 'm', usage: { input: 1, output: 1, calls: 1 } }; };
+  const r1 = await buildDigests(items, { digest: dg, nowIso: 'x' });
+  assert.deepEqual([r1.digests.length, r1.counts.single, calls], [1, 1, 1]);
+  const r2 = await buildDigests(items, { held: r1.digests, digest: dg, nowIso: 'y' });
+  assert.equal(calls, 1, 'unchanged quotes: the held digest is kept, no call'); assert.strictEqual(r2.digests[0], r1.digests[0]);
+  const r3 = await buildDigests([...items, Q('p3', { id: 'p4' })], { held: r1.digests, digest: async () => { calls++; return { status: 'failed-check', reasons: ['x'], usage: { input: 1, output: 1, calls: 2 } }; }, nowIso: 'z' });
+  assert.equal(r3.digests[0].blocks, null); const before = calls;
+  await buildDigests([...items, Q('p3', { id: 'p4' })], { held: r3.digests, digest: async () => { calls++; return { status: 'ok', blocks: good }; }, nowIso: 'w' });
+  assert.equal(calls, before, 'the same quotes that failed are not sent again');
+});
 await ok('tour-wide: another sport is never a tennis quote; a scrambled three-word name is never matched on a given name', async () => {
   const SECTION = '<html>' + 'x'.repeat(700) + '<a href="/sport/hockey/nhl/joel-eriksson-ek-glodhet">Joel</a><a href="/sport/tennis/joel-on-his-long-season">Joel 2</a></html>';
   const PAGE = (b) => `<html><head><script type="application/ld+json">{"datePublished":"2026-11-10T20:00:00Z"}</script></head><body><article><p>Match report.</p>${b}</article></body></html>` + 'x'.repeat(700);

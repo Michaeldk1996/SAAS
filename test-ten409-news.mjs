@@ -124,14 +124,25 @@ test('Ticker: match reports, quotes (outlet linked, translation marked) and stat
   assert.ok(/H\. Rune after beating M\. Kecmanovic/.test(text(q)), 'one card per player per match, titled with the context');
   assert.equal((q.match(/class="news-para"/g) || []).length, 2, 'two statements, not three: ' + text(q));
   assert.ok(text(q).indexOf('“I found my level today and I kept believing in the third set.”') < text(q).indexOf('“The crowd carried me.”'));
-  assert.match(q, /<a class="news-cardsource" href="https:\/\/www\.bt\.dk\/tennis\/x&quot;y" target="_blank" rel="noopener nofollow"[^>]*>BT<\/a>, <a class="news-cardsource" href="https:\/\/svt\.example\/b"[^>]*>SVT<\/a> · translated from Danish/, 'each quote links its outlet(s), escaped; the translation is marked');
-  assert.match(q, /“The crowd carried me\.” <span class="news-qsrc"><a class="news-cardsource" href="https:\/\/atp\.example\/a"/);
+  assert.ok(!/news-qsrc|news-cardsource|translated from|BT|SVT/.test(q), 'founder 2026-11-18: no outlet and no translation line under a quote');
   assert.ok(!/tquote-3|tquote-4/.test(h), 'no separate cards for the same match');
   assert.ok(/gave a walkover/.test(list) && !/N\. Body/.test(list));
   assert.deepEqual(stats(P).slice(0, 2).map(s => s[1]), ['7', '7']);
-  assert.match(text(page({}, { ticker: TK, cats: ['Quotes'] }).get('newsList')), /H\. Rune after beating M\. Kecmanovic “I found my level today[^“]*“The crowd carried me\.” ATP$/);
+  assert.match(text(page({}, { ticker: TK, cats: ['Quotes'] }).get('newsList')), /H\. Rune after beating M\. Kecmanovic “I found my level today[^“]*“The crowd carried me\.”$/);
   const inj = text(page({}, { ticker: TK, cats: ['Withdrawals & Injuries'] }).get('newsList'));
-  assert.ok(/gave a walkover/.test(inj) && /H\. Rune on his fitness “My knee is fine again\.” TSN/.test(inj), 'an injury quote keeps its own card under Withdrawals & Injuries');
+  assert.ok(/gave a walkover/.test(inj) && /H\. Rune on his fitness “My knee is fine again\.”/.test(inj), 'an injury quote keeps its own card under Withdrawals & Injuries');
+  // the digest: when the quote job built one for the card, its blocks replace the quotes (one subject each, no repeats)
+  const D = TK.concat([{ id: 'digest-x', type: 'digest', playerId: '437', eventKey: '77', timestamp: at(0.3), blocks: [
+    { label: 'after his win over Kecmanovic', text: 'I found my level today and I kept believing in the third set.', from: ['quote-1', 'quote-4'] },
+    { label: 'on the crowd', text: 'The crowd carried me.', from: ['quote-3'] }] }]);
+  const dq = card(page({}, { ticker: D }).get('newsList'), 'tquote-1');
+  assert.match(dq, /<span class="news-qtopic">after his win over Kecmanovic:<\/span> “I found my level today and I kept believing in the third set\.”/);
+  assert.equal((dq.match(/class="news-para"/g) || []).length, 2, 'one paragraph per digest block');
+  assert.ok(!/tdigest/.test(page({}, { ticker: D }).get('newsList')), 'a digest is never a card of its own');
+  // founder 2026-11-18: reports are kept for good — a 40-day-old report shows under "All time", not under 7 days
+  const OLD = TK.concat([{ id: 'report-old', type: 'report', playerId: '437', opponentId: '2848', player: 'H. Rune', opponent: 'M. Kecmanovic', tournament: 'Paris', timestamp: at(24 * 40), text: 'H. Rune beat M. Kecmanovic in Paris.' }]);
+  assert.ok(!/in Paris/.test(text(page({}, { ticker: OLD }).get('newsList'))), 'not in the last 7 days');
+  assert.ok(/in Paris/.test(text(page({}, { ticker: OLD, hours: 24 * 365 * 30 }).get('newsList'))), 'All time shows it');
   const U = page({ feed: null, state: 'unavailable' }, { ticker: TK });   // the article feed down: the ticker still shows
   assert.ok(/H\. Rune beat/.test(text(U.get('newsList'))));
 });

@@ -14,6 +14,7 @@
  * Usage: node tools/news-ticker/build-news-ticker.mjs [--dir .] [--now ISO] [--no-times]
  * Exit 0 always writes what it could; exit 1 only when the board itself cannot be read.
  */
+import { decodeEntities } from './quote-digest.mjs';
 import { humaniseReport, VOICE_VERSION, plainNames } from './humanise.mjs';
 import { baselineFor } from './standouts.mjs';
 import fs from 'node:fs';
@@ -270,7 +271,7 @@ export async function build({ nowIso, times, rewrite = null, writer = null, apiK
       fresh.push({ ...st, tournamentKey: g.key, season: g.season, sourceUrl: 'matches.json' }); summary.status++;
     }
     const qf = readJson(`news-quotes/${g.key}-${g.season}.json`);
-    for (const q of (qf && qf.items) || []) { if (hidden(q)) continue; fresh.push(q); summary.quotes++; }
+    for (const q of (qf && qf.items) || []) { if (hidden(q)) continue; fresh.push(q.type === 'quote' ? { ...q, text: decodeEntities(q.text) } : q); summary.quotes++; }
 
     const kept = ((existing && existing.items) || []).filter((x) => !hidden(x) && !(x.type === 'report' && x.stage === 'qualifying')), dropped = ((existing && existing.items) || []).length - kept.length;
     summary.hiddenByOffSwitch += dropped;
@@ -291,7 +292,8 @@ export async function build({ nowIso, times, rewrite = null, writer = null, apiK
   // news-quotes/tour-<season>.json -> news-ticker/tour-<season>.json, same merge, same off switch
   for (const f of (fs.existsSync(path.join(DIR, 'news-quotes')) ? fs.readdirSync(path.join(DIR, 'news-quotes')) : []).filter((x) => /^tour-\d{4}\.json$/.test(x))) {
     const qf = readJson(`news-quotes/${f}`), season = f.slice(5, 9), file = fileOf('tour', season), existing = readJson(file);
-    const fresh = tourKeep(((qf && qf.items) || []).filter((q) => !hidden(q)));
+    const all = ((qf && qf.items) || []).filter((q) => !hidden(q));
+    const fresh = tourKeep(all.filter((q) => q.type !== 'digest')).map((q) => ({ ...q, text: decodeEntities(q.text) })).concat(all.filter((q) => q.type === 'digest'));
     // an item the tour rule no longer admits (undated article, more than 2 from one article) leaves the feed
     const kept = ((existing && existing.items) || []).filter((x) => !hidden(x) && fresh.some((f) => f.id === x.id)), dropped = ((existing && existing.items) || []).length - kept.length;
     if (!fresh.length && !kept.length) continue;
