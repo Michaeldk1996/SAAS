@@ -1,19 +1,19 @@
 {
- "generatedAt": "2026-11-19T03:47:45.956Z",
+ "generatedAt": "2026-11-19T04:07:51.386Z",
  "tournaments": [
   {
    "key": "2794",
    "season": "2026",
    "name": "Finals - Turin",
    "file": "news-ticker/2794-2026.json",
-   "items": 164,
+   "items": 165,
    "byType": {
+    "quote": 135,
     "digest": 22,
-    "quote": 134,
     "report": 8
    },
-   "latestTimestamp": "2026-11-19T01:29:31.000Z",
-   "updatedAt": "2026-11-19T03:47:45.956Z"
+   "latestTimestamp": "2026-11-19T03:30:00.000Z",
+   "updatedAt": "2026-11-19T04:07:51.386Z"
   },
   {
    "key": "tour",
@@ -26,7 +26,7 @@
     "quote": 100
    },
    "latestTimestamp": "2026-11-18T21:00:16.682Z",
-   "updatedAt": "2026-11-19T03:47:45.956Z"
+   "updatedAt": "2026-11-19T04:07:51.386Z"
   },
   {
    "key": "1681",
@@ -56,6 +56,37 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-ea2c114efebcaf",
+   "type": "quote",
+   "playerId": "372",
+   "opponentId": "2846",
+   "player": "F. Cobolli",
+   "opponent": "F. Tiafoe",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-19T03:30:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after losing to F. Tiafoe",
+   "eventKey": "12179699",
+   "won": false,
+   "text": "When you lose a set in which you are playing better than your opponent, and I think I deserved to win it, it hurts more, … I tried to stay in the match. He got that somewhat unexpected break that killed me, and that is when I fell into the trap. I usually do not struggle to pick myself up and find energy in a negative moment, but I could not do it this time, and that happens too.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "TennisUpToDate",
+   "sourceUrl": "https://tennisuptodate.com/atp/flavio-cobolli-breaks-down-in-tears-during-emotional-press-conference-after-atp-finals-defeat",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On losing a set he deserved to win",
+   "sourceHash": "07672ff99d5b0a51",
+   "publishedAt": "2026-11-19T04:07:51.386Z",
+   "file": "news-ticker/2794-2026.json"
+  },
   {
    "id": "digest-de64654c2cb346",
    "type": "digest",
@@ -1655,38 +1686,6 @@
    "topic": "On playing through a thigh problem against Medvedev",
    "sourceHash": "8ad354927c62a075",
    "publishedAt": "2026-11-18T15:38:04.057Z",
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-14316f8053a29c",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": "1093",
-   "player": "C. Alcaraz",
-   "opponent": "D. Medvedev",
-   "tournament": "Finals - Turin",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-18T14:42:00.000Z",
-   "timestampKind": "observed (Tennis TV published the clip then)",
-   "category": "Quotes",
-   "context": "after beating D. Medvedev",
-   "eventKey": "12179696",
-   "won": true,
-   "text": "When it comes to play against Medvedev, you have to be chill. You have to be relaxed, you know, because a lot of balls comes again and again and again. … You have to accept it.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "On-court interview",
-   "sourceUrl": "https://www.tennistv.com/videos/4610891/turin-2026-rr-alcaraz-interview",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
-   "interview": "on-court",
-   "topic": "On playing Medvedev",
-   "sourceHash": "11a89c8004666549",
-   "publishedAt": "2026-11-18T16:08:21.478Z",
    "file": "news-ticker/2794-2026.json"
   }
  ]
