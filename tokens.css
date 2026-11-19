@@ -252,6 +252,12 @@
   --pp-x-shadow-pop6: 0 18px 48px rgba(0, 0, 0, 0.6);    /* the export's Filters menu shadow (Market edge, Derived lines, Calendar) */
   --pp-x-track:       #0A0D14;   /* v4 Live trading: the situation box's All / Happened / Did not track */
   --pp-x-shadow-box:  0 30px 80px rgba(0, 0, 0, 0.6);   /* v4 Live trading: the situation record / heatmap box shadow */
+  /* Profile v5 (handoff 2026-11-19, CHANGES §0): hover, lifted surface, the 55% resting bar, the 7% bar track, the 9% tile ring. */
+  --pp-x-hover:       #171B28;
+  --pp-x-lifted:      #121521;
+  --pp-x-bar-55:      rgba(91, 155, 255, 0.55);
+  --pp-x-track-7:     rgba(255, 255, 255, 0.07);
+  --pp-x-edge-9:      rgba(255, 255, 255, 0.09);
 }
 
 /* Database v2 (handoff design_handoff_database_v2, founder brief 2026-11-16 "pixel for pixel, identical colours"): the

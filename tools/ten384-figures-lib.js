@@ -31,9 +31,11 @@ function speedScheme() {
   const src = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
   const i = src.indexOf('const COURT_CONDITIONS = {'), j = src.indexOf('\n};', i);
   const f = src.indexOf('function courtSpeedCategory(speed) {'), g = src.indexOf('\n}', f);
+  // the catalog gives each rated venue its surface (Court speed bands against the surface's own average, 2026-11-19)
+  const c = src.indexOf('const TOURNAMENT_CATALOG = ['), d = src.indexOf('\n];', c);
   // eslint-disable-next-line no-new-func
-  return new Function(src.slice(i, j + 3) + '\n' + src.slice(f, g + 2) +
-    '\nreturn { cc: COURT_CONDITIONS, cat: courtSpeedCategory };')();
+  return new Function(src.slice(i, j + 3) + '\n' + src.slice(f, g + 2) + '\n' + src.slice(c, d + 3) +
+    '\nreturn { cc: COURT_CONDITIONS, cat: courtSpeedCategory, catalog: TOURNAMENT_CATALOG };')();
 }
 /**
  * Loads player-profile-v2.js (or `src`) into a fresh sandbox window. `now` pins the MODULE's clock only
@@ -45,7 +47,7 @@ function loadPp2(opts) {
     FEATURE_PP2: true,
     playerProfiles: { players: opts.players },
     courtSpeedMap: JSON.parse(fs.readFileSync(path.join(ROOT, 'court-speed-map.json'), 'utf8')),
-    COURT_CONDITIONS: SPEED.cc, courtSpeedCategory: SPEED.cat,
+    COURT_CONDITIONS: SPEED.cc, courtSpeedCategory: SPEED.cat, TOURNAMENT_CATALOG: SPEED.catalog,
     MarketEdgeCore: require(path.join(ROOT, 'market-edge-core.js')),
     TournamentIdentity: require(path.join(ROOT, 'tournament-identity.js')),
     marketEdge: opts.marketEdge || {}, careerHistory: opts.careerHistory || {}, bet365History: opts.bet365History || {}

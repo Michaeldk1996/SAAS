@@ -229,7 +229,8 @@ H.check('4 · Court speed while the shard loads: no units and no H / A dashes', 
   assert(!/[+−]\d+\.\d%/.test(t), 'a yield figure while loading');
   W.marketEdge[FX.key] = FX.marketEdge; delete W.marketEdgePending[FX.key];
   const t2 = T(withState(I, { key: p.key, speedSurf: 'all', speedBand: null }, () => I.renderSpeedModal(p)));
-  assert(/[+−]\d+\.\d%/.test(t2), 'the landed modal prints no yield %');
+  // v5 (2026-11-19): the landed modal prints units on the price (+ ROI in the open row's tile)
+  assert(/[+−]\d+\.\du\b/.test(t2), 'the landed modal prints no units');
 });
 H.check('4 · Matchup Backing while the shard loads: no units, no "0 priced"', () => {
   const styles = { players: [] };

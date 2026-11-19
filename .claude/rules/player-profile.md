@@ -494,3 +494,23 @@ Supersedes the v3 values it restates. Reference = `Player Stat Boxes.dc.html` / 
     any profiled player with a tour-level Davis Cup match left with no Record per tournament? (58 of 741 were.) An archive
     Davis Cup rubber (named per tie) that the api-tennis tie holds — same season, result, opponent — is listed once
     (`tools/test-tournament-history-editions.js` A + C).
+
+## Profile v5 (handoff `design_handoff_player_profile_v5/`, 2026-11-19) — round 1 (founder 2026-11-19)
+- **Calendar · Best / Worst swing and month = win rate, 20 matches.** Ranked on the win rate (not the yield gap), among
+  swings / months with at least `PP4.CAL_PICK_MIN` (20) matches played; ties go to the larger sample; none → a dash
+  "no swing with 20 matches". **Test:** `tools/test-pp5-r1.js` cal (control: the yield rule names another worst swing).
+- **Court speed record = the v5 layout (CHANGES §3):** filter card (Window · Surface switches, Filters right), one card,
+  three rows that open in place (Fast open by default, a click on the open row shuts all three). The open row's tiles are
+  **On the price · As favourite (W–L, % won, n) · As underdog (same) · Deciding sets** — no Vs tour (founder).
+  Favourite = the shorter closing price; a tie is neither (2026-11-15 ruling kept; the export counts a tie as underdog).
+- **Court speed bands read against the SURFACE's average, not the tour's 1.00** (founder: "clay all slow, grass all
+  fast; Eastbourne should be slower than Stuttgart"). Average = the mean Tennis Abstract reading of that surface's ATP
+  venues (`COURT_CONDITIONS` + `TOURNAMENT_CATALOG` surface; the season's own readings when `PP4.SPEED_YEAR_MIN` venues
+  have one, else today's); a venue's own catalog surface beats a row with no court flag. Fast > +`PP4.SPEED_BAND_GAP`
+  (0.08), slow < −0.08. Measured 19 Nov: clay 0.74, grass 1.07, outdoor hard 1.07, indoor 1.16; Eastbourne −0.30,
+  Stuttgart +0.33. The "speed" figure on rows and editions is that gap. **Test:** `tools/test-pp4-speed.js` 5.
+- **Court speed Level filter** (behind Filters): All · ATP · Challenger · ITF. Only ATP venues carry a speed reading, so a
+  Challenger / ITF match is never banded (counted out loud in the "?"), never read off an ATP venue in its city.
+  **Test:** `tools/test-pp4-speed.js` 4.
+- **Match-up record:** Window = Last 52 weeks · Last 24 months · Career. A dot turns blue on hover by CSS (thin dots
+  too); gridlines, the average label, group dividers and brackets never catch the pointer. **Test:** `tools/test-pp5-r1.js` sty.

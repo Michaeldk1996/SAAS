@@ -42,7 +42,10 @@
     STK_EDGE: 1,           // Streaks: yield gap (pp) beyond which a state is Back him / Fade him
     CAL_MIN: 5,            // Calendar: priced matches before a rate shows
     CAL_THIN: 10,          // Calendar: below this a shown rate is a thin sample
+    CAL_PICK_MIN: 20,      // Calendar: matches played before a swing / month can be best or worst (founder 2026-11-19)
     SPEED_FLOOR: 5,        // Court speed: a band under this many matches shows a dash
+    SPEED_BAND_GAP: 0.08,  // Court speed: fast above +0.08 / slow below -0.08 against its SURFACE's average (founder 2026-11-19)
+    SPEED_YEAR_MIN: 5,     // Court speed: venues a season needs on a surface before that season's own average is used
     ALT_CUT_M: 500,        // Court speed: venue altitude (m) at or above which a match is "Altitude"
     SPL_MINB: 15,          // Level & round: matches a row needs to be a summary box / coloured vs tour
     HB_MIN: 10,            // Live trading heatmap: games a cell needs before it shows a rate and a colour
@@ -339,11 +342,11 @@
     // selected look (blue fill + ring + 4px halo; a thin sample keeps its hollow look with the soft ring), its label and code white.
     '.pp2-styrow[data-pp2]:hover{box-shadow:inset 0 0 0 100px var(--wash-4);}' +
     '.pp2-stytile:hover{border-color:color-mix(in srgb, var(--text) 22%, transparent)!important;transform:translateY(-1px);}' +
-    '.pp2-stydot.pp2-hov{background:var(--link)!important;border-color:var(--link)!important;box-shadow:0 0 0 4px color-mix(in srgb, var(--link) 18%, transparent)!important;}' +
-    '.pp2-stydot-thin.pp2-hov{background:var(--card)!important;border-color:var(--text-soft)!important;box-shadow:0 0 0 4px color-mix(in srgb, var(--text) 8%, transparent)!important;}' +
+    '.pp2-stydot.pp2-hov,.pp2-stydot:hover{background:var(--link)!important;border-color:var(--link)!important;box-shadow:0 0 0 4px color-mix(in srgb, var(--link) 18%, transparent)!important;z-index:2;}' +
+    '.pp2-stycode:hover{color:var(--text)!important;font-weight:700!important;}' +
     '.pp2-stylab.pp2-hov{color:var(--text)!important;}.pp2-stycode.pp2-hov{color:var(--text)!important;font-weight:700!important;}' +
     '.pp2-mkcard:hover{background:var(--wash-4)!important;}.pp2-mkps:hover{box-shadow:inset 0 0 0 100px var(--wash-4);}.pp2-lchip:hover{filter:brightness(1.35);}.pp2-mkband:hover{background:var(--wash-4)!important;box-shadow:-10px 0 0 var(--wash-4),10px 0 0 var(--wash-4)!important;}.pp2-utab:hover{color:var(--text)!important;}' +
-    '.pp2-fmrow:hover{background:var(--wash-5)!important;}.pp2-fmtrig:hover{border-color:var(--edge-24)!important;color:var(--text)!important;}' +
+    '.pp2-v5fmrow:hover{background:var(--pp-x-hover)!important;}.pp2-fmrow:hover{background:var(--wash-5)!important;}.pp2-fmtrig:hover{border-color:var(--edge-24)!important;color:var(--text)!important;}' +
     '.pp2-splbox:hover{border-color:var(--edge-16)!important;background:var(--selected)!important;}.pp2-splrow:hover{background:var(--line)!important;}' +   // v4 §6
     '.pp2-calc:hover{filter:brightness(1.6);}' +
     '.pp2-tlink:hover{text-decoration-color:color-mix(in srgb, var(--text) 45%, transparent)!important;}' +
@@ -3382,7 +3385,11 @@
     '.pp2-dopp{cursor:pointer;}.pp2-dopp:hover{text-decoration:underline;}' +
     // v4 §5 · Court speed: a band tile lifts its ring on hover; a match row fills edge to edge (no column gap)
     '.pp2-spdband{transition:border-color .15s ease,background .15s ease;}.pp2-spdband[data-pp2]:hover{border-color:var(--edge-16)!important;}' +
-    '.pp2-spdrow:not(.wo):hover>*{background:var(--tile-hover);}' +
+    '.pp2-spdrow:not(.wo):hover>*{background:var(--pp-x-hover);}' +
+    // v5 §3 · a shut Court speed row: straight hairline at rest, hover colour + radius 10 on hover; the open row's head takes none
+    '.pp2-spdhead{transition:background .12s ease,border-color .12s ease;}.pp2-spdhead[data-pp2]:not([data-open="1"]):hover{background:var(--pp-x-hover)!important;border-radius:10px!important;border-top-color:transparent!important;}' +
+    '.pp2-v5seg{transition:background .12s ease,color .12s ease;}.pp2-v5seg:not([aria-pressed="true"]):hover{color:var(--text)!important;}' +
+    '.pp2-v5fm:hover{border-color:color-mix(in srgb, var(--text) 22%, transparent)!important;color:var(--text)!important;}' +
     '.pp2-spdrow.pp2-rowopen>*{background:var(--selected)!important;}' +
     '.pp2-fmsel:hover{border-color:color-mix(in srgb, var(--text) 30%, transparent)!important;}' +
     '.pp2-fmchip:hover{border-color:color-mix(in srgb, var(--bar) 70%, transparent)!important;}' +
@@ -3802,16 +3809,20 @@
     var active = groups.filter(function (g) { return g.cur !== 'all'; });
     var lit = open || active.length;
     var BLUE12 = 'color-mix(in srgb, var(--bar) 12%, transparent)', BLUE35 = 'color-mix(in srgb, var(--bar) 35%, transparent)';
-    var trig = '<span data-pp2="fm-toggle" data-v="' + esc(id) + '" class="pp2-fmtrig" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;' +
-      'white-space:nowrap;padding:6px 11px 6px 12px;border-radius:8px;box-sizing:border-box;font-size:11.5px;font-weight:700;' +
+    var V5 = !!o.v5;
+    var trig = '<span data-pp2="fm-toggle" data-v="' + esc(id) + '" class="' + (V5 ? 'pp2-v5fm' : 'pp2-fmtrig') + '" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;' +
+      (V5 ? 'white-space:nowrap;height:38px;padding:0 12px 0 13px;border-radius:10px;box-sizing:border-box;font-size:13px;font-weight:600;' +
+          'color:' + (lit ? 'var(--text)' : 'var(--text-soft)') + ';background:' + (active.length ? 'var(--pp-x-lifted)' : open ? 'var(--selected)' : 'var(--inner)') + ';' +
+          'border:1px solid ' + (active.length ? EDGE_14 : open ? 'color-mix(in srgb, var(--text) 22%, transparent)' : EDGE_8) + ';user-select:none;">'
+      : 'white-space:nowrap;padding:6px 11px 6px 12px;border-radius:8px;box-sizing:border-box;font-size:11.5px;font-weight:700;' +
       (v4
         ? 'color:' + (lit ? 'var(--text)' : 'var(--text-soft)') + ';background:' + (active.length ? BLUE12 : open ? 'var(--selected)' : 'transparent') + ';' +
           'border:1px solid ' + (active.length ? BLUE35 : open ? 'color-mix(in srgb, var(--text) 22%, transparent)' : EDGE_8) + ';user-select:none;">'
         : 'color:' + (lit ? 'var(--text)' : 'var(--text-label)') + ';background:' + (lit ? 'var(--selected)' : 'transparent') + ';' +
-          'border:1px solid ' + (open ? (X ? 'color-mix(in srgb, var(--text) 22%, transparent)' : 'var(--edge-24)') : active.length ? 'var(--edge-16)' : EDGE_8) + ';user-select:none;">') +
+          'border:1px solid ' + (open ? (X ? 'color-mix(in srgb, var(--text) 22%, transparent)' : 'var(--edge-24)') : active.length ? 'var(--edge-16)' : EDGE_8) + ';user-select:none;">')) +
       '<svg width="11" height="11" viewBox="0 0 12 12" fill="none" style="pointer-events:none;"><path d="M1 2.5h10M3 6h6M5 9.5h2" ' +
       'stroke="currentColor" stroke-width="1.4" stroke-linecap="round"></path></svg>Filters' +
-      (active.length ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:' + (v4 ? '10.5px;font-weight:700;color:var(--text)' : '10px;font-weight:600;color:var(--text-label)') + ';pointer-events:none;">' + MIDDOT + ' ' + active.length + '</span>' : '') +
+      (active.length ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:' + (v4 || V5 ? '10.5px;font-weight:700;color:var(--text)' : '10px;font-weight:600;color:var(--text-label)') + ';pointer-events:none;">' + MIDDOT + ' ' + active.length + '</span>' : '') +
       '<svg width="9" height="9" viewBox="0 0 10 10" fill="none" style="pointer-events:none;"><path d="M2 3.5l3 3 3-3" stroke="var(--text-label)" ' +
       'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>';
     var wrapStyle = 'position:relative;display:inline-flex;' + (alignRight ? 'margin-left:auto;' : '');
@@ -3837,13 +3848,13 @@
           '<svg width="9" height="9" viewBox="0 0 10 10" fill="none" style="pointer-events:none;flex:none;"><path d="M2 3.5l3 3 3-3" stroke="var(--text-soft)" stroke-width="1.5" ' +
           'stroke-linecap="round" stroke-linejoin="round"></path></svg></span>' : '') +
         // the export wraps every option list in a 9px-radius box: a 10% ring + 4px for a drop-down, transparent + 0 otherwise
-        (g.select && !selOpen ? '' : (g.select || v4 ? '<div style="display:flex;flex-direction:column;gap:2px;border:1px solid ' + (g.select ? 'var(--edge-10)' : 'transparent') +
+        (g.select && !selOpen ? '' : (g.select || v4 || V5 ? '<div style="display:flex;flex-direction:column;gap:2px;border:1px solid ' + (g.select ? 'var(--edge-10)' : 'transparent') +
           ';border-radius:9px;padding:' + (g.select ? '4px' : '0') + ';">' : '') +
         // o.gutter (Calendar): the export wraps every option list in a scroller that keeps a stable scrollbar gutter
         (g.maxH || o.gutter ? '<div class="pp2-yscroll pp2-tscroll" style="display:flex;flex-direction:column;gap:2px;' + (g.maxH ? 'max-height:' + g.maxH + 'px;' : '') + 'overflow-y:auto;' + (o.gutter ? 'scrollbar-gutter:stable;' : '') + '">' : '') +
         g.options.map(function (o) {
           var on = g.cur === o[0], n = g.count(o[0]);
-          return '<span data-pp2="fm-set" data-g="' + esc(g.key) + '" data-v="' + esc(o[0]) + '" class="pp2-fmrow" style="cursor:pointer;display:flex;' +
+          return '<span data-pp2="fm-set" data-g="' + esc(g.key) + '" data-v="' + esc(o[0]) + '" class="' + (V5 ? 'pp2-v5fmrow' : 'pp2-fmrow') + '" style="cursor:pointer;display:flex;' +
             'justify-content:space-between;align-items:center;gap:8px;padding:7px 8px;border-radius:7px;font-size:12px;font-weight:' + (on ? 700 : 500) + ';' +
             'color:' + (on ? 'var(--text)' : X && n === 0 ? 'var(--pp-x-faint)' : 'var(--text-soft)') + ';background:' + (on ? 'var(--selected)' : 'transparent') + ';">' +
             '<span style="white-space:nowrap;' + (NOELL ? '' : 'overflow:hidden;text-overflow:ellipsis;min-width:0;') + 'pointer-events:none;">' + esc(o[1]) + '</span>' +
@@ -3851,15 +3862,15 @@
             'color:var(--text-label);font-weight:400;">' + (n == null ? DASH : n) + '</span>' +
             (on ? '<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5.5l2.2 2.2L8.5 2.8" stroke="var(--text)" stroke-width="1.6" ' +
               'stroke-linecap="round" stroke-linejoin="round"></path></svg>' : '') + '</span></span>';
-        }).join('') + (g.maxH || o.gutter ? '</div>' : '') + (g.select || v4 ? '</div>' : '')) +
+        }).join('') + (g.maxH || o.gutter ? '</div>' : '') + (g.select || v4 || V5 ? '</div>' : '')) +
         (g.hint ? '<span style="font-size:11px;color:var(--text-label);line-height:1.45;padding:8px 8px 0;text-wrap:pretty;">' + esc(g.hint) + '</span>' : '') + '</div>';
     }).join('');
     return '<span style="' + wrapStyle + '">' + trig +
       '<div data-pp2="fm-close" style="position:fixed;inset:0;z-index:70;"></div>' +
       '<div data-pp2="card" style="position:absolute;top:calc(100% + 8px);' + (alignRight ? 'right:0;' : 'left:0;') + 'z-index:71;width:' + (width || 520) + 'px;max-width:calc(100vw - 48px);' +
-        'background:var(--card);border:1px solid ' + (v4 || X ? 'var(--pp-x-edge-12)' : 'var(--edge-10)') + ';border-radius:14px;box-shadow:' + (v4 ? 'var(--pp-x-shadow-pop)' : X ? 'var(--pp-x-shadow-pop6)' : 'var(--shadow-pop)') + ';padding:14px 16px 12px;' +
-        'box-sizing:border-box;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:' + (o.gap || (v4 ? '18px' : '16px 18px')) + ';align-items:start;">' + cols +
-        '<div style="grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;border-top:1px solid ' + (v4 || X ? EDGE_8 : 'var(--edge-10)') + ';' +
+        'background:var(--card);border:1px solid ' + (V5 ? 'var(--pp-x-edge-9)' : v4 || X ? 'var(--pp-x-edge-12)' : 'var(--edge-10)') + ';border-radius:14px;box-shadow:' + (V5 ? 'var(--pp-x-shadow-pop6)' : v4 ? 'var(--pp-x-shadow-pop)' : X ? 'var(--pp-x-shadow-pop6)' : 'var(--shadow-pop)') + ';padding:14px 16px 12px;' +
+        'box-sizing:border-box;display:grid;grid-template-columns:repeat(' + (o.cols || 3) + ',minmax(0,1fr));gap:' + (o.gap || (v4 || V5 ? '18px' : '16px 18px')) + ';align-items:start;">' + cols +
+        '<div style="grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;border-top:1px solid ' + (V5 ? 'var(--edge-6)' : v4 || X ? EDGE_8 : 'var(--edge-10)') + ';' +
           'margin-top:-4px;padding-top:10px;">' +
           '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);">' + (o.foot != null ? esc(o.foot) : nIn + ' of ' + nAll + ' matches') + '</span>' +
           '<span data-pp2="fm-reset" data-v="' + esc(id) + '" style="cursor:pointer;font-size:12px;font-weight:600;color:var(--link);">Reset filters</span>' +
@@ -3878,8 +3889,8 @@
         active.map(function (g) {
           var x = g.options.filter(function (y) { return y[0] === g.cur; })[0];
           return '<span data-pp2="fm-set" data-g="' + esc(g.key) + '" data-v="all" title="Remove" class="pp2-fmchip" style="cursor:pointer;display:inline-flex;align-items:center;' +
-            'gap:6px;padding:4px 7px 4px 10px;border-radius:7px;background:color-mix(in srgb, var(--bar) 12%, transparent);' +
-            'border:1px solid color-mix(in srgb, var(--bar) 35%, transparent);font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;">' +
+            'gap:6px;padding:4px 7px 4px 10px;border-radius:7px;background:' + (o.v5 ? 'var(--pp-x-lifted)' : 'color-mix(in srgb, var(--bar) 12%, transparent)') + ';' +
+            'border:1px solid ' + (o.v5 ? EDGE_14 : 'color-mix(in srgb, var(--bar) 35%, transparent)') + ';font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;">' +
             esc((g.chipPrefix || '') + (x ? x[1] : g.cur)) +
             '<svg width="9" height="9" viewBox="0 0 10 10" fill="none" style="pointer-events:none;"><path d="M2 2l6 6M8 2L2 8" stroke="var(--text-soft)" ' +
             'stroke-width="1.4" stroke-linecap="round"></path></svg></span>';
@@ -3952,6 +3963,18 @@
     return '<span style="display:flex;gap:8px;flex-wrap:wrap;">' + items.map(function (t) {
       return bandPill(hook, t[0], t[1], cur === t[0], attrOf ? attrOf(t) : '', offEdge);
     }).join('') + '</span>';
+  }
+  // Profile v5 (handoff 2026-11-19, CHANGES §0.2) · THE switch: a well track (padding 3, gap 3, radius 10); option 5/13,
+  // radius 7, 13px 600 grey, no outline; picked 700 white on --selected + 16% ring. Boxes move onto it as v5 lands.
+  function v5Seg(hook, opts, cur) {
+    return '<span style="display:flex;gap:3px;background:var(--inner);border:1px solid ' + EDGE_8 + ';border-radius:10px;padding:3px;flex:none;">' +
+      opts.map(function (o) {
+        var on = cur === o[0];
+        return '<span data-pp2="' + esc(hook) + '" data-v="' + esc(o[0]) + '" role="button" aria-pressed="' + (on ? 'true' : 'false') + '" class="pp2-v5seg" ' +
+          'style="cursor:pointer;white-space:nowrap;padding:5px 13px;border-radius:7px;font-size:13px;font-weight:' + (on ? 700 : 600) + ';' +
+          'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';background:' + (on ? 'var(--selected)' : 'transparent') + ';' +
+          'border:1px solid ' + (on ? 'var(--edge-16)' : 'transparent') + ';">' + esc(o[1]) + '</span>';
+      }).join('') + '</span>';
   }
   function bandDiv(m) {
     return '<span style="width:1px;height:18px;background:var(--edge-10);margin:' + (m || '0 6px') + ';flex:none;"></span>';
@@ -10797,7 +10820,7 @@
   // ("by the week they are played and the region"). Team events (Davis / Laver / United / ATP Cup, Hopman, Olympics)
   // are muted and out of every yield.
   // v3 D (founder sets the final values): a rate shows from CAL_MIN priced matches; CAL_MIN..CAL_THIN-1 is a thin sample.
-  var CAL_MIN = PP4.CAL_MIN, CAL_THIN = PP4.CAL_THIN;
+  var CAL_MIN = PP4.CAL_MIN, CAL_THIN = PP4.CAL_THIN, CAL_PICK_MIN = PP4.CAL_PICK_MIN;
   var CAL_SW = [
     { k: 'aus', name: 'Australian', code: 'AUS', surf: 'Hard' },
     { k: 'me', name: 'Middle East', code: 'M·EAST', surf: 'Hard' },
@@ -10857,7 +10880,7 @@
     if (calRows._sp === sp && calRows._sr === sr && calRows._elo === eloNow && calRows._v) return calRows._v;
     var out = sp.map(function (r, i) {
       var sri = speedRowOf(r);
-      var cc = calCountryOf(r), spd = sri ? spdBandOf(spdEditionSpeed(sri)) : null;
+      var cc = calCountryOf(r), spd = sri ? spdBandOfRow(sri) : null;
       return { r: r, i: i, cc: cc, sw: calSwingOf(r, cc), surf: r.seasonIndoor === true ? 'Indoors' : mkSurfOf(r), speed: spd,
         fmt: r.level === 'Grand Slam' || (r.setGames && r.setGames.length >= 4) ? 'bo5' : 'bo3',
         band: r.price != null ? mkBandIdx(+r.price) : -1, arch: styleArchetypeOf(mkOppName(r.opp)) || null,
@@ -10968,8 +10991,9 @@
       var ss = seasonsOf(ms);
       return { s: s, ms: ms, st: st, pp: st.y != null && oth.y != null ? st.y - oth.y : null, played: ss.played, above: ss.above };
     });
-    var rated = pend ? [] : swStats.filter(function (x) { return x.st.priced >= CAL_MIN && x.pp != null; });
-    var pickOf = function (list, dir) { return list.slice().sort(function (a, b) { return dir * (b.pp - a.pp); })[0]; };
+    // Best / worst swing and month = win rate, among those with CAL_PICK_MIN matches played (founder 2026-11-19).
+    var rated = pend ? [] : swStats.filter(function (x) { return x.st.n >= CAL_PICK_MIN; });
+    var pickOf = function (list, dir) { return list.slice().sort(function (a, b) { return dir * (b.st.pct - a.st.pct) || b.st.n - a.st.n; })[0]; };
     // month view: the same picks over calendar months (team events out, as the swings)
     var moStats = CAL_MON.map(function (m, i) {
       var ms = M.filter(function (x) { return x.r.mon === i && x.sw !== 'team'; }), st = calStat(ms);
@@ -10977,7 +11001,7 @@
       var ss = seasonsOf(ms);
       return { name: CAL_MONF[i], st: st, pp: st.y != null && oth.y != null ? st.y - oth.y : null, played: ss.played, above: ss.above };
     });
-    var moRated = pend ? [] : moStats.filter(function (x) { return x.st.priced >= CAL_MIN && x.pp != null; });
+    var moRated = pend ? [] : moStats.filter(function (x) { return x.st.n >= CAL_PICK_MIN; });
     var opener = [], rest = [], r1 = [], later = [];
     years.forEach(function (y) {
       nonTeam.forEach(function (s) {
@@ -11015,14 +11039,14 @@
         : tile('Best surface', DASH, null, 'no surface with ' + CAL_MIN + ' matches')];
     if (view === 'swing') {
       var bw = pickOf(rated, 1), ww = pickOf(rated, -1);
-      tiles.push(bw ? tile('Best swing', bw.s.name, bw.st, seasonsLine(bw)) : tile('Best swing', DASH, null, 'no swing with ' + CAL_MIN + ' priced'));
-      tiles.push(ww ? tile('Worst swing', ww.s.name, ww.st, seasonsLine(ww)) : tile('Worst swing', DASH, null, 'no swing with ' + CAL_MIN + ' priced'));
+      tiles.push(bw ? tile('Best swing', bw.s.name, bw.st, seasonsLine(bw)) : tile('Best swing', DASH, null, 'no swing with ' + CAL_PICK_MIN + ' matches'));
+      tiles.push(ww ? tile('Worst swing', ww.s.name, ww.st, seasonsLine(ww)) : tile('Worst swing', DASH, null, 'no swing with ' + CAL_PICK_MIN + ' matches'));
       tiles.push(tile('Swing opener', 'First event of a swing', opener.length ? calStat(opener) : null,
         restSt.n ? 'rest of the swing: ' + wordPct(restSt.pct) + ' win rate' + (restSt.priced >= CAL_MIN && restSt.y != null ? ' ' + MIDDOT + ' ' + signed(restSt.y, 1, '%') + ' yield' : '') : ''));
     } else {
       var bm = pickOf(moRated, 1), wm = pickOf(moRated, -1);
-      tiles.push(bm ? tile('Best month', bm.name, bm.st, seasonsLine(bm)) : tile('Best month', DASH, null, 'no month with ' + CAL_MIN + ' priced'));
-      tiles.push(wm ? tile('Worst month', wm.name, wm.st, seasonsLine(wm)) : tile('Worst month', DASH, null, 'no month with ' + CAL_MIN + ' priced'));
+      tiles.push(bm ? tile('Best month', bm.name, bm.st, seasonsLine(bm)) : tile('Best month', DASH, null, 'no month with ' + CAL_PICK_MIN + ' matches'));
+      tiles.push(wm ? tile('Worst month', wm.name, wm.st, seasonsLine(wm)) : tile('Worst month', DASH, null, 'no month with ' + CAL_PICK_MIN + ' matches'));
       tiles.push(tile('Round 1 record', 'First match at an event', r1.length ? calStat(r1) : null,
         laterSt.n ? 'later rounds: ' + wordPct(laterSt.pct) + ' win rate' + (laterSt.priced >= CAL_MIN && laterSt.y != null ? ' ' + MIDDOT + ' ' + signed(laterSt.y, 1, '%') + ' yield' : '') : ''));
     }
@@ -12349,6 +12373,7 @@
       event: r.event, level: r.level, round: r.round, opp: r.opp,
       sets: r.sets, score: r.score, retired: r.retired, wo: r.wo, unconf: !!r.unconf,
       price: r.price, oppPrice: r.oppPrice, cents: r.cents, tier: r.tier, setGames: r.setGames, setScores: r.setScores,
+      raw: r.raw, tournament: r.tournament, qual: r.qual || r.qualifying,
       venue: info ? info.venue : null,
       speed: info ? info.speed : null,
       ratingYear: info ? info.ratingYear : null,
@@ -12485,12 +12510,13 @@
   // with a WO chip and counted nowhere. Units (u).
   var SPD_BANDS = [['fast', 'Fast'], ['medium', 'Medium'], ['slow', 'Slow']];
   var SPD_INFO1 = { what: 'How he does on fast, medium and slow courts.', defs: [
-    ['Band', 'Set per edition from the measured court speed: fast above +0.08, slow below −0.08, medium between. A season the court sheet has no reading for takes the venue\'s current reading.'],
+    ['Band', 'Set per edition from the measured court speed against the average court of the same surface: fast above +' + PP4.SPEED_BAND_GAP.toFixed(2) + ', slow below −' + PP4.SPEED_BAND_GAP.toFixed(2) + ', medium between. So a fast clay court and a fast grass court are each fast for their surface. A season the court sheet has no reading for takes the venue\'s current reading.'],
+    ['Speed', 'The court\'s measured speed minus the average of its surface. The row shows the range of the editions in the band.'],
     ['Figure', 'His win rate in that band. The small line is his record.'],
     ['Signed figure', 'Units won or lost at 1 unit on him, closing price, on his priced matches in that band.'],
-    ['Population', 'ATP matches at a rated venue. Challenger, ITF and unrated venues are left out for now.'],
-    ['Click a band', 'Opens its tiles and every match in it.'],
-    ['Filters', 'Window and surface sit in the bar. Price role, altitude and opponent archetype sit behind Filters. Every figure follows them, and the gap then compares with his unfiltered rate in that band.'],
+    ['Level', 'Behind Filters: ATP, Challenger or ITF. Court speed is measured at ATP venues only, so Challenger and ITF matches have no band yet.'],
+    ['Click a row', 'Opens its tiles and every match in it. A second click closes it.'],
+    ['Filters', 'Window and surface sit in the bar. Level, price role, altitude and opponent archetype sit behind Filters. Every figure follows them, and the gap then compares with his unfiltered rate in that band.'],
     ['Thin sample', 'A band with fewer than ' + PP4.SPEED_FLOOR + ' matches shows a dash and the count, never a rate.'],
     ['Bar', 'His win rate from 0 to 100%. The tick marks 50%.']] };
   var SPD_INFO2 = { what: 'The selected band in detail.', defs: [
@@ -12509,11 +12535,63 @@
     if (ed != null && isFinite(ed)) return ed;
     return r.speed != null && isFinite(r.speed) ? +r.speed : null;
   }
-  function spdBandOf(speed) {
-    if (speed == null) return null;
-    var g = Math.round((speed - 1) * 100) / 100;
-    return g > 0.08 ? 'fast' : g < -0.08 ? 'slow' : 'medium';
+  function spdBandOf(gap) {
+    if (gap == null) return null;
+    var g = Math.round(gap * 100) / 100, cut = PP4.SPEED_BAND_GAP;
+    return g > cut ? 'fast' : g < -cut ? 'slow' : 'medium';
   }
+  // Founder 2026-11-19 ("clay is all slow, grass all fast; Eastbourne should be slower than Stuttgart"): a court is fast,
+  // medium or slow FOR ITS SURFACE. The tour's 1.00 put every clay court under slow and most grass and indoor courts
+  // under fast. The average is the mean Tennis Abstract reading of that surface's ATP venues (COURT_CONDITIONS,
+  // surface from TOURNAMENT_CATALOG): the season's own readings when SPEED_YEAR_MIN venues have one, else today's.
+  // Measured 19 Nov: clay 0.74, grass 1.07, outdoor hard 1.07, indoor 1.16. Without the catalog: the tour's 1.00.
+  function spdSurfKey(r) {
+    if (String(r.court || '') === 'Indoor') return 'indoor';
+    var s = String(r.surface || '').toLowerCase();
+    return s === 'hard' || s === 'clay' || s === 'grass' ? s : null;
+  }
+  function spdSurfMeans() {
+    var sch = speedScheme(), w = (typeof window !== 'undefined') ? window : {};
+    /* global TOURNAMENT_CATALOG */
+    var cat = (typeof TOURNAMENT_CATALOG !== 'undefined') ? TOURNAMENT_CATALOG : (w.TOURNAMENT_CATALOG || null);
+    if (spdSurfMeans._v && spdSurfMeans._c === sch.cc && spdSurfMeans._k === cat) return spdSurfMeans._v;
+    var out = null;
+    if (sch && sch.cc && Array.isArray(cat)) {
+      out = { _venue: {} };
+      Object.keys(sch.cc).forEach(function (v) {
+        var e = cat.filter(function (x) { return x.name === v; })[0] || cat.filter(function (x) { return String(x.name || '').indexOf(v) > -1; })[0];
+        if (!e) return;
+        var k = e.indoor ? 'indoor' : String(e.surface || '').toLowerCase();
+        out._venue[v] = k;   // the venue's own surface beats a row whose court flag is missing (Turin 2026)
+        var c = sch.cc[v], o = out[k] || (out[k] = { cur: [], yr: {} });
+        if (c.abstractSpeed != null && isFinite(+c.abstractSpeed)) o.cur.push(+c.abstractSpeed);
+        Object.keys(c).forEach(function (f) {
+          var m = /^as(\d{4})$/.exec(f);
+          if (m && c[f] != null && isFinite(+c[f])) (o.yr[m[1]] || (o.yr[m[1]] = [])).push(+c[f]);
+        });
+      });
+    }
+    spdSurfMeans._v = out; spdSurfMeans._c = sch && sch.cc; spdSurfMeans._k = cat;
+    return out;
+  }
+  function spdMean(list) { return list && list.length ? list.reduce(function (a, b) { return a + b; }, 0) / list.length : null; }
+  // the edition's speed minus its surface's average (the figure the band and every "speed" line print)
+  function spdEditionGap(r) {
+    var sp = spdEditionSpeed(r);
+    if (sp == null) return null;
+    var M = spdSurfMeans();
+    if (!M) return sp - 1;
+    var o = M[(r.venue && M._venue[r.venue]) || spdSurfKey(r)];
+    if (!o) return null;
+    var y = String(r.year || String(r.date || '').slice(0, 4)), yl = o.yr[y];
+    var mean = yl && yl.length >= PP4.SPEED_YEAR_MIN ? spdMean(yl) : spdMean(o.cur);
+    return mean == null ? null : sp - mean;
+  }
+  function spdBandOfRow(r) { return spdBandOf(spdEditionGap(r)); }
+  // Level (founder 2026-11-19): ATP (main draw + qualifying) · Challenger · ITF, as Market edge reads a row's level.
+  // Only ATP venues carry a court speed reading (Tennis Abstract rates tour events only), so a Challenger or ITF row is
+  // never banded: it is counted out loud as unrated, never read off an ATP venue that shares its city.
+  function spdLvlOf(r) { var l = lcLevelOfRow(r); return l === 'main' || l === 'atpq' ? 'atp' : l; }
   function spdIsAtp(r) { return String(r.tier || 'atp') === 'atp'; }
   function spdSurfOk(r, surf) {
     if (surf === 'all') return true;
@@ -12529,7 +12607,7 @@
   }
   // The current filter: Window + Surface in the bar, Price role / Altitude / Opponent archetype behind Filters.
   function spdFilter() {
-    return { win: state.spdWin === 'l52' ? 'l52' : 'career', surf: state.spdSurf || 'all',
+    return { win: state.spdWin === 'l52' ? 'l52' : 'career', surf: state.spdSurf || 'all', lvl: state.spdLvl || 'all',
       role: state.spdRole || 'all', alt: state.spdAlt || 'all', arch: state.spdArch || 'all' };
   }
   function spdRoleOf(r) {
@@ -12539,6 +12617,7 @@
   function spdRowOk(r, f, cut) {
     if (!spdSurfOk(r, f.surf)) return false;
     if (f.win === 'l52' && !(String(r.date || '') >= cut)) return false;
+    if (f.lvl && f.lvl !== 'all' && spdLvlOf(r) !== f.lvl) return false;
     if (f.role !== 'all' && spdRoleOf(r) !== f.role) return false;
     if (f.alt !== 'all') { var a = spdAltOf(r); if (a == null || (a >= PP4.ALT_CUT_M ? 'alt' : 'sea') !== f.alt) return false; }
     if (f.arch !== 'all' && styleArchetypeOf(r.opp) !== f.arch) return false;
@@ -12548,12 +12627,13 @@
   function spdData(p, f) {
     f = f || { win: 'career', surf: state.spdSurf || 'all', role: 'all', alt: 'all', arch: 'all' };
     var cut = last52Cutoff();
-    var rows = speedRows(p).filter(function (r) { return spdIsAtp(r) && spdRowOk(r, f, cut); });
+    var inLvl = speedRows(p).filter(function (r) { return spdRowOk(r, f, cut); });
+    var rows = inLvl.filter(spdIsAtp);
     var listed = speedRowsListed(p).filter(function (r) { return spdIsAtp(r) && spdRowOk(r, f, cut); });
-    var unrated = 0;
+    var unrated = 0, offTour = inLvl.length - rows.length;
     var by = { fast: [], medium: [], slow: [] }, lby = { fast: [], medium: [], slow: [] };
-    rows.forEach(function (r) { var b = spdBandOf(spdEditionSpeed(r)); if (b) by[b].push(r); else unrated++; });
-    listed.forEach(function (r) { var b = spdBandOf(spdEditionSpeed(r)); if (b) lby[b].push(r); });
+    rows.forEach(function (r) { var b = spdBandOfRow(r); if (b) by[b].push(r); else unrated++; });
+    listed.forEach(function (r) { var b = spdBandOfRow(r); if (b) lby[b].push(r); });
     var bands = SPD_BANDS.map(function (B) {
       var ms = by[B[0]], w = ms.filter(function (m) { return m.won; }).length, priced = ms.filter(function (m) { return m.cents != null; });
       return { key: B[0], name: B[1], ms: ms, listed: lby[B[0]], n: ms.length, w: w, l: ms.length - w,
@@ -12561,20 +12641,21 @@
         units: priced.length ? priced.reduce(function (s, m) { return s + m.cents; }, 0) / 100 : null };
     });
     var tw = bands.reduce(function (s, b) { return s + b.w; }, 0), tn = bands.reduce(function (s, b) { return s + b.n; }, 0);
-    return { bands: bands, tw: tw, tn: tn, unrated: unrated };
+    return { bands: bands, tw: tw, tn: tn, unrated: unrated, offTour: offTour };
   }
   // The rated pool every Filters count is read from: ATP, banded, walkovers out (they are counted nowhere).
   function spdPool(p) {
-    return speedRows(p).filter(function (r) { return spdIsAtp(r) && spdBandOf(spdEditionSpeed(r)); });
+    return speedRows(p).filter(function (r) { return spdIsAtp(r) && spdBandOfRow(r); });
   }
   var SPD_ROLES = [['all', 'All'], ['fav', 'As favourite'], ['dog', 'As underdog']];
   var SPD_ALTS = [['all', 'All'], ['sea', 'Sea level'], ['alt', 'Altitude']];
-  var SPD_FM_KEYS = ['spdRole', 'spdAlt', 'spdArch'];
+  var SPD_LVLS = [['all', 'All'], ['atp', 'ATP'], ['ch', 'Challenger'], ['itf', 'ITF']];
+  var SPD_FM_KEYS = ['spdLvl', 'spdRole', 'spdAlt', 'spdArch'];
   // v4 §5 · the drawer title's sample: "n of m matches" when anything narrows it, else "m matches".
   function spdTitleCount(p) {
     if (!speedRows(p).length) return '';
     var f = spdFilter(), all = spdPool(p).length;
-    var on = f.win !== 'career' || f.surf !== 'all' || f.role !== 'all' || f.alt !== 'all' || f.arch !== 'all';
+    var on = f.win !== 'career' || f.surf !== 'all' || f.lvl !== 'all' || f.role !== 'all' || f.alt !== 'all' || f.arch !== 'all';
     return on ? spdData(p, f).tn + ' of ' + all + ' matches' : all + ' matches';
   }
 
@@ -12600,35 +12681,43 @@
     // §5.5 kept: PENDING before EMPTY — a zero row count from an unsettled store is a network fact, not a player fact
     if (!speedRows(p).length && !careerHistorySettled(p.key)) return speedEmptyBox('The career match store has not loaded, so no court can be rated yet.');
     if (!speedRows(p).length) return speedEmptyBox('No matches on record, so no court can be rated.');
+    // ── Profile v5 (handoff 2026-11-19, CHANGES §3) · filter card + ONE card of three rows that open in place ──────────
     FM_KEYS.spd = SPD_FM_KEYS;
     var F = spdFilter(), cut = last52Cutoff(), FLOOR = PP4.SPEED_FLOOR;
-    var hidden = F.role !== 'all' || F.alt !== 'all' || F.arch !== 'all';
+    var hidden = F.lvl !== 'all' || F.role !== 'all' || F.alt !== 'all' || F.arch !== 'all';
     var narrowed = F.win !== 'career' || hidden;   // the gap compares with the unfiltered band ("pp vs unfiltered")
     var D = spdData(p, F);
-    var U = narrowed ? spdData(p, { win: 'career', surf: F.surf, role: 'all', alt: 'all', arch: 'all' }) : null;
-    var pool = spdPool(p), poolAll = pool.length;
-    var M = 'font-family:\'IBM Plex Mono\',monospace;';
+    var U = narrowed ? spdData(p, { win: 'career', surf: F.surf, lvl: 'all', role: 'all', alt: 'all', arch: 'all' }) : null;
+    var pool = speedRows(p).filter(function (r) { return !spdIsAtp(r) || spdBandOfRow(r); }), poolAll = spdPool(p).length;
+    var M = 'font-family:\'IBM Plex Mono\',monospace;font-variant-numeric:tabular-nums;';
+    // the Level counts are the BANDED matches (a Challenger / ITF match has no band, so it counts 0)
     var countOf = function (k, v) {
       var g = Object.assign({}, F); g[k] = v;
-      return pool.filter(function (r) { return spdRowOk(r, g, cut); }).length;
+      return pool.filter(function (r) { return spdIsAtp(r) && spdRowOk(r, g, cut); }).length;
     };
     var archOpts = [['all', 'All archetypes']].concat(STYLE_AXIS.map(function (a) { return [a.label, a.label]; }));
     var groups = [
+      { key: 'spdLvl', title: 'Level', cur: F.lvl, options: SPD_LVLS, count: function (v) { return countOf('lvl', v); },
+        hint: 'Court speed is measured at ATP venues only.' },
       { key: 'spdRole', title: 'Price role', cur: F.role, options: SPD_ROLES, count: function (v) { return countOf('role', v); } },
       { key: 'spdAlt', title: 'Altitude', cur: F.alt, options: SPD_ALTS, count: function (v) { return countOf('alt', v); },
         hint: 'Altitude = venues at ' + PP4.ALT_CUT_M + ' m or higher.' },
       { key: 'spdArch', title: 'Opponent archetype', cur: F.arch, options: archOpts, count: function (v) { return countOf('arch', v); },
         select: true, chipPrefix: 'Opponent: ' }
     ];
-    var bar = pp4FilterBar({ id: 'spd', winHook: 'spd-win', win: F.win, surfHook: 'spd-surf', surf: F.surf,
-      surfs: [['all', 'All'], ['Hard', 'Hard'], ['Clay', 'Clay'], ['Grass', 'Grass'], ['Indoors', 'Indoors']],
-      groups: groups, nIn: D.tn, nAll: poolAll, foot: spdTitleCount(p) });
+    var filterCard = '<div data-pp2-band="v5" style="display:flex;align-items:center;gap:12px 10px;flex-wrap:wrap;margin-bottom:16px;padding:22px 24px;' +
+        'background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;">' +
+        v5Seg('spd-win', [['l52', 'Last 52 weeks'], ['career', 'Career']], F.win) +
+        v5Seg('spd-surf', [['all', 'All'], ['Hard', 'Hard'], ['Clay', 'Clay'], ['Grass', 'Grass'], ['Indoors', 'Indoors']], F.surf) +
+        filtersTriggerHtml('spd', groups, D.tn, poolAll, 760, true, { v5: true, cols: 4, foot: spdTitleCount(p) }) +
+      '</div>';
+    var applied = filtersAppliedHtml('spd', groups, D.tn, poolAll, { v4: true, v5: true });
 
-    // the bands, Fast · Medium · Slow (the export's bandsSpeed order)
+    // Accordion (§3): Fast open by default; a click on the open row shuts all three (state 'none').
     var openable = D.bands.filter(function (b) { return b.n >= FLOOR; });
-    var selKey = state.spdBand && openable.some(function (b) { return b.key === state.spdBand; }) ? state.spdBand
-      : (openable.filter(function (b) { return b.key === 'fast'; })[0] || openable[0] ||
-         D.bands.slice().sort(function (a, b) { return b.n - a.n; }).filter(function (b) { return b.n; })[0] || {}).key || null;
+    var want = state.spdBand === 'none' ? null : state.spdBand || 'fast';
+    var selKey = want && openable.some(function (b) { return b.key === want; }) ? want
+      : state.spdBand == null && openable[0] ? openable[0].key : null;
     var gapOf = function (b) {
       if (b.n < FLOOR) return null;
       if (narrowed) {
@@ -12639,155 +12728,154 @@
       return oN ? b.pct - 100 * (D.tw - b.w) / oN : null;
     };
     var gapWord = narrowed ? 'unfiltered' : 'his other courts';
-    var gapCol = function (g) { return g == null || Math.abs(g) < 0.05 ? 'var(--text-label)' : g > 0 ? 'var(--pos)' : 'var(--neg)'; };
-    var yieldOf = function (b) { return b.priced ? 100 * b.units / b.priced : null; };
-    var tiles = SPD_BANDS.map(function (B) {
-      var b = D.bands.filter(function (x) { return x.key === B[0]; })[0];
-      var thin = b.n < FLOOR, empty = !b.n, on = selKey === b.key && !thin;
-      var g = gapOf(b), gTxt = g == null ? '' : signed(g, 1, 'pp');
-      var y = yieldOf(b);
-      return '<div ' + (thin ? '' : 'data-pp2="spd-band" data-v="' + b.key + '" ') + 'class="pp2-spdband' + (on ? ' on' : '') + '" style="cursor:' + (thin ? 'default' : 'pointer') + ';' +
-        'background:' + (on ? 'var(--selected)' : 'var(--card)') + ';border:1.25px solid ' + (on ? 'var(--edge-16)' : 'var(--edge-6)') + ';border-radius:12px;' +
-        'padding:14px 16px 15px;display:flex;flex-direction:column;gap:12px;min-width:0;box-sizing:border-box;">' +
-        '<span style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:3px 8px;pointer-events:none;">' +
-          '<span style="font-size:13px;font-weight:700;color:' + (thin ? 'var(--text-label)' : on ? 'var(--text)' : 'var(--text-soft)') + ';white-space:nowrap;">' + b.name + '</span></span>' +
-        '<span style="display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px;min-width:0;pointer-events:none;">' +
-          '<span style="' + M + 'font-size:28px;font-weight:700;line-height:1;color:' + (thin ? 'var(--text-label)' : 'var(--text)') + ';">' + (thin ? DASH : Math.round(b.pct) + '%') + '</span>' +
-          (gTxt ? '<span style="' + M + 'font-size:11px;color:' + gapCol(g) + ';white-space:nowrap;pointer-events:auto;" title="' + esc(gTxt + ' vs ' + gapWord) + '">' + gTxt + '</span>' : '') + '</span>' +
-        '<span style="position:relative;display:block;height:6px;border-radius:3px;background:var(--edge-6);pointer-events:none;">' +
-          '<span style="position:absolute;left:0;top:0;bottom:0;width:' + (thin ? 0 : Math.round(b.pct)) + '%;border-radius:3px;background:' + pp4Bar(on) + ';"></span>' +
-          '<span style="position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:color-mix(in srgb, var(--text) 35%, transparent);"></span></span>' +
-        '<span style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;' + M + 'font-size:11.5px;white-space:nowrap;min-width:0;pointer-events:none;">' +
-          '<span style="color:var(--text-soft);">' + (empty ? 'no matches here' : thin ? b.n + (b.n === 1 ? ' match' : ' matches') + ' ' + MIDDOT + ' min ' + FLOOR
-            : recordText(b.w, b.l) + ' ' + MIDDOT + ' ' + b.n + ' matches') + '</span>' +
-          // a band under the floor shows its count only, never a rate — its yield is a rate too
-          '<span style="color:var(--text-label);">' + (spPend ? '&nbsp;' : y == null || thin ? DASH : signed(b.units, 1, 'u')) + '</span></span>' +   // founder 2026-11-14: units
-        '</div>';
-    }).join('');
-    var tPriced = 0, tCents = 0;
-    D.bands.forEach(function (b) { if (b.priced) { tPriced += b.priced; tCents += b.units * 100; } });
-    var tYield = tPriced ? tCents / tPriced : null;
-    var head = '<div style="display:flex;align-items:baseline;gap:6px 16px;flex-wrap:wrap;padding-right:30px;">' +
-      recCaps((F.win === 'l52' ? 'Last 52 weeks' : 'Career') + (F.surf === 'all' ? '' : ' ' + MIDDOT + ' ' + F.surf), 'white-space:nowrap;') +
-      '<span style="' + M + 'font-size:22px;font-weight:700;line-height:1;color:var(--text);white-space:nowrap;">' + (D.tn ? recordText(D.tw, D.tn - D.tw) : DASH) + '</span>' +
-      '<span style="display:inline-flex;align-items:baseline;gap:6px;white-space:nowrap;"><span style="' + M + 'font-size:13px;font-weight:700;color:var(--text);">' +
-        (D.tn ? Math.round(100 * D.tw / D.tn) + '%' : DASH) + '</span><span style="font-size:11.5px;color:var(--text-label);">win rate</span></span>' +
-      '<span style="margin-left:auto;display:inline-flex;align-items:baseline;gap:6px;white-space:nowrap;"><span data-pp2-spd-yield="1" style="' + M + 'font-size:13px;font-weight:700;color:' +
-        (tYield == null ? 'var(--text-label)' : signColour(tYield)) + ';">' + (spPend ? '&nbsp;' : tYield == null ? DASH : signed(tCents / 100, 1, 'u')) + '</span>' +
-        '<span style="font-size:11.5px;color:var(--text-label);">on the price</span></span></div>';
-    // its (?) popover must paint over the detail card's own (?) (both sit in z-3 corners): lift the card while it is open
-    var card1 = '<div data-pp2-spd="summary" style="margin-bottom:16px;position:relative;' + (state.info === 'spd1' ? 'z-index:4;' : '') + 'background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;padding:18px 20px 20px;">' +
-      '<span style="position:absolute;top:20px;right:20px;z-index:3;display:flex;">' + infoIcon('spd1', Object.assign({ width: 400, align: 'right',
-        notes: D.unrated ? [D.unrated + ' ATP matches at a venue with no speed reading are left out.'] : [] }, SPD_INFO1)) + '</span>' +
-      head + '<div style="height:16px;"></div>' +
-      '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;">' + tiles + '</div></div>';
+    var sgnCol = function (v, dp) { var r = v == null ? null : Math.round(v * Math.pow(10, dp)) / Math.pow(10, dp); return r == null ? 'var(--text-label)' : r > 0 ? 'var(--pos)' : r < 0 ? 'var(--neg)' : 'var(--text-label)'; };
+    var sgnStr = function (v, dp) { return (v > 0 ? '+' : v < 0 ? MINUS : '') + Math.abs(v).toFixed(dp); };
+    var wl = function (a) { var w = a.filter(function (m) { return m.won; }).length; return recordText(w, a.length - w); };
+    var pctWon = function (a) { return Math.round(100 * a.filter(function (m) { return m.won; }).length / a.length) + '% won'; };
+    var bo5 = function (m) { var k = setsOfScore(m); return (k != null && k >= 4) || /grand slam/i.test(String(m.level || '')); };
+    var RGRID = 'display:grid;grid-template-columns:minmax(120px,1fr) minmax(90px,1.4fr) 150px 60px 78px 72px 10px;gap:0 14px;align-items:center;';
+    var CAPS = 'font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);white-space:nowrap;';
+    var LGRID = 'display:grid;grid-template-columns:58px 22px minmax(0,1.1fr) 46px 50px minmax(0,1.3fr) 52px 52px;gap:0;align-items:stretch;';
 
-    if (!D.tn) {   // every band empty under these filters: Clear all resets Window and Surface too; no detail card
-      return bar.band + bar.applied + card1 +
+    var rows = SPD_BANDS.map(function (B) {
+      var b = D.bands.filter(function (x) { return x.key === B[0]; })[0];
+      var thin = b.n < FLOOR, empty = !b.n, on = selKey === b.key;
+      var g = gapOf(b);
+      var gaps = b.ms.map(spdEditionGap).filter(function (v) { return v != null; });
+      var range = gaps.length ? 'speed ' + sgnStr(Math.min.apply(null, gaps), 2) + ' to ' + sgnStr(Math.max.apply(null, gaps), 2) : '';
+      var head = '<div ' + (thin ? '' : 'data-pp2="spd-band" data-v="' + b.key + '" data-open="' + (on ? 1 : 0) + '" ') + 'class="pp2-spdhead" style="' + RGRID +
+          'min-height:60px;padding:0 14px;cursor:' + (thin ? 'default' : 'pointer') + ';background:transparent;border-radius:0;' +
+          'border-top:1px solid ' + (on ? 'transparent' : 'var(--edge-6)') + ';">' +
+        '<span style="display:flex;flex-direction:column;gap:3px;min-width:0;pointer-events:none;">' +
+          '<span style="font-size:14.5px;font-weight:700;color:' + (thin ? 'var(--text-label)' : on ? 'var(--text)' : 'var(--text-soft)') + ';white-space:nowrap;">' + b.name + '</span>' +
+          '<span style="font-size:12px;color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + range + '</span></span>' +
+        '<span style="position:relative;display:block;height:4px;border-radius:2px;background:var(--pp-x-track-7);pointer-events:none;">' +
+          '<span style="position:absolute;left:0;top:0;bottom:0;width:' + (thin ? 0 : Math.round(b.pct)) + '%;border-radius:2px;background:' + (on ? 'var(--pp-x-link)' : 'var(--pp-x-bar-55)') + ';"></span>' +
+          '<span style="position:absolute;left:50%;top:-4px;bottom:-4px;width:1px;background:color-mix(in srgb, var(--text) 35%, transparent);"></span></span>' +
+        '<span style="' + M + 'white-space:nowrap;font-size:13px;color:var(--text-label);text-align:right;overflow:hidden;text-overflow:ellipsis;pointer-events:none;">' +
+          (empty ? 'no matches here' : thin ? b.n + (b.n === 1 ? ' match' : ' matches') + ' ' + MIDDOT + ' min ' + FLOOR : recordText(b.w, b.l) + ' ' + MIDDOT + ' ' + b.n + ' matches') + '</span>' +
+        '<span style="' + M + 'white-space:nowrap;font-size:14px;font-weight:700;color:' + (thin ? 'var(--text-label)' : 'var(--text)') + ';text-align:right;pointer-events:none;">' + (thin ? DASH : Math.round(b.pct) + '%') + '</span>' +
+        '<span title="' + (g == null ? '' : esc(sgnStr(g, 1) + 'pp vs ' + gapWord)) + '" style="' + M + 'white-space:nowrap;font-size:13px;font-weight:700;color:' + sgnCol(g, 1) + ';text-align:right;">' + (g == null ? '' : sgnStr(g, 1) + 'pp') + '</span>' +
+        '<span style="' + M + 'white-space:nowrap;font-size:13px;font-weight:700;color:' + (spPend || !b.priced ? 'var(--text-label)' : sgnCol(b.units, 1)) + ';text-align:right;pointer-events:none;">' +
+          (spPend ? '&nbsp;' : b.priced ? sgnStr(b.units, 1) + 'u' : DASH) + '</span>' +
+        '<span style="font-size:15px;font-weight:700;color:var(--pp-x-link);line-height:1;display:inline-block;transform:' + (on ? 'rotate(90deg)' : 'none') + ';transition:transform .15s ease;pointer-events:none;">' + (thin ? '' : '›') + '</span>' +
+      '</div>';
+      if (!on) return '<div data-pp2-spdrow="' + b.key + '">' + head + '</div>';
+
+      // the open row: four centred tiles, then the matches grouped by edition, then the count note
+      var played = b.ms;
+      var fav = played.filter(function (m) { return spdRoleOf(m) === 'fav'; }), dog = played.filter(function (m) { return spdRoleOf(m) === 'dog'; });
+      var dec = played.filter(function (m) { return !m.retired && setsOfScore(m) === (bo5(m) ? 5 : 3); });
+      var str = played.filter(function (m) { return !m.retired && setsOfScore(m) === (bo5(m) ? 3 : 2); });
+      var decW = dec.filter(function (m) { return m.won; }).length;
+      var y = b.priced ? 100 * b.units / b.priced : null;
+      var none = function (sub) { return { fig: DASH, figColor: 'var(--text-label)', sub: sub, tail: '' }; };
+      var tl = [
+        Object.assign({ label: 'On the price' }, spPend ? { fig: '&nbsp;', sub: '&nbsp;', tail: '' } : !b.priced ? none('no prices kept')
+          : { fig: sgnStr(b.units, 1) + 'u', figColor: sgnCol(b.units, 1), sub: 'ROI ' + sgnStr(Math.round(y), 0) + '%', tail: b.priced + ' priced' }),
+        Object.assign({ label: 'As favourite' }, fav.length ? { fig: wl(fav), sub: pctWon(fav), tail: fav.length + (fav.length === 1 ? ' match' : ' matches') } : none('none yet')),
+        Object.assign({ label: 'As underdog' }, dog.length ? { fig: wl(dog), sub: pctWon(dog), tail: dog.length + (dog.length === 1 ? ' match' : ' matches') } : none('none yet')),
+        Object.assign({ label: 'Deciding sets' }, dec.length ? { fig: recordText(decW, dec.length - decW), sub: Math.round(100 * decW / dec.length) + '% won',
+          tail: str.length ? wl(str) + ' straight sets' : '' } : none('none yet'))
+      ].map(function (t) {
+        return '<div style="border:1px solid var(--pp-x-edge-9);border-radius:11px;padding:13px 12px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;min-width:0;">' +
+          '<span style="font-size:11.5px;font-weight:600;color:var(--text-label);max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + t.label + '</span>' +
+          '<span style="' + M + 'font-size:20px;font-weight:700;line-height:1;color:' + (t.figColor || 'var(--text)') + ';white-space:nowrap;">' + t.fig + '</span>' +
+          '<span style="display:flex;flex-direction:column;gap:2px;max-width:100%;min-width:0;">' +
+            '<span style="font-size:11.5px;line-height:1.35;color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + t.sub + '</span>' +
+            (t.tail ? '<span style="font-size:11.5px;line-height:1.35;color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + t.tail + '</span>' : '') +
+          '</span></div>';
+      }).join('');
+      // matches grouped by edition (event + year), newest first; walkovers listed with a WO tag and counted nowhere
+      var all = b.ms.concat(b.listed).sort(function (x, z) { return String(z.date).localeCompare(String(x.date)); });
+      var groupsE = [], idx = {};
+      all.forEach(function (m) {
+        var k = (m.event || '') + '|' + String(m.date || '').slice(0, 4);
+        if (!idx[k]) {
+          idx[k] = { event: m.event, year: String(m.date || '').slice(0, 4), rows: [], gap: spdEditionGap(m), alt: spdAltOf(m),
+            surf: String(m.court || '') === 'Indoor' ? 'Indoors' : m.surface ? m.surface.charAt(0).toUpperCase() + m.surface.slice(1) : null, level: m.level };
+          groupsE.push(idx[k]);
+        }
+        idx[k].rows.push(m);
+      });
+      var lhead = ['Date', '', 'Opponent', 'Rd', 'Sets', 'Set scores', 'H', 'A'].map(function (h, i) {
+        return '<span style="position:sticky;top:0;z-index:2;background:var(--card);' + CAPS + 'text-align:' + (i >= 6 ? 'right' : 'left') + ';padding:10px 0 9px;">' + h + '</span>';
+      }).join('');
+      var CELL = 'padding:8px 0;border-top:1px solid var(--edge-6);display:flex;align-items:center;';
+      var body = groupsE.map(function (G) {
+        var right = (G.gap != null ? '<span style="display:inline-flex;gap:6px;"><span>speed</span><span style="color:var(--text-soft);font-weight:700;">' + sgnStr(G.gap, 2) + '</span></span>' : '') +
+          (G.alt != null ? '<span style="display:inline-flex;gap:6px;"><span>altitude</span><span style="color:var(--text-soft);font-weight:700;">' + Number(G.alt).toLocaleString('en-US') + ' m</span></span>' : '');
+        return '<span data-pp2-spdgroup="1" style="grid-column:1 / -1;display:flex;align-items:baseline;gap:10px;padding:14px 0 8px;border-top:1px solid var(--edge-6);min-width:0;">' +
+            '<span style="font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;">' + esc((tournDisplayName(G.event, null) || DASH) + ' ' + G.year) + '</span>' +
+            '<span style="font-size:11.5px;color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc([G.surf, G.level].filter(Boolean).join(' ' + MIDDOT + ' ')) + '</span>' +
+            (right ? '<span style="margin-left:auto;display:inline-flex;align-items:baseline;gap:14px;' + M + 'font-size:10.5px;color:var(--text-label);white-space:nowrap;">' + right + '</span>' : '') +
+          '</span>' +
+          G.rows.map(function (m) {
+            var wo = !!m.wo, unconf = !wo && !!m.unconf, quiet = wo || unconf;
+            var hook = quiet ? '' : sheetHook(m.sheetId || (m.date + '|' + m.opp));
+            var cur = quiet ? '' : sheetCursor();
+            var c = function (html, st) { return '<span ' + hook + 'style="' + cur + CELL + (st || '') + '">' + html + '</span>'; };
+            var dot = unconf ? '' : '<span title="' + (wo ? (m.won ? 'Walkover in his favour ' + MIDDOT + ' opponent withdrew' : 'Walkover against him ' + MIDDOT + ' he withdrew') : (m.won ? 'Won' : 'Lost')) +
+              '" style="display:block;width:8px;height:8px;border-radius:2px;background:' + (m.won ? 'var(--pos)' : 'var(--neg)') + ';"></span>';
+            var sets = unconf ? ENDASH : wo ? '<span style="display:inline-flex;align-items:center;height:16px;padding:0 5px;border-radius:4px;box-sizing:border-box;background:var(--edge-6);border:1px solid var(--edge-10);' +
+              M + 'font-size:8.5px;font-weight:700;letter-spacing:0.06em;color:var(--text-label);white-space:nowrap;">WO</span>' : esc(m.sets || DASH);
+            var favR = spdRoleOf(m) === 'fav';
+            var rowOpen = !quiet && state.sheetRow === (m.sheetId || (m.date + '|' + m.opp)) && sheetOnScreen();
+            return '<div class="pp2-spdrow' + (quiet ? ' wo' : '') + (rowOpen ? ' pp2-rowopen' : '') + '"' + (wo ? ' data-pp2-wo-row="1"' : '') + ' style="display:contents;">' +
+              c(fmtDotDate(m.date) + '.', M + 'font-size:11px;color:var(--text-label);white-space:nowrap;') +
+              c(dot) +
+              c('<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(initialSurname(m.opp || '') || DASH) + '</span>', 'font-size:13px;color:var(--text);min-width:0;padding-right:10px;') +
+              c(esc(m.round || DASH), M + 'font-size:11px;color:var(--text-label);') +
+              c(sets, M + 'font-size:12px;font-weight:700;color:' + (quiet ? 'var(--pp-x-ink-muted)' : m.won ? 'var(--pos)' : 'var(--neg)') + ';') +
+              c('<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (quiet ? '' : esc(String(m.score || DASH))) + '</span>', M + 'font-size:11px;color:var(--text-label);min-width:0;padding-right:10px;') +
+              c(m.price != null ? Number(m.price).toFixed(2) : spPend ? '' : DASH, M + 'font-size:11.5px;font-weight:700;color:' + (favR ? 'var(--text-soft)' : 'var(--text-label)') + ';justify-content:flex-end;') +
+              c(m.oppPrice != null ? Number(m.oppPrice).toFixed(2) : spPend ? '' : DASH, M + 'font-size:11.5px;color:var(--text-label);justify-content:flex-end;') +
+              '</div>';
+          }).join('');
+      }).join('');
+      var woN = b.listed.filter(function (m) { return m.wo; }).length;
+      return '<div data-pp2-spdrow="' + b.key + '" data-pp2-spd="detail" style="background:var(--card);box-shadow:inset 0 0 0 1px var(--pp-x-edge-12);border-radius:12px;margin:6px 0;">' + head +
+        '<div style="padding:0 14px 14px;display:flex;flex-direction:column;">' +
+          '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;padding:4px 0 6px;">' + tl + '</div>' +
+          '<div style="max-height:440px;overflow-y:auto;padding-right:12px;"><div style="' + LGRID + '">' + lhead + body + '</div></div>' +
+          '<span style="font-size:12px;color:var(--text-label);padding-top:12px;border-top:1px solid var(--edge-6);margin-top:8px;">' +
+            'All ' + b.n + ' matches' + (woN ? ' ' + MIDDOT + ' ' + woN + ' walkover' + (woN === 1 ? '' : 's') + ', not counted' : '') + '</span>' +
+        '</div></div>';
+    }).join('');
+
+    var tU = 0, tP = 0;
+    D.bands.forEach(function (b) { if (b.priced) { tP += b.priced; tU += b.units; } });
+    var notes = [];
+    if (D.unrated) notes.push(D.unrated + ' ATP matches at a venue with no speed reading are left out.');
+    if (D.offTour) notes.push(D.offTour + ' Challenger and ITF matches are left out: their courts carry no speed reading yet.');
+    var card = '<div data-pp2-spd="summary" style="margin-bottom:16px;position:relative;background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;padding:24px 24px 22px;">' +
+      '<span style="position:absolute;top:26px;right:24px;z-index:3;display:flex;">' + infoIcon('spd1', Object.assign({ width: 400, align: 'right', v4: true, notes: notes }, SPD_INFO1)) + '</span>' +
+      '<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:10px 20px;flex-wrap:wrap;padding-right:34px;margin-bottom:18px;">' +
+        '<span style="display:flex;flex-direction:column;gap:5px;min-width:0;">' +
+          '<span style="font-size:18px;font-weight:800;letter-spacing:-0.01em;color:var(--text);">' + (F.win === 'l52' ? 'Last 52 weeks' : 'Career') + (F.surf === 'all' ? '' : ' ' + MIDDOT + ' ' + F.surf) + '</span>' +
+          '<span style="font-size:13px;color:var(--text-label);text-wrap:pretty;">' + (D.tn ? D.tn + ' matches' : 'No matches') + ' ' + MIDDOT + ' fast, medium and slow courts ' + MIDDOT + ' click a row for its matches</span></span>' +
+        '<span style="display:inline-flex;align-items:baseline;gap:12px;white-space:nowrap;">' +
+          '<span style="' + M + 'font-size:26px;font-weight:700;line-height:1;color:var(--text);">' + (D.tn ? recordText(D.tw, D.tn - D.tw) : DASH) + '</span>' +
+          '<span style="' + M + 'font-size:14px;color:var(--text-label);">' + (D.tn ? Math.round(100 * D.tw / D.tn) + '%' : DASH) + '</span>' +
+          '<span style="display:inline-flex;align-items:baseline;gap:6px;"><span data-pp2-spd-yield="1" style="' + M + 'font-size:14px;font-weight:700;color:' + (spPend || !tP ? 'var(--text-label)' : sgnCol(tU, 1)) + ';">' +
+            (spPend ? '&nbsp;' : tP ? sgnStr(tU, 1) + 'u' : DASH) + '</span><span style="font-size:12px;color:var(--text-label);">on the price</span></span></span>' +
+      '</div>' +
+      '<div style="overflow-x:auto;"><div style="min-width:660px;display:flex;flex-direction:column;">' +
+        '<div style="' + RGRID + 'padding:0 14px 9px;">' +
+          ['Court speed', 'Win rate ' + MIDDOT + ' tick = 50%', 'Record', 'Win %', 'Vs others', 'On price'].map(function (h, i) {
+            return '<span style="' + CAPS + (i >= 2 ? 'text-align:right;' : '') + '">' + h + '</span>';
+          }).join('') + '<span></span></div>' + rows +
+      '</div></div></div>';
+
+    if (!D.tn) {   // every band empty under these filters: Clear all resets Window and Surface too
+      return filterCard + applied + card +
         '<div data-pp2-spd="none" style="border:1px dashed color-mix(in srgb, var(--text) 14%, transparent);border-radius:16px;padding:44px 24px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;">' +
           '<span style="font-size:15px;font-weight:700;color:var(--text);">No matches for these filters</span>' +
           '<span style="font-size:12.5px;color:var(--text-label);">' + esc(spdTitleCount(p)) + ' fit. Remove a filter or start again.</span>' +
           '<span data-pp2="spd-clearall" class="pp2-spdclear" style="margin-top:8px;cursor:pointer;padding:8px 16px;border-radius:9px;font-size:12px;font-weight:700;color:var(--text);' +
             'background:var(--selected);border:1px solid var(--edge-16);">Clear all</span></div>';
     }
-
-    var b = D.bands.filter(function (x) { return x.key === selKey; })[0];
-    var thinSel = b.n < FLOOR;
-    var scope = (F.win === 'l52' ? 'last 52 weeks' : 'career') + (F.surf !== 'all' ? ' ' + MIDDOT + ' ' + F.surf.toLowerCase() : '') +
-      (F.role !== 'all' ? ' ' + MIDDOT + ' ' + (F.role === 'fav' ? 'as favourite' : 'as underdog') : '') +
-      (F.alt !== 'all' ? ' ' + MIDDOT + ' ' + (F.alt === 'alt' ? 'altitude' : 'sea level') : '') +
-      (F.arch !== 'all' ? ' ' + MIDDOT + ' vs ' + F.arch : '');
-    // five tiles (none under the floor)
-    var played = b.ms;
-    var fav = played.filter(function (m) { return spdRoleOf(m) === 'fav'; }), dog = played.filter(function (m) { return spdRoleOf(m) === 'dog'; });
-    var wl = function (a) { var w = a.filter(function (m) { return m.won; }).length; return recordText(w, a.length - w); };
-    var bo5 = function (m) { var k = setsOfScore(m); return (k != null && k >= 4) || /grand slam/i.test(String(m.level || '')); };
-    var dec = played.filter(function (m) { return !m.retired && setsOfScore(m) === (bo5(m) ? 5 : 3); });
-    var str = played.filter(function (m) { return !m.retired && setsOfScore(m) === (bo5(m) ? 3 : 2); });
-    var decW = dec.filter(function (m) { return m.won; }).length;
-    var g = gapOf(b), gTxt = g == null ? '' : signed(g, 1, 'pp');
-    var y = yieldOf(b);
-    var tl = thinSel ? '' : [
-      { label: 'Win rate', fig: Math.round(b.pct) + '%', sub: recordText(b.w, b.l),
-        tail: gTxt ? gTxt + (narrowed ? ' vs all' : ' vs others') : '', tailTitle: gTxt ? gTxt + ' vs ' + gapWord : '', tailColor: gapCol(g) },
-      // founder 2026-11-14 ("follow design"): band win rate − the tour average 50% (every match has one winner and one
-      // loser, so the whole tour wins 50% in any band); a dash with Price role or Opponent archetype on, as the reference
-      (F.role !== 'all' || F.arch !== 'all')
-        ? { label: 'Vs tour', fig: DASH, figColor: 'var(--text-label)', sub: 'no tour figure', tail: 'for these filters' }
-        : (function () { var tg = Math.round(b.pct) - 50;   // the printed win rate − 50, as the reference
-            return { label: 'Vs tour', fig: signed(tg, 1, 'pp'), figColor: Math.abs(tg) < 0.05 ? 'var(--text)' : tg > 0 ? 'var(--pos)' : 'var(--neg)',
-              sub: 'tour average 50%', tail: 'on ' + b.name.toLowerCase() + ' courts' }; })(),
-      { label: 'On the price', fig: spPend ? '&nbsp;' : y == null ? DASH : signed(b.units, 2, 'u'), figColor: y == null ? 'var(--text-label)' : signColour(b.units),
-        sub: b.priced ? signed(y, 1, '%') + ' yield' : 'no prices kept', tail: b.priced ? b.priced + ' priced' : '' },   // founder 2026-11-14: units
-      { label: 'As favourite', fig: fav.length ? wl(fav) : DASH, figColor: fav.length ? null : 'var(--text-label)', sub: fav.length + ' matches', tail: wl(dog) + ' as underdog' },
-      { label: 'Deciding sets', fig: dec.length ? recordText(decW, dec.length - decW) : DASH, figColor: dec.length ? null : 'var(--text-label)',
-        sub: dec.length ? Math.round(100 * decW / dec.length) + '% won' : 'none yet', tail: str.length ? wl(str) + ' straight sets' : '' }
-    ].map(function (t) {
-      return '<div style="background:var(--card);border:1.25px solid var(--edge-6);border-radius:12px;padding:12px 14px 13px;display:flex;flex-direction:column;gap:6px;min-width:0;">' +
-        recCaps(t.label, 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;') +
-        '<span style="' + M + 'font-size:21px;font-weight:700;line-height:1;color:' + (t.figColor || 'var(--text)') + ';">' + t.fig + '</span>' +
-        '<span style="font-size:11.5px;color:var(--text-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + t.sub + '</span>' +
-        '<span style="' + M + 'font-size:10.5px;color:' + (t.tailColor || 'var(--text-label)') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"' +
-          (t.tailTitle ? ' title="' + esc(t.tailTitle) + '"' : '') + '>' + (t.tail || '&nbsp;') + '</span></div>';
-    }).join('');
-    // matches grouped by edition (event + year), newest first; walkovers listed with a WO tag and counted nowhere
-    var all = b.ms.concat(b.listed).sort(function (x, z) { return String(z.date).localeCompare(String(x.date)); });
-    var groupsE = [], idx = {};
-    all.forEach(function (m) {
-      var k = (m.event || '') + '|' + String(m.date || '').slice(0, 4);
-      if (!idx[k]) {
-        idx[k] = { event: m.event, year: String(m.date || '').slice(0, 4), rows: [], sp: spdEditionSpeed(m), alt: spdAltOf(m),
-          surf: String(m.court || '') === 'Indoor' ? 'Indoors' : m.surface ? m.surface.charAt(0).toUpperCase() + m.surface.slice(1) : null, level: m.level };
-        groupsE.push(idx[k]);
-      }
-      idx[k].rows.push(m);
-    });
-    var GRID = 'display:grid;grid-template-columns:58px 22px minmax(0,1.1fr) 46px 50px minmax(0,1.3fr) 52px 52px;gap:0;align-items:stretch;';
-    var head2 = ['Date', '', 'Opponent', 'Rd', 'Sets', 'Set scores', 'H', 'A'].map(function (h, i) {
-      return '<span style="position:sticky;top:0;z-index:2;background:var(--card);font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;' +
-        'text-transform:uppercase;color:var(--text-label);text-align:' + (i >= 6 ? 'right' : 'left') + ';padding:2px 0 9px;border-bottom:1px solid var(--edge-10);white-space:nowrap;">' + h + '</span>';
-    }).join('');
-    var CELL = 'padding:7px 0;border-top:1px solid var(--line);display:flex;align-items:center;';
-    var body = groupsE.map(function (G) {
-      var right = (G.sp != null ? '<span style="display:inline-flex;gap:6px;"><span>speed</span><span style="color:var(--text-soft);font-weight:700;">' + signed(G.sp - 1, 2, '') + '</span></span>' : '') +
-        (G.alt != null ? '<span style="display:inline-flex;gap:6px;"><span>altitude</span><span style="color:var(--text-soft);font-weight:700;">' + Number(G.alt).toLocaleString('en-US') + ' m</span></span>' : '');
-      return '<span data-pp2-spdgroup="1" style="grid-column:1 / -1;display:flex;align-items:baseline;gap:10px;padding:16px 0 8px;min-width:0;">' +
-          '<span style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;">' + esc((tournDisplayName(G.event, null) || DASH) + ' ' + G.year) + '</span>' +
-          '<span style="font-size:11.5px;color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc([G.surf, G.level].filter(Boolean).join(' ' + MIDDOT + ' ')) + '</span>' +
-          (right ? '<span style="margin-left:auto;display:inline-flex;align-items:baseline;gap:14px;' + M + 'font-size:10.5px;color:var(--text-label);white-space:nowrap;">' + right + '</span>' : '') +
-        '</span>' +
-        G.rows.map(function (m) {
-          var wo = !!m.wo, unconf = !wo && !!m.unconf, quiet = wo || unconf;
-          var hook = quiet ? '' : sheetHook(m.sheetId || (m.date + '|' + m.opp));
-          var cur = quiet ? '' : sheetCursor();
-          var c = function (html, st) { return '<span ' + hook + 'style="' + cur + CELL + (st || '') + '">' + html + '</span>'; };
-          var dot = unconf ? '' : '<span title="' + (wo ? (m.won ? 'Walkover in his favour ' + MIDDOT + ' opponent withdrew' : 'Walkover against him ' + MIDDOT + ' he withdrew') : (m.won ? 'Won' : 'Lost')) +
-            '" style="display:block;width:8px;height:8px;border-radius:2px;background:' + (m.won ? 'var(--pos)' : 'var(--neg)') + ';"></span>';
-          var sets = unconf ? ENDASH : wo ? '<span style="display:inline-flex;align-items:center;height:16px;padding:0 5px;border-radius:4px;box-sizing:border-box;background:var(--edge-6);border:1px solid var(--edge-10);' +
-            M + 'font-size:8.5px;font-weight:700;letter-spacing:0.06em;color:var(--text-label);white-space:nowrap;">WO</span>' : esc(m.sets || DASH);
-          var rowOpen = !quiet && state.sheetRow === (m.sheetId || (m.date + '|' + m.opp)) && sheetOnScreen();
-          return '<div class="pp2-spdrow' + (quiet ? ' wo' : '') + (rowOpen ? ' pp2-rowopen' : '') + '"' + (wo ? ' data-pp2-wo-row="1"' : '') + ' style="display:contents;">' +
-            c(fmtDotDate(m.date) + '.', M + 'font-size:11px;color:var(--text-label);white-space:nowrap;') +
-            c(dot) +
-            c('<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(initialSurname(m.opp || '') || DASH) + '</span>', 'font-size:12.5px;min-width:0;padding-right:10px;') +
-            c(esc(m.round || DASH), M + 'font-size:10.5px;color:var(--text-label);') +
-            c(sets, M + 'font-size:11.5px;font-weight:600;color:var(--text-soft);') +
-            c('<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (quiet ? '' : esc(String(m.score || DASH))) + '</span>', M + 'font-size:11px;color:var(--text-label);min-width:0;padding-right:10px;') +
-            c(m.price != null ? Number(m.price).toFixed(2) : spPend ? '' : DASH, M + 'font-size:11px;color:var(--text-soft);justify-content:flex-end;') +
-            c(m.oppPrice != null ? Number(m.oppPrice).toFixed(2) : spPend ? '' : DASH, M + 'font-size:11px;color:var(--text-label);justify-content:flex-end;') +
-            '</div>';
-        }).join('');
-    }).join('');
-    var woN = b.listed.filter(function (m) { return m.wo; }).length;
-    var box = '<div data-pp2-spd="detail" style="position:relative;background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;padding:18px 20px 16px;min-width:0;">' +
-      '<span style="position:absolute;top:18px;right:20px;z-index:3;display:flex;">' + infoIcon('spd2', Object.assign({ width: 400, align: 'right' }, SPD_INFO2)) + '</span>' +
-      '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:6px 12px;margin-bottom:14px;flex-wrap:wrap;padding-right:30px;">' +
-        recCaps(esc(b.name + ' courts ' + MIDDOT + ' ' + scope), 'white-space:nowrap;') +
-        '<span style="' + M + 'font-size:11px;color:var(--text-label);white-space:nowrap;">' +
-          'All ' + b.n + ' matches' + (woN ? ' ' + MIDDOT + ' ' + woN + ' walkover' + (woN === 1 ? '' : 's') + ', not counted' : '') + '</span></div>' +
-      (tl ? '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:14px;">' + tl + '</div>' : '') +
-      '<div style="max-height:calc(100vh - 560px);min-height:260px;overflow-y:auto;padding-right:12px;"><div style="' + GRID + '">' + head2 + body + '</div></div></div>';
-    return bar.band + bar.applied + card1 + box;
+    return filterCard + applied + card;
   }
 
   function renderSpeedModal(p) {
@@ -13255,10 +13343,10 @@
   function l52Cut() { var d = new Date(Date.now() - 364 * 86400000); return d.toISOString().slice(0, 10); }
   function styScope() {
     var win = state.styWin || 'career', surf = state.stySurf || 'all';
-    return (win === 'l52' ? 'last 52 weeks' : 'career') + (surf === 'all' ? '' : ' ' + MIDDOT + ' ' + surf.toLowerCase());
+    return (win === 'l52' ? 'last 52 weeks' : win === 'l24' ? 'last 24 months' : 'career') + (surf === 'all' ? '' : ' ' + MIDDOT + ' ' + surf.toLowerCase());
   }
   function styData(p) {
-    var win = state.styWin || 'career', surf = state.stySurf || 'all', cut = win === 'l52' ? l52Cut() : null;
+    var win = state.styWin || 'career', surf = state.stySurf || 'all', cut = win === 'l52' ? l52Cut() : win === 'l24' ? last24Cutoff() : null;
     var rows = styleRows(p);
     var data = STYLE_AXIS.map(function (a, i) {
       var r = rows.filter(function (x) { return x.axis.label === a.label; })[0];
@@ -13362,10 +13450,10 @@
       return { label: STY_GROUP_LABEL[g], l: l, r: r };
     }).filter(Boolean);
     var divs = groups.slice(1).map(function (g, i) {
-      return '<span style="position:absolute;left:' + ((groups[i].r + g.l) / 2).toFixed(1) + '%;top:0;bottom:0;width:1px;border-left:1px dashed var(--edge-10);"></span>';
+      return '<span style="position:absolute;left:' + ((groups[i].r + g.l) / 2).toFixed(1) + '%;top:0;bottom:0;width:1px;border-left:1px dashed var(--edge-10);pointer-events:none;"></span>';
     }).join('');
     var brackets = groups.map(function (g) {
-      return '<span style="position:absolute;left:' + g.l.toFixed(1) + '%;width:' + (g.r - g.l).toFixed(1) + '%;bottom:0;height:16px;' +
+      return '<span style="position:absolute;left:' + g.l.toFixed(1) + '%;width:' + (g.r - g.l).toFixed(1) + '%;bottom:0;height:16px;pointer-events:none;' +
         'border-top:1px solid ' + STY_C.bracket + ';display:flex;justify-content:center;align-items:flex-end;">' +
         '<span style="font-family:var(--font-words);font-size:9.5px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;' +
         'color:' + STY_C.muted + ';white-space:nowrap;background:var(--card);padding:0 6px;transform:translateY(-9px);">' + g.label + '</span></span>';
@@ -13376,10 +13464,10 @@
           'font-size:10px;color:var(--text-label);">' + t + '%</span>';
       }).join('') + '</div>' +
       '<div style="position:relative;height:200px;border-left:1px solid ' + STY_C.axis + ';border-bottom:1px solid ' + STY_C.axis + ';">' +
-        ticks.map(function (t) { return '<span style="position:absolute;left:0;right:0;top:' + top(t) + ';height:1px;background:var(--line);"></span>'; }).join('') +
-        (D.avg != null ? '<span style="position:absolute;left:0;right:0;top:' + top(D.avg) + ';height:1px;background:' + STY_C.avgLine + ';"></span>' +
+        ticks.map(function (t) { return '<span style="position:absolute;left:0;right:0;top:' + top(t) + ';height:1px;background:var(--line);pointer-events:none;"></span>'; }).join('') +
+        (D.avg != null ? '<span style="position:absolute;left:0;right:0;top:' + top(D.avg) + ';height:1px;background:' + STY_C.avgLine + ';pointer-events:none;"></span>' +
           '<span style="position:absolute;right:6px;top:' + top(D.avg) + ';transform:translateY(-130%);' + STY_MONO + 'font-size:10.5px;' +
-          'color:var(--text-label);white-space:nowrap;">his average ' + MIDDOT + ' ' + Math.round(D.avg) + '%</span>' : '') +
+          'color:var(--text-label);white-space:nowrap;pointer-events:none;">his average ' + MIDDOT + ' ' + Math.round(D.avg) + '%</span>' : '') +
         divs + marks +
       '</div>' +
       '<span></span>' +
@@ -13503,7 +13591,7 @@
           '<span style="font-size:12px;color:var(--text-label);">backing him</span></span>' +
       '</div>';
     return bandBox('<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' + stySegPills('sty-surf', STY_SURFS, state.stySurf || 'all') + '</div>' +
-        winSeg('sty-win', state.styWin || 'career', false), 'joined-card', 'justify-content:space-between;gap:12px;') +
+        winSeg('sty-win', state.styWin || 'career', true), 'joined-card', 'justify-content:space-between;gap:12px;') +
       '<div data-pp2-sty="card" style="position:relative;background:var(--card);border:1.25px solid var(--edge-6);border-top:0;border-radius:0 0 16px 16px;' +
         'padding:22px 24px 18px;margin-bottom:16px;">' +
         '<span style="position:absolute;top:20px;right:20px;z-index:3;display:flex;">' +
@@ -16311,7 +16399,7 @@
     lcBandF: 'all', lcArch: 'all', spdSurf: 'all', spdBand: null,
     // v4 §5 · Court speed's shared filter bar: Window (default Career) and the three hidden filters; fmSel = the open
     // drop-down group inside a Filters popover ('<menu id>|<group key>')
-    spdWin: 'career', spdRole: 'all', spdAlt: 'all', spdArch: 'all', fmSel: null,
+    spdWin: 'career', spdLvl: 'all', spdRole: 'all', spdAlt: 'all', spdArch: 'all', fmSel: null,
     // v4 §9 Live trading: Window · Surface · the four Filters groups, the open box ('heat' is state.heat) and the last-clicked tile
     ltWin: 'm24', ltSurf: 'all', ltRole: 'all', ltFmt: 'all', ltLvl: 'all', ltArch: 'all', ltBox: null, ltPicked: null, ltSpotF: 'all'
   };
@@ -16404,7 +16492,7 @@
     state.calSpeed = 'all'; state.calFmt = 'all'; state.calBand = 'all'; state.calArch = 'all'; state.calOpp = 'all'; state.calCtry = 'all'; state.mkOpp = 'all';
     state.speedSurf = 'all'; state.speedBand = null;
     // v4 §5 · a new player opens Court speed on Career, no filters
-    state.spdSurf = 'all'; state.spdBand = null; state.spdWin = 'career'; state.spdRole = 'all'; state.spdAlt = 'all'; state.spdArch = 'all'; state.fmSel = null;
+    state.spdSurf = 'all'; state.spdBand = null; state.spdWin = 'career'; state.spdLvl = 'all'; state.spdRole = 'all'; state.spdAlt = 'all'; state.spdArch = 'all'; state.fmSel = null;
     state.styleRow = null;
     state.hbSurf = 'all';
     state.hbMode = 'hold';
@@ -16683,11 +16771,11 @@
     else if (kind === 'mk-surf') { state.mkSurf = v; state.fb = null; }
     else if (kind === 'mk-win') { state.mkWin = v; state.fb = null; }
     else if (kind === 'mk-role') { state.mkRole = v === 'fav' || v === 'dog' ? v : 'all'; state.fb = null; }
-    else if (kind === 'spd-surf') { state.spdSurf = v; state.spdBand = null; }
+    else if (kind === 'spd-surf') { state.spdSurf = v; }
     else if (kind === 'spd-win') { state.spdWin = v === 'l52' ? 'l52' : 'career'; }
     // v4 §5 · the empty state's Clear all: the hidden filters AND Window + Surface
-    else if (kind === 'spd-clearall') { state.spdRole = 'all'; state.spdAlt = 'all'; state.spdArch = 'all'; state.spdWin = 'career'; state.spdSurf = 'all'; state.spdBand = null; state.fmOpen = null; state.fmSel = null; }
-    else if (kind === 'spd-band') { state.spdBand = v; }
+    else if (kind === 'spd-clearall') { state.spdLvl = 'all'; state.spdRole = 'all'; state.spdAlt = 'all'; state.spdArch = 'all'; state.spdWin = 'career'; state.spdSurf = 'all'; state.spdBand = null; state.fmOpen = null; state.fmSel = null; }
+    else if (kind === 'spd-band') { state.spdBand = el.getAttribute('data-open') === '1' ? 'none' : v; }
     else if (kind === 'spl-view') { state.splView = v; }
     else if (kind === 'cal-tab') { state.seasonTab = v === 'streaks' ? 'streaks' : 'calendar'; state.calCellV2 = null; state.runSel = null; state.runScroll = null; }
     else if (kind === 'cal-win') { state.calWin = v === 'l52' ? 'l52' : 'career'; state.calCellV2 = null; state.runSel = null; state.runScroll = null; }
@@ -16862,7 +16950,7 @@
     _internals: {
       PP4: PP4, pp4Bar: pp4Bar, mtoRowsFor: mtoRowsFor, renderMto: renderMto, renderAvatar: renderAvatar, splTourFor: splTourFor,
       // Profile v2 (2026-11-09): the shared drill box, its per-box builders and the Match-up model
-      FB_BUILD: FB_BUILD, floatBoxHtml: floatBoxHtml, OPP_LEVELS: OPP_LEVELS, oppLevelOf: oppLevelOf, calRows: calRows, calSwingOf: calSwingOf, calCountryOf: calCountryOf, renderSeasonModalV2: renderSeasonModalV2, streakSeq: streakSeq, streakRuns: streakRuns, splModel: splModel, splRoundKeyer: splRoundKeyer, spdData: spdData, renderSpeedModalV2: renderSpeedModalV2, PP4: PP4, spdTitleCount: spdTitleCount, spdFilter: spdFilter, spdRowOk: spdRowOk, spdAltOf: spdAltOf, spdPool: spdPool, pp4FilterBar: pp4FilterBar, MODAL_TITLE_COUNT: MODAL_TITLE_COUNT, renderSplitsModalV2: renderSplitsModalV2, styData: styData, renderStylesModalV2: renderStylesModalV2,
+      FB_BUILD: FB_BUILD, floatBoxHtml: floatBoxHtml, OPP_LEVELS: OPP_LEVELS, oppLevelOf: oppLevelOf, calRows: calRows, calSwingOf: calSwingOf, calCountryOf: calCountryOf, renderSeasonModalV2: renderSeasonModalV2, streakSeq: streakSeq, streakRuns: streakRuns, splModel: splModel, splRoundKeyer: splRoundKeyer, spdData: spdData, renderSpeedModalV2: renderSpeedModalV2, PP4: PP4, spdTitleCount: spdTitleCount, spdFilter: spdFilter, spdRowOk: spdRowOk, spdAltOf: spdAltOf, spdPool: spdPool, spdEditionGap: spdEditionGap, spdSurfMeans: spdSurfMeans, spdBandOfRow: spdBandOfRow, spdLvlOf: spdLvlOf, SPD_FM_KEYS: SPD_FM_KEYS, pp4FilterBar: pp4FilterBar, MODAL_TITLE_COUNT: MODAL_TITLE_COUNT, renderSplitsModalV2: renderSplitsModalV2, styData: styData, renderStylesModalV2: renderStylesModalV2,
       mkBandIdx: mkBandIdx, MK_BANDS: MK_BANDS, mkTourBand: mkTourBand, styleArchetypeOf: styleArchetypeOf, renderLinesTabV2: renderLinesTabV2, renderMarketWinnerV2: renderMarketWinnerV2,
       recordRowsOf: recordRowsOf,
       countedSpine: countedSpine,

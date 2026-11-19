@@ -1,5 +1,7 @@
 #!/usr/bin/env node
-// tools/test-pp4-speed.js — Player Profile v4 · Court speed record (handoff 2026-11-14, CHANGES §5, `modal.isSpeed`).
+// tools/test-pp4-speed.js — Player Profile v5 · Court speed record (handoff 2026-11-19, CHANGES §3, `modal.isSpeed`;
+// founder 2026-11-19: Vs tour replaced by As favourite + As underdog, a Level filter, bands against the surface's average).
+// The v4 header below describes the checks this file grew from; the v5 checks are listed above each one.
 //
 // Runs the shipped renderer on the pinned fixture (tools/fixtures/ten384-figures/player-2840.json, S. Korda, the module
 // clock pinned to its asOf) plus one walkover row and a synthetic playing-styles store, and asserts the v4 rules:
@@ -38,24 +40,27 @@ const PP4 = I.PP4 || { SPEED_FLOOR: 5, ALT_CUT_M: 500 };   // the pre-v4 module 
 const FLOOR = PP4.SPEED_FLOOR;
 
 const checks = {
+  // v5 §0.3 · the filter card: Window and Surface as two well switches, Filters right; no Applied row while nothing hidden is on
   bar(html) {
-    const band = html.slice(html.indexOf('data-pp2-band="standalone-card"'), html.indexOf('data-pp2-spd="summary"'));
-    assert(band.length > 0, 'no standalone filter band');
+    const band = html.slice(html.indexOf('data-pp2-band="v5"'), html.indexOf('data-pp2-spd="summary"'));
+    assert(band.length > 0, 'no v5 filter card');
     const wins = (band.match(/data-pp2="spd-win" data-v="(\w+)"/g) || []).map(x => x.replace(/.*data-v="(\w+)"/, '$1'));
-    assert.deepStrictEqual(wins, ['l52', 'career'], 'the Window pills are not Last 52 weeks | Career');
+    assert.deepStrictEqual(wins, ['l52', 'career'], 'the Window switch is not Last 52 weeks | Career');
     assert(/data-pp2="spd-win" data-v="career"[^>]*aria-pressed="true"/.test(band), 'Career is not the default window');
     const surfs = (band.match(/data-pp2="spd-surf" data-v="(\w+)"/g) || []).map(x => x.replace(/.*data-v="(\w+)"/, '$1'));
-    assert.deepStrictEqual(surfs, ['all', 'Hard', 'Clay', 'Grass', 'Indoors'], 'the surface pills');
-    assert(band.indexOf('spd-win') < band.indexOf('width:1px;height:18px') && band.indexOf('width:1px;height:18px') < band.indexOf('spd-surf'), 'no divider between Window and Surface');
-    assert(/data-pp2="fm-toggle" data-v="spd"/.test(band) && /margin-left:auto/.test(band), 'no Filters trigger at the right');
+    assert.deepStrictEqual(surfs, ['all', 'Hard', 'Clay', 'Grass', 'Indoors'], 'the surface switch');
+    assert((band.match(/border-radius:10px;padding:3px;flex:none;/g) || []).length === 2, 'the two switches are not well tracks');
+    assert(/data-pp2="fm-toggle" data-v="spd" class="pp2-v5fm"[^>]*height:38px/.test(band) && /margin-left:auto/.test(band), 'no v5 Filters button at the right');
   },
-  popover(html, D) {
-    assert(/width:620px/.test(html), 'the popover is not 620px');
+  // the popover: Level · Price role · Altitude · Opponent archetype; every count = the banded rows the filter keeps
+  popover(html) {
     const t = T(html);
-    assert(/PRICE ROLE|Price role/.test(t) && /Altitude/.test(t) && /Opponent archetype/.test(t), 'a group is missing');
+    assert(/Level/.test(t) && /Price role/.test(t) && /Altitude/.test(t) && /Opponent archetype/.test(t), 'a group is missing');
+    const lv = (html.match(/data-g="spdLvl" data-v="(\w+)"/g) || []).map(x => x.replace(/.*data-v="(\w+)"/, '$1'));
+    assert.deepStrictEqual(lv, ['all', 'atp', 'ch', 'itf'], 'the Level options are not All · ATP · Challenger · ITF');
     assert(t.includes('Altitude = venues at ' + PP4.ALT_CUT_M + ' m or higher.'), 'the altitude hint does not name PP4.ALT_CUT_M');
     const pool = I.spdPool(p), f = I.spdFilter(), cut = I.last52Cutoff();
-    [['spdRole', 'role', ['all', 'fav', 'dog']], ['spdAlt', 'alt', ['all', 'sea', 'alt']]].forEach(([g, k, vs]) => vs.forEach(v => {
+    [['spdRole', 'role', ['all', 'fav', 'dog']], ['spdAlt', 'alt', ['all', 'sea', 'alt']], ['spdLvl', 'lvl', ['all', 'atp', 'ch', 'itf']]].forEach(([g, k, vs]) => vs.forEach(v => {
       const n = pool.filter(r => I.spdRowOk(r, Object.assign({}, f, { [k]: v }), cut)).length;
       const re = new RegExp('data-pp2="fm-set" data-g="' + g + '" data-v="' + v + '"[\\s\\S]*?font-weight:400;">(\\d+)<');
       const m = re.exec(html); assert(m, g + '=' + v + ' has no count');
@@ -67,55 +72,65 @@ const checks = {
     assert.deepStrictEqual(names, ['all', 'Big Server', 'Big Server + First Strike', 'Big Server + Complete Baseliner', 'Attacking Baseliner',
       'Solid Baseliner', 'Counterpuncher', 'Solid Defender', 'All Court Elite'], 'the archetype drop-down is not the eight names');
   },
+  // a hidden filter on: "Filters · 1" lifted (never blue), a lifted Applied chip + Clear all, the gap vs unfiltered
   filterOn(html, title) {
     assert(/Filters<span[^>]*>· 1</.test(html), 'the trigger does not read "Filters · 1"');
-    assert(/data-pp2="fm-toggle" data-v="spd"[^>]*background:color-mix\(in srgb, var\(--bar\) 12%/.test(html), 'the trigger is not blue with a hidden filter on');
-    assert(/data-pp2-applied="spd"[\s\S]*As favourite[\s\S]*Clear all/.test(html), 'no Applied chip + Clear all');
+    assert(/data-pp2="fm-toggle" data-v="spd"[^>]*background:var\(--pp-x-lifted\)/.test(html), 'the trigger is not lifted with a hidden filter on');
+    assert(/data-pp2-applied="spd"[\s\S]*background:var\(--pp-x-lifted\)[\s\S]*As favourite[\s\S]*Clear all/.test(html), 'no lifted Applied chip + Clear all');
     assert(/^\d+ of \d+ matches$/.test(title), 'the title sample is not "n of m matches": ' + title);
     assert(/vs unfiltered/.test(html), 'the gap does not compare with the unfiltered band');
   },
-  // founder 2026-11-14 ("follow design", "use units"): Vs tour = band win rate − the tour average 50% (a dash with Price
-  // role or Opponent archetype on); every money figure in units
-  money(html, filtered) {
-    const t = T(html);
-    if (filtered) assert(/VS TOUR|Vs tour/.test(t) && /no tour figure/.test(t) && /for these filters/.test(t), 'Vs tour is not a dash "for these filters"');
-    else assert(/tour average 50%/.test(t) && /[+−]?\d+\.\dpp/.test(t), 'Vs tour does not print the gap to the tour average 50%');
-    assert(/[+−]\d+\.\du\b/.test(t) && /on the price/.test(t), 'no units figure on the price');
-    assert(!/[+−]\d+\.\d%\s*on the price/.test(t), 'the summary is a yield %, not units');
-  },
+  // founder 2026-11-19: the open row's four tiles are On the price · As favourite · As underdog · Deciding sets; no Vs tour
   detail(html) {
-    const labels = (html.match(/data-pp2-spd="detail"[\s\S]*?(?=<div style="max-height)/) || [''])[0];
-    const got = (T(labels).match(/Win rate|Vs tour|On the price|As favourite|Deciding sets/g) || []);
-    assert.deepStrictEqual(got, ['Win rate', 'Vs tour', 'On the price', 'As favourite', 'Deciding sets'], 'the five tiles');
+    const det = (html.match(/data-pp2-spd="detail"[\s\S]*?(?=<div style="max-height)/) || [''])[0];
+    const got = (T(det).match(/Vs tour|On the price|As favourite|As underdog|Deciding sets/g) || []);
+    assert.deepStrictEqual(got, ['On the price', 'As favourite', 'As underdog', 'Deciding sets'], 'the four tiles');
+    assert(/% won/.test(T(det)), 'As favourite / underdog carry no win rate');
     assert(/grid-template-columns:58px 22px minmax\(0,1\.1fr\) 46px 50px minmax\(0,1\.3fr\) 52px 52px;gap:0;/.test(html), 'the match grid');
     assert(/data-pp2-spdgroup="1"[\s\S]*?>speed<\/span>/.test(html), 'the group line has no speed');
+    assert(/[+−]\d+\.\du\b/.test(T(html)) && /on the price/.test(T(html)), 'no units on the price');
   },
 };
 // ── the checks on the shipped renderer
-H.check('1 · the shared filter bar (Window · Surface · Filters), no Applied row when no hidden filter is on', () => {
+H.check('1 · the v5 filter card (Window · Surface · Filters), no Applied row when no hidden filter is on', () => {
   const html = render();
   checks.bar(html);
   assert(!/data-pp2-applied=/.test(html), 'an Applied row with no hidden filter on');
   assert.strictEqual((I.MODAL_TITLE_COUNT || {}).speed(p), I.spdPool(p).length + ' matches', 'the unfiltered title sample');
 });
-H.check('2 · the Filters popover: 620px, three groups, every count = the rows it keeps; the archetype drop-down', () => {
+H.check('2 · the Filters popover: Level, Price role, Altitude, archetype; every count = the rows it keeps', () => {
   checks.popover(render({ fmOpen: 'spd' }));
   checks.archOpen(render({ fmOpen: 'spd', fmSel: 'spd|spdArch' }));
 });
-H.check('3 · a hidden filter on: "Filters · 1" blue, Applied chip, "n of m" title, gap vs unfiltered', () => {
-  const html = render({ spdRole: 'fav' });
-  checks.filterOn(html, (I.MODAL_TITLE_COUNT || {}).speed(p));
+H.check('3 · a hidden filter on: "Filters · 1" lifted, Applied chip, "n of m" title, gap vs unfiltered', () => {
+  checks.filterOn(render({ spdRole: 'fav' }), (I.MODAL_TITLE_COUNT || {}).speed(p));
 });
-H.check('4 · Vs tour = band win rate − 50% (dash under Price role); money in units', () => {
+H.check('4 · Level: Challenger and ITF rows carry no band; ATP = All; the "?" names why', () => {
   I.resetState(KEY);
-  const D = I.spdData(p, I.spdFilter());
-  const band = D.bands.find(b => b.n >= 5);
-  assert(band, 'vacuous: no band at the floor');
-  checks.money(render({ spdBand: band.key }));
-  checks.money(render({ spdBand: band.key, spdRole: 'fav' }), true);
-  assert(/for these filters/.test(T(render({ spdRole: 'fav' }))), 'Vs tour does not say "for these filters" with Price role on');
+  const rows = I.speedRows(p), off = rows.filter(r => I.spdLvlOf(r) === 'ch' || I.spdLvlOf(r) === 'itf');
+  assert(off.length > 0, 'vacuous: the fixture has no Challenger / ITF row');
+  const all = I.spdData(p, Object.assign(I.spdFilter(), { lvl: 'all' })), atp = I.spdData(p, Object.assign(I.spdFilter(), { lvl: 'atp' }));
+  const ch = I.spdData(p, Object.assign(I.spdFilter(), { lvl: 'ch' }));
+  assert.strictEqual(all.tn, atp.tn, 'All and ATP differ although only ATP venues are rated');
+  assert.strictEqual(ch.tn, 0, 'a Challenger row was banded off an ATP venue');
+  assert(ch.offTour > 0, 'the Challenger rows are not counted as left out');
 });
-H.check('5 · the detail card: five tiles, the grid, the group line; a walkover row carries a result bullet', () => {
+H.check('5 · bands read against the SURFACE average: clay is not all slow, Eastbourne slower than Stuttgart', () => {
+  const M = I.spdSurfMeans();
+  assert(M && M.clay && M.grass && M.hard && M.indoor, 'no surface averages');
+  const mean = k => M[k].cur.reduce((a, b) => a + b, 0) / M[k].cur.length;
+  assert(mean('clay') < 0.85 && mean('grass') > 0.95, 'the surface averages are not clay-slow / grass-quick');
+  const g = (venue, surface) => I.spdEditionGap({ venue, surface, year: 2025, date: '2025-06-20', speed: null });
+  assert(g('Eastbourne', 'grass') < -0.08 && g('Stuttgart', 'grass') > 0.08, 'Eastbourne / Stuttgart are not slow / fast for grass');
+  const clayRows = I.speedRows(p).filter(r => String(r.surface).toLowerCase() === 'clay' && I.spdBandOfRow(r));
+  const bands = new Set(clayRows.map(I.spdBandOfRow));
+  assert(clayRows.length && bands.size > 1, 'every clay row still lands in one band: ' + [...bands]);
+  // CONTROL: the tour-average rule (speed − 1.00) puts the clay rows in fewer bands
+  const tourBands = new Set(clayRows.map(r => { const sp = r.speed; return sp - 1 > 0.08 ? 'fast' : sp - 1 < -0.08 ? 'slow' : 'medium'; }));
+  assert(tourBands.size < bands.size, 'CONTROL: the tour rule spreads clay as widely — this check measures nothing');
+  console.log('        clay bands: surface rule ' + [...bands].join('/') + ' · tour rule ' + [...tourBands].join('/'));
+});
+H.check('6 · the open row: four tiles (no Vs tour), the grid, the group line; a walkover row carries a result bullet', () => {
   I.resetState(KEY);
   const D = I.spdData(p, I.spdFilter());
   const band = D.bands.find(b => b.listed.some(m => m.date === WO.date));
@@ -125,13 +140,17 @@ H.check('5 · the detail card: five tiles, the grid, the group line; a walkover 
   checks.detail(html);
   const row = html.slice(html.indexOf('data-pp2-wo-row="1"'), html.indexOf('data-pp2-wo-row="1"') + 1200);
   assert(/title="Walkover against him · he withdrew"[^>]*background:var\(--neg\)/.test(row), 'the walkover row has no red result bullet');
-  const alt = band.ms.concat(band.listed).map(I.spdAltOf).filter(v => v != null);
-  if (alt.length) assert(/>altitude<\/span>/.test(html), 'a venue with an altitude on record prints none');
 });
-H.check('6 · a band under the floor is a dash + "n matches · min ' + FLOOR + '"; all bands empty = "No matches for these filters"', () => {
-  let thin = 0, empty = 0;
-  for (const win of ['career', 'l52']) for (const surf of ['all', 'Hard', 'Clay', 'Grass', 'Indoors']) for (const role of ['all', 'fav', 'dog']) for (const alt of ['all', 'sea', 'alt']) {
-    const st = { spdWin: win, spdSurf: surf, spdRole: role, spdAlt: alt };
+H.check('7 · accordion: Fast open by default, "none" shuts all three; a thin band is a dash and never opens', () => {
+  I.resetState(KEY);
+  const h0 = render();
+  assert.strictEqual((h0.match(/data-pp2-spd="detail"/g) || []).length, 1, 'not exactly one open row by default');
+  assert(!/data-pp2-spd="detail"/.test(render({ spdBand: 'none' })), 'a row is open after the open row was clicked shut');
+  const src = fs.readFileSync(process.env.PP4_SRC || path.join(L.ROOT, 'player-profile-v2.js'), 'utf8');
+  assert(/kind === 'spd-band'\) \{ state\.spdBand = el\.getAttribute\('data-open'\) === '1' \? 'none' : v; \}/.test(src), 'a click on the open row does not shut it');
+  let thin = 0;
+  for (const surf of ['all', 'Hard', 'Clay', 'Grass', 'Indoors']) for (const role of ['all', 'fav', 'dog']) {
+    const st = { spdSurf: surf, spdRole: role };
     I.resetState(KEY); Object.assign(I.state, st);
     const D = I.spdData(p, I.spdFilter()), html = render(st);
     D.bands.forEach(b => {
@@ -140,29 +159,19 @@ H.check('6 · a band under the floor is a dash + "n matches · min ' + FLOOR + '
       assert(html.includes(b.n + (b.n === 1 ? ' match' : ' matches') + ' · min ' + FLOOR), 'thin ' + b.key + ' has no "n matches · min" line');
       assert(!html.includes('data-pp2="spd-band" data-v="' + b.key + '"'), 'thin ' + b.key + ' opens');
     });
-    if (!D.tn) {
-      empty++;
-      assert(/No matches for these filters/.test(html) && /data-pp2="spd-clearall"/.test(html), 'the empty state');
-      assert(!/data-pp2-spd="detail"/.test(html), 'a detail card under the empty state');
-    }
   }
   assert(thin > 0, 'no thin band was manufactured — this check never ran');
-  assert(empty > 0, 'no empty filter set was manufactured — this check never ran');
-  console.log('        ' + thin + ' thin bands, ' + empty + ' empty filter sets');
 });
-H.check('7 · Clear all (empty state) resets Window and Surface too; Reset filters clears the hidden filters only', () => {
+H.check('8 · Clear all resets Level, Window and Surface; Reset filters clears the hidden filters only', () => {
   const src = fs.readFileSync(process.env.PP4_SRC || path.join(L.ROOT, 'player-profile-v2.js'), 'utf8');
-  assert(/kind === 'spd-clearall'\) \{ state\.spdRole = 'all'; state\.spdAlt = 'all'; state\.spdArch = 'all'; state\.spdWin = 'career'; state\.spdSurf = 'all';/.test(src), 'spd-clearall does not reset Window + Surface');
+  assert(/kind === 'spd-clearall'\) \{ state\.spdLvl = 'all'; state\.spdRole = 'all'; state\.spdAlt = 'all'; state\.spdArch = 'all'; state\.spdWin = 'career'; state\.spdSurf = 'all';/.test(src), 'spd-clearall does not reset everything');
   render();
-  assert.deepStrictEqual(I.FM_KEYS ? I.FM_KEYS.spd : ['spdRole', 'spdAlt', 'spdArch'], ['spdRole', 'spdAlt', 'spdArch']);
+  assert.deepStrictEqual(I.SPD_FM_KEYS, ['spdLvl', 'spdRole', 'spdAlt', 'spdArch'], 'Reset filters does not clear Level with the hidden filters');
 });
-// ── CONTROL: the v3 drawer's markers, fed to the same checks, must go red (each check is not vacuous)
-const V3 = '<div data-pp2-band="standalone" style="padding:10px 16px;"><span data-pp2="spd-surf" data-v="all">All</span></div>' +
-  '<span>Faster courts</span><div data-pp2-spd="summary"></div><span>+1.7u</span><span>Favourite · underdog</span>' +
-  '<div style="display:grid;grid-template-columns:48px 12px minmax(0,1.1fr) 36px 40px minmax(0,1.3fr) 46px 46px;gap:0 10px;">';
-H.mustFail('CONTROL · the v3 band (surfaces only, no Window, no Filters) fails the bar check', () => checks.bar(V3));
-H.mustFail('CONTROL · a yield % on the price fails the money check', () => checks.money('<span>Vs tour</span><span>+22.0pp</span><span>tour average 50%</span><span>+4.1%</span><span>on the price</span>'));
-H.mustFail('CONTROL · a dash Vs tour with no filter on fails the money check', () => checks.money('<span>Vs tour</span><span>no tour figure</span><span>+1.70u</span><span>on the price</span>'));
-H.mustFail('CONTROL · the v3 four tiles and 10px-gap grid fail the detail check', () => checks.detail('<div data-pp2-spd="detail"><span>Win rate</span><span>On the price</span><span>Favourite · underdog</span><span>Deciding sets</span></div><div style="max-height">' + V3));
-H.mustFail('CONTROL · a grey trigger with no Applied row fails the filter-on check', () => checks.filterOn(render({ spdRole: 'all' }), '725 matches'));
+// ── CONTROL: the v4 drawer's markers, fed to the same checks, must go red (each check is not vacuous)
+const V4 = '<div data-pp2-band="standalone-card" style="padding:20px 24px;"><span data-pp2="spd-win" data-v="l52">L</span><span data-pp2="spd-win" data-v="career" aria-pressed="true">C</span>' +
+  '<span data-pp2="spd-surf" data-v="all">All</span><span data-pp2="fm-toggle" data-v="spd" class="pp2-fmtrig" style="margin-left:auto">Filters</span></div><div data-pp2-spd="summary"></div>';
+H.mustFail('CONTROL · the v4 pill band fails the v5 bar check', () => checks.bar(V4));
+H.mustFail('CONTROL · the v4 five tiles (Win rate · Vs tour · …) fail the four-tile check', () => checks.detail('<div data-pp2-spd="detail"><span>Win rate</span><span>Vs tour</span><span>On the price</span><span>As favourite</span><span>Deciding sets</span></div><div style="max-height">'));
+H.mustFail('CONTROL · a blue trigger and blue chip fail the filter-on check', () => checks.filterOn('<span data-pp2="fm-toggle" data-v="spd" style="background:color-mix(in srgb, var(--bar) 12%, transparent)">Filters<span>· 1</span></span><div data-pp2-applied="spd"><span style="background:color-mix(in srgb, var(--bar) 12%)">As favourite</span>Clear all</div>vs unfiltered', '3 of 9 matches'));
 H.done();
