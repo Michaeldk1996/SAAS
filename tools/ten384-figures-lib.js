@@ -202,32 +202,26 @@ function playerChecks(I, R, p, mk, label, opts) {
       assert.strictEqual(I.undatedFor(p, 'all'), I.calResidual(p).undated, 'Last 52 and the Calendar read two undated figures');
       return got.map(([t, u]) => t + ' ' + u).join(' · ');
     } },
-    // profile v2 (2026-11-09): the Best / Worst SWING tiles = a recompute of every swing's yield against the other swings
-    // (priced rows only, team events out, n >= 5 priced), done here from the module's own rows.
-    { name: `3 · ${L}: Best / Worst swing tiles = each swing's yield minus the other swings', recomputed`, fn() {
+    // founder 2026-11-19 (v5 round 1): the Best / Worst SWING tiles = the highest / lowest WIN RATE among swings with
+    // PP4.CAL_PICK_MIN (20) matches played, team events out — recomputed here from the module's own rows.
+    { name: `3 · ${L}: Best / Worst swing tiles = highest / lowest win rate among 20+ match swings, recomputed`, fn() {
       const c = R.readCal(p);
       const rows = R.withState({ key: p.key, calWin: 'career', calSurf: 'all' }, () => I.calRows(p));
       const by = {};
-      rows.forEach((x) => { if (x.sw === 'team' || x.r.cents == null) return; (by[x.sw] = by[x.sw] || []).push(x.r.cents); });
-      const tot = Object.values(by).reduce((a, v) => a.concat(v), []);
-      const sum = v => v.reduce((a, x) => a + x, 0);
-      const pp = Object.keys(by).filter(k => by[k].length >= 5).map((k) => {
-        const rest = tot.length - by[k].length;
-        return { k, n: by[k].length, pp: sum(by[k]) / by[k].length - (sum(tot) - sum(by[k])) / rest };
-      });
-      assert(pp.length, 'no swing clears five priced — vacuous');
-      const best = pp.slice().sort((a, b) => b.pp - a.pp)[0], worst = pp.slice().sort((a, b) => a.pp - b.pp)[0];
-      // v3 D2 (2026-11-12): the tile prints the picked swing's own yield over "N priced" (the pick is still the gap to the
-      // other swings); read each tile's own slice of the strip
-      const yld = k => { const y = sum(by[k]) / by[k].length, r = Math.round(y * 10) / 10; return (r < 0 ? '−' : '+') + Math.abs(r).toFixed(1) + '%'; };
-      // each tile is found after the previous one (the opened (?) also names "Swing opener" ahead of the strip)
+      rows.forEach((x) => { if (x.sw === 'team') return; const o = by[x.sw] || (by[x.sw] = { w: 0, l: 0 }); x.r.won ? o.w++ : o.l++; });
+      const MIN = (I.PP4 && I.PP4.CAL_PICK_MIN) || 20;
+      const pct = o => o.w / (o.w + o.l);
+      const rated = Object.keys(by).filter(k => by[k].w + by[k].l >= MIN).map(k => Object.assign({ k }, by[k]));
+      assert(rated.length, 'no swing clears ' + MIN + ' matches — vacuous');
+      const best = rated.slice().sort((a, b) => pct(b) - pct(a) || (b.w + b.l) - (a.w + a.l))[0];
+      const worst = rated.slice().sort((a, b) => pct(a) - pct(b) || (b.w + b.l) - (a.w + a.l))[0];
       const t = c.t.replace(/\s+/g, ' '), at = (re, from) => { const k = t.slice(from).search(re); return k < 0 ? -1 : from + k; };
       const bi = at(/BEST SWING/i, 0), wi = at(/WORST SWING/i, bi), oi = at(/SWING OPENER/i, wi);
       assert(bi >= 0 && wi > bi && oi > wi, 'the swing tiles are not in order');
-      const bs = t.slice(bi, wi), ws = t.slice(wi, oi);
-      assert(bs.includes(yld(best.k) + ' Yield ' + best.n + ' priced'), `Best swing tile is not ${best.k} ${yld(best.k)} over ${best.n} priced: ${bs}`);
-      assert(ws.includes(yld(worst.k) + ' Yield ' + worst.n + ' priced'), `Worst swing tile is not ${worst.k} ${yld(worst.k)} over ${worst.n} priced: ${ws}`);
-      return `best ${best.k} ${yld(best.k)} n=${best.n} · worst ${worst.k} ${yld(worst.k)} n=${worst.n}`;
+      const bs = t.slice(bi, wi), ws = t.slice(wi, oi), wl = o => o.w + '–' + o.l;
+      assert(bs.includes('Win rate ' + wl(best)), `Best swing tile is not ${best.k} ${wl(best)}: ${bs}`);
+      assert(ws.includes('Win rate ' + wl(worst)), `Worst swing tile is not ${worst.k} ${wl(worst)}: ${ws}`);
+      return `best ${best.k} ${wl(best)} · worst ${worst.k} ${wl(worst)}`;
     } },
     { name: `4 · ${L}: ledger head counts the window "See all N results" counts`, fn() {
       const { head, more } = R.readLedger(p);
