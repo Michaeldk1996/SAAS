@@ -29,7 +29,10 @@ Founder rulings: TEN-418 card 7a80b6fe, R1 review and R2 review 73f754f9 (2026-1
   active "N/14", "N of 14 active", the strip (14 segments) and the table (14 rows) agree on every match. A layer the
   engine hides or can't read is an inactive row with its reason — the format split on a best-of-three reads `—` / `—`,
   Favours "Gated", Why "Best of 3: this layer applies to best-of-five only". No placeholder rows for layers the engine
-  lacks (Round performance, H2H trend, Tournament surface speed). The engine's "Subjective input" is named "Manual context".
+  lacks (Round performance, H2H trend, Tournament surface speed). The engine's "Subjective input" is named "Match context"
+  (founder 2026-11-19): the model's own read of our match reports and quotes (`h2h-model/context.js`), a
+  `manual-inputs.json` note winning over it; `subjective.context.mode` = 'shadow' (shown, never priced) until the founder
+  rules on the measuring period. **Test:** `tools/test-model-layers-1119.js`. No Round pill when the feed sends no round.
 - **The model sections are never hidden (founder 2026-11-18, replacing the 0–30 h state-2 display gate of 2026-07-25,
   the 120-min stale-Pinnacle dash of 2026-11-01 and the in-play line).** Every match with a model run shows Market
   context, Value layers, Fair price & value and Biggest movers from that run. Market context's scope line adds a plain
@@ -42,8 +45,7 @@ Founder rulings: TEN-418 card 7a80b6fe, R1 review and R2 review 73f754f9 (2026-1
   else the browser zone.
 - **Weight** = the layer's cap `maxMagnitude` → Highest ≥ 0.06 · High ≥ 0.035 · Medium-high ≥ 0.025 · Medium ≥ 0.016 ·
   Low. **Quality** = Good (applied, confidence high / med; or inputs in for both but too close to move — Favours "Even",
-  Shift 0.0pp) · Medium (applied at low confidence, gated, not this format) · Poor (no input for this match — Style matchup included:
-  the model has no style input yet, TEN-419). **Favours** = a player · Even · Gated · No data, never another word (R2). Rows by weight, Highest →
+  Shift 0.0pp) · Medium (applied at low confidence, gated, not this format) · Poor (no input for this match). **Favours** = a player · Even · Gated · No data, never another word (R2). Rows by weight, Highest →
   Low, then by |shift|. **Test:** the label, the Favours word, the Why and the Data quality sentence tell one story.
 - **Player columns** = the two players' real figures in the layer's unit, read from the engine's sentence (44% / 63%,
   29 / 74, 258.0 / 303.5, 0.89 / 1.05, 4.0 / 8.0 load units, −22.0pp / −8.0pp = top-50 win rate minus overall win rate (founder R3:
@@ -53,7 +55,10 @@ Founder rulings: TEN-418 card 7a80b6fe, R1 review and R2 review 73f754f9 (2026-1
   shorthand ("career+52wk", "Nₑₓ", "rel-to-archetype"). Style matchup reads the Playing Styles pair cell (`psCellFor`, the
   grid's own cell, same figure as its tooltip): "X v Y: N matches, under 30", or "On the Playing Styles grid, Xs win N% of
   M matches against Ys. The model doesn't read playing styles yet, so this layer doesn't move the price." (founder R3
-  copy); the row stays No data / Poor, Data quality "The model doesn't read playing styles yet." Two-player figures name
+  copy). **The model reads that cell since founder 2026-11-19** (`styleMatchup.readLabels`: the step-9 label, n ≥ 30,
+  same style = no edge; backtest out-of-sample log-loss 0.62399 → 0.62278 on 14,668 matches): an applied row's Why drops
+  the "doesn't read" sentence. Staged, not live: Bet105 as the movement lead (`oddsMovement.lead`), the court speed
+  record layer #18 (`courtSpeedRecord.gated`; no gain in the backtest). Two-player figures name
   each player ("L. Darderi −8.3pp over 21 matches, S. Tsitsipas −1.7pp over 228"), never "A vs B" unnamed; a court
   figure under the engine's 10-match floor (`qualityForm.surfaceFloorM`) reads "under 10 top-50 matches there (not counted)",
   never the engine's placeholder +0.0pp. Soft scan also skips exchange-named keys (Matchbook, Smarkets, Betdaq). **Data quality** = one

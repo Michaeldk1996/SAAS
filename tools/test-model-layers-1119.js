@@ -18,13 +18,14 @@ const P = (label, extra) => Object.assign({ abbrName: 'X', style: { archetype_la
 const baseCtx = (a, b, match) => ({ p1: P(a), p2: P(b), match: match || {}, matchupMatrix: mm, surface: 'hard', bestOf: 3 });
 
 // --- the switches ship off: today's output is unchanged until the founder approves ---
-assert.strictEqual(config.adjustments.styleMatchup.readLabels, false);
+assert.strictEqual(config.adjustments.styleMatchup.readLabels, true, 'style matchup live (founder 2026-11-19)');
 assert.strictEqual(config.adjustments.oddsMovement.lead, null);
 assert.strictEqual(config.adjustments.courtSpeedRecord.gated, true);
 assert.strictEqual(config.adjustments.subjective.context.mode, 'shadow', 'reads are made and shown, never priced');
-ok('every new switch ships staged (no price changes before go-live)');
+ok('style matchup live; Bet105 lead, court speed record and the context read still staged');
 
 // --- style matchup ---
+config.adjustments.styleMatchup.readLabels = false;
 let r = adj.runAll(baseCtx('Big Server', 'Solid Defender'));
 assert.strictEqual(byKey(r, 'styleMatchup').applied, false, 'off: the label is not read');
 config.adjustments.styleMatchup.readLabels = true;

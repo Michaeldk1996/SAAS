@@ -93,8 +93,10 @@ module.exports = {
   adjustments: {
     // 1. Style matchup — archetype vs archetype (matchup-matrix.json)
     //    readLabels (founder 2026-11-19): read the step-9 archetype_label, the matrix's key (the file has no `primary`
-    //    since step 9, so the layer never applied); minN = the Playing Styles page's 30. Go-live switch.
-    styleMatchup:   { id: 1,  maxMagnitude: 0.10, gated: false, readLabels: false, minN: 30 },
+    //    since step 9, so the layer never applied); minN = the Playing Styles page's 30. LIVE by founder ruling 2026-11-19
+    //    ("Yes, switch it on", on model-layers-1119-report.md: out-of-sample log-loss 0.62399 → 0.62278, n 14,668).
+    //    Rollback = readLabels false, one commit.
+    styleMatchup:   { id: 1,  maxMagnitude: 0.10, gated: false, readLabels: true, minN: 30 },
     // 2. Subjective input — Michael's manual read (passthrough, default 0)
     //    context (founder 2026-11-19): the model's own read of our match reports and quotes (h2h-model/context.js),
     //    used when the match has no manual-inputs.json row. mode 'off' | 'shadow' (read and shown, never moves the
