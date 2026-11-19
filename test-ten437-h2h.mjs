@@ -272,7 +272,7 @@ test('single source: no shipped display code reads m.h2h\'s record or meetings; 
   // the model (founder ruling 2026-10-14, card edd72529): its H2H input is the SAME list — the pipeline hands
   // modelH2hMatches (H2HCore over career-history) to runModel as h2h.matches; executed in "model" below
   const pipe = readFileSync(join(HERE, 'bsp-pipeline.js'), 'utf8');
-  assert.match(pipe, /h2h: Object\.assign\(\{\}, m\.h2h \|\| \{\}, \{ matches: modelH2hMatches\(m, h2hIn\) \}\) \}\) : m;\n\s*result = runModel\(mm\);/,
+  assert.match(pipe, /h2h: Object\.assign\(\{\}, m\.h2h \|\| \{\}, \{ matches: modelH2hMatches\(m, h2hIn\) \}\) \}\) : m;\n\s*result = runModel\(mm(?:, \{ contextRead: ctxRead \})?\);/,
     'the model runs on the screens\' H2H list');
 });
 test('population constants are ATP\'s (report B, 2026-10-14) and the excluded-event list is the pipeline\'s', () => {

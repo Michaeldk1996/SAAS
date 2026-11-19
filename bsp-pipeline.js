@@ -8437,8 +8437,6 @@ async function buildModelOutput(matches) {
     }
     let result, ctxRead = null;
     try {
-      const mm = h2hIn && m.p1Key != null && m.p2Key != null
-        ? Object.assign({}, m, { h2h: Object.assign({}, m.h2h || {}, { matches: modelH2hMatches(m, h2hIn) }) }) : m;
       // Layer #2's automatic read of our match reports (founder 2026-11-19): one Claude call only when a new report or
       // quote changes the inputs; the cached read is reused otherwise (a failed read waits for new inputs too).
       if (ctxCfg.mode !== 'off') {
@@ -8448,6 +8446,8 @@ async function buildModelOutput(matches) {
         else if (inp && process.env.ANTHROPIC_API_KEY) { ctxRead = Object.assign(await ctxMod.readContext(inp), { at: nowIso }); ctxCalls++; }
         else ctxRead = null;
       }
+      const mm = h2hIn && m.p1Key != null && m.p2Key != null
+        ? Object.assign({}, m, { h2h: Object.assign({}, m.h2h || {}, { matches: modelH2hMatches(m, h2hIn) }) }) : m;
       result = runModel(mm, { contextRead: ctxRead });
     } catch (e) {
       failed++;
