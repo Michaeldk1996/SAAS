@@ -51,8 +51,8 @@ switch 171×39, menu trigger 35, stats box head 67, Compact row 55, opened repor
   ubitennis → Ubitennis, tennis-majors → Tennis Majors, bbc-sport-tennis → BBC Sport, guardian-tennis → The Guardian …); an
   id the table lacks prints as sent (`newsSourceUnknown` lists them). **Article text is verbatim**: title and body exactly as
   the feed sends them (paragraphs split on blank lines), including the feed's own closing "Based on reporting from …" line,
-  with HTML codes decoded ("didn&#039;t" → "didn't", `newsDecode`). The source shows only in an opened Compact row's foot,
-  never on a Reading card.
+  with HTML codes decoded ("didn&#039;t" → "didn't", `newsDecode`). No source is shown anywhere on the
+  page (founder 2026-11-19).
 - **No time on a feed article** (founder card 28bd8fc2, kept over the reference's time): `published_at` is api-tennis's
   4-hourly batch stamp (:00–:03 past 02/06/10/14/18/22 UTC), not the outlet's time, and a wrong figure is not shown. Our
   own items (reports: the observed end; quotes: the outlet's publish time; posts) carry a real time and show it first in
@@ -102,7 +102,7 @@ switch 171×39, menu trigger 35, stats box head 67, Compact row 55, opened repor
 - Reading / Compact persists to `stennisfy.newsView`. **Read more** above 5 paragraphs (above 7 when the stats box has more
   than 6 rows): the card shows 4. Compact: one card per day; closed row = avatar + player · headline · "category · score |
   n topics" · blue ›; one row open at a time, the open row = card colour + 12% ring, its title wraps, a 184px-indented body
-  (full width beside a stats box), a foot with the category pill and "source · event"; no Close link — a second click
+  (full width beside a stats box), a foot with the category pill and the event — **no source is named anywhere on the page** (founder 2026-11-19: "just don't mention our sources", over the export's "source · tournament"); no Close link — a second click
   closes it.
 - **Empty state** (15 white + 13 grey): no filters → "No articles available. Last updated HH:MM:SS." (feed refresh);
   otherwise "No articles match these filters." + the responsible filter ("No results for “x”.", "No {cats} articles for

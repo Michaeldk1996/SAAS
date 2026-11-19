@@ -6354,7 +6354,7 @@ function newsCompactRow(it, admin){
   let inner = '';
   if (it.quotes){ const s = newsQuotesShown(it); inner = `<div class="nx-qs">${newsQuotesHtml(s.quotes)}</div>` + (s.has ? newsMoreBtn(it, s.more) : ''); }
   else { const s = newsParasShown(it); inner = s.paras.map(x => `<div class="nx-p">${newsEscape(x)}</div>`).join('') + (s.has ? newsMoreBtn(it, s.open ? 'Show less' : 'Read more') : ''); }
-  const foot = `<div class="nx-wfoot">${it.cat ? `<span class="nx-pill">${newsEscape(it.cat)}</span>` : ''}<span class="nx-wsub">${newsEscape([it.source, it.tour].filter(Boolean).join(' · '))}</span>${it.kind === 'intel' && admin ? newsIntelActsHtml(it) : ''}</div>`;
+  const foot = `<div class="nx-wfoot">${it.cat ? `<span class="nx-pill">${newsEscape(it.cat)}</span>` : ''}<span class="nx-wsub">${newsEscape(it.tour || '')}</span>${it.kind === 'intel' && admin ? newsIntelActsHtml(it) : ''}</div>`;
   return `<div class="nx-wr open" role="button" tabindex="0" aria-expanded="true" ${attrs} onkeydown="if(event.key==='Enter'&&event.target===this)newsToggleRow(this.dataset.id)">`
     + `<div class="nx-wo">${who}<span class="nx-wh">${newsEscape(it.title)}</span><span class="nx-car" aria-hidden="true">›</span></div>`
     + `<div class="nx-wline${ms ? ' ms' : ''}"></div><div class="nx-wbody${ms ? ' ms' : ''}"><div class="nx-wcol">${inner}${foot}</div>${ms ? newsMsBoxHtml(it, true) : ''}</div></div>`;

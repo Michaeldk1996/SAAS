@@ -248,7 +248,7 @@ test('Compact: the opened row = card colour + ring, no Close link; an opened rep
   assert.match(o, /<div class="nx-wr open"/); assert.ok(!/>Close</.test(o));
   assert.match(o, /<div class="nx-wline ms"><\/div><div class="nx-wbody ms"><div class="nx-wcol">/);
   assert.match(o, /<span class="nx-div"><\/span><div class="nx-box c">/);
-  assert.match(o, /<span class="nx-pill">Match Reports<\/span><span class="nx-wsub">Stennisfy · Finals - Turin<\/span>/);
+  assert.match(o, /<span class="nx-pill">Match Reports<\/span><span class="nx-wsub">Finals - Turin<\/span>/, 'no source named (founder 2026-11-19)');
   assert.match(CSS, /\.nx-wr\.open, \.nx-wr\.open:hover \{ background: var\(--news-card\);[^}]*box-shadow: inset 0 0 0 1px var\(--nx-e12\)/);
   assert.match(CSS, /\.nx-box \{ flex: 2 1 340px; max-width: 560px;/); assert.match(CSS, /\.nx-box\.c \{ flex: 1\.6 1 320px; max-width: 540px; \}/);
   assert.match(CSS, /\.nx-col \{ flex: 1 1 300px;/); assert.match(CSS, /\.nx-wcol \{ flex: 1 1 280px;/);
