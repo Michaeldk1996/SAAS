@@ -60682,6 +60682,184 @@
    },
    "rehomed": 0,
    "alerts": []
+  },
+  {
+   "at": "2026-11-19T21:23:12.751Z",
+   "activeTournaments": [
+    "Finals - Turin"
+   ],
+   "tournaments": [
+    {
+     "name": "Finals - Turin",
+     "key": "2794",
+     "sources": [],
+     "fromOutlets": 47,
+     "counts": {
+      "candidates": 47,
+      "droppedNotVerbatim": 0,
+      "droppedNoPlayer": 0,
+      "droppedAmbiguous": 0,
+      "notTranslatedNoKey": 0,
+      "notTranslatedApiError": 0,
+      "droppedTranslationCheck": 0,
+      "droppedEnglishExists": 0,
+      "mergedSameQuote": 1,
+      "alreadyHeld": 0,
+      "items": 46,
+      "tokens": {
+       "input": 0,
+       "output": 0
+      },
+      "modelError": null,
+      "retryUrls": 0
+     },
+     "digests": {
+      "cards": 33,
+      "kept": 24,
+      "made": 0,
+      "failed": 0,
+      "waiting": 0,
+      "single": 9
+     },
+     "added": 0,
+     "held": 190,
+     "byCategory": {
+      "Quotes": 147,
+      "Injuries": 9,
+      "Interviews": 34
+     },
+     "finishedMatches": 7,
+     "matchesWithWinnerQuote": 7
+    },
+    {
+     "name": "ATP Tour",
+     "key": "tour",
+     "sources": [],
+     "fromOutlets": 0,
+     "counts": {
+      "candidates": 0,
+      "droppedNotVerbatim": 0,
+      "droppedNoPlayer": 0,
+      "droppedAmbiguous": 0,
+      "notTranslatedNoKey": 0,
+      "notTranslatedApiError": 0,
+      "droppedTranslationCheck": 0,
+      "droppedEnglishExists": 0,
+      "mergedSameQuote": 0,
+      "alreadyHeld": 0,
+      "items": 0,
+      "tokens": {
+       "input": 0,
+       "output": 0
+      },
+      "modelError": null,
+      "retryUrls": 0
+     },
+     "digests": {
+      "cards": 52,
+      "kept": 20,
+      "made": 3,
+      "failed": 0,
+      "waiting": 0,
+      "single": 29
+     },
+     "added": 0,
+     "held": 119,
+     "byCategory": {
+      "Interviews": 88,
+      "Injuries": 8,
+      "Quotes": 23
+     },
+     "finishedMatches": 0,
+     "matchesWithWinnerQuote": 0
+    }
+   ],
+   "newItems": 0,
+   "tokens": {
+    "input": 2664,
+    "output": 880
+   },
+   "press": {
+    "matchesLookedUp": 0,
+    "answers": 0
+   },
+   "ttvInbox": {
+    "held": 87,
+    "routed": 31
+   },
+   "atpInbox": {
+    "held": 30,
+    "routed": 16
+   },
+   "outlets": {
+    "read": 131,
+    "withCandidates": 0,
+    "blocked": [
+     "El Deber: the site refuses a plain request",
+     "Tenniskafe: the site refuses a plain request",
+     "TenisovySvet.cz: the site refuses a plain request",
+     "The Indian Express: the site refuses a plain request",
+     "ESPN México (Tenis): unexpected answer",
+     "Aftonbladet: unexpected answer",
+     "ESPN: unexpected answer"
+    ],
+    "articlesFetched": 9,
+    "paywalled": 0,
+    "unnamed": 8,
+    "byOutlet": [
+     {
+      "outlet": "Sport1.ba (Oslobodjenje)",
+      "country": "Bosnia and Herzegovina",
+      "language": "bs",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "tennisnet.com",
+      "country": "Austria",
+      "language": "de",
+      "fetched": 3,
+      "candidates": 0
+     },
+     {
+      "outlet": "Sport1",
+      "country": "Germany",
+      "language": "de",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Tennis Actu",
+      "country": "France",
+      "language": "fr",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Tennishead",
+      "country": "INT",
+      "language": "en",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "SuperSport",
+      "country": "South Africa",
+      "language": "en",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Mundo Deportivo",
+      "country": "Spain",
+      "language": "es",
+      "fetched": 1,
+      "candidates": 0
+     }
+    ]
+   },
+   "rehomed": 0,
+   "alerts": []
   }
  ]
 }
