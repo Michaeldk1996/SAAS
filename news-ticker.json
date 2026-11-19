@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-19T07:08:06.688Z",
+ "generatedAt": "2026-11-19T07:48:44.144Z",
  "tournaments": [
   {
    "key": "2794",
@@ -13,7 +13,7 @@
     "report": 8
    },
    "latestTimestamp": "2026-11-19T03:30:00.000Z",
-   "updatedAt": "2026-11-19T07:08:06.688Z"
+   "updatedAt": "2026-11-19T07:48:44.144Z"
   },
   {
    "key": "tour",
@@ -40,7 +40,7 @@
     "status": 7
    },
    "latestTimestamp": "2026-11-14T16:03:27.000Z",
-   "updatedAt": "2026-11-18T00:28:11.155Z"
+   "updatedAt": "2026-11-19T07:48:44.144Z"
   },
   {
    "key": "1725",
@@ -52,7 +52,7 @@
     "report": 1
    },
    "latestTimestamp": "2026-11-08T14:20:00.000Z",
-   "updatedAt": "2026-11-18T15:10:22.441Z"
+   "updatedAt": "2026-11-19T07:48:44.144Z"
   }
  ],
  "latest": [
@@ -936,6 +936,102 @@
    },
    "category": "Statistics",
    "text": "Tiafoe beat Cobolli 7–6, 6–0 in his second group match in Turin to win his first match at this event. It was the first appearance here for both players and Cobolli played it at home.\n\nThe first set was a real fight. Cobolli broke in the opening game and Tiafoe only got level at 3–3. Tiafoe then had a set point on Cobolli's serve but Cobolli saved it and forced a tiebreak. Tiafoe took that tiebreak 8–6. For him, the break back was the moment the set changed: \"Just fighting. Like, you know, I felt like after I got the break back, I was a better player in the set.\" After the tiebreak, Cobolli did not win another game. Tiafoe broke three times and took the second set 6–0.\n\nThat second set was built on his return. He won 35% of the points against the first serve, far above his usual 26%.\n\nCredit to him: in his first appearance at this event, he beat the home player on a fast indoor court, with a dominance ratio of 1.64. Medvedev waits in his last group match.\n\nTiafoe: performance rating 8.1 | W: 20 / UE: 19 | DR: 1.64\n\nCobolli: performance rating 7.0 | W: 17 / UE: 29 | DR: 0.61",
+   "ms": {
+    "a": "F. Tiafoe",
+    "b": "F. Cobolli",
+    "sets": [
+     [
+      7,
+      6
+     ],
+     [
+      6,
+      0
+     ]
+    ],
+    "rows": [
+     [
+      "Dominance ratio",
+      1.64,
+      0.61,
+      "dr"
+     ],
+     [
+      "Serve quality",
+      8.1,
+      7.7,
+      "1"
+     ],
+     [
+      "Return quality",
+      7.2,
+      5.1,
+      "1"
+     ],
+     [
+      "1st serve in",
+      59,
+      61,
+      "%"
+     ],
+     [
+      "Unreturned serves",
+      39,
+      28,
+      "%"
+     ],
+     [
+      "1st serve won",
+      84,
+      65,
+      "%"
+     ],
+     [
+      "2nd serve won",
+      55,
+      37,
+      "%"
+     ],
+     [
+      "Baseline points won",
+      37,
+      28,
+      "0"
+     ],
+     [
+      "Winners / unforced",
+      1.05,
+      0.59,
+      "2"
+     ],
+     [
+      "Winners",
+      20,
+      17,
+      "0"
+     ],
+     [
+      "Unforced errors",
+      19,
+      29,
+      "0",
+      1
+     ],
+     [
+      "Winners / points",
+      0.16,
+      0.14,
+      "2"
+     ],
+     [
+      "Unforced / points",
+      0.15,
+      0.23,
+      "2",
+      1
+     ]
+    ]
+   },
    "baseText": "Tiafoe beat Cobolli 7–6, 6–0 in his second group match in Turin to win his first match at this event. It was the first appearance here for both players and Cobolli played it at home.\n\nThe first set was a real fight. Cobolli broke in the opening game and Tiafoe only got level at 3–3. Tiafoe then had a set point on Cobolli's serve but Cobolli saved it and forced a tiebreak. Tiafoe took that tiebreak 8–6. For him, the break back was the moment the set changed: \"Just fighting. Like, you know, I felt like after I got the break back, I was a better player in the set.\" After the tiebreak, Cobolli did not win another game. Tiafoe broke three times and took the second set 6–0.\n\nThat second set was built on his return. He won 35% of the points against the first serve, far above his usual 26%.\n\nCredit to him: in his first appearance at this event, he beat the home player on a fast indoor court, with a dominance ratio of 1.64. Medvedev waits in his last group match.",
    "rating": [
     "Tiafoe: performance rating 8.1 | W: 20 / UE: 19 | DR: 1.64",
@@ -1109,10 +1205,10 @@
    "sourceUrl": "pbp/12179699.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "0d553020032460af",
+   "sourceHash": "0ebcbe044d2d3542",
    "publishedAt": "2026-11-18T21:42:20.669Z",
-   "revisedAt": "2026-11-19T06:26:05.884Z",
-   "revision": 4,
+   "revisedAt": "2026-11-19T07:48:44.144Z",
+   "revision": 5,
    "file": "news-ticker/2794-2026.json"
   },
   {
