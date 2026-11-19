@@ -1,30 +1,32 @@
 {
- "generatedAt": "2026-11-19T03:22:53.598Z",
+ "generatedAt": "2026-11-19T03:47:45.956Z",
  "tournaments": [
   {
    "key": "2794",
    "season": "2026",
    "name": "Finals - Turin",
    "file": "news-ticker/2794-2026.json",
-   "items": 142,
+   "items": 164,
    "byType": {
+    "digest": 22,
     "quote": 134,
     "report": 8
    },
    "latestTimestamp": "2026-11-19T01:29:31.000Z",
-   "updatedAt": "2026-11-19T03:22:53.598Z"
+   "updatedAt": "2026-11-19T03:47:45.956Z"
   },
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 100,
+   "items": 122,
    "byType": {
+    "digest": 22,
     "quote": 100
    },
    "latestTimestamp": "2026-11-18T21:00:16.682Z",
-   "updatedAt": "2026-11-19T03:22:53.598Z"
+   "updatedAt": "2026-11-19T03:47:45.956Z"
   },
   {
    "key": "1681",
@@ -55,6 +57,74 @@
  ],
  "latest": [
   {
+   "id": "digest-de64654c2cb346",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2846",
+   "player": "F. Tiafoe",
+   "opponentId": "372",
+   "opponent": "F. Cobolli",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "eventKey": "12179699",
+   "context": "after beating F. Cobolli",
+   "category": "Quotes",
+   "timestamp": "2026-11-19T01:29:31.000Z",
+   "members": [
+    "quote-0aa1b23976744e",
+    "quote-179d004758b18e",
+    "quote-51837e65395e3e",
+    "quote-b6b8ad37c453d0",
+    "quote-b7a4e277901811",
+    "quote-c0872959c01358"
+   ],
+   "memberHash": "f9ddee8070d28bc8",
+   "digestedAt": "2026-11-19T03:16:57.592Z",
+   "blocks": [
+    {
+     "label": "after his win over Cobolli",
+     "text": "Just fighting. Like, I felt like after I got the break back, I was a better player in the set. And he did a good job of fighting, came up with some goods. I ended up playing a good breaker, and I wanted to get on him early in the second.",
+     "from": [
+      "quote-b6b8ad37c453d0",
+      "quote-c0872959c01358"
+     ]
+    },
+    {
+     "label": "on playing with the crowd against him",
+     "text": "Every time I play out here, it's an experience. It was packed today again, and fans against me, we played some crazy points. I'm not used to it being that one-sided, but it's cool, man.",
+     "from": [
+      "quote-0aa1b23976744e"
+     ]
+    },
+    {
+     "label": "on the long rally against Cobolli",
+     "text": "We're both running side to side, and I was like, I'm just going to bear down, and he's going to have to lace a winner.",
+     "from": [
+      "quote-51837e65395e3e"
+     ]
+    },
+    {
+     "label": "on facing Medvedev next",
+     "text": "I'm going to have to take it from him. He's going to make me earn it. He's going to make me execute at the highest level, and if I do that, I like my chances. If I don't, he'll get it done. So it's pretty much that simple.",
+     "from": [
+      "quote-b7a4e277901811"
+     ]
+    },
+    {
+     "label": "on his plan for the next match",
+     "text": "In the next match I plan to be very aggressive. The court is getting a little bit faster.",
+     "from": [
+      "quote-179d004758b18e"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "1c4a58665f6128fc",
+   "publishedAt": "2026-11-19T03:47:45.956Z",
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
    "id": "quote-179d004758b18e",
    "type": "quote",
    "playerId": "2846",
@@ -83,6 +153,57 @@
    "topic": "On his plan for the next match",
    "sourceHash": "d4237b0467594963",
    "publishedAt": "2026-11-19T02:19:30.092Z",
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "digest-adf5042a8aecf8",
+   "type": "digest",
+   "version": 1,
+   "playerId": "1093",
+   "player": "D. Medvedev",
+   "opponentId": "2382",
+   "opponent": "C. Alcaraz",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "eventKey": "12179696",
+   "context": "after losing to C. Alcaraz",
+   "category": "Quotes",
+   "timestamp": "2026-11-18T23:30:00.000Z",
+   "members": [
+    "quote-1311af6770059b",
+    "quote-40dc5f11334841",
+    "quote-7c8bbe0327171d"
+   ],
+   "memberHash": "b056240c2887b748",
+   "digestedAt": "2026-11-19T03:16:57.592Z",
+   "blocks": [
+    {
+     "label": "after his loss to Alcaraz",
+     "text": "Of course, it's not easy to play Carlos when he's full of confidence. To be able to beat him, you need to play a perfect or near-perfect game, which I didn't manage to do, and I lost. I should have been more competitive on serve.",
+     "from": [
+      "quote-40dc5f11334841",
+      "quote-1311af6770059b"
+     ]
+    },
+    {
+     "label": "on whether faster courts help against Alcaraz",
+     "text": "I still think the reality is that the faster the surface, the easier it is and the more chances you have to beat Carlos. But look, he wins a lot of matches, and it doesn't matter which surface. He's basically won all four Grand Slams, so it doesn't matter whether it's slow or fast.",
+     "from": [
+      "quote-7c8bbe0327171d"
+     ]
+    },
+    {
+     "label": "on how to counter Alcaraz",
+     "text": "To counter Alcaraz you have to take away his time.",
+     "from": [
+      "quote-1311af6770059b"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "ce886b5edb7ead81",
+   "publishedAt": "2026-11-19T03:47:45.956Z",
    "file": "news-ticker/2794-2026.json"
   },
   {
@@ -145,6 +266,106 @@
    "topic": "On whether faster courts help against Alcaraz",
    "sourceHash": "edd467834e6452e1",
    "publishedAt": "2026-11-19T00:11:17.409Z",
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "digest-1d2844491a0a98",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2382",
+   "player": "C. Alcaraz",
+   "opponentId": "1093",
+   "opponent": "D. Medvedev",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "eventKey": "12179696",
+   "context": "after beating D. Medvedev",
+   "category": "Quotes",
+   "timestamp": "2026-11-18T23:17:27.000Z",
+   "members": [
+    "quote-01538ac7fe07c1",
+    "quote-080105df9575d5",
+    "quote-08f755d91dd4c8",
+    "quote-0d36e6ab1e7ee8",
+    "quote-13b7891235b7f6",
+    "quote-14316f8053a29c",
+    "quote-19864c75faa604",
+    "quote-2c2fc355d60322",
+    "quote-3b56669adb5ac2",
+    "quote-49a1911f415cc4",
+    "quote-54fe8fd09e61e9",
+    "quote-5ff20559b8ddd4",
+    "quote-9c742db037ba45",
+    "quote-a26d057992729e",
+    "quote-c1412f51b53439",
+    "quote-cfec6b83fc9e38",
+    "quote-d2833f05ae9f31",
+    "quote-e16338a9cff833",
+    "quote-e66fc6e0639600"
+   ],
+   "memberHash": "9187a22a183e1a37",
+   "digestedAt": "2026-11-19T03:16:57.592Z",
+   "blocks": [
+    {
+     "label": "after his win over Medvedev",
+     "text": "I think I did everything well. I think I just hit the ball in the sweet spot.",
+     "from": [
+      "quote-19864c75faa604",
+      "quote-5ff20559b8ddd4"
+     ]
+    },
+    {
+     "label": "on the thigh problem vs Medvedev",
+     "text": "I was playing really well and suddenly I felt a twinge in the back of my thigh. But only a little. I had some minor physical problems during the match. But I think everyone saw that I was still able to play good tennis and move well around the court. I didn't want to push too much to the limit, I was a break up at that point, so I just tried to hold my serve, play calmly, smoothly, relaxed and simply enjoy it. Right now I'm just feeling OK. So, I'm going to look at it with my team and I will see. The rest of the day and tomorrow are going to be very important.",
+     "from": [
+      "quote-49a1911f415cc4",
+      "quote-080105df9575d5",
+      "quote-01538ac7fe07c1",
+      "quote-0d36e6ab1e7ee8",
+      "quote-cfec6b83fc9e38",
+      "quote-2c2fc355d60322",
+      "quote-3b56669adb5ac2",
+      "quote-e66fc6e0639600",
+      "quote-54fe8fd09e61e9",
+      "quote-a26d057992729e",
+      "quote-c1412f51b53439",
+      "quote-13b7891235b7f6",
+      "quote-e16338a9cff833"
+     ]
+    },
+    {
+     "label": "on what it takes to play Medvedev",
+     "text": "When it comes to playing against Medvedev, you have to be chill. You have to be relaxed, because a lot of balls come again and again and again. … You have to accept it.",
+     "from": [
+      "quote-14316f8053a29c"
+     ]
+    },
+    {
+     "label": "on staying calm in tough moments",
+     "text": "That's what I did well today, because it let me think clearly and think pretty well in some really tough moments that I had today.",
+     "from": [
+      "quote-d2833f05ae9f31"
+     ]
+    },
+    {
+     "label": "on his return against Medvedev",
+     "text": "I would say the return. I returned really well. Like on the second serve, I returned really aggressive, really, really well, really deep.",
+     "from": [
+      "quote-9c742db037ba45"
+     ]
+    },
+    {
+     "label": "on fear after his wrist injury comeback",
+     "text": "I just have to give 100 percent and try to stay away from this fear.",
+     "from": [
+      "quote-08f755d91dd4c8"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "4fa0a5875155091f",
+   "publishedAt": "2026-11-19T03:47:45.956Z",
    "file": "news-ticker/2794-2026.json"
   },
   {
@@ -277,6 +498,50 @@
    "publishedAt": "2026-11-18T15:38:04.057Z",
    "revisedAt": "2026-11-19T00:11:17.409Z",
    "revision": 2,
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "digest-1c26fe4cd890bc",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2846",
+   "player": "F. Tiafoe",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-18T21:36:36.000Z",
+   "members": [
+    "quote-aa73d8afedc991",
+    "quote-bae94d7483c898",
+    "quote-c0e65d7801ab3b"
+   ],
+   "memberHash": "3decde41b0318562",
+   "digestedAt": "2026-11-19T03:16:57.592Z",
+   "blocks": [
+    {
+     "label": "on facing Medvedev at the ATP Finals",
+     "text": "I'm gonna have to take it from him. He's gonna make me earn it. He's gonna make me execute at the highest level, and if I do that, I like my chances. If I don't, he'll get it done. It's pretty much that simple.",
+     "from": [
+      "quote-aa73d8afedc991",
+      "quote-c0e65d7801ab3b"
+     ]
+    },
+    {
+     "label": "on Alcaraz's level in their Turin match",
+     "text": "There are moments when he's definitely Superman and plays pretty crazy.",
+     "from": [
+      "quote-bae94d7483c898"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "67bb3a697f71e82d",
+   "publishedAt": "2026-11-19T03:47:45.956Z",
    "file": "news-ticker/2794-2026.json"
   },
   {
@@ -516,6 +781,76 @@
    "file": "news-ticker/2794-2026.json"
   },
   {
+   "id": "digest-998e40c8cd323c",
+   "type": "digest",
+   "version": 1,
+   "playerId": "1980",
+   "player": "A. Zverev",
+   "opponentId": "2973",
+   "opponent": "B. Shelton",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "eventKey": "12179705",
+   "context": "after beating B. Shelton",
+   "category": "Quotes",
+   "timestamp": "2026-11-18T21:20:39.000Z",
+   "members": [
+    "quote-1bfe28c7bb6572",
+    "quote-1c1ae2514f657d",
+    "quote-37a061d5b300d1",
+    "quote-3c496f49e7141e",
+    "quote-56be0e9237fdb3",
+    "quote-59f5407f2d4a52",
+    "quote-5e9a479e5accc7",
+    "quote-64e0ce634a49fc",
+    "quote-7ae38bcff83008",
+    "quote-7ec66f0cc51ec5",
+    "quote-81038774dc54bb",
+    "quote-924bb0eaa1e87e",
+    "quote-b503c4211cc53e",
+    "quote-bd9eef27e444e1",
+    "quote-c21bdbdb6ba96c",
+    "quote-d7eb9bc6d39310"
+   ],
+   "memberHash": "631ddf5d8a72008f",
+   "digestedAt": "2026-11-19T03:16:57.592Z",
+   "blocks": [
+    {
+     "label": "after his win over Shelton",
+     "text": "The first set was almost perfect … That helps when two big servers are playing each other … In the second-set tiebreak I played a few fantastic points, especially the match point was the highlight.",
+     "from": [
+      "quote-c21bdbdb6ba96c"
+     ]
+    },
+    {
+     "label": "on his match-point forehand pass",
+     "text": "I don't care how I win the match point as long as I win it. But I think it was definitely a highlight a little bit. But funny enough, I was very clear-minded of what I wanted to do with that ball, and it was perfect.",
+     "from": [
+      "quote-1bfe28c7bb6572",
+      "quote-3c496f49e7141e",
+      "quote-1c1ae2514f657d",
+      "quote-64e0ce634a49fc"
+     ]
+    },
+    {
+     "label": "on not knowing he needed straight sets",
+     "text": "No, I didn't know that, but I think for me, if I focus on myself and I play good tennis, the results will take care of themselves in a way. … It's about playing good tennis, and I feel like I did that today. I did that against Rafa two days ago, and that's the outcome of it.",
+     "from": [
+      "quote-7ec66f0cc51ec5",
+      "quote-59f5407f2d4a52",
+      "quote-81038774dc54bb",
+      "quote-7ae38bcff83008",
+      "quote-b503c4211cc53e"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "633fe8c6d2607d3f",
+   "publishedAt": "2026-11-19T03:47:45.956Z",
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
    "id": "quote-37a061d5b300d1",
    "type": "quote",
    "playerId": "1980",
@@ -748,6 +1083,48 @@
    "revisedAt": "2026-11-19T01:11:06.540Z",
    "revision": 3,
    "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "digest-eb623e8f9803c3",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2073",
+   "player": "F. Auger-Aliassime",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-18T21:00:16.682Z",
+   "members": [
+    "quote-a248922a61dd39",
+    "quote-fdbe048f839b79"
+   ],
+   "memberHash": "7a6fb6434a5998cb",
+   "digestedAt": "2026-11-19T03:16:57.592Z",
+   "blocks": [
+    {
+     "label": "on his transition year and missed Grand Slam chances",
+     "text": "It's a transition year for me. Just an unfortunate set of circumstances, because I felt I was playing well. There were a couple of big moments and quarters of Grand Slams where I missed a big opportunity, so I was disappointed with that.",
+     "from": [
+      "quote-fdbe048f839b79"
+     ]
+    },
+    {
+     "label": "on practicing with juniors as Finals alternate",
+     "text": "Obviously, being six weeks out, you always want to practice with the best players in the world. But they're very busy playing matches. So I get good practices with juniors and hitting partners.",
+     "from": [
+      "quote-a248922a61dd39"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "11b7936d95b8312f",
+   "publishedAt": "2026-11-19T03:47:45.956Z",
+   "file": "news-ticker/tour-2026.json"
   },
   {
    "id": "quote-a248922a61dd39",
@@ -1311,408 +1688,6 @@
    "sourceHash": "11a89c8004666549",
    "publishedAt": "2026-11-18T16:08:21.478Z",
    "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-5ff20559b8ddd4",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": "1093",
-   "player": "C. Alcaraz",
-   "opponent": "D. Medvedev",
-   "tournament": "Finals - Turin",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-18T14:42:00.000Z",
-   "timestampKind": "observed (Tennis TV published the clip then)",
-   "category": "Quotes",
-   "context": "after beating D. Medvedev",
-   "eventKey": "12179696",
-   "won": true,
-   "text": "I think I just hit the ball in the sweet spot.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "On-court interview",
-   "sourceUrl": "https://www.tennistv.com/videos/4610891/turin-2026-rr-alcaraz-interview",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
-   "interview": "on-court",
-   "topic": "On his level today",
-   "sourceHash": "4bddd30172894c23",
-   "publishedAt": "2026-11-18T16:08:21.478Z",
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-9c742db037ba45",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": "1093",
-   "player": "C. Alcaraz",
-   "opponent": "D. Medvedev",
-   "tournament": "Finals - Turin",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-18T14:42:00.000Z",
-   "timestampKind": "observed (Tennis TV published the clip then)",
-   "category": "Quotes",
-   "context": "after beating D. Medvedev",
-   "eventKey": "12179696",
-   "won": true,
-   "text": "I would say the return. I just, I returned really well. Like in the second serve, I just, you know, I returned really aggressive, really, really well, really deep.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "On-court interview",
-   "sourceUrl": "https://www.tennistv.com/videos/4610891/turin-2026-rr-alcaraz-interview",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
-   "interview": "on-court",
-   "topic": "On his return",
-   "sourceHash": "b5ddfe74fe364e7c",
-   "publishedAt": "2026-11-18T16:08:21.478Z",
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-d2833f05ae9f31",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": "1093",
-   "player": "C. Alcaraz",
-   "opponent": "D. Medvedev",
-   "tournament": "Finals - Turin",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-18T14:42:00.000Z",
-   "timestampKind": "observed (Tennis TV published the clip then)",
-   "category": "Quotes",
-   "context": "after beating D. Medvedev",
-   "eventKey": "12179696",
-   "won": true,
-   "text": "that's what I did well today because it let me think clearly and think pretty well in some really tough moments that I had today.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "On-court interview",
-   "sourceUrl": "https://www.tennistv.com/videos/4610891/turin-2026-rr-alcaraz-interview",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
-   "interview": "on-court",
-   "topic": "On staying calm",
-   "sourceHash": "3aeba170aa7a3d95",
-   "publishedAt": "2026-11-18T16:08:21.478Z",
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "report-12179696",
-   "type": "report",
-   "playerId": "2382",
-   "opponentId": "1093",
-   "player": "C. Alcaraz",
-   "opponent": "D. Medvedev",
-   "tournament": "Finals - Turin",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "stage": "main draw",
-   "round": "group stage",
-   "eventKey": "12179696",
-   "timestamp": "2026-11-18T14:25:28.062Z",
-   "timestampKind": "observed",
-   "observed": {
-    "endedAt": "2026-11-18T14:25:28.062Z",
-    "startedAt": "2026-11-18T13:13:49.160Z",
-    "minutes": 72
-   },
-   "category": "Statistics",
-   "text": "Alcaraz beat Medvedev for the 8th time in 11 meetings, 6–2, 6–4 in the group stage. Alcaraz won 7 games in a row from 1–2 down in the first set. Alcaraz landed 56% of his first serves, compared with his 68% average on hard over the last 52 weeks, and won 74% of his first-serve points (20 of 27) and 76% of his second-serve points (16 of 21), compared with his usual 56%. His first-serve percentage is something to watch in the next round. Returning, Alcaraz won 24% of the points against the first serve (7 of 29), compared with his usual 34%. Alcaraz faced no break points. Medvedev struggled on his second serve, winning 39% of the points (7 of 18), compared with his 49% average on hard over the last 52 weeks. Alcaraz returned very well, with an 8.9 return quality. Medvedev ended with a 9.0 serve quality and 33% unreturned serves. Alcaraz was clearly the better player from the baseline (31–16).\n\nAlcaraz won the first set 6-2 in 31 minutes in a very one-sided start and he went for his shots from the beginning. His returns did much of the damage, including a strong return off a big second serve from Medvedev and he kept breaking serve while covering the whole court. Medvedev looked lost, shrugging his shoulders and shaking his head as the breaks went against him. Alcaraz briefly lost focus and gave up break chances but he held on. Alcaraz preferred the faster court in Turin to the slower court at Indian Wells, where Medvedev had beaten him. He finished with a one-sided win, looked relaxed throughout and moved to two wins from two matches this week.\n\nPhysically, it is something to follow. Alcaraz took a medical timeout at 2–1 in the second set. We do not know the reason. Something to follow up for the next round.\n\nAlcaraz: performance rating 9.5 | W: 16 / UE: 13 | DR: 1.53\n\nMedvedev: performance rating 8.0 | W: 15 / UE: 21 | DR: 0.65",
-   "baseText": "Alcaraz beat Medvedev for the 8th time in 11 meetings, 6–2, 6–4 in the group stage. Alcaraz won 7 games in a row from 1–2 down in the first set. Alcaraz landed 56% of his first serves, compared with his 68% average on hard over the last 52 weeks, and won 74% of his first-serve points (20 of 27) and 76% of his second-serve points (16 of 21), compared with his usual 56%. His first-serve percentage is something to watch in the next round. Returning, Alcaraz won 24% of the points against the first serve (7 of 29), compared with his usual 34%. Alcaraz faced no break points. Medvedev struggled on his second serve, winning 39% of the points (7 of 18), compared with his 49% average on hard over the last 52 weeks.",
-   "rating": [
-    "Alcaraz: performance rating 9.5 | W: 16 / UE: 13 | DR: 1.53",
-    "Medvedev: performance rating 8.0 | W: 15 / UE: 21 | DR: 0.65"
-   ],
-   "shotStats": {
-    "p1": {
-     "performance": 9.5,
-     "serveQuality": 8.1,
-     "unreturnedPct": 30,
-     "firstInPct": 56,
-     "firstWonPct": 74,
-     "secondWonPct": 76,
-     "secondSpeed": 157,
-     "returnQuality": 8.9,
-     "fhWinners": 10,
-     "bhWinners": 3,
-     "fhUnforced": 9,
-     "bhUnforced": 3,
-     "forcedErrors": 13,
-     "baselineWon": 31,
-     "under9Won": 49,
-     "over9Won": 5,
-     "bpWon": [
-      3,
-      4
-     ],
-     "netWon": [
-      5,
-      8
-     ]
-    },
-    "p2": {
-     "performance": 8,
-     "serveQuality": 9,
-     "unreturnedPct": 33,
-     "firstInPct": 62,
-     "firstWonPct": 76,
-     "secondWonPct": 39,
-     "secondSpeed": 177,
-     "returnQuality": 7.9,
-     "fhWinners": 8,
-     "bhWinners": 2,
-     "fhUnforced": 9,
-     "bhUnforced": 11,
-     "forcedErrors": 17,
-     "baselineWon": 16,
-     "under9Won": 40,
-     "over9Won": 1,
-     "bpWon": [
-      0,
-      0
-     ],
-     "netWon": [
-      5,
-      9
-     ]
-    },
-    "postedAt": "2026-11-18T14:29:54.000Z",
-    "readAt": "2026-11-18T18:45:06.321Z",
-    "sourceName": "ATP broadcast match statistics (via @ATP_Entry)",
-    "sourceUrl": "https://x.com/ATP_Entry/status/2123061138044879335",
-    "agreed": "6 of 6 serve figures within 3 points of ours; set scores and break points equal",
-    "wue": {
-     "compared": 4,
-     "maxDiff": 0
-    }
-   },
-   "mto": [
-    "Physically, it is something to follow.",
-    "Alcaraz took a medical timeout at 2–1 in the second set.",
-    "We do not know the reason.",
-    "Something to follow up for the next round."
-   ],
-   "commentary": {
-    "text": "Alcaraz won the first set 6-2 in 31 minutes in a very one-sided start and he went for his shots from the beginning. His returns did much of the damage, including a strong return off a big second serve from Medvedev and he kept breaking serve while covering the whole court. Medvedev looked lost, shrugging his shoulders and shaking his head as the breaks went against him. Alcaraz briefly lost focus and gave up break chances but he held on. Alcaraz preferred the faster court in Turin to the slower court at Indian Wells, where Medvedev had beaten him. He finished with a one-sided win, looked relaxed throughout and moved to two wins from two matches this week.",
-    "sourceName": "Tennis TV highlights commentary",
-    "sourceUrl": "https://www.tennistv.com/videos/4610890/turin-2026-rr-alcaraz-medvedev-highlights"
-   },
-   "templateText": "C. Alcaraz beat D. Medvedev for the 8th time in 11 meetings, 6-2, 6-4 in the group stage. C. Alcaraz won 7 games in a row from 1-2 down in the first set. C. Alcaraz landed 56% of his first serves, compared with his 68% average on hard over the last 52 weeks, won 74% of his first-serve points (20 of 27) and won 76% of his second-serve points (16 of 21), compared with his usual 56%. C. Alcaraz's first-serve percentage is something to watch in the next round. C. Alcaraz won 24% of the points against the first serve (7 of 29), compared with his usual 34%. C. Alcaraz faced no break points. D. Medvedev struggled on his second serve, winning only 39% of the points (7 of 18), compared with his 49% average on hard over the last 52 weeks.",
-   "voice": {
-    "version": 5,
-    "model": "claude-opus-5-5",
-    "passed": 7,
-    "total": 7,
-    "failures": []
-   },
-   "voiceText": "Alcaraz beat Medvedev for the 8th time in 11 meetings, 6–2, 6–4 in the group stage. Alcaraz won 7 games in a row from 1–2 down in the first set. Alcaraz landed 56% of his first serves, compared with his 68% average on hard over the last 52 weeks, and won 74% of his first-serve points (20 of 27) and 76% of his second-serve points (16 of 21), compared with his usual 56%. His first-serve percentage is something to watch in the next round. Returning, Alcaraz won 24% of the points against the first serve (7 of 29), compared with his usual 34%. Alcaraz faced no break points. Medvedev struggled on his second serve, winning 39% of the points (7 of 18), compared with his 49% average on hard over the last 52 weeks.",
-   "composed": {
-    "version": 3,
-    "sheetHash": "af41470d45f4070e",
-    "status": "failed-check",
-    "tries": 2,
-    "runs": 2,
-    "usage": {
-     "input": 34124,
-     "output": 12569,
-     "calls": 4
-    },
-    "failures": [
-     "\"balls\" — nothing on the sheet says it"
-    ]
-   },
-   "fields": {
-    "score": "6-2, 6-4",
-    "round": "group stage",
-    "retired": false,
-    "h2h": {
-     "a": 8,
-     "b": 3,
-     "n": 11
-    },
-    "durationMinutes": 72,
-    "facts": {
-     "longestRun": {
-      "side": "p1",
-      "n": 7,
-      "set": 1,
-      "from": {
-       "me": 1,
-       "opp": 2
-      },
-      "afterBeingBroken": false,
-      "toTheEnd": false
-     }
-    },
-    "standouts": [
-     {
-      "player": "winner",
-      "tone": null,
-      "metric": "firstIn",
-      "value": 56,
-      "baseline": 68,
-      "scope": "last52",
-      "surface": "Hard",
-      "n": 43
-     },
-     {
-      "player": "winner",
-      "tone": null,
-      "metric": "firstWon",
-      "value": 74,
-      "won": 20,
-      "total": 27
-     },
-     {
-      "player": "winner",
-      "tone": null,
-      "metric": "secondWon",
-      "value": 76,
-      "won": 16,
-      "total": 21,
-      "baseline": 56,
-      "scope": "last52",
-      "surface": "Hard",
-      "n": 43
-     },
-     {
-      "player": "winner",
-      "tone": "bad",
-      "metric": "watch",
-      "of": "firstIn"
-     },
-     {
-      "player": "winner",
-      "tone": "bad",
-      "metric": "ret1Won",
-      "value": 24,
-      "won": 7,
-      "total": 29,
-      "baseline": 34,
-      "scope": "last52",
-      "surface": "Hard",
-      "n": 43
-     },
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "breakPoints",
-      "saved": 0,
-      "faced": 0
-     },
-     {
-      "player": "loser",
-      "tone": "bad",
-      "metric": "secondWon",
-      "value": 39,
-      "won": 7,
-      "total": 18,
-      "baseline": 49,
-      "scope": "last52",
-      "surface": "Hard",
-      "n": 55
-     }
-    ],
-    "winner": {
-     "aces": 3,
-     "winners": 16,
-     "unforcedErrors": 13,
-     "breakPointsSaved": 0,
-     "breakPointsFaced": 0,
-     "breakPointsSource": "point-by-point"
-    },
-    "loser": {
-     "aces": 5,
-     "winners": 15,
-     "unforcedErrors": 21,
-     "breakPointsSaved": 1,
-     "breakPointsFaced": 4,
-     "breakPointsSource": "box score"
-    }
-   },
-   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
-   "sourceUrl": "pbp/12179696.json",
-   "language": "en",
-   "translated": false,
-   "sourceHash": "421305827c8b0a2f",
-   "publishedAt": "2026-11-18T14:45:43.925Z",
-   "revisedAt": "2026-11-18T19:05:51.359Z",
-   "revision": 4,
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-21dc4d07e6fffc",
-   "type": "quote",
-   "playerId": "902",
-   "opponentId": null,
-   "player": "J. Mensik",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-18T12:45:16.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "Through my brother, who has autism spectrum disorder. I know very well what it's like to be part of families who need help,",
-   "originalText": "Skrze bráchu, který má poruchu autistického spektra. Moc dobře vím, jaké to je být součástí rodin, které potřebují pomoct,",
-   "language": "cs",
-   "translated": true,
-   "translationModel": "claude-opus-5-5",
-   "sourceName": "CT sport",
-   "sourceUrl": "https://sport.ceskatelevize.cz/clanek/tenis/mensik-uz-je-po-padu-fit-vyhlizi-finale-davis-cupu-miluju-tymove-akce-jedeme-pro-to-nejcennejsi-160014",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On his autistic brother and helping families",
-   "sourceHash": "28acb4882ff73b4f",
-   "publishedAt": "2026-11-18T13:44:26.285Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-9f9e8809b20afe",
-   "type": "quote",
-   "playerId": "902",
-   "opponentId": null,
-   "player": "J. Mensik",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-18T12:45:16.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "Every win counts; I go into every match intending to win. The exhibition was for other purposes, and I'm very glad it turned out this way and that we could help those in need. It was great, I enjoyed it,",
-   "originalText": "Každá výhra se počítá, jdu do každého zápasu s vítězným záměrem. Exhibice byla pro jiné účely a jsem moc rád, že se to takhle podařilo a mohlo se pomoct potřebným. Bylo to skvělé, užil jsem si to,",
-   "language": "cs",
-   "translated": true,
-   "translationModel": "claude-opus-5-5",
-   "sourceName": "CT sport",
-   "sourceUrl": "https://sport.ceskatelevize.cz/clanek/tenis/mensik-uz-je-po-padu-fit-vyhlizi-finale-davis-cupu-miluju-tymove-akce-jedeme-pro-to-nejcennejsi-160014",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On his charity exhibition in Prostějov",
-   "sourceHash": "9cc87ad156b4b2d1",
-   "publishedAt": "2026-11-18T13:44:26.285Z",
-   "file": "news-ticker/tour-2026.json"
   }
  ]
 }
