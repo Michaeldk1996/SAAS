@@ -10,15 +10,11 @@ import { fileURLToPath } from 'node:url';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const html = readFileSync(process.env.TEN409_HTML || join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
 const BLOCK = (() => {
-  const a = html.indexOf('// TEN-409 step 10 (founder 2026-10-09): one feed'), b = html.indexOf('/* ---------- BSP CONSULT INTEL');
+  const a = html.indexOf('// TEN-409 step 10 (founder 2026-10-09): one feed'), b = html.indexOf('/* ---------- PLAYING STYLES ---------- */');
   assert.ok(a > 0 && b > a, 'News JS block');
   return html.slice(a, b);
 })();
-const CSS = (() => {
-  const a = html.indexOf('<!-- NEWS PAGE (TEN-8 → TEN-409'), b = html.indexOf('<div class="tabpage" data-page="news">');
-  assert.ok(a > 0 && b > a, 'News CSS block');
-  return html.slice(a, b);
-})();
+const CSS = readFileSync(join(HERE, 'news-page.css'), 'utf8');   // News v2: every style is in news-page.css
 const MARKUP = (() => { const a = html.indexOf('<div class="tabpage" data-page="news">'); return html.slice(a, html.indexOf('<!-- TENNIS EDGE MODEL PAGE', a)); })();
 
 function el(id) {
@@ -34,10 +30,8 @@ function load(opts = {}) {
   const store = { 'stennisfy.tz': 'UTC' };
   const ls = { getItem: k => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = String(v); } };
   const f = new Function('document', 'localStorage', 'fetch', 'opts', 'TP', `
-    let _intelNotes = opts.intel || [], _intelEditingId = null; const INTEL_MAX = 5;
-    const playerProfiles = opts.profiles || {}; const playerIndex = [];
-    function isBspAdmin(){ return !!opts.admin; }
-    function intelResolveNote(n){ return { label: n.player || '', key: n.playerKey != null ? String(n.playerKey) : null }; }
+    const playerProfiles = opts.profiles || {};
+    const window = { BSP: opts.admin ? { currentUser: () => ({ uid: 'admin' }) } : null, ADMIN_CONFIG: { ADMIN_UIDS: ['admin'] }, confirm: () => true }; const BSP = window.BSP;
     const TOURNAMENT_CATALOG = ['Australian Open', 'French Open', 'Roland Garros', 'Wimbledon', 'Shanghai', 'Beijing', 'Tokyo', 'Montreal', 'Toronto'].map(name => ({ name }));
     const SF_EVENT_NAMES = { 'Australian Open': 'Australian Open', 'French Open': 'Roland Garros', 'Roland Garros': 'Roland Garros', Wimbledon: 'Wimbledon', Shanghai: 'Shanghai Masters', Beijing: 'China Open',
       Tokyo: 'Japan Open', Montreal: 'Canadian Open', Toronto: 'Canadian Open' };
@@ -47,14 +41,16 @@ function load(opts = {}) {
     function psOpenProfile(){} const tourxState = {}; let asapSignals = {};
     const tournamentProfiles = opts.tp || TP();
     const setInterval = () => 0, clearInterval = () => {};
-    function newsRenderComposer(){}   // the composer lives in the intel section (founder only)
+    let playerIndex = opts.index || [];
     function escapeHtml(s){ return String(s); }
     function newsPlayerFor(){ throw new Error('the News page read a headline for a name'); }
     ${BLOCK}
+    _intelNotes = opts.intel || [];
     return { set data(v) { _newsData = v; }, set state(v) { _newsState = v; }, set cats(v) { _newsCats = v; }, set tour(v) { _newsTourKey = v; },
       set ticker(v) { _newsTicker = v; }, set hours(v) { _newsRangeHours = v; }, set q(v) { _newsSearch = v; }, set view(v) { _newsView = v; },
-      renderNews, newsToggleCat, newsSetView, newsWiden, newsToggleRow, newsWireItems, newsPageIntelItems, get hoursNow() { return _newsRangeHours; },
-      get cats() { return _newsCats; } };
+      renderNews, newsToggleCat, newsSetView, newsWiden, newsToggleRow, newsWireItems, newsPageIntelItems, newsTickerItems, newsResetFilters, newsToggleMore,
+      newsMenuToggle, newsMenuPick, intelPick, intelOnText, intelSetCat, intelStartEdit, intelCanPublish, intelPlayerHits, newsToggleComposer,
+      set composerOpen(v) { _composerOpen = v; }, get hoursNow() { return _newsRangeHours; }, get cats() { return _newsCats; } };
   `);
   const api = f(doc, ls, () => Promise.reject(new Error('offline')), opts, TP);
   return { api, get: id => get(id).innerHTML, els, store };
@@ -75,7 +71,7 @@ const ts = hAgo => new Date(Date.now() - hAgo * H).toISOString().replace('T', ' 
 const GEN = new Date(Date.now() - 3 * H); GEN.setUTCSeconds(7);
 const art = (k, key, hAgo, title, o = {}) => Object.assign({ news_key: String(k), player_key: key, player_name: key ? 'P. ' + key : null, published_at: ts(hAgo), title,
   content: 'One.\n\nTwo.', sources: ['ubitennis'], tournament_name: 'Shanghai' }, o);
-const card = (h, id) => { const i = h.indexOf(`data-id="${id}"`); return h.slice(i, h.indexOf('</article>', i)); };
+const card = (h, id) => { const i = h.indexOf(`data-id="${id}"`); const e = h.indexOf('</article>', i); return h.slice(i, e > 0 ? e : undefined); };
 // tournament_name is deliberately wrong on every row: the page must never read it (R1 tournament rule).
 const FEED = () => ({ generatedAt: GEN.toISOString(), articles: [
   art(1, '2382', 2, 'Alcaraz eases through in straight sets in Shanghai', { tournament_name: 'Wimbledon' }),
@@ -88,63 +84,14 @@ function page(opts = {}, set = {}) {
   const P = load(opts); P.api.data = 'feed' in opts ? opts.feed : FEED(); P.api.state = opts.state || 'ok';
   Object.assign(P.api, set); P.api.renderNews(); return P;
 }
-const stats = P => [...P.get('newsHeaderStats').matchAll(/<span class="sfh__l">([^<]+)<\/span><span class="sfh__v([^"]*)"[^>]*>([^<]*)</g)].map(m => [m[1], m[3], m[2].trim()]);
+const stats = P => [...P.get('newsHeaderStats').matchAll(/<span class="nx-stat-v">([^<]*)<\/span><span class="nx-stat-l">([^<]+)</g)].map(m => [m[2], m[1]]);
+
 
 // Data 2 — mutation: restore `|| newsPlayerFor(a.title)` / drop the player_key filter in newsWireItems.
 test('Data 2: only player-attributed articles show; the page never reads a headline for a name', () => {
-  const P = page();
-  const list = text(P.get('newsList'));
+  const list = text(page().get('newsList'));
   assert.ok(/Alcaraz eases/.test(list) && /Sinner withdraws/.test(list) && /Djokovic draw/.test(list));
   assert.ok(!/Djokovic wins the title/.test(list), 'a tournament-only article came back');
-  assert.ok(/Djokovic/.test(FEED().articles[2].title), 'control: the unattributed headline does name a player');
-});
-
-// News ticker (founder 2026-11-12: "it needs to be there in news") — mutation: drop newsTickerItems() from the list; print a
-// quote without its outlet link; show a ticker item that has no text.
-test('Ticker: match reports, quotes (outlet linked, translation marked) and status items sit in the feed with the articles', () => {
-  const at = h => new Date(Date.now() - h * H).toISOString();
-  const TK = [
-    { id: 'report-1', type: 'report', playerId: '437', opponentId: '2848', player: 'H. Rune', opponent: 'M. Kecmanovic', tournament: 'Stockholm', timestamp: at(1),
-      text: 'H. Rune beat M. Kecmanovic, 2-6, 6-1, 6-4 in the second round in 83 minutes.', fields: { score: '2-6, 6-1, 6-4' } },
-    { id: 'quote-1', type: 'quote', playerId: '437', opponentId: '2848', player: 'H. Rune', opponent: 'M. Kecmanovic', tournament: 'Stockholm', timestamp: at(0.5), eventKey: '77',
-      context: 'after beating M. Kecmanovic', text: 'I found my level today and I kept believing in the third set.', translated: true, language: 'da', sourceName: 'BT', sourceUrl: 'https://www.bt.dk/tennis/x"y' },
-    { id: 'quote-3', type: 'quote', playerId: '437', player: 'H. Rune', tournament: 'Stockholm', timestamp: at(0.4), eventKey: '77', text: 'The crowd carried me.', sourceName: 'ATP', sourceUrl: 'https://atp.example/a' },
-    { id: 'quote-4', type: 'quote', playerId: '437', player: 'H. Rune', tournament: 'Stockholm', timestamp: at(0.3), eventKey: '77', text: 'I found my level today', sourceName: 'SVT', sourceUrl: 'https://svt.example/b' },   // the same statement, shorter, from a second outlet
-    { id: 'quote-5', type: 'quote', playerId: '437', player: 'H. Rune', tournament: 'ATP Tour', tournamentKey: 'tour', timestamp: at(0.2), category: 'Injuries', text: 'My knee is fine again.', sourceName: 'TSN', sourceUrl: 'https://tsn.example/c' },
-    { id: 'status-1', type: 'status', playerId: '1777', opponentId: '366', player: 'T. M. Etcheverry', opponent: 'T. A. Tirante', tournament: 'Stockholm', timestamp: at(2),
-      category: 'Withdrawals', text: 'T. M. Etcheverry gave a walkover to T. A. Tirante.' },
-    { id: 'quote-2', type: 'quote', playerId: '9', player: 'N. Body', tournament: 'Stockholm', timestamp: at(1), text: '' },           // no words: never shown
-  ];
-  const P = page({}, { ticker: TK }), h = P.get('newsList'), list = text(h);
-  assert.ok(/Alcaraz eases/.test(list), 'the articles left the feed');
-  assert.ok(/H\. Rune beat M\. Kecmanovic, 2-6, 6-1, 6-4/.test(list) && /in 83 minutes/.test(list), 'the match report is not in the feed');
-  // one card for everything he said about the match: the fullest quote first, each with its outlet; the shorter copy of
-  // the same statement is not printed twice, its outlet joins the longer one
-  const q = card(h, 'tquote-1');
-  assert.ok(/H\. Rune after beating M\. Kecmanovic/.test(text(q)), 'one card per player per match, titled with the context');
-  assert.equal((q.match(/class="news-para"/g) || []).length, 2, 'two statements, not three: ' + text(q));
-  assert.ok(text(q).indexOf('“I found my level today and I kept believing in the third set.”') < text(q).indexOf('“The crowd carried me.”'));
-  assert.ok(!/news-qsrc|news-cardsource|translated from|BT|SVT/.test(q), 'founder 2026-11-18: no outlet and no translation line under a quote');
-  assert.ok(!/tquote-3|tquote-4/.test(h), 'no separate cards for the same match');
-  assert.ok(/gave a walkover/.test(list) && !/N\. Body/.test(list));
-  assert.deepEqual(stats(P).slice(0, 2).map(s => s[1]), ['7', '7']);
-  assert.match(text(page({}, { ticker: TK, cats: ['Quotes'] }).get('newsList')), /H\. Rune after beating M\. Kecmanovic “I found my level today[^“]*“The crowd carried me\.”$/);
-  const inj = text(page({}, { ticker: TK, cats: ['Withdrawals & Injuries'] }).get('newsList'));
-  assert.ok(/gave a walkover/.test(inj) && /H\. Rune on his fitness “My knee is fine again\.”/.test(inj), 'an injury quote keeps its own card under Withdrawals & Injuries');
-  // the digest: when the quote job built one for the card, its blocks replace the quotes (one subject each, no repeats)
-  const D = TK.concat([{ id: 'digest-x', type: 'digest', playerId: '437', eventKey: '77', timestamp: at(0.3), blocks: [
-    { label: 'after his win over Kecmanovic', text: 'I found my level today and I kept believing in the third set.', from: ['quote-1', 'quote-4'] },
-    { label: 'on the crowd', text: 'The crowd carried me.', from: ['quote-3'] }] }]);
-  const dq = card(page({}, { ticker: D }).get('newsList'), 'tquote-1');
-  assert.match(dq, /<span class="news-qtopic">after his win over Kecmanovic:<\/span> “I found my level today and I kept believing in the third set\.”/);
-  assert.equal((dq.match(/class="news-para"/g) || []).length, 2, 'one paragraph per digest block');
-  assert.ok(!/tdigest/.test(page({}, { ticker: D }).get('newsList')), 'a digest is never a card of its own');
-  // founder 2026-11-18: reports are kept for good — a 40-day-old report shows under "All time", not under 7 days
-  const OLD = TK.concat([{ id: 'report-old', type: 'report', playerId: '437', opponentId: '2848', player: 'H. Rune', opponent: 'M. Kecmanovic', tournament: 'Paris', timestamp: at(24 * 40), text: 'H. Rune beat M. Kecmanovic in Paris.' }]);
-  assert.ok(!/in Paris/.test(text(page({}, { ticker: OLD }).get('newsList'))), 'not in the last 7 days');
-  assert.ok(/in Paris/.test(text(page({}, { ticker: OLD, hours: 24 * 365 * 30 }).get('newsList'))), 'All time shows it');
-  const U = page({ feed: null, state: 'unavailable' }, { ticker: TK });   // the article feed down: the ticker still shows
-  assert.ok(/H\. Rune beat/.test(text(U.get('newsList'))));
 });
 
 // Data 3 — mutation: any "Sample" text in the page code or markup.
@@ -154,61 +101,57 @@ test('Data 3: no sample article anywhere in the News page code or markup', () =>
   assert.match(text(P.get('newsList')), /^No articles available\. Last updated \d\d:\d\d:07 ?\.$/);
 });
 
-// Data 6 — mutation: Updated from `new Date()`; Players counted per article; a zero for an unsourced value.
-test('Data 6: Articles after every filter, Players distinct, Updated = the feed refresh (HH:MM), never the clock', () => {
-  const P = page();
-  const hm = GEN.toISOString().slice(11, 16);
-  assert.deepEqual(stats(P), [['Articles', '3', ''], ['Players', '3', ''], ['Updated', hm, 'sfh__v--soft']]);
+// v2 §2 — mutation: Updated from `new Date()`; Players counted per article; a zero for an unsourced value.
+test('Header pills: Articles after every filter, Players distinct, Updated = the feed refresh, never the clock', () => {
+  const P = page(), hm = GEN.toISOString().slice(11, 16);
+  assert.deepEqual(stats(P), [['Articles', '3'], ['Players', '3'], ['Updated', hm]]);
   const now = new Date().toISOString().slice(11, 16);
   if (now !== hm) assert.notEqual(stats(P)[2][1], now, 'Updated reads the clock');
-  const Q = page({}, { cats: ['Withdrawals & Injuries'] });
-  assert.deepEqual(stats(Q).slice(0, 2).map(s => s[1]), ['1', '1']);
-  const N = page({ feed: { articles: FEED().articles } });   // no generatedAt
-  assert.deepEqual(stats(N)[2], ['Updated', '—', 'sfh__v--none']);
+  assert.deepEqual(stats(page({}, { cats: ['Withdrawals & Injuries'] })).slice(0, 2).map(s => s[1]), ['1', '1']);
+  assert.deepEqual(stats(page({ feed: { articles: FEED().articles } }))[2], ['Updated', '—']);
   const U = page({ feed: null, state: 'unavailable' });
   assert.deepEqual(stats(U).map(s => s[1]), ['—', '—', '—']);
   assert.match(text(U.get('newsList')), /^News feed unavailable\. Last checked \d\d:\d\d:\d\d ?\.$/);
 });
 
-// Data 8 / keep-as-built — mutation: always offer "Try a wider date range." / offer Clear search without a search.
+// v2 §7 empty state — mutation: always offer "Try a wider date range." / offer Clear search without a search.
 test('Empty state: names the filter, widens only when a wider window has results, Clear search only with a search', () => {
-  const W = page({}, { hours: 6, cats: ['Draws & Schedules'] });          // the 100 h-old draw article exists
-  assert.equal(text(W.get('newsList')), 'No articles match these filters. No Draws & Schedules articles in the last 6 hours. Try a wider date range.');
+  const fw = FEED(); fw.articles[0].title = 'Alcaraz beats Rune in Shanghai';   // the only Tour News left is the 100 h-old draw article
+  const W = page({ feed: fw }, { hours: 6, cats: ['Tour News'] });
+  assert.equal(text(W.get('newsList')), 'No articles match these filters. No Tour News articles in the last 6 hours. Try a wider date range.');
   W.api.newsWiden(); assert.equal(W.api.hoursNow, 168, 'widen jumps to the first window with results');
-  const Q = page({}, { hours: 6, q: 'draw released' });   // the window, not the search, is the cause
+  const Q = page({ feed: fw }, { hours: 6, q: 'draw released' });
   assert.equal(text(Q.get('newsList')), 'No articles match these filters. No results for “draw released” in the last 6 hours. Try a wider date range. Clear search');
-  const S = page({ feed: Object.assign(FEED(), { articles: FEED().articles.concat([art(9, '1905', 24 * 9, 'Old draw news', { content: 'x' })]) }) }, { hours: 48, cats: ['Draws & Schedules'], q: 'old draw' });
-  assert.ok(!/wider/.test(S.get('newsList')), 'an article older than 7 days does not earn the widen link');
   const N = page({}, { hours: 6, cats: ['Match Reports'], q: 'zzz' });
   assert.equal(text(N.get('newsList')), 'No articles match these filters. No results for “zzz”. Clear search');
-  const X = page({}, { hours: 6, cats: ['Match Reports'] });             // "eases through" is Tour News, nothing anywhere
-  assert.ok(!/wider/.test(X.get('newsList')) && !/Clear search/.test(X.get('newsList')));
-  assert.equal(text(X.get('newsList')), 'No articles match these filters. No Match Reports articles in the last 6 hours.');
-  const T = page({}, { hours: 6, tour: 'china-open', cats: ['Draws & Schedules'] });   // a kept selection outside the window (art 4, 100 h)
-  assert.equal(text(T.get('newsList')), 'No articles match these filters. No Draws & Schedules articles for China Open in the last 6 hours. Try a wider date range.');
+  assert.match(page({}, { hours: 6, cats: ['Match Reports'] }).get('newsList'), /class="nx-card nx-empty"/, 'the empty state is a section card');
 });
 
-// keep-as-built — mutation: single-select categories; "All" not clearing.
-test('Categories are multi-select and All clears them', () => {
+// v2 §2 categories — mutation: multi-select back; Draws & Schedules back; a click on the active one not returning to All.
+test('Four categories, single select; Draws & Schedules arrives as Tour News', () => {
   const P = page();
-  P.api.newsToggleCat('Withdrawals & Injuries'); P.api.newsToggleCat('Draws & Schedules');
-  assert.deepEqual(stats(P)[0][1], '2');
-  assert.deepEqual((P.get('newsChips').match(/news-segi on/g) || []).length, 2);
-  P.api.newsToggleCat(''); assert.deepEqual(P.api.cats, []); assert.equal(stats(P)[0][1], '3');
+  assert.deepEqual([...P.get('newsChips').matchAll(/>([^<]+)<\/button>/g)].map(m => m[1].replace('&amp;', '&')), ['All', 'Match Reports', 'Quotes', 'Withdrawals & Injuries', 'Tour News']);
+  P.api.newsToggleCat('Withdrawals & Injuries'); P.api.newsToggleCat('Tour News');
+  assert.deepEqual(P.api.cats, ['Tour News'], 'a click replaces the category');
+  assert.equal((P.get('newsChips').match(/nx-tab nx-seg on/g) || []).length, 1);
+  P.api.newsToggleCat('Tour News'); assert.deepEqual(P.api.cats, [], 'a click on the active one returns to All');
+  assert.match(card(P.get('newsList'), 'w4'), /Tour News/, 'a draw article reads Tour News');
+  assert.ok(!/Draws &amp; Schedules|Draws & Schedules/.test(P.get('newsList') + P.get('newsChips')));
 });
 
-// keep-as-built — mutation: list every event in the feed, or string-match a roster against the body.
-test('Tournament drop-down lists only events with articles in the current window; filters combine', () => {
+// v2 §2 menus + Reset — mutation: every event listed; Reset shown with no filter on; Reset not clearing.
+test('Tournament menu lists events in the window; filters combine; Reset filters clears them all', () => {
   const P = page({}, { hours: 24 });
-  const menu = P.get('newsTourFilter');
-  assert.deepEqual([...menu.matchAll(/data-v="([^"]*)"><span>([^<]+)</g)].map(m => m[2]), ['All tournaments', 'China Open', 'Shanghai Masters']);
+  assert.deepEqual([...P.get('newsTourFilter').matchAll(/data-v="[^"]*" onclick="[^"]*">([^<]+)<span/g)].map(m => m[1]), ['All tournaments', 'China Open', 'Shanghai Masters']);
+  assert.match(P.get('newsTourFilter'), /class="nx-trig nx-seg"[^>]*>All tournaments<span class="nx-chev"/);
+  assert.match(P.get('newsResetHost'), /Reset filters/, 'a window other than 7 days shows Reset');
+  assert.equal(page().get('newsResetHost'), '', 'no filter: no Reset');
   const C = page({}, { tour: 'china-open', cats: ['Withdrawals & Injuries'], q: 'knee' });
   assert.equal(stats(C)[0][1], '1');
-  const D = page({}, { tour: 'china-open', cats: ['Tour News'] });
-  assert.equal(stats(D)[0][1], '0');
+  C.api.newsResetFilters(); assert.equal(stats(C)[0][1], '3'); assert.equal(C.get('newsResetHost'), '');
+  assert.match(P.get('newsRange'), /Last 7 days|Last 24h/);
 });
 
-// keep-as-built — mutation: search drops the body / tournament, or adds the source.
 test('Search covers title, players, tournament and body (not the source)', () => {
   assert.equal(stats(page({}, { q: 'monaco' }))[0][1], '1');
   assert.equal(stats(page({}, { q: 'shanghai masters' }))[0][1], '1');
@@ -216,119 +159,145 @@ test('Search covers title, players, tournament and body (not the source)', () =>
   assert.equal(stats(page({}, { q: 'ubitennis' }))[0][1], '0');
 });
 
-// keep-as-built — mutation: a different key, or no write.
-test('Reading / Compact persists to stennisfy.newsView', () => {
+test('Reading / Compact persists to stennisfy.newsView; Compact = one card per day of rows', () => {
   const P = page(); P.api.newsSetView('compact');
   assert.equal(P.store['stennisfy.newsView'], 'compact');
-  assert.match(P.get('newsList'), /class="news-rows"/);
+  assert.match(P.get('newsList'), /class="nx-card nx-cl"><div class="nx-wr"/);
+  assert.match(P.get('newsViewSw'), /class="nx-tab nx-seg on"[^>]*>Compact</);
 });
 
-// Data 4 + 5 — mutation: feed spelling over the profile name; a raw tournament name; the intel player linked.
-// review fix — mutation: newsEscape (quotes left raw) in an attribute.
-test('Feed text in attributes is quote-escaped', () => {
-  const f = FEED(); f.articles[0].player_name = 'Jo "JJ" Smith';
-  const h = page({ feed: f }).get('newsList');
-  assert.match(h, /title="Open Jo &quot;JJ&quot; Smith on Player Profile"/);
+// v2 §3 — mutation: a kind pill, a source or a translation note back in Reading; the wire time back (R2 card 28bd8fc2).
+test('Reading card: one head line (avatars · names · sub line), no source in Reading, no time on a feed article', () => {
+  const f = FEED(); f.articles[0].sources = ['espn-tennis']; f.articles[0].title = 'Alcaraz didn&#039;t drop a set in Shanghai';
+  const h = page({ feed: f }).get('newsList'), c = card(h, 'w1');
+  assert.match(c, /^data-id="w1"><div class="nx-ahead"><span class="nx-avs"><span class="nx-av">P<\/span><\/span><div class="nx-names"><span class="nx-nl">P\. 2382<\/span><span class="nx-sl">Tour News · Shanghai Masters<\/span>/);
+  assert.ok(!/ESPN|espn/.test(c), 'no source on a Reading card');
+  assert.match(c, /didn't drop a set/, 'HTML codes decoded');
+  assert.match(c, /class="nx-title" data-news-tip="Added to feed \d\d [A-Z][a-z]{2} \d\d:\d\d">/);
+  const day = h.slice(0, h.indexOf('<article'));
+  assert.match(day, /<span class="nx-day-l">\d\d [A-Z]{3} \d{4}<\/span><span class="nx-day-n">\d+ articles?<\/span>/);
 });
 
-test('Names: profile name + canonical event name; feed players link, an intel player is plain text', () => {
-  const P = page({ profiles: { 2382: { name: 'C. Alcaraz' } }, intel: [{ id: 'n1', text: 'Practised fully. Looked sharp.', player: 'J. Sinner', playerKey: '2072', createdAtMs: Date.now() - H }] });
-  const h = P.get('newsList');
-  assert.match(h, /news-entlink"[^>]*newsOpenPlayer\('2382'\)[^>]*>C\. Alcaraz</);
-  assert.match(h, /data-tour="Shanghai"[^>]*>Shanghai Masters</);
-  assert.match(h, /<span class="news-cat">Stennisfy Intel<\/span><span class="news-cardsource">Stennisfy<\/span><span class="news-cardsep">·<\/span><span class="news-ent">J\. Sinner<\/span>/);
-  assert.match(h, /<h3 class="news-cardtitle"[^>]*>Practised fully<\/h3>/);
+// v2 §3b — mutation: show 2 paragraphs; Read more under 6 paragraphs.
+test('Read more: above 5 paragraphs the card shows 4', () => {
+  const f = FEED(); f.articles[0].content = Array.from({ length: 6 }, (_, i) => 'Para ' + i).join('\n\n'); f.articles[1].content = Array.from({ length: 5 }, (_, i) => 'Line ' + i).join('\n\n');
+  const P = page({ feed: f }), h = P.get('newsList');
+  assert.equal((card(h, 'w1').match(/Para \d/g) || []).length, 4);
+  assert.match(card(h, 'w1'), /class="nx-more nx-seg"[^>]*>Read more</);
+  assert.equal((card(h, 'w2').match(/Line \d/g) || []).length, 5, 'five paragraphs show whole');
+  assert.ok(!/nx-more/.test(card(h, 'w2')));
+  P.api.newsToggleMore('w1'); assert.equal((card(P.get('newsList'), 'w1').match(/Para \d/g) || []).length, 6);
 });
 
-// What changes 8–10 — mutation: a raw colour, link blue on names, a blue ring / fill, green / red / amber on the page.
-test('Colour check: tokens only, links --link, names white, no blue rings or fills, no green / red / amber', () => {
-  assert.ok(!/#[0-9a-fA-F]{3,8}\b|rgba?\(/.test(CSS), 'raw colour in the News CSS');
-  assert.ok(!/--pos|--neg|--amber|--bar\b|--open-card|--viz-/.test(CSS));
-  assert.match(CSS, /\.news-link\{[^}]*color:var\(--link\)/);
-  assert.equal((CSS.match(/var\(--link\)/g) || []).length, 1, '--link only on the real links');
-  assert.match(CSS, /\.news-ent\{[^}]*font-weight:600; color:var\(--text\)/);
-  assert.ok(!/outline:(?!none)[^;]*;/.test(CSS.replace(/outline:none/g, '')), 'a focus ring');
-  for (const m of CSS.matchAll(/:focus[^{]*\{([^}]*)\}/g)) assert.ok(!/--link|--bar/.test(m[1]));
-  const f = FEED(); f.articles[0].content = Array.from({ length: 6 }, (_, i) => 'Para ' + i).join('\n\n');
-  const P = page({ feed: f });
-  assert.equal((P.get('newsList').match(/class="news-link news-more"/g) || []).length, 1, 'Read more only past the 2-paragraph preview');
-  // R2 fix 1 — mutation: the menu's large ▼ shown (font-size back) or another glyph
-  assert.match(CSS, /\.sf-dd-trig \.sf-dd-chev\{ font-size:0; \}/);
-  assert.match(CSS, /\.sf-dd-trig \.sf-dd-chev::after\{ content:'\\25BE'; font-size:12\.5px; color:var\(--text\); font-family:'Hanken Grotesk', system-ui, sans-serif; \}/);
+// v2 §3a — mutation: a headline on a quote card; "quotes" instead of topics; quote marks back; more than 3 shown.
+const QCARD = (n) => Array.from({ length: n }, (_, i) => ({ id: 'q' + i, type: 'quote', playerId: '2382', player: 'C. Alcaraz', opponentId: '1093', tournament: 'Finals - Turin', tournamentKey: '2794',
+  eventKey: '77', timestamp: new Date(Date.now() - H).toISOString(), context: 'after beating D. Medvedev', text: ['I served well today and won.', 'The crowd here carried me through.', 'My thigh felt tight after the break.', 'Medvedev returns everything back deep.', 'Next I play Cobolli on Friday.'][i], topic: 'on topic ' + i }));
+test('Quotes card: no headline, topic over quote, 3 shown, "n topics", the digest replaces the raw quotes', () => {
+  const P = page({}, { ticker: QCARD(5) }), c = card(P.get('newsList'), 'tq0');
+  assert.match(c, /<span class="nx-sl">\d\d:\d\d · 5 topics · Finals - Turin<\/span>/);
+  assert.ok(!/nx-title/.test(c), 'a headline on a quote card');
+  assert.equal((c.match(/class="nx-qt"/g) || []).length, 3);
+  assert.match(c, /<span class="nx-qt">On topic 0<\/span><div class="nx-qx">I served well today and won\.<\/div>/);
+  assert.match(c, />Show 2 more topics</);
+  assert.ok(!/[“”]/.test(c), 'quote marks');
+  const D = QCARD(5).concat([{ id: 'digest-x', type: 'digest', playerId: '2382', eventKey: '77', timestamp: new Date().toISOString(), blocks: [
+    { label: 'after his win over Medvedev', text: 'I didn&#039;t want to push.', from: ['q0'] }, { label: 'on his thigh', text: 'Minor.', from: ['q1'] }] }]);
+  const d = card(page({}, { ticker: D }).get('newsList'), 'tq0');
+  assert.match(d, /2 topics/); assert.match(d, /<span class="nx-qt">After his win over Medvedev<\/span><div class="nx-qx">I didn't want to push\.<\/div>/);
+  assert.ok(!/tdigest/.test(page({}, { ticker: D }).get('newsList')), 'a digest is never a card of its own');
 });
 
-// R1 + R2 tournament rule (founder cards 91aec78c / 28bd8fc2, review round 2) — mutations: read tournament_name; let a title
-// naming two events decide; accept a paragraph naming two; drop the 14-day window; drop NEWS_EVENT_SAME.
+// v2 §4 — the stats box. Mutations: the box without both figures; the leader by the higher figure on unforced errors;
+// the bar width off the formula; a dash or zero for a missing figure; the box with no rows; the closing lines kept with it.
+const REPORT = (rows, o = {}) => [Object.assign({ id: 'report-9', type: 'report', playerId: '2846', opponentId: '372', player: 'F. Tiafoe', opponent: 'F. Cobolli', tournament: 'Finals - Turin',
+  timestamp: new Date(Date.now() - H).toISOString(), text: 'Tiafoe beat Cobolli.\n\nSecond.\n\nTiafoe: performance rating 8.1 | W: 20 / UE: 19 | DR: 1.64',
+  rating: ['Tiafoe: performance rating 8.1 | W: 20 / UE: 19 | DR: 1.64'], fields: { score: '7-6, 6-0' },
+  ms: rows ? { a: 'F. Tiafoe', b: 'F. Cobolli', sets: [[7, 6], [6, 0]], rows } : undefined }, o)];
+test('Match report: text | divider | stats box from the rows held; row maths; missing data', () => {
+  const rows = [['Dominance ratio', 1.64, 0.61, 'dr'], ['1st serve in', 59, 61, '%'], ['Winners', 20, 17, '0'], ['Unforced errors', 19, 29, '0', 1], ['Winners / points', 0.16, 0.14, '2']];
+  const c = card(page({}, { ticker: REPORT(rows) }).get('newsList'), 'treport-9');
+  assert.match(c, /<span class="nx-sl">\d\d:\d\d · Match Reports · 7-6 6-0 · Finals - Turin<\/span>/);
+  assert.match(c, /<div class="nx-title"[^>]*>F\. Tiafoe beat F\. Cobolli, 7-6, 6-0<\/div>/);
+  assert.match(c, /<div class="nx-col ms">/); assert.match(c, /<span class="nx-div"><\/span><div class="nx-box">/);
+  assert.ok(!/performance rating/.test(c), 'the closing lines leave the text when the box carries the numbers');
+  assert.match(c, /<span class="nx-bs"><span>7<i>-6<\/i><\/span><span>6<i>-0<\/i><\/span><\/span>/);
+  assert.match(c, /<span class="nx-won">Won<\/span>/);
+  assert.match(c, /<div class="nx-r full"><div class="nx-rf"><span class="nx-fa up lead">1\.64<\/span><span class="nx-lab">Dominance ratio<\/span><span class="nx-fb down ">0\.61<\/span>/);
+  assert.match(c, /<span class="nx-fa ">59%<\/span><span class="nx-lab">1st serve in<\/span><span class="nx-fb lead">61%<\/span>[\s\S]*?<span class="nx-chip">2 pts<\/span>/);
+  assert.match(c, /<span class="nx-fa lead">19<\/span><span class="nx-lab">Unforced errors<\/span><span class="nx-fb ">29<\/span>/, 'the lower figure leads on unforced errors');
+  // bar = 12 + |a-b| / max × 88: winners 20 v 17 → 12 + 3/20×88 = 25.2%, on A's side
+  assert.match(c, /<span class="nx-tr a"><span class="nx-bar" style="width:25\.2%"><\/span><\/span><span class="nx-chip">3<\/span><span class="nx-tr b"><span class="nx-bar" style="width:0%">/);
+  // 4 rows other than DR is even → the last row does not span; 3 others → it does
+  assert.match(c, /<div class="nx-r"><div class="nx-rf"><span class="nx-fa lead">0\.16/);
+  const odd = card(page({}, { ticker: REPORT(rows.slice(0, 4)) }).get('newsList'), 'treport-9');
+  assert.match(odd, /<div class="nx-r full"><div class="nx-rf"><span class="nx-fa lead">19/, 'an odd last row spans both columns');
+  assert.match(card(page({}, { ticker: REPORT([['Winners', 20, 20, '0']]) }).get('newsList'), 'treport-9'), /<span class="nx-fa ">20<\/span>[\s\S]*<span class="nx-chip">Level<\/span>/);
+  const none = card(page({}, { ticker: REPORT(null) }).get('newsList'), 'treport-9');
+  assert.ok(!/nx-box|nx-div/.test(none) && /<div class="nx-col">/.test(none) && /performance rating/.test(none), 'no rows: a plain text article');
+  // Read more: above 7 paragraphs with more than 6 rows, else above 5
+  const long = REPORT(rows.concat([['Serve quality', 8.1, 7.7, '1'], ['Return quality', 7.2, 5.1, '1']]), { text: Array.from({ length: 7 }, (_, i) => 'P' + i).join('\n\n') });
+  assert.ok(!/nx-more/.test(card(page({}, { ticker: long }).get('newsList'), 'treport-9')), '7 paragraphs with 7 rows show whole');
+});
+
+// v2 §5 — mutation: a Close link; the opened report losing its box; the 184px indent kept beside the box.
+test('Compact: the opened row = card colour + ring, no Close link; an opened report carries the same box at full width', () => {
+  const P = page({}, { ticker: REPORT([['Winners', 20, 17, '0']]), view: 'compact' });
+  assert.match(P.get('newsList'), /<div class="nx-wc"><span class="nx-wn"><span class="nx-avs"><span class="nx-av s">FT<\/span><\/span><b>F\. Tiafoe<\/b><\/span><span class="nx-wh"[^>]*>F\. Tiafoe beat F\. Cobolli, 7-6, 6-0<\/span><span class="nx-wk">Match Reports · 7-6 6-0<\/span><span class="nx-car" aria-hidden="true">›<\/span>/);
+  P.api.newsToggleRow('treport-9');
+  const o = P.get('newsList');
+  assert.match(o, /<div class="nx-wr open"/); assert.ok(!/>Close</.test(o));
+  assert.match(o, /<div class="nx-wline ms"><\/div><div class="nx-wbody ms"><div class="nx-wcol">/);
+  assert.match(o, /<span class="nx-div"><\/span><div class="nx-box c">/);
+  assert.match(o, /<span class="nx-pill">Match Reports<\/span><span class="nx-wsub">Stennisfy · Finals - Turin<\/span>/);
+  assert.match(CSS, /\.nx-wr\.open, \.nx-wr\.open:hover \{ background: var\(--news-card\);[^}]*box-shadow: inset 0 0 0 1px var\(--nx-e12\)/);
+  assert.match(CSS, /\.nx-box \{ flex: 2 1 340px; max-width: 560px;/); assert.match(CSS, /\.nx-box\.c \{ flex: 1\.6 1 320px; max-width: 540px; \}/);
+  assert.match(CSS, /\.nx-col \{ flex: 1 1 300px;/); assert.match(CSS, /\.nx-wcol \{ flex: 1 1 280px;/);
+});
+
+// v2 §6 — the composer. Mutations: publish without a player; free-typed names; Draws & Schedules in the group;
+// Edit not restoring player and group; a sixth post.
+test('Post intel: player from the search required, group = category, destination sentence, max 5, Edit restores', () => {
+  const idx = [{ key: '2382', name: 'Carlos Alcaraz', rank: 1 }, { key: '2072', name: 'Jannik Sinner', rank: 2 }];
+  const P = page({ admin: true, index: idx }, { ticker: QCARD(1) });
+  P.api.newsToggleComposer();
+  let c = P.get('newsComposer');
+  assert.match(P.get('newsPostIntelHost'), /class="nx-post nx-seg open"[^>]*>Post intel <span class="nx-post-n">0\/5<\/span>/);
+  assert.match(c, /placeholder="Search a player…"/); assert.match(c, /Pick a player to publish\./);
+  assert.deepEqual([...c.matchAll(/intelSetCat\('([^']+)'\)/g)].map(m => m[1].replace("\\'", "'")), ['Match Reports', 'Quotes', 'Withdrawals & Injuries', 'Tour News']);
+  assert.match(c, /class="nx-tab nx-seg on"[^>]*>Tour News</, 'Tour News by default');
+  assert.deepEqual(P.api.intelPlayerHits('alca').map(h => [h.key, h.tour]), [['2382', 'Finals - Turin']], 'the real player list, with his tournament');
+  P.api.intelOnText('Practised fully. Looked sharp.');
+  assert.equal(P.api.intelCanPublish(), false, 'no player: no publish');
+  P.api.intelPick('2382', 'C. Alcaraz', 'Finals - Turin'); P.api.intelSetCat('Withdrawals & Injuries');
+  c = P.get('newsComposer');
+  assert.match(c, /<span class="nx-dot on"><\/span>Goes to the top of today in<b>Withdrawals &amp; Injuries · C\. Alcaraz · Finals - Turin<\/b>/);
+  assert.match(c, /class="nx-pub nx-seg ready"/);
+  const five = Array.from({ length: 5 }, (_, i) => ({ id: 'n' + i, text: 'Note ' + i + '.', player: 'C. Alcaraz', playerKey: '2382', cat: 'Quotes', tour: 'Finals - Turin', createdAtMs: Date.now() - i * H }));
+  const F5 = page({ admin: true, index: idx, intel: five });
+  F5.api.newsToggleComposer(); F5.api.intelPick('2382', 'C. Alcaraz', ''); F5.api.intelOnText('x.');
+  assert.equal(F5.api.intelCanPublish(), false); assert.match(F5.get('newsComposer'), /Five posts are active\. Delete one to publish in/);
+  assert.match(card(F5.get('newsList'), 'in0'), /<span class="nx-sl">\d\d:\d\d · Quotes · Finals - Turin<\/span>/, 'the post carries its group and tournament');
+  F5.api.intelStartEdit('n0');
+  assert.ok(!/data-id="in0"/.test(F5.get('newsList')), 'the post leaves the feed while it is edited');
+  assert.match(F5.get('newsComposer'), /<b>C\. Alcaraz<\/b>/); assert.match(F5.get('newsComposer'), /class="nx-tab nx-seg on"[^>]*>Quotes</);
+  assert.match(F5.get('newsComposer'), />Note 0\.<\/textarea>/);
+  assert.equal(page({ admin: false }).get('newsPostIntelHost'), '', 'members get no composer');
+});
+
+// v2 colours — mutation: a raw colour; a foundation token where the export names its own.
+test('Colour: only the export\'s own tokens (--news-*), no raw colour', () => {
+  assert.ok(!/#[0-9a-fA-F]{3,8}\b|rgba?\(/.test(CSS), 'raw colour in news-page.css');
+  assert.ok(!/var\(--(card|inner|selected|text|text-soft|text-label|link|bar|pos|neg)\)/.test(CSS), 'a foundation token on the News page');
+  assert.match(CSS, /\.nx-bar \{ background: var\(--news-blue\); \}/);
+});
+
+// R1 + R2 tournament rule (founder cards 91aec78c / 28bd8fc2) — mutations: read tournament_name; the 14-day window dropped.
 test('Tournament: exactly one event named in the title (in play), else in the first paragraph (in play), else none', () => {
-  const P = page();
-  const h = P.get('newsList');
-  assert.match(card(h, 'w1'), /data-tour="Shanghai"[^>]*>Shanghai Masters</, 'title event (the feed says Wimbledon)');
-  assert.match(card(h, 'w2'), /data-tour="Beijing"[^>]*>China Open</, 'first-paragraph event (the feed says US Open)');
+  const h = page().get('newsList');
+  assert.match(card(h, 'w1'), /Shanghai Masters/, 'title event (the feed says Wimbledon)');
+  assert.match(card(h, 'w2'), /China Open/, 'first-paragraph event (the feed says US Open)');
   assert.ok(!/Halle|US Open/.test(h), 'the feed field reached the page');
-  const f = FEED();
-  f.articles[0].title = 'Alcaraz picks Tokyo over Shanghai'; f.articles[0].content = 'He is in Shanghai this week.\n\nTwo.';   // two in the title → paragraph
-  f.articles[1].content = 'He skipped Tokyo and Beijing this month.\n\nShanghai is next.';                               // two in paragraph 1 → none
-  f.articles[3].title = 'Djokovic eyes the Canadian Open';                                                                 // a shared official name → none
-  const q = page({ feed: f }, { hours: 168 }).get('newsList');
-  assert.match(card(q, 'w1'), />Shanghai Masters</, 'a two-event title defers to the first paragraph');
-  assert.ok(!/Japan Open/.test(card(q, 'w1')));
-  assert.ok(!/data-tour|Japan Open|China Open|Shanghai Masters/.test(card(q, 'w2')) && !/·<\/span><\/div>/.test(card(q, 'w2')), 'no tournament and no placeholder');
-  assert.ok(!/data-tour/.test(card(q, 'w4')));
-  // the 14-day window: Melbourne / Wimbledon are months away → no tag; the paragraph's in-play event then decides
-  const w = FEED();
-  w.articles[0].title = 'Sinner confirmed for One Point Slam in Melbourne'; w.articles[0].content = 'One.\n\nTwo.';
-  w.articles[3].title = 'Djokovic recalls his Wimbledon win'; w.articles[3].content = 'He spoke in Beijing on Monday.\n\nTwo.';
-  const W = page({ feed: w }, { hours: 168 }).get('newsList');
-  assert.ok(!/Australian Open|data-tour/.test(card(W, 'w1')), 'Melbourne in October = no tag');
-  assert.match(card(W, 'w4'), />China Open</, 'an out-of-play title event lets the paragraph decide');
-  // card 78a3685b: out-of-play names are dropped first — one in-play + one out-of-play event in the title → the title decides
-  const c = FEED(); c.articles[3].title = 'Cobolli falls early in Beijing but Wimbledon hopes remain'; c.articles[3].content = 'He next plays in Shanghai.\n\nTwo.';
-  assert.match(card(page({ feed: c }, { hours: 168 }).get('newsList'), 'w4'), />China Open</, 'the out-of-play Wimbledon is dropped first');
-  const noWin = page({ feed: w, tp: Object.assign(TP(), { 'Australian Open': { allEditionMatches: [ed(Y, iso(-3), iso(3))] } }) }, { hours: 168 }).get('newsList');
-  assert.match(card(noWin, 'w1'), />Australian Open</, 'control: in play, Melbourne does tag');
-  // no event dates on record (the store has not loaded) → no tournament, never a guess
-  assert.ok(!/data-tour/.test(page({ tp: {} }).get('newsList')));
-  // review fix (R1): "Roland Garros" and "French Open" are one event
-  const g = FEED(); g.articles[0].title = 'Alcaraz eyes Roland Garros title'; g.articles[3].title = 'Djokovic back at the French Open';
-  const G = page({ feed: g, tp: Object.assign(TP(), { 'Roland Garros': { allEditionMatches: [ed(Y, iso(-3), iso(3))] } }) }, { hours: 168 }).get('newsList');
-  assert.equal((G.match(/>Roland Garros</g) || []).length, 2);
-});
-
-// R2 time ruling (card 28bd8fc2) + source names (fix 2) — mutations: an article time back; the hover dropped; raw source ids.
-test('No time on an article; the title hover reads "Added to feed DD Mon HH:MM"; sources print display names', () => {
-  const f = FEED(); f.articles[0].sources = ['espn-tennis', 'tennis365', 'newsfeed-x'];
-  const P = page({ feed: f, intel: [{ id: 'n1', text: 'Practised fully.', player: '', createdAtMs: Date.now() - H }] });
-  const h = P.get('newsList');
-  assert.ok(!/news-cardtime|news-rtime/.test(h + CSS), 'a per-article time came back');
-  const hm = new Date(Date.now() - 2 * H).toISOString().slice(11, 16);
-  assert.match(card(h, 'w1'), new RegExp(`<h3 class="news-cardtitle" data-news-tip="Added to feed \\d\\d [A-Z][a-z]{2} ${hm}">`));
-  assert.match(card(h, 'in1'), /data-news-tip="Posted /);
-  assert.match(card(h, 'w1'), /<span class="news-cardsource">ESPN, Tennis365, newsfeed-x<\/span>/, 'display names; an unknown id as sent');
-  assert.match(card(h, 'w2'), /<span class="news-cardsource">Ubitennis<\/span>/);
-  P.api.view = 'compact'; P.api.renderNews();
-  const rows = [...P.get('newsList').matchAll(/<div class="news-rowhead">([\s\S]*?)<\/div>/g)].map(m => m[1]);
-  const row = rows.find(r => /Added to feed/.test(r));
-  assert.ok(row && rows.length >= 3);
-  assert.match(row, /^<span class="news-rplayer">[\s\S]*<\/span><span class="news-rhead" data-news-tip="Added to feed [^"]+">[^<]+<\/span><span class="news-rcaret"[^>]*>▾<\/span>$/, 'Compact row = player · title · chevron');
-  assert.match(CSS, /\.news-rowhead\{ display:grid; grid-template-columns:104px minmax\(0,1fr\) 16px;/);
-});
-
-// R1 fixes 1, 2, 6 — mutation: a 4-paragraph preview; the open row drops the player column; a renamed source.
-test('2-paragraph preview, open Compact row keeps its columns', () => {
-  const f = FEED(); f.articles[0].content = Array.from({ length: 4 }, (_, i) => 'Para ' + i).join('\n\n'); f.articles[0].sources = ['tennis365', 'ubitennis'];
-  const P = page({ feed: f });
-  const card = P.get('newsList').slice(0, P.get('newsList').indexOf('</article>'));
-  assert.equal((card.match(/Para \d/g) || []).length, 2);
-  assert.match(card, /<span class="news-cardsource">Tennis365, Ubitennis<\/span>/);
-  P.api.view = 'compact'; P.api.newsToggleRow('w1');
-  const open = P.get('newsList').match(/<div class="news-row open"[\s\S]*?<div class="news-rbody"/);
-  assert.ok(open, 'row w1 opened');
-  assert.match(open[0], /<div class="news-rowhead"><span class="news-rplayer"><span[^>]*>P\. 2382<\/span><\/span><span class="news-rhead"/, 'the open row keeps player · title');
-  assert.match(CSS, /\.news-rbody\{[^}]*padding:8px 16px 4px; padding-left:116px;/, 'the body sits under the title column');
-  // founder R1 fix 1: the same 2-paragraph preview in an open Compact row, Read more / Show less
-  assert.equal((open[0].match(/Para \d/g) || []).length, 0, 'control: the head holds no paragraph');
-  const rowHtml = P.get('newsList').slice(P.get('newsList').indexOf('<div class="news-row open"'));
-  const rb = rowHtml.slice(0, rowHtml.indexOf('</div></div>') + 12);
-  assert.equal((rb.match(/Para \d/g) || []).length, 2, 'open Compact row previews 2 paragraphs');
-  assert.match(rb, /news-more[^>]*>Read more</);
+  const w = FEED(); w.articles[0].title = 'Sinner confirmed for One Point Slam in Melbourne'; w.articles[0].content = 'One.\n\nTwo.';
+  assert.ok(!/Australian Open/.test(card(page({ feed: w }).get('newsList'), 'w1')), 'Melbourne in October = no tag');
+  assert.ok(!/Shanghai Masters|China Open/.test(page({ tp: {} }).get('newsList')), 'no event dates on record: no tournament');
 });

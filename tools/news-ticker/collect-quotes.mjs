@@ -127,7 +127,10 @@ export function rehomeTourItems(items, tournaments, tourKeys, nowIso) {
 }
 export function routeCandidate(c, tournaments, tourKeys, nowIso) {
   const ts = Date.parse(c.timestamp);
-  for (const t of tournaments) if (t.fieldKeys.has(String(c.speakerKey)) && (c.mentions || []).some((mn) => mn === t.folded || (t.aliases || []).includes(mn)) && !(Number.isFinite(ts) && ts < t.since)) return t.key;
+  // what the article names, and what its own URL names (measured 19 Nov: ATP inbox rows stored before the aliases came
+  // back to the tour file on every run while their URL read ".../cobolli-tiafoe-nitto-atp-finals-...")
+  const mentions = [...(c.mentions || []), ...urlMentions(c.sourceUrl, tournaments)];
+  for (const t of tournaments) if (t.fieldKeys.has(String(c.speakerKey)) && mentions.some((mn) => mn === t.folded || (t.aliases || []).includes(mn)) && !(Number.isFinite(ts) && ts < t.since)) return t.key;
   if (tourKeys.has(String(c.speakerKey)) && /^observed/.test(String(c.timestampKind || '')) && !(Number.isFinite(ts) && ts < Date.parse(nowIso) - TOUR_DAYS * 86400000)) return TOUR_KEY;
   return null;
 }
@@ -304,6 +307,7 @@ async function main() {
   }
   run.rehomed = movedIds.size;
   const inTournaments = new Set(prep.flatMap((x) => (((rd(`news-quotes/${x.key}-${x.t.season}.json`) || {}).items) || []).map((q) => q.id)));
+  const toTournaments = new Set();   // ids a tournament job of THIS run holds: the tour file never repeats them
   const jobs = prep.map((x) => ({ t: x.t, main: x.main, site: x.site, extra: x.extra }));
   jobs.push({ t: { key: TOUR_KEY, season, name: TOUR_NAME, cards: tour.map((p) => ({ p1Key: p.key, p1: p.name })) }, main: [], site: null, extra: tourCandidates });
   for (const { t, main, site, extra } of jobs) {
@@ -311,7 +315,7 @@ async function main() {
     got.candidates.push(...extra);
     const file = `news-quotes/${t.key}-${t.season}.json`, held = rd(file);
     const heldItems = ((held && held.items) || []).filter((x) => !off.has(x.sourceName)
-      && !(t.key === TOUR_KEY && (movedIds.has(x.id) || inTournaments.has(x.id) || notTennis(x.sourceUrl))));
+      && !(t.key === TOUR_KEY && (movedIds.has(x.id) || inTournaments.has(x.id) || toTournaments.has(x.id) || notTennis(x.sourceUrl))));
     const res = await processTournament({ t, got, known: heldItems });
     if (res.counts.modelError) modelError = res.counts.modelError;
     // a quote the model could not translate is not lost: its article is read again on a later run (at most RETRY_MAX times)
@@ -322,7 +326,8 @@ async function main() {
     const tourWide = t.key === TOUR_KEY, heldDigests = heldItems.filter((x) => x.type === 'digest'), heldQuotes = heldItems.filter((x) => x.type !== 'digest');
     const baseItems = tourWide ? tourKeep(heldQuotes) : heldQuotes;
     const keepIds = tourWide ? new Set(tourKeep([...baseItems, ...res.items.filter((r) => !baseItems.some((h) => h.id === r.id))]).map((x) => x.id)) : null;
-    const merged = mergeItems(baseItems, tourWide ? res.items.filter((r) => keepIds.has(r.id)) : res.items, nowIso);
+    const merged = mergeItems(baseItems, tourWide ? res.items.filter((r) => keepIds.has(r.id) && !toTournaments.has(r.id)) : res.items, nowIso);
+    if (!tourWide) merged.items.forEach((x) => toTournaments.add(x.id));
     // quotes held from before the labels existed (their articles are not read again): label a few each run, from the quote alone
     let labelled = 0;
     for (const x of merged.items) {

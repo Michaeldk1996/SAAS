@@ -21,7 +21,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
-import { reportText, statusItems, h2hAfter, roundWords, breakPoints, mtoSentences, ratingLines } from './news-core.mjs';
+import { reportText, statusItems, h2hAfter, roundWords, breakPoints, mtoSentences, ratingLines, msRows } from './news-core.mjs';
 import { shotSentences } from './match-cards.mjs';
 import { pbpFacts, scoreFacts } from './pbp-facts.mjs';
 import { mergeItems, buildIndex, fileOf, observedTimes, tourKeep } from './ticker-core.mjs';
@@ -246,10 +246,13 @@ export async function build({ nowIso, times, rewrite = null, writer = null, apiK
         }
         if (obs && obs.endedAt) summary.withObservedEnd++;
         if (rep.used.duration) summary.withDuration++;
+        // the stats box (News v2): the rows we hold for both players, and the sets with the winner's games first
+        const boxRows = msRows(m, w, l, cardsByMatch[ek(m)]), boxSets = ((m.finalScore && m.finalScore.sets) || []).map((t) => [t[w], t[l]]).filter((t) => Number.isFinite(t[0]) && Number.isFinite(t[1]));
+        const ms = boxRows.length ? { a: m[w], b: m[l], sets: boxSets, rows: boxRows } : null;
         fresh.push({ id, type: 'report', playerId: String(m[w + 'Key']), opponentId: String(m[l + 'Key']), player: m[w], opponent: m[l],
           tournament: g.name, tournamentKey: g.key, season: g.season, stage: stage || 'main draw', round: rep.fields.round, eventKey: ek(m),
           timestamp: obs && obs.endedAt ? obs.endedAt : startIso(m), timestampKind: obs && obs.endedAt ? 'observed' : 'scheduled',
-          observed: obs || null, category: 'Statistics', text, ...(text !== baseText ? { baseText } : {}), ...(rating.length ? { rating } : {}), ...(cardsByMatch[ek(m)] ? { shotStats: cardsByMatch[ek(m)] } : {}), ...(mto.length ? { mto } : {}), ...(cm && cm.text ? { commentary: { text: cm.text, sourceName: cm.sourceName, sourceUrl: cm.sourceUrl } } : {}), ...(voice ? { templateText: rep.text, voice, voiceText: composed && composed.body ? (prev && prev.voiceText) || null : baseText } : {}), ...(composed ? { composed } : {}), fields: rep.fields,
+          observed: obs || null, category: 'Statistics', text, ...(ms ? { ms } : {}), ...(text !== baseText ? { baseText } : {}), ...(rating.length ? { rating } : {}), ...(cardsByMatch[ek(m)] ? { shotStats: cardsByMatch[ek(m)] } : {}), ...(mto.length ? { mto } : {}), ...(cm && cm.text ? { commentary: { text: cm.text, sourceName: cm.sourceName, sourceUrl: cm.sourceUrl } } : {}), ...(voice ? { templateText: rep.text, voice, voiceText: composed && composed.body ? (prev && prev.voiceText) || null : baseText } : {}), ...(composed ? { composed } : {}), fields: rep.fields,
           sourceName: 'Stennisfy match data (api-tennis box score and point-by-point)', sourceUrl: `pbp/${ek(m)}.json`, language: 'en', translated: false });
         summary.reports++;
       } catch (e) { summary.reportErrors.push(`${m.id}: ${e && e.message}`); }

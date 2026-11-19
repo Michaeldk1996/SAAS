@@ -307,3 +307,24 @@
   --sm-shadow-pop:  0 18px 44px rgba(0, 0, 0, 0.55);
   --sm-shadow-menu: 0 12px 28px rgba(0, 0, 0, 0.45);
 }
+
+/* News page v2 (handoff design_handoff_news_v2, founder 2026-11-19 "code it pixelperfect"): the export's own values,
+   named apart from the foundation tokens. news-page.css reads them inside .tabpage[data-page="news"] only (night only);
+   nothing else reads them. */
+:root {
+  --news-card:     #0E1019;   /* every card, the stats box, menus, the opened Compact row */
+  --news-lifted:   #121521;   /* pills, avatars, chips, the picked player */
+  --news-well:     #0C0E16;   /* inputs, switch tracks, menu triggers */
+  --news-hover:    #171B28;   /* row / option hover */
+  --news-on:       #131623;   /* switch tab on, chosen option, the idle Publish */
+  --news-text:     #E7E9EE;
+  --news-soft:     #C6CCDB;   /* body text, initials */
+  --news-grey:     #8B96B5;
+  --news-blue:     #5B9BFF;   /* links, chevrons, stat bars, the ready Publish */
+  --news-blue-hov: #8FBCFF;
+  --news-green:    #3ECF8E;   /* "Won", a dominance ratio of 1.00 or more */
+  --news-red:      #FF6B6B;   /* a dominance ratio under 1.00 */
+  --news-ink:      #090B12;   /* text on the ready Publish */
+  --news-white:    #FFFFFF;   /* edges and tracks, always at a stated alpha */
+  --news-shadow:   0 12px 28px rgba(0, 0, 0, 0.45);
+}

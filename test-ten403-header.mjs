@@ -70,10 +70,10 @@ const STATIC = [   // [page, the header markup's opening, the title]
   ['players', '<div class="sfh pgh-card">', 'Players'],
   ['tournaments', '<div class="sfh tourx-head">', 'Tournaments'],
   ['database', '<div class="sfh db-headcard" data-db="head">\n', 'Database'],   // the page mount (the two overlay mounts are one line)
-  ['news', '<div class="sfh news-head">', 'Tennis News'],
   ['styles', '<div class="sfh ps-head">', 'Matchup grid'],   // TEN-408 step 9
   ['live', '<div class="sfh">\n    <div class="sfh__text">\n      <h1 class="sfh__title">Live</h1>', 'Live'],
   // Stennisfy Model left the shared header on 2026-11-16: its handoff (design_handoff_stennisfy_model) draws its own head.
+  // Tennis News left it on 2026-11-19: its handoff (design_handoff_news_v2) draws its own header card with stat pills.
 ];
 function checkPages(dash, js, css) {
   for (const [page, open, title] of STATIC) {

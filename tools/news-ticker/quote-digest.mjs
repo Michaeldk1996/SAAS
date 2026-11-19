@@ -113,7 +113,8 @@ export async function digestQuotes({ player, context, members, apiKey = process.
 // a card whose quotes changed is digested again (at most `limit` calls per run). -> { digests, usage, counts }
 export async function buildDigests(items, { held = [], limit = DIGEST_MAX_PER_RUN, digest = digestQuotes, nowIso } = {}) {
   const groups = new Map();
-  for (const q of items) if (q && q.type === 'quote' && q.id && q.text && q.playerId != null && !/injur/i.test(String(q.category))) {
+  // injury quotes join the card too (founder 2026-11-19: the physical problem was told several times across two cards)
+  for (const q of items) if (q && q.type === 'quote' && q.id && q.text && q.playerId != null) {
     const k = digestGroupKey(q); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(q);
   }
   const heldById = new Map(held.filter((d) => d.type === 'digest').map((d) => [d.id, d]));

@@ -1,10 +1,12 @@
-# News page (founder step 10, TEN-409, 2026-10-09)
+# News page v2 (founder 2026-11-19, handoff `design_handoff_news_v2`; replaces the TEN-409 step-10 look)
 
 Applies to the News page block of `bsp-consult-dashboard.html` (`renderNews`, the `news*` helpers from "TEN-409 step 10"
-to the Post intel section, `newsRenderComposer`, the `[data-page="news"]` CSS). Reference = `OFFICIAL VERSION 1.html` →
-News, night, 1512px; the reference wins except where a rule says *(override)*. Design file: `News.dc.html` (its raw
-hexes are legacy, read through `tokens.json → legacyColourMap`). Night only. Header = the shared 35b `.sfh`
-(`app-shell.md`); no page rule restyles it. **Test:** `test-ten409-news.mjs` (each check names its mutation).
+to the Post intel section, `newsRenderComposer`, `intelPublish`) and `news-page.css`. Reference =
+`design_handoff_news_v2/reference/News.dc.html` + its `README.md` (night only, high fidelity): every size and colour is the
+export's own, as `--news-*` tokens in `tokens.css` read by `news-page.css` only. The page draws its own header card (not
+the 35b `.sfh`; `test-ten403-header.mjs` lists it beside Stennisfy Model). **Test:** `test-ten409-news.mjs` (each check
+names its mutation). Measured against the reference in Chrome at 1512: header 93.5, filter card 137, stat pills 102×55.5,
+switch 171×39, menu trigger 35, stats box head 67, Compact row 55, opened report box 540 — all equal.
 
 ## Data
 - **One feed: `news-feed.json`** (`build-news-feed.js`, api-tennis `get_news`), the same `_newsData` as Match analysis →
@@ -37,69 +39,80 @@ hexes are legacy, read through `tokens.json → legacyColourMap`). Night only. H
     drop-down entry. Search still covers the body.
   - Measured 9 Oct 13:00Z feed: 29 of 38 keep one (25 title, 4 first paragraph).
   **Test:** "Tournament: exactly one event named …". Follow-up TEN-413: the builder attaches the article's own event.
-- **Categories are our mapping** (`newsClassify`, title keywords; the feed has no category field): Withdrawals &
-  Injuries, Draws & Schedules, Match Reports (strong / weak evidence), else Tour News — every article lands in one of the
-  four. Quotes holds ticker quotes only. Intel posts carry "Stennisfy Intel" and leave the list under any category filter.
-- **Header stats:** Articles = the list after every filter; Players = distinct players across it (by key); Updated =
-  `generatedAt` of `news-feed.json` (HH:MM, member zone, `--text-soft`; hover = full date-time), **never the clock**.
+- **Four categories, single select** (v2 §2): Match Reports · Quotes · Withdrawals & Injuries · Tour News; the switch reads
+  "All" + these four; a click replaces the active one, a click on it returns to All. There is no Draws & Schedules: what
+  `newsClassify` (title keywords) used to file there, and a ticker status item about a qualifier or lucky loser, is Tour
+  News. An intel post takes the group chosen in the composer (an older note: Tour News); there is no Stennisfy Intel
+  category. **Test:** "Four categories, single select".
+- **Header pills:** Articles = the list after every filter; Players = distinct players across it (by key); Updated =
+  `generatedAt` of `news-feed.json` (HH:MM, member zone; hover = full date-time), **never the clock** (the reference's clock
+  is its placeholder).
 - **Source = the outlet's display name from ONE table** (`NEWS_SOURCE_NAMES`: espn-tennis → ESPN, tennis365 → Tennis365,
   ubitennis → Ubitennis, tennis-majors → Tennis Majors, bbc-sport-tennis → BBC Sport, guardian-tennis → The Guardian …); an
   id the table lacks prints as sent (`newsSourceUnknown` lists them). **Article text is verbatim**: title and body exactly as
-  the feed sends them (paragraphs split on blank lines), including the feed's own closing "Based on reporting from …" line.
-- **No time on an article** (founder card 28bd8fc2): `published_at` is api-tennis's 4-hourly batch stamp (:00–:03 past
-  02/06/10/14/18/22 UTC), not the outlet's time, and a wrong figure is not shown — no time and no "—" in Reading or
-  Compact. Day groups and the newest-first sort still read it. The title's hover says what it is: **"Added to feed DD Mon
+  the feed sends them (paragraphs split on blank lines), including the feed's own closing "Based on reporting from …" line,
+  with HTML codes decoded ("didn&#039;t" → "didn't", `newsDecode`). The source shows only in an opened Compact row's foot,
+  never on a Reading card.
+- **No time on a feed article** (founder card 28bd8fc2, kept over the reference's time): `published_at` is api-tennis's
+  4-hourly batch stamp (:00–:03 past 02/06/10/14/18/22 UTC), not the outlet's time, and a wrong figure is not shown. Our
+  own items (reports: the observed end; quotes: the outlet's publish time; posts) carry a real time and show it first in
+  the sub line. Day groups and the newest-first sort still read it. The title's hover says what it is: **"Added to feed DD Mon
   HH:MM"** (member zone; an intel note: "Posted …"). Follow-up **TEN-415**: `build-news-feed.js` reads the outlet's own
   publish time; then the time column comes back. **Test:** "No time on an article …".
   Unsourced = grey "—", never 0. A feed older than `NEWS_STALE_HOURS` (24) adds the stale line above the list.
 - **Time zone:** `stennisfy.tz` (Account settings), else the browser zone — day groups, the "Added to feed" hover and the header's Updated (hover: date + time with seconds).
-- **Post intel:** founder only (`isBspAdmin`: admin allowlist, re-enforced by `firestore.rules`); notes live in Firestore
-  `intel_notes`; every signed-in member reads them in the feed (and H2H's Latest news). Cap 5: Publish is disabled with
-  an empty Update or at 5/5 (a new note); Edit / Delete on the founder's session only.
+- **Post intel** (v2 §6): founder only (`isBspAdmin`, re-enforced by `firestore.rules`); notes live in Firestore
+  `intel_notes` (`text`, `player`, `playerKey`, `cat`, `tour`). **A player picked from the player search is required**
+  (`intelPlayerHits`: this week's standings + every player on the page, up to 8 hits, with his tournament = his newest
+  article's, else his board card's, else "No tournament this week"); a free-typed name is never accepted. The group switch
+  (default Tour News) is the post's category. The foot names where it goes ("Goes to the top of today in Group · Player ·
+  Tournament"); Publish now is blue only when ready. Cap 5. **Edit** takes the post out of the feed and reopens the composer
+  with its text, player (by its stored key) and group; Delete removes it. **Test:** "Post intel".
 
 ## Ticker items (founder 2026-11-12: "it needs to be there in news, that's a bit our ticker")
 - **The feed = the articles + the news ticker's items** (`news-ticker.json` → the tournament files with an item in the
   last 8 days; `loadNewsTicker`, `newsTickerItems`). This amends "One feed": the ticker is our own data and verbatim
   player quotes, never a sample. A failed ticker read shows no ticker item; a failed article feed still shows the ticker.
-- **Report** → category Match Reports, title "{winner} beat {loser}, {score}", body = the report, source Stennisfy.
-  **Quote** → category **Quotes** (a fifth category chip), or Withdrawals & Injuries when tagged `Injuries`; title = the
-  player + the context ("after beating X"; "in the press" / "on his fitness" without one); body = his words in curly
-  quotes, then "Translated from {language}." on a translated one; **the source is the outlet's name, linked to its
-  article** (grey, underline on hover, never `--link`). **Status** → Withdrawals & Injuries (walkover, withdrawal,
-  retirement) or Draws & Schedules (qualifiers, lucky losers); title = the item's text.
-- **Quotes are one card per player per match** (founder 2026-11-12: "list all what he said in one reading";
-  `newsQuoteCards`): every quote we hold from that player about that match, the fullest first, each followed by its
-  outlet (linked) and "· translated from {language}" where it applies. A quote whose words are at least 80% inside a
-  longer one on the same card (the same statement from a second outlet) is not printed twice; its outlet is listed on
-  the longer one. A quote tied to no match groups by player and day; injury quotes keep their own card under
-  Withdrawals & Injuries. The words stay verbatim — never merged into one paraphrase.
+- **Report** → category Match Reports, title "{winner} beat {loser}, {score}", head = the winner, sub line "time · Match
+  Reports · 7-6 6-0 · event", body = the report. **The stats box** (v2 §4) = the item's `ms` rows (built by the feed build,
+  `news-core.mjs` `msRows`: ours where we hold the figure, else the verified broadcast card; a row only with both figures;
+  13 rows in the design's order): text | 1px divider | box; leader = the higher figure (the lower on Unforced errors and
+  Unforced / points), white 700, the other grey 500, equal = both grey and no bar; a dominance ratio coloured by value
+  (≥ 1.00 green, below red); bar = 12 + |a − b| / max(a, b) × 88 % of the leader's half from the chip outwards; chip = the
+  unsigned difference ("19 pts", "3", "0.4", "1.03", "Level"); Dominance ratio and an odd last row span both columns. With
+  the box, the closing per-player lines leave the text (the box carries their numbers); no rows = no box, no divider, a
+  plain text article. **Quote** → a quotes card (below). **Status** → Withdrawals & Injuries (walkover, withdrawal,
+  retirement) or Tour News; title = the item's text. **Test:** "Match report", "Compact".
+- **Quotes are one card per player per match** (founder 2026-11-12; v2 §3a; founder 2026-11-18/19 "5 or 6 blocks … not
+  the same questions, same texts"): no headline; topic (13/700 grey) over his words (16.5 white), 3 shown then "Show n more
+  topics"; the sub line says "n topics", never quotes; no quote marks, no outlet, no translation note. The card shows the
+  quote job's **digest** (`news-ticker.md` "The quotes section") where one exists — at most 6 subject blocks, injury quotes
+  included (no second card for the same match) — else the quotes as collected (80% word overlap = one statement). A quote
+  tied to no match groups by player and day. **Test:** "Quotes card".
 - An item with no text or no player is not shown. Names = the Player Profile name of the item's key; the event =
   `sfEventName`; a tour-wide quote carries no event.
-- **Test:** `test-ten409-news.mjs` "Ticker" (report, linked + escaped quote source, translation line, category filters,
-  the ticker with the article feed down).
+- **Test:** `test-ten409-news.mjs` "Quotes card", "Match report", "Compact".
 
 ## Behaviour (keep)
-- Filters combine: tournament AND categories (multi-select, All clears) AND window (6h · 24h · 48h · 7 days, default 7
-  days) AND search (title, players, tournament, body — not the source). The tournament menu lists only events with
-  articles in the current window (a kept selection outside it still names itself).
-- Reading / Compact persists to `stennisfy.newsView`. Reading: a **2-paragraph preview** (R1 fix 1); "Read more" opens the
-  rest in place, "Show less" closes it — the same in an open Compact row. Compact row = **player · title · ▾** (grid 104 /
-  1fr / 16, gap 12; no time column). One row open at a time; the **open row keeps its columns**, the title wraps and the
-  body sits under the title column (left 116 = 104 + 12), max 68ch.
+- Filters combine: tournament AND category AND window (6h · 24h · 48h · 7 days · **All time**, default 7 days) AND search
+  (title, players, tournament, body — not the source). "All time" (founder 2026-11-18, after the export: nothing leaves the
+  archive) loads every tournament file. The tournament menu lists only events with articles in the current window.
+  **Reset filters** (blue, right of row 2) shows only when a category, tournament, search or window other than 7 days is
+  on, and clears them all. Opening one menu closes the other; a click outside or Escape closes it.
+- Reading / Compact persists to `stennisfy.newsView`. **Read more** above 5 paragraphs (above 7 when the stats box has more
+  than 6 rows): the card shows 4. Compact: one card per day; closed row = avatar + player · headline · "category · score |
+  n topics" · blue ›; one row open at a time, the open row = card colour + 12% ring, its title wraps, a 184px-indented body
+  (full width beside a stats box), a foot with the category pill and "source · event"; no Close link — a second click
+  closes it.
 - **Empty state** (15 white + 13 grey): no filters → "No articles available. Last updated HH:MM:SS." (feed refresh);
   otherwise "No articles match these filters." + the responsible filter ("No results for “x”.", "No {cats} articles for
   {event} in the last {window}." …). "Try a wider date range." only when a wider window has results; "Clear search" only
   when a search is set. No auto-widening.
 
 ## Display
-- Cards (article, Compact, composer): `--card` + `--top-light`, no outline, radius 12, padding 18×22 (Compact 4×16).
-  Category tag `--inner`, radius 6, 4×9, Hanken 10.5 / 700 / 0.10em caps `--text-label`; no category colours.
-- Segmented controls (categories, Reading / Compact) = the site's darker track as the reference draws it: track `--card`
-  + inset `--edge-6`, padding 3, radius 10; selected `--inner` + `--edge-10`, white 700; idle `--text-label` 600.
-- Drop-downs = the shared `sfDd` menu; the trigger takes the reference geometry (10×15, gap 8) and its small chevron: ▾ at
-  12.5px white (the menu's ▼ hidden; review round 2 fix 1). *Note:* Database's `.db-caret` is ▼ 9px — not this page's call.
-- Search and triggers `--inner`, no edge, radius 10; focus / composer-open = `--edge-16`. No blue rings or fills.
-- Links *(override)*: Read more / Show less, Try a wider date range., Clear search = `--link`, underline on hover — the
-  only `--link` on the page. Player and tournament names in the meta line = white 600, underline on hover.
-- Body `--text-soft`, 14 / 1.7, max 68ch; times Plex Mono 11.5 `--text-label`; day labels caps 10.5 on an `--edge-6`
-  hairline; Compact rows on `--line`. No green / red / amber, no surface colours. **Test:** "Colour check".
+- Every value is the export's (`news-page.css`, README §1–§7): cards `--news-card` + 1.25px 6% white edge (radius 12 header
+  / filter, 14 feed); pills, avatars and chips `--news-lifted`; wells (search, switch tracks, menu triggers, textarea)
+  `--news-well` + 8% edge; hover `--news-hover`; switch tab on `--news-on` + 16% edge, white 700. Links, chevrons, bars and
+  the ready Publish `--news-blue`; green / red only on "Won" and a dominance ratio by value. Avatars: initials over the
+  player's photo where we hold one (`playerPhotoImg`, `player-photos.md`; the export draws initials only). The page sits
+  in the portal ("embedded"): no ground of its own. **Test:** "Colour".

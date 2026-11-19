@@ -401,6 +401,7 @@ window.sfEarlyFetch = function (u, init) {
 <link rel="stylesheet" href="./picks-page.css">
 <link rel="stylesheet" href="./tournaments-tab.css">
 <link rel="stylesheet" href="./h2h-page.css">
+<link rel="stylesheet" href="./news-page.css">
 <!-- Sharp drop alerts (beta, founder 2026-11-14): #sharp, admins only. Scoped under [data-page="sharp"]. -->
 <link rel="stylesheet" href="./sharp-drops-page.css">
 <!-- Bet Tracker (export design_handoff_bet_tracker, LOCKED 2026-10-28). Night only; scoped under [data-page="tracker"]. -->
@@ -4759,187 +4760,44 @@ window.EntryListsTab = (function(){
 <!-- only (player_key, never a headline match on this page), plus    -->
 <!-- the founder's Post intel notes (Firestore intel_notes).         -->
 <!-- ============================================================= -->
-<style>
-  /* ============================================================
-     NEWS PAGE — TEN-409 step 10 (founder, 2026-10-09), reference = OFFICIAL VERSION 1 → News, 1512 night; values are
-     the reference's computed ones, colours the foundation tokens (rules: .claude/rules/news.md). Header = the shared
-     35b .sfh (no page rule restyles it). Two feed views: Reading (cards, max 820) and Compact (one card of rows).
-     ============================================================ */
-  [data-page="news"] .news-wrap{ max-width:1360px; box-sizing:content-box; margin:0; padding:30px 40px 70px; display:flex; flex-direction:column; gap:18px; line-height:normal; }
-  [data-page="news"] .news-stalebanner{ background:var(--inner); border-radius:10px; padding:11px 14px; max-width:820px; box-sizing:border-box; font-size:12.5px; line-height:1.5; color:var(--text-soft); }
-
-  /* ---- Row 1: tournament drop-down, then the category segmented control. Row 2: search, then Post intel · Reading /
-     Compact · time window on the right. ---- */
-  [data-page="news"] .news-row1{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-  [data-page="news"] .news-row2{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
-  [data-page="news"] .news-r2right{ display:inline-flex; align-items:center; gap:10px; flex-wrap:wrap; }
-
-  /* Segmented controls (categories, Reading / Compact) = the site's darker track, as the reference draws it: track
-     --card + 1px --edge-6 (inset), padding 3, radius 10, gap 3; item 7px 14px radius 8, 12.5; selected --inner + 1px
-     --edge-10, white 700; idle --text-label 600. */
-  [data-page="news"] .news-seg{ display:inline-flex; align-items:center; gap:3px; flex-wrap:wrap; padding:3px; border-radius:10px; background:var(--card); box-shadow:inset 0 0 0 1px var(--edge-6); }
-  [data-page="news"] .news-segi{ font-family:var(--font-words); font-size:12.5px; font-weight:600; line-height:normal; color:var(--text-label); background:transparent; border:1px solid transparent; border-radius:8px; padding:7px 14px; cursor:pointer; white-space:nowrap; }
-  [data-page="news"] .news-segi:hover{ color:var(--text); }
-  [data-page="news"] .news-segi.on{ color:var(--text); font-weight:700; background:var(--inner); border-color:var(--edge-10); }
-  [data-page="news"] .news-segi:focus-visible{ outline:none; border-color:var(--edge-16); }
-
-  /* TEN-376 README §5.5 — the one dropdown (sfDd). Trigger: --inner, no edge, ▼ in --text-label; focus 16% edge.
-     Menu: --card, 1px --edge-10, radius 10, padding 4, --shadow-menu, ~6 rows then scroll; rows 12.5px, 6px 9px,
-     hover --inner, selected --selected + white ✓. No native <select> anywhere (the OS list must never appear). */
-  .sf-dd{ position:relative; display:inline-flex; min-width:0; }
-  .sf-dd-trig{ display:inline-flex; align-items:center; justify-content:space-between; gap:10px; width:100%; box-sizing:border-box;
-    padding:9px 12px 9px 14px; background:var(--inner); border:1px solid transparent; border-radius:10px; cursor:pointer;
-    font-family:var(--font-words); font-size:12.5px; font-weight:600; color:var(--text); text-align:left; white-space:nowrap; }
-  .sf-dd-trig:focus-visible, .sf-dd.open .sf-dd-trig{ outline:none; border-color:var(--edge-16); }
-  .sf-dd-trig .sf-dd-lab{ overflow:hidden; text-overflow:ellipsis; }
-  .sf-dd-trig .sf-dd-chev{ flex:none; font-size:9px; color:var(--text-label); }
-  .sf-dd-menu{ display:none; position:absolute; z-index:300; top:calc(100% + 6px); left:0; min-width:100%; box-sizing:border-box;
-    max-height:252px; overflow-y:auto; padding:4px; background:var(--card); border:1px solid var(--edge-10); border-radius:10px; box-shadow:var(--shadow-menu); }
-  .sf-dd.open .sf-dd-menu{ display:block; }
-  .sf-dd-row{ display:flex; align-items:center; gap:8px; padding:6px 9px; border-radius:8px; cursor:pointer; white-space:nowrap;
-    font-family:var(--font-words); font-size:12.5px; font-weight:500; color:var(--text-soft); }
-  .sf-dd-row:hover, .sf-dd-row.kb{ background:var(--inner); color:var(--text); }
-  .sf-dd-row.sel{ background:var(--selected); color:var(--text); font-weight:600; }
-  .sf-dd-row .sf-dd-tick{ margin-left:auto; padding-left:12px; color:var(--text); visibility:hidden; }
-  .sf-dd-row.sel .sf-dd-tick{ visibility:visible; }
-  /* The page's two drop-downs are the site's one menu (sfDd). The trigger takes the reference's geometry (10px 15px, gap 8)
-     and its small chevron (R2 fix 1: the reference's ▾ at the label's 12.5px, white; the menu's ▼ glyph is hidden). */
-  [data-page="news"] .sf-dd-trig .sf-dd-chev{ font-size:0; }
-  [data-page="news"] .sf-dd-trig .sf-dd-chev::after{ content:'\25BE'; font-size:12.5px; color:var(--text); font-family:'Hanken Grotesk', system-ui, sans-serif; }   /* the reference's stack: Hanken has no ▾, system-ui draws it 6px wide */
-  [data-page="news"] .sf-dd-trig{ padding:10px 15px; gap:8px; line-height:normal; }
-  [data-page="news"] #newsTourFilter .sf-dd-menu{ min-width:200px; }
-  [data-page="news"] #newsRange .sf-dd-menu{ left:auto; right:0; min-width:150px; }
-
-  /* Search (row 2, 360px): --inner, no edge, radius 10; 16% edge on focus, never a blue ring. */
-  [data-page="news"] .news-searchwrap{ width:360px; max-width:100%; box-sizing:border-box; display:flex; align-items:center; gap:9px; padding:10px 14px; background:var(--inner); border:1px solid transparent; border-radius:10px; }
-  [data-page="news"] .news-searchwrap:focus-within{ border-color:var(--edge-16); }
-  [data-page="news"] .news-searchicon{ flex:none; width:14px; height:14px; color:var(--text-label); }
-  [data-page="news"] .news-search{ flex:1 1 0; min-width:0; padding:1px 2px; background:transparent; border:0; outline:none; font-family:var(--font-words); font-size:13px; color:var(--text); }
-  [data-page="news"] .news-search::placeholder{ color:var(--text-label); opacity:1; }
-
-  /* Post intel (founder only): a trigger button — --inner, no edge; 16% edge while the composer is open. */
-  [data-page="news"] .news-postintel{ display:inline-flex; align-items:center; gap:8px; padding:10px 15px; border-radius:10px; background:var(--inner); border:1px solid transparent; font-family:var(--font-words); font-size:12.5px; font-weight:700; line-height:normal; color:var(--text); white-space:nowrap; cursor:pointer; }
-  [data-page="news"] .news-postintel.active, [data-page="news"] .news-postintel:focus-visible{ outline:none; border-color:var(--edge-16); }
-  [data-page="news"] .news-picount{ font-family:var(--font-nums); font-size:11px; font-weight:700; color:var(--text-label); }
-
-  /* ---- Composer (opens under the search row, max 820): card tone, no outline, radius 12, padding 18×22, gap 14. ---- */
-  [data-page="news"] .news-composer{ max-width:820px; box-sizing:border-box; display:flex; flex-direction:column; gap:14px; padding:18px 22px; border:1px solid transparent; border-radius:12px; background:var(--card); box-shadow:var(--top-light); }
-  [data-page="news"] .cmp-head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
-  [data-page="news"] .cmp-title{ font-size:15px; font-weight:800; color:var(--text); }
-  [data-page="news"] .cmp-count{ font-size:12px; color:var(--text-label); }
-  [data-page="news"] .cmp-count b{ font-family:var(--font-nums); font-weight:400; }
-  [data-page="news"] .cmp-field{ display:flex; flex-direction:column; gap:7px; }
-  [data-page="news"] .cmp-label{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); }
-  [data-page="news"] .news-composer textarea, [data-page="news"] .news-composer input{ box-sizing:border-box; width:100%; background:var(--inner); border:1px solid transparent; border-radius:10px; outline:none; font-family:var(--font-words); font-size:13.5px; color:var(--text); }
-  [data-page="news"] .news-composer textarea{ resize:vertical; padding:11px 13px; line-height:1.5; }
-  [data-page="news"] .news-composer input{ padding:10px 13px; }
-  [data-page="news"] .news-composer textarea:focus, [data-page="news"] .news-composer input:focus{ border-color:var(--edge-16); }
-  [data-page="news"] .news-composer textarea::placeholder, [data-page="news"] .news-composer input::placeholder{ color:var(--text-label); opacity:1; }
-  [data-page="news"] .cmp-foot{ display:flex; align-items:center; justify-content:flex-end; gap:10px; padding-top:2px; }
-  [data-page="news"] .cmp-msg{ margin-right:auto; font-size:12px; color:var(--text-label); }
-  [data-page="news"] .cmp-cancel{ padding:9px 16px; border-radius:10px; background:transparent; border:1px solid transparent; font-family:var(--font-words); font-size:12.5px; font-weight:600; color:var(--text-label); cursor:pointer; }
-  [data-page="news"] .cmp-cancel:hover{ color:var(--text); }
-  [data-page="news"] .cmp-pub{ padding:9px 18px; border-radius:10px; background:var(--inner); border:1px solid var(--edge-10); font-family:var(--font-words); font-size:12.5px; font-weight:700; color:var(--text); cursor:pointer; }
-  [data-page="news"] .cmp-pub:disabled{ color:var(--text-label); cursor:default; }
-  [data-page="news"] .cmp-cancel:focus-visible, [data-page="news"] .cmp-pub:focus-visible{ outline:none; border-color:var(--edge-16); }
-
-  [data-page="news"] #newsComposer:empty, [data-page="news"] #newsStale:empty, [data-page="news"] #newsPostIntelHost:empty{ display:none; }
-
-  /* ---- Feed: day groups (caps date + 6% hairline), max 820 in Reading, full width in Compact. ---- */
-  [data-page="news"] #newsList{ display:flex; flex-direction:column; gap:10px; width:100%; max-width:820px; }
-  [data-page="news"] .news-wrap.compact #newsList{ max-width:none; }
-  [data-page="news"] #newsList:empty{ display:none; }
-  [data-page="news"] .news-daterow{ display:flex; align-items:center; gap:12px; margin-top:6px; }
-  [data-page="news"] .news-datelabel{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); white-space:nowrap; }
-  [data-page="news"] .news-daterule{ flex:1 1 0; height:1px; background:var(--edge-6); }
-
-  /* ---- Reading cards: card tone, no outline, radius 12, padding 18×22, column gap 9. ---- */
-  [data-page="news"] .news-card{ display:flex; flex-direction:column; gap:9px; padding:18px 22px; border:1px solid transparent; border-radius:12px; background:var(--card); box-shadow:var(--top-light); }
-  [data-page="news"] .news-cardmeta{ display:flex; align-items:flex-start; justify-content:space-between; gap:18px; }
-  [data-page="news"] [data-news-tip]{ cursor:default; }
-  .news-tip{ position:fixed; z-index:400; pointer-events:none; opacity:0; padding:7px 10px; border-radius:8px; background:var(--card); border:1px solid var(--edge-10); box-shadow:var(--shadow-menu); white-space:nowrap; font-family:var(--font-words); font-size:12px; color:var(--text-soft); }
-  [data-page="news"] .news-cardmeta-l{ display:flex; align-items:center; gap:9px; flex-wrap:wrap; min-width:0; }
-  [data-page="news"] .news-cat{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; line-height:normal; color:var(--text-label); background:var(--inner); border-radius:6px; padding:4px 9px; }
-  [data-page="news"] .news-cardsource, [data-page="news"] .news-cardsep{ font-size:12px; color:var(--text-label); }
-  [data-page="news"] .news-ent{ font-size:12px; font-weight:600; color:var(--text); }
-  [data-page="news"] .news-cardtitle{ margin:0; font-size:16px; font-weight:700; line-height:1.35; color:var(--text); text-wrap:pretty; }
-  [data-page="news"] .news-para{ font-size:14px; line-height:1.7; color:var(--text-soft); text-wrap:pretty; max-width:68ch; }
-  [data-page="news"] .news-acts{ display:flex; align-items:center; gap:14px; margin-top:4px; }
-  [data-page="news"] .news-act{ padding:0; background:none; border:0; font-family:var(--font-words); font-size:11.5px; color:var(--text-label); cursor:pointer; }
-  [data-page="news"] .news-act:hover, [data-page="news"] .news-act:focus-visible{ outline:none; color:var(--text); }
-
-  /* Player / tournament names in the meta line: white 600, underline on hover (never link blue). */
-  [data-page="news"] .news-entlink{ cursor:pointer; text-decoration:none; }
-  [data-page="news"] .news-entlink:hover, [data-page="news"] .news-entlink:focus-visible{ outline:none; text-decoration:underline; }
-  /* Real links (Read more / Show less, Try a wider date range., Clear search) = --link, underline on hover. */
-  [data-page="news"] .news-qsrc{ font-size:12px; color:var(--text-label); white-space:nowrap; }
-  [data-page="news"] .news-qtopic{ color:var(--text); font-weight:600; }
-  [data-page="news"] a.news-cardsource{ text-decoration:none; }
-  [data-page="news"] a.news-cardsource:hover, [data-page="news"] a.news-cardsource:focus-visible{ outline:none; color:var(--text); text-decoration:underline; }
-  [data-page="news"] .news-link{ padding:0; background:none; border:0; font-family:var(--font-words); font-size:inherit; font-weight:inherit; color:var(--link); cursor:pointer; }
-  [data-page="news"] .news-link:hover, [data-page="news"] .news-link:focus-visible{ outline:none; text-decoration:underline; }
-  [data-page="news"] .news-more{ align-self:flex-start; font-size:13px; font-weight:600; }
-
-  /* ---- Compact: one card (padding 4×16) of rows on 5% hairlines; closed row = time · player · title · ▾. ---- */
-  [data-page="news"] .news-rows{ display:flex; flex-direction:column; padding:4px 16px; border-radius:12px; background:var(--card); box-shadow:var(--top-light); }
-  [data-page="news"] .news-row{ display:flex; flex-direction:column; padding:9px 6px; border-bottom:1px solid var(--line); cursor:pointer; }
-  [data-page="news"] .news-row:last-child{ border-bottom:0; }
-  [data-page="news"] .news-row:focus-visible{ outline:none; box-shadow:inset 0 0 0 1px var(--edge-16); }
-  [data-page="news"] .news-row:hover, [data-page="news"] .news-row.open{ background:color-mix(in srgb, var(--text) 2%, transparent); }
-  [data-page="news"] .news-rowhead{ display:grid; grid-template-columns:104px minmax(0,1fr) 16px; gap:12px; align-items:center; }   /* R2: no time column */
-  [data-page="news"] .news-row.open .news-rowhead{ align-items:start; }
-  [data-page="news"] .news-row.open .news-rplayer{ padding-top:2px; }
-  [data-page="news"] .news-rplayer{ font-size:12px; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  [data-page="news"] .news-rhead{ font-size:13.5px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  [data-page="news"] .news-row.open .news-rhead{ min-width:0; overflow:visible; white-space:normal; line-height:1.4; text-wrap:pretty; }
-  [data-page="news"] .news-rcaret{ justify-self:end; font-size:11px; color:var(--text); }
-  [data-page="news"] .news-row.open .news-rcaret{ transform:rotate(180deg); }
-  [data-page="news"] .news-rbody{ display:flex; flex-direction:column; gap:8px; padding:8px 16px 4px; padding-left:116px; cursor:auto; }   /* left = 104 + 12: the title column */
-
-  /* ---- Empty state (15 white title + 13 grey detail) and the foot line (12.5 grey). ---- */
-  [data-page="news"] .news-empty{ display:flex; flex-direction:column; gap:6px; padding:10px 0; }
-  [data-page="news"] .news-empty-t{ font-size:15px; color:var(--text); }
-  [data-page="news"] .news-empty-d{ font-size:13px; line-height:1.6; color:var(--text-label); }
-  [data-page="news"] .news-empty-d b{ font-family:var(--font-nums); font-weight:400; }
-  [data-page="news"] .news-foot{ display:flex; align-items:center; gap:16px; flex-wrap:wrap; padding-bottom:6px; font-size:12.5px; color:var(--text-label); }
-</style>
+<!-- News v2 (design_handoff_news_v2, founder 2026-11-19): every style is in news-page.css. -->
 <div class="tabpage" data-page="news">
-  <div class="news-wrap" id="newsWrap">
-    <!-- The shared 35b page header (.sfh, TEN-403): title, one sentence + grey tail, stats Articles · Players · Updated
-         (newsRenderHeaderStats). Updated = news-feed.json's own generatedAt, never the clock. -->
-    <div class="sfh news-head">
-      <div class="sfh__text">
-        <h1 class="sfh__title">Tennis News</h1>
-        <p class="sfh__sub">Fitness, practice, schedule and tour updates on the players you trade. <span class="sfh__tail">· ATP tour · players in this week’s draws</span></p>
+  <div class="nx-main" id="newsWrap">
+    <!-- Header card (README §2): title, one sentence, stat pills Articles · Players · Updated (newsRenderHeaderStats).
+         Updated = news-feed.json's own generatedAt, never the clock. -->
+    <div class="nx-card nx-head">
+      <div class="nx-head-t">
+        <h1>Tennis News</h1>
+        <div class="nx-sub">Fitness, practice, schedule and tour updates on the players in this week's ATP draws.</div>
       </div>
-      <div class="sfh__stats" id="newsHeaderStats" aria-label="News summary"></div>
+      <div class="nx-stats" id="newsHeaderStats" aria-label="News summary"></div>
     </div>
-    <!-- Row 1: tournament drop-down (tournaments with articles in the window), then the category segmented control. -->
-    <div class="news-row1">
-      <span id="newsTourFilter" class="sf-dd"></span>
-      <span class="news-seg" id="newsChips" role="group" aria-label="Categories"></span>
-    </div>
-    <!-- Row 2: search (360px) left; Post intel · Reading / Compact · time window right. -->
-    <div class="news-row2">
-      <label class="news-searchwrap">
-        <svg class="news-searchicon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M13.2 13.2 L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        <input id="newsSearch" class="news-search" type="text" autocomplete="off" placeholder="Search headlines, players, tournaments" aria-label="Search headlines, players, tournaments" oninput="newsOnSearch(this.value)">
-      </label>
-      <div class="news-r2right">
+    <!-- Filter card: search · Reading / Compact · window · Post intel, a hairline, then tournament · category · Reset filters. -->
+    <div class="nx-card nx-filters">
+      <div class="nx-row">
+        <label class="nx-search">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="5.5" stroke="var(--news-grey)" stroke-width="1.5"/><path d="M13.2 13.2 L17 17" stroke="var(--news-grey)" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <input id="newsSearch" class="nx-input" type="text" autocomplete="off" placeholder="Search headlines, players, tournaments" aria-label="Search headlines, players, tournaments" oninput="newsOnSearch(this.value)">
+          <span class="nx-x nx-seg" id="newsClear" role="button" tabindex="0" title="Clear search" hidden onclick="event.preventDefault();newsClearSearch()"></span>
+        </label>
+        <span class="nx-spacer"></span>
+        <span class="nx-sw" id="newsViewSw" role="tablist" aria-label="Feed view"></span>
+        <span class="nx-menu" id="newsRange"></span>
         <span id="newsPostIntelHost"></span>
-        <span class="news-seg" role="tablist" aria-label="Feed view">
-          <button class="news-segi" id="newsTabReading" role="tab" onclick="newsSetView('reading')">Reading</button>
-          <button class="news-segi" id="newsTabCompact" role="tab" onclick="newsSetView('compact')">Compact</button>
-        </span>
-        <span id="newsRange" class="sf-dd"></span>
+      </div>
+      <div class="nx-hair"></div>
+      <div class="nx-row">
+        <span class="nx-menu" id="newsTourFilter"></span>
+        <span class="nx-sw" id="newsChips" role="group" aria-label="Categories"></span>
+        <span id="newsResetHost" style="display:contents"></span>
       </div>
     </div>
-    <!-- Post intel composer (founder only), under the search row. -->
+    <!-- Post intel composer (founder only), between the filter card and the feed. -->
     <div id="newsComposer"></div>
     <div id="newsStale"></div>
-    <!-- Feed host: day groups of Reading cards or Compact rows, or the empty state. -->
-    <div id="newsList"></div>
-    <div class="news-foot"><span>Reporting via ATP Tour, Reuters, Tennis Majors, Ubitennis and other cited outlets</span><span>·</span><span>For informational purposes only</span></div>
+    <!-- Feed: day groups of Reading cards or Compact rows, or the empty state. -->
+    <div class="nx-feed" id="newsList"></div>
+    <div class="nx-foot">Reporting via ATP Tour, Reuters, Tennis Majors, Ubitennis and other cited outlets · For informational purposes only</div>
   </div>
 </div>
 
@@ -5498,10 +5356,11 @@ let _newsTourKey = '';     // selected event ('' = all tournaments) = newsTourKe
 
 // Categories are OUR mapping (newsClassify, title keywords): the feed carries no category field. Tour News is the
 // fallback bucket, so every article lands in exactly one of the four.
-const NEWS_CATEGORIES = ['Match Reports', 'Quotes', 'Withdrawals & Injuries', 'Tour News', 'Draws & Schedules'];
+// News v2 (founder 2026-11-19): FOUR categories, single select; what was Draws & Schedules arrives as Tour News.
+const NEWS_CATEGORIES = ['Match Reports', 'Quotes', 'Withdrawals & Injuries', 'Tour News'];
 let _newsRangeHours = 168;  // Last 7 days (the reference's default)
 let _newsSearch = '';       // the query as typed; matched trimmed + lower case
-let _newsCats = [];         // multi-select; [] = All
+let _newsCats = [];         // single select (News v2): [] = All, else [one category]
 // Reading / Compact, persisted to localStorage['stennisfy.newsView'].
 let _newsView = 'reading';
 let _composerOpen = false;
@@ -5532,7 +5391,7 @@ const MR_SCORE  = /\b\d{1,2}-\d{1,2}\b/;
 function newsClassify(title, content){
   const t = String(title || '').toLowerCase();
   if (/\b(withdr\w*|retir\w*|injur\w*|pull(?:s|ed)?\s+out|walkover|w\/o|hip|knee|ankle|shoulder|wrist|elbow|thigh|hamstring|calf|abdomin\w*|illness|virus|medical timeout|ruled out|sidelined|abandon\w*|comeback from|back (?:injury|complaint|problem|spasm))\b/.test(t)) return 'Withdrawals & Injuries';
-  if (/\b(draw|draws|seed\w*|bracket|order of play|qualif\w*|wild ?card|entry list|schedul\w*|byes?)\b/.test(t)) return 'Draws & Schedules';
+  if (/\b(draw|draws|seed\w*|bracket|order of play|qualif\w*|wild ?card|entry list|schedul\w*|byes?)\b/.test(t)) return 'Tour News';   // News v2: no Draws & Schedules category
   const weakHits = (t.match(MR_WEAK) || []).length;
   if (MR_STRONG.test(t) || weakHits >= 2 || (weakHits >= 1 && MR_SCORE.test(t))) return 'Match Reports';
   return 'Tour News';
@@ -5808,10 +5667,11 @@ function newsRenderHeaderStats(list){
   const ok = _newsState === 'ok' && Array.isArray(list);
   const who = new Set();
   if (ok) list.forEach(x => x.players.forEach(p => who.add(p.key != null ? 'k' + p.key : 'n' + p.name.toLowerCase())));
-  const stat = (l, v, cls, title) => `<div class="sfh__stat"><span class="sfh__l">${l}</span><span class="sfh__v${v === '—' ? ' sfh__v--none' : cls}"${title ? ` title="${newsAttr(title)}"` : ''}>${v}</span></div>`;
-  el.innerHTML = stat('Articles', ok ? String(list.length) : '—', '')
-    + stat('Players', ok ? String(who.size) : '—', '')
-    + stat('Updated', f.known ? newsEscape(newsFmtTime(f.ts)) : '—', ' sfh__v--soft', f.known ? 'Feed refreshed ' + newsFmtAbs(f.ts) : '');
+  // News v2 §2: three stat pills, value over label; Updated = the feed's own refresh time, never the clock
+  const stat = (l, v, title) => `<div class="nx-stat"${title ? ` title="${newsAttr(title)}"` : ''}><span class="nx-stat-v">${v}</span><span class="nx-stat-l">${l}</span></div>`;
+  el.innerHTML = stat('Articles', ok ? String(list.length) : '—')
+    + stat('Players', ok ? String(who.size) : '—')
+    + stat('Updated', f.known ? newsEscape(newsFmtTime(f.ts)) : '—', f.known ? 'Feed refreshed ' + newsFmtAbs(f.ts) : '');
 }
 // A stale feed (generatedAt older than NEWS_STALE_HOURS) says so above the list — the Updated stat alone would read
 // as fresh. Text only (S3), no colour.
@@ -5819,7 +5679,7 @@ function newsRenderStale(){
   const el = document.getElementById('newsStale'); if (!el) return;
   const f = newsFreshness();
   el.innerHTML = (f.known && f.stale)
-    ? `<div class="news-stalebanner">No new articles since ${newsEscape(newsFmtAbs(f.ts))}. The news source has returned nothing new for ${Math.floor(f.ageH / 24)} day${Math.floor(f.ageH / 24) === 1 ? '' : 's'}; the articles below are the last retrieved.</div>`
+    ? `<div class="nx-card nx-empty"><span class="nx-empty-d">No new articles since ${newsEscape(newsFmtAbs(f.ts))}. The news source has returned nothing new for ${Math.floor(f.ageH / 24)} day${Math.floor(f.ageH / 24) === 1 ? '' : 's'}; the articles below are the last retrieved.</span></div>`
     : '';
 }
 
@@ -5830,8 +5690,8 @@ function newsSetView(v){
   renderNews();
 }
 // Post intel → open / close the composer under the search row (founder only).
-function newsToggleComposer(){ _composerOpen = !_composerOpen; if (!_composerOpen) _intelEditingId = null; newsRenderComposer(); }
-function newsCancelComposer(){ _composerOpen = false; _intelEditingId = null; newsRenderComposer(); }
+function newsToggleComposer(){ _composerOpen = !_composerOpen; if (!_composerOpen){ const ed = _intelEditingId; _intelEditingId = null; newsClearComposer(); if (ed) renderNews(); } newsRenderComposer(); }
+function newsCancelComposer(){ const ed = _intelEditingId; _composerOpen = false; _intelEditingId = null; newsClearComposer(); newsRenderComposer(); if (ed) renderNews(); }
 
 function newsOnSearch(v){ _newsSearch = String(v || ''); renderNews(); }
 function newsOnRange(v){ _newsRangeHours = parseInt(v, 10) || 168; if (_newsRangeHours > 168 && !_newsTickerAll) loadNewsTicker(true); renderNews(); }
@@ -5870,22 +5730,35 @@ document.addEventListener('keydown', ev => {
     i = Math.max(0, Math.min(rows.length - 1, i + (ev.key === 'ArrowDown' ? 1 : -1))); rows.forEach(r => r.classList.remove('kb')); rows[i].classList.add('kb'); rows[i].scrollIntoView({ block: 'nearest' }); }
   if (ev.key === 'Enter' && i >= 0){ ev.preventDefault(); sfDdPick(d, rows[i].getAttribute('data-v')); }
 });
-function newsRangeDd(){ sfDdRender('newsRange', { ariaLabel: 'Time window', value: _newsRangeHours, onChange: newsOnRange,
-  options: NEWS_WINDOWS.map(([value, label]) => ({ value, label })) }); }
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', newsRangeDd); else newsRangeDd();
-// Categories are multi-select; "All" clears them (the reference's segmented control).
+// The page's two menus (README §1 "Menu"): a well trigger with the drawn blue chevron, a card panel 6px below; opening one
+// closes the other; a click outside or Escape closes it.
+let _newsMenu = '';
+function newsMenuHtml(id, label, opts, cur, side){
+  return `<button type="button" class="nx-trig nx-seg" aria-haspopup="listbox" aria-expanded="${_newsMenu === id}" onclick="event.stopPropagation();newsMenuToggle('${id}')">${newsEscape(label)}<span class="nx-chev" aria-hidden="true"></span></button>`
+    + `<div class="nx-panel ${side}" role="listbox">${opts.map(o => { const on = String(o.value) === String(cur);
+      return `<div class="nx-opt nx-seg${on ? ' on' : ''}" role="option" aria-selected="${on}" data-v="${newsAttr(o.value)}" onclick="event.stopPropagation();newsMenuPick('${id}', this.dataset.v)">${newsEscape(o.label)}<span class="nx-tick">${on ? '✓' : ''}</span></div>`; }).join('')}</div>`;
+}
+function newsMenuSync(){ ['newsRange', 'newsTourFilter'].forEach(id => { const h = document.getElementById(id); if (h) h.classList.toggle('open', _newsMenu === id); }); }
+function newsMenuToggle(id){ _newsMenu = _newsMenu === id ? '' : id; newsMenuSync(); }
+function newsMenuPick(id, v){ _newsMenu = ''; if (id === 'newsRange') newsOnRange(v); else { _newsTourKey = v; renderNews(); } newsMenuSync(); }
+if (typeof document !== 'undefined' && document.addEventListener) document.addEventListener('click', () => { if (_newsMenu){ _newsMenu = ''; newsMenuSync(); } });
+(globalThis.sfEscLayers = globalThis.sfEscLayers || []).push({ id: 'news-menu', z: 90, isOpen: () => !!_newsMenu, close: () => { _newsMenu = ''; newsMenuSync(); } });
+function newsRangeDd(){
+  const host = document.getElementById('newsRange'); if (!host) return;
+  const cur = NEWS_WINDOWS.find(w => w[0] === _newsRangeHours) || NEWS_WINDOWS[3];
+  host.innerHTML = newsMenuHtml('newsRange', cur[1], NEWS_WINDOWS.map(([value, label]) => ({ value, label })), _newsRangeHours, 'r');
+  newsMenuSync();
+}
+// Categories are single select (News v2): a click replaces the active one; a click on the active one returns to All.
 function newsToggleCat(cat){
-  if (!cat) _newsCats = [];
-  else _newsCats = _newsCats.indexOf(cat) >= 0 ? _newsCats.filter(c => c !== cat) : _newsCats.concat([cat]);
+  _newsCats = !cat || _newsCats[0] === cat ? [] : [cat];
   renderNews();
 }
+const newsTabHtml = (label, on, onclick, attrs) => `<button type="button" class="nx-tab nx-seg${on ? ' on' : ''}" aria-pressed="${on}" ${attrs || ''} onclick="${onclick}">${newsEscape(label)}</button>`;
 function renderNewsChips(){
   const wrap = document.getElementById('newsChips');
   if (!wrap) return;
-  wrap.innerHTML = [''].concat(NEWS_CATEGORIES).map(c => {
-    const on = c ? _newsCats.indexOf(c) >= 0 : !_newsCats.length;
-    return `<button type="button" class="news-segi${on ? ' on' : ''}" aria-pressed="${on}" onclick="newsToggleCat('${c.replace(/'/g, "\\'")}')">${newsEscape(c || 'All')}</button>`;
-  }).join('');
+  wrap.innerHTML = [''].concat(NEWS_CATEGORIES).map(c => newsTabHtml(c || 'All', c ? _newsCats[0] === c : !_newsCats.length, `newsToggleCat('${c.replace(/'/g, "\\'")}')`)).join('');
 }
 
 function newsParseTs(s){
@@ -5956,13 +5829,16 @@ function newsRenderTourDd(inWin, all){
   inWin.forEach(x => { const k = newsTourKey(x.tour); if (k) names[k] = x.tour; });
   if (_newsTourKey && !names[_newsTourKey]){ const hit = all.find(x => newsTourKey(x.tour) === _newsTourKey); if (hit) names[_newsTourKey] = hit.tour; }
   const opts = [{ value: '', label: 'All tournaments' }].concat(Object.keys(names).sort((a, b) => names[a].localeCompare(names[b])).map(k => ({ value: k, label: names[k] })));
-  const host = document.getElementById('newsTourFilter');
-  const sig = JSON.stringify([opts, _newsTourKey]);
-  if (!host || (host._newsSig === sig && host.querySelector('.sf-dd-trig'))) return;   // an open menu stays open across re-renders
-  host._newsSig = sig;
-  sfDdRender(host, { ariaLabel: 'Tournament filter', value: _newsTourKey, options: opts, onChange: v => { _newsTourKey = v; renderNews(); } });
+  const host = document.getElementById('newsTourFilter'); if (!host) return;
+  host.innerHTML = newsMenuHtml('newsTourFilter', (opts.find(o => o.value === _newsTourKey) || opts[0]).label, opts, _newsTourKey, 'l');
+  newsMenuSync();
 }
 
+// Feed text arrives with HTML codes ("didn&#039;t", "I&#8217;m"): decoded to their characters before anything prints.
+const NEWS_ENT = { amp: '&', quot: '"', apos: "'", lt: '<', gt: '>', nbsp: ' ', rsquo: '’', lsquo: '‘', rdquo: '”', ldquo: '“', hellip: '…', ndash: '–', mdash: '—' };
+function newsDecode(t){ return String(t == null ? '' : t).replace(/&#x([0-9a-f]+);/gi, (m, h) => String.fromCodePoint(parseInt(h, 16))).replace(/&#(\d+);/g, (m, d) => String.fromCodePoint(parseInt(d, 10)))
+  .replace(/&([a-z]+);/gi, (m, n) => (NEWS_ENT[n.toLowerCase()] != null ? NEWS_ENT[n.toLowerCase()] : m)); }
+const newsCap = t => { t = String(t || '').trim(); return t ? t[0].toUpperCase() + t.slice(1) : ''; };
 // Split an article/note body into paragraphs on blank lines (single \n kept via
 // white-space:pre-wrap). A body with no blank lines renders as one paragraph.
 function newsSplitParas(text){
@@ -6130,7 +6006,7 @@ function newsWireItems(){
       kind: 'wire', id: 'w' + (a.news_key != null ? a.news_key : i), ts: at,
       players: name ? [{ key, name }] : [],
       tour: ev ? newsEventLabel(ev.key) : '', tourKey: ev ? ev.key : '', tourFrom: ev ? ev.from : '',
-      title: a.title || 'Untitled', bodyParas: newsSplitParas(a.content),
+      title: newsDecode(a.title) || 'Untitled', bodyParas: newsSplitParas(newsDecode(a.content)),
       cat: newsClassify(a.title, a.content), source: newsSourceNames(a.sources),
     };
   }).filter(x => x.players.length);
@@ -6146,13 +6022,18 @@ function newsTickerItems(){
     const tour = x.tournament ? (typeof sfEventName === 'function' ? sfEventName(x.tournament) : String(x.tournament)) : '';
     const base = { kind: 'ticker', id: 't' + x.id, ts: Date.parse(x.timestamp), tour, tourKey: '', tourFrom: '' };
     if (x.type === 'report'){
-      const score = x.fields && x.fields.score ? ', ' + x.fields.score : '';
-      return Object.assign(base, { players: both, title: both.length === 2 ? `${both[0].name} beat ${both[1].name}${score}` : String(x.text).split('. ')[0],
-        bodyParas: newsSplitParas(x.text), cat: 'Match Reports', source: 'Stennisfy' });
+      const sc = x.fields && x.fields.score ? String(x.fields.score) : '';
+      // News v2 §4: the stats box from the report's rows (both figures held); with it, the closing per-player lines leave
+      // the text (the box carries their numbers). No rows = no box, the report reads as a text article.
+      const ms = x.ms && Array.isArray(x.ms.rows) && x.ms.rows.length ? { a: x.ms.a, b: x.ms.b, sets: x.ms.sets || [], rows: x.ms.rows } : null;
+      const rating = new Set((x.rating || []).map(t => String(t).trim()));
+      const paras = newsSplitParas(newsDecode(x.text)).filter(t => !(ms && rating.has(t)));
+      return Object.assign(base, { players: both, title: both.length === 2 ? `${both[0].name} beat ${both[1].name}${sc ? ', ' + sc : ''}` : paras[0] || '',
+        bodyParas: paras, score: sc.replace(/,\s*/g, ' '), ms, cat: 'Match Reports', source: 'Stennisfy' });
     }
     if (x.type === 'quote' || x.type === 'digest') return null;   // quotes are grouped below: one card per player per match
     return Object.assign(base, { players: both, title: String(x.text), bodyParas: [], source: 'Stennisfy',
-      cat: /withdraw|injur|retire/i.test(String(x.category)) ? 'Withdrawals & Injuries' : 'Draws & Schedules' });
+      cat: /withdraw|injur|retire/i.test(String(x.category)) ? 'Withdrawals & Injuries' : 'Tour News' });
   }).filter(x => x && x.players.length).concat(newsQuoteCards(_newsTicker || []));
 }
 // Quotes: ONE card per player per match (founder 2026-11-12: "list all what he said in one reading") — every quote
@@ -6181,9 +6062,10 @@ function newsQuoteCards(items){
   for (const x of items){
     if (!x || x.type !== 'quote' || !x.id || !x.text || !x.player || x.playerId == null) continue;
     const ts = Date.parse(x.timestamp), inj = /injur/i.test(String(x.category));
-    const dkey = x.playerId + '|' + (x.eventKey ? 'm' + x.eventKey : 'd' + String(x.timestamp || '').slice(0, 10));
-    const key = x.playerId + '|' + (x.eventKey ? 'm' + x.eventKey : 'd' + (isFinite(ts) ? localDayKey(ts) : '')) + '|' + (inj ? 'i' : 'q');
-    if (!groups.has(key)) groups.set(key, { inj, list: [], digest: inj ? null : (digests.get(dkey) || null) });
+    const dkey = x.playerId + '|' + (x.eventKey ? 'm' + x.eventKey : 'd' + String(x.timestamp || '').slice(0, 10)), dg = digests.get(dkey) || null;
+    // with a digest the injury quotes are inside it: one card per player per match (founder 2026-11-19, no repeats)
+    const key = x.playerId + '|' + (x.eventKey ? 'm' + x.eventKey : 'd' + (isFinite(ts) ? localDayKey(ts) : '')) + '|' + (inj && !dg ? 'i' : 'q');
+    if (!groups.has(key)) groups.set(key, { inj: inj && !dg, list: [], digest: dg });
     groups.get(key).list.push(x);
   }
   const words = t => new Set(String(t).toLowerCase().match(/[a-z'’]{3,}/g) || []);
@@ -6209,20 +6091,13 @@ function newsQuoteCards(items){
     out.push({ kind: 'ticker', id: 't' + first.id, ts: isFinite(tsMax) ? tsMax : NaN, tour, tourKey: '', tourFrom: '',
       players: name ? [{ key: String(first.playerId), name }] : [],
       title: name + (ctx ? ' ' + ctx : (g.inj ? ' on his fitness' : ' in the press')),
-      // founder 2026-11-18: no outlet or translation line under a quote; one block per subject ("on the physical scare: “…”")
-      bodyParas: g.digest ? g.digest.blocks.map(b => b.label + ': “' + String(b.text).trim() + '”') : kept.map(k => (k.q.topic ? k.q.topic + ': ' : '') + '“' + String(k.q.text).trim() + '”'),
-      parasHtml: g.digest ? g.digest.blocks.map(b => '<span class="news-qtopic">' + newsEscape(b.label) + ':</span> ' + newsEscape('“' + String(b.text).trim() + '”'))
-        : kept.map(k => (k.q.topic ? '<span class="news-qtopic">' + newsEscape(k.q.topic) + ':</span> ' : '') + newsEscape('“' + String(k.q.text).trim() + '”')),
-      cat: g.inj ? 'Withdrawals & Injuries' : 'Quotes', source: '', sourceUrl: '' });
+      // founder 2026-11-18 / News v2 §3a: one topic per subject over his words — no quote marks, no outlet, no translation
+      // note; the digest's blocks where the quote job built one, else the quotes as collected
+      quotes: (g.digest ? g.digest.blocks.map(b => ({ topic: newsCap(b.label), text: newsDecode(b.text).trim() })) : kept.map(k => ({ topic: newsCap(k.q.topic || ''), text: newsDecode(k.q.text).trim() }))),
+      cat: g.inj ? 'Withdrawals & Injuries' : 'Quotes', source: 'Stennisfy' });
+    const last = out[out.length - 1]; last.bodyParas = last.quotes.map(q => (q.topic ? q.topic + ': ' : '') + q.text);
   }
   return out.filter(x => x.players.length);
-}
-const newsParaHtml = (it, p, i) => (it.parasHtml && it.parasHtml[i] != null ? it.parasHtml[i] : newsEscape(p));
-// The source in the meta line: a ticker quote links to the outlet's article (grey, underline on hover — never blue).
-function newsSourceHtml(it){
-  if (!it.source) return '';
-  return it.sourceUrl ? `<a class="news-cardsource" href="${newsAttr(it.sourceUrl)}" target="_blank" rel="noopener nofollow" onclick="event.stopPropagation()">${newsEscape(it.source)}</a>`
-    : `<span class="news-cardsource">${newsEscape(it.source)}</span>`;
 }
 // The founder's Post intel notes on this page: title = the first sentence (≤ 90 characters), body = the note, tag
 // "Stennisfy Intel", source "Stennisfy"; the player is plain text (never a link). A note without a player still shows.
@@ -6231,10 +6106,12 @@ function newsPageIntelItems(){
     const text = (it.bodyParas || []).join('\n\n');
     const first = text.split(/[.!?]/)[0].trim().slice(0, 90);
     const named = it.player && it.player !== 'BSP Intel';
+    // News v2 §6: the post takes the group chosen in the composer as its category (an older note: Tour News) and its
+    // player's tournament; a note being edited leaves the feed until it is published again
     return { kind: 'intel', id: 'i' + it.intelId, intelId: it.intelId, ts: it.ts,
       players: named ? [{ key: it.playerKey != null ? String(it.playerKey) : null, name: String(it.player) }] : [],
-      tour: '', tourKey: '', tourFrom: '', title: first || it.title, bodyParas: it.bodyParas || [], cat: 'Stennisfy Intel', source: 'Stennisfy' };
-  });
+      tour: it.tour || '', tourKey: '', tourFrom: '', title: first || it.title, bodyParas: it.bodyParas || [], cat: NEWS_CATEGORIES.indexOf(it.cat) >= 0 ? it.cat : 'Tour News', source: 'Stennisfy' };
+  }).filter(x => x.intelId !== _intelEditingId);
 }
 
 function newsIntelItems(){
@@ -6246,7 +6123,7 @@ function newsIntelItems(){
       kind: 'intel', intelId: n.id, ts: ms,
       player: pr.label || 'BSP Intel', playerKey: pr.key,
       title: text || 'Intel note', bodyParas: newsSplitParas(text),
-      cat: '', src: '', srcRaw: 'BSP Consult Intel',
+      cat: n.cat || '', tour: n.tour || '', src: '', srcRaw: 'BSP Consult Intel',
     };
   });
 }
@@ -6278,11 +6155,9 @@ function newsAsapItems(){
 
 // Sync the view toggle (feed width + selected segment) — safe before data loads.
 function newsSyncViewUI(){
-  const wrapEl = document.getElementById('newsWrap');
-  if (wrapEl) wrapEl.classList.toggle('compact', _newsView === 'compact');
-  const rt = document.getElementById('newsTabReading'), ct = document.getElementById('newsTabCompact');
-  if (rt){ rt.classList.toggle('on', _newsView === 'reading'); rt.setAttribute('aria-selected', String(_newsView === 'reading')); }
-  if (ct){ ct.classList.toggle('on', _newsView === 'compact'); ct.setAttribute('aria-selected', String(_newsView === 'compact')); }
+  const sw = document.getElementById('newsViewSw'); if (!sw) return;
+  sw.innerHTML = newsTabHtml('Reading', _newsView === 'reading', "newsSetView('reading')", `role="tab" id="newsTabReading" aria-selected="${_newsView === 'reading'}"`)
+    + newsTabHtml('Compact', _newsView === 'compact', "newsSetView('compact')", `role="tab" id="newsTabCompact" aria-selected="${_newsView === 'compact'}"`);
 }
 
 // Search covers the title, the players, the tournament and the body.
@@ -6318,9 +6193,9 @@ function newsEmptyState(all){
     } else if (cats.length){ detail = 'No ' + catPart + winPhrase + '.'; widen = canWiden; }
     else { detail = 'No articles' + winPhrase + '.'; widen = canWiden; }
   }
-  return `<div class="news-empty"><span class="news-empty-t">${title}</span><span class="news-empty-d">${detail}`
-    + (widen ? `${detail ? ' ' : ''}<button type="button" class="news-link" onclick="newsWiden()">Try a wider date range.</button>` : '')
-    + (clear ? ` <button type="button" class="news-link" onclick="newsClearSearch()">Clear search</button>` : '')
+  return `<div class="nx-card nx-empty"><span class="nx-empty-t">${title}</span><span class="nx-empty-d">${detail}`
+    + (widen ? `${detail ? ' ' : ''}<button type="button" class="nx-link nx-seg" onclick="newsWiden()">Try a wider date range.</button>` : '')
+    + (clear ? ` <button type="button" class="nx-link nx-seg" onclick="newsClearSearch()">Clear search</button>` : '')
     + `</span></div>`;
 }
 // Widen to the first wider window that has results (so the click always changes the list).
@@ -6338,9 +6213,11 @@ function renderNews(){
   if (!listEl) return;
   newsSyncViewUI();
   renderNewsChips();
+  newsRangeDd();
   newsRenderComposer();
   newsRenderStale();
   newsTip.hide();   // a re-render never leaves a stale title tip
+  const clr = document.getElementById('newsClear'); if (clr) clr.hidden = !_newsSearch;
   const all = (_newsState === 'ok' ? newsWireItems() : []).concat(newsTickerItems(), newsPageIntelItems());
   newsAwaitEventDates();
   const inWin = all.filter(x => newsPasses(x, { hours: _newsRangeHours }));
@@ -6349,18 +6226,21 @@ function renderNews(){
   const list = inWin.filter(x => newsPasses(x, { tour: _newsTourKey, cats: _newsCats, q }))
     .sort((a, b) => (isFinite(b.ts) ? b.ts : -Infinity) - (isFinite(a.ts) ? a.ts : -Infinity));
   newsRenderHeaderStats(list);
+  const reset = document.getElementById('newsResetHost');
+  if (reset) reset.innerHTML = (_newsCats.length || _newsTourKey || _newsSearch || _newsRangeHours !== 168)
+    ? '<button type="button" class="nx-reset nx-seg" onclick="newsResetFilters()">Reset filters</button>' : '';
 
   if (!list.length){
-    if (_newsState === 'load'){ listEl.innerHTML = `<div class="news-empty"><span class="news-empty-d">Loading news…</span></div>`; return; }
+    if (_newsState === 'load'){ listEl.innerHTML = `<div class="nx-card nx-empty"><span class="nx-empty-d">Loading news…</span></div>`; return; }
     if (_newsState === 'unavailable' && !all.length){
-      listEl.innerHTML = `<div class="news-empty"><span class="news-empty-t">News feed unavailable.</span><span class="news-empty-d">Last checked <b>${newsEscape(newsFmtHMS(Date.now()))}</b>.</span></div>`;
+      listEl.innerHTML = `<div class="nx-card nx-empty"><span class="nx-empty-t">News feed unavailable.</span><span class="nx-empty-d">Last checked <b>${newsEscape(newsFmtHMS(Date.now()))}</b>.</span></div>`;
       return;
     }
     listEl.innerHTML = newsEmptyState(all);
     return;
   }
 
-  // Day groups (member zone), newest first; undated items last, under no label.
+  // Day groups (member zone), newest first, each with its count; undated items last, under no label.
   const groups = []; const idx = {};
   for (const it of list){
     const key = isFinite(it.ts) ? localDayKey(it.ts) : '__nodate__';
@@ -6369,29 +6249,22 @@ function renderNews(){
   }
   const admin = isBspAdmin();
   listEl.innerHTML = groups.map(g => {
-    const header = g.label ? `<div class="news-daterow"><span class="news-datelabel">${newsEscape(g.label)}</span><span class="news-daterule"></span></div>` : '';
+    const n = g.items.length;
+    const header = g.label ? `<div class="nx-day"><span class="nx-day-l">${newsEscape(g.label)}</span><span class="nx-day-n">${n} ${n === 1 ? 'article' : 'articles'}</span><span class="nx-day-r"></span></div>` : '';
     return header + (_newsView === 'compact'
-      ? `<div class="news-rows">${g.items.map(it => newsCompactRow(it, admin)).join('')}</div>`
+      ? `<div class="nx-card nx-cl">${g.items.map(it => newsCompactRow(it, admin)).join('')}</div>`
       : g.items.map(it => newsReadingCard(it, admin)).join(''));
   }).join('');
 }
+function newsResetFilters(){
+  _newsCats = []; _newsTourKey = ''; _newsSearch = ''; _newsRangeHours = 168;
+  const i = document.getElementById('newsSearch'); if (i) i.value = '';
+  renderNews();
+}
 
-// Meta-line names: white 600, underline on hover; a feed player → Player Profile, an event → Tournaments; an intel
-// player is plain text.
-function newsPlayerHtml(p, kind){
-  const n = newsEscape(p.name);
-  if (kind !== 'intel' && p.key != null && newsHasProfile(p.key))
-    return `<span class="news-ent news-entlink" role="link" tabindex="0" onclick="event.stopPropagation();newsOpenPlayer('${newsKeyAttr(p.key)}')" onkeydown="if(event.key==='Enter'){event.stopPropagation();newsOpenPlayer('${newsKeyAttr(p.key)}')}" title="Open ${newsAttr(p.name)} on Player Profile">${n}</span>`;
-  return `<span class="news-ent">${n}</span>`;
-}
-function newsTourHtml(it){
-  const n = newsEscape(it.tour), k = newsTourRegistryKey(it.tourKey);
-  if (!k) return `<span class="news-ent">${n}</span>`;
-  return `<span class="news-ent news-entlink" role="link" tabindex="0" data-tour="${newsAttr(k)}" onclick="event.stopPropagation();newsOpenTournament(this.dataset.tour)" onkeydown="if(event.key==='Enter'){event.stopPropagation();newsOpenTournament(this.dataset.tour)}" title="Open ${newsAttr(it.tour)} on Tournaments">${n}</span>`;
-}
-// R2 (founder card 28bd8fc2): no time on an article — published_at is api-tennis's 4-hourly batch stamp, not the outlet's time,
-// and a wrong figure is not shown. Day groups and the newest-first sort still read it. The title's hover says what it is:
-// "Added to feed 09 Oct 18:02" (member zone); an intel note says "Posted …".
+// R2 (founder card 28bd8fc2): an api-tennis article shows no time — its published_at is the feed's 4-hourly batch
+// stamp, not the outlet's. Our own items (reports, quotes, posts) carry a real time and show it. The title's hover says
+// what the time is: "Added to feed 09 Oct 18:02" (member zone); an intel note says "Posted …".
 function newsAddedLabel(it){
   if (!isFinite(it.ts)) return '';
   const o = { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false };
@@ -6399,48 +6272,94 @@ function newsAddedLabel(it){
   return (it.kind === 'intel' ? 'Posted ' : 'Added to feed ') + t.replace(',', '');
 }
 const newsTipAttr = it => { const t = newsAddedLabel(it); return t ? ` data-news-tip="${newsAttr(t)}"` : ''; };
+const newsTimeOf = it => (it.kind !== 'wire' && isFinite(it.ts)) ? newsFmtTime(it.ts) : '';
 function newsIntelActsHtml(it){
   const s = String(it.intelId).replace(/[^A-Za-z0-9_-]/g, '');
-  return `<div class="news-acts"><button type="button" class="news-act" onclick="event.stopPropagation();intelStartEdit('${s}')">Edit</button>`
-    + `<button type="button" class="news-act" onclick="event.stopPropagation();intelDelete('${s}')">Delete</button></div>`;
+  return `<button type="button" class="nx-act nx-seg" onclick="event.stopPropagation();intelStartEdit('${s}')">Edit</button>`
+    + `<button type="button" class="nx-act nx-seg" onclick="event.stopPropagation();intelDelete('${s}')">Delete</button>`;
 }
 
-// Reading: one card per article — meta line (tag · source · players · tournament, time right), title, body. R1 fix 1:
-// a 2-paragraph preview (the reference's card); "Read more" opens the rest in place, "Show less" closes it.
-const NEWS_PREVIEW_PARAS = 2;
+// Initials = first letter of the first word + first letter of the last word ("F. Tiafoe" → "FT"); the player's photo
+// sits over them where we hold one (player-photos.md: one resolver on every avatar).
+function newsIni(name){ const w = String(name || '').replace(/[^\p{L}\s.'-]/gu, '').trim().split(/\s+/).filter(Boolean); return w.length ? ((w[0][0] || '') + (w.length > 1 ? (w[w.length - 1][0] || '') : '')).toUpperCase() : ''; }
+function newsAvHtml(p, cls){ return `<span class="nx-av${cls ? ' ' + cls : ''}">${newsEscape(newsIni(p.name))}${p.key != null && typeof playerPhotoImg === 'function' ? playerPhotoImg(p.key, p.name) : ''}</span>`; }
+const newsAvsHtml = (players, cls) => `<span class="nx-avs">${players.slice(0, 3).map(p => newsAvHtml(p, cls)).join('')}</span>`;
+
+// "Read more": above 5 paragraphs (7 when the stats box has more than 6 rows) the card shows 4.
+function newsParasShown(it){
+  const lim = it.ms && it.ms.rows.length > 6 ? 7 : 5, has = it.bodyParas.length > lim, open = !!_newsMore[it.id];
+  return { paras: has && !open ? it.bodyParas.slice(0, 4) : it.bodyParas, has, open };
+}
+function newsQuotesShown(it){
+  const has = it.quotes.length > 3, open = !!_newsMore[it.id], n = it.quotes.length - 3;
+  return { quotes: has && !open ? it.quotes.slice(0, 3) : it.quotes, has, open, more: open ? 'Show less' : `Show ${n} more ${n === 1 ? 'topic' : 'topics'}` };
+}
+const newsMoreBtn = (it, label) => `<button type="button" class="nx-more nx-seg" data-id="${newsAttr(it.id)}" onclick="event.stopPropagation();newsToggleMore(this.dataset.id)">${label}</button>`;
+const newsQuotesHtml = qs => qs.map(q => `<div class="nx-q">${q.topic ? `<span class="nx-qt">${newsEscape(q.topic)}</span>` : ''}<div class="nx-qx">${newsEscape(q.text)}</div></div>`).join('');
+
+// The match report's stats box (README §4). Built from the rows both players have, in the pipeline's order; a row
+// missing a figure never reaches it. Leader = the higher figure (the lower one on unforced errors); bar = 12 + |a−b| /
+// max(a,b) × 88 % of the leader's half, growing from the chip outwards; the chip = the unsigned difference.
+function newsFigFmt(v, k){ return k === '%' ? Math.round(v) + '%' : k === '0' ? String(Math.round(v)) : Number(v).toFixed(k === '1' ? 1 : 2); }
+function newsMsRow(r, i, rows){
+  const [label, x, y, k, low] = r, lowWins = !!low;
+  const aLead = lowWins ? x < y : x > y, bLead = lowWins ? y < x : y > x, hi = Math.max(Math.abs(x), Math.abs(y)) || 1, d = Math.abs(x - y);
+  const w = (12 + d / hi * 88).toFixed(1) + '%';
+  const cls = (lead, v) => (k === 'dr' ? (v >= 1 ? 'up ' : 'down ') : '') + (lead ? 'lead' : '');   // a dominance ratio is coloured by its value
+  const others = rows.filter(z => z[3] !== 'dr').length, full = k === 'dr' || (i === rows.length - 1 && others % 2 === 1);
+  const diff = d === 0 ? 'Level' : k === '%' ? Math.round(d) + ' pts' : k === '0' ? String(Math.round(d)) : d.toFixed(k === '1' ? 1 : 2);
+  return `<div class="nx-r${full ? ' full' : ''}"><div class="nx-rf"><span class="nx-fa ${cls(aLead, x)}">${newsFigFmt(x, k)}</span><span class="nx-lab">${newsEscape(label)}</span><span class="nx-fb ${cls(bLead, y)}">${newsFigFmt(y, k)}</span></div>`
+    + `<div class="nx-rl"><span class="nx-tr a"><span class="nx-bar" style="width:${aLead ? w : '0%'}"></span></span><span class="nx-chip">${diff}</span><span class="nx-tr b"><span class="nx-bar" style="width:${bLead ? w : '0%'}"></span></span></div></div>`;
+}
+function newsMsBoxHtml(it, compact){
+  const ms = it.ms, A = it.players[0] || { name: ms.a }, B = it.players[1] || { name: ms.b };
+  const sets = (ms.sets || []).map(t => `<span>${t[0]}<i>-${t[1]}</i></span>`).join('');
+  return `<span class="nx-div"></span><div class="nx-box${compact ? ' c' : ''}">`
+    + `<div class="nx-bh"><span class="nx-bp">${newsAvHtml(A, 'b')}<span class="nx-bpn"><span class="nx-bn">${newsEscape(A.name)}</span><span class="nx-won">Won</span></span></span>`
+    + `<span class="nx-bs">${sets}</span>`
+    + `<span class="nx-bp r"><span class="nx-bn">${newsEscape(B.name)}</span>${newsAvHtml(B, 'b g')}</span></div>`
+    + `<div class="nx-grid">${ms.rows.map((r, i) => newsMsRow(r, i, ms.rows)).join('')}</div></div>`;
+}
+// A match report's head names the winner only (the reference's report: players = [winner]); search and the Players
+// count still read both players.
+const newsHeadPlayers = it => (it.cat === 'Match Reports' && it.kind === 'ticker') ? it.players.slice(0, 1) : it.players;
+const newsMeta = it => it.quotes ? it.quotes.length + (it.quotes.length === 1 ? ' topic' : ' topics') : (it.score || '');
+
+// Reading: one card per article, one head line for every kind (avatars · names · time · category · score · tournament).
 function newsReadingCard(it, admin){
-  const hasMore = it.bodyParas.length > NEWS_PREVIEW_PARAS, expanded = !!_newsMore[it.id];
-  const paras = hasMore && !expanded ? it.bodyParas.slice(0, NEWS_PREVIEW_PARAS) : it.bodyParas;
-  const ents = it.players.map(p => newsPlayerHtml(p, it.kind)).concat(it.tour ? [newsTourHtml(it)] : []);
-  const idA = newsAttr(it.id);
-  return `<article class="news-card" data-id="${idA}">
-      <div class="news-cardmeta">
-        <div class="news-cardmeta-l">${it.cat ? `<span class="news-cat">${newsEscape(it.cat)}</span>` : ''}${newsSourceHtml(it)}${ents.map(e => `<span class="news-cardsep">·</span>${e}`).join('')}</div>
-      </div>
-      <h3 class="news-cardtitle"${newsTipAttr(it)}>${newsEscape(it.title)}</h3>
-      ${paras.map((p, i) => `<div class="news-para">${newsParaHtml(it, p, i)}</div>`).join('')}
-      ${hasMore ? `<button type="button" class="news-link news-more" data-id="${idA}" onclick="newsToggleMore(this.dataset.id)">${expanded ? 'Show less' : 'Read more'}</button>` : ''}
-      ${it.kind === 'intel' && admin ? newsIntelActsHtml(it) : ''}
-    </article>`;
+  const idA = newsAttr(it.id), hp = newsHeadPlayers(it), names = newsEscape(hp.map(p => p.name).join(' · '));
+  if (it.quotes){
+    const s = newsQuotesShown(it), sub = [newsTimeOf(it), newsMeta(it), it.tour].filter(Boolean).join(' · ');
+    return `<article class="nx-card nx-art" data-id="${idA}"><div class="nx-ahead q">${newsAvsHtml(hp)}<div class="nx-names"><span class="nx-nl"${newsTipAttr(it)}>${names}</span><span class="nx-sl">${newsEscape(sub)}</span></div></div>`
+      + `<div class="nx-qs">${newsQuotesHtml(s.quotes)}${s.has ? newsMoreBtn(it, s.more) : ''}</div></article>`;
+  }
+  const s = newsParasShown(it), sub = [newsTimeOf(it), it.cat, it.score, it.tour].filter(Boolean).join(' · ');
+  const links = (s.has ? newsMoreBtn(it, s.open ? 'Show less' : 'Read more') : '') + (it.kind === 'intel' && admin ? newsIntelActsHtml(it) : '');
+  return `<article class="nx-card nx-art" data-id="${idA}"><div class="nx-ahead">${newsAvsHtml(hp)}<div class="nx-names"><span class="nx-nl">${names}</span><span class="nx-sl">${newsEscape(sub)}</span></div></div>`
+    + `<div class="nx-body"><div class="nx-col${it.ms ? ' ms' : ''}"><div class="nx-title"${newsTipAttr(it)}>${newsEscape(it.title)}</div>`
+    + s.paras.map(p => `<div class="nx-p">${newsEscape(p)}</div>`).join('')
+    + (links ? `<div class="nx-links">${links}</div>` : '') + `</div>${it.ms ? newsMsBoxHtml(it, false) : ''}</div></article>`;
 }
 function newsToggleMore(id){ _newsMore[id] = !_newsMore[id]; renderNews(); }
 
-// Compact: row = time · player · title · ▾ on one grid. A click opens it in place: same columns (R1 fix 2), the title
-// wraps, the body sits under the title column, the caret turns. One row open at a time.
+// Compact: one card per day, one row per article; a click opens it in place (one open at a time) and closes it again.
 function newsCompactRow(it, admin){
-  const open = _newsOpenId === it.id, p = it.players[0];
-  const idA = newsAttr(it.id);
-  const head = `<div class="news-rowhead"><span class="news-rplayer">${p ? newsPlayerHtml(p, it.kind) : ''}</span><span class="news-rhead"${newsTipAttr(it)}>${newsEscape(it.title)}</span><span class="news-rcaret" aria-hidden="true">▾</span></div>`;
-  // the same 2-paragraph preview as Reading (founder R1 fix 1): "Read more" opens the rest, "Show less" collapses to 2
-  const hasMore = it.bodyParas.length > NEWS_PREVIEW_PARAS, expanded = !!_newsMore[it.id];
-  const paras = hasMore && !expanded ? it.bodyParas.slice(0, NEWS_PREVIEW_PARAS) : it.bodyParas;
-  const body = open
-    ? `<div class="news-rbody" onclick="event.stopPropagation()">${paras.map((x, i) => `<div class="news-para">${newsParaHtml(it, x, i)}</div>`).join('')}`
-      + (hasMore ? `<button type="button" class="news-link news-more" data-id="${idA}" onclick="event.stopPropagation();newsToggleMore(this.dataset.id)">${expanded ? 'Show less' : 'Read more'}</button>` : '')
-      + `${it.kind === 'intel' && admin ? newsIntelActsHtml(it) : ''}</div>`
-    : '';
-  return `<div class="news-row${open ? ' open' : ''}" data-id="${idA}" role="button" tabindex="0" aria-expanded="${open}" onclick="newsToggleRow(this.dataset.id)" onkeydown="if(event.key==='Enter'&&event.target===this)newsToggleRow(this.dataset.id)">${head}${body}</div>`;
+  const open = _newsOpenId === it.id, p = it.players[0], idA = newsAttr(it.id);
+  const who = `<span class="nx-wn">${newsAvsHtml(newsHeadPlayers(it), 's')}<b>${p ? newsEscape(p.name) : ''}</b></span>`;
+  const kind = [it.cat, newsMeta(it)].filter(Boolean).join(' · ');
+  const attrs = `data-id="${idA}" onclick="newsToggleRow(this.dataset.id)"`;
+  if (!open) return `<div class="nx-wr" role="button" tabindex="0" aria-expanded="false" ${attrs} onkeydown="if(event.key==='Enter'&&event.target===this)newsToggleRow(this.dataset.id)">`
+    + `<div class="nx-wc">${who}<span class="nx-wh"${newsTipAttr(it)}>${newsEscape(it.title)}</span><span class="nx-wk">${newsEscape(kind)}</span><span class="nx-car" aria-hidden="true">›</span></div></div>`;
+  const ms = !!it.ms;
+  let inner = '';
+  if (it.quotes){ const s = newsQuotesShown(it); inner = `<div class="nx-qs">${newsQuotesHtml(s.quotes)}</div>` + (s.has ? newsMoreBtn(it, s.more) : ''); }
+  else { const s = newsParasShown(it); inner = s.paras.map(x => `<div class="nx-p">${newsEscape(x)}</div>`).join('') + (s.has ? newsMoreBtn(it, s.open ? 'Show less' : 'Read more') : ''); }
+  const foot = `<div class="nx-wfoot">${it.cat ? `<span class="nx-pill">${newsEscape(it.cat)}</span>` : ''}<span class="nx-wsub">${newsEscape([it.source, it.tour].filter(Boolean).join(' · '))}</span>${it.kind === 'intel' && admin ? newsIntelActsHtml(it) : ''}</div>`;
+  return `<div class="nx-wr open" role="button" tabindex="0" aria-expanded="true" ${attrs} onkeydown="if(event.key==='Enter'&&event.target===this)newsToggleRow(this.dataset.id)">`
+    + `<div class="nx-wo">${who}<span class="nx-wh">${newsEscape(it.title)}</span><span class="nx-car" aria-hidden="true">›</span></div>`
+    + `<div class="nx-wline${ms ? ' ms' : ''}"></div><div class="nx-wbody${ms ? ' ms' : ''}"><div class="nx-wcol">${inner}${foot}</div>${ms ? newsMsBoxHtml(it, true) : ''}</div></div>`;
 }
+
 // The title hover ("Added to feed …"): one floating tip, card + 10% edge + --shadow-menu, like the site's info popovers.
 const newsTip = { hide: () => {} };
 (function newsTipInit(){
@@ -6617,97 +6536,113 @@ async function loadIntel(){
 // composer (its count + list membership both changed).
 function newsAfterIntel(){ renderNews(); }
 
-// Composer: the Post intel button (row 2) + the panel under the search row. Founder only — members get neither, and
-// read the notes in the feed. The panel is rebuilt only when it opens, closes, switches note or the count moves, so a
-// filter change never wipes what is being typed.
-let _composerSig = '';
-function newsRenderComposer(){
+// Post intel (News v2 §6, founder only): the pill in the filter card opens the composer between the filter card and the
+// feed. A player picked from the player search is required (the feed shows player-attributed articles only); the post
+// takes the chosen group as its category and that player's tournament, and goes to the top of today. At most INTEL_MAX
+// active posts. The panel is rebuilt only when it opens, closes, a player is picked or dropped, or the group changes, so
+// typing never loses what is typed; the hits list and the foot sentence update in place.
+let _cmpQ = '', _cmpPlayer = null, _cmpCat = 'Tour News', _cmpText = '', _composerSig = '';
+// The tournament of a player: his newest article on the page, else this week's board card, else none.
+function intelPlayerTour(key){
+  const k = String(key);
+  const items = (_newsState === 'ok' ? newsWireItems() : []).concat(newsTickerItems()).filter(x => x.tour && x.players.some(p => String(p.key) === k)).sort((a, b) => (b.ts || 0) - (a.ts || 0));
+  if (items.length) return items[0].tour;
+  const board = (typeof matches !== 'undefined' && Array.isArray(matches)) ? matches : [];
+  const m = board.find(x => x && [x.p1Key, x.p2Key].map(String).includes(k) && x.tour);
+  return m ? (typeof sfEventName === 'function' ? sfEventName(m.tour) : String(m.tour)) : '';
+}
+// The player search: this week's ATP standings (player-index.json) plus every player on the page, by name.
+function intelPlayerHits(q){
+  const f = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const qq = f(q).trim(); if (!qq) return [];
+  const seen = new Map();
+  const add = (key, name, rank) => { if (key == null || !name || seen.has(String(key))) return; seen.set(String(key), { key: String(key), name: newsPlayerName(String(key), name), rank: rank || 9999 }); };
+  ((typeof playerIndex !== 'undefined' && Array.isArray(playerIndex)) ? playerIndex : []).forEach(p => add(p.key, p.name, +p.rank));
+  (_newsState === 'ok' ? newsWireItems() : []).concat(newsTickerItems()).forEach(x => x.players.forEach(p => add(p.key, p.name)));
+  return [...seen.values()].filter(p => f(p.name).indexOf(qq) >= 0).sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name)).slice(0, 8)
+    .map(p => Object.assign(p, { tour: intelPlayerTour(p.key) }));
+}
+function intelHitsHtml(){
+  const hits = intelPlayerHits(_cmpQ);
+  if (!_cmpQ.trim()) return '';
+  if (!hits.length) return '<span class="nx-nohit">No player found</span>';
+  return hits.map(h => `<span class="nx-hit nx-seg" data-k="${newsAttr(h.key)}" data-n="${newsAttr(h.name)}" data-t="${newsAttr(h.tour)}" onclick="intelPick(this.dataset.k, this.dataset.n, this.dataset.t)">${newsAvHtml(h, 's')}<b>${newsEscape(h.name)}</b><span>${newsEscape(h.tour)}</span></span>`).join('');
+}
+function intelCanPublish(){ return !!_cmpText.trim() && !!_cmpPlayer && (!!_intelEditingId || (_intelNotes || []).length < INTEL_MAX); }
+function intelFootHtml(){
+  const full = !_intelEditingId && (_intelNotes || []).length >= INTEL_MAX, ready = intelCanPublish();
+  const dest = _cmpPlayer ? [_cmpCat, _cmpPlayer.name, _cmpPlayer.tour].filter(Boolean).join(' · ') : '';
+  const lead = !_cmpPlayer ? 'Pick a player to publish.' : ready ? 'Goes to the top of today in' : full ? 'Five posts are active. Delete one to publish in' : 'Write the update to publish in';
+  return `<span class="nx-arrive"><span class="nx-dot${ready ? ' on' : ''}"></span>${lead}${dest ? `<b>${newsEscape(dest)}</b>` : ''}</span>`
+    + `<span class="nx-cmpb"><button type="button" class="nx-cancel nx-seg" onclick="newsCancelComposer()">Cancel</button>`
+    + `<button type="button" class="nx-pub nx-seg${ready ? ' ready' : ''}" id="intelPublishBtn" onclick="intelPublish()">Publish now</button></span><span class="nx-arrive" id="intelMsg"></span>`;
+}
+function intelSyncPublish(){ const f = document.getElementById('intelFoot'); if (f) f.innerHTML = intelFootHtml(); }
+function intelOnQ(v){ _cmpQ = String(v || ''); const h = document.getElementById('intelHits'); if (h) h.innerHTML = intelHitsHtml(); }
+function intelOnText(v){ _cmpText = String(v || ''); intelSyncPublish(); }
+function intelPick(key, name, tour){ _cmpPlayer = { key: String(key), name, tour: tour || '' }; _cmpQ = ''; newsRenderComposer(true); }
+function intelUnpick(){ _cmpPlayer = null; _cmpQ = ''; newsRenderComposer(true); }
+function intelSetCat(c){ _cmpCat = c; newsRenderComposer(true); }
+function newsRenderComposer(force){
   const host  = document.getElementById('newsPostIntelHost');
   const panel = document.getElementById('newsComposer');
   const admin = isBspAdmin(), n = (_intelNotes || []).length;
   if (host){
     host.innerHTML = admin
-      ? `<button type="button" class="news-postintel${_composerOpen ? ' active' : ''}" aria-expanded="${_composerOpen}" onclick="newsToggleComposer()">Post intel <span class="news-picount">${n}/${INTEL_MAX}</span></button>`
+      ? `<button type="button" class="nx-post nx-seg${_composerOpen ? ' open' : ''}" aria-expanded="${_composerOpen}" onclick="newsToggleComposer()">Post intel <span class="nx-post-n">${n}/${INTEL_MAX}</span></button>`
       : '';
   }
   if (!panel) return;
   if (!admin || !_composerOpen){ panel.innerHTML = ''; _composerSig = ''; return; }
-  const sig = 'open|' + (_intelEditingId || '');
-  if (sig === _composerSig && panel.firstChild){
-    const c = panel.querySelector('.cmp-count b'); if (c) c.textContent = n + '/' + INTEL_MAX;
-    intelSyncPublish(); return;
-  }
+  const sig = ['open', _intelEditingId || '', _cmpPlayer ? _cmpPlayer.key : '', _cmpCat, n].join('|');
+  if (!force && sig === _composerSig && panel.firstChild){ intelSyncPublish(); return; }
   _composerSig = sig;
-  const editing = _intelEditingId ? ((_intelNotes || []).find(x => x.id === _intelEditingId) || null) : null;
-  panel.innerHTML = `
-    <div class="news-composer">
-      <div class="cmp-head"><span class="cmp-title">${editing ? 'Edit intel' : 'Post intel'}</span><span class="cmp-count"><b>${n}/${INTEL_MAX}</b> active</span></div>
-      <label class="cmp-field"><span class="cmp-label">Update</span>
-        <textarea id="intelText" rows="3" placeholder="Injury update, insider info, practice observation…" oninput="intelSyncPublish()">${editing ? newsEscape(editing.text || '') : ''}</textarea></label>
-      <label class="cmp-field"><span class="cmp-label">Player · optional</span>
-        <input id="intelPlayer" type="text" autocomplete="off" placeholder="e.g. Jannik Sinner" value="${editing ? newsAttr(editing.player || '') : ''}"></label>
-      <div class="cmp-foot">
-        <span class="cmp-msg" id="intelMsg"></span>
-        <button type="button" class="cmp-cancel" onclick="newsCancelComposer()">Cancel</button>
-        <button type="button" class="cmp-pub" id="intelPublishBtn" onclick="intelPublish()" disabled>${editing ? 'Save' : 'Publish'}</button>
+  const P = _cmpPlayer;
+  const who = P
+    ? `<span class="nx-pick">${newsAvHtml(P)}<span class="nx-pick-i"><b>${newsEscape(P.name)}</b><span>${newsEscape(P.tour || 'No tournament this week')}</span></span><span class="nx-x nx-seg" role="button" tabindex="0" title="Change player" onclick="intelUnpick()"></span></span>`
+    : `<span class="nx-ps"><span class="nx-psw"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="5.5" stroke="var(--news-grey)" stroke-width="1.5"/><path d="M13.2 13.2 L17 17" stroke="var(--news-grey)" stroke-width="1.5" stroke-linecap="round"/></svg>`
+      + `<input id="intelPlayer" class="nx-input" type="text" autocomplete="off" placeholder="Search a player…" value="${newsAttr(_cmpQ)}" oninput="intelOnQ(this.value)"></span><span class="nx-hits" id="intelHits">${intelHitsHtml()}</span></span>`;
+  panel.innerHTML = `<div class="nx-card nx-cmp">
+      <div class="nx-cmph"><span class="nx-cmph-t"><b>Post intel</b><span>Your own update, published straight to the top of the feed</span></span><span class="nx-cnt"><span>${n}/${INTEL_MAX}</span> active</span></div>
+      <div class="nx-cmpr">
+        <div class="nx-fld"><span class="nx-cap">Player</span>${who}</div>
+        <div class="nx-fld g"><span class="nx-cap">Group</span><span class="nx-sw">${NEWS_CATEGORIES.map(c => newsTabHtml(c, c === _cmpCat, `intelSetCat('${c.replace(/'/g, "\\'")}')`)).join('')}</span></div>
       </div>
+      <label class="nx-upd"><span class="nx-cap">Update</span><textarea id="intelText" class="nx-ta" rows="4" placeholder="What happened? The first sentence becomes the headline." oninput="intelOnText(this.value)">${newsEscape(_cmpText)}</textarea></label>
+      <div class="nx-cmpf" id="intelFoot">${intelFootHtml()}</div>
     </div>`;
-  intelSyncPublish();
 }
-// Publish is white and clickable only with text in the Update field and (for a new note) fewer than 5 active notes.
-function intelCanPublish(){
-  const t = ((document.getElementById('intelText') || {}).value || '').trim();
-  return !!t && (!!_intelEditingId || (_intelNotes || []).length < INTEL_MAX);
+function newsClearComposer(){ _cmpQ = ''; _cmpPlayer = null; _cmpCat = 'Tour News'; _cmpText = ''; }
+// Edit: the post leaves the feed and the composer reopens with its text, player and group (README §6).
+function intelStartEdit(id){
+  const n = (_intelNotes || []).find(x => x.id === id); if (!n) return;
+  const pr = intelResolveNote(n);
+  _intelEditingId = id; _composerOpen = true;
+  _cmpText = String(n.text || ''); _cmpCat = NEWS_CATEGORIES.indexOf(n.cat) >= 0 ? n.cat : 'Tour News';
+  const key = n.playerKey != null ? n.playerKey : pr.key;   // the post's own player key, whether or not his profile is loaded
+  _cmpPlayer = key != null ? { key: String(key), name: pr.label || n.player || '', tour: n.tour || intelPlayerTour(key) } : null; _cmpQ = '';
+  renderNews(); newsRenderComposer(true);
 }
-function intelSyncPublish(){ const b = document.getElementById('intelPublishBtn'); if (b) b.disabled = !intelCanPublish(); }
-
-function intelStartEdit(id){ _intelEditingId = id; _composerOpen = true; newsRenderComposer(); }
 function intelCancelEdit(){ newsCancelComposer(); }
 
 async function intelPublish(){
-  const msgEl = document.getElementById('intelMsg');
-  const btn = document.getElementById('intelPublishBtn');
-  const setMsg = t => { if (msgEl) msgEl.textContent = t; };
+  const setMsg = t => { const m = document.getElementById('intelMsg'); if (m) m.textContent = t; };
   if (!isBspAdmin()){ setMsg('Admin session required.'); return; }
-  const text = (document.getElementById('intelText') || {}).value || '';
-  const rawPlayer = ((document.getElementById('intelPlayer') || {}).value || '').trim();
-  if (!text.trim()){ setMsg('Note text is required.'); return; }
-  if (!_intelEditingId && (_intelNotes || []).length >= INTEL_MAX){ setMsg('5 of 5 notes are active. Delete one first.'); return; }
-  // Fuzzy-resolve the typed name to a roster player. A confident match stores the
-  // canonical name + numeric key (so the tag links to the profile); no match stores
-  // the raw text with a null key and the note still publishes, unlinked.
-  const match = rawPlayer ? intelMatchPlayer(rawPlayer) : null;
-  const player = match ? match.name : rawPlayer;
-  const playerKey = match ? match.key : null;
+  if (!intelCanPublish()) return;
   const db = intelDb();
   if (!db){ setMsg('Firestore unavailable — try again once signed in.'); return; }
-  if (btn) btn.disabled = true;
+  const P = _cmpPlayer, doc = { text: _cmpText.trim(), player: P.name, playerKey: P.key, cat: _cmpCat, tour: P.tour || '' };
   setMsg('Saving…');
   try {
     const u = BSP.currentUser();
-    if (_intelEditingId){
-      await db.collection(INTEL_COLLECTION).doc(_intelEditingId).set(
-        { text: text.trim(), player, playerKey }, { merge: true });
-      _intelEditingId = null;
-    } else {
-      await db.collection(INTEL_COLLECTION).add({
-        text: text.trim(),
-        player,
-        playerKey,
-        authorUid: u ? u.uid : null,
-        createdAtMs: Date.now(),
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      });
-    }
+    if (_intelEditingId) await db.collection(INTEL_COLLECTION).doc(_intelEditingId).set(Object.assign({ createdAtMs: Date.now() }, doc), { merge: true });
+    else await db.collection(INTEL_COLLECTION).add(Object.assign({ authorUid: u ? u.uid : null, createdAtMs: Date.now(), createdAt: firebase.firestore.FieldValue.serverTimestamp() }, doc));
     await intelPruneToMax(db);
-    _composerOpen = false; _composerSig = '';
+    _intelEditingId = null; _composerOpen = false; _composerSig = ''; newsClearComposer();
     await loadIntel();
   } catch (err) {
     console.warn('intel: publish failed:', err && err.message);
-    setMsg('Save failed: ' + (err && err.message ? err.message : 'unknown error') +
-      ' (has the updated firestore.rules been published?)');
-  } finally {
-    intelSyncPublish();
+    setMsg('Save failed: ' + (err && err.message ? err.message : 'unknown error'));
   }
 }
 

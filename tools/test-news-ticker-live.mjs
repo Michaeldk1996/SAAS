@@ -442,7 +442,7 @@ await ok('on-court interview inbox: an answer becomes an item that keeps its top
   const src = read('tools/news-ticker/collect-quotes.mjs');
   assert.ok(/inbox-ttv\.json/.test(src) && /tennistv\\\.com\\\/videos/.test(src), 'the interview inbox takes Tennis TV clip rows only');
   const page = read('bsp-consult-dashboard.html');
-  assert.ok(/news-qtopic/.test(page) && /k\.q\.topic \? k\.q\.topic \+ ': '/.test(page), 'the card prints the topic in front of the answer');
+  assert.ok(/class="nx-qt"/.test(page) && /topic: newsCap\(k\.q\.topic \|\| ''\)/.test(page), 'the card prints the topic over the answer (News v2)');
 });
 // ---- reading a card (founder 2026-11-13): context for every quote, the interview in match order, a withdrawal named ----
 await ok('a press quote gets a topic label, asked once; a label that is not "On …" is not used; a walkover day reads as a withdrawal', async () => {
@@ -547,6 +547,24 @@ await ok('digest: one block per subject from his own words; an added fact, a rep
   await buildDigests([...items, Q('p3', { id: 'p4' })], { held: r3.digests, digest: async () => { calls++; return { status: 'ok', blocks: good }; }, nowIso: 'w' });
   assert.equal(calls, before, 'the same quotes that failed are not sent again');
 });
+await ok('stats box rows: ours where we hold the figure, else the verified card; a row only with both figures; per point from our total points', async () => {
+  const { msRows, MS_ROWS } = await import('./news-ticker/news-core.mjs');
+  assert.equal(MS_ROWS.length, 13);
+  const st = (o) => ({ 'Service:1st serve percentage': 66, 'Service:1st serve points won': 75.5, 'Service:2nd serve points won': 68, 'Points:Winners': 28, 'Points:Unforced errors': 32,
+    'Points:Service Points Won': 73, 'Points:Return Points Won': 37, raw: { 'Points:Total Points Won': { won: 88, total: 166 } }, ...o });
+  const m = { matchStats: { p1: st({}), p2: st({ 'Service:1st serve percentage': 76, 'Points:Winners': 21, 'Points:Unforced errors': 22, 'Points:Service Points Won': 63, 'Points:Return Points Won': 27 }) } };
+  const card = { p1: { serveQuality: 9.4, returnQuality: 7.6, unreturnedPct: 54, baselineWon: 33, firstInPct: 99 }, p2: { serveQuality: 8.4, returnQuality: 6.3, unreturnedPct: 31, baselineWon: 38 } };
+  const r = Object.fromEntries(msRows(m, 'p1', 'p2', card).map((x) => [x[0], x.slice(1)]));
+  assert.deepEqual(r['1st serve in'], [66, 76, '%'], 'ours over the card (the card said 99)');
+  assert.deepEqual(r['Serve quality'], [9.4, 8.4, '1']);
+  assert.deepEqual(r['Winners / points'], [0.17, 0.13, '2'], 'winners ÷ our 166 total points');
+  assert.deepEqual(r['Unforced errors'], [32, 22, '0', 1]);
+  assert.deepEqual(Object.keys(r)[0], 'Dominance ratio');
+  const noCard = msRows(m, 'p1', 'p2', null).map((x) => x[0]);
+  assert.ok(!noCard.includes('Serve quality') && !noCard.includes('Baseline points won') && noCard.includes('1st serve in'), 'no card: its rows are dropped, ours stay');
+  const oneSide = msRows({ matchStats: { p1: st({}), p2: {} } }, 'p1', 'p2', null);
+  assert.equal(oneSide.length, 0, 'a figure one side lacks drops the row');
+});
 await ok('tour-wide: another sport is never a tennis quote; a scrambled three-word name is never matched on a given name', async () => {
   const SECTION = '<html>' + 'x'.repeat(700) + '<a href="/sport/hockey/nhl/joel-eriksson-ek-glodhet">Joel</a><a href="/sport/tennis/joel-on-his-long-season">Joel 2</a></html>';
   const PAGE = (b) => `<html><head><script type="application/ld+json">{"datePublished":"2026-11-10T20:00:00Z"}</script></head><body><article><p>Match report.</p>${b}</article></body></html>` + 'x'.repeat(700);
@@ -573,6 +591,9 @@ await ok('tour-wide: a held quote whose URL names a tournament now on moves to i
     q('c', 'https://www.tennistv.com/videos/4609109/stockholm-2026-final-taylor-fritz-interview', '9'),
     q('d', 'https://x.com/turin-2026-rr-mensik', '777')];
   assert.deepEqual(rehomeTourItems(items, F, new Set(['1980', '9', '777']), now).map((m) => m.item.id + '>' + m.to), ['a>2794'], 'only the Finals article said by a Finals player moves');
+  const { routeCandidate } = await import('./news-ticker/collect-quotes.mjs');
+  assert.equal(routeCandidate({ speakerKey: '1980', mentions: [], sourceUrl: 'https://www.atptour.com/en/news/cobolli-tiafoe-nitto-atp-finals-2026-wednesday', timestamp: '2026-11-17T16:00:00Z', timestampKind: 'observed (x)' }, F, new Set(['1980']), now), '2794',
+    'an article whose own URL names the event goes to it even when its stored mentions are empty (the ATP inbox loop)');
 });
 await ok('tour-wide: routing (field + article names the event -> that tournament; else a ranked player -> the tour file; else nowhere), field = top 200, tags', async () => {
   const { routeCandidate, tourPlayers, quoteCategory, TOUR_MAX_RANK } = await import('./news-ticker/collect-quotes.mjs');
