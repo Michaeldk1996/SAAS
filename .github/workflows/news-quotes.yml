@@ -59,8 +59,9 @@ jobs:
           CHROME_BIN: /usr/bin/google-chrome
         run: |
           sudo apt-get install -y -qq xvfb >/dev/null 2>&1 || true
-          timeout 600 xvfb-run -a -s "-screen 0 1280x800x24" node tools/news-ticker/atp-reader.mjs --repo . \
-            || echo "::warning::ATP reader did not finish (rc=$?): ATP articles skipped this run"
+          rc=0; timeout 600 xvfb-run -a -s "-screen 0 1280x800x24" node tools/news-ticker/atp-reader.mjs --repo . || rc=$?
+          if [ "$rc" = "124" ]; then node -e "import('./tools/news-ticker/atp-reader.mjs').then(({appendRun,RUN_LOG})=>{const fs=require('fs');let p=null;try{p=JSON.parse(fs.readFileSync(RUN_LOG,'utf8'))}catch(e){}fs.writeFileSync(RUN_LOG,JSON.stringify(appendRun(p,{at:new Date().toISOString(),where:'cloud',result:'timeout'}),null,1)+'\\n')})" || true; fi
+          if [ "$rc" != "0" ]; then echo "::warning::ATP reader did not finish (rc=$rc): ATP articles skipped this run"; fi
 
       - name: Collect quotes
         if: ${{ !inputs.test_alerts }}

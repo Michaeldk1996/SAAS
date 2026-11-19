@@ -41,6 +41,13 @@ export function mergeInbox(prev, rows, nowIso) {
   return { updatedAt: nowIso, candidates: [...by.values()].filter((x) => !(Date.parse(x.readAt) < cut)) };
 }
 
+// Every run leaves one line in news-quotes/atp-reader-log.json (founder 2026-11-19: "let me know how much it is skipped"):
+// ok / blocked (ATP's check did not clear) / no-chrome / error, with what it read. Kept 60 days.
+export const RUN_LOG = 'news-quotes/atp-reader-log.json', RUN_LOG_DAYS = 60;
+export function appendRun(prev, row) {
+  const cut = Date.parse(row.at) - RUN_LOG_DAYS * 86400000;
+  return { runs: [...(((prev && prev.runs) || []).filter((r) => Date.parse(r.at) >= cut)), row] };
+}
 async function main() {
   const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
   const ROOT = path.resolve(arg('repo', path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..')));
@@ -49,6 +56,8 @@ async function main() {
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const rd = (p) => { try { return JSON.parse(fs.readFileSync(path.join(ROOT, p), 'utf8')); } catch (e) { return null; } };
   const wr = (p, o) => { const f = path.join(ROOT, p); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f + '.tmp', JSON.stringify(o, null, 1) + '\n'); fs.renameSync(f + '.tmp', f); };
+  const log = (result, extra = {}) => wr(RUN_LOG, appendRun(rd(RUN_LOG), { at: nowIso, where: process.env.GITHUB_ACTIONS ? 'cloud' : 'mac', result, ...extra }));
+  process.on('uncaughtException', (e) => { try { log('error', { detail: String(e && e.message).slice(0, 200) }); } catch (x) { /* best effort */ } console.error('atp reader: ' + (e && e.stack || e)); process.exit(1); });
   const reg = rd('data/news-outlets.json') || {};
   const entry = (reg.outlets || []).find((o) => /atptour\.com/.test(String(o.sectionUrl)));
   if (entry && entry.enabled === false) { console.log('atp reader: ATP is switched off in the registry — nothing read'); return; }
@@ -64,7 +73,7 @@ async function main() {
   const cleanup = () => { try { chrome.kill(); } catch (e) { /* gone */ } setTimeout(() => { try { fs.rmSync(profile, { recursive: true, force: true }); } catch (e) { /* tmp */ } }, 300); };
   process.on('exit', cleanup);
   let ws; for (let i = 0; i < 80 && !ws; i++) { try { const l = await (await fetch(`http://127.0.0.1:${port}/json`)).json(); ws = (l.find((t) => t.type === 'page') || {}).webSocketDebuggerUrl; } catch (e) { /* not up yet */ } if (!ws) await sleep(250); }
-  if (!ws) { console.error('atp reader: Chrome did not start'); process.exit(2); }
+  if (!ws) { log('no-chrome'); console.error('atp reader: Chrome did not start'); process.exit(2); }
   const sock = new WebSocket(ws); let mid = 0; const pend = new Map();
   await new Promise((res, rej) => { sock.onopen = res; sock.onerror = rej; });
   sock.onmessage = (e) => { const m = JSON.parse(e.data); if (m.id && pend.has(m.id)) { pend.get(m.id)(m); pend.delete(m.id); } };
@@ -73,7 +82,7 @@ async function main() {
   await send('Page.enable');
   await send('Page.navigate', { url: ATP.sectionUrl });
   let clear = false; for (let i = 0; i < 60 && !clear; i++) { await sleep(500); const t = await ev('document.title').catch(() => ''); clear = !!t && !/just a moment/i.test(t); }
-  if (!clear) { console.error('atp reader: the page did not open within 30 s — nothing changed'); process.exit(3); }
+  if (!clear) { log('blocked'); console.error('atp reader: the page did not open within 30 s — nothing changed'); process.exit(3); }
   // the list of articles is filled in after the page opens: wait until it is there (up to 20 s)
   for (let i = 0; i < 40; i++) { const n = await ev(`document.querySelectorAll('a[href*="/en/news/"]').length`).catch(() => 0); if (n >= 8) break; await sleep(500); }
   // a Response-like fetch through the open page (same origin), so readOutlet runs unchanged
@@ -90,6 +99,7 @@ async function main() {
   for (const [u, v] of Object.entries(cache)) if (Date.parse(nowIso) - Date.parse(v.at) > 45 * 86400000) delete cache[u];
   wr('news-quotes/atp-fetched.json', cache);
   if (inbox.candidates.length !== before) wr('news-quotes/inbox-atp.json', inbox);
+  log(r.stats.blocked ? 'blocked' : 'ok', { section: r.stats.section, links: r.stats.links, articlesRead: r.stats.fetched, quotes: r.candidates.length, newRows: inbox.candidates.length - before });
   console.log(`atp reader: section ${r.stats.section}, ${r.stats.links} links, ${r.stats.relevant} about our players, ${r.stats.fetched} read now (${r.stats.alreadyFetched} read before), ${r.candidates.length} quotes found, ${rows.length} word for word, inbox ${before} -> ${inbox.candidates.length}${r.stats.blocked ? ' — BLOCKED: ' + r.stats.blocked : ''}`);
   process.exit(0);
 }

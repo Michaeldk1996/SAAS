@@ -400,6 +400,9 @@ await ok('report: only what matters is printed — a quick or very long duration
 // ---- the ATP reader (founder 2026-11-12: agreement with ATP; atptour.com only opens in a real browser, on the Mac) ----
 await ok('ATP reader: the inbox holds quotes checked word for word on the page and never the page text; the collector takes them as checked, from atptour.com only', async () => {
   const { inboxRows, mergeInbox, INBOX_DAYS } = await import('./news-ticker/atp-reader.mjs');
+  const { appendRun } = await import('./news-ticker/atp-reader.mjs');
+  const lg = appendRun(appendRun({ runs: [{ at: '2026-09-01T00:00:00Z', result: 'ok' }] }, { at: '2026-11-19T01:00:00Z', result: 'blocked' }), { at: '2026-11-19T01:30:00Z', result: 'ok', quotes: 2 });
+  assert.deepEqual(lg.runs.map((r) => r.result), ['blocked', 'ok'], 'one line per run, older than 60 days dropped');
   const page = 'Fritz was pleased. “I played really well, got the momentum and finished the set,” said Fritz. More article text here.';
   const cand = (text, over = {}) => ({ id: 'ATP Tour-3', speakerKey: 2832, spans: [text], text, sourceText: page, sourceName: 'ATP Tour', sourceUrl: 'https://www.atptour.com/en/news/stockholm-2026-wednesday-report',
     timestamp: '2026-11-11T16:00:00.000Z', timestampKind: "observed (the outlet's own publication time)", day: '2026-11-11', language: 'en', mentions: ['stockholm'], ...over });
