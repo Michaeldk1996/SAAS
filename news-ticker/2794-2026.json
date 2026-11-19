@@ -2,7 +2,7 @@
  "tournament": "Finals - Turin",
  "tournamentKey": "2794",
  "season": "2026",
- "updatedAt": "2026-11-19T16:31:54.931Z",
+ "updatedAt": "2026-11-19T16:55:22.352Z",
  "items": [
   {
    "id": "digest-1d2844491a0a98",
@@ -18,7 +18,7 @@
    "eventKey": "12179696",
    "context": "after beating D. Medvedev",
    "category": "Quotes",
-   "timestamp": "2026-11-19T15:46:07.000Z",
+   "timestamp": "2026-11-19T16:12:18.000Z",
    "members": [
     "quote-01538ac7fe07c1",
     "quote-080105df9575d5",
@@ -50,11 +50,13 @@
     "quote-e01cc88ccf3df9",
     "quote-e16338a9cff833",
     "quote-e66fc6e0639600",
+    "quote-ec0c58ff7d67b2",
+    "quote-f61adebbdbbe0f",
     "quote-fd16add8c7421c",
     "quote-fd6595077d0123"
    ],
-   "memberHash": "ea54741766592306",
-   "digestedAt": "2026-11-19T15:51:03.821Z",
+   "memberHash": "1614623a99b4e4ec",
+   "digestedAt": "2026-11-19T16:21:37.625Z",
    "blocks": [
     {
      "label": "after his win over Medvedev",
@@ -65,28 +67,35 @@
      ]
     },
     {
-     "label": "on the hamstring problem vs Medvedev",
-     "text": "I feel it a little bit, I'm not going to lie. I was playing really well and suddenly I felt a small problem in my hamstring. But it's just something minor. I had some minor physical problems during the match, but I think everyone saw that I was still able to play good tennis and move well around the court. I didn't want to push too much to the limit. I was a break up at that point, so I just tried to hold my serve, play calmly, smoothly, relaxed and simply enjoy it. I was trying to stay relaxed, to move not too aggressive. Right now I'm just feeling OK. We will see with my team, with my physio, but I think the rest of the day and tomorrow are really going to be important days ahead of me.",
+     "label": "on the hamstring scare vs Medvedev",
+     "text": "Well, I feel it a little bit. I'm not gonna lie. I was playing great and suddenly I felt a little problem in my hamstring. But it's just something minor. I had some minor physical problems during the match. But I think everyone saw that I was still able to play good tennis and move well around the court. I didn't want to push too much to the limit, I was a break up at that point, so I just tried to hold my serve, play calmly, smoothly, relaxed and simply enjoy it. I was trying to stay relaxed, to move not too aggressive. Right now I'm just feeling OK. We will see with my team, with my physio, but I think the rest of the day and tomorrow are really going to be important days ahead of me.",
      "from": [
-      "quote-236b0fff2eba7a",
+      "quote-a7e2756faa621b",
+      "quote-54fe8fd09e61e9",
       "quote-349ff28bbfe846",
       "quote-080105df9575d5",
       "quote-1fcd31b2b90e0e",
-      "quote-fd6595077d0123"
+      "quote-9fca65db4bd3d1"
      ]
     },
     {
-     "label": "on the taping on his right knee",
-     "text": "The knee is great, it's just a precaution.",
+     "label": "on knowing his body from Past experience",
+     "text": "These are moments I have already been through. I'm learning to know my body better. Past experiences allow me to react in the right way, both on the court and off it.",
      "from": [
-      "quote-510440afcf0a7f"
+      "quote-f61adebbdbbe0f"
      ]
     },
     {
      "label": "on what it takes to play Medvedev",
-     "text": "When it comes to playing against Medvedev, you have to be chill. You have to be relaxed, because a lot of balls come again and again and again. … You have to accept it. That's what I did well today, because it let me think clearly and think pretty well in some really tough moments that I had today.",
+     "text": "When it comes to playing against Medvedev, you have to be chill. You have to be relaxed, because a lot of balls come again and again and again. … You have to accept it.",
      "from": [
-      "quote-14316f8053a29c",
+      "quote-14316f8053a29c"
+     ]
+    },
+    {
+     "label": "on staying calm in tough moments",
+     "text": "That's what I did well today, because it let me think clearly and think pretty well in some really tough moments that I had today.",
+     "from": [
       "quote-d2833f05ae9f31"
      ]
     },
@@ -96,21 +105,73 @@
      "from": [
       "quote-9c742db037ba45"
      ]
-    },
-    {
-     "label": "on his calmer mindset after his wrist injury",
-     "text": "It's not about winning or losing finals in tournaments. It's just about playing tennis. It's a gift every time I can go out on the court and be healthy and injury-free. More calm, relaxed, and I'm thinking, OK, I'm going to still try my best tennis, I'm going to still try what I have to do ... I think right now I'm more mature.",
-     "from": [
-      "quote-d52414308975d4",
-      "quote-be4543b77e129e"
-     ]
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "cb6cf48df4e0a5d4",
+   "sourceHash": "6f6b73707d5a817a",
    "publishedAt": "2026-11-19T03:47:45.956Z",
-   "revisedAt": "2026-11-19T16:11:40.130Z",
-   "revision": 7
+   "revisedAt": "2026-11-19T16:55:22.352Z",
+   "revision": 8
+  },
+  {
+   "id": "quote-ec0c58ff7d67b2",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": "1093",
+   "player": "C. Alcaraz",
+   "opponent": "D. Medvedev",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-19T16:12:18.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating D. Medvedev",
+   "eventKey": "12179696",
+   "won": true,
+   "text": "These are moments I have already experienced. I'm getting to know my body better. The fact that I have already gone through these situations several times helps me react correctly both on the court and off it,",
+   "originalText": "Tohle jsou momenty, které už jsem zažil. Poznávám líp své tělo. To, že jsem si těmi situacemi už víckrát prošel, mi pomáhá správně reagovat jak na kurtu, tak i mimo něj,",
+   "language": "cs",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "CT sport",
+   "sourceUrl": "https://sport.ceskatelevize.cz/clanek/tenis/shelton-ma-postup-do-semifinale-turnaje-mistru-na-dosah-160033",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On handling his thigh problem from experience",
+   "sourceHash": "d87bddc7c9729f7f",
+   "publishedAt": "2026-11-19T16:55:22.352Z"
+  },
+  {
+   "id": "quote-f61adebbdbbe0f",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": "1093",
+   "player": "C. Alcaraz",
+   "opponent": "D. Medvedev",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-19T15:55:38.698Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Injuries",
+   "context": "after beating D. Medvedev",
+   "eventKey": "12179696",
+   "won": true,
+   "text": "I am indeed in a bit of pain, I'm not going to hide it … These are moments I have already been through. I'm learning to know my body better. Past experiences allow me to react in the right way, both on the court and off it.",
+   "originalText": "J'ai effectivement un peu mal, je ne vais pas le cacher … Ce sont des moments que j'ai déjà vécus. J'apprends à mieux connaître mon corps. Les expériences passées me permettent de réagir de la bonne manière, tant sur le court qu'en dehors.",
+   "language": "fr",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "La DH Les Sports+",
+   "sourceUrl": "https://www.dhnet.be/sports/tennis/2026/11/19/atp-finals-malgre-une-blessure-a-la-cuisse-alcaraz-affrontera-flavio-cobolli-vendredi-SARS4HHSARDULNGTVURIUNL5TY/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his left thigh pain at ATP Finals",
+   "sourceHash": "c1a3fd5275d58274",
+   "publishedAt": "2026-11-19T16:55:22.352Z"
   },
   {
    "id": "quote-236b0fff2eba7a",
@@ -203,6 +264,181 @@
    "publishedAt": "2026-11-19T16:11:40.130Z"
   },
   {
+   "id": "digest-1de430ec7f6e90",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2973",
+   "player": "B. Shelton",
+   "opponentId": "50323",
+   "opponent": "R. Jodar",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "eventKey": "12179704",
+   "context": "after beating R. Jodar",
+   "category": "Quotes",
+   "timestamp": "2026-11-19T15:30:00.000Z",
+   "members": [
+    "quote-0966b288973b14",
+    "quote-1b563e462a5cb2",
+    "quote-2fe349224f3c56",
+    "quote-e2a919b2c55d88"
+   ],
+   "memberHash": "7563f05c1f9b49fe",
+   "digestedAt": "2026-11-19T16:21:37.625Z",
+   "blocks": [
+    {
+     "label": "after his win over Jodar",
+     "text": "I knew it wasn't going to be an easy match going in. I was happy that I was able to get through some tough moments in the first set, early when I was down break points, to be able to hold serve and get to that tiebreaker. Once I was in the tiebreaker I felt confident, fending off those set points and coming through it in the end. A tricky second set as well, being up a break and losing it, but I thought I fought well, competed well.",
+     "from": [
+      "quote-0966b288973b14",
+      "quote-1b563e462a5cb2"
+     ]
+    },
+    {
+     "label": "on reaching the semi-finals for the first time",
+     "text": "Looking forward to it either way. I think both those guys are great guys. I'd love to make the semi-finals here for the first time. I did my job today and let's see what happens.",
+     "from": [
+      "quote-2fe349224f3c56"
+     ]
+    },
+    {
+     "label": "on Fritz's match against Zverev",
+     "text": "I'm always rooting for him. I think him and Sasha are going to have a great match. I think if he takes Sasha out in straights, he gets through to the semi-finals.",
+     "from": [
+      "quote-e2a919b2c55d88"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "15ff1aa52357bc98",
+   "publishedAt": "2026-11-19T16:55:22.352Z"
+  },
+  {
+   "id": "quote-0966b288973b14",
+   "type": "quote",
+   "playerId": "2973",
+   "opponentId": "50323",
+   "player": "B. Shelton",
+   "opponent": "R. Jodar",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-19T15:30:00.000Z",
+   "timestampKind": "observed (Tennis TV published the clip then)",
+   "category": "Quotes",
+   "context": "after beating R. Jodar",
+   "eventKey": "12179704",
+   "won": true,
+   "text": "So I knew it wasn't gonna be an easy match going in I was happy that I was able to get through some tough moments in the first set Early when I was down break points To be able to hold serve and get to that tiebreaker once I was in the tiebreaker I felt confident, you know fending off those those set points and coming through it in the end",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "On-court interview",
+   "sourceUrl": "https://www.tennistv.com/videos/4611522/turin-2026-rr-shelton-interview",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
+   "interview": "on-court",
+   "topic": "On the first set",
+   "sourceHash": "6938ae7fbf5e041b",
+   "publishedAt": "2026-11-19T16:55:22.352Z"
+  },
+  {
+   "id": "quote-1b563e462a5cb2",
+   "type": "quote",
+   "playerId": "2973",
+   "opponentId": "50323",
+   "player": "B. Shelton",
+   "opponent": "R. Jodar",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-19T15:30:00.000Z",
+   "timestampKind": "observed (Tennis TV published the clip then)",
+   "category": "Quotes",
+   "context": "after beating R. Jodar",
+   "eventKey": "12179704",
+   "won": true,
+   "text": "a tricky second set as well being up a break and losing it But I thought I fought well competed well",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "On-court interview",
+   "sourceUrl": "https://www.tennistv.com/videos/4611522/turin-2026-rr-shelton-interview",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
+   "interview": "on-court",
+   "topic": "On the second set",
+   "sourceHash": "2e491d374c310ef6",
+   "publishedAt": "2026-11-19T16:55:22.352Z"
+  },
+  {
+   "id": "quote-2fe349224f3c56",
+   "type": "quote",
+   "playerId": "2973",
+   "opponentId": "50323",
+   "player": "B. Shelton",
+   "opponent": "R. Jodar",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-19T15:30:00.000Z",
+   "timestampKind": "observed (Tennis TV published the clip then)",
+   "category": "Quotes",
+   "context": "after beating R. Jodar",
+   "eventKey": "12179704",
+   "won": true,
+   "text": "looking forward to it either way. I think both those guys are great guys I'd love to make the semi-finals here for the first time. I did my job today and yeah, let's see what happens",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "On-court interview",
+   "sourceUrl": "https://www.tennistv.com/videos/4611522/turin-2026-rr-shelton-interview",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
+   "interview": "on-court",
+   "topic": "On reaching the semi-finals",
+   "sourceHash": "6169bebc0d087160",
+   "publishedAt": "2026-11-19T16:55:22.352Z"
+  },
+  {
+   "id": "quote-e2a919b2c55d88",
+   "type": "quote",
+   "playerId": "2973",
+   "opponentId": "50323",
+   "player": "B. Shelton",
+   "opponent": "R. Jodar",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-19T15:30:00.000Z",
+   "timestampKind": "observed (Tennis TV published the clip then)",
+   "category": "Quotes",
+   "context": "after beating R. Jodar",
+   "eventKey": "12179704",
+   "won": true,
+   "text": "I'm always rooting for him I think him and Sasha are gonna have a great match. I think if he takes Sasha out and straights He gets through the semi-finals.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "On-court interview",
+   "sourceUrl": "https://www.tennistv.com/videos/4611522/turin-2026-rr-shelton-interview",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
+   "interview": "on-court",
+   "topic": "On Fritz's match against Zverev",
+   "sourceHash": "ee80030f7d470148",
+   "publishedAt": "2026-11-19T16:55:22.352Z"
+  },
+  {
    "id": "quote-a7e2756faa621b",
    "type": "quote",
    "playerId": "2382",
@@ -283,7 +519,7 @@
     "minutes": 126
    },
    "category": "Statistics",
-   "text": "Shelton beat Jodar in their first meeting, 7-6, 7-5 in the group stage.\n\nShelton: W: 27 / UE: 32 | DR: 1.29\n\nJodar: W: 25 / UE: 31 | DR: 0.77",
+   "text": "Shelton beat Jodar 7–6, 7–5 in the group stage to move closer to the semi-finals, though his place there was not yet guaranteed. It was Jodar's first appearance at this event.\n\nThe first set had no break. Shelton saved 2 break points early on and the set went to a long tiebreak. Jodar had a chance late in it but Shelton held on and took it 10–8 to lead by a set. In the second set he broke first, before Jodar broke back to level at 4–4. Shelton afterwards: \"a tricky second set as well being up a break and losing it But I thought I fought well competed well\" He broke again for 6–5 and served out the match.\n\nThat late break showed where he won it. His return was the base of it all: he won 66% of the points against the second serve, far above his usual 48%. It was not a clean match from him, with 32 unforced errors and just 57% of first serves in against his 69% average.\n\nLate in the second set Jodar called the physio, his second medical timeout in two matches.\n\nAll in all, very little separated them and Shelton was the stronger player on the few points that mattered. Next is his last group match.\n\nShelton: W: 27 / UE: 32 | DR: 1.29\n\nJodar: W: 25 / UE: 31 | DR: 0.77",
    "ms": {
     "a": "B. Shelton",
     "b": "R. Jodar",
@@ -356,7 +592,7 @@
      ]
     ]
    },
-   "baseText": "Shelton beat Jodar in their first meeting, 7-6, 7-5 in the group stage.",
+   "baseText": "Shelton beat Jodar 7–6, 7–5 in the group stage to move closer to the semi-finals, though his place there was not yet guaranteed. It was Jodar's first appearance at this event.\n\nThe first set had no break. Shelton saved 2 break points early on and the set went to a long tiebreak. Jodar had a chance late in it but Shelton held on and took it 10–8 to lead by a set. In the second set he broke first, before Jodar broke back to level at 4–4. Shelton afterwards: \"a tricky second set as well being up a break and losing it But I thought I fought well competed well\" He broke again for 6–5 and served out the match.\n\nThat late break showed where he won it. His return was the base of it all: he won 66% of the points against the second serve, far above his usual 48%. It was not a clean match from him, with 32 unforced errors and just 57% of first serves in against his 69% average.\n\nLate in the second set Jodar called the physio, his second medical timeout in two matches.\n\nAll in all, very little separated them and Shelton was the stronger player on the few points that mattered. Next is his last group match.",
    "rating": [
     "Shelton: W: 27 / UE: 32 | DR: 1.29",
     "Jodar: W: 25 / UE: 31 | DR: 0.77"
@@ -371,6 +607,20 @@
     "text": "Shelton beat Jodar on day five in Turin. The first set went to a tiebreak, which Shelton won 10-8 after he survived a chance for Jodar late in the breaker and his backhand held up well toward the end. Jodar produced some strong returns, including a very deep one off a fast second serve into his forehand that left Shelton little to do. After the tiebreak Shelton held serve well, hitting the ball aggressively to big deep targets and he kept hurting Jodar, at one point leaving him almost on the ground. The win gave Shelton two wins out of three in the group but his place in the semi-finals was not yet guaranteed and depended on the evening match.",
     "sourceName": "Tennis TV highlights commentary",
     "sourceUrl": "https://www.tennistv.com/videos/4611524/turin-2026-rr-shelton-jodar-highlights"
+   },
+   "composed": {
+    "version": 3,
+    "sheetHash": "c545ab91d341a094",
+    "status": "ok",
+    "model": "claude-opus-5-5",
+    "tries": 1,
+    "runs": 1,
+    "usage": {
+     "input": 8023,
+     "output": 2369,
+     "calls": 1
+    },
+    "body": "Shelton beat Jodar 7–6, 7–5 in the group stage to move closer to the semi-finals, though his place there was not yet guaranteed. It was Jodar's first appearance at this event.\n\nThe first set had no break. Shelton saved 2 break points early on and the set went to a long tiebreak. Jodar had a chance late in it but Shelton held on and took it 10–8 to lead by a set. In the second set he broke first, before Jodar broke back to level at 4–4. Shelton afterwards: \"a tricky second set as well being up a break and losing it But I thought I fought well competed well\" He broke again for 6–5 and served out the match.\n\nThat late break showed where he won it. His return was the base of it all: he won 66% of the points against the second serve, far above his usual 48%. It was not a clean match from him, with 32 unforced errors and just 57% of first serves in against his 69% average.\n\nLate in the second set Jodar called the physio, his second medical timeout in two matches.\n\nAll in all, very little separated them and Shelton was the stronger player on the few points that mattered. Next is his last group match."
    },
    "fields": {
     "score": "7-6, 7-5",
@@ -469,10 +719,10 @@
    "sourceUrl": "pbp/12179704.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "35035ae85f444a20",
+   "sourceHash": "3e666c3a61970bd9",
    "publishedAt": "2026-11-19T15:48:11.688Z",
-   "revisedAt": "2026-11-19T16:31:54.931Z",
-   "revision": 1
+   "revisedAt": "2026-11-19T16:55:22.352Z",
+   "revision": 2
   },
   {
    "id": "quote-349ff28bbfe846",
