@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-18T03:47:27.438Z",
+  "generatedAt": "2026-11-19T03:45:41.306Z",
   "source": "Computed from board-finalized v5.1 archetype labels (playing-styles.json) x TML match results",
   "window": "2000-2026",
   "note": "Win% of row archetype vs column, over matches where BOTH players are in the deployed labelled roster. Full grid incl. the diagonal: same-archetype cells are 50% by construction (coin flip on style) and carry the real match count n. Off-diagonal cells below the sample floor show n but no pct. TEN-88 (2026-08-27 ruling): the current-season api-tennis supplement is now folded into the aggregate matrix as well as the per-player split, so published cells track the live season instead of stopping mid-January.",
@@ -18,14 +18,14 @@
     "Solid Defender": 18,
     "All Court Elite": 3
   },
-  "matchesCounted": 16442,
+  "matchesCounted": 16444,
   "tmlMatchesCounted": 13422,
-  "supplementMatchesInMatrix": 3020,
+  "supplementMatchesInMatrix": 3022,
   "matchesInWindow": 78091,
   "tmlWalkoverExcluded": 413,
   "formRuleExcluded": 47,
   "from": "2002-12-30",
-  "through": "2026-11-17",
+  "through": "2026-11-18",
   "retentionPct": 17.2,
   "archetypes": {
     "Big Server": {
@@ -198,7 +198,7 @@
       },
       "Attacking Baseliner": {
         "pct": 50,
-        "n": 1640,
+        "n": 1641,
         "note": "same archetype — coin flip on style"
       },
       "Solid Baseliner": {
@@ -344,7 +344,7 @@
       },
       "All Court Elite": {
         "pct": 19,
-        "n": 103,
+        "n": 104,
         "w": 20
       }
     },
@@ -381,8 +381,8 @@
       },
       "Solid Defender": {
         "pct": 81,
-        "n": 103,
-        "w": 83
+        "n": 104,
+        "w": 84
       },
       "All Court Elite": {
         "pct": 50,
@@ -393,7 +393,7 @@
   },
   "surfaceNote": "matrixBySurface splits the same construction by court surface (hard/clay/grass). Same floor per surface; carpet/unknown dropped.",
   "surfaceMatchesCounted": {
-    "hard": 9926,
+    "hard": 9928,
     "clay": 4762,
     "grass": 1664
   },
@@ -543,7 +543,7 @@
         },
         "Attacking Baseliner": {
           "pct": 50,
-          "n": 948,
+          "n": 949,
           "note": "same archetype — coin flip on style"
         },
         "Solid Baseliner": {
@@ -689,7 +689,7 @@
         },
         "All Court Elite": {
           "pct": 21,
-          "n": 72,
+          "n": 73,
           "w": 15
         }
       },
@@ -726,8 +726,8 @@
         },
         "Solid Defender": {
           "pct": 79,
-          "n": 72,
-          "w": 57
+          "n": 73,
+          "w": 58
         },
         "All Court Elite": {
           "pct": 50,
@@ -1417,8 +1417,8 @@
   "byPlayerSupplement": {
     "source": "api-tennis 2026 finished fixtures",
     "loaded": true,
-    "matchesAdded": 3027,
-    "foldedIntoMatrix": 3020,
+    "matchesAdded": 3029,
+    "foldedIntoMatrix": 3022,
     "dedupedAgainstTml": 135,
     "walkoverExcluded": 26,
     "dedupTolDays": 1
@@ -1427,15 +1427,15 @@
     "note": "Closing odds per meeting row, both players. Book unlabelled (founder ruling): Bet365 for 2026, Pinnacle (Bet365 fallback) for earlier years; dash where no price. Coverage = share of meeting rows with a price on at least one side.",
     "sourceFiles": 23,
     "sourceRows": 59468,
-    "rows": 32978,
-    "priced": 30106,
+    "rows": 32982,
+    "priced": 30110,
     "pricedPct": 91.3,
-    "rows2026": 6324,
-    "priced2026": 4694,
+    "rows2026": 6328,
+    "priced2026": 4698,
     "priced2026Pct": 74.2
   },
   "byPlayerPlayers": 249,
-  "byPlayerEndpointsCounted": 32978,
+  "byPlayerEndpointsCounted": 32982,
   "byPlayer": {
     "martin|a": {
       "name": "A. Martin",
@@ -2987,7 +2987,7 @@
           "l": 22
         },
         "Attacking Baseliner": {
-          "w": 72,
+          "w": 73,
           "l": 42
         },
         "Solid Defender": {
@@ -3490,7 +3490,7 @@
         },
         "All Court Elite": {
           "w": 15,
-          "l": 28
+          "l": 29
         },
         "Attacking Baseliner": {
           "w": 107,
@@ -5642,7 +5642,7 @@
       "name": "C. Alcaraz",
       "vs": {
         "Solid Defender": {
-          "w": 21,
+          "w": 22,
           "l": 5
         },
         "Counterpuncher": {
@@ -6672,7 +6672,7 @@
         },
         "Attacking Baseliner": {
           "w": 45,
-          "l": 30
+          "l": 31
         },
         "All Court Elite": {
           "w": 0,
