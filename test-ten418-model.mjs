@@ -234,7 +234,7 @@ test('value layers: inactive and not-applicable rows: dashes, no pill, the reaso
   api.edgeToggleLayer('weather');
   assert.match(text(api.render()), /Weather \/ conditions Not applicable · switched off — › Why Medium-high weight Not applicable Switched off for every match until the match-time fix and an indoor check are both in\. Data quality Not applicable The layer is switched off by a model rule for every match, not by missing data\./);
   api.edgeToggleLayer('subjective');
-  assert.match(text(api.render()), /— Manual context Highest weight · no analyst note — › Why Highest weight No data No analyst note is attached to this match, so the layer stays neutral\./, 'one name: Manual context');
+  assert.match(text(api.render()), /— Match context Highest weight · no analyst note — › Why Highest weight No data No match report read or analyst note for this match yet, so the layer stays neutral\./, 'one name: Match context');
   api.edgeToggleLayer('styleMatchup');
   assert.match(text(api.render()), /Style matchup Highest weight · no data — › Why Highest weight No data On the Playing Styles grid, Attacking Baseliners win 38% of 1,259 matches against Big Server \+ Complete Baseliners\. The model doesn’t read playing styles yet, so this layer doesn’t move the price\. Data quality Poor The model doesn’t read playing styles yet\./);
   api.edgeToggleLayer('qualityForm');

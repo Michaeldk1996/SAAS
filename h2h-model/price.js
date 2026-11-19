@@ -273,4 +273,34 @@ function valueFlag(type, side, player, price, edge, book) {
 function round4(x) { return Math.round(x * 1e4) / 1e4; }
 function round4OrNull(x) { return x == null ? null : round4(x); }
 
-module.exports = { priceAndValue, vigFree, fairOdds, pinnacleSeries, bookSeries, preMatchCutoffMs, saneTwoWay };
+// A chart line (m.oddsMovement.chart.books[label], odds.md "The odds-movement chart"): each side is its own change-only
+// [time, price] series, so a tick pairs the side that moved with the other side's last price at or before it (never
+// across a missing side). Pre-match only (cut at preMatchCutoffMs). Same shape as bookSeries, so the movement layer reads
+// either. Used for Bet105 (Kibl), whose line the odds loop refreshes from the Kibl stream (founder 2026-11-19).
+function chartSeries(match, label) {
+  const bk = match.oddsMovement && match.oddsMovement.chart && match.oddsMovement.chart.books &&
+             match.oddsMovement.chart.books[label];
+  if (!bk || !Array.isArray(bk.p1) || !Array.isArray(bk.p2)) return null;
+  const cutoff = preMatchCutoffMs(match);
+  const ev = [];
+  for (const [side, arr] of [['p1', bk.p1], ['p2', bk.p2]]) {
+    for (const t of arr) { const ts = t && Date.parse(t[0]); if (ts && t[1] != null) ev.push({ ts, side, px: Number(t[1]) }); }
+  }
+  ev.sort((a, b) => a.ts - b.ts);
+  const last = { p1: null, p2: null };
+  const ticks = [];
+  for (const e of ev) {
+    if (cutoff != null && e.ts > cutoff) break;
+    last[e.side] = e.px;
+    if (last.p1 == null || last.p2 == null || !saneTwoWay(last.p1, last.p2)) continue;
+    const tick = { p1: last.p1, p2: last.p2, ts: e.ts, vfP1: vfP1(last.p1, last.p2) };
+    if (ticks.length && ticks[ticks.length - 1].ts === e.ts) ticks[ticks.length - 1] = tick; else ticks.push(tick);
+  }
+  if (!ticks.length) return null;
+  const opening = ticks[0], current = ticks[ticks.length - 1];
+  if (opening.vfP1 == null || current.vfP1 == null) return null;
+  if (Math.abs(current.vfP1 - opening.vfP1) > config.maxPreMatchMove) return null;
+  return { opening, current, ticks, shift: current.vfP1 - opening.vfP1, count: ticks.length };
+}
+
+module.exports = { priceAndValue, vigFree, fairOdds, pinnacleSeries, bookSeries, chartSeries, preMatchCutoffMs, saneTwoWay };

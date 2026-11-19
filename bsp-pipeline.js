@@ -1482,8 +1482,10 @@ function courtSpeedRecordFromFixtures(fixtures, playerKey, category) {
     const isFirst = String(f.first_player_key) === String(playerKey);
     const isSecond = String(f.second_player_key) === String(playerKey);
     if (!isFirst && !isSecond) continue;
-    const cc = courtConditionsFor(f.tournament_name);
-    if (!cc || courtSpeedCategory(cc.speed) !== category) continue;
+    if (category !== '*') {  // '*' = every decided match, the baseline the model's court speed record layer compares with
+      const cc = courtConditionsFor(f.tournament_name);
+      if (!cc || courtSpeedCategory(cc.speed) !== category) continue;
+    }
     const won = isFirst ? f.event_winner === 'First Player' : f.event_winner === 'Second Player';
     if (isWalkover(f)) continue; // a walkover is not a match played (TEN-313)
     if (won) wins++; else losses++;
@@ -1520,6 +1522,9 @@ async function buildExtraStats(p1Key, p2Key, surface, surfaceMap, p1CurrentYearF
     courtSpeedRecord: courtSpeedCategoryForMatch ? {
       p1: courtSpeedRecordFromFixtures(p1Fixtures.filter(inLast52Weeks), p1Key, courtSpeedCategoryForMatch),
       p2: courtSpeedRecordFromFixtures(p2Fixtures.filter(inLast52Weeks), p2Key, courtSpeedCategoryForMatch),
+      p1All: courtSpeedRecordFromFixtures(p1Fixtures.filter(inLast52Weeks), p1Key, '*'),
+      p2All: courtSpeedRecordFromFixtures(p2Fixtures.filter(inLast52Weeks), p2Key, '*'),
+      category: courtSpeedCategoryForMatch,
     } : null,
   };
 }
@@ -8413,6 +8418,10 @@ async function buildModelOutput(matches) {
   const cand = modelPreMatchCandidates({ store: readJ(MODEL_PREMATCH_PATH),
     files: [readJ(MODEL_OUTPUT_PUBLISHED_PATH), { generatedAt: priorGen, matches: prior }] });
   const out = {};
+  const ctxMod = require('./h2h-model/context');
+  const ctxCfg = require('./h2h-model/config').adjustments.subjective.context || { mode: 'off' };
+  const ctxItems = ctxCfg.mode !== 'off' ? ctxMod.tickerItems() : [];
+  let ctxCalls = 0, ctxCached = 0;
   let ran = 0, failed = 0, sumNew = 0, sumCached = 0, sumSkipped = 0, frozenNew = 0, frozenKept = 0, startedNoPre = 0;
   const h2hIn = modelH2hInputs(matches);   // TEN-437: the model's H2H = the screens' H2H
 
@@ -8426,11 +8435,20 @@ async function buildModelOutput(matches) {
       else { out[m.id] = { ok: false, reason: 'no pre-match prediction on record', preMatch: false }; startedNoPre++; }
       continue;
     }
-    let result;
+    let result, ctxRead = null;
     try {
       const mm = h2hIn && m.p1Key != null && m.p2Key != null
         ? Object.assign({}, m, { h2h: Object.assign({}, m.h2h || {}, { matches: modelH2hMatches(m, h2hIn) }) }) : m;
-      result = runModel(mm);
+      // Layer #2's automatic read of our match reports (founder 2026-11-19): one Claude call only when a new report or
+      // quote changes the inputs; the cached read is reused otherwise (a failed read waits for new inputs too).
+      if (ctxCfg.mode !== 'off') {
+        const inp = ctxMod.contextInputs(m, { items: ctxItems });
+        const was = prior[m.id] && prior[m.id].contextRead;
+        if (inp && was && was.hash === inp.hash) { ctxRead = was; ctxCached++; }
+        else if (inp && process.env.ANTHROPIC_API_KEY) { ctxRead = Object.assign(await ctxMod.readContext(inp), { at: nowIso }); ctxCalls++; }
+        else ctxRead = null;
+      }
+      result = runModel(mm, { contextRead: ctxRead });
     } catch (e) {
       failed++;
       out[m.id] = { ok: false, reason: `engine error: ${e.message}`, preMatch: true, computedAt: nowIso };
@@ -8459,6 +8477,7 @@ async function buildModelOutput(matches) {
       preMatch: true,
       computedAt: nowIso,
       summary: null,
+      contextRead: ctxRead || null,
     };
 
     // ---- Stage 4: pre-baked AI summary, hash-cached ----
@@ -8524,7 +8543,7 @@ async function buildModelOutput(matches) {
     if (entries[ek] && !entries[ek].at) delete entries[ek];
   }
   writeJsonAtomic(MODEL_PREMATCH_PATH, { v: 1, savedAt: nowIso, keepHours: MODEL_PREMATCH_KEEP_H, entries }, true);
-  console.log(`Wrote model-output.json — engine ran on ${ran}/${matches.length} (${failed} could not run); started: ${frozenNew} newly frozen at their last pre-match prediction, ${frozenKept} kept frozen, ${startedNoPre} with no pre-match prediction on record (never computed after the start). Store: ${Object.keys(entries).length} event(s). Summaries: ${sumNew} new, ${sumCached} cached, ${sumSkipped} skipped.`);
+  console.log(`Wrote model-output.json — engine ran on ${ran}/${matches.length} (${failed} could not run); started: ${frozenNew} newly frozen at their last pre-match prediction, ${frozenKept} kept frozen, ${startedNoPre} with no pre-match prediction on record (never computed after the start). Store: ${Object.keys(entries).length} event(s). Summaries: ${sumNew} new, ${sumCached} cached, ${sumSkipped} skipped. Context reads (mode ${ctxCfg.mode}): ${ctxCalls} new, ${ctxCached} cached.`);
   return out;
 }
 

@@ -51,7 +51,9 @@ const path = require('path');
 const config = require('./config');
 
 const ROOT = path.join(__dirname, '..');
-const TML_DIR = path.join(ROOT, 'tml-cache');
+// tml-cache is gitignored and lives only in the main checkout; a worktree reads it from there.
+const TML_DIR = process.env.TML_DIR || [path.join(ROOT, 'tml-cache'), path.join(ROOT, '..', 'bsp-consult-project', 'tml-cache')]
+  .find(d => fs.existsSync(d)) || path.join(ROOT, 'tml-cache');
 const ODDS_DIR = path.join(ROOT, 'odds-archive');
 
 // ---------- CSV + name/surface helpers (self-contained on purpose) ----------
@@ -95,29 +97,61 @@ function dayNum(yyyymmdd) {
 // match is a fair approximation — but the matrix aggregates outcomes that
 // include the very matches we score (each is ~1/70k of the pool, so leakage is
 // small but non-zero). Read the fitted #1 coefficient with that in mind.
+// Live rule (TEN-419 / modal-playing-style.md): playing-styles.json archetype_label is the
+// one label; matrix[labelA][labelB] = {pct, n, w}; signal = (pct - 50)/50 only when n >= 30;
+// a mirror (same label) is 0.
+const STYLE_MIN_N = 30;
 function loadStyle() {
   const mmPath = path.join(ROOT, 'matchup-matrix.json');
   const psPath = path.join(ROOT, 'playing-styles.json');
   if (!fs.existsSync(mmPath) || !fs.existsSync(psPath)) {
-    return { matrix: null, primaryBySurname: new Map(), minN: 20 };
+    throw new Error('matchup-matrix.json / playing-styles.json missing in ' + ROOT);
   }
   const mm = JSON.parse(fs.readFileSync(mmPath, 'utf8'));
   const ps = JSON.parse(fs.readFileSync(psPath, 'utf8'));
-  // surname -> primary archetype. Drop surnames that resolve to >1 distinct
-  // primary (ambiguous, e.g. two different players share a surname) -> abstain.
+  // surname -> label. Drop surnames that resolve to >1 distinct label (two players share it) -> abstain.
   const seen = new Map();
   for (const p of (ps.players || [])) {
-    if (!p.name || !p.primary) continue;
+    if (!p.name || !p.archetype_label) continue;
     const sn = tmSurname(p.name); // "C. Alcaraz" -> "alcaraz"
     if (!sn) continue;
     if (!seen.has(sn)) seen.set(sn, new Set());
-    seen.get(sn).add(p.primary);
+    seen.get(sn).add(p.archetype_label);
   }
   const primaryBySurname = new Map();
   for (const [sn, set] of seen) if (set.size === 1) primaryBySurname.set(sn, [...set][0]);
-  return { matrix: mm.matrix || null, primaryBySurname, minN: mm.minSampleN || 20 };
+  if (!mm.matrix || !primaryBySurname.size) throw new Error('style files carry no matrix / no archetype_label');
+  return { matrix: mm.matrix, primaryBySurname, minN: STYLE_MIN_N };
 }
 const STYLE = loadStyle();
+
+// ---------- court speed band (layer #18) ------------------------------------
+// COURT_CONDITIONS, courtSpeedCategory, courtConditionsFor and COURT_CONDITIONS_ALIASES are
+// sliced verbatim from bsp-pipeline.js (requiring it would run the pipeline).
+const CS = (() => {
+  const src = fs.readFileSync(path.join(ROOT, 'bsp-pipeline.js'), 'utf8');
+  const grab = re => { const m = src.match(re); if (!m) throw new Error('court-speed slice failed: ' + re); return m[0]; };
+  const code = [
+    grab(/const COURT_CONDITIONS = \{[\s\S]*?\n\};/),
+    grab(/function courtSpeedCategory\(speed\) \{[\s\S]*?\n\}/),
+    grab(/function courtConditionsFor\(tournamentName\) \{[\s\S]*?\n\}/),
+    grab(/const COURT_CONDITIONS_ALIASES = \{[^\n]*\};/),
+  ].join('\n') + '\n;({ COURT_CONDITIONS, courtSpeedCategory, courtConditionsFor });';
+  return require('vm').runInNewContext(code, {});
+})();
+// Sackmann spells some events differently from api-tennis. Each entry is the same venue.
+// The season finals map to Turin only from 2021 (2009-2020 = London O2, not in the table).
+const SACK_EVENT = { "Queen's Club": 'London', 'Rio De Janeiro': 'Rio de Janeiro', 'Winston Salem': 'Winston-Salem' };
+const FINALS = new Set(['Tour Finals', 'ATP Finals', 'ATP Tour Finals']);
+function courtKeyFor(name, year) {
+  if (/olympic/i.test(name)) return null; // a different venue ('London Olympics' = Wimbledon, 'Paris Olympics' = RG)
+  if (FINALS.has(name)) return year >= 2021 ? 'Turin' : null;
+  // Canada alternates: to 2019 Toronto even / Montreal odd; from 2021 Toronto odd / Montreal even.
+  if (name === 'Canada Masters') return ((year <= 2019) === (year % 2 === 0)) ? 'Toronto' : 'Montreal';
+  const c = CS.courtConditionsFor(SACK_EVENT[name] || name);
+  return c ? c.key : null;
+}
+
 
 // ---------- point-in-time ELO (same as backtest.js) -------------------------
 const K = 32, BASE = 1500;
@@ -150,6 +184,7 @@ function newState() {
     last5: [], last20: [],
     serve: { ace: 0, svpt: 0, firstIn: 0, firstWon: 0, matches: 0 },
     recent: [], // {day, sets}
+    yr: [], // {day, won, band} — last 364 days, for #18
   };
 }
 const rate = (o, min) => (o && o.p >= min ? o.w / o.p : null);
@@ -161,6 +196,7 @@ const LAYERS = [
   { id: 1, key: 'styleMatchup', min: 0, scale: 1, fn: (s1, s2, ctx) => {
       const a1 = ctx.a1, a2 = ctx.a2;
       if (!a1 || !a2 || !STYLE.matrix) return null;
+      if (a1 === a2) return 0; // mirror
       const cell = STYLE.matrix[a1] && STYLE.matrix[a1][a2];
       if (!cell || cell.pct == null || (cell.n || 0) < STYLE.minN) return null;
       return clamp1((cell.pct - 50) / 50);
@@ -206,6 +242,23 @@ const LAYERS = [
       const a = topRate(s1), b = topRate(s2);
       return (a == null || b == null) ? null : clamp1((a - b) / 0.5);
     } },
+  // #18 court speed record (live spec): per player, win rate in THIS event's band over the
+  // previous 52 weeks minus his win rate over all matches in the same 52 weeks, shrunk by
+  // n_band/(n_band+15), 0 when n_band < 5; signal = clamp((t1 - t2)/0.20). Abstain with no band
+  // or both terms 0.
+  { id: 18, key: 'courtSpeedRecord', min: 5, scale: 0.20, fn: (s1, s2, ctx) => {
+      if (!ctx.band) return null;
+      const term = st => {
+        const yr = st.yr.filter(r => ctx.day - r.day <= 364);
+        const b = yr.filter(r => r.band === ctx.band);
+        if (b.length < 5) return 0;
+        const gap = b.reduce((x, r) => x + r.won, 0) / b.length - yr.reduce((x, r) => x + r.won, 0) / yr.length;
+        return gap * b.length / (b.length + 15);
+      };
+      const t1 = term(s1), t2 = term(s2);
+      if (t1 === 0 && t2 === 0) return null;
+      return clamp1((t1 - t2) / 0.20);
+    } },
   { id: 13, key: 'formatSplit', min: 8, scale: 0.2, fn: (s1, s2, ctx) => {
       const over = st => { const f = rate(st.fmt[ctx.bestOf], 8), o = rate(st.all, 10); return (f == null || o == null) ? null : f - o; };
       const a = over(s1), b = over(s2);
@@ -228,6 +281,7 @@ function loadSpine(y0, y1) {
         wId: r[idx.winner_id] || wn, lId: r[idx.loser_id] || ln,
         wSurname: tmSurname(wn), lSurname: tmSurname(ln),
         surface: surfKey(r[idx.surface]),
+        tourney: r[idx.tourney_name] || '', venueSig: (r[idx.surface] || '') + '|' + (r[idx.indoor] || ''),
         round: (r[idx.round] || '').trim() || 'NA',
         bestOf: (+r[idx.best_of] === 5) ? 5 : 3,
         wRank: +r[idx.winner_rank] || null, lRank: +r[idx.loser_rank] || null,
@@ -238,6 +292,16 @@ function loadSpine(y0, y1) {
     }
   }
   out.sort((a, b) => a.date - b.date || a.matchNum - b.matchNum);
+  // Band = the table's speed for this venue. The table measures today's court (2023-25), so a
+  // row only gets it when the event is still played on the same surface + indoor/outdoor as in
+  // its latest season on file (Stuttgart clay to 2014, Acapulco clay to 2013 get none) — the
+  // live join's own "different event" guard (venueAndCourtSpeedFor).
+  const latestSig = new Map();
+  for (const m of out) { m.courtKey = courtKeyFor(m.tourney, m.year); if (m.courtKey) latestSig.set(m.courtKey, m.venueSig); }
+  for (const m of out) {
+    m.band = (m.courtKey && latestSig.get(m.courtKey) === m.venueSig)
+      ? CS.courtSpeedCategory(CS.COURT_CONDITIONS[m.courtKey].speed) : null;
+  }
   return out;
 }
 function loadMarket(y0, y1) {
@@ -329,7 +393,7 @@ function buildRows(spine, market, scoreFromYear) {
       const p1Sn = asWinner ? m.wSurname : m.lSurname;
       const p2Sn = asWinner ? m.lSurname : m.wSurname;
       const ctx = {
-        surface: m.surface, round: m.round, bestOf: m.bestOf, day: dayNum(m.date), h2h: h2hP1,
+        band: m.band, surface: m.surface, round: m.round, bestOf: m.bestOf, day: dayNum(m.date), h2h: h2hP1,
         a1: STYLE.primaryBySurname.get(p1Sn), a2: STYLE.primaryBySurname.get(p2Sn),
       };
 
@@ -344,7 +408,7 @@ function buildRows(spine, market, scoreFromYear) {
       const mkRaw = ym && ym.get(m.wSurname + '|' + m.lSurname); // prob winner wins
       const mkt = mkRaw == null ? null : (asWinner ? mkRaw : 1 - mkRaw);
 
-      rows.push({ y, baseLogit, signals, year: m.year, mkt });
+      rows.push({ y, baseLogit, signals, active, year: m.year, mkt, band: m.band, turin: m.courtKey === 'Turin' });
     }
 
     // ---- update state AFTER recording (point-in-time) ----
@@ -374,6 +438,9 @@ function buildRows(spine, market, scoreFromYear) {
     uW.recent.push({ day: dn, sets: m.sets }); uL.recent.push({ day: dn, sets: m.sets });
     uW.recent = uW.recent.filter(r => dn - r.day <= config.fatigueWindowDays);
     uL.recent = uL.recent.filter(r => dn - r.day <= config.fatigueWindowDays);
+    // 52-week band record (#18); kept on the match day, read by days <= 364 before the scored match
+    uW.yr.push({ day: dn, won: 1, band: m.band }); uL.yr.push({ day: dn, won: 0, band: m.band });
+    uW.yr = uW.yr.filter(r => dn - r.day <= 364); uL.yr = uL.yr.filter(r => dn - r.day <= 364);
     // h2h
     const key = h2hKey(m.wId, m.lId);
     const rec = h2hMap.get(key) || { a: 0, b: 0 };
@@ -465,6 +532,76 @@ function main() {
     console.log(`    gap to market closed by layers: ${closed.toFixed(0)}%  (${gap0.toFixed(4)} -> ${gap1.toFixed(4)})`);
   }
   console.log('');
+  layerReport(rows, train, test);
+}
+
+// ---------- per-layer report: coverage, coefficient, with / without -------------
+// fitEval: fit [1, base, signals at cols] on trainRows, score on testRows.
+function fitEval(trainRows, testRows, cols) {
+  const toX = r => [1, r.baseLogit, ...cols.map(i => r.signals[i])];
+  const f = fitLogistic(trainRows.map(toX), trainRows.map(r => r.y), 1.0);
+  const s = brierLL(testRows, r => sigmoid(toX(r).reduce((a, x, j) => a + f.w[j] * x, 0)));
+  return { w: f.w, se: f.se, ...s };
+}
+function layerReport(rows, train, test) {
+  const all = LAYERS.map((_, i) => i);
+  const fmt = r => `logloss ${r.ll.toFixed(4)}  Brier ${r.brier.toFixed(4)}  (n ${r.n})`;
+  const pct = (a, b) => (b ? (a / b * 100).toFixed(1) : '—') + '%';
+  const bandCount = rs => { const c = {}; rs.forEach(r => { const k = r.band || 'none'; c[k] = (c[k] || 0) + 1; }); return c; };
+  console.log('--- court-speed band coverage (scored rows) ---');
+  console.log('  train', JSON.stringify(bandCount(train)), ' test', JSON.stringify(bandCount(test)));
+  const out = { train: train.length, test: test.length, bands: { train: bandCount(train), test: bandCount(test) }, layers: {} };
+  for (const id of [1, 18]) {
+    const i = LAYERS.findIndex(L => L.id === id), L = LAYERS[i];
+    const act = rs => rs.filter(r => r.active[i]).length;
+    const nz = rs => rs.filter(r => r.active[i] && r.signals[i] !== 0).length;
+    const joint = fitEval(train, test, all);
+    const without = fitEval(train, test, all.filter(j => j !== i));
+    const base = fitEval(train, test, []);
+    const alone = fitEval(train, test, [i]);
+    const o = {
+      key: L.key,
+      active: { train: act(train), trainNonzero: nz(train), test: act(test), testNonzero: nz(test) },
+      joint: { beta: joint.w[2 + i], se: joint.se[2 + i] }, alone: { beta: alone.w[2], se: alone.se[2] },
+      oos: { allLayers: joint, allButThis: without, base, baseThis: alone },
+    };
+    // fit on the rows where the layer is active only
+    const trA = train.filter(r => r.active[i]), teA = test.filter(r => r.active[i]);
+    if (trA.length > 50 && teA.length > 50) o.activeOnly = { base: fitEval(trA, teA, []), baseThis: fitEval(trA, teA, [i]) };
+    out.layers[id] = o;
+    console.log(`\n--- #${id} ${L.key} ---`);
+    console.log(`  active: train ${o.active.train}/${train.length} (${pct(o.active.train, train.length)}), nonzero ${o.active.trainNonzero}; test ${o.active.test}/${test.length} (${pct(o.active.test, test.length)}), nonzero ${o.active.testNonzero}`);
+    console.log(`  joint beta ${o.joint.beta.toFixed(3)} ± ${o.joint.se.toFixed(3)} -> suggest maxMag ${(0.25 * o.joint.beta).toFixed(3)}; alone beta ${o.alone.beta.toFixed(3)} ± ${o.alone.se.toFixed(3)}`);
+    console.log(`  all layers:        ${fmt(joint)}`);
+    console.log(`  all but #${id}:       ${fmt(without)}`);
+    console.log(`  base only:         ${fmt(base)}`);
+    console.log(`  base + #${id} only:   ${fmt(alone)}`);
+    if (o.activeOnly) { console.log(`  active rows only: base ${fmt(o.activeOnly.base)} | base+#${id} ${fmt(o.activeOnly.baseThis)}`); }
+  }
+  // Fast-band only (founder: fast courts like the ATP Finals)
+  const i18 = LAYERS.findIndex(L => L.id === 18);
+  const trF = train.filter(r => r.band === 'Fast'), teF = test.filter(r => r.band === 'Fast');
+  const all18 = all.filter(j => j !== i18);
+  const F = {
+    train: trF.length, test: teF.length,
+    active: { train: trF.filter(r => r.active[i18]).length, test: teF.filter(r => r.active[i18]).length },
+    base: fitEval(trF, teF, []), base18: fitEval(trF, teF, [i18]),
+    allBut18: fitEval(trF, teF, all18), all: fitEval(trF, teF, all),
+  };
+  F.beta = F.base18.w[2]; F.se = F.base18.se[2]; F.betaJoint = F.all.w[2 + i18]; F.seJoint = F.all.se[2 + i18];
+  const trFA = trF.filter(r => r.active[i18]), teFA = teF.filter(r => r.active[i18]);
+  F.activeOnly = { base: fitEval(trFA, teFA, []), base18: fitEval(trFA, teFA, [i18]) };
+  F.activeOnly.beta = F.activeOnly.base18.w[2]; F.activeOnly.se = F.activeOnly.base18.se[2];
+  // Turin finals in test (2021-25)
+  F.turinTest = test.filter(r => r.band === 'Fast' && r.turin).length;
+  out.fast = F;
+  console.log(`\n--- Fast band only (train ${trF.length}, test ${teF.length}; #18 active ${F.active.train} / ${F.active.test}) ---`);
+  console.log(`  base:               ${fmt(F.base)}`);
+  console.log(`  base + #18:         ${fmt(F.base18)}   beta ${F.beta.toFixed(3)} ± ${F.se.toFixed(3)}`);
+  console.log(`  all but #18:        ${fmt(F.allBut18)}`);
+  console.log(`  all layers:         ${fmt(F.all)}   beta #18 ${F.betaJoint.toFixed(3)} ± ${F.seJoint.toFixed(3)}`);
+  console.log(`  #18-active Fast rows: base ${fmt(F.activeOnly.base)} | base+#18 ${fmt(F.activeOnly.base18)} beta ${F.activeOnly.beta.toFixed(3)} ± ${F.activeOnly.se.toFixed(3)}`);
+  if (process.env.CAL_JSON) fs.writeFileSync(process.env.CAL_JSON, JSON.stringify(out, null, 1));
 }
 
 main();

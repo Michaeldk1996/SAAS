@@ -33,7 +33,7 @@ const config = require('./config');
 // TEN-327: the one house Serve / Return rating helper (also loaded by the dashboard).
 const HouseRatings = require('../house-ratings');
 const { surfaceCategory, rankOf, loadManualInputs, loadMcpBaseline } = require('./data');
-const { pinnacleSeries, bookSeries, preMatchCutoffMs } = require('./price');
+const { pinnacleSeries, bookSeries, chartSeries, preMatchCutoffMs } = require('./price');
 
 // ---- small helpers --------------------------------------------------------
 const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
@@ -394,8 +394,13 @@ function careerOverallWR(profile) {
 function styleMatchup(ctx) {
   const c = config.adjustments.styleMatchup;
   const res = base(c.id, 'styleMatchup', 'Style matchup', c.maxMagnitude, 'matchup-matrix.json');
-  const a1 = ctx.p1.style && ctx.p1.style.primary;
-  const a2 = ctx.p2.style && ctx.p2.style.primary;
+  // The step-9 label (playing-styles.json archetype_label) is the matrix's key, the same label the Playing Styles page
+  // shows; `primary` is the pre-step-9 field, read only as a fallback for an old styles file.
+  const labelOf = (st) => !st ? null : (c.readLabels
+    ? String(st.archetype_label || st.primary || '').replace(/ \+ Variety( Player)?$/, '') || null
+    : (st.primary || null));
+  const a1 = labelOf(ctx.p1.style);
+  const a2 = labelOf(ctx.p2.style);
   // Title-Case an archetype key ("solid_baseliner" -> "Solid Baseliner"). The
   // mirror message keys off the PRIMARY archetype (what makes it a mirror), not
   // the compound archetype_label, so the two sides can't read as different.
@@ -420,7 +425,8 @@ function styleMatchup(ctx) {
   const cell = mm && mm.matrix && mm.matrix[a1] && mm.matrix[a1][a2];
   if (!cell || cell.pct == null) return res;
   const n = cell.n || 0;
-  const minN = (mm.minSampleN || 20);
+  // The Playing Styles page's floor (under 30 matches = a dash), so the page and the model use one cell rule.
+  const minN = c.readLabels ? Math.max(mm.minSampleN || 0, c.minN || 30) : (mm.minSampleN || 20);
   if (n < minN) {
     res.detail = `${a1} vs ${a2}: n=${n} < floor ${minN}, not applied.`;
     return res;
@@ -429,7 +435,7 @@ function styleMatchup(ctx) {
   const signal = (cell.pct - 50) / 50;
   const conf = n >= 500 ? 'high' : (n >= 100 ? 'med' : 'low');
   return apply(res, signal, conf,
-    `${a1} beats ${a2} ${cell.pct}% (n=${n}) historically.`);
+    `${a1} win ${cell.pct}% of ${n} matches against ${a2}.`);
 }
 
 // =========================================================================
@@ -449,6 +455,16 @@ function subjective(ctx) {
     if (row && num(row.signal) != null) s = clamp(row.signal, -1, 1);
   }
   if (s == null || s === 0) {
+    // No manual row: the model's own read of the match reports and quotes (context.js), when its switch is on.
+    const cc = c.context || {}, cr = ctx.contextRead;
+    if (cc.mode !== 'off' && cr && cr.ok && cr.read) {
+      const r = cr.read;
+      res.contextRead = r;
+      if (cr.noItems) { res.detail = 'No match report or quote for either player yet.'; return res; }
+      const why = r.why || (r.edge === 'even' ? 'The reports give neither player an edge.' : '');
+      if (cc.mode === 'shadow' || !r.lean) { res.detail = why + (cc.mode === 'shadow' && r.lean ? ' (Read only: not applied to the price yet.)' : ''); return res; }
+      return apply(res, clamp(r.lean * (cc.scale || 0.3), -1, 1), r.confidence === 'high' ? 'med' : 'low', why);
+    }
     res.detail = 'No manual input (default neutral).';
     return res;
   }
@@ -1349,13 +1365,15 @@ function timingWeight(pin, match, c) {
 // (steam = coordinated sharp money) vs against it. Full weight when >= steamMinBooks
 // agree; a lone Pinnacle move is discounted (steamLoneMult), partial agreement
 // sits in between (steamMidMult).
-function steamFactor(match, pinDir, c) {
-  const books = (match.oddsMovement && match.oddsMovement.books)
-    ? Object.keys(match.oddsMovement.books) : [];
+function steamFactor(match, pinDir, c, lead) {
+  // Bet105 lead (lead = its chart label): the other books are the other chart lines; else the legacy Pinnacle path.
+  const om = match.oddsMovement || {};
+  const books = lead ? Object.keys((om.chart && om.chart.books) || {}).filter(b => b !== lead)
+                     : (om.books ? Object.keys(om.books) : []);
   const thresh = c.minMove * 0.5;
   let agree = 0, oppose = 0;
   for (const b of books) {
-    const s = bookSeries(match, b);
+    const s = lead ? chartSeries(match, b) : bookSeries(match, b);
     if (!s || Math.abs(s.shift) < thresh) continue; // flat/absent book: not a mover
     if (Math.sign(s.shift) === pinDir) agree++; else oppose++;
   }
@@ -1380,11 +1398,14 @@ function oddsMovement(ctx) {
     return gate(res, 'below ATP tour level \u2014 market too thin for movement to be informative');
   }
 
-  // (5) no-line flag \u2014 no clean pre-match Pinnacle tick history to read.
-  const pin = bookSeries(ctx.match, 'Pinnacle');
+  // (5) no-line flag. Lead book: Bet105's chart line (the Kibl stream, founder 2026-11-19) when `lead` is set — our
+  // Pinnacle capture has no movement history — else the legacy Pinnacle series.
+  const lead = c.lead || null;
+  const bookName = lead || 'Pinnacle';
+  const pin = lead ? chartSeries(ctx.match, lead) : bookSeries(ctx.match, 'Pinnacle');
   if (!pin) {
     res.noLine = true;
-    res.detail = 'No clean pre-match Pinnacle line (no-line) \u2014 movement signal unavailable.';
+    res.detail = `No clean pre-match ${bookName} line (no-line) \u2014 movement signal unavailable.`;
     return res;
   }
 
@@ -1393,7 +1414,7 @@ function oddsMovement(ctx) {
 
   // (1) move-size threshold \u2014 a vig-free move under minMove is book noise.
   if (absShift < c.minMove) {
-    res.detail = `Pinnacle move ${fmtPct(shift * 100)} < ${fmtPct(c.minMove * 100)} threshold \u2014 treated as noise.`;
+    res.detail = `${bookName} move ${fmtPct(shift * 100)} < ${fmtPct(c.minMove * 100)} threshold \u2014 treated as noise.`;
     return res; // signal stays 0 (dead-zone)
   }
   const span = Math.max(c.fullMove - c.minMove, 1e-6);
@@ -1401,13 +1422,45 @@ function oddsMovement(ctx) {
 
   // (2) timing weight and (3) steam detection
   const timing = timingWeight(pin, ctx.match, c);
-  const steam = steamFactor(ctx.match, Math.sign(shift), c);
+  const steam = steamFactor(ctx.match, Math.sign(shift), c, lead);
 
   const signal = clamp(raw * timing.weight * steam.mult, -1, 1);
   const conf = steam.confirmed ? (timing.late ? 'med' : 'low') : 'low';
   const detail =
-    `Pinnacle p1 ${fmtPct(pin.opening.vfP1 * 100)}\u2192${fmtPct(pin.current.vfP1 * 100)} ` +
+    `${bookName} p1 ${fmtPct(pin.opening.vfP1 * 100)}\u2192${fmtPct(pin.current.vfP1 * 100)} ` +
     `(${steam.agree}/${steam.total} books ${steam.confirmed ? 'steam' : 'no steam'}, ${timing.label}).`;
+  return apply(res, signal, conf, detail);
+}
+
+// =========================================================================
+// 18. COURT SPEED RECORD — how each player does at THIS event's court speed (founder 2026-11-19: "a layer of record on
+// fast surfaces, since the court in Turin is fast"). Pipeline field m.extraStats.courtSpeedRecord: per player, the last
+// 52 weeks' W–L at the event's band (Slow ≤ 43 · Medium ≤ 68 · Fast, courtSpeedCategory) and over every match (p1All /
+// p2All). A player's term = his band win rate minus his overall win rate, shrunk by n / (n + shrinkK), 0 under minN band
+// matches; signal = (term1 − term2) / scale. It reads a player's lean toward the speed, not his level (Elo has that).
+// =========================================================================
+function courtSpeedRecord(ctx) {
+  const c = config.adjustments.courtSpeedRecord;
+  const res = base(c.id, 'courtSpeedRecord', 'Court speed record', c.maxMagnitude, 'matches.json:extraStats.courtSpeedRecord');
+  if (c.gated) return gate(res, 'staged: off until the founder approves the backtest');
+  const csr = ctx.match && ctx.match.extraStats && ctx.match.extraStats.courtSpeedRecord;
+  const band = (csr && csr.category) || (ctx.match && ctx.match.courtSpeed && ctx.match.courtSpeed.category) || null;
+  if (!csr || !band) { res.detail = 'No court speed rating for this event.'; return res; }
+  if (!csr.p1All || !csr.p2All) { res.detail = `${band} courts: no all-court record to compare with yet.`; return res; }
+  const term = (b, all) => {
+    const n = b ? b.sampleSize : 0;
+    if (!b || n < c.minN || !all.sampleSize) return { n, t: 0, rate: b ? b.wins / n : null };
+    const gap = b.wins / n - all.wins / all.sampleSize;
+    return { n, t: gap * n / (n + c.shrinkK), rate: b.wins / n, all: all.wins / all.sampleSize };
+  };
+  const t1 = term(csr.p1, csr.p1All), t2 = term(csr.p2, csr.p2All);
+  const pct = (x) => Math.round(x * 100);
+  const line = (b, all) => b ? `${b.wins}–${b.losses} on ${band.toLowerCase()} courts (${pct(b.wins / b.sampleSize)}%) v ${pct(all.wins / all.sampleSize)}% overall` : `no ${band.toLowerCase()}-court match`;
+  const detail = `Last 52 weeks: P1 ${line(csr.p1, csr.p1All)}; P2 ${line(csr.p2, csr.p2All)}.`;
+  if (t1.t === 0 && t2.t === 0) { res.detail = `${detail} Under ${c.minN} ${band.toLowerCase()}-court matches for both, not applied.`; return res; }
+  const signal = clamp((t1.t - t2.t) / c.scale, -1, 1);
+  const nMin = Math.min(t1.t ? t1.n : Infinity, t2.t ? t2.n : Infinity);
+  const conf = nMin >= 20 ? 'high' : (nMin >= 10 ? 'med' : 'low');
   return apply(res, signal, conf, detail);
 }
 
@@ -1425,8 +1478,9 @@ const ALL = [
   styleMatchup, subjective, h2h, surface, recentForm,
   qualityForm, winnerUE,
   serve, returnPressure, fatigue, weather, formatSplit,
-  clutch, oddsMovement,
-];
+  clutch, oddsMovement, courtSpeedRecord,
+// While staged (gated) the court speed record is not a row at all, so the page keeps its 14 layers until go-live.
+].filter(fn => fn !== courtSpeedRecord || !config.adjustments.courtSpeedRecord.gated);
 
 function runAll(ctx) {
   return ALL.map(fn => fn(ctx));

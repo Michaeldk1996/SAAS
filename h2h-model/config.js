@@ -92,9 +92,16 @@ module.exports = {
   // until Michael supplies the missing input.
   adjustments: {
     // 1. Style matchup — archetype vs archetype (matchup-matrix.json)
-    styleMatchup:   { id: 1,  maxMagnitude: 0.10, gated: false },
+    //    readLabels (founder 2026-11-19): read the step-9 archetype_label, the matrix's key (the file has no `primary`
+    //    since step 9, so the layer never applied); minN = the Playing Styles page's 30. Go-live switch.
+    styleMatchup:   { id: 1,  maxMagnitude: 0.10, gated: false, readLabels: false, minN: 30 },
     // 2. Subjective input — Michael's manual read (passthrough, default 0)
-    subjective:     { id: 2,  maxMagnitude: 0.10, gated: false },
+    //    context (founder 2026-11-19): the model's own read of our match reports and quotes (h2h-model/context.js),
+    //    used when the match has no manual-inputs.json row. mode 'off' | 'shadow' (read and shown, never moves the
+    //    price) | 'on'. scale caps an automatic read at scale × maxMagnitude (0.3 × 10pp = 3pp). Go-live switch = mode.
+    subjective:     { id: 2,  maxMagnitude: 0.10, gated: false,
+                      context: { mode: 'shadow', scale: 0.3, model: 'claude-sonnet-5-5', windowDays: 45, perPlayer: 8,
+                                 briefMaxChars: 24000 } },
     // 3. H2H record — dominance-weighted head-to-head (v2.0 redesign 2026-07).
     //    Per-meeting surface & recency filters MULTIPLY, set-score dominance
     //    scores each meeting, and a three-tier sample system scales the signal.
@@ -412,8 +419,15 @@ module.exports = {
                       steamMinBooks: 3,      // books that must agree to confirm steam
                       steamLoneMult: 0.5,    // discount when only Pinnacle moved
                       steamMidMult: 0.8,     // discount for partial cross-book agreement
+                      // Lead book (founder 2026-11-19): 'Bet105' = its chart line (Kibl stream); null = the legacy
+                      // Pinnacle series (oddsMovement.books.Pinnacle, empty since the Oddspapi bet365 capture ended). Go-live switch.
+                      lead: null,
                       reverseLineMove: { available: false,
                         reason: 'needs public-betting/ticket %; no licensed feed carries it' } },
+    // 18. Court speed record (founder 2026-11-19): last-52-week win rate at this event's court speed band minus the
+    //     player's overall rate, shrunk by n / (n + shrinkK); 0 under minN band matches; (term1 − term2) / scale = signal.
+    //     `gated` = the go-live switch (staged until the founder approves the backtest).
+    courtSpeedRecord: { id: 18, maxMagnitude: 0.025, gated: true, minN: 5, shrinkK: 15, scale: 0.20 },
   },
 
   // Final clamp on adjusted probability so no single match is called a lock.

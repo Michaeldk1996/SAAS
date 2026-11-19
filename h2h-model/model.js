@@ -73,6 +73,7 @@ function runModel(match, opts = {}) {
   const ctx = {
     p1, p2, match, surface, bestOf,
     subjectiveSignal: opts.subjectiveSignal,
+    contextRead: opts.contextRead || null,   // context.js read of the match reports (layer #2), pipeline-supplied
     matchupMatrix: data.loadMatchupMatrix(),
     progression: pairOnly ? { tournaments: {} } : data.loadProgression(),      // Tier-1 serve (this tournament; none for a pair)
     historicalStats: data.loadHistoricalStats(), // Tier-2 serve (last-3 on surface)

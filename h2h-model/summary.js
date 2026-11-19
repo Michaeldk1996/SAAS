@@ -98,7 +98,7 @@ function edgeEven(a){ return !!(a && !a.applied && !a.gated && edgeFigures(a)); 
 function edgeNotThisFormat(a){ return !!(a && a.key === 'formatSplit' && a.hidden && /^Bo3\b/.test(String(a.detail || ''))); }
 function edgeQuality(a){ const s = edgeCovState(a); return s === 'full' ? 'Good' : (s === 'partial' ? 'Medium' : 'Poor'); }
 function edgeVisibleAdjs(list){ return (list || []).slice(); }
-const EDGE_LAYER_NAMES = { subjective: 'Manual context' };
+const EDGE_LAYER_NAMES = { subjective: 'Match context' };
 function edgeLayerName(a){ return EDGE_LAYER_NAMES[a.key] || a.name; }
 function edgeSigned(v){ const n = Number(String(v).replace('−', '-')); return isFinite(n) ? (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(n).toFixed(1) : String(v); }
 function edgeCourt(surf){ const s = String(surf || '').toLowerCase(); return s ? s + ' courts' : 'this surface'; }
@@ -122,7 +122,9 @@ function edgeWhyText(a, nm){
       if ((x = /^(.+?) vs (.+?): n=(\d+) < floor (\d+)/.exec(d))) return `${x[1]} v ${x[2]}: ${x[3]} matches, under ${x[4]}.`;
       break;
     case 'subjective':
-      if (!a.applied) return 'No analyst note is attached to this match, so the layer stays neutral.';
+      if (a.contextRead) return d || 'The match reports give neither player an edge.';   // the model's read of our reports
+      if (!a.applied) return 'No match report read or analyst note for this match yet, so the layer stays neutral.';
+      if ((x = /^Manual read applied/.exec(d))) return 'An analyst note on this match moves the price.';
       break;
     case 'h2h':
       if (/^No prior meetings/.test(d)) return `${A} and ${B} have never met.`;
@@ -168,8 +170,11 @@ function edgeWhyText(a, nm){
       if ((x = /index(?: on (\w+))? (\d+) vs (\d+)/.exec(d))) return `Under-pressure index ${x[2]} vs ${x[3]}${x[1] ? ' on ' + edgeCourt(x[1]) : ''} (break points and tiebreaks).`;
       break;
     case 'oddsMovement':
-      if (/no-line/.test(d)) return 'The model’s own Pinnacle series holds no pre-match line for this match, so there is no market move to read.';
-      if ((x = /Pinnacle move (\S+) < (\S+) threshold/.exec(d))) return `Pinnacle moved ${x[1]}, under the ${x[2]} the layer needs, so it reads as noise.`;
+      if ((x = /No clean pre-match (\w+) line/.exec(d))) return `No pre-match ${x[1]} price history for this match yet, so there is no market move to read.`;
+      if ((x = /^(\w+) move (\S+) < (\S+) threshold/.exec(d))) return `${x[1]}'s no-vig price for ${A} moved ${edgeSigned(String(x[2]).replace('%', ''))} points, under the ${String(x[3]).replace(/^\+/, '')} the layer needs, so it reads as noise.`;
+      if ((x = /^(\w+) p1 \+?([\d.]+)%→\+?([\d.]+)% \((\d+)\/(\d+) books (steam|no steam), (?:(\d+)% late|(move late)|timing n\/a)\)/.exec(d)))
+        return `${x[1]}'s no-vig price for ${A} moved from ${x[2]}% to ${x[3]}% before the match; ${x[4]} of the ${x[5]} other books that moved went the same way${x[6] === 'steam' ? ' (steam)' : ''}` +
+          (x[7] != null ? `, ${x[7]}% of the move in the last 12 hours.` : x[8] ? ', all of it in the last 12 hours.' : '.');
       break;
   }
   return d;
@@ -177,6 +182,7 @@ function edgeWhyText(a, nm){
 function edgeFigures(a){
   const d = String(a.detail || ''); let x;
   switch (a.key){
+    case 'styleMatchup': x = / win (\d+)% of \d+ matches against /.exec(d); return x ? [x[1] + '%', (100 - Number(x[1])) + '%'] : null;
     case 'h2h': x = /^H2H (\d+)-(\d+)/.exec(d); return x ? [x[1], x[2]] : null;
     case 'surface': x = /record (\d+)% vs (\d+)%/.exec(d); return x ? [x[1] + '%', x[2] + '%'] : null;
     case 'recentForm': x = /^Form (\d+)% vs (\d+)%/.exec(d); return x ? [x[1] + '%', x[2] + '%'] : null;
@@ -223,7 +229,7 @@ function buildFacts(r, m) {
       shiftPP: !a.applied ? null : (even ? 0 : +delta.toFixed(1)),
       // The page reads styles from the Playing Styles grid, which the pipeline doesn't hold: the analysis says only that
       // the model does not read styles yet (TEN-419), never "no label".
-      why: a.key === 'styleMatchup' && !a.applied ? 'The model doesn’t read playing styles yet, so this layer doesn’t move the price.' : edgeWhyText(a, { p1: mm.p1, p2: mm.p2 }),
+      why: a.key === 'styleMatchup' && !a.applied && !(config.adjustments.styleMatchup || {}).readLabels ? 'The model doesn’t read playing styles yet, so this layer doesn’t move the price.' : edgeWhyText(a, { p1: mm.p1, p2: mm.p2 }),
     };
   });
   const movers = adjs.filter(a => a.applied && Math.abs(a.deltaP1 || 0) >= 0.0005)

@@ -11659,7 +11659,8 @@ function edgeQuality(a){ const s = edgeCovState(a); return s === 'full' ? 'Good'
 // the engine hides or has no data for is an inactive row with its reason (supersedes Rule A's self-hiding on this page).
 function edgeVisibleAdjs(list){ return (list || []).slice(); }
 // One name per layer: the engine's, except "Subjective input", which is the reference's "Manual context" (R1 fix 4).
-const EDGE_LAYER_NAMES = { subjective: 'Manual context' };
+// "Match context" since 19 Nov: the model's own read of our match reports and quotes, or Michael's note when he adds one.
+const EDGE_LAYER_NAMES = { subjective: 'Match context' };
 function edgeLayerName(a){ return EDGE_LAYER_NAMES[a.key] || a.name; }
 // The engine writes one fixed sentence template per layer (h2h-model/adjustments.js). The page reads that template's
 // figures and says them in plain words for THIS match (R1 fix 3); a sentence it can't read is shown cleaned, never dropped.
@@ -11685,7 +11686,9 @@ function edgeWhyText(a, nm){
       if ((x = /^(.+?) vs (.+?): n=(\d+) < floor (\d+)/.exec(d))) return `${x[1]} v ${x[2]}: ${x[3]} matches, under ${x[4]}.`;
       break;
     case 'subjective':
-      if (!a.applied) return 'No analyst note is attached to this match, so the layer stays neutral.';
+      if (a.contextRead) return d || 'The match reports give neither player an edge.';   // the model's read of our reports
+      if (!a.applied) return 'No match report read or analyst note for this match yet, so the layer stays neutral.';
+      if ((x = /^Manual read applied/.exec(d))) return 'An analyst note on this match moves the price.';
       break;
     case 'h2h':
       if (/^No prior meetings/.test(d)) return `${A} and ${B} have never met.`;
@@ -11731,8 +11734,11 @@ function edgeWhyText(a, nm){
       if ((x = /index(?: on (\w+))? (\d+) vs (\d+)/.exec(d))) return `Under-pressure index ${x[2]} vs ${x[3]}${x[1] ? ' on ' + edgeCourt(x[1]) : ''} (break points and tiebreaks).`;
       break;
     case 'oddsMovement':
-      if (/no-line/.test(d)) return 'The model’s own Pinnacle series holds no pre-match line for this match, so there is no market move to read.';
-      if ((x = /Pinnacle move (\S+) < (\S+) threshold/.exec(d))) return `Pinnacle moved ${x[1]}, under the ${x[2]} the layer needs, so it reads as noise.`;
+      if ((x = /No clean pre-match (\w+) line/.exec(d))) return `No pre-match ${x[1]} price history for this match yet, so there is no market move to read.`;
+      if ((x = /^(\w+) move (\S+) < (\S+) threshold/.exec(d))) return `${x[1]}'s no-vig price for ${A} moved ${edgeSigned(String(x[2]).replace('%', ''))} points, under the ${String(x[3]).replace(/^\+/, '')} the layer needs, so it reads as noise.`;
+      if ((x = /^(\w+) p1 \+?([\d.]+)%→\+?([\d.]+)% \((\d+)\/(\d+) books (steam|no steam), (?:(\d+)% late|(move late)|timing n\/a)\)/.exec(d)))
+        return `${x[1]}'s no-vig price for ${A} moved from ${x[2]}% to ${x[3]}% before the match; ${x[4]} of the ${x[5]} other books that moved went the same way${x[6] === 'steam' ? ' (steam)' : ''}` +
+          (x[7] != null ? `, ${x[7]}% of the move in the last 12 hours.` : x[8] ? ', all of it in the last 12 hours.' : '.');
       break;
   }
   return d;
@@ -11742,6 +11748,7 @@ function edgeWhyText(a, nm){
 function edgeFigures(a){
   const d = String(a.detail || ''); let x;
   switch (a.key){
+    case 'styleMatchup': x = / win (\d+)% of \d+ matches against /.exec(d); return x ? [x[1] + '%', (100 - Number(x[1])) + '%'] : null;
     case 'h2h': x = /^H2H (\d+)-(\d+)/.exec(d); return x ? [x[1], x[2]] : null;
     case 'surface': x = /record (\d+)% vs (\d+)%/.exec(d); return x ? [x[1] + '%', x[2] + '%'] : null;
     case 'recentForm': x = /^Form (\d+)% vs (\d+)%/.exec(d); return x ? [x[1] + '%', x[2] + '%'] : null;
@@ -11757,6 +11764,7 @@ function edgeFigures(a){
 // Data quality = one fixed sentence per state and cause — the same state the label shows (R1 fix 3).
 function edgeDqText(a){
   const q = edgeQuality(a);
+  if (a.contextRead && !a.applied) return 'The model’s read of the match reports and quotes, shown only: it does not move the price yet.';
   if (edgeEven(a)) return 'The inputs are in for both players; they are too close for the layer to move the price.';
   if (q === 'Good') return 'The inputs behind this layer are complete for both players in this match.';
   if (q === 'Medium' && a.applied) return 'The sample behind this layer is thin for at least one player in this match.';
@@ -11786,7 +11794,7 @@ function edgeStylesKnown(names, keys){ const a = edgeStyleArch(names.p1, keys.p1
 // Founder R3 fix 1 copy: "Attacking Baseliners win 38% of 1,259 matches against Big Server + Complete Baseliners".
 const EDGE_STYLE_PLURAL = { 'Big Server + First Strike': 'Big Server + First Strike players', 'All Court Elite': 'All Court Elite players' };
 function edgeStylePlural(a){ return EDGE_STYLE_PLURAL[a.name] || a.name + 's'; }
-function edgeStyleWhy(names, keys){
+function edgeStyleWhy(names, keys, applied){
   const arch = s => edgeStyleArch(names[s], keys[s]);
   const a = arch('p1'), b = arch('p2');
   if (!a && !b) return `Neither ${names.p1} nor ${names.p2} has a playing-style label.`;
@@ -11798,7 +11806,8 @@ function edgeStyleWhy(names, keys){
   }
   const i = PS_ARCHETYPES.indexOf(a), j = PS_ARCHETYPES.indexOf(b), c = (i >= 0 && j >= 0) ? psCellFor(i, j) : null, n = c ? c.n : 0;
   if (!c || c.pct == null || n < PS_PAGE_MIN_N) return `${a.name} v ${b.name}: ${Number(n).toLocaleString('en-US')} match${n === 1 ? '' : 'es'}, under ${PS_PAGE_MIN_N}.`;
-  return `On the Playing Styles grid, ${edgeStylePlural(a)} win ${c.pct}% of ${Number(n).toLocaleString('en-US')} matches against ${edgeStylePlural(b)}. The model doesn’t read playing styles yet, so this layer doesn’t move the price.`;
+  // The engine reads the same grid cell since 19 Nov (styleMatchup.readLabels); before that switch the row says it doesn't.
+  return `On the Playing Styles grid, ${edgeStylePlural(a)} win ${c.pct}% of ${Number(n).toLocaleString('en-US')} matches against ${edgeStylePlural(b)}.` + (applied ? '' : ' The model doesn’t read playing styles yet, so this layer doesn’t move the price.');
 }
 
 // ── Pro gating (TEN-418 Data 8) ────────────────────────────────────────────
@@ -11980,7 +11989,7 @@ function edgeMatchHeadHtml(m, e){
   return `
     <div class="sm-card sm-mh">
       <div class="sm-mh-g">${side('p1')}<span class="sm-caps sm-mh-vs">vs</span>${side('p2')}</div>
-      <div class="sm-mh-f">${tag('Tournament', tour)}${tag('Surface', surf)}${tag('Round', rnd)}${tag('Format', bo ? 'Best of ' + bo : null)}
+      <div class="sm-mh-f">${tag('Tournament', tour)}${tag('Surface', surf)}${rnd ? tag('Round', rnd) : ''}${tag('Format', bo ? 'Best of ' + bo : null)}
         <span class="sm-mh-links">${card}${pairLink}</span></div>
     </div>`;
 }
@@ -12117,7 +12126,7 @@ function edgeLayersHtml(e, names, keys){
       const lead = s => v.moved && (s === 'p1') === v.favA;
       const rt = s => `<span class="sm-rt${!v.has ? ' na' : lead(s) ? ' lead' : ''}">${edgeEsc(v.has && v.fig ? v.fig[s === 'p1' ? 0 : 1] : '—')}</span>`;
       const sp = s => `<span class="sm-sp${lead(s) ? ' on' : ''}">${lead(s) ? v.shift : ''}</span>`;
-      const why = a.key === 'styleMatchup' && !a.applied && v.r.cell ? edgeStyleWhy(names, keys) : (a.key === 'styleMatchup' && !a.applied ? edgeStyleWhy(names, keys) : edgeWhyText(a, names));
+      const why = a.key === 'styleMatchup' ? edgeStyleWhy(names, keys, a.applied) : edgeWhyText(a, names);
       const det = open ? `<div class="sm-lp"><div class="sm-lp-in">
           <span class="sm-lp-c"><span class="sm-lp-h"><span class="sm-caps">Why</span><span class="sm-lp-p nw">${edgeEsc(v.r.w.word)} weight</span><span class="sm-lp-p">${edgeEsc(v.fav)}</span></span><span class="sm-lp-why">${edgeEsc(why || '—')}</span></span>
           <span class="sm-lp-c"><span class="sm-lp-h dq"><span class="sm-caps">Data quality</span><span class="sm-lp-st q-${v.qk}">${EDGE_QWORD[v.qk]}</span></span><span class="sm-lp-dq">${edgeEsc(v.r.cell ? 'The model doesn’t read playing styles yet.' : edgeDqText(a))}</span></span>
