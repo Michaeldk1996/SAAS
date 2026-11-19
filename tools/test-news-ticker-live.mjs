@@ -420,6 +420,9 @@ await ok('ATP reader: the inbox holds quotes checked word for word on the page a
   assert.ok(/preVerified: true/.test(src) && /\^https:\\\/\\\/www\\\.atptour\\\.com\\\//.test(src), 'only atptour.com rows from the inbox are taken as checked');
   const rd = read('tools/news-ticker/atp-reader.mjs');
   assert.ok(!/--headless/.test(rd) && /enabled === false/.test(rd), 'a normal window; the registry off switch stops it');
+  const wf = read('.github/workflows/news-quotes.yml');
+  assert.ok(/xvfb-run[^\n]*atp-reader\.mjs/.test(wf) && wf.indexOf('atp-reader.mjs') < wf.indexOf('collect-quotes.mjs\n'), 'the cloud quote job reads ATP in a visible Chrome (Xvfb), before the collector');
+  assert.ok(!/xvfb-run[^\n]*--headless/.test(wf), 'never headless');
 });
 // ---- Tennis TV on-court interviews (founder 2026-11-12): one inbox row per answer, with its topic ----
 await ok('on-court interview inbox: an answer becomes an item that keeps its topic and reads "On-court interview"; only tennistv.com clip rows are taken', async () => {

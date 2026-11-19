@@ -141,7 +141,7 @@ when the full report could not be written or did not pass its check.
     articles and ATP video / press conferences).** This replaces "ATP stays on the permission route; YouTube audio and
     the Tennis TV stream stay out". Still in force: no bypassing a technical block (atptour.com answered 403 to a plain
     request; founder 2026-11-12: "we do work around technical blocks, find a solution" — so ATP, and only ATP, is read
-    by `tools/news-ticker/atp-reader.mjs` through a normal Chrome window on the Mac, the headshot job's route; registry
+    by `tools/news-ticker/atp-reader.mjs` through a normal (visible, never headless) Chrome window — since 2026-11-19 on the cloud quote job under Xvfb (`news-quotes.yml` step "Read ATP news", founder: "find a solution" so the Mac need not be on; measured: curl 403, the visible Chrome 200 and 6 articles read), no longer the Mac; registry
     status `browser`. It stores quoted words checked word for word on the page in `news-quotes/inbox-atp.json`, never
     article text; the collector takes those rows as checked, from atptour.com only. **Test:** "ATP reader"). Every other
     blocked outlet stays out. No login is ever entered,

@@ -7,6 +7,7 @@ name: News ticker quotes
 #
 # Alerts go to the pipeline Telegram chat: this job failing (job-fail-alert.yml watches it, one message per failure
 # streak); a model call failing on credit or key (first failure); no new quote for 24 hours while a tournament is on.
+# Its first step reads atptour.com in a visible Chrome (tools/news-ticker/atp-reader.mjs; it used to run on the Mac).
 
 on:
   schedule:
@@ -48,6 +49,18 @@ jobs:
         run: |
           node tools/news-ticker/ticker-alerts.mjs --test
           node tools/news-ticker/collect-quotes.mjs --test-alerts
+
+      # ATP's own news (founder 2026-11-19: "find a solution" so the Mac need not be on). atptour.com answers 403 to
+      # curl and headless Chrome; a visible Chrome under Xvfb on this runner opens it (measured 19 Nov: 6 articles read).
+      # Best-effort: a blocked or failed read only skips ATP this run, the other outlets still run.
+      - name: Read ATP news (visible Chrome under Xvfb)
+        if: ${{ !inputs.test_alerts }}
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: |
+          sudo apt-get install -y -qq xvfb >/dev/null 2>&1 || true
+          timeout 600 xvfb-run -a -s "-screen 0 1280x800x24" node tools/news-ticker/atp-reader.mjs --repo . \
+            || echo "::warning::ATP reader did not finish (rc=$?): ATP articles skipped this run"
 
       - name: Collect quotes
         if: ${{ !inputs.test_alerts }}
