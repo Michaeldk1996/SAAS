@@ -37,7 +37,7 @@
 #h2hRoot .x-ph__title { margin: 0; font-size: 29px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
 #h2hRoot .x-ph__sub { margin: 0; font-size: 13.5px; color: var(--h2h-soft); text-wrap: pretty; }
 #h2hRoot .x-stick { position: sticky; top: 0; z-index: 30; padding: 10px 40px 14px;
-  background: linear-gradient(var(--page) 78%, color-mix(in srgb, var(--page) 0%, transparent)); }
+  background: linear-gradient(var(--page) 78%, color-mix(in srgb, var(--page) 0%, transparent)); } /* + the page glow, inline (X_STICK_BG) */
 #h2hRoot .x-stick__card { background: var(--h2h-card); border: 1px solid color-mix(in srgb, var(--h2h-white) 6%, transparent); border-radius: 14px;
   padding: 16px 18px; box-shadow: var(--h2h-shadow-sticky); }
 
@@ -94,6 +94,7 @@
 /* rows and controls (DF style-hover): a row / band / career / tournament / news / line row = the raised tone; the Overall
    box lifts with a 16% edge; a ✕ and the Filters button brighten their ring */
 #h2hRoot .x-row:hover, #h2hRoot .x-hl:hover, #h2hRoot .x-more:hover, #h2hRoot .x-topt:hover { background: var(--h2h-raised) !important; }
+#h2hRoot .x-evchip:hover { background: var(--h2h-raised) !important; color: var(--h2h-text) !important; }
 #h2hRoot .x-ovbox:hover { border-color: color-mix(in srgb, var(--h2h-white) 16%, transparent) !important; background: var(--h2h-raised) !important; }
 #h2hRoot .x-close:hover { color: var(--h2h-text) !important; border-color: color-mix(in srgb, var(--h2h-white) 30%, transparent) !important; }
 #h2hRoot .x-filt:hover { border-color: color-mix(in srgb, var(--h2h-white) 30%, transparent) !important; }

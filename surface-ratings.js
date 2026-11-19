@@ -367,8 +367,17 @@ function computeRatings(b, floors, cb) {
     // in the bucket has no ratio — null, not Infinity, and never a fabricated ceiling.
     rating: mePL > 0 ? +(mePW / mePL).toFixed(3) : null,
   } : null;
+  // Dominance ratio (founder 2026-11-19, the house formula used on Live and the match sheet):
+  // return points won % ÷ (100 − service points won %), from this bucket's tour-level counts, like Mental Edge.
+  // No serve or return points, or every serve point won → null (no ratio), never a made-up ceiling.
+  const spwN = b.firstWon + b.secondWon, rpwN = b.oSvpt - b.oFirstWon - b.oSecondWon;
+  const dominance = b.svpt > 0 && b.oSvpt > 0 && spwN < b.svpt ? {
+    spwPct: round1(spwN / b.svpt * 100),
+    rpwPct: round1(rpwN / b.oSvpt * 100),
+    rating: +((rpwN / b.oSvpt) / (1 - spwN / b.svpt)).toFixed(2),
+  } : null;
   return {
-    serve, return: ret, underPressure: up, mental,
+    serve, return: ret, underPressure: up, mental, dominance,
     reliable: okSample,
     confidence: okSample ? (usedChall ? 'med' : (haveUp >= 4 ? 'high' : haveUp >= 3 ? 'med' : 'low')) : 'low',
     sample: {
@@ -824,7 +833,7 @@ if (require.main === module) (async () => {
   for (const surf of [...SURFACES, 'All']) {
     for (const scope of ['career', 'last52']) {
       // Serve & return are single composite ratings → percentile of the composite.
-      for (const fam of ['serve', 'return']) {
+      for (const fam of ['serve', 'return', 'dominance']) {
         const vals = rows.map(r => { const b = r.surfaces[surf][scope][fam]; return b && b.rating != null ? b.rating : null; })
           .filter(v => v != null).sort((x, y) => x - y);
         for (const r of rows) {
@@ -871,6 +880,7 @@ if (require.main === module) (async () => {
       serve: 'Serve Rating = 1stIn% + 1stWon% + 2ndWon% + serviceGamesWon% + acesPerMatch - dfPerMatch, with aces and double faults as RAW PER-MATCH COUNTS over the matches carrying serve stats (serve.svMatches) - founder ruling 2026-08-29, re-affirmed TEN-243 gate b5a358e9. Until TEN-243 this file summed ace% and applied no df penalty, which did not implement that ruling; acePct/dfPct are still emitted as rates but are NOT the rating. Tour level is primary; players thin at tour level (unreliable tour sample) have their Challenger/qualifying serve sample folded in per component with the success side discounted x' + CHALL_DISCOUNT + ' (serve.inclChallenger flags those) - aces take the discount, double faults do not, because discounting a penalty would forgive errors at the weaker tier.',
       mental: 'Mental Edge = PW / PL to 3dp, where a PRESSURE POINT IS A BREAK POINT - founder ruling TEN-243 gate b5a358e9 (2026-09-19). PW = break points saved on serve + break points converted on return; PL = break points lost on serve + break points missed on return. PW + PL == sample.bpFaced + sample.bpChances by construction. Raw integer counts, tour level only (no Challenger fold-in - mixing tiers inside a count changes what the count means). rating is null when PL is 0: a player who never lost a break point in the bucket has no ratio, and an infinity is not a rating.',
       return: 'ATP-style Return Rating = 1stServeReturnWon% + 2ndServeReturnWon% + BPconverted% + returnGamesWon% (return points split by serve type to match the Infosys ATP Return leaderboard scale). Tour level is primary; players thin at tour level have their Challenger/qualifying return sample folded in per component with the success side discounted x' + CHALL_DISCOUNT + ' (return.inclChallenger flags those). rating is null (a dash) when any component has a zero denominator - above all 0 break-point chances in the bucket - and that component is emitted null rather than 0; founder ruling TEN-263, one rule across the product (matches dna-apitennis-ratings.js).',
+      dominance: 'Dominance ratio = return points won % ÷ (100 − service points won %), tour-level counts of the bucket (no Challenger fold-in, like Mental Edge); null with no serve or return points. Its index is the pool percentile of the ratio within the surface+scope bucket.',
       underPressure: 'ATP-style Under-Pressure Rating = sum of the components present scaled to the full 4-component equivalent (mean of BPsaved% / BPconverted% / tiebreak% / decidingSet% * 4, ~200-240); rated when >= 3 of 4 clear their floors so 3- and 4-component players share the ATP scale. Tour level is primary; any single component below its tour-level floor is topped up with the player\u2019s Challenger/qualifying sample (inclChallenger:true flags those buckets).',
       index: 'retained internally: 0-100 pool percentile within the same surface+scope bucket (serve/return rank the composite rating, under-pressure averages each component\u2019s own pool percentile). The board now displays the ATP-style ratings above, not this index.',
     },
@@ -899,4 +909,4 @@ if (require.main === module) (async () => {
   console.log(`\nWrote surface-ratings.json (${rows.length} players).`);
 })();
 
-module.exports = { buildPool };
+module.exports = { buildPool, computeRatings, newBucket };

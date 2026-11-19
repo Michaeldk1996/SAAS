@@ -188,7 +188,7 @@ test('fix 7: records in sentences carry an en dash (U+2013), line names a true m
 test('fix 7: the no-meetings card names the EARLIEST record the two loaded histories hold (Sinner 2019 v Vacherot 2021 → since 2019), after the design\'s sentence', () => {
   const h = page();
   const t = text(h.call(h.h2hCard, { a: PA, b: PB, h2h: { S: { firstYear: [2019, 2021] }, all: [], F: [], surf: 'all' } }));
-  assert.match(t, /These two have never met on record\. .* Searched both players’ match histories since 2019\./);
+  assert.match(t, / have never played each other\. We checked both players’ matches back to 2019\./);
 });
 
 test('fix 7: the Tournament card location = "City, Country" ("London, UK", "New York, USA"), the city from the pipeline\'s venue table', () => {

@@ -141,6 +141,21 @@ test('H6: an item is chipped with the player the News page attributes it to — 
   assert.equal(a.some(x => /Cerundolo/.test(x.title)), false);
   assert.match(s[0].meta, /^ATP Tour · /);   // source · age (ageStr reads the real clock)
 });
+test('founder 2026-11-19: a medical time-out (mto-matches.json) is an Injury item for the player who called it — joined on surname + initial, the score from his side', () => {
+  const newsFor = (() => { const src = sliceConst('H2H_NEWS_HOURS') + slice('ageStr') + '\n' + slice('xSurOf') + '\n' + slice('newsFor');
+    return new Function('DV', 'fn', 'window', src + '\nreturn newsFor;')(() => null, () => null, { pp2MtoMatches: { matches: { 12179700: [
+      { calledAt: new Date(NOW - 30 * 3600e3).toISOString(), player: 'Rafael Jodar', opponent: 'Arthur Fils', playerSide: 1, games: [[6, 1], [4, 4]], durationSeconds: 58, finalResult: '6–4, 2–6, 2–6', retired: false },
+      { calledAt: new Date(NOW - 30 * 3600e3).toISOString(), player: null, opponent: null, playerSide: null, games: [[6, 1], [4, 4]] }] } } }); })();
+  const J1 = { key: '50323', full: 'R. Jodar', short: 'R. Jodar' }, F1 = { key: '1', full: 'A. Fils', short: 'A. Fils' };
+  const j = newsFor(J1, NOW);
+  assert.equal(j.length, 1, 'one item: the unnamed duplicate row is never his');
+  assert.equal(j[0].kind, 'mto');
+  assert.equal(j[0].title, 'Jodar took a medical time-out against Fils');
+  assert.equal(j[0].body, 'Jodar called a medical time-out at 6–4, 1–4 in the second set against Fils, and it took under a minute. He lost 6–4, 2–6, 2–6.');
+  assert.deepEqual(newsFor(F1, NOW), [], 'never under the opponent');
+  const xc = new Function(slice('xNewsCat') + '\nreturn xNewsCat;')();
+  assert.equal(xc(j[0]), 'injuries', 'it sits under the Injuries filter');
+});
 test('H6: BSP Intel / ASAP items join under their own key; nothing for either player → the design\'s one grey sentence, never a sample', () => {
   const intel = () => [{ kind: 'intel', intelId: 'n1', ts: NOW - 3600e3, player: 'C. Alcaraz', playerKey: '2382', title: 'Intel on Alcaraz', bodyParas: ['x'], srcRaw: 'BSP Consult Intel' }];
   const newsFor = newsHarness([], { newsIntelItems: intel });
@@ -258,7 +273,8 @@ test('DNA (founder ruling 8, re-ruled 2026-11-18): the windows are Last 52 weeks
   assert.match(dv, /delta: \(has && W\.scope === 'last52' && d\.deltas\)/, 'Δ only on the last-52-weeks view');
   const dc = slice('dnaCareerFor');
   assert.match(dc, /rec\.surfaces\[surface\]\.career/);
-  assert.match(dc, /const ratings = \[g\(nd\.serve, 'rating'\), g\(nd\.return, 'rating'\), g\(nd\.underPressure, 'rating'\), null, dnaEloPeak\(p\.full\)\];/);
+  assert.match(dc, /const ratings = \[g\(nd\.serve, 'rating'\), g\(nd\.return, 'rating'\), g\(nd\.underPressure, 'rating'\), g\(nd\.dominance, 'rating'\), peak\];/, 'founder 2026-11-19: the career dominance ratio');
+  assert.match(dc, /const pcts = \[g\(nd\.serve, 'index'\), g\(nd\.return, 'index'\), g\(nd\.underPressure, 'index'\), g\(nd\.dominance, 'index'\), dnaEloPeakPct\(peak\)\];/, 'every career axis carries a shape point');
   assert.match(slice('dnaEloPeak'), /rec\.peak \? rec\.peak\.rating/);
 });
 // ── Playing style (design §2, DF L253–290): the radar and the ten face-to-face rows, executed ─────────────────────
@@ -351,13 +367,14 @@ test('the sticky picker (DF L45–200): sticky at top 0 on a page-tone band, car
   const h = page({ SfCountryIoc: { of: c => ({ Italy: 'ITA', Spain: 'ESP' })[c] || null } });
   const c = h.call(h.selectorBar, pageV());
   // the band = the website's page tone fading out (founder ruling 4, 2026-11-18; CHANGES 2026-11-18 §1), never --h2h-page
-  assert.match(c, /^<div class="x-stick" style="position:sticky; top:0; z-index:30; padding:10px 40px 14px; background:linear-gradient\(var\(--page\) 78%, color-mix\(in srgb, var\(--page\) 0%, transparent\)\);">/);
+  assert.match(c, /^<div class="x-stick" style="position:sticky; top:0; z-index:30; padding:10px 40px 14px; background:radial-gradient\(ellipse 1500px 640px at var\(--x-gx, 720px\) var\(--x-gy, -120px\), var\(--glow\) 0%, color-mix\(in srgb, var\(--glow\) 0%, transparent\) 100%\) 0 0 \/ 100% 78% no-repeat, linear-gradient\(var\(--page\) 78%, color-mix\(in srgb, var\(--page\) 0%, transparent\)\);">/, 'the page tone + the page glow, so the band never cuts the glow (founder 2026-11-19)');
   assert.match(c, new RegExp(`<div id="h2h-sticky" style="background:var\\(--h2h-card\\); border:1\\.25px solid ${esc(W(6))}; border-radius:14px; padding:16px 18px; box-shadow:var\\(--h2h-shadow-sticky\\);">`));
   assert.match(c, /<div class="x-pick" style="display:grid; grid-template-columns:minmax\(0,1fr\) 54px minmax\(0,1fr\); gap:12px; align-items:start;">/);
   assert.equal(text(c), 'Change ITA Jannik Sinner RANK #2 ELO 2210 JS VS Change CA Carlos Alcaraz ESP RANK #1 ELO 2250 Model Meetings Surface Hard', 'A right-aligned (Change · country · name, avatar last), B mirrored');
-  // the picked box (CHANGES 2026-11-17 §1): --h2h-card + 9% edge r12 11/14; avatar 44, A ring blue, B ring white; "Change" caps on a 10% border
+  // the picked box (CHANGES 2026-11-17 §1): --h2h-card + 9% edge r12 11/14; avatar 44, no ring (founder 2026-11-19); "Change" caps on a 10% border
   assert.match(c, new RegExp(`<div style="display:flex; align-items:center; gap:13px; background:var\\(--h2h-card\\); border:1px solid ${esc(W(9))}; border-radius:12px; padding:11px 14px; min-width:0;">`));
-  assert.deepEqual([...c.matchAll(/class="x-av"[^>]*width:44px; height:44px;[^>]*box-shadow:0 0 0 2px ([^;]+);/g)].map(m => m[1]), ['var(--h2h-blue)', 'var(--h2h-text)']);
+  // founder 2026-11-19: no blue / white ring in the picker (rings only where stats compare)
+  assert.deepEqual([...c.matchAll(/class="x-av"[^>]*width:44px; height:44px;[^>]*box-shadow:([^;]+);/g)].map(m => m[1]), ['none', 'none']);
   assert.match(c, new RegExp(`<span class="seg x-change" data-hid="1" style="${esc(CAP)} border:1px solid ${esc(W(10))}; border-radius:7px; padding:5px 9px;">Change</span>`));
   // the jump links (data-h2h-jump) and the global switches, under a 6% hairline
   assert.match(c, new RegExp(`margin-top:14px; padding-top:12px; border-top:1px solid ${esc(W(6))};`));

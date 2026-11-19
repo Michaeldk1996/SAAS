@@ -102,12 +102,12 @@ function styleView(rows, avg) {
   return { a: SIN, b: ALC, styles: { sides: [{ p: SIN, R: { state: 'ready', oppLab: 'Big Server', avg, rows } }, { p: ALC, R: { state: 'ready', oppLab: 'Big Server', avg, rows: [] } }], arch: ['All Court Elite', 'All Court Elite'] } };
 }
 const recRow = (ago, won) => ({ won, opponent: 'Player ' + ago, surface: 'hard', tournament: 'Basel', result: won ? '6-4 6-4' : '4-6 4-6', date: iso(day0 - ago), round: 'R32' });
-test('Record against each style (founder 2026-11-17): the "Vs style average" figure keeps its sign colour (green / red) for n 5–9; only the win rate greys; under 5 still "—"', () => {
+test('Record against each style (founder 2026-11-17 / 2026-11-19): the "Vs style average" keeps its sign colour at n 5–9; the win rate stays white as the design (the small sample is its hover); under 5 still "—"', () => {
   const h = HX.load({ html, globals: { _careerHistoryShards: {}, _sfDbJoinSt: 'loading', _sfDbJoinP: new Promise(() => {}) } });
   const six = (w) => Array.from({ length: 6 }, (_, i) => recRow(10 + i, i < w));
   const up = h.call(h.stylesCard, styleView(six(5), 50));   // 83% v 50 → +33 pts, n 6
   assert.match(up, /title="Small sample · n=6"/);
-  assert.match(up, /font-size:20px; font-weight:700; line-height:1; color:var\(--h2h-grey\);">83%</, 'the rate greys at 5–9');
+  assert.match(up, /font-size:20px; font-weight:700; line-height:1;">83%</, 'the rate stays white at 5–9 (founder 2026-11-19: the design\'s colours)');
   assert.match(up, /color:var\(--h2h-up\);">\+33 pts</, 'the gap stays green');
   assert.match(up, /background:var\(--h2h-up\); left:50\.0%;/, 'and its bar');
   const dn = h.call(h.stylesCard, styleView(six(1), 50));   // 17% v 50 → −33 pts
@@ -168,7 +168,7 @@ test('xTrAgg (group mode): two events, the window cut by EXACT date — W–L, s
   assert.deepEqual([A.W, A.L, A.n], [3, 1, 4], 'the 366-day-old R16 loss is outside the window; the 363-day-old QF loss inside');
   assert.ok(!A.rows.some(r => r.date === outWin), 'the old row is cut');
   assert.deepEqual([A.sW, A.sT], [6, 8], 'sets: 2+2+2 won, 0+0+2 lost');
-  assert.deepEqual(J(A.best), { code: 'Won', year: yr(iso(day0 - 20)) }, 'best = the won final (a full edition marked Won)');
+  assert.deepEqual(J(A.best), { code: 'Won', year: yr(iso(day0 - 20)), ev: 'Basel' }, 'best = the won final (a full edition marked Won), with its event (founder 2026-11-19)');
   assert.deepEqual([A.last.row.opp, A.last.year], ['A. Zverev', yr(iso(day0 - 20))], 'last played = the newest played row');
   const priced = [basel.P.eds[0].rows[0], basel.P.eds[0].rows[1], shang.P.eds[0].rows[0]];
   assert.equal(A.priced.length, 3, 'three priced rows in the window (the unpriced Shelton match is not a bet)');
@@ -202,7 +202,9 @@ test('Tournament record: group mode (a Surface or Court speed set) runs over eve
   assert.equal(grp.grp, true);
   const cg = h.call(h.tourneyCard, { a, b, tourney: grp });
   assert.match(text(cg), /^Tournament record At one event, or across a surface and court speed Back to Swiss Indoors › /);
-  assert.match(text(cg), / 1 Hard courts 1 tournament · Swiss Indoors Surface Hard Court speed All Tournaments 1 /, 'the row names the condition; Monte Carlo (clay) is out');
+  assert.match(text(cg), / 1 Hard courts 1 tournament Swiss Indoors Surface Hard Court speed All /, 'the row names the condition, its events as chips (founder 2026-11-19); Monte Carlo (clay) is out');
+  assert.match(cg, /class="seg x-evchip"/, 'each event is a chip that opens it');
+  assert.match(text(cg), /Best result QF Swiss Indoors 2024/, 'the best result names its event (founder 2026-11-19)');
   assert.match(text(cg), /J\. Sinner On hard courts · since 2025 1–0 /);
   assert.match(text(cg), /Swiss Indoors 2025 Hard · Fast · 1–0 that year/, 'group heads: event + year, surface · speed');
   // "Back to" clears both filters (back to the one tournament)
@@ -210,11 +212,11 @@ test('Tournament record: group mode (a Surface or Court speed set) runs over eve
   assert.deepEqual([h.state.trSurf, h.state.trSpeed], ['all', 'all']);
   // Court speed Slow: Monte Carlo (its one rating reads Slow); Alcaraz never played it
   const slow = text(h.call(h.tourneyCard, { a, b, tourney: h.call(h.tourneyVals, a, b, { tourSel: 'Basel', trSpeed: 'Slow' }) }));
-  assert.match(slow, / 1 Slow courts 1 tournament · Monte-Carlo Masters Surface All Court speed Slow Tournaments 1 /);
+  assert.match(slow, / 1 Slow courts 1 tournament Monte-Carlo Masters Surface All Court speed Slow /);
   assert.match(slow, /J\. Sinner On slow courts · since 2025 0–1 .* C\. Alcaraz has no matches on slow courts\.$/);
   // a condition nothing fits, with a window: "0 tournaments · none on record", the window named in the empty line
   const grass = text(h.call(h.tourneyCard, { a, b, tourney: h.call(h.tourneyVals, a, b, { tourSel: 'Basel', trSurf: 'Grass', trWin: 'w52' }) }));
-  assert.match(grass, / 0 Grass courts 0 tournaments · none on record /);
+  assert.match(grass, / 0 Grass courts 0 tournaments none on record /);
   assert.match(grass, /J\. Sinner has no matches on grass courts in the last 52 weeks\./);
 });
 
@@ -315,25 +317,30 @@ test('ruling 3: the page ranks its hot lines from 2 meetings; Match analysis (fh
 
 // ── Playing style windows (founder ruling 8, 2026-11-18) ──
 function dnaHarness(o) {
-  const sr = { players: [{ key: '1', name: 'J. Sinner', surfaces: { Hard: { career: { serve: { rating: 301.2, index: 97.5, firstWonPct: 77.1, secondWonPct: 56.2, holdPct: 89.9 }, return: { rating: 155.4, index: 96.1, breakPct: 29.8, bpConvPct: 41.7 }, underPressure: { rating: 241.3, index: 93.2 }, sample: { matches: (o && o.n) || 180 } } } } },
-    { key: '2', name: 'C. Alcaraz', surfaces: { Hard: { career: { serve: { rating: 284.3, index: 93.5, firstWonPct: 73.3, secondWonPct: 56.6, holdPct: 86.4 }, return: { rating: 157.1, index: 98.5, breakPct: 28.7, bpConvPct: 41.2 }, underPressure: { rating: 238.4, index: 91.6 }, sample: { matches: 226 } } } } }] };
+  const sr = { players: [{ key: '1', name: 'J. Sinner', surfaces: { Hard: { career: { serve: { rating: 301.2, index: 97.5, firstWonPct: 77.1, secondWonPct: 56.2, holdPct: 89.9 }, return: { rating: 155.4, index: 96.1, breakPct: 29.8, bpConvPct: 41.7 }, underPressure: { rating: 241.3, index: 93.2 }, dominance: { rating: 1.12, index: 95.0 }, sample: { matches: (o && o.n) || 180 } } } } },
+    { key: '2', name: 'C. Alcaraz', surfaces: { Hard: { career: { serve: { rating: 284.3, index: 93.5, firstWonPct: 73.3, secondWonPct: 56.6, holdPct: 86.4 }, return: { rating: 157.1, index: 98.5, breakPct: 28.7, bpConvPct: 41.2 }, underPressure: { rating: 238.4, index: 91.6 }, dominance: { rating: 1.1, index: 92.0 }, sample: { matches: 226 } } } } }] };
   const elo = { elo: { 'sinner|j': { all: { rating: 2210 }, peak: { rating: 2341, month: '2025-06' } }, 'alcaraz|c': { all: { rating: 2195 }, peak: { rating: 2309, month: '2026-03' } } } };
+  if (o && o.noDom) sr.players.forEach(x => { delete x.surfaces.Hard.career.dominance; });
   const h = HX.load({ html, globals: { surfaceRatings: sr, eloRatings: elo } });
   h.call(() => h.need('psEloNorm'));
   return h;
 }
-test('ruling 8: Career = surface-ratings career (Serve / Return / Under pressure + their pool percentile) and the Elo PEAK; Dominance ratio "—"', () => {
+test('ruling 8 + career radar (founder 2026-11-19): Career = surface-ratings career (Serve / Return / Under pressure / Dominance + their pool percentile) and the Elo PEAK with its percentile among every peak', () => {
   const h = dnaHarness();
   h.state.dnaWin = 'career'; h.state.ctxSurface = 'Hard';
   const D = h.call(h.dnaVals, SIN, ALC);
   assert.deepEqual(J(D.tabs.map(t => t.label)), ['Last 52 weeks', 'Career'], 'two windows (ruling 8 re-ruled: Last 24 months skipped)');
-  assert.deepEqual(J(D.a.vals.map(x => x.raw)), [301.2, 155.4, 241.3, null, 2341], 'serve, return, under pressure, no DR, the Elo peak');
-  assert.deepEqual(J(D.a.vals.map(x => x.pct)), [97.5, 96.1, 93.2, null, null], 'the shape = the pool percentile; no percentile for the peak');
+  assert.deepEqual(J(D.a.vals.map(x => x.raw)), [301.2, 155.4, 241.3, 1.12, 2341], 'serve, return, under pressure, dominance, the Elo peak');
+  assert.deepEqual(J(D.a.vals.map(x => x.pct)), [97.5, 96.1, 93.2, 95, 50], 'the shape = the pool percentile; the peak = its place among every peak (1 of 2 below it)');
+  assert.deepEqual(J(D.b.vals.map(x => x.pct)), [93.5, 98.5, 91.6, 92, 0]);
   assert.deepEqual(J(D.extra.a), [77.1, 56.2, 89.9, 29.8, 41.7], 'the rows read the same career node (return games won = breakPct)');
   const t = text(h.call(h.dnaCard, { a: SIN, b: ALC, dna: D }));
   assert.match(t, /Elo peak 2341 · 2309/, 'the radar axis names the peak');
   assert.match(t, /Ratings 2341 Elo peak 32 2309 /, 'the row is the peak, its gap on the line');
-  assert.match(t, /Dominance ratio — · —/);
+  assert.match(t, /Dominance ratio 1\.12 · 1\.10/);
+  // control: a node built before the field existed draws no dominance point (a dash, never a guess)
+  const hOld = dnaHarness({ noDom: true }); hOld.state.dnaWin = 'career'; hOld.state.ctxSurface = 'Hard';
+  assert.deepEqual(J(hOld.call(hOld.dnaVals, SIN, ALC).a.vals.map(x => x.pct)), [97.5, 96.1, 93.2, null, 50]);
   // control: under the 10-match floor no figure but the peak
   const t9 = h.call(h.dnaVals, Object.assign({}, SIN), ALC);
   const h9 = dnaHarness({ n: 9 }); h9.state.dnaWin = 'career'; h9.state.ctxSurface = 'Hard';
@@ -374,7 +381,7 @@ test('item 12: the news ticker\'s reports and quotes join the card by player key
   h.state.newsOpen = 'treport-1';
   const card = h.call(h.newsCard, { a: SIN, b: ALC, news: h.call(h.newsVals, SIN, ALC) });
   assert.match(text(card), /C\. Alcaraz beat F\. Tiafoe, 6-3, 6-2 C\. Alcaraz · Match report · Stennisfy · 1h ago › Alcaraz beat Tiafoe\. Match report Stennisfy · 1h ago Close/, 'the opened item: body, kind pill, source · time, Close (CHANGES 2026-11-18 §7)');
-  assert.match(card, /background:var\(--h2h-layer\); box-shadow:inset 0 0 0 1px color-mix\(in srgb, var\(--h2h-white\) 12%, transparent\);/);
+  assert.match(card, /background:var\(--h2h-layer\); box-shadow:inset 0 0 0 1px color-mix\(in srgb, var\(--h2h-white\) 12%, transparent\);/);  assert.doesNotMatch(card, /class="x-av"[^>]*box-shadow:0 0 0 2px/, 'founder 2026-11-19: no blue / white ring around a news avatar');
 });
 
 // ── the return chart keeps the design's style (founder ruling 2, 2026-11-18) ──

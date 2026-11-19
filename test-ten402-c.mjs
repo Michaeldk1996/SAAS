@@ -135,6 +135,25 @@ test('Market edge gate: under 5 matches the band\'s Return dashes with Won and E
   assert.match(text(bandRows(marketOf(h, A, A).html)[0]), /^1\.01 – 1\.20 Heavy favourite — 2–1 — ›$/);
 });
 
+test('Market edge (founder 2026-11-19): a band row and a tile open his matches in that band — Record, Win rate / break even, Edge, Return, then every priced match newest first', () => {
+  const h = page();
+  const L = playerWith(rowsOf(Array.from({ length: 12 }, (_, i) => [10 + i, 1.5, i < 9])), 'L. Large');
+  const { m, html: card } = marketOf(h, L, L);
+  const bi = core.bandOf(1.5), row = bandRows(card)[bi], hid = /data-hid="(\d+)"/.exec(row)[1];
+  h.X.handlers()[+hid]();
+  assert.deepEqual(J(h.state.meBox), { i: 0, k: bi }, 'the row opens the pop-up for player one, that band');
+  assert.equal(h.state.mBand, bi, 'and still filters the return chart to it (the design)');
+  const pop = h.call(h.meBoxHTML, { a: L, b: L, market: h.call(h.marketVals, L, L, {}), showBody: true });
+  const t = text(pop);
+  assert.match(t, /L\. Large · Favourite · 1\.36–1\.50 Last 52 weeks · closing odds/);
+  assert.match(t, /Record 9–3 12 priced matches Win rate 75\.0% break even 66\.7% Edge \+8\.3 pts win rate − break even Return \+[\d.]+% flat 1% stake/);
+  assert.equal((pop.match(/class="seg x-row" data-hid/g) || []).length, 12, 'every priced match is a row');
+  assert.doesNotMatch(pop, /box-shadow:0 0 0 2px/, 'no ring around his avatar');
+  // a tile opens its group / band too
+  const tileHid = /<div class="seg x-row" role="button" tabindex="0" title="Open his matches" data-hid="(\d+)"/.exec(card)[1];
+  h.X.handlers()[+tileHid]();
+  assert.deepEqual(J(h.state.meBox), { i: 0, k: 'fav' }, 'As favourite opens every favourite band');
+});
 test('Market edge: 5–9 greyed (small sample), 10+ in the signed colour; A ring blue, B ring white; Total return = the sum of the priced matches', () => {
   const h = page();
   const S = playerWith(rowsOf(Array.from({ length: 7 }, (_, i) => [10 + i, 1.5, i < 6])), 'S. Small');
@@ -142,11 +161,11 @@ test('Market edge: 5–9 greyed (small sample), 10+ in the signed colour; A ring
   const card = marketOf(h, S, L).html;
   const sRow = bandRows(card.slice(0, card.indexOf('L. Large')))[core.bandOf(1.5)], lRow = bandRows(card.slice(card.indexOf('L. Large')))[core.bandOf(1.5)];
   assert.match(sRow, /title="Small sample · n=7"/);
-  assert.match(sRow, /class="x-edgechip" style="[^"]*color:var\(--h2h-grey\); background:var\(--h2h-layer\);[^"]*">\+\d+\.\d</, '5–9: the edge greyed');
+  assert.match(sRow, /class="x-edgechip" style="[^"]*color:var\(--h2h-up\); background:var\(--h2h-layer\);[^"]*">\+\d+\.\d</, '5–9: the edge keeps its sign colour (founder 2026-11-19: green or red, never grey)');
   assert.match(lRow, /class="x-edgechip" style="[^"]*color:var\(--h2h-up\); background:var\(--h2h-layer\);[^"]*">\+\d+\.\d</, '10+: a positive edge in --h2h-up');
   assert.match(lRow, /<span style="position:absolute; top:0; height:4px; border-radius:2px; left:50\.0%; width:\d+\.\d%; background:var\(--h2h-up\);"><\/span>/, 'the green segment runs right from the centre');
-  assert.deepEqual(iniRings(card).slice(0, 2), [BLUE, WHITE], 'player one blue, player two white (initials only, DF L676)');
-  assert.doesNotMatch(card, /<img/, 'no photo on a Market edge card');
+  assert.deepEqual(iniRings(card), [], 'no ringed initials on a Market edge card');
+  assert.doesNotMatch(card, /box-shadow:0 0 0 2px var\(--h2h-(blue|text)\)/, 'no blue or white ring around a Market edge avatar (founder 2026-11-19)');
   const M = core.playerModel(L._cSt.rows, { scope: 'l52', refDay: day0, winnerRows: L._cSt.rows.win });
   const u = M.priced.reduce((s2, r) => s2 + core.plCents(r), 0) / 100;
   assert.match(text(card.slice(card.indexOf('L. Large'))), new RegExp(`^L\\. Large 12 priced matches \\+${u.toFixed(1)}% Total return`), 'every return in % (CHANGES 2026-11-17 §4)');
@@ -231,7 +250,7 @@ test('Record vs style: under 5 no rate, 5–9 grey "small sample", 10+ white; Vs
   const c7 = h.call(h.stylesCard, styleView(seven, [], { avgA: 50 }));
   assert.equal(styleCards(c7)[0], 'Record 5–2 Win rate 71% Vs style average +21 pts');
   assert.match(c7, /title="Small sample · n=7"/);
-  assert.match(c7, /font-size:20px; font-weight:700; line-height:1; color:var\(--h2h-grey\);">71%</, '5–9 greyed');
+  assert.match(c7, /font-size:20px; font-weight:700; line-height:1;">71%</, '5–9: the rate stays white as the design (founder 2026-11-19); the hover says small sample');
   assert.match(c7, /color:var\(--h2h-up\);">\+21 pts</, 'founder 2026-11-17: the gap keeps its sign colour at n 5–9 (only the win rate greys)');
   const twelve = Array.from({ length: 12 }, (_, i) => recRow(10 + i, i < 9));
   const c12 = h.call(h.stylesCard, styleView(twelve, [], { avgA: 50 }));
@@ -322,8 +341,8 @@ test('career-match card: the design\'s grid, six rows then "Show N more matches"
   assert.match(c, new RegExp(`grid-template-columns:${re(LEDGER_COLS)}; gap:0 10px; align-items:center; padding:8px 18px; background:var\\(--h2h-card\\); border-top:1px solid color-mix\\(in srgb, var\\(--h2h-white\\) 6%, transparent\\);`), 'the column head on the design grid, card tone (CHANGES 2026-11-18 §3)');
   // the price column head: the player's initials, 24px, 1px 16% edge, no ring, never a photo (DF L559; founder ruling 10)
   assert.match(c, /<span class="x-avmini" title="J\. Sinner’s closing price" style="justify-self:end; width:24px; height:24px; border-radius:50%; border:1px solid color-mix\(in srgb, var\(--h2h-white\) 16%, transparent\);[^"]*font-size:9\.5px;[^"]*">JS<\/span>/);
-  // the card head: initials in a ring, no photo (DF L553; founder ruling 10)
-  assert.match(c, /<span class="x-ini" style="flex:none; width:38px; height:38px; border-radius:50%; background:var\(--h2h-card\); box-shadow:0 0 0 2px var\(--h2h-blue\);[^"]*font-size:13px;[^"]*">JS<\/span><div[^>]*><span[^>]*>J\. Sinner<\/span><span[^>]*>Career matches against/);
+  // the card head (founder 2026-11-19, replaces ruling 10 here): the player's avatar, photo when stored, NO blue / white ring
+  assert.match(c, /<span class="x-av"  style="[^"]*width:38px; height:38px; border-radius:50%; background:var\(--h2h-raised\); box-shadow:none;[^"]*"><span class="x-av__i"[^>]*font-size:13px;[^>]*>JS<\/span>(<img[^>]*>)?<\/span><div[^>]*><span[^>]*>J\. Sinner<\/span><span[^>]*>Career matches against/);
   assert.match(text(c), /Shanghai Masters Hard · Masters 1000/, 'the group header prints the one event name (sfEventName)');
   assert.ok(!/>Shanghai</.test(c), 'never the raw key');
   assert.deepEqual(ringOf(c).slice(0, 2), [BLUE, WHITE], 'card A ring blue, card B ring white');

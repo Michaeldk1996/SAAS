@@ -616,7 +616,7 @@ test('TEN-437 (5): a history that did not load is "could not load" + Retry (H2HP
   const f = text(h.call(h.h2hCard, { a: PA, b: PB, h2h: { failed: true, names: ['C. Alcaraz'] } }));
   assert.match(f, /^Head to head record Meetings between the two players Head to head could not load: the match history for C\. Alcaraz did not load\. Retry$/);
   assert.match(h.call(h.h2hCard, { a: PA, b: PB, h2h: { failed: true, names: [] } }), /<span class="seg" onclick="H2HPage\._h2hRetry\(\)"[^>]*>Retry<\/span>/);
-  assert.match(text(h.call(h.h2hCard, h.view())), /These two have never met on record\./);
+  assert.match(text(h.call(h.h2hCard, h.view())), / have never played each other\./);
   assert.match(text(h.call(h.h2hCard, { a: PA, b: PB, h2h: { loading: true } })), /Loading head to head…/);
 });
 

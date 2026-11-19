@@ -27666,7 +27666,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
     styleAAll: false, styleBAll: false,   // per-column "+N more" state for the career style-meeting lists (TEN-117)
     mOpen: null, mView: 'stats', mSScope: 'match', mPScope: 's1', yrOpen: null, newsOpen: null,
     h2hSurf: 'all', h2hAllLines: false,
-    hotOpen: null, h2hBox: false, boxSel: null, psFilt: false, psRecWin: 'career', psRecSurf: 'all', psSpeed: 'all', newsCat: 'all',   // TEN-402 b: the Head-to-head record's scope chip and Hot lines' "Show all lines"
+    hotOpen: null, h2hBox: false, boxSel: null, meBox: null, psFilt: false, psRecWin: 'career', psRecSurf: 'all', psSpeed: 'all', newsCat: 'all',   // TEN-402 b: the Head-to-head record's scope chip and Hot lines' "Show all lines"
   };
   // TEN-402 (a): the DNA card's tab (Last 52 weeks | Since Mar 2024) and its "Show player profile" toggle.
   Object.assign(state, { dnaWin: 'w52', dnaProf: false });
@@ -28484,7 +28484,9 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
       noMatch: tq.length > 0 && !hits.length,
       info: grp ? { grp: true, initial: String(GT.length), name: gLbl.charAt(0).toUpperCase() + gLbl.slice(1),
           location: GT.length + (GT.length === 1 ? ' tournament' : ' tournaments'), surface: GT.length ? GT.map(e2 => evName(e2.name)).join(', ') : 'none on record',
-          meta: [['Surface', SF === 'all' ? 'All' : SF], ['Court speed', SPD === 'all' ? 'All' : SPD], ['Tournaments', String(GT.length)]],
+          // founder 2026-11-19 ("refine the band"): the events as chips (a click opens that tournament), the count once
+          events: GT.map(e2 => ({ label: evName(e2.name), h: bindH(() => setState({ tourSel: e2.name, tourQuery: '', tourOpen: false, trSurf: 'all', trSpeed: 'all', trAAll: false, trBAll: false })) })),
+          meta: [['Surface', SF === 'all' ? 'All' : SF], ['Court speed', SPD === 'all' ? 'All' : SPD.charAt(0).toUpperCase() + SPD.slice(1)]],
           unrated: SPD !== 'all' ? evs.filter(e2 => (SF === 'all' || e2.surface === SF) && !e2.speed).length : 0 }
         : Object.assign(cTourInfo(selName, surfVote), { name: evName(selName), initial: (evName(selName).trim()[0] || 'T').toUpperCase() }),
       cols,
@@ -28529,7 +28531,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
     eds.forEach(e => {
       const last = e.rows[0];
       const code = e.full && e.result === 'Won' ? 'Won' : last && !last.won && !last.wo ? last.round : null;
-      if (code && TR_BEST_RANK[code] && (!best || TR_BEST_RANK[code] > TR_BEST_RANK[best.code] || (TR_BEST_RANK[code] === TR_BEST_RANK[best.code] && e.year > best.year))) best = { code, year: e.year };
+      if (code && TR_BEST_RANK[code] && (!best || TR_BEST_RANK[code] > TR_BEST_RANK[best.code] || (TR_BEST_RANK[code] === TR_BEST_RANK[best.code] && e.year > best.year))) best = { code, year: e.year, ev: e.ev && e.ev.name };
     });
     let sW = 0, sT = 0;
     rows.forEach(r => { if (r.pS != null && !r.wo) { sW += r.pS; sT += r.pS + r.oS; } });
@@ -28588,6 +28590,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
     root.querySelectorAll('[data-hfocus]').forEach(el => {
       el.addEventListener('focus', e => { const fn = handlers[+el.dataset.hfocus]; if (fn) fn(e); });
     });
+    xGlowSync();
     // the design's jump links: smooth-scroll the window to the section, its top just under the sticky picker (README:
     // never scrollIntoView, which would shift the app shell)
     root.querySelectorAll('[data-h2h-jump]').forEach(el => {
@@ -28608,6 +28611,18 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
       el.addEventListener('change', fire);
       el.addEventListener('input', fire);
     });
+  }
+  // Founder 2026-11-19: the sticky band must not cut the page glow (--page-bg on <html>, which scrolls with the page).
+  // The band paints the same glow, its centre moved into the band's own box, so it matches whatever is behind it.
+  const X_STICK_BG = 'radial-gradient(ellipse 1500px 640px at var(--x-gx, 720px) var(--x-gy, -120px), var(--glow) 0%, color-mix(in srgb, var(--glow) 0%, transparent) 100%) 0 0 / 100% 78% no-repeat, linear-gradient(var(--page) 78%, color-mix(in srgb, var(--page) 0%, transparent))';
+  function xGlowSync() {
+    const st = document.querySelector('#h2hRoot .x-stick'); if (!st) return;
+    const r = st.getBoundingClientRect(), de = document.documentElement.getBoundingClientRect();
+    st.style.setProperty('--x-gx', (720 - (r.left - de.left)) + 'px');
+    st.style.setProperty('--x-gy', (-120 - (r.top - de.top)) + 'px');
+    if (!xGlowSync.on) { xGlowSync.on = true; let q = 0;
+      const tick = () => { if (q) return; q = requestAnimationFrame(() => { q = 0; xGlowSync(); }); };
+      window.addEventListener('scroll', tick, { passive: true }); window.addEventListener('resize', tick); }
   }
   function render() {
     const root = rootEl(); if (!root) return;
@@ -28787,8 +28802,9 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
   // are Last 52 weeks · Career. What each reads:
   //  · Last 52 weeks = the DNA file's last52 scope (unchanged; Surface Elo = the current weekly Elo on that surface).
   //  · Career = surface-ratings.json `career` (2010–now, the Database → Ratings figures): Serve, Return, Under pressure
-  //    ratings and their pool-percentile `index` for the shape; Dominance ratio has no career figure ("—"); the Elo axis is
-  //    the PEAK (elo-ratings.json `peak`, all surfaces — a career figure that is a peak, ruling 8), with no percentile.
+  //    ratings and their pool-percentile `index` for the shape; Dominance ratio = the node's `dominance` (founder 2026-11-19,
+  //    return points won % ÷ (100 − service points won %), built by surface-ratings.js); the Elo axis is the PEAK
+  //    (elo-ratings.json `peak`, all surfaces — ruling 8), its shape point = its percentile among every player's peak.
   //    The rows read the same node (1st / 2nd serve points won, service games held, return games won = breakPct, break
   //    points converted). The 10-match floor reads the node's own sample.
   const DNA_WIN = { w52: { scope: 'last52', label: 'Last 52 weeks', lc: 'last 52 weeks' },
@@ -28801,6 +28817,15 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
     const r = rec && rec.peak ? rec.peak.rating : null;
     return typeof r === 'number' && isFinite(r) ? r : null;
   }
+  // The peak's place among every peak in elo-ratings.json (the share of peaks below it, as surface-ratings.js pctOf).
+  let _dnaPeaks = null, _dnaPeaksOf = null;
+  function dnaEloPeakPct(v) {
+    const EL = DV('eloRatings'); if (v == null || !EL || !EL.elo) return null;
+    if (_dnaPeaksOf !== EL) { _dnaPeaksOf = EL; _dnaPeaks = Object.values(EL.elo).map(x => x && x.peak && x.peak.rating).filter(x => typeof x === 'number' && isFinite(x)).sort((x, y) => x - y); }
+    if (!_dnaPeaks.length) return null;
+    let lo = 0; while (lo < _dnaPeaks.length && _dnaPeaks[lo] < v) lo++;
+    return +(lo / _dnaPeaks.length * 100).toFixed(1);
+  }
   function dnaCareerFor(p, surface) {
     const sr = DV('surfaceRatings');
     if (!sr || !Array.isArray(sr.players) || !sr.players.length) return { d: { loading: true, inPool: false, ok: false }, extra: DNA_EXTRA.map(() => null) };
@@ -28810,8 +28835,9 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
     const matches = (nd.sample && nd.sample.matches) || 0, ok = matches >= DNA_FLOOR;
     const num = v => (typeof v === 'number' && isFinite(v) ? v : null);
     const g = (o, k) => (o ? num(o[k]) : null);
-    const ratings = [g(nd.serve, 'rating'), g(nd.return, 'rating'), g(nd.underPressure, 'rating'), null, dnaEloPeak(p.full)];
-    const pcts = [g(nd.serve, 'index'), g(nd.return, 'index'), g(nd.underPressure, 'index'), null, null];
+    const peak = dnaEloPeak(p.full);
+    const ratings = [g(nd.serve, 'rating'), g(nd.return, 'rating'), g(nd.underPressure, 'rating'), g(nd.dominance, 'rating'), peak];
+    const pcts = [g(nd.serve, 'index'), g(nd.return, 'index'), g(nd.underPressure, 'index'), g(nd.dominance, 'index'), dnaEloPeakPct(peak)];
     const extra = ok ? [g(nd.serve, 'firstWonPct'), g(nd.serve, 'secondWonPct'), g(nd.serve, 'holdPct'), g(nd.return, 'breakPct'), g(nd.return, 'bpConvPct')] : DNA_EXTRA.map(() => null);
     return { d: { inPool: true, ok, matches, pcts, ratings, career: true }, extra };
   }
@@ -28938,6 +28964,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
   // player is never re-tagged (the old surname-anywhere filter chipped a Sinner headline as Alcaraz), and an item
   // the News page leaves unattributed is not shown. No News-page selection (tournament, category, search) applies.
   // Newest first. Item: { id, ts, who, whoKey, title, meta, body }.
+  let _xMtoAsked = false;
   function newsFor(p, nowMs) {
     if (!p || typeof p !== 'object' || p.key == null) return [];
     const key = String(p.key), full = p.full;
@@ -28968,6 +28995,31 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
         out.push({ id: it.id, ts: it.ts, who: p.short, whoKey: key, title: it.title || 'Untitled', meta: [it.source || '', ageStr(it.ts)].filter(Boolean).join(' · '),
           body: (it.bodyParas || []).join('\n\n'), kind: 'ticker', tcat: it.cat });
       }); }
+    // Founder 2026-11-19: a medical time-out is injury news. mto-matches.json (the MTO bot's file, the one the profile's
+    // MTO badge reads; loaded once a session) → one Injury item per time-out he called: when, the score from his side, how
+    // long, and the final score. Joined on his name (the file spells it in full): same surname and first initial.
+    const MT = typeof window !== 'undefined' ? window.pp2MtoMatches : null;
+    if (MT === undefined && !_xMtoAsked) { _xMtoAsked = true; const ld = fn('loadPp2Mto'); if (ld) Promise.resolve(ld(key)).then(() => { if (built && state.aSel && state.bSel) render(); }).catch(() => {}); }
+    if (MT && MT.matches) {
+      const nmK = x => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z ]/g, ' ').replace(/\s+/g, ' ').trim();
+      Object.entries(MT.matches).forEach(([ek, list]) => (list || []).forEach((x, j) => {
+        // the file spells him in full ("Rafael Jodar"), the page may hold "R. Jodar": same surname and first initial
+        const same = (u, w) => { const P1 = nmK(u).split(' '), P2 = nmK(w).split(' '); return P1.length > 1 && P2.length > 1 && P1[P1.length - 1] === P2[P2.length - 1] && P1[0][0] === P2[0][0]; };
+        if (!x || !x.player || !(nmK(x.player) === nmK(full) || same(x.player, full))) return;
+        const ts = Date.parse(x.calledAt); if (isFinite(ts) && ts < cutoff) return;
+        const me = x.playerSide === 2 ? 1 : 0, g = Array.isArray(x.games) && x.games.length === 2 ? x.games : null;
+        const sets = g ? g[me].map((v2, k2) => v2 + '–' + g[1 - me][k2]) : [];
+        const setNo = sets.length ? ['first', 'second', 'third', 'fourth', 'fifth'][sets.length - 1] : '';
+        const oppS = xSurOf(x.opponent || ''), selfS = xSurOf(x.player);
+        const fin = String(x.finalResult || '').split(/,\s*/).filter(Boolean).map(t2 => { const q = t2.split('–'); return me ? q[1] + '–' + q[0] : t2; });
+        const wonSets = fin.filter(t2 => { const q = t2.split('–').map(Number); return q[0] > q[1]; }).length;
+        const dur = x.durationSeconds != null ? Math.max(1, Math.round(x.durationSeconds / 60)) : null;
+        const body = selfS + ' called a medical time-out' + (sets.length ? ' at ' + sets.join(', ') + ' in the ' + setNo + ' set' : '') + ' against ' + oppS + (x.durationSeconds == null ? '.' : x.durationSeconds < 60 ? ', and it took under a minute.' : ', and it took ' + dur + (dur === 1 ? ' minute.' : ' minutes.'))
+          + (fin.length ? (x.retired ? ' He retired.' : ' He ' + (wonSets > fin.length / 2 ? 'won' : 'lost') + ' ' + fin.join(', ') + '.') : '');
+        out.push({ id: 'mto' + ek + '_' + j, ts, who: p.short, whoKey: key, title: selfS + ' took a medical time-out against ' + oppS,
+          meta: ['Stennisfy match data', ageStr(ts)].filter(Boolean).join(' · '), body, kind: 'mto' });
+      }));
+    }
     ['newsIntelItems', 'newsAsapItems'].forEach(fname => {
       const f = fn(fname); if (!f) return;
       let items = [];
@@ -29317,7 +29369,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
     xPhotoKick();
     let img = key && typeof playerPhotoImg === 'function' ? playerPhotoImg(key, p.full || '') : '';
     if (img && opt.eager) img = img.replace('loading="lazy"', 'loading="eager" fetchpriority="high"');
-    return `<span class="x-av" ${opt.title ? `title="${E(opt.title)}"` : ''} style="display:inline-block; vertical-align:middle; flex:none; position:relative; width:${size}px; height:${size}px; border-radius:50%; background:var(--h2h-raised); box-shadow:0 0 0 2px ${ring}; overflow:hidden;${opt.style || ''}"><span class="x-av__i" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:${fs}px; font-weight:700; letter-spacing:0; color:var(--h2h-text);">${E((p && p.mono) || '—')}</span>${img}</span>`;
+    return `<span class="x-av" ${opt.title ? `title="${E(opt.title)}"` : ''} style="display:inline-block; vertical-align:middle; flex:none; position:relative; width:${size}px; height:${size}px; border-radius:50%; background:var(--h2h-raised); box-shadow:${opt.noRing ? 'none' : '0 0 0 2px ' + ring}; overflow:hidden;${opt.style || ''}"><span class="x-av__i" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:${fs}px; font-weight:700; letter-spacing:0; color:var(--h2h-text);">${E((p && p.mono) || '—')}</span>${img}</span>`;
   }
   // The photo over an initials circle that is not an xAv (the Model boxes, the search rows): founder 2026-11-18 (ruling 6,
   // follow-up): every avatar beside a picked or picker player shows his stored photo; initials only when none is stored.
@@ -29388,7 +29440,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
       ${v.showEmpty ? emptyState(v) : ''}
       ${v.showLoading ? loadingState(v) : ''}
       ${v.showBody ? bodyHTML(v) : ''}
-      ${v.showBody ? h2hBoxHTML(v) : ''}
+      ${v.showBody ? h2hBoxHTML(v) : ''}${v.showBody ? meBoxHTML(v) : ''}
     </section></div>`;
   }
   function pickedCard(v, side) {
@@ -29397,7 +29449,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
     const ctry = `<span style="${X_CAP} background:var(--h2h-raised); border:1px solid color-mix(in srgb, var(--h2h-white) 12%, transparent); border-radius:5px; padding:1px 6px;">${E(h2hIoc(p.ctry))}</span>`;
     const nm = `<span class="x-pname" style="font-size:17px; font-weight:800; letter-spacing:-0.01em; color:var(--h2h-text); white-space:normal; overflow-wrap:anywhere;">${E(p.full)}</span>`;
     const meta = `<div style="display:flex; gap:16px; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--h2h-grey);"><span>RANK <span style="color:var(--h2h-soft);">${E(p.rankTxt)}</span></span><span>ELO <span style="color:var(--h2h-soft);">${E(p.eloTxt)}</span></span></div>`;
-    const av = xAv(p, side, 44, { style: B ? ' order:1;' : '', eager: true });
+    const av = xAv(p, side, 44, { style: B ? ' order:1;' : '', eager: true, noRing: true });   // founder 2026-11-19: rings only where stats compare
     return `<div style="display:flex; align-items:center; gap:13px; background:var(--h2h-card); border:1px solid color-mix(in srgb, var(--h2h-white) 9%, transparent); border-radius:12px; padding:11px 14px; min-width:0;">
       ${B ? change + av : change}
       <div style="${B ? 'order:2; ' : ''}min-width:0; flex:1; display:flex; flex-direction:column;${B ? '' : ' align-items:flex-end;'} gap:3px;">
@@ -29427,7 +29479,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
     const slot = side => `<div id="h2h-slot-${side}" style="position:relative;">
       ${(side === 'a' ? v.aPicked : v.bPicked) ? pickedCard(v, side) : ''}${(side === 'a' ? v.aSearching : v.bSearching) ? searchInput(side, v) : ''}${(side === 'a' ? v.aListOpen : v.bListOpen) ? dropdown(side, v) : ''}
     </div>`;
-    return `<div class="x-stick" style="position:sticky; top:0; z-index:30; padding:10px 40px 14px; background:linear-gradient(var(--page) 78%, color-mix(in srgb, var(--page) 0%, transparent));">
+    return `<div class="x-stick" style="position:sticky; top:0; z-index:30; padding:10px 40px 14px; background:${X_STICK_BG};">
     <div id="h2h-sticky" style="background:var(--h2h-card); border:1.25px solid color-mix(in srgb, var(--h2h-white) 6%, transparent); border-radius:14px; padding:16px 18px; box-shadow:var(--h2h-shadow-sticky);">
       <div class="x-pick" style="display:grid; grid-template-columns:minmax(0,1fr) 54px minmax(0,1fr); gap:12px; align-items:start;">
         ${slot('a')}
@@ -29581,7 +29633,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
     const scope = D.surface + ' · Best of ' + (state.ctxFormat || 3) + ' · ' + D.W.label;
     const why = s => (D.loading ? '' : !s.d.inPool ? ' ' + s.name + ': no rating on record.'
       : !s.d.ok ? ' ' + s.name + ': ' + (s.d.matches || 0) + ' ' + D.surface + (s.d.matches === 1 ? ' match' : ' matches') + ' in the window, under the ' + DNA_FLOOR + '-match floor, so no shape and no figures.' : '');
-    const winNote = D.W.career ? ' Career: Serve, Return and Under pressure are the career ratings of Database → Ratings (2010–now), the shape their percentile among the players rated there; Dominance ratio has no career figure (—); Elo is each player’s peak Elo, all surfaces.'
+    const winNote = D.W.career ? ' Career: Serve, Return and Under pressure are the career ratings of Database → Ratings (2010–now), the shape their percentile among the players rated there; Dominance ratio = return points won % ÷ (100 − service points won %) over the same career matches; Elo is each player’s peak Elo, all surfaces, its shape point his place among every player’s peak.'
       : ' Last 52 weeks: the ratings from our own box scores (since March 2024); Surface Elo is the current weekly Elo on ' + surfLc + '.';
     const help = 'Blue line and blue ring: ' + D.a.name + '. White line and white ring: ' + D.b.name + '. The shape shows where each player stands against the tour on five ratings (percentile). The rows give the raw figures: the line leans toward the better player and the number on it is the difference.' + winNote + why(D.a) + why(D.b);
     return `<div id="h2h-dna" class="x-sec" style="${X_SEC} gap:16px;">
@@ -29724,7 +29776,9 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
     if (h.failed) return sec(note(`Head to head could not load: the match history for ${E(h.names.join(' and ') || 'one player')} did not load. <span class="seg" onclick="H2HPage._h2hRetry()" style="color:${X_BL}; font-weight:600; cursor:pointer;">Retry</span>`));
     if (!played.length) {
       const yrs = (h.S && h.S.firstYear || []).filter(y => y != null && isFinite(y));
-      return sec(note('These two have never met on record. There is no head-to-head to show — the rest of the page compares them indirectly.' + (yrs.length ? ' Searched both players’ match histories since ' + Math.min(...yrs) + '.' : '')));
+      // founder 2026-11-19: plain words, no dash
+      const nm = x => E((x && (x.short || x.full)) || '');
+      return sec(note((v.a && v.b ? nm(v.a) + ' and ' + nm(v.b) + ' have' : 'These two have') + ' never played each other.' + (yrs.length ? ' We checked both players’ matches back to ' + Math.min(...yrs) + '.' : '')));
     }
     const F = h.F, n = F.length, aw = F.filter(r => r.won).length, bw = n - aw;
     const wins = k => k + (k === 1 ? ' win' : ' wins');
@@ -29840,6 +29894,56 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
       </div>
     </div>`;
   }
+  // Market edge pop-up (founder 2026-11-19: "the boxes clickable, per band the historical results of the player"): a band
+  // row or a tile opens his priced matches there — head, four tiles (Record · Win rate / break even · Edge · Return at a flat
+  // 1% stake), then every match newest first; a row opens the match statistics. Same rows, gate and settlement as the card.
+  function meBoxHTML(v) {
+    const B = state.meBox, m = v.market; if (!B || !m || !m.core) return '';
+    const core = m.core, M = m.MM[B.i]; if (!M || M.state !== 'ready') return '';
+    const p = B.i ? v.b : v.a, sd = B.i ? 'b' : 'a';
+    const bands = typeof B.k === 'number' ? [M.bands[B.k]] : M.bands.filter(b => b.gk === B.k);
+    const rows = bands.flatMap(b => b.rows || []).slice().sort((x, y) => String(y.date || '').localeCompare(String(x.date || '')));
+    if (!rows.length) return '';
+    const sg = (val, d, u) => (val > 0 ? '+' : val < 0 ? '−' : '') + Math.abs(val).toFixed(d) + (u || '');
+    const n = rows.length, w = rows.filter(r => r.won).length, needs = bands.reduce((t, b) => t + (b.n && b.needs != null ? b.n * b.needs : 0), 0) / n;
+    const units = rows.reduce((t, r) => t + core.plCents(r), 0) / 100, gm = maGate(n).mode, rated = gm === 'full' || gm === 'small';
+    const edge = rated ? (w / n - needs) * 100 : null;
+    const title = typeof B.k === 'number' ? xBandName(B.k, core) + ' · ' + core.BANDS[B.k].label.replace(/\s/g, '') : B.k === 'fav' ? 'As favourite' : 'As underdog';
+    const close = bindH(() => setState({ meBox: null }));
+    const tile = (k, val, col, sub) => `<div style="background:var(--h2h-card); border:1px solid color-mix(in srgb, var(--h2h-white) 9%, transparent); border-radius:12px; padding:14px 12px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px; min-width:0;"><span style="font-size:11.5px; font-weight:600; color:${X_G};">${E(k)}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:700; line-height:1; color:${col}; white-space:nowrap;">${E(val)}</span><span style="font-size:11px; color:${X_G};">${E(sub)}</span></div>`;
+    const tiles = [tile('Record', w + '–' + (n - w), X_WH, n + (n === 1 ? ' priced match' : ' priced matches')),
+      tile('Win rate', rated ? (w / n * 100).toFixed(1) + '%' : '—', rated ? X_WH : X_G, 'break even ' + (needs * 100).toFixed(1) + '%'),
+      tile('Edge', edge == null ? '—' : sg(edge, 1, ' pts'), edge == null ? X_G : edge >= 0 ? X_UP : X_DN, 'win rate − break even'),
+      tile('Return', sg(units, 1, '%'), units >= 0 ? X_UP : X_DN, 'flat 1% stake')].join('');
+    const COLS = '58px 10px minmax(0,1fr) minmax(0,1.2fr) 34px minmax(0,1fr) 44px 44px 58px';
+    const list = rows.map(r => {
+      const pl = core.plCents(r) / 100, rc = r.won ? X_UP : X_DN, sc = (r.sets || []).map(q => q[0] + '-' + q[1]).join(', ') || '—';
+      return `<div class="seg x-row" data-hid="${bindH(() => xOpenStyleRow(p, { date: r.date, tournament: r.tourn, round: r.round, opponent: r.opp, won: !!r.won, surface: r.surface, eventKey: r.ek }, { price: r.price, oppPrice: r.oppPrice, book: r.book }, { setsArr: r.sets }))}" title="Open the match statistics" style="display:grid; grid-template-columns:${COLS}; gap:0 10px; align-items:center; padding:7px 8px; border-radius:6px; cursor:pointer;">
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:${X_G};">${E(meDMY(r.date))}</span>
+        <span style="width:8px; height:8px; border-radius:2px; background:${rc};"></span>
+        <span style="font-size:12.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${E(r.opp || '')}">${E(r.opp || '—')}</span>
+        <span style="font-size:12px; color:var(--h2h-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${E(r.tourn || '')}">${E(r.tourn || '—')}</span>
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:${X_G};">${E(r.round || '—')}</span>
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:${X_G}; white-space:normal;">${E(sc)}</span>
+        <span title="${E(h2hPriceTitle(r))}" style="font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--h2h-text); text-align:right;">${E(r.price == null ? '—' : fhOdd(r.price))}</span>
+        <span title="${E(h2hPriceTitle(r))}" style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:${X_G}; text-align:right;">${E(r.oppPrice == null ? '—' : fhOdd(r.oppPrice))}</span>
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:11.5px; font-weight:700; text-align:right; color:${pl >= 0 ? X_UP : X_DN};">${E(sg(pl, 2, '%'))}</span>
+      </div>`; }).join('');
+    const head = ['Date', '', 'Opponent', 'Event', 'Rd', 'Score', 'Price', 'Opp.', 'Return'].map((h, j) => `<span style="${X_CAP}${j >= 6 ? ' text-align:right;' : ''}">${h}</span>`).join('');
+    const help = 'His matches at closing odds in ' + (typeof B.k === 'number' ? 'this band' : 'every ' + (B.k === 'fav' ? 'favourite' : 'underdog') + ' band') + ' (Pinnacle, else Bet365), ' + m.scopeLbl.toLowerCase() + ', newest first. Break even = the win rate he needs at the average price; edge = win rate minus break even, in points. Return = backing him with 1% of bankroll on every match. Grey = small sample (5–9 matches); under 5, no rate. ' + (core.RET_SETTLE_NOTE || '') + ' Click a match for its statistics.';
+    return `<div class="h2hx-pop" style="position:fixed; inset:0; z-index:80; background:var(--h2h-overlay); display:flex; align-items:flex-start; justify-content:center; padding:40px 24px; overflow-y:auto;">
+      <div data-hid="${close}" style="position:absolute; inset:0;"></div>
+      <div style="position:relative; box-sizing:content-box; width:100%; max-width:860px; background:var(--h2h-card); border:1px solid color-mix(in srgb, var(--h2h-white) 10%, transparent); border-radius:14px; padding:28px 30px 26px; display:flex; flex-direction:column; gap:20px; font-family:'Hanken Grotesk',sans-serif; color:var(--h2h-text);">
+        <span class="seg x-close" data-hid="${close}" title="Close" style="position:absolute; top:14px; right:14px; width:30px; height:30px; border-radius:50%; border:1px solid color-mix(in srgb, var(--h2h-white) 12%, transparent); color:${X_G}; font-size:14px; display:flex; align-items:center; justify-content:center; cursor:pointer;">✕</span>
+        <div style="display:flex; align-items:center; gap:14px; padding-right:40px; min-width:0;">${xAv(p, sd, 44, { noRing: true })}<div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;"><span style="font-size:17px; font-weight:800; letter-spacing:-0.01em;">${E(p.short)} · ${E(title)}</span><span style="font-size:12.5px; color:${X_G};">${E(m.scopeLbl)} · closing odds</span></div>${xHelp(help)}</div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px;">${tiles}</div>
+        <div style="border:1px solid color-mix(in srgb, var(--h2h-white) 9%, transparent); border-radius:12px; overflow:clip; background:var(--h2h-card);">
+          <div style="display:grid; grid-template-columns:${COLS}; gap:0 10px; align-items:center; padding:8px 16px 7px; border-bottom:1px solid color-mix(in srgb, var(--h2h-white) 9%, transparent);">${head}</div>
+          <div style="padding:4px 8px 6px; display:flex; flex-direction:column;">${list}</div>
+        </div>
+      </div>
+    </div>`;
+  }
   // ── Record against each style (design §4, DF L512–584) ─────────────────────────────────────────────────────────
   // Rows = each player's style-meeting shard vs the OPPONENT's archetype (ps2Record: walkovers out), filtered here by
   // the three filters on real row fields: Window (row date, Last 52 weeks = 364 days, Last 24 months = the same day two
@@ -29920,7 +30024,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
         <div style="display:flex; align-items:center; justify-content:center; gap:12px; min-width:0;">${xAv(p, sd, 38)}<div style="min-width:0; display:flex; flex-direction:column; gap:2px;"><span style="font-size:15px; font-weight:800; letter-spacing:-0.01em; white-space:normal; overflow-wrap:anywhere;">${E(who)}</span><span style="font-size:12.5px; color:var(--h2h-grey); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">against ${E(vs)}</span></div></div>
         <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.35fr); background:var(--h2h-layer); border:1px solid color-mix(in srgb, var(--h2h-white) 6%, transparent); border-radius:10px; padding:14px 0;">
           ${fig('Record', `<span style="font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:700; line-height:1; white-space:nowrap;${rec === '—' ? ' color:var(--h2h-grey);' : ''}">${E(rec)}</span>`)}
-          ${fig('Win rate', `<span style="font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:700; line-height:1;${!rated || muted ? ' color:var(--h2h-grey);' : ''}">${E(rateTxt)}</span>`, ' border-left:1px solid color-mix(in srgb, var(--h2h-white) 6%, transparent); border-right:1px solid color-mix(in srgb, var(--h2h-white) 6%, transparent);', rateTip)}
+          ${fig('Win rate', `<span style="font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:700; line-height:1;${!rated ? ' color:var(--h2h-grey);' : ''}">${E(rateTxt)}</span>`, ' border-left:1px solid color-mix(in srgb, var(--h2h-white) 6%, transparent); border-right:1px solid color-mix(in srgb, var(--h2h-white) 6%, transparent);', rateTip)}
           ${fig(`<span title="${E(help)}" style="cursor:help;">Vs style average</span>`, `<span style="font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:700; line-height:1; white-space:nowrap; color:${dC};">${E(dTxt)}</span>`)}
         </div>
         <div style="display:flex; flex-direction:column; gap:9px;">
@@ -29957,7 +30061,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
       });
       const emptyLine = !ready ? (R.state === 'loading' ? 'Loading career meetings…' : 'Playing style not classified') : !sorted.length ? 'No career matches against ' + vs + ' in this filter' + (F.noSpeed ? ' (' + F.noSpeed + ' with no court-speed rating left out)' : '') : '';
       const mcard = `<div style="background:var(--h2h-card); border:1px solid color-mix(in srgb, var(--h2h-white) 9%, transparent); border-radius:12px; overflow:hidden; display:flex; flex-direction:column; min-width:0;">
-        <div style="display:flex; align-items:center; gap:12px; padding:16px 18px 14px; min-width:0;">${xIni(p, sd, 38, 13)}<div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;"><span style="font-size:15px; font-weight:800; letter-spacing:-0.01em; white-space:normal; overflow-wrap:anywhere;">${E(who)}</span><span style="font-size:12px; color:var(--h2h-grey); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Career matches against ${E(vs)}</span></div><span title="${F.noSpeed ? E(F.noSpeed + ' with no court-speed rating left out') : ''}" style="flex:none; font-size:11.5px; font-weight:600; color:var(--h2h-soft); background:color-mix(in srgb, var(--h2h-white) 5%, transparent); border-radius:999px; padding:4px 10px; white-space:nowrap;">Showing ${vis.length} of ${sorted.length}</span></div>
+        <div style="display:flex; align-items:center; gap:12px; padding:16px 18px 14px; min-width:0;">${xAv(p, sd, 38, { fs: 13, noRing: true })}<div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;"><span style="font-size:15px; font-weight:800; letter-spacing:-0.01em; white-space:normal; overflow-wrap:anywhere;">${E(who)}</span><span style="font-size:12px; color:var(--h2h-grey); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Career matches against ${E(vs)}</span></div><span title="${F.noSpeed ? E(F.noSpeed + ' with no court-speed rating left out') : ''}" style="flex:none; font-size:11.5px; font-weight:600; color:var(--h2h-soft); background:color-mix(in srgb, var(--h2h-white) 5%, transparent); border-radius:999px; padding:4px 10px; white-space:nowrap;">Showing ${vis.length} of ${sorted.length}</span></div>
         <div style="display:grid; grid-template-columns:52px minmax(0,1fr) 34px minmax(0,1.1fr) 56px 44px 44px 8px; gap:0 10px; align-items:center; padding:8px 18px; background:var(--h2h-card); border-top:1px solid color-mix(in srgb, var(--h2h-white) 6%, transparent); ${X_CAP}"><span>Date</span><span>Opponent</span><span>Rd</span><span>Score</span><span style="text-align:center;">Sets</span>${xMini(p, 24, 9.5, who + '’s closing price')}<span title="The opponent's closing price" style="text-align:right;">Opp.</span><span></span></div>
         <div style="padding:0 0 8px; display:flex; flex-direction:column;">${ent.join('')}${emptyLine ? `<div style="padding:18px; text-align:center; font-size:12.5px; color:var(--h2h-grey); border-top:1px solid color-mix(in srgb, var(--h2h-white) 6%, transparent);">${E(emptyLine)}</div>` : ''}</div>
         ${rest > 0 ? `<span class="seg x-more" data-hid="${bindH(() => setState(s2 => (i ? { styleBAll: !s2.styleBAll } : { styleAAll: !s2.styleAAll })))}" style="margin-top:auto; text-align:center; font-size:12.5px; font-weight:600; color:var(--h2h-blue); cursor:pointer; padding:12px 0; border-top:1px solid color-mix(in srgb, var(--h2h-white) 6%, transparent);">${all ? 'Show fewer' : 'Show ' + rest + ' more ' + (rest === 1 ? 'match' : 'matches')}</span>` : ''}
@@ -30034,13 +30138,15 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
     const meta = I.meta.map(m2 => `<div style="display:flex; flex-direction:column; gap:4px;"><span style="font-size:11.5px; font-weight:600; color:${G};">${E(m2[0])}</span><span style="font-size:13px; font-weight:600; color:${m2[1] ? 'var(--h2h-text)' : G}; white-space:nowrap;">${E(m2[1] || '—')}</span></div>`).join('');
     const info = `<div${I.grp && I.unrated ? ` title="${E(I.unrated + (I.unrated === 1 ? ' event has' : ' events have') + ' no court speed rating, so no speed filter includes ' + (I.unrated === 1 ? 'it' : 'them') + '.')}"` : ''} style="background:var(--h2h-card); border:1px solid ${W9}; border-radius:12px; padding:16px 18px; display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
       <span style="flex:none; width:44px; height:44px; border-radius:11px; background:var(--h2h-raised); border:1px solid color-mix(in srgb, var(--h2h-white) 8%, transparent); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:700;">${E(I.initial)}</span>
-      <div style="flex:1 1 200px; min-width:0; display:flex; flex-direction:column; gap:3px;"><span style="font-size:16px; font-weight:800; letter-spacing:-0.01em;">${E(I.name)}</span><span style="font-size:12.5px; color:${G};">${E((I.location || '—') + ' · ' + (I.surface || '—'))}</span></div>
+      <div style="flex:1 1 200px; min-width:0; display:flex; flex-direction:column; gap:${I.grp ? 8 : 3}px;"><span style="font-size:16px; font-weight:800; letter-spacing:-0.01em;">${E(I.name)}${I.grp ? `<span style="margin-left:8px; font-size:12.5px; font-weight:600; color:${G};">${E(I.location)}</span>` : ''}</span>${I.grp
+        ? (I.events.length ? `<div style="display:flex; flex-wrap:wrap; gap:6px;">${I.events.map(ev => `<span class="seg x-evchip" data-hid="${ev.h}" title="Open ${E(ev.label)}" style="font-size:11.5px; font-weight:600; color:var(--h2h-soft); background:var(--h2h-layer); border:1px solid color-mix(in srgb, var(--h2h-white) 6%, transparent); border-radius:999px; padding:3px 10px; white-space:nowrap; cursor:pointer;">${E(ev.label)}</span>`).join('')}</div>` : `<span style="font-size:12.5px; color:${G};">none on record</span>`)
+        : `<span style="font-size:12.5px; color:${G};">${E((I.location || '—') + ' · ' + (I.surface || '—'))}</span>`}</div>
       <div style="display:flex; gap:22px; flex-wrap:wrap;">${meta}</div>
     </div>`;
     const where = t.grp ? 'on ' + t.gLbl : I.name, winTxt = t.TW === 'w52' ? ' in the last 52 weeks' : t.TW === 'm24' ? ' in the last 24 months' : '';
     const panels = t.cols.map((c, i) => {
       const sd = i ? 'b' : 'a', p = c.p, A = c.agg, nm = p.short;
-      const tile = (k, val, col, sub) => `<div style="background:var(--h2h-card); border:1px solid ${W9}; border-radius:10px; padding:11px 6px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:5px; min-width:0;"><span style="font-size:11.5px; font-weight:600; color:${G}; white-space:nowrap;">${E(k)}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:17px; font-weight:700; line-height:1; color:${col}; white-space:nowrap;">${E(val)}</span><span style="font-size:11px; color:${G}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;">${E(sub)}</span></div>`;
+      const tile = (k, val, col, sub, wrap) => `<div style="background:var(--h2h-card); border:1px solid ${W9}; border-radius:10px; padding:11px 6px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:5px; min-width:0;"><span style="font-size:11.5px; font-weight:600; color:${G}; white-space:nowrap;">${E(k)}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:17px; font-weight:700; line-height:1; color:${col}; white-space:nowrap;">${E(val)}</span><span style="font-size:11px; color:${G}; max-width:100%; ${wrap ? 'white-space:normal; line-height:1.35;' : 'white-space:nowrap; overflow:hidden; text-overflow:ellipsis;'}">${E(sub)}</span></div>`;
       const ready = c.state === 'ready' && A;
       const At = t.grp ? 'On ' + t.gLbl : 'At ' + I.name;
       const sub = ready ? (A.n || A.rows.length ? At + (A.first ? ' · since ' + A.first : '') : (t.grp ? 'No matches ' + where : 'Never played ' + I.name))
@@ -30050,7 +30156,8 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
       let tiles = '', rowsH = '', empty = '';
       if (ready && A.rows.length) {
         const Wc = 'var(--h2h-text)', D = G;
-        const best = A.best ? tile('Best result', A.best.code, Wc, String(A.best.year)) : tile('Best result', '—', D, 'no finished edition');
+        // founder 2026-11-19: across a surface / court speed the best result names its event ("Washington Open 2025")
+        const best = A.best ? tile('Best result', A.best.code, Wc, t.grp && A.best.ev ? evName(A.best.ev) + ' ' + A.best.year : String(A.best.year), !!t.grp) : tile('Best result', '—', D, 'no finished edition');
         const sg = maGate(A.sT).mode;
         const sets = tile('Sets won', A.sT ? A.sW + '–' + (A.sT - A.sW) : '—', A.sT ? Wc : D, A.sT && (sg === 'full' || sg === 'small') ? Math.round(A.sW / A.sT * 100) + '% of sets' : A.sT ? A.sT + ' sets' : '');
         const lr = A.last ? A.last.row : null;
@@ -30190,27 +30297,27 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
         const rowOf = bd => {
           const n = bd.n, gm = maGate(n).mode, rated = n > 0 && (gm === 'full' || gm === 'small'), muted = gm === 'small';
           const edge = rated && bd.won != null && bd.needs != null ? (bd.won - bd.needs) * 100 : null;
-          return { bd, n, rated, muted, edge, ec: edge == null || muted ? G : edge >= 0 ? UP : DN };
+          return { bd, n, rated, muted, edge, ec: edge == null ? G : edge >= 0 ? UP : DN };   // founder 2026-11-19: a signed edge is green / red at any n it prints
         };
         const rows = M.bands.map(rowOf);
         const grp = gk => { const rs = rows.filter(x => x.bd.gk === gk), gn = rs.reduce((t2, x) => t2 + x.n, 0);
           const gw = rs.reduce((t2, x) => t2 + (x.bd.w || 0), 0), gx = rs.reduce((t2, x) => t2 + (x.n && x.bd.needs != null ? x.n * x.bd.needs : 0), 0);
           const gm = maGate(gn).mode, rated = gn > 0 && (gm === 'full' || gm === 'small'), e = rated ? (gw - gx) / gn * 100 : null;
-          return { label: gk === 'fav' ? 'As favourite' : 'As underdog', v: e == null ? '—' : sg(e, 1, ''), c: e == null || gm === 'small' ? G : e >= 0 ? UP : DN,
+          return { label: gk === 'fav' ? 'As favourite' : 'As underdog', v: e == null ? '—' : sg(e, 1, ''), c: e == null ? G : e >= 0 ? UP : DN, k: gk, n: gn,
             sub: !gn ? 'No priced matches' : gn.toLocaleString('en-US') + (gn === 1 ? ' match' : ' matches') };
         };
         const ranked = rows.filter(x => x.edge != null).sort((p2, q2) => q2.edge - p2.edge);
-        const bw = (x, lbl) => x ? { label: lbl, v: sg(x.edge, 1, ''), c: x.muted ? G : x.edge >= 0 ? UP : DN, sub: xBandName(x.bd.i, core) } : { label: lbl, v: '—', c: G, sub: 'No band with 5+ matches' };
+        const bw = (x, lbl) => x ? { label: lbl, v: sg(x.edge, 1, ''), c: x.edge >= 0 ? UP : DN, sub: xBandName(x.bd.i, core), k: x.bd.i, n: x.n } : { label: lbl, v: '—', c: G, sub: 'No band with 5+ matches' };
         const tiles = [grp('fav'), grp('dog'), bw(ranked[0], 'Best band'), bw(ranked[ranked.length - 1], 'Worst band')];
-        const tilesH = `<div style="display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin:0 22px 6px;">${tiles.map(t2 => `<div style="background:var(--h2h-card); border:1px solid color-mix(in srgb, var(--h2h-white) 9%, transparent); border-radius:10px; padding:11px 6px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:5px; min-width:0;"><span style="font-size:11.5px; font-weight:600; color:${G}; white-space:nowrap;">${E(t2.label)}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:17px; font-weight:700; line-height:1; color:${t2.c}; white-space:nowrap;">${E(t2.v)}</span><span style="font-size:11px; color:${G}; text-wrap:balance;">${E(t2.sub)}</span></div>`).join('')}</div>`;
+        const tilesH = `<div style="display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin:0 22px 6px;">${tiles.map(t2 => `<div${t2.n ? ` class="seg x-row" role="button" tabindex="0" title="Open his matches" data-hid="${bindH(() => setState({ meBox: { i, k: t2.k }, mBand: typeof t2.k === 'number' ? t2.k : null }))}"` : ''} style="background:var(--h2h-card); border:1px solid color-mix(in srgb, var(--h2h-white) 9%, transparent); border-radius:10px; padding:11px 6px;${t2.n ? ' cursor:pointer;' : ''} display:flex; flex-direction:column; align-items:center; text-align:center; gap:5px; min-width:0;"><span style="font-size:11.5px; font-weight:600; color:${G}; white-space:nowrap;">${E(t2.label)}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:17px; font-weight:700; line-height:1; color:${t2.c}; white-space:nowrap;">${E(t2.v)}</span><span style="font-size:11px; color:${G}; text-wrap:balance;">${E(t2.sub)}</span></div>`).join('')}</div>`;
         const bandRow = x => {
           const bd = x.bd, n = x.n, on = m.band === bd.i, click = n > 0;
           const lab = bd.label.replace(/\s/g, ''), op = lab.split('–'), open = op.length < 2;
           const lo = open ? lab.replace('+', '') : op[0], hi = open ? '' : op[1], sep = open ? '+' : '–';
           const dw = x.edge != null && Math.abs(x.edge) > 0.04 ? 14 + Math.min(Math.abs(x.edge) / 30, 1) * 32 : 0;
           const tip = !n ? 'No priced match in this band' : !x.rated ? n + (n === 1 ? ' match' : ' matches') + ': under ' + (core.ME_THIN_FLOOR || 5) + ', no rate' : x.muted ? 'Small sample · n=' + n : '';
-          const plC = !x.rated || x.muted ? G : bd.units >= 0 ? UP : DN;
-          return `<div class="${click ? 'seg x-row' : ''}"${click ? ` data-hid="${m.hBand[bd.i]}" role="button" tabindex="0"` : ''}${tip ? ` title="${E(tip)}"` : ''} style="display:grid; grid-template-columns:${BCOLS}; gap:0 16px; align-items:center; min-height:64px; margin:0 -10px; padding:0 10px; border-radius:8px; border-top:1px solid color-mix(in srgb, var(--h2h-white) 6%, transparent); background:${on ? 'var(--h2h-raised)' : 'transparent'}; box-shadow:inset 0 0 0 1px ${on ? 'color-mix(in srgb, var(--h2h-white) 16%, transparent)' : 'transparent'}; cursor:${click ? 'pointer' : 'default'};">
+          const plC = !x.rated ? G : bd.units >= 0 ? UP : DN;
+          return `<div class="${click ? 'seg x-row' : ''}"${click ? ` data-hid="${bindH(() => setState({ meBox: { i, k: bd.i }, mBand: bd.i }))}" role="button" tabindex="0"` : ''}${tip ? ` title="${E(tip)}"` : ''} style="display:grid; grid-template-columns:${BCOLS}; gap:0 16px; align-items:center; min-height:64px; margin:0 -10px; padding:0 10px; border-radius:8px; border-top:1px solid color-mix(in srgb, var(--h2h-white) 6%, transparent); background:${on ? 'var(--h2h-raised)' : 'transparent'}; box-shadow:inset 0 0 0 1px ${on ? 'color-mix(in srgb, var(--h2h-white) 16%, transparent)' : 'transparent'}; cursor:${click ? 'pointer' : 'default'};">
             <span style="display:flex; flex-direction:column; gap:6px; min-width:0;"><span class="x-odds" style="display:flex; align-items:baseline; gap:9px; font-family:'IBM Plex Mono',monospace; font-size:19px; font-weight:700; line-height:1; white-space:nowrap; color:var(--h2h-text);"><span>${E(lo)}</span><span style="font-weight:500; color:${G};">${sep}</span><span>${E(hi)}</span></span><span style="font-size:12px; color:${G}; white-space:nowrap;">${E(xBandName(bd.i, core))}</span></span>
             <div style="position:relative; height:4px; border-radius:2px; background:color-mix(in srgb, var(--h2h-white) 7%, transparent);">${dw ? `<span style="position:absolute; top:0; height:4px; border-radius:2px; left:${(x.edge >= 0 ? 50 : 50 - dw).toFixed(1)}%; width:${dw.toFixed(1)}%; background:${x.ec};"></span>` : ''}<span class="x-edgechip" style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:700; line-height:18px; color:${x.ec}; background:var(--h2h-layer); box-shadow:0 0 0 1px color-mix(in srgb, var(--h2h-white) 14%, transparent); border-radius:9px; padding:0 7px; white-space:nowrap;">${E(x.edge == null ? '—' : sg(x.edge, 1, ''))}</span></div>
             <span style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--h2h-soft); text-align:right;">${n ? bd.w + '–' + bd.l : '—'}</span>
@@ -30223,7 +30330,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
         body = tilesH + `<div style="display:flex; flex-direction:column; padding:0 22px 10px;">${groupsH}</div>`;
       }
       return `<div style="background:var(--h2h-card); border:1px solid color-mix(in srgb, var(--h2h-white) 9%, transparent); border-radius:12px; overflow:hidden; display:flex; flex-direction:column; min-width:0;">
-        <div style="display:flex; align-items:center; gap:12px; padding:20px 22px 18px; min-width:0;">${xIni(p, sd, 38, 13)}<div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;"><span style="font-size:15px; font-weight:800; letter-spacing:-0.01em; white-space:normal; overflow-wrap:anywhere;">${E(m.names[i])}</span><span style="font-size:12px; color:${G}; white-space:nowrap;">${E(nTxt || ' ')}</span></div><div style="flex:none; display:flex; flex-direction:column; align-items:flex-end; gap:3px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:26px; font-weight:700; line-height:1; color:${totC};">${E(tot)}</span><span style="font-size:11.5px; color:${G};">Total return</span></div></div>
+        <div style="display:flex; align-items:center; gap:12px; padding:20px 22px 18px; min-width:0;">${xAv(p, sd, 38, { fs: 13, noRing: true })}<div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;"><span style="font-size:15px; font-weight:800; letter-spacing:-0.01em; white-space:normal; overflow-wrap:anywhere;">${E(m.names[i])}</span><span style="font-size:12px; color:${G}; white-space:nowrap;">${E(nTxt || ' ')}</span></div><div style="flex:none; display:flex; flex-direction:column; align-items:flex-end; gap:3px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:26px; font-weight:700; line-height:1; color:${totC};">${E(tot)}</span><span style="font-size:11.5px; color:${G};">Total return</span></div></div>
         ${body}
       </div>`;
     }).join('');
@@ -30281,6 +30388,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
   const H2H_NEWS_CATS = [['all', 'All'], ['reports', 'Match reports'], ['quotes', 'Quotes'], ['injuries', 'Injuries'], ['articles', 'Articles']];
   function xNewsCat(n) {
     if (n.kind === 'asap') return 'quotes';
+    if (n.kind === 'mto') return 'injuries';
     if (n.kind === 'ticker') return n.tcat === 'Match Reports' ? 'reports' : n.tcat === 'Quotes' ? 'quotes' : n.tcat === 'Withdrawals & Injuries' ? 'injuries' : 'articles';
     if (n.kind === 'feed') { const c = typeof newsClassify === 'function' ? newsClassify(n.title, n.body) : ''; return c === 'Match Reports' ? 'reports' : c === 'Withdrawals & Injuries' ? 'injuries' : 'articles'; }
     return 'articles';
@@ -30298,7 +30406,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
       // lined up with the headline (60px), then the kind pill, "source · time" and "Close".
       return `<div style="border-radius:10px; background:${it.open ? 'var(--h2h-layer)' : 'transparent'}; box-shadow:inset 0 0 0 1px ${it.open ? 'color-mix(in srgb, var(--h2h-white) 12%, transparent)' : 'transparent'};">
         <div class="seg x-row" data-hid="${it.hOpen}" data-h2h-news="${E(it.whoKey)}" style="display:flex; align-items:center; gap:14px; padding:12px 12px; border-radius:10px; cursor:pointer;">
-          ${xAv(p, it.side, 34, { title: it.who })}
+          ${xAv(p, it.side, 34, { title: it.who, noRing: true })}
           <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
             <span style="font-size:14px; font-weight:${it.open ? 700 : 600}; line-height:1.4; color:var(--h2h-text); text-wrap:pretty;">${E(it.title)}</span>
             <span style="display:flex; flex-wrap:wrap; gap:0 7px; font-size:12px; color:${G};"><span style="font-weight:700; color:var(--h2h-soft);">${E(it.who)}</span><span>·</span><span>${E(H2H_NEWS_KIND[it.cat] || 'Article')}</span>${it.meta ? `<span>·</span><span>${E(it.meta)}</span>` : ''}</span>

@@ -38,7 +38,7 @@ const MUTANTS = [
     "<span title=\"${E(d.h === '' ? (d.hTitle || '') : h2hPriceTitle(r))}\"",
     "<span title=\"${E(d.hTitle || '')}\""],
   ["fix 7: the never-met card loses its searched-since line", 'html',
-    "(yrs.length ? ' Searched both players’ match histories since ' + Math.min(...yrs) + '.' : '')",
+    "(yrs.length ? ' We checked both players’ matches back to ' + Math.min(...yrs) + '.' : '')",
     "''"],
   ["fix 3: the Tournament column head names no player", 'html',
     "${xMini(p, 24, 9.5, nm + '’s closing price')}",

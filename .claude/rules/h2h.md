@@ -21,10 +21,12 @@ live calculation (Data below).
   sheet takes the same rule when opened from this page only (`#fhSheet.h2hx`).
 - **Page ground = the website's background, always** (founder ruling 4, 2026-11-18, replacing "only with no pair"; the
   design's 18 Nov §1 ground): the tab and the page are transparent, so the shell's `--page-bg` (page tone + glow) shows
-  whether or not players are picked; the sticky band behind the picker fades from `--page` to transparent. Cards keep
+  whether or not players are picked; the sticky band behind the picker fades from `--page` to transparent **and paints the
+  same page glow, placed where `<html>` draws it** (founder 2026-11-19: the band cut the glow into a black step under the
+  title; `X_STICK_BG` + `xGlowSync`, which moves the glow's centre into the band's box on scroll / resize). Cards keep
   their tones. `--h2h-page` is no fill on this page (only the dark text of the blue Filters badge / Done button).
   **Test:** with a pair AND with none, `.tabpage[data-page="h2h"]` and `.x-wrap` compute transparent and the sticky band
-  reads `--page`.
+  reads `--page` under the page glow (`--glow`, the `--page-bg` geometry).
 - **Page title = the header card** (design change 2026-11-18 §2, as on Database / Tournaments / Stennisfy Model): card
   tone, 1.25px 6% edge, r12, 18/26; "Head to Head" 24/800, the sub 13 grey, the "?" (coverage) at the right; it scrolls,
   only the picker is sticky.
@@ -35,7 +37,7 @@ live calculation (Data below).
 - **Section cards:** padding 24/26, inner gap 16, 1.25px 6% edge, r14 — all seven (design change 2026-11-18 §8).
 - **Returns read in %, never u** (2026-11-17 §4): "Return at a flat 1% stake" (1% of bankroll a match), its band rows,
   totals, chart axis and line ends, and the Tournament Backing ("flat 1% stake · N bets").
-- **Player one is blue, player two white, everywhere on the page** (README): avatar rings, the radar polygons, the
+- **Player one is blue, player two white, wherever two players' stats meet** (README): avatar rings, the radar polygons, the
   face-to-face lean, the bullets, the return chart, the sheet's figures and split bars. Green / red only on signed figures
   and results. *Exception (founder 2026-11-16, CLAUDE.md non-negotiables):* the Playing style face-to-face rows print the
   better figure white 800 and the other grey 500, as the export draws it (`H2H_FTF_LEAD_EMPHASIS`).
@@ -43,18 +45,20 @@ live calculation (Data below).
   Clay / Grass, Format Best of 3 / 5) · empty state with Suggested matchups / loading skeleton · thin-data caveat ·
   Stennisfy Model · Playing style · Head to head record (Overall box, Hot lines) · Record against each style · Tournament
   record · Market edge · Latest news. The head to head box (z 80) and the match sheet open over it.
-- **Avatars (design change 2026-11-18 §4; founder rulings 6 and 10, 2026-11-18):** initials (Plex Mono 700) in a circle
-  with a 2px ring — blue player one, white player two. The photo (the one resolver, `playerPhotoImg`) covers the initials
-  in the picker (44 / 13), Playing style (40 / 12), the overall box (46 / 12), the style record cards (38 / 11.5) and news
-  (34 / 10.5) (`xAv`). **The picker's photo is loaded eagerly** and a render made before the photo index landed repaints
+- **Avatars (design change 2026-11-18 §4; founder rulings 6 and 10, 2026-11-18; founder 2026-11-19):** initials (Plex
+  Mono 700) in a circle; the photo (the one resolver, `playerPhotoImg`) covers them (`xAv`). **The blue / white ring only
+  where the two players' stats are compared** (founder 2026-11-19): Playing style (40 / 12), the overall box (46 / 12), the
+  style record cards (38 / 11.5) and the head to head pop-up head. **No ring** (`xAv(…, { noRing: true })`): the picker
+  (44 / 13), the Career matches card heads (38 / 13, with the photo — replaces ruling 10 there), the Market edge cards and
+  its pop-up, and Latest news (34 / 10.5). **The picker's photo is loaded eagerly** and a render made before the photo index landed repaints
   once it lands (ruling 6: the header pickers never stay on initials when a photo exists). **Every avatar beside the picker
   shows the stored photo too** (founder ruling 6 follow-up, 2026-11-18, overriding the design's initials-only circles): the
   Stennisfy Model boxes (34) and the player search rows (28) layer the photo over their initials (`xPhotoOver`, eager);
   initials only for a player with no stored photo. Suggested matchups draw no avatar (the design's text chips). Initials only (`xIni`, card
-  fill): the head to head pop-up head (52 / 16), the Career matches and Tournament card heads and the Market edge cards
-  (38 / 13). **The column-head avatars over a price** (Meetings 26 / 10, career and tournament lists 24 / 9.5) are
+  fill, ringed): the head to head pop-up head (52 / 16) and the Tournament card heads (38 / 13). **The column-head avatars over a price** (Meetings 26 / 10, career and tournament lists 24 / 9.5) are
   initials, 1px 16% edge, no ring, never a photo (`xMini`; ruling 10). **Test:** the picker's `<img>` carries
-  `loading="eager"`; no `<img>` in the Meetings head, the career or tournament list heads or any `xIni`.
+  `loading="eager"`; no `<img>` in the Meetings head, the tournament list heads or any `xIni`; no `box-shadow:0 0 0 2px` on
+  a picker, Career matches head, Market edge or news avatar (`test-ten402-a.mjs`, `test-ten402-c.mjs`, `test-h2h-1117.mjs`).
 - **One component each:** the "?" `xHelp` (22px, its explanation is the hover title — **no footnotes**; every
   definition lives in a "?" or a label's title), the pill switch `xSw`, the section head `xHead`. Hovers are classes in
   `h2h-page.css` (the reference's style-hover): rows, bands and lines → the raised tone; the Overall box lifts with a 16%
@@ -80,15 +84,18 @@ live calculation (Data below).
   - Last 52 weeks = the DNA file's `last52` (ratings, percentiles, `serve.firstWonPct` / `secondWonPct` / `holdPct`,
     `return.returnGamesWonPct` / `bpConvPct`); Elo = the current weekly Elo on the surface.
   - Career = `surface-ratings.json` `career` (2010–now, the Database → Ratings figures): Serve, Return, Under pressure
-    ratings, the shape their pool-percentile `index`; Dominance ratio "—" (no career figure); **Elo = the peak**
-    (`elo-ratings.json` `peak`, all surfaces, labelled "Elo peak", no percentile); the rows read the same node (return
-    games won = `breakPct`).
+    ratings, the shape their pool-percentile `index`; **Dominance ratio** = the node's `dominance` (founder 2026-11-19:
+    return points won % ÷ (100 − service points won %), tour-level counts, built by `surface-ratings.js` with its pool
+    `index`); **Elo = the peak** (`elo-ratings.json` `peak`, all surfaces, labelled "Elo peak"), its shape point = its
+    percentile among every peak in that file; the rows read the same node (return games won = `breakPct`). **Test:** on
+    Career both axes carry a shape point whenever the value exists (`test-h2h-1117.mjs` "career radar").
   Under the 10-match floor (that window's own sample): no shape, "—" on every row except the Elo peak, the reason in the
   "?". The lean and its chip read the printed figures. **Test:** the switch reads exactly Last 52 weeks · Career; Career
   prints the surface-ratings career rating and the Elo peak.
 - **Head to head record:** surface tabs with counts (a surface with no meeting is inert, `--h2h-dead`); the Overall box
   (score all white, one bullet per meeting oldest → newest, blue = A won, white = B; "X won the last n meetings";
-  "All n meetings ›" opens the box). Never met: the design's one sentence.
+  "All n meetings ›" opens the box). Never met (founder 2026-11-19, plain words): "<A> and <B> have never played each
+  other. We checked both players' matches back to <year>." — no dash, no "compares them indirectly".
 - **Hot lines (founder ruling 3, 2026-11-18, "show the lines from 2 meetings on"; replaces the design's 3):** ranked once
   the scope has `H2H_HOT_MIN_MEETINGS` = 2 meetings (0–1 → "Not enough meetings to rank lines (n=…)"); a line shows with `H2H_HOT_MIN_LINE` = 1 eligible meeting; no rate
   floor (`H2H_HOT_MIN_RATE` null); best line per family, "Show all lines (N)". The Rate keeps the page's thin rule (under
@@ -108,7 +115,8 @@ live calculation (Data below).
 - **Record against each style:** each player's record against the other's archetype, filtered for real by Window (Last 52
   weeks · Last 24 months · Career — **Career by default**, founder 2026-11-16), Surface and Court speed (the profile's one
   speed rule, `speedRowOf` → `speedBandForRow`; a venue with no rating leaves a picked speed and the card says how many).
-  Win rate from `H2H_STYLE_FLOOR` = 5 matches (= the profile's Match-up record floor), greyed 5–9; the **Vs style average
+  Win rate from `H2H_STYLE_FLOOR` = 5 matches (= the profile's Match-up record floor), **white at every n it prints, as the
+  design draws it** (founder 2026-11-19; the 5–9 "Small sample · n=" is its hover); the **Vs style average
   keeps its sign colour at 5–9** (founder 2026-11-17: a filter never takes the green away), "—" under 5. **Vs style average** =
   his win rate minus the matchup-matrix cell for his own style against that style (career, all surfaces — the only
   population the matrix holds; it does not follow the filters, the label's title says so). Career match cards: 6 rows,
@@ -124,7 +132,9 @@ live calculation (Data below).
   tournament clears both; "Back to <tournament> ›" clears both. Single event: opens on an event of this week whose posted
   main draw lists both players (`EntryListsTab.currentWeekRows`, by key), else the most recent event both have played,
   else the first listed. Tiles Best result, Sets won, Last played, Backing (flat 1% stake on the one join, Data below)
-  over the window (`xTrAgg`); groups per year, or per tournament and year in group mode. The search caps at 320px and
+  over the window (`xTrAgg`); groups per year, or per tournament and year in group mode. **In group mode the Best result
+  names its event** ("Won" over "Stuttgart 2026", "F" over "Washington Open 2026"; founder 2026-11-19), and the band names
+  the condition with its count once, the events as chips that open that tournament, Surface and Court speed beside it. The search caps at 320px and
   each filter group keeps its own width (2026-11-18 §5). **A long list shows its newest `H2H_TOUR_SHOWN` = 6 rows, then
   "Show N more matches" / "Show fewer"** (founder ruling 5, 2026-11-18; the career-matches pattern); a filter or pick
   folds it again. **Test:** a 40-row group renders 6 rows and "Show 34 more matches".
@@ -135,8 +145,12 @@ live calculation (Data below).
   track, a green segment right / red left from the centre, 14–46% wide by |edge|/30, a chip on the centre with the
   signed edge, one decimal, no unit), Record, Return (%), a blue ›. **Edge = his win rate in the band − 100 / the band's
   average closing price** (MarketEdgeCore `needs`), in points; a group tile = the same over the group's priced matches.
-  The page's thin gate holds (under 5 no edge, 5–9 grey); Best / Worst band = the bands that print an edge. A band click
-  filters the chart; again clears it. **The band "?" and the chart "?" are the founder's own help text** (ruling 13, re-ruled 2026-11-18): "Win rate =
+  The page's thin gate holds (under 5 no edge); **a signed edge or return is green / red at every n it prints, never grey**
+  (founder 2026-11-19: "Worst band −11.5" read grey at 5–9; the small sample is the hover). Best / Worst band = the bands
+  that print an edge. **A band row or a tile opens his matches there** (founder 2026-11-19, `meBoxHTML`): head (photo, no
+  ring, "<player> · <band>"), four tiles — Record, Win rate (break even under it), Edge, Return at a flat 1% stake — then
+  every priced match newest first (date, result, opponent, event, round, score, both closing prices, return); a row opens
+  the match statistics. A band click also filters the chart (the design), "Clear" in the chart clears it. **The band "?" and the chart "?" are the founder's own help text** (ruling 13, re-ruled 2026-11-18): "Win rate =
   his win rate at closing odds in the band (Pinnacle, else Bet365); break even = … Edge = the gap between them …" and
   "Cumulative units, flat 1u … each line spans that player's own matches …"; only the words naming the removed bar / tick
   changed, and the units say they read in % (1u = 1% of bankroll). **Test:** no band row prints "1.01–1.20" as one string;
@@ -151,7 +165,9 @@ live calculation (Data below).
   Injuries, the rest → Articles); sources print the outlet names (`newsSourceNames`). **Our own match reports and the
   players' quotes come from the news ticker** (item 12, founder 2026-11-18: `newsTickerItems()`, news-ticker.json and its
   tournament files — a report counts for both players by key, quotes one card per player per match; its kind = the
-  item's own category). No item → the design's sentence. An open item (2026-11-18 §7): layer tone + 12% ring, headline
+  item's own category). **A medical time-out is an Injury item** (founder 2026-11-19: Jodar v Fils): `mto-matches.json`
+  (the MTO bot's file, the one the profile's MTO badge reads), joined on the player's surname + first initial, "<X> took a
+  medical time-out against <Y>" with the score from his side, how long it took and the final score. No item → the design's sentence. An open item (2026-11-18 §7): layer tone + 12% ring, headline
   700, the body under a hairline aligned with the headline (60px), then the kind pill, "source · time" and "Close".
 - **Match sheet:** the shared sheet, drawn by player only when this page opens it (`fhSheetTone()` 'h2h', host
   `#fhSheet.h2hx`): A's figures and bars blue, B's white, the scope and set switches the page's one size (2026-11-18 §8),

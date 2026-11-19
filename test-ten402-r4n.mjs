@@ -62,7 +62,8 @@ test('r4 fix 1: the sticky picker sits at the viewport top on a page-tone band (
   assert.ok(+wrap['z-index'] >= 30, 'over the sections (they carry no z-index)');
   const pad = box(wrap.padding);
   assert.ok(pad.t > 0, 'a band above the card');
-  assert.match(wrap.background, /^linear-gradient\(var\(--page\) 78%, /, 'the band is the website\'s page tone (opaque over its top 78%; founder ruling 4, 2026-11-18)');
+  assert.match(wrap.background, /, linear-gradient\(var\(--page\) 78%, /, 'the band is the website\'s page tone (opaque over its top 78%; founder ruling 4, 2026-11-18)');
+  assert.match(wrap.background, /^radial-gradient\(ellipse 1500px 640px at var\(--x-gx, 720px\) var\(--x-gy, -120px\), var\(--glow\)/, 'with the page glow over it, placed where the page draws it (founder 2026-11-19)');
   assert.ok(pad.t / (pad.t + 60 + pad.b) < 0.78, 'the top padding lies inside the opaque 78% for any card ≥ 60px tall');
   assert.match(bar, /<div id="h2h-sticky" style="background:var\(--h2h-card\);/, 'the card inside the band');
   // the stylesheet carries the same band (the inline style and the class agree)
