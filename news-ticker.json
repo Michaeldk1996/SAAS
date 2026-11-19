@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-19T21:41:50.197Z",
+ "generatedAt": "2026-11-19T22:01:15.005Z",
  "tournaments": [
   {
    "key": "2794",
@@ -13,7 +13,7 @@
     "quote": 166
    },
    "latestTimestamp": "2026-11-19T21:21:07.182Z",
-   "updatedAt": "2026-11-19T21:41:50.197Z"
+   "updatedAt": "2026-11-19T22:01:15.005Z"
   },
   {
    "key": "tour",
@@ -101,19 +101,19 @@
      [
       "1st serve in",
       73,
-      68,
+      66,
       "%"
      ],
      [
       "1st serve won",
-      82,
-      74,
+      83,
+      76,
       "%"
      ],
      [
       "2nd serve won",
       53,
-      75,
+      71,
       "%"
      ],
      [
@@ -184,17 +184,17 @@
       "player": "winner",
       "tone": "good",
       "metric": "firstWon",
-      "value": 82,
-      "won": 42,
-      "total": 51
+      "value": 83,
+      "won": 43,
+      "total": 52
      },
      {
       "player": "winner",
       "tone": "bad",
       "metric": "ret2Won",
-      "value": 25,
-      "won": 5,
-      "total": 20,
+      "value": 29,
+      "won": 6,
+      "total": 21,
       "baseline": 51,
       "scope": "last52",
       "surface": "Hard",
@@ -222,8 +222,10 @@
    "sourceUrl": "pbp/12179706.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "497ab3bb5183e239",
+   "sourceHash": "645ee577559a8abf",
    "publishedAt": "2026-11-19T21:41:50.197Z",
+   "revisedAt": "2026-11-19T22:01:15.005Z",
+   "revision": 1,
    "file": "news-ticker/2794-2026.json"
   },
   {
