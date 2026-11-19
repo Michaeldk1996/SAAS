@@ -1,19 +1,19 @@
 {
- "generatedAt": "2026-11-19T17:36:15.260Z",
+ "generatedAt": "2026-11-19T18:00:47.910Z",
  "tournaments": [
   {
    "key": "2794",
    "season": "2026",
    "name": "Finals - Turin",
    "file": "news-ticker/2794-2026.json",
-   "items": 184,
+   "items": 191,
    "byType": {
-    "quote": 152,
+    "quote": 159,
     "digest": 23,
     "report": 9
    },
    "latestTimestamp": "2026-11-19T16:50:25.000Z",
-   "updatedAt": "2026-11-19T17:36:15.260Z"
+   "updatedAt": "2026-11-19T18:00:47.910Z"
   },
   {
    "key": "tour",
@@ -26,7 +26,7 @@
     "digest": 23
    },
    "latestTimestamp": "2026-11-19T10:14:06.285Z",
-   "updatedAt": "2026-11-19T17:14:40.857Z"
+   "updatedAt": "2026-11-19T18:00:47.910Z"
   },
   {
    "key": "1681",
@@ -262,6 +262,99 @@
    "file": "news-ticker/2794-2026.json"
   },
   {
+   "id": "digest-1de430ec7f6e90",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2973",
+   "player": "B. Shelton",
+   "opponentId": "50323",
+   "opponent": "R. Jodar",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "eventKey": "12179704",
+   "context": "after beating R. Jodar",
+   "category": "Quotes",
+   "timestamp": "2026-11-19T16:00:31.659Z",
+   "members": [
+    "quote-0966b288973b14",
+    "quote-1b563e462a5cb2",
+    "quote-2fe349224f3c56",
+    "quote-30f5644d5c213e",
+    "quote-e2a919b2c55d88"
+   ],
+   "memberHash": "5fae4bebd8318bfe",
+   "digestedAt": "2026-11-19T17:22:03.536Z",
+   "blocks": [
+    {
+     "label": "after his win over Jodar",
+     "text": "I knew it wasn't gonna be an easy match going in. I was happy that I was able to get through some tough moments in the first set, early when I was down break points, to be able to hold serve and get to that tiebreaker. Once I was in the tiebreaker I felt confident, fending off those set points and coming through it in the end. A tricky second set as well, being up a break and losing it, but I thought I fought well, competed well.",
+     "from": [
+      "quote-0966b288973b14",
+      "quote-1b563e462a5cb2"
+     ]
+    },
+    {
+     "label": "on Jodar qualifying for Turin in his debut season",
+     "text": "Rafa is one of the best young talents that tennis has seen in a long time. To be here playing in Turin in his first year on tour, starting the year outside of top 100, is a ridiculous feat. So I hope all you guys recognize how special that is.",
+     "from": [
+      "quote-30f5644d5c213e"
+     ]
+    },
+    {
+     "label": "on his chances of reaching the semi-finals",
+     "text": "Looking forward to it either way. I think both those guys are great guys. I'd love to make the semi-finals here for the first time. I did my job today and let's see what happens.",
+     "from": [
+      "quote-2fe349224f3c56"
+     ]
+    },
+    {
+     "label": "on Fritz's match against Zverev",
+     "text": "I'm always rooting for him. I think him and Sasha are gonna have a great match. I think if he takes Sasha out in straights, he gets through to the semi-finals.",
+     "from": [
+      "quote-e2a919b2c55d88"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "0f6c2abccbc6831f",
+   "publishedAt": "2026-11-19T16:55:22.352Z",
+   "revisedAt": "2026-11-19T18:00:47.910Z",
+   "revision": 1,
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "quote-30f5644d5c213e",
+   "type": "quote",
+   "playerId": "2973",
+   "opponentId": "50323",
+   "player": "B. Shelton",
+   "opponent": "R. Jodar",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-19T16:00:31.659Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating R. Jodar",
+   "eventKey": "12179704",
+   "won": true,
+   "text": "Rafa is one of the best young talents that tennis has seen in a long time, … To be here playing in Turin in his first year on tour, starting the year outside of top 100, is a ridiculous feat. So I hope all you guys recognize how special that is.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "TSN",
+   "sourceUrl": "https://www.tsn.ca/tennis/article/shelton-beats-jodar-and-now-needs-help-from-zverev-to-advance-at-atp-finals/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On Jodar qualifying for Turin in debut season",
+   "sourceHash": "96f180539673516f",
+   "publishedAt": "2026-11-19T18:00:47.910Z",
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
    "id": "quote-f61adebbdbbe0f",
    "type": "quote",
    "playerId": "2382",
@@ -383,58 +476,6 @@
    "topic": "On Rafa Jódar's rapid rise to Turin",
    "sourceHash": "9899c11eeacb4312",
    "publishedAt": "2026-11-19T16:11:40.130Z",
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "digest-1de430ec7f6e90",
-   "type": "digest",
-   "version": 1,
-   "playerId": "2973",
-   "player": "B. Shelton",
-   "opponentId": "50323",
-   "opponent": "R. Jodar",
-   "tournament": "Finals - Turin",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "eventKey": "12179704",
-   "context": "after beating R. Jodar",
-   "category": "Quotes",
-   "timestamp": "2026-11-19T15:30:00.000Z",
-   "members": [
-    "quote-0966b288973b14",
-    "quote-1b563e462a5cb2",
-    "quote-2fe349224f3c56",
-    "quote-e2a919b2c55d88"
-   ],
-   "memberHash": "7563f05c1f9b49fe",
-   "digestedAt": "2026-11-19T16:21:37.625Z",
-   "blocks": [
-    {
-     "label": "after his win over Jodar",
-     "text": "I knew it wasn't going to be an easy match going in. I was happy that I was able to get through some tough moments in the first set, early when I was down break points, to be able to hold serve and get to that tiebreaker. Once I was in the tiebreaker I felt confident, fending off those set points and coming through it in the end. A tricky second set as well, being up a break and losing it, but I thought I fought well, competed well.",
-     "from": [
-      "quote-0966b288973b14",
-      "quote-1b563e462a5cb2"
-     ]
-    },
-    {
-     "label": "on reaching the semi-finals for the first time",
-     "text": "Looking forward to it either way. I think both those guys are great guys. I'd love to make the semi-finals here for the first time. I did my job today and let's see what happens.",
-     "from": [
-      "quote-2fe349224f3c56"
-     ]
-    },
-    {
-     "label": "on Fritz's match against Zverev",
-     "text": "I'm always rooting for him. I think him and Sasha are going to have a great match. I think if he takes Sasha out in straights, he gets through to the semi-finals.",
-     "from": [
-      "quote-e2a919b2c55d88"
-     ]
-    }
-   ],
-   "model": "claude-opus-5-5",
-   "sourceHash": "15ff1aa52357bc98",
-   "publishedAt": "2026-11-19T16:55:22.352Z",
    "file": "news-ticker/2794-2026.json"
   },
   {
@@ -1749,76 +1790,6 @@
    "publishedAt": "2026-11-18T22:03:42.409Z",
    "revisedAt": "2026-11-18T22:47:09.263Z",
    "revision": 1,
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "digest-998e40c8cd323c",
-   "type": "digest",
-   "version": 1,
-   "playerId": "1980",
-   "player": "A. Zverev",
-   "opponentId": "2973",
-   "opponent": "B. Shelton",
-   "tournament": "Finals - Turin",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "eventKey": "12179705",
-   "context": "after beating B. Shelton",
-   "category": "Quotes",
-   "timestamp": "2026-11-18T21:20:39.000Z",
-   "members": [
-    "quote-1bfe28c7bb6572",
-    "quote-1c1ae2514f657d",
-    "quote-37a061d5b300d1",
-    "quote-3c496f49e7141e",
-    "quote-56be0e9237fdb3",
-    "quote-59f5407f2d4a52",
-    "quote-5e9a479e5accc7",
-    "quote-64e0ce634a49fc",
-    "quote-7ae38bcff83008",
-    "quote-7ec66f0cc51ec5",
-    "quote-81038774dc54bb",
-    "quote-924bb0eaa1e87e",
-    "quote-b503c4211cc53e",
-    "quote-bd9eef27e444e1",
-    "quote-c21bdbdb6ba96c",
-    "quote-d7eb9bc6d39310"
-   ],
-   "memberHash": "631ddf5d8a72008f",
-   "digestedAt": "2026-11-19T03:16:57.592Z",
-   "blocks": [
-    {
-     "label": "after his win over Shelton",
-     "text": "The first set was almost perfect … That helps when two big servers are playing each other … In the second-set tiebreak I played a few fantastic points, especially the match point was the highlight.",
-     "from": [
-      "quote-c21bdbdb6ba96c"
-     ]
-    },
-    {
-     "label": "on his match-point forehand pass",
-     "text": "I don't care how I win the match point as long as I win it. But I think it was definitely a highlight a little bit. But funny enough, I was very clear-minded of what I wanted to do with that ball, and it was perfect.",
-     "from": [
-      "quote-1bfe28c7bb6572",
-      "quote-3c496f49e7141e",
-      "quote-1c1ae2514f657d",
-      "quote-64e0ce634a49fc"
-     ]
-    },
-    {
-     "label": "on not knowing he needed straight sets",
-     "text": "No, I didn't know that, but I think for me, if I focus on myself and I play good tennis, the results will take care of themselves in a way. … It's about playing good tennis, and I feel like I did that today. I did that against Rafa two days ago, and that's the outcome of it.",
-     "from": [
-      "quote-7ec66f0cc51ec5",
-      "quote-59f5407f2d4a52",
-      "quote-81038774dc54bb",
-      "quote-7ae38bcff83008",
-      "quote-b503c4211cc53e"
-     ]
-    }
-   ],
-   "model": "claude-opus-5-5",
-   "sourceHash": "633fe8c6d2607d3f",
-   "publishedAt": "2026-11-19T03:47:45.956Z",
    "file": "news-ticker/2794-2026.json"
   }
  ]

@@ -2,7 +2,7 @@
  "tournament": "Finals - Turin",
  "tournamentKey": "2794",
  "season": "2026",
- "updatedAt": "2026-11-19T17:36:15.260Z",
+ "updatedAt": "2026-11-19T18:00:47.910Z",
  "items": [
   {
    "id": "quote-1c8bda4d41e99c",
@@ -206,6 +206,97 @@
    "publishedAt": "2026-11-19T16:55:22.352Z"
   },
   {
+   "id": "digest-1de430ec7f6e90",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2973",
+   "player": "B. Shelton",
+   "opponentId": "50323",
+   "opponent": "R. Jodar",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "eventKey": "12179704",
+   "context": "after beating R. Jodar",
+   "category": "Quotes",
+   "timestamp": "2026-11-19T16:00:31.659Z",
+   "members": [
+    "quote-0966b288973b14",
+    "quote-1b563e462a5cb2",
+    "quote-2fe349224f3c56",
+    "quote-30f5644d5c213e",
+    "quote-e2a919b2c55d88"
+   ],
+   "memberHash": "5fae4bebd8318bfe",
+   "digestedAt": "2026-11-19T17:22:03.536Z",
+   "blocks": [
+    {
+     "label": "after his win over Jodar",
+     "text": "I knew it wasn't gonna be an easy match going in. I was happy that I was able to get through some tough moments in the first set, early when I was down break points, to be able to hold serve and get to that tiebreaker. Once I was in the tiebreaker I felt confident, fending off those set points and coming through it in the end. A tricky second set as well, being up a break and losing it, but I thought I fought well, competed well.",
+     "from": [
+      "quote-0966b288973b14",
+      "quote-1b563e462a5cb2"
+     ]
+    },
+    {
+     "label": "on Jodar qualifying for Turin in his debut season",
+     "text": "Rafa is one of the best young talents that tennis has seen in a long time. To be here playing in Turin in his first year on tour, starting the year outside of top 100, is a ridiculous feat. So I hope all you guys recognize how special that is.",
+     "from": [
+      "quote-30f5644d5c213e"
+     ]
+    },
+    {
+     "label": "on his chances of reaching the semi-finals",
+     "text": "Looking forward to it either way. I think both those guys are great guys. I'd love to make the semi-finals here for the first time. I did my job today and let's see what happens.",
+     "from": [
+      "quote-2fe349224f3c56"
+     ]
+    },
+    {
+     "label": "on Fritz's match against Zverev",
+     "text": "I'm always rooting for him. I think him and Sasha are gonna have a great match. I think if he takes Sasha out in straights, he gets through to the semi-finals.",
+     "from": [
+      "quote-e2a919b2c55d88"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "0f6c2abccbc6831f",
+   "publishedAt": "2026-11-19T16:55:22.352Z",
+   "revisedAt": "2026-11-19T18:00:47.910Z",
+   "revision": 1
+  },
+  {
+   "id": "quote-30f5644d5c213e",
+   "type": "quote",
+   "playerId": "2973",
+   "opponentId": "50323",
+   "player": "B. Shelton",
+   "opponent": "R. Jodar",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-19T16:00:31.659Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating R. Jodar",
+   "eventKey": "12179704",
+   "won": true,
+   "text": "Rafa is one of the best young talents that tennis has seen in a long time, … To be here playing in Turin in his first year on tour, starting the year outside of top 100, is a ridiculous feat. So I hope all you guys recognize how special that is.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "TSN",
+   "sourceUrl": "https://www.tsn.ca/tennis/article/shelton-beats-jodar-and-now-needs-help-from-zverev-to-advance-at-atp-finals/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On Jodar qualifying for Turin in debut season",
+   "sourceHash": "96f180539673516f",
+   "publishedAt": "2026-11-19T18:00:47.910Z"
+  },
+  {
    "id": "quote-f61adebbdbbe0f",
    "type": "quote",
    "playerId": "2382",
@@ -324,57 +415,6 @@
    "topic": "On Rafa Jódar's rapid rise to Turin",
    "sourceHash": "9899c11eeacb4312",
    "publishedAt": "2026-11-19T16:11:40.130Z"
-  },
-  {
-   "id": "digest-1de430ec7f6e90",
-   "type": "digest",
-   "version": 1,
-   "playerId": "2973",
-   "player": "B. Shelton",
-   "opponentId": "50323",
-   "opponent": "R. Jodar",
-   "tournament": "Finals - Turin",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "eventKey": "12179704",
-   "context": "after beating R. Jodar",
-   "category": "Quotes",
-   "timestamp": "2026-11-19T15:30:00.000Z",
-   "members": [
-    "quote-0966b288973b14",
-    "quote-1b563e462a5cb2",
-    "quote-2fe349224f3c56",
-    "quote-e2a919b2c55d88"
-   ],
-   "memberHash": "7563f05c1f9b49fe",
-   "digestedAt": "2026-11-19T16:21:37.625Z",
-   "blocks": [
-    {
-     "label": "after his win over Jodar",
-     "text": "I knew it wasn't going to be an easy match going in. I was happy that I was able to get through some tough moments in the first set, early when I was down break points, to be able to hold serve and get to that tiebreaker. Once I was in the tiebreaker I felt confident, fending off those set points and coming through it in the end. A tricky second set as well, being up a break and losing it, but I thought I fought well, competed well.",
-     "from": [
-      "quote-0966b288973b14",
-      "quote-1b563e462a5cb2"
-     ]
-    },
-    {
-     "label": "on reaching the semi-finals for the first time",
-     "text": "Looking forward to it either way. I think both those guys are great guys. I'd love to make the semi-finals here for the first time. I did my job today and let's see what happens.",
-     "from": [
-      "quote-2fe349224f3c56"
-     ]
-    },
-    {
-     "label": "on Fritz's match against Zverev",
-     "text": "I'm always rooting for him. I think him and Sasha are going to have a great match. I think if he takes Sasha out in straights, he gets through to the semi-finals.",
-     "from": [
-      "quote-e2a919b2c55d88"
-     ]
-    }
-   ],
-   "model": "claude-opus-5-5",
-   "sourceHash": "15ff1aa52357bc98",
-   "publishedAt": "2026-11-19T16:55:22.352Z"
   },
   {
    "id": "quote-0966b288973b14",
@@ -2337,6 +2377,269 @@
    "publishedAt": "2026-11-18T17:12:45.817Z"
   },
   {
+   "id": "digest-ad827fe5f2e89f",
+   "type": "digest",
+   "version": 1,
+   "playerId": "50323",
+   "player": "R. Jodar",
+   "opponentId": "1759",
+   "opponent": "A. Fils",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "eventKey": "12179700",
+   "context": "after losing to A. Fils",
+   "category": "Quotes",
+   "timestamp": "2026-11-18T16:00:00.000Z",
+   "members": [
+    "quote-01c24e7f7fcd22",
+    "quote-0b4bec8d4f4a1f",
+    "quote-2514c922af9f54",
+    "quote-420cde4b816820",
+    "quote-637aed68fbee34",
+    "quote-8200b2a1244942",
+    "quote-999083727b02a3",
+    "quote-9bd02be01c737d",
+    "quote-d1691c18a64ab9",
+    "quote-ef23b8eefa8f82"
+   ],
+   "memberHash": "1fe969de0c7efdda",
+   "digestedAt": "2026-11-19T17:22:03.536Z",
+   "blocks": [
+    {
+     "label": "after his loss to Fils",
+     "text": "The first set, I think it was a competitive match, because both of us were playing a high level of tennis, but then my tennis and obviously physically I dropped a little bit. When you drop your level here, your opponent is not going to drop it.",
+     "from": [
+      "quote-01c24e7f7fcd22"
+     ]
+    },
+    {
+     "label": "on his physical struggles against Fils",
+     "text": "I'm better now, but it was tough obviously, because I felt that I couldn't compete and physically, I wasn't at the level today, especially in the last two sets.",
+     "from": [
+      "quote-999083727b02a3",
+      "quote-9bd02be01c737d"
+     ]
+    },
+    {
+     "label": "on the experience gap with established opponents",
+     "text": "These players have been playing here on Tour for five, six, seven years, so they are used to this. Every match is different. If you are not competitive, if you don't have the right mindset or mentality to approach the match, it's very difficult to compete against these types of guys.",
+     "from": [
+      "quote-2514c922af9f54",
+      "quote-d1691c18a64ab9"
+     ]
+    },
+    {
+     "label": "on his debut season on Tour",
+     "text": "It wasn't meant to be at the end of the second set, but I think when I'm more on Tour, I'll learn more things, but as this first year, I'm happy with how the season has gone for me. However, it's my first season on Tour, so I was new. I didn't know what I was going to face and what we could expect in the first season. But I'm super proud of the work I've done. I've given everything on court in every match that I've played this season.",
+     "from": [
+      "quote-637aed68fbee34",
+      "quote-ef23b8eefa8f82",
+      "quote-8200b2a1244942"
+     ]
+    },
+    {
+     "label": "on hard work paying off this season",
+     "text": "It means a lot. I think I've done the work. I've worked very, very hard and very well this year, so super happy how everything is going on Tour. I'm enjoying my time on Tour and let's keep pushing to achieve bigger things in the future.",
+     "from": [
+      "quote-420cde4b816820"
+     ]
+    },
+    {
+     "label": "on his ambition to keep improving",
+     "text": "But obviously, having played against the best players in the world, I see that if I keep improving and if I have ambition to be better every day, I think I can be a better player. That's what it's all about. I have been every day a little bit better and improving in all the things that I think I can be better in the future.",
+     "from": [
+      "quote-0b4bec8d4f4a1f"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "c07e34cc75ed7b77",
+   "publishedAt": "2026-11-19T03:47:45.956Z",
+   "revisedAt": "2026-11-19T18:00:47.910Z",
+   "revision": 1
+  },
+  {
+   "id": "quote-0b4bec8d4f4a1f",
+   "type": "quote",
+   "playerId": "50323",
+   "opponentId": "1759",
+   "player": "R. Jodar",
+   "opponent": "A. Fils",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-18T16:00:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after losing to A. Fils",
+   "eventKey": "12179700",
+   "won": false,
+   "text": "But obviously, having played against the best players in the world, I see that if I keep improving and if I have ambition to be better every day, I think I can be a better player. That's what it's all about. I have been every day a little bit better and improving in all the things that I think I can be better in the future.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "ATP Tour",
+   "sourceUrl": "https://www.atptour.com/en/news/jodar-nitto-atp-finals-2026-thursday-reaction",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
+   "topic": "On his ambition to keep improving",
+   "sourceHash": "ef2765df1cd55082",
+   "publishedAt": "2026-11-19T18:00:47.910Z"
+  },
+  {
+   "id": "quote-2514c922af9f54",
+   "type": "quote",
+   "playerId": "50323",
+   "opponentId": "1759",
+   "player": "R. Jodar",
+   "opponent": "A. Fils",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-18T16:00:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after losing to A. Fils",
+   "eventKey": "12179700",
+   "won": false,
+   "text": "These players have been playing here on Tour for five, six, seven years, so they are used to this,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "ATP Tour",
+   "sourceUrl": "https://www.atptour.com/en/news/jodar-nitto-atp-finals-2026-thursday-reaction",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
+   "topic": "On his opponents' experience on the Tour",
+   "sourceHash": "c611055dd5cd6d11",
+   "publishedAt": "2026-11-19T18:00:47.910Z"
+  },
+  {
+   "id": "quote-637aed68fbee34",
+   "type": "quote",
+   "playerId": "50323",
+   "opponentId": "1759",
+   "player": "R. Jodar",
+   "opponent": "A. Fils",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-18T16:00:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after losing to A. Fils",
+   "eventKey": "12179700",
+   "won": false,
+   "text": "It wasn't meant to be at the end of the second set, but yeah, I think when I'm more on Tour, I think I'll learn more things, but as this first year, I'm happy with how the season has gone for me.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "ATP Tour",
+   "sourceUrl": "https://www.atptour.com/en/news/jodar-nitto-atp-finals-2026-thursday-reaction",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
+   "topic": "On the debut season on Tour",
+   "sourceHash": "84251d48a324da1e",
+   "publishedAt": "2026-11-19T18:00:47.910Z"
+  },
+  {
+   "id": "quote-8200b2a1244942",
+   "type": "quote",
+   "playerId": "50323",
+   "opponentId": "1759",
+   "player": "R. Jodar",
+   "opponent": "A. Fils",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-18T16:00:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after losing to A. Fils",
+   "eventKey": "12179700",
+   "won": false,
+   "text": "I've given everything on court in every match that I've played this season,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "ATP Tour",
+   "sourceUrl": "https://www.atptour.com/en/news/jodar-nitto-atp-finals-2026-thursday-reaction",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
+   "topic": "On his effort throughout this season",
+   "sourceHash": "c48989d42b83460d",
+   "publishedAt": "2026-11-19T18:00:47.910Z"
+  },
+  {
+   "id": "quote-d1691c18a64ab9",
+   "type": "quote",
+   "playerId": "50323",
+   "opponentId": "1759",
+   "player": "R. Jodar",
+   "opponent": "A. Fils",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-18T16:00:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after losing to A. Fils",
+   "eventKey": "12179700",
+   "won": false,
+   "text": "Every match is different. If you are not competitive, if you don't have the right mindset or mentality to approach the match, it's very difficult to compete against these types of guys,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "ATP Tour",
+   "sourceUrl": "https://www.atptour.com/en/news/jodar-nitto-atp-finals-2026-thursday-reaction",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
+   "topic": "On needing the right mindset to compete",
+   "sourceHash": "e6ad31b6b9442a7e",
+   "publishedAt": "2026-11-19T18:00:47.910Z"
+  },
+  {
+   "id": "quote-ef23b8eefa8f82",
+   "type": "quote",
+   "playerId": "50323",
+   "opponentId": "1759",
+   "player": "R. Jodar",
+   "opponent": "A. Fils",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-18T16:00:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after losing to A. Fils",
+   "eventKey": "12179700",
+   "won": false,
+   "text": "However, it's my first season on Tour, so I was new. I didn't know what I was going to face and what we could expect in the first season. But I'm super proud of the work I've done.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "ATP Tour",
+   "sourceUrl": "https://www.atptour.com/en/news/jodar-nitto-atp-finals-2026-thursday-reaction",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
+   "topic": "On a debut season on Tour",
+   "sourceHash": "02cd3d42c7dee169",
+   "publishedAt": "2026-11-19T18:00:47.910Z"
+  },
+  {
    "id": "quote-a26d057992729e",
    "type": "quote",
    "playerId": "2382",
@@ -3758,57 +4061,6 @@
    "topic": "On fast Turin court helping him against Alcaraz",
    "sourceHash": "b70c476b6ca2b87a",
    "publishedAt": "2026-11-18T16:08:21.478Z"
-  },
-  {
-   "id": "digest-ad827fe5f2e89f",
-   "type": "digest",
-   "version": 1,
-   "playerId": "50323",
-   "player": "R. Jodar",
-   "opponentId": "1759",
-   "opponent": "A. Fils",
-   "tournament": "Finals - Turin",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "eventKey": "12179700",
-   "context": "after losing to A. Fils",
-   "category": "Quotes",
-   "timestamp": "2026-11-17T17:07:05.000Z",
-   "members": [
-    "quote-01c24e7f7fcd22",
-    "quote-420cde4b816820",
-    "quote-999083727b02a3",
-    "quote-9bd02be01c737d"
-   ],
-   "memberHash": "38fe8fcbfcb5670b",
-   "digestedAt": "2026-11-19T03:16:57.592Z",
-   "blocks": [
-    {
-     "label": "after his loss to Fils",
-     "text": "The first set, I think it was a competitive match, because both of us were playing a high level of tennis, but then my tennis and obviously physically I dropped a little bit. When you drop your level here, your opponent is not going to drop it.",
-     "from": [
-      "quote-01c24e7f7fcd22"
-     ]
-    },
-    {
-     "label": "on his physical struggles against Fils",
-     "text": "I'm better now, but it was tough obviously, because I felt that I couldn't compete and physically, I wasn't at the level today, especially in the last two sets.",
-     "from": [
-      "quote-999083727b02a3",
-      "quote-9bd02be01c737d"
-     ]
-    },
-    {
-     "label": "on what this season's success means",
-     "text": "It means a lot. I think I've done the work. I've worked very, very hard and very well this year, so super happy how everything is going on Tour. I'm enjoying my time on Tour and let's keep pushing to achieve bigger things in the future.",
-     "from": [
-      "quote-420cde4b816820"
-     ]
-    }
-   ],
-   "model": "claude-opus-5-5",
-   "sourceHash": "0f59ff9d6dd025b0",
-   "publishedAt": "2026-11-19T03:47:45.956Z"
   },
   {
    "id": "quote-01c24e7f7fcd22",
