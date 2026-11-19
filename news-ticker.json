@@ -1,19 +1,19 @@
 {
- "generatedAt": "2026-11-19T21:17:27.820Z",
+ "generatedAt": "2026-11-19T21:41:50.197Z",
  "tournaments": [
   {
    "key": "2794",
    "season": "2026",
    "name": "Finals - Turin",
    "file": "news-ticker/2794-2026.json",
-   "items": 199,
+   "items": 200,
    "byType": {
+    "report": 10,
     "digest": 24,
-    "quote": 166,
-    "report": 9
+    "quote": 166
    },
-   "latestTimestamp": "2026-11-19T20:30:00.000Z",
-   "updatedAt": "2026-11-19T21:17:27.820Z"
+   "latestTimestamp": "2026-11-19T21:21:07.182Z",
+   "updatedAt": "2026-11-19T21:41:50.197Z"
   },
   {
    "key": "tour",
@@ -26,7 +26,7 @@
     "digest": 23
    },
    "latestTimestamp": "2026-11-19T18:43:47.000Z",
-   "updatedAt": "2026-11-19T21:17:27.820Z"
+   "updatedAt": "2026-11-19T21:41:50.197Z"
   },
   {
    "key": "1681",
@@ -56,6 +56,176 @@
   }
  ],
  "latest": [
+  {
+   "id": "report-12179706",
+   "type": "report",
+   "playerId": "1980",
+   "opponentId": "1759",
+   "player": "A. Zverev",
+   "opponent": "A. Fils",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "stage": "main draw",
+   "round": "group stage",
+   "eventKey": "12179706",
+   "timestamp": "2026-11-19T21:21:07.182Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-19T21:21:07.182Z",
+    "startedAt": "2026-11-19T19:43:15.005Z",
+    "minutes": 98
+   },
+   "category": "Statistics",
+   "text": "Zverev beat Fils for the 6th time in 8 meetings, 6-4, 7-6 in the group stage.\n\nZverev: W: 23 / UE: 22 | DR: 1.02\n\nFils: W: 24 / UE: 14 | DR: 0.98",
+   "ms": {
+    "a": "A. Zverev",
+    "b": "A. Fils",
+    "sets": [
+     [
+      6,
+      4
+     ],
+     [
+      7,
+      6
+     ]
+    ],
+    "rows": [
+     [
+      "Dominance ratio",
+      1.02,
+      0.98,
+      "dr"
+     ],
+     [
+      "1st serve in",
+      73,
+      68,
+      "%"
+     ],
+     [
+      "1st serve won",
+      82,
+      74,
+      "%"
+     ],
+     [
+      "2nd serve won",
+      53,
+      75,
+      "%"
+     ],
+     [
+      "Winners / unforced",
+      1.05,
+      1.71,
+      "2"
+     ],
+     [
+      "Winners",
+      23,
+      24,
+      "0"
+     ],
+     [
+      "Unforced errors",
+      22,
+      14,
+      "0",
+      1
+     ],
+     [
+      "Winners / points",
+      0.17,
+      0.18,
+      "2"
+     ],
+     [
+      "Unforced / points",
+      0.17,
+      0.11,
+      "2",
+      1
+     ]
+    ]
+   },
+   "baseText": "Zverev beat Fils for the 6th time in 8 meetings, 6-4, 7-6 in the group stage.",
+   "rating": [
+    "Zverev: W: 23 / UE: 22 | DR: 1.02",
+    "Fils: W: 24 / UE: 14 | DR: 0.98"
+   ],
+   "fields": {
+    "score": "6-4, 7-6",
+    "round": "group stage",
+    "retired": false,
+    "h2h": {
+     "a": 6,
+     "b": 2,
+     "n": 8
+    },
+    "durationMinutes": 98,
+    "facts": {
+     "tiebreakSets": [
+      {
+       "set": 2,
+       "winner": "p1"
+      }
+     ]
+    },
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "aces",
+      "value": 10
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "firstWon",
+      "value": 82,
+      "won": 42,
+      "total": 51
+     },
+     {
+      "player": "winner",
+      "tone": "bad",
+      "metric": "ret2Won",
+      "value": 25,
+      "won": 5,
+      "total": 20,
+      "baseline": 51,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 50
+     }
+    ],
+    "winner": {
+     "aces": 10,
+     "winners": 23,
+     "unforcedErrors": 22,
+     "breakPointsSaved": 2,
+     "breakPointsFaced": 2,
+     "breakPointsSource": "box score"
+    },
+    "loser": {
+     "aces": 7,
+     "winners": 24,
+     "unforcedErrors": 14,
+     "breakPointsSaved": 2,
+     "breakPointsFaced": 3,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12179706.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "497ab3bb5183e239",
+   "publishedAt": "2026-11-19T21:41:50.197Z",
+   "file": "news-ticker/2794-2026.json"
+  },
   {
    "id": "digest-2fe98118ffca6f",
    "type": "digest",
@@ -1759,39 +1929,6 @@
    "publishedAt": "2026-11-18T15:38:04.057Z",
    "revisedAt": "2026-11-19T00:11:17.409Z",
    "revision": 2,
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-3b56669adb5ac2",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": "1093",
-   "player": "C. Alcaraz",
-   "opponent": "D. Medvedev",
-   "tournament": "Finals - Turin",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-18T23:17:27.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Quotes",
-   "context": "after beating D. Medvedev",
-   "eventKey": "12179696",
-   "won": true,
-   "text": "I didn't want to force myself to the limit physically. I was a break-up at that time. And I just tried to keep up my serve... play chill, smoothly, relaxed and just happy about it,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "RTHK",
-   "sourceUrl": "https://news.rthk.hk/rthk/en/component/k2/1878374-20261119.htm",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On easing off after his thigh was taped",
-   "sourceHash": "2501a3c7cb774748",
-   "publishedAt": "2026-11-18T22:47:09.263Z",
-   "revisedAt": "2026-11-19T00:11:17.409Z",
-   "revision": 1,
    "file": "news-ticker/2794-2026.json"
   }
  ]
