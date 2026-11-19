@@ -30539,7 +30539,7 @@ window.DatabaseTab = (function(){
   // 'raw-first'  = smooth then sample (the spec read literally): 161/58 erased.
   // 'sample-first' = sample then smooth (what the export itself does): 171/64 erased,
   //   and up to 25.90u of real drawdown lost (Grand Slam underdogs -1,112.07 -> -1,086.17).
-  var SMOOTH_MODE='guarded';   // FOUNDER RULING, gate e8453243, 2026-09-13: 'guarded'.
+  var SMOOTH_MODE='sample-first';   // FOUNDER RULING 2026-11-19 (Database v3, "use export smoothing"): the export's smooth(vals, 3), endpoints pinned; replaces 'guarded' (gate e8453243, 2026-09-13).
   function smoothVals(vals, k){
     var n=vals.length, out=[], i, j, a, b, s;
     if(n<3) return vals.slice();
@@ -34137,7 +34137,8 @@ window.DatabaseTab = (function(){
       return card;
     }
     var N=Math.max(2, o.N||0), H=300, PH=360, all=[0];
-    live.forEach(function(s){ all=all.concat(s.vals); });
+    // the axis is built from the line as drawn (smoothed, sampled), as the export's: no band past what the eye sees
+    live.forEach(function(s){ var xs=s.vals.map(function(_,k){ return k; }); all=all.concat(paintSeries(xs, s.vals, N_TOURN).vals); });
     var rawHi=Math.max.apply(null,all), rawLo=Math.min.apply(null,all), span=Math.max(1e-9, rawHi-rawLo);
     var step=[0.5,1,2,5,10,25,50,100,250,500,1000,2500].filter(function(v){ return span/v<=8; })[0] || 5000;
     var hi=Math.ceil(rawHi/step)*step, lo=Math.floor(rawLo/step)*step; if(hi===lo) hi=lo+step;
@@ -34443,6 +34444,15 @@ window.DatabaseTab = (function(){
   function paintSeries(xs, vals, N){
     var i, k, sm, mx, mn, forced, out;
     if(SMOOTH_MODE==='raw-first') vals=smoothVals(vals,3);
+    // The export's look (founder 2026-11-19): a curve of a few hundred points, smoothed ±3, ends pinned. A long series is
+    // first cut to N equal buckets by index, each drawn at its mean (x and value), the first and last raw points kept.
+    if(SMOOTH_MODE==='sample-first' && xs.length>(N||N_TOUR)){
+      var n=xs.length, B=(N||N_TOUR)-2, bx=[xs[0]], bv=[vals[0]];
+      for(i=0;i<B;i++){ var a0=1+Math.floor(i*(n-2)/B), a1=1+Math.floor((i+1)*(n-2)/B), sx=0, sv=0, c=0;
+        for(var j=a0;j<a1;j++){ sx+=xs[j]; sv+=vals[j]; c++; } if(c){ bx.push(sx/c); bv.push(sv/c); } }
+      bx.push(xs[n-1]); bv.push(vals[n-1]);
+      return { xs:bx, vals:smoothVals(bv,3) };
+    }
     k=sampleKeep(xs, vals, N||N_TOUR);
     var px=new Array(k.length), pv=new Array(k.length);
     for(i=0;i<k.length;i++){ px[i]=xs[k[i]]; pv[i]=vals[k[i]]; }

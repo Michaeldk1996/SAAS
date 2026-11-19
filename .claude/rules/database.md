@@ -182,7 +182,11 @@ inside every mount (`[data-db-root]`). Ratings and Lines rules: `ratings.md`, `l
   curve is there, else under, else hidden; end plates in % (one decimal under 10), pushed apart. **Under 30 settled
   matches on every line: no chart, one sentence** "Too few matches for a return line. Widen the filters." One builder
   (`db3Chart`) draws Tour, Tournament, Player and the compare chart. **Test:** `test-ten399-database-frame.mjs` "seam",
-  `test-database-v2.mjs` "dates". Display smoothing (`SMOOTH_MODE`) is unchanged and lands on the printed end value.
+  `test-database-v2.mjs` "dates". **Display smoothing = the export's** (founder 2026-11-19, "use export smoothing"; replaces the 'guarded' mode of TEN-196,
+  gate e8453243): `SMOOTH_MODE` 'sample-first' — a series longer than the vertex budget is cut into equal buckets by
+  index, each drawn at its mean, then a centred ±3 moving average (`smoothVals`); both ends are the raw values, so the
+  line lands on the printed end value. The y axis is built from the line as drawn. **Test:** does a drawn line end off its
+  plate's value, or does the axis reach past the drawn line by more than one step? Then it is wrong.
 - **"How this is built" and the disclaimer live in the "?" hovers** (founder 2026-11-16).
 
 ## Tournament
