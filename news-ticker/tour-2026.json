@@ -2,7 +2,7 @@
  "tournament": "ATP Tour",
  "tournamentKey": "tour",
  "season": "2026",
- "updatedAt": "2026-11-19T07:08:06.688Z",
+ "updatedAt": "2026-11-19T08:09:06.207Z",
  "items": [
   {
    "id": "digest-eb623e8f9803c3",
@@ -318,47 +318,6 @@
    "publishedAt": "2026-11-17T22:26:26.835Z"
   },
   {
-   "id": "digest-bc52850609bedc",
-   "type": "digest",
-   "version": 1,
-   "playerId": "50323",
-   "player": "R. Jodar",
-   "opponentId": null,
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "eventKey": null,
-   "context": null,
-   "category": "Quotes",
-   "timestamp": "2026-11-17T20:30:00.000Z",
-   "members": [
-    "quote-420cde4b816820",
-    "quote-54bf04d2309cb4"
-   ],
-   "memberHash": "5d310cdb19c76571",
-   "digestedAt": "2026-11-19T03:16:57.592Z",
-   "blocks": [
-    {
-     "label": "on the close first set against Fils",
-     "text": "I think the first set was good, physically and also technically. I saw that the set could go either way. In the end, it came down to small details.",
-     "from": [
-      "quote-54bf04d2309cb4"
-     ]
-    },
-    {
-     "label": "on reaching a milestone after a hard-working season",
-     "text": "It means a lot. I think I've done the work. I've worked very, very hard and very well this year, so super happy how everything is going on Tour. I'm enjoying my time on Tour and let's keep pushing to achieve bigger things in the future.",
-     "from": [
-      "quote-420cde4b816820"
-     ]
-    }
-   ],
-   "model": "claude-opus-5-5",
-   "sourceHash": "8438f625f588fe99",
-   "publishedAt": "2026-11-19T03:47:45.956Z"
-  },
-  {
    "id": "quote-54bf04d2309cb4",
    "type": "quote",
    "playerId": "50323",
@@ -548,215 +507,6 @@
    "revision": 1
   },
   {
-   "id": "digest-b8ab13a17e77bb",
-   "type": "digest",
-   "version": 1,
-   "playerId": "2846",
-   "player": "F. Tiafoe",
-   "opponentId": null,
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "eventKey": null,
-   "context": null,
-   "category": "Quotes",
-   "timestamp": "2026-11-17T16:00:00.000Z",
-   "members": [
-    "quote-1f82ef9df54776",
-    "quote-611789d4998d31",
-    "quote-945720c238a93c",
-    "quote-a20ad7c6e979e3"
-   ],
-   "memberHash": "bcc008e5d0cb0c6d",
-   "digestedAt": "2026-11-19T03:16:57.592Z",
-   "blocks": [
-    {
-     "label": "on the 6-4 point and his work over the past year",
-     "text": "The 6-4 point is literally why I put all that work in in the last year.",
-     "from": [
-      "quote-1f82ef9df54776"
-     ]
-    },
-    {
-     "label": "on winning a set 6-0",
-     "text": "I wasn't thinking I was going to win it 6-0. I can't remember the last time I won a set 6-0, but I'll take it.",
-     "from": [
-      "quote-945720c238a93c"
-     ]
-    },
-    {
-     "label": "on Carlos Alcaraz's level",
-     "text": "He has moments where he's definitely Superman and he's playing pretty insane. But again, it's one of those things, you've got to appreciate greatness.",
-     "from": [
-      "quote-a20ad7c6e979e3",
-      "quote-611789d4998d31"
-     ]
-    }
-   ],
-   "model": "claude-opus-5-5",
-   "sourceHash": "d4dd5c7ade3e95e2",
-   "publishedAt": "2026-11-19T03:47:45.956Z"
-  },
-  {
-   "id": "quote-1f82ef9df54776",
-   "type": "quote",
-   "playerId": "2846",
-   "opponentId": null,
-   "player": "F. Tiafoe",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-17T16:00:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "The 6/4 point is literally why I put all that work in in the last year,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "ATP Tour",
-   "sourceUrl": "https://www.atptour.com/en/news/cobolli-tiafoe-nitto-atp-finals-2026-wednesday",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "sourceHash": "6d429bd739069b5e",
-   "publishedAt": "2026-11-18T22:03:42.409Z",
-   "topic": "On the 6-4 point justifying a year's work",
-   "revisedAt": "2026-11-19T07:08:06.688Z",
-   "revision": 14
-  },
-  {
-   "id": "quote-420cde4b816820",
-   "type": "quote",
-   "playerId": "50323",
-   "opponentId": null,
-   "player": "R. Jodar",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-17T16:00:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "It means a lot. I think I've done the work. I've worked very, very hard and very well this year, so super happy how everything is going on Tour, … I'm enjoying my time on Tour and let's keep pushing to achieve bigger things in the future.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "ATP Tour",
-   "sourceUrl": "https://www.atptour.com/en/news/jodar-nitto-atp-finals-2026-top-10-trophy",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "topic": "On hard work paying off this season",
-   "sourceHash": "26a0db8fb30c3fb5",
-   "publishedAt": "2026-11-18T18:42:24.618Z",
-   "revisedAt": "2026-11-19T06:45:50.419Z",
-   "revision": 24
-  },
-  {
-   "id": "quote-62b3f2f8bf9099",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": null,
-   "player": "C. Alcaraz",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-17T16:00:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "When you realise that, everything comes easier for me, because I enjoy and I don't feel stressful on a tennis court, or most of the time I don't feel stressful on a tennis court, which means I could face the problems in a different way. More calm, relaxed, and I'm thinking, ‘OK, I'm going to still try my best tennis, I'm going to still try what I have to do.’",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "ATP Tour",
-   "sourceUrl": "https://www.atptour.com/en/news/alcaraz-nitto-atp-finals-2026-wednesday-reaction",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "topic": "On feeling less stressed on court",
-   "sourceHash": "94055a54252a1389",
-   "publishedAt": "2026-11-18T18:42:24.618Z",
-   "revisedAt": "2026-11-19T07:08:06.688Z",
-   "revision": 25
-  },
-  {
-   "id": "quote-945720c238a93c",
-   "type": "quote",
-   "playerId": "2846",
-   "opponentId": null,
-   "player": "F. Tiafoe",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-17T16:00:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "I wasn't thinking I was going to win it 6-0. I can't remember the last time I won a set 6-0, but I'll take it.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "ATP Tour",
-   "sourceUrl": "https://www.atptour.com/en/news/cobolli-tiafoe-nitto-atp-finals-2026-wednesday",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "topic": "On winning a set 6-0",
-   "sourceHash": "087f3f22b8a6093b",
-   "publishedAt": "2026-11-18T22:03:42.409Z"
-  },
-  {
-   "id": "quote-b7fe4694c49380",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": null,
-   "player": "C. Alcaraz",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-17T16:00:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Injuries",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "The injury made me realise what's important, what's really important,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "ATP Tour",
-   "sourceUrl": "https://www.atptour.com/en/news/alcaraz-nitto-atp-finals-2026-wednesday-reaction",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "topic": "On lessons learned from the injury",
-   "sourceHash": "2660ecc24ee340f3",
-   "publishedAt": "2026-11-18T18:42:24.618Z",
-   "revisedAt": "2026-11-19T07:08:06.688Z",
-   "revision": 23
-  },
-  {
    "id": "quote-bcbb6d32fb9c7e",
    "type": "quote",
    "playerId": "431",
@@ -926,6 +676,43 @@
    "topic": "On loss of trust in FIFA and Infantino",
    "sourceHash": "d67780548a6bdb7f",
    "publishedAt": "2026-11-17T15:20:40.094Z"
+  },
+  {
+   "id": "digest-b8ab13a17e77bb",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2846",
+   "player": "F. Tiafoe",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-17T08:28:00.000Z",
+   "members": [
+    "quote-611789d4998d31",
+    "quote-a20ad7c6e979e3"
+   ],
+   "memberHash": "2a5d041b1162e6f2",
+   "digestedAt": "2026-11-19T07:17:55.824Z",
+   "blocks": [
+    {
+     "label": "on Carlos Alcaraz's level of play",
+     "text": "He has moments where he's definitely Superman and he's playing pretty insane. But again, it's one of those things, you've got to appreciate greatness.",
+     "from": [
+      "quote-a20ad7c6e979e3",
+      "quote-611789d4998d31"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "234b3814f1a9f30e",
+   "publishedAt": "2026-11-19T03:47:45.956Z",
+   "revisedAt": "2026-11-19T08:09:06.207Z",
+   "revision": 1
   },
   {
    "id": "quote-611789d4998d31",
@@ -1287,38 +1074,6 @@
    "publishedAt": "2026-11-17T16:25:01.354Z"
   },
   {
-   "id": "quote-8038f206096c37",
-   "type": "quote",
-   "playerId": "1759",
-   "opponentId": null,
-   "player": "A. Fils",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-16T16:00:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "I played great match against Ben, actually, I was just unlucky, … Here, the first set was a bit 'so so' with a little bit of frustration. But I'm very happy with how I handled the second and the third, and a little bit of relief now.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "ATP Tour",
-   "sourceUrl": "https://www.atptour.com/en/news/fils-jodar-nitto-atp-finals-2026-tuesday",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "topic": "On bouncing back after a frustrating first set",
-   "sourceHash": "3ed6edd5591d7f92",
-   "publishedAt": "2026-11-17T16:04:59.441Z",
-   "revisedAt": "2026-11-19T06:45:50.419Z",
-   "revision": 29
-  },
-  {
    "id": "digest-66d318bc7e2cf4",
    "type": "digest",
    "version": 1,
@@ -1420,6 +1175,40 @@
    "topic": "On past difficulties facing Frances Tiafoe",
    "sourceHash": "3c9daa15ae23a685",
    "publishedAt": "2026-11-16T16:41:28.259Z"
+  },
+  {
+   "id": "digest-0523576b41e037",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2072",
+   "player": "J. Sinner",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-16T14:48:50.000Z",
+   "members": [
+    "quote-3d6b11f3aa06d9",
+    "quote-7f190792e7ff1d"
+   ],
+   "memberHash": "ecda148c51470795",
+   "digestedAt": "2026-11-19T07:17:55.824Z",
+   "blocks": [
+    {
+     "label": "on treatment for his right knee injury",
+     "text": "With the doctors, we decided that I need treatment for my knee.",
+     "from": [
+      "quote-3d6b11f3aa06d9"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "adf284ba36233b80",
+   "publishedAt": "2026-11-19T08:09:06.207Z"
   },
   {
    "id": "quote-3d6b11f3aa06d9",
@@ -1695,10 +1484,10 @@
     "quote-f2b49767a36019"
    ],
    "memberHash": "c0a714cecf99b5f9",
-   "digestedAt": "2026-11-19T06:47:48.532Z",
+   "digestedAt": "2026-11-19T07:48:05.356Z",
    "blocks": [
     {
-     "label": "after his physical win over Fils",
+     "label": "after his win over Fils",
      "text": "That was really intense, especially in the first set. I don't know that I've played that many rallies out there on tour on a court this fast. So it was physical, really physical. A tough contest.",
      "from": [
       "quote-f2b49767a36019"
@@ -1713,10 +1502,10 @@
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "fdc3120885572212",
+   "sourceHash": "9c1a214fe985ce6c",
    "publishedAt": "2026-11-19T03:47:45.956Z",
-   "revisedAt": "2026-11-19T07:08:06.688Z",
-   "revision": 7
+   "revisedAt": "2026-11-19T08:09:06.207Z",
+   "revision": 8
   },
   {
    "id": "quote-b2f1172a530332",
@@ -1890,7 +1679,7 @@
     "quote-c97b20550b80b5"
    ],
    "memberHash": "31dca0b43f47f574",
-   "digestedAt": "2026-11-19T06:47:48.532Z",
+   "digestedAt": "2026-11-19T07:48:05.356Z",
    "blocks": [
     {
      "label": "after his opening ATP Finals win over Jodar",
@@ -1908,10 +1697,10 @@
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "97f486978ab36c0f",
+   "sourceHash": "de235d431d688b97",
    "publishedAt": "2026-11-19T03:47:45.956Z",
-   "revisedAt": "2026-11-19T07:08:06.688Z",
-   "revision": 7
+   "revisedAt": "2026-11-19T08:09:06.207Z",
+   "revision": 8
   },
   {
    "id": "quote-5c8fc89fea1cd6",
@@ -2248,7 +2037,7 @@
     "quote-91909bb6648e25"
    ],
    "memberHash": "631d2375c215fb2f",
-   "digestedAt": "2026-11-19T06:47:48.532Z",
+   "digestedAt": "2026-11-19T07:48:05.356Z",
    "blocks": [
     {
      "label": "on practicing with a stringless racket in Turin",
@@ -2266,10 +2055,10 @@
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "b8e9683a73ec39b1",
+   "sourceHash": "21e33580ba01a8eb",
    "publishedAt": "2026-11-19T03:47:45.956Z",
-   "revisedAt": "2026-11-19T07:08:06.688Z",
-   "revision": 7
+   "revisedAt": "2026-11-19T08:09:06.207Z",
+   "revision": 8
   },
   {
    "id": "quote-74899a9a78880b",
@@ -2766,11 +2555,13 @@
    "timestamp": "2026-11-12T16:02:02.000Z",
    "members": [
     "quote-0f8a217f7a532d",
+    "quote-25cc3c4ae15565",
     "quote-2f5a805d3deae9",
+    "quote-a733179800055d",
     "quote-fbc2b259df30f6"
    ],
-   "memberHash": "9dbf76cde54be0ff",
-   "digestedAt": "2026-11-19T03:16:57.592Z",
+   "memberHash": "d9ff0de0b86ecade",
+   "digestedAt": "2026-11-19T07:17:55.824Z",
    "blocks": [
     {
      "label": "on an injury with good and bad days",
@@ -2781,16 +2572,32 @@
      ]
     },
     {
+     "label": "on rebuilding his muscle mass in Monaco",
+     "text": "We have returned to Monaco and now we are working every day, trying to regain muscle mass.",
+     "from": [
+      "quote-a733179800055d"
+     ]
+    },
+    {
+     "label": "on protecting his knee limiting life outside tennis",
+     "text": "Also my life outside of tennis is a bit more limited because of a simple fact: I cannot do things that I really like, because I want to protect my knee.",
+     "from": [
+      "quote-25cc3c4ae15565"
+     ]
+    },
+    {
      "label": "on spending time off on his F1 simulator",
-     "text": "I don't do anything special. You know that I love playing tennis. Instead I have to deal with long days where I'm at the simulator … I go to the gym and then go back to the simulator. I have a great passion for motorsport.",
+     "text": "I don't do anything special. You know that I love playing tennis. Instead I have to deal with long days where I'm at the simulator… I go to the gym and then go back to the simulator. I have a great passion for motorsport.",
      "from": [
       "quote-0f8a217f7a532d"
      ]
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "bc12732714339708",
-   "publishedAt": "2026-11-19T03:47:45.956Z"
+   "sourceHash": "02959962152c9b15",
+   "publishedAt": "2026-11-19T03:47:45.956Z",
+   "revisedAt": "2026-11-19T08:09:06.207Z",
+   "revision": 1
   },
   {
    "id": "quote-0f8a217f7a532d",
@@ -2885,6 +2692,47 @@
    "topic": "On an injury with good and bad days",
    "revisedAt": "2026-11-13T07:43:17.649Z",
    "revision": 1
+  },
+  {
+   "id": "digest-238f4b65eceb3e",
+   "type": "digest",
+   "version": 1,
+   "playerId": "1079",
+   "player": "D. Dzumhur",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-12T13:54:45.025Z",
+   "members": [
+    "quote-5582025187afcf",
+    "quote-6bc75830035e69"
+   ],
+   "memberHash": "474ed25f74f89320",
+   "digestedAt": "2026-11-19T07:17:55.824Z",
+   "blocks": [
+    {
+     "label": "on nine straight years in the top 100",
+     "text": "A good year is behind me. What makes me especially happy is that I finished in the top 100 for the ninth year in a row. Few tennis players from this region can boast of that achievement.",
+     "from": [
+      "quote-6bc75830035e69"
+     ]
+    },
+    {
+     "label": "on how injuries affected his form and results",
+     "text": "Injuries kept me away from the court a lot, there were problems last year. For example, I played the US Open without training, and all of that affects form and results. I was coming back from an injury at the time.",
+     "from": [
+      "quote-5582025187afcf"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "537f11cd77d64f6a",
+   "publishedAt": "2026-11-19T08:09:06.207Z"
   },
   {
    "id": "quote-5582025187afcf",
@@ -3094,29 +2942,25 @@
    "category": "Quotes",
    "timestamp": "2026-11-11T19:05:00.000Z",
    "members": [
+    "quote-3013a557e31a78",
     "quote-47ccb45615e440",
     "quote-ace314bd96ecab",
     "quote-c2cd699681d090"
    ],
-   "memberHash": "2e38909926b009f7",
-   "digestedAt": "2026-11-19T03:16:57.592Z",
+   "memberHash": "2e84cd2268b33b02",
+   "digestedAt": "2026-11-19T07:17:55.824Z",
    "blocks": [
     {
-     "label": "on unpredictable days of pain and immobility",
-     "text": "I had days where I felt nothing and I could play without any problems, and then I had days where I couldn't move at all. So, very strange.",
+     "label": "on his knee problem and checks in Lyon",
+     "text": "The truth is that for the first time in my career I don't have things under my own control. I had days where I felt nothing and I could play without any problems, and then I had days where I couldn't move at all. So, very strange. We flew today to Lyon. Tomorrow we have some checks for the knee.",
      "from": [
-      "quote-47ccb45615e440"
+      "quote-c2cd699681d090",
+      "quote-47ccb45615e440",
+      "quote-3013a557e31a78"
      ]
     },
     {
-     "label": "on lacking control for the first time ever",
-     "text": "The truth is that for the first time in my career I don't have things under my own control.",
-     "from": [
-      "quote-c2cd699681d090"
-     ]
-    },
-    {
-     "label": "on a newcomer accepting the team's existing methods",
+     "label": "on a newcomer accepting his team's methods",
      "text": "He accepts the way we already work … That's important to me, because I don't want to change everything all over again.",
      "from": [
       "quote-ace314bd96ecab"
@@ -3124,8 +2968,10 @@
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "cb8fa2a4b49568e6",
-   "publishedAt": "2026-11-19T03:47:45.956Z"
+   "sourceHash": "a1c2ee2b065f9d82",
+   "publishedAt": "2026-11-19T03:47:45.956Z",
+   "revisedAt": "2026-11-19T08:09:06.207Z",
+   "revision": 1
   },
   {
    "id": "quote-ace314bd96ecab",
