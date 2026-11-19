@@ -92,14 +92,14 @@ try {
     const med = a => { a.sort((x, y) => x - y); const m = a.length >> 1; return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2; };
     const cuts = {};
     for (const ck in F) { cuts[ck] = {}; for (const ln in F[ck]) cuts[ck][ln] = [Math.round(med(F[ck][ln]) * 1000) / 1000, F[ck][ln].length]; }
-    return { cuts, players, failed, minN: MIN, l52Cutoff: LNF.l52Cutoff };
+    return { cuts, players, failed, minN: MIN, l52Cutoff: LNF.l52Cutoff, dogBands: DatabaseTab.dogBands };
   })()`);
 } catch (e) { fail(e.message); }
 try { ch.kill('SIGKILL'); } catch (e) { /* gone */ } if (!LIVE) server.close();
 // a shard that fails to load shifts every median: fail, as build-lines-field.js does
 if (res.failed.length) die(res.failed.length + ' roster player(s) not tallied: ' + res.failed.slice(0, 5).join('; '));
 const body = JSON.stringify({ _doc: 'Lines field under the side / price band / opponent archetype / level filters. cuts["fmt|surf|scope|P|X"][line] = [median cover %, field size]. Built by tools/build-lines-field-cuts.mjs from the page\'s own DatabaseTab.lnCutTally.',
-  builtAt: new Date().toISOString(), l52Cutoff: res.l52Cutoff, minN: res.minN, players: res.players, cuts: res.cuts });
+  builtAt: new Date().toISOString(), l52Cutoff: res.l52Cutoff, minN: res.minN, dogBands: res.dogBands, players: res.players, cuts: res.cuts });
 writeFileSync(OUT + '.tmp', body); renameSync(OUT + '.tmp', OUT);
 console.log(`lines-field-cuts: ${res.players} players · ${Object.keys(res.cuts).length} cuts · ${body.length} B raw, ${gzipSync(body).length} B gzip -> ${OUT}`);
 process.exit(0);

@@ -25,7 +25,7 @@ function varSource(src, name) {
   throw new Error('unbalanced ' + name);
 }
 // three bo3 matches: won 6-4 6-4 (a push on −4) as favourite at 1.40 (Clear favourite? no: 1.36-1.50 = Favourite, index 2) on hard,
-// lost 4-6 3-6 as underdog at 2.20 (Slight underdog, index 1) on clay, won 7-6 6-4 with no price (unpriced) on hard
+// lost 4-6 3-6 as underdog at 2.20 (Slight underdog, index 0 since 2026-11-19) on clay, won 7-6 6-4 with no price (unpriced) on hard
 const ROWS = [
   { date: '2026-10-01', surface: 'Hard', sets: [{ p: 6, o: 4 }, { p: 6, o: 4 }], arch: 'Big Server', lvl: 'ATP 500', px: { p: 1.4, op: 3.0 } },
   { date: '2026-09-01', surface: 'Clay', sets: [{ p: 4, o: 6 }, { p: 3, o: 6 }], arch: 'Big Server', lvl: 'ATP 250', px: { p: 2.2, op: 1.7 } },
@@ -47,7 +47,7 @@ function check(src) {
   if (JSON.stringify(line('bo3|All|career|fav|-', '−1.5 games')) !== '[1,1]') return 'favourite cut −1.5: ' + JSON.stringify(line('bo3|All|career|fav|-', '−1.5 games'));
   if (JSON.stringify(line('bo3|All|career|dog|-', '−1.5 games')) !== '[0,1]') return 'underdog cut −1.5: ' + JSON.stringify(line('bo3|All|career|dog|-', '−1.5 games'));
   if (!T['bo3|Hard|career|fav:2|-']) return 'no band cut for a favourite at 1.40 (Favourite, 1.36-1.50)';
-  if (!T['bo3|Clay|l52|dog:1|a:0']) return 'no underdog band x archetype cut on clay, last 52 weeks';
+  if (!T['bo3|Clay|l52|dog:0|a:0']) return 'no underdog band x archetype cut on clay, last 52 weeks';
   if (line('bo3|All|career|fav|-', '−4 games')) return 'a push on a whole line counts: ' + JSON.stringify(line('bo3|All|career|fav|-', '−4 games'));
   if (T['bo3|All|career|all|-']) return 'the base slice is re-tallied (lines-field.json owns it)';
   if (JSON.stringify(line('bo3|All|career|all|a:0', '−1.5 games')) !== '[1,2]') return 'archetype cut over both priced and unpriced: ' + JSON.stringify(line('bo3|All|career|all|a:0', '−1.5 games'));

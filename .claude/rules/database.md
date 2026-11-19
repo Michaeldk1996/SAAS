@@ -130,14 +130,15 @@ inside every mount (`[data-db-root]`). Ratings and Lines rules: `ratings.md`, `l
 - Filter triggers 36px, padding 0 10px, gap 6: grey 12/500 label · 13/600 value · the CSS chevron; picked = `--db2-raised` +
   16%, then a 1px 12% divider and the DRAWN remove cross (22px, radius 6; never a "×" glyph). Years = one plain box "Years
   2010 to 2026". No rolling windows (Last 52 weeks / 24 months) on this bar.
-- Filters per view: Tour and Fade finder = **Tour · Level · Surface · Round · Swing · Years**; Tournament = event search
-  (1–4 chips) · Level · Surface · Round · Years; Player = player search (1–2 chips) · Surface · Period · Tournament · Side;
+- Filters per view: Tour and Fade finder = **Level · Surface · Round · Swing · Years**; Tournament = event search
+  (1–4 chips) · Level · Surface · Round · Years; Player = player search (1–2 chips) · Surface · Period · **Level · Round**
+  (founder 2026-11-19: tournament type and round, on his rows and the tour beside them) · Tournament · Side;
   Lines and Ratings in their files.
 - **Swing** = the 11 swings of the Player Profile's swing calendar ("Team / other" left out), ONE rule with the profile:
   `PlayerProfileV2._internals.calSwingOf` over the match month, its surface and the tournament catalog's indoor flag and
-  country (`db3SwingOf`). **Tour** = ATP · Challenger · ITF; the Database holds ATP main draw only (founder 2026-10-30), so
-  Challenger and ITF are listed and disabled with that reason on hover (`DB3_LOWER_IN_DB` false; founder ruling 2026-11-18:
-  "ATP only, others greyed" — no methodology change). **Test:** the Tour menu's Challenger and ITF rows are `off` and do nothing.
+  country (`db3SwingOf`). **No Tour (ATP / Challenger / ITF) filter** (founder 2026-11-19, replacing the 2026-11-18 greyed
+  menu): the Database holds ATP main draw only, so there is nothing to choose. **Test:** the Tour bar has Level · Surface ·
+  Round · Swing · Years and no Tour trigger (`test-ten399-database-frame.mjs` "caret").
 - Search with chips: well `--db2-inset`, radius 9; chips 26px, radius 6, `--db2-raised` + 16%, **a player chip carries a
   20px avatar** and every remove cross is drawn (18px). The player search pop-up: a caps "Players  N" head, each row a 24px
   ringed avatar, the name and "#rank". **Every player avatar is his photo when he has one** (founder review 2026-11-18): the
@@ -153,15 +154,21 @@ inside every mount (`[data-db-root]`). Ratings and Lines rules: `ratings.md`, `l
 - **Fixed price bands** (founder 2026-11-16): Favourites = Heavy favourite 1.01–1.20 · Clear favourite 1.21–1.35 ·
   Favourite 1.36–1.50 · Slight favourite 1.51–1.70 · Near coin-flip 1.71–1.99; Underdogs = Near coin-flip 1.71–1.99 · Slight
   underdog 2.00–2.49 · Underdog 2.50–2.99 · Big underdog 3.00–3.99 · Long underdog 4.00–5.99 · Longshot 6.00 + (`DB2_BANDS`).
-  Edges are half-open (an archive close of 1.357 is a Clear favourite). **Test:** every price lands in exactly one band.
+  **Near coin-flip is a favourite band only** (founder 2026-11-19: the underdog bands start at 2.00, as the profile and Head
+  to Head draw them); an underdog priced under 2.00 (a near-even match) counts in the side's total and in no band row, the
+  count on the headline's hover. Edges are half-open (an archive close of 1.357 is a Clear favourite). **Test:** every
+  favourite price lands in exactly one band; an underdog price under 2.00 lands in none (`test-database-v2.mjs` "bands").
 - **Band cards (CHANGES §2):** two section cards (24/26/10, radius 14). Head: title 18/800 over the 13px hint ("Back the
   shorter / longer price") | the side's yield 26px over "N matches · median price X" (+ " · tour Y"). Columns Odds · Yield
   (Event / Player) · Matches (· Tour); a row (min 64px, hover `--db2-hover`) = the odds 19px mono low · grey dash · high over
   the band name | the **yield line** (4px track, a segment from the centre, right green / left red, the chip on the centre)
   | Matches 14/700 | (Tour 13) | blue ›. **No Median column.** Every row opens the band box (§3).
-- **A shown yield is green or red at every sample size** (founder review 2026-11-18: "60 matches are still an interesting
-  sample"; replaces the SOFT_GATE grey). Under HARD_GATE (30) the chip is a grey dash with the count on hover (kept: the
-  export's own rule, CHANGES §0). **Test:** `test-database-v2.mjs` "yieldColour" (+ mutant).
+- **A yield shows from 1 match, green or red** (founder 2026-11-19, "we need information and not dashes"; replaces the
+  HARD_GATE dash of the export's CHANGES §0 and the 2026-11-18 grey): every band row draws its yield line and chip, with
+  its record (W–L) under the match count; under 30 the row's hover says "Small sample: n matches". The band box's four
+  tiles fill from 1 match (Yield sub "Small sample"; Rank among the bands with matches); the player head, the compare tiles
+  and band rows likewise. The cumulative chart draws a line from 2 matches. The Fade finder still ranks from 30 matches
+  (fewer = unranked at the bottom, their figures shown). **Test:** `test-database-v2.mjs` "yieldColour" (+ mutant).
 - **The Tour column is always computed** (founder review 2026-11-18: "compare vs tour, fix it"; replaces "only while round
   and years are untouched"): the tour baseline is rebuilt over the Database rows under the SAME round, years, level,
   surface, swing and tour filters (`tourBaseIndex` keyed by `tbKey`), on the same bands and the same settlement as the
@@ -172,6 +179,10 @@ inside every mount (`[data-db-root]`). Ratings and Lines rules: `ratings.md`, `l
   under 30 Yield and Win rate are dashes; then "Matches in this band": Date · Match (backed player bold v opponent) · Event ·
   Rd · Score · Price · Result pill · Return, newest first, 12 then "Show 12 more matches". **Score is a dash** (the Database
   archive holds no set score; the hover says so). On Player the backed name is the player, or his opponent when fading.
+  **Every match row opens the one match stats sheet** (founder 2026-11-19; the band box and the fade box): the backed
+  player's career-history row of that match (same result, opponent surname, match day ±2 for a feed row, event start up to
+  16 days before for an archive row, nearest wins) through the profile's hand-off `pp2OpenMatchSheet`, priced with the
+  Database's Pinnacle close; no career row = the sheet on the Database's own facts. Escape closes the sheet, then the box.
 - **Cumulative return chart (CHANGES §4, LOCKED; replaces the dated x axis of 2026-11-16):** "Cumulative return" over "Flat
   1% stake on every match, as % of bankroll" | legend + "?". **x = the match number** (date order, stable tie-break, one
   equal step per match), ticks "Match 1 · n · n · n · N matches" + the caption "Matches, in the order played"; **y in %**
@@ -193,7 +204,8 @@ inside every mount (`[data-db-root]`). Ratings and Lines rules: `ratings.md`, `l
 - One event = the Tour cards (with the Tour column) and the chart. **Two events (pair compare, CHANGES §5):** the summary
   card with the two heads (**no remove button**: removal lives in the filter chips) and per side three centred tiles
   Favourite yield · Underdog yield · Best price band (`--db2-card` + 9% edge, radius 11); the compare chart (§4 rule 11: no
-  season bar; the axis is the longest event's match count; a shorter line and its end dot STOP where its matches run out);
+  season bar = the seasons of the line with the most matches (founder 2026-11-19, over the export's "no season bar"); the
+  axis is the longest event's match count; a shorter line and its end dot STOP where its matches run out);
   then one "Yield by price band" card per event (rows 60px, `132px minmax(0,1fr) 48px 8px`: odds 17px over the band name |
   the yield line | matches | ›), each row opening the band box with the event's name first in its scope line. Three or four
   events = the aligned table + the chart.
@@ -204,7 +216,7 @@ inside every mount (`[data-db-root]`). Ratings and Lines rules: `ratings.md`, `l
   2026-11-16). **"All matches" counts each match once:** `(fav + dog) / 2` per match (founder 2026-10-23).
 
 ## Player
-- One player: head card (24/26; 60px avatar, blue ring; photo and "ATP #n" only when the Tennis-Data name joins exactly one
+- One player: head card (24/26; 60px avatar, no ring (founder 2026-11-19); photo and "ATP #n" only when the Tennis-Data name joins exactly one
   ranked player), tiles All matches (tour figure under the same filters) and Record (`--db2-card` + 9% edge, radius 11 —
   one tile colour, CHANGES §0/§6), "Compare with" = the five best-ranked players this week who have Database rows
   (`--db2-layer` + 8% edge chips, hover `--db2-hover` + 22%, a photo on a `--db2-inset` disc). Band cards As favourite / As
@@ -229,7 +241,12 @@ inside every mount (`[data-db-root]`). Ratings and Lines rules: `ratings.md`, `l
 - **Pin:** a pick from the search pins the player: a chip in the well, his row first and lifted (`--db2-layer` + 14% ring,
   "PINNED", his real rank, a drawn cross to unpin), gone from the list below.
 - A row opens the fade box (band box anatomy): Yield fading / backing him · He lost / won (his record) · Market expected ·
-  Rank; "Open in Player ›" jumps to the Player view with the player and Side preset.
+  Rank; "Open in Player ›" jumps to the Player view with the player and Side preset. **Window switch in the box** (founder
+  2026-11-19): All · Last 52 weeks · Last 24 months recompute the tiles and the list from his matches in that window; Rank
+  stays his place in the list (whole period). Its match rows open the sheet like the band box.
+- **Filters (founder 2026-11-19):** All ranks · Top 25 · Top 50 · Top 100 (this week's ATP ranking) and Any day · Plays
+  today · Plays tomorrow (a match on Today's Matches; the row says "Today" / "Tomorrow" + the time). **12 months and 24
+  months** columns: the same bet over the 12 / 24 months to the archive's last match, each with its count.
 
 ## Formatting
 - **Test:** yields 2 dp with sign, `pp` deltas, units, all with a true minus `−` (`fmtPct`, `fmtPP`, `fmtU`);

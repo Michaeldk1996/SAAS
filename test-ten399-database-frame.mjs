@@ -134,12 +134,12 @@ CHECKS.caret = (src) => {
   if (!caret || (caret.match(/▼/g) || []).length !== 1) return 'DB_CARET is not one ▼ element: ' + caret;
   const { bar } = renderTourBar(src, null);
   const trigs = bar.all().filter(n => n.tagName === 'BUTTON' && has(n, 'db-trig'));
-  // Database v3 (CHANGES §1): Tour · Level · Surface · Round · Swing · the two Years ends
-  if (trigs.length !== 7) return `the Tour bar has ${trigs.length} drop-down triggers, not 7`;
+  // Database v3 (CHANGES §1): Level · Surface · Round · Swing · the two Years ends (founder 2026-11-19: no Tour filter, ATP only)
+  if (trigs.length !== 6) return `the Tour bar has ${trigs.length} drop-down triggers, not 6`;
   const bad = trigs.filter(t => !t.innerHTML.endsWith(caret));
   if (bad.length) return `${bad.length} trigger(s) do not end with the shared caret: ${bad.map(t => t.innerHTML).join(' | ')}`;
   const n = (bar.html().match(/▼/g) || []).length;
-  if (n !== 7) return `the bar paints ${n} ▼, not 7`;
+  if (n !== 6) return `the bar paints ${n} ▼, not 6`;
   // one CSS rule styles the caret: no per-trigger size / colour override
   const rules = [...src.matchAll(/\n\s*([^{}\n]*db-caret[^{}\n]*)\{/g)].map(m => m[1].trim());
   if (rules.length !== 1 || rules[0] !== '.db-caret') return 'the caret is styled by more than one rule: ' + JSON.stringify(rules);

@@ -6,9 +6,10 @@ Applies to the Database tab's Ratings view (`renderRatings`, `db2RatOverview`, `
 
 ## The board and the compare card (founder 2026-11-16)
 - **One period at a time: Last 52 weeks first and the default, then Career** (replaces TEN-262 #1's Career-first control
-  and the compare panel's Last 52 + Career + Δ columns). There is still no Last 52 Elo: every Elo cell on Last 52 weeks is
-  a dash (TEN-262 ruling 1 stands; never create one; founder re-confirmed 2026-11-17 against the design, which draws
-  Elo on Last 52 weeks: "it should be a dash").
+  and the compare panel's Last 52 + Career + Δ columns). **Elo = this week's rating on both periods** (founder 2026-11-19,
+  "rating that are every week updated, we have those ratings, they should be there"; replaces TEN-262 ruling 1 and the
+  2026-11-17 dash): the weekly Elo list is a current rating, so Last 52 weeks and Career print the same figure, the Elo
+  board lists its rows on both. **Test:** `test-ten262.mjs` "eloDash" (mutant: the Last 52 gate back).
 - **Boards: Overview · Elo · Serve · Return · Under pressure** — the Mental Edge board, its view pills, the 200-point
   ranking minimum and its count line are gone with it (the design has none).
 - The board lists the whole gated field while players are compared; the sorted column is white 700, the others ink-2 400;

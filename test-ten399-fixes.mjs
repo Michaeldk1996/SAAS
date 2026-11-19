@@ -44,7 +44,7 @@ const CHECKS = {
   ratingsCopy(src) {
     if (/discounted \\u00d70\.9|discounted ×0\.9/.test(src)) return 'Ratings subtitle still says "discounted ×0.9"';
     const m = /var ELO_CAVEAT='([^']*)';/.exec(src);
-    if (!m || m[1].length > 110) return 'Elo note is not one short line: ' + (m && m[1]);
+    if (!m || m[1].length > 130) return 'Elo note is not one short line: ' + (m && m[1]);
     if (!/esc\('n is the serve-stat match count\.'\)/.test(src)) return 'n note is not the one-line form';
     return null;
   },

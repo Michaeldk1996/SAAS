@@ -173,21 +173,16 @@ const CHECKS = {
     if (counts.career === counts.last52) return 'fixture: the two scopes gate to the same field size';
     return null;
   },
-  // 1 · Elo has no last-52 value: on Last 52 every Elo cell of the Overview is a
-  // dash and the Elo board has no rows but says why; on Career they carry figures.
+  // 1 · Elo (founder 2026-11-19, reversing TEN-262 ruling 1): the weekly Elo is a current rating, so the Overview's Elo
+  // cells carry it on Last 52 weeks AND Career, the same figure, and the Elo board lists its rows on both.
   eloDash(src) {
     const car = boardRows(src, 'overview', 'career'), l52 = boardRows(src, 'overview', 'last52');
     const eloCol = rows => rows.map(r => r.cells[rows.eloIdx]);
-    const carNum = eloCol(car).filter(t => /^\d/.test(t)).length;
+    const carNum = eloCol(car).filter(t => /^\d/.test(t)).length, l52Num = eloCol(l52).filter(t => /^\d/.test(t)).length;
     if (carNum < 50) return `career overview: only ${carNum} numeric Elo cells`;
-    const l52Num = eloCol(l52).filter(t => t !== '—');
-    if (l52Num.length) return `last52 overview: ${l52Num.length} Elo cells are not a dash (e.g. ${l52Num[0]})`;
+    if (l52Num < 50) return `last52 overview: only ${l52Num} numeric Elo cells`;
     const { api } = build(src, { scope: 'last52', board: 'elo' });
-    const pool = api.ratBoardPool('elo');
-    if (pool.length) return `last52 Elo board lists ${pool.length} players`;
-    const wrap = api.ratLeaderboard(pool, 'elo');
-    const txt = wrap.textContent;
-    if (!/No Elo on the Last 52 scope/.test(txt)) return 'last52 Elo board does not say why it is empty';
+    if (api.ratBoardPool('elo').length < 50) return 'last52 Elo board lost its rows';
     const { api: a2 } = build(src, { scope: 'career', board: 'elo' });
     if (a2.ratBoardPool('elo').length < 50) return 'career Elo board lost its rows';
     return null;
@@ -239,7 +234,8 @@ const CHECKS = {
 const MUTANTS = {
   scopeValues: s => s.replace("return s ? (s[state.ratScope]||null) : null;", "return s ? (s['career']||null) : null;"),
   gatePerScope: s => s.replace("return s ? (s[state.ratScope]||null) : null;", "return s ? (s['last52']||null) : null;"),
-  eloDash: s => s.split("state.ratScope!=='career') return null;").join("false) return null;"),
+  eloDash: s => s.replace("    if(k.indexOf('elo.')===0){\n      var rec=ratEloRec(p.name);", "    if(k.indexOf('elo.')===0 && state.ratScope!=='career') return null;\n    if(k.indexOf('elo.')===0){\n      var rec=ratEloRec(p.name);")
+    .replace("    if(board==='elo'){\n      var rec=ratEloRec(p.name);", "    if(board==='elo'){\n      if(state.ratScope!=='career') return null;\n      var rec=ratEloRec(p.name);"),
   compareHighlight: s => s.replace("    var hiL52 = true;", "    var hiL52 = state.ratScope==='last52';"),
   control: s => s.replace("state.ratScope, function(v){ state.ratScope=v; }, false, 'lines'));", "state.ratScope, function(v){ state.ratScope=v; }, state.ratSel.length>0));"),
 };

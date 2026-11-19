@@ -33,7 +33,7 @@ const CHECKS = {
     const code = varSource(src, 'DB2_BANDS') + '\n' + fnSource(src, 'db2InBand') + '\nreturn {DB2_BANDS, db2InBand};';
     const { DB2_BANDS, db2InBand } = new Function(code)();
     const want = { fav: ['Heavy favourite', 'Clear favourite', 'Favourite', 'Slight favourite', 'Near coin-flip'],
-      dog: ['Near coin-flip', 'Slight underdog', 'Underdog', 'Big underdog', 'Long underdog', 'Longshot'] };
+      dog: ['Slight underdog', 'Underdog', 'Big underdog', 'Long underdog', 'Longshot'] };   // founder 2026-11-19: underdogs start at 2.00
     for (const sd of ['fav', 'dog']) {
       const names = DB2_BANDS[sd].map(b => b[0]);
       if (names.join('|') !== want[sd].join('|')) return sd + ' bands are ' + names.join(', ');
@@ -42,10 +42,12 @@ const CHECKS = {
       const n = DB2_BANDS.fav.filter(b => db2InBand(b, p)).length;
       if (n !== 1) return `favourite price ${p} lands in ${n} bands`;
     }
-    for (const p of [1.71, 1.99, 2, 2.49, 2.5, 2.999, 3, 3.99, 4, 5.99, 6, 26]) {
+    for (const p of [2, 2.49, 2.5, 2.999, 3, 3.99, 4, 5.99, 6, 26]) {
       const n = DB2_BANDS.dog.filter(b => db2InBand(b, p)).length;
       if (n !== 1) return `underdog price ${p} lands in ${n} bands`;
     }
+    // an underdog priced under 2.00 (near-even) is in no underdog band: it counts in the side's total only
+    for (const p of [1.71, 1.99]) if (DB2_BANDS.dog.some(b => db2InBand(b, p))) return `underdog price ${p} lands in an underdog band`;
     if (!db2InBand(DB2_BANDS.fav[1], 1.357) && !db2InBand(DB2_BANDS.fav[2], 1.357)) return '1.357 is in no band';
     if (!db2InBand(DB2_BANDS.fav[1], 1.21)) return '1.21 is not a Clear favourite';
     return null;
@@ -69,11 +71,12 @@ const CHECKS = {
     if (JSON.stringify(ss) !== JSON.stringify([{ y: 2024, i0: 0, i1: 2 }, { y: 2025, i0: 2, i1: 4 }, { y: 2026, i0: 4, i1: 5 }])) return 'season segments ' + JSON.stringify(ss);
     return null;
   },
-  // Founder review 2026-11-18: a shown yield is green / red at every sample size; only the hard gate (30) is a grey dash.
+  // Founder review 2026-11-18: a shown yield is green / red at every sample size; founder 2026-11-19: from 1 match (no dash).
   yieldColour(src) {
     const bc = fnSource(src, 'bandCard2'), yl = fnSource(src, 'db3YieldLine');
     if (/SOFT_GATE/.test(bc) || /SOFT_GATE/.test(yl)) return 'the band card still mutes a yield under the soft gate';
-    if (!/hard=!g \|\| g\.n<HARD_GATE/.test(yl)) return 'the hard gate is not the dash';
+    if (!/hard=!g \|\| !g\.n,/.test(yl)) return 'a yield under 30 matches is dashed';
+    if (!/ok=n>0, small=/.test(fnSource(src, 'db3BandBox'))) return 'the band box dashes a small sample';
     return null;
   },
   // Founder review 2026-11-18: the Tour column is recomputed under the same round / years / level / surface filters.
@@ -176,6 +179,7 @@ const MUTANTS = [
   ['band edges inclusive', 'bands', s => s.replace("function db2InBand(B, p){ return p>=B[3]-1e-9 && p<B[4]-1e-9; }", "function db2InBand(B, p){ return p>=B[3]-1e-9 && p<=B[4]+1e-9; }")],
   ['terciles back', 'bands', s => s.replace("['Clear favourite','1.21','1.35',1.21,1.36]", "['Firm favourite','1.21','1.35',1.21,1.36]")],
   ['dates back', 'dates', s => s.replace("{ N:n, seasons:db3Seasons(ordered.map(function(r){ return r[0]; }))", "{ N:n, xs:ordered.map(function(r){ return db2Ms(r[0]); }), seasons:db3Seasons(ordered.map(function(r){ return r[0]; }))")],
+  ['hard gate dashes again', 'yieldColour', s => s.replace("var hard=!g || !g.n,", "var hard=!g || g.n<HARD_GATE,")],
   ['soft gate mutes', 'yieldColour', s => s.replace("var c=hard ? 'var(--db2-muted)' : y>0", "var c=hard||g.n<SOFT_GATE ? 'var(--db2-muted)' : y>0")],
   ['tour column withheld', 'tourUnderFilters', s => s.replace("var baseKnown = isPl ? (opts.baseKnown!==false) : true;", "var baseKnown = isPl ? (opts.baseKnown!==false) : baselineAllowed();")],
   ['tour index unfiltered', 'tourUnderFilters', s => s.replace("if(tbFiltered()) rows=rows.filter", "if(false) rows=rows.filter")],
