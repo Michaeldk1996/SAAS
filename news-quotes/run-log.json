@@ -1,70 +1,6 @@
 {
  "runs": [
   {
-   "at": "2026-11-12T01:55:45.132Z",
-   "activeTournaments": [
-    "Stockholm"
-   ],
-   "tournaments": [
-    {
-     "name": "Stockholm",
-     "key": "1681",
-     "sources": [
-      {
-       "name": "ATP Tour daily report (via the official tournament site)",
-       "articles": 16,
-       "candidates": 8,
-       "robotsStatus": 200,
-       "skippedByRobots": 0,
-       "unnamed": 4
-      }
-     ],
-     "outlets": {
-      "read": 57,
-      "withCandidates": 0,
-      "blocked": [
-       "Fox Sports Australia: the site refuses a plain request",
-       "TenisovySvet.cz: the site refuses a plain request",
-       "Aftonbladet: unexpected answer",
-       "ESPN: unexpected answer"
-      ],
-      "articlesFetched": 0,
-      "paywalled": 0,
-      "unnamed": 0,
-      "byOutlet": []
-     },
-     "counts": {
-      "candidates": 8,
-      "droppedNotVerbatim": 0,
-      "droppedNoPlayer": 1,
-      "droppedAmbiguous": 0,
-      "notTranslatedNoKey": 0,
-      "notTranslatedApiError": 0,
-      "droppedTranslationCheck": 0,
-      "droppedEnglishExists": 0,
-      "mergedSameQuote": 0,
-      "alreadyHeld": 0,
-      "items": 7,
-      "tokens": {
-       "input": 0,
-       "output": 0
-      },
-      "modelError": null
-     },
-     "added": 0,
-     "held": 25,
-     "finishedMatches": 17,
-     "matchesWithWinnerQuote": 7
-    }
-   ],
-   "newItems": 0,
-   "tokens": {
-    "input": 0,
-    "output": 0
-   },
-   "alerts": []
-  },
-  {
    "at": "2026-11-12T02:25:52.065Z",
    "activeTournaments": [
     "Stockholm"
@@ -67477,6 +67413,200 @@
       "outlet": "Digi Sport",
       "country": "Romania",
       "language": "ro",
+      "fetched": 1,
+      "candidates": 0
+     }
+    ]
+   },
+   "rehomed": 0,
+   "alerts": []
+  },
+  {
+   "at": "2026-11-20T20:31:05.338Z",
+   "activeTournaments": [
+    "Finals - Turin"
+   ],
+   "tournaments": [
+    {
+     "name": "Finals - Turin",
+     "key": "2794",
+     "sources": [],
+     "fromOutlets": 65,
+     "counts": {
+      "candidates": 65,
+      "droppedNotVerbatim": 0,
+      "droppedNoPlayer": 0,
+      "droppedAmbiguous": 0,
+      "notTranslatedNoKey": 0,
+      "notTranslatedApiError": 0,
+      "droppedTranslationCheck": 0,
+      "droppedEnglishExists": 0,
+      "mergedSameQuote": 1,
+      "alreadyHeld": 0,
+      "items": 64,
+      "tokens": {
+       "input": 1826,
+       "output": 168
+      },
+      "modelError": null,
+      "retryUrls": 0,
+      "topicsAdded": 3
+     },
+     "digests": {
+      "cards": 43,
+      "kept": 30,
+      "made": 3,
+      "failed": 0,
+      "waiting": 0,
+      "single": 10
+     },
+     "added": 3,
+     "held": 245,
+     "byCategory": {
+      "Quotes": 182,
+      "Interviews": 46,
+      "Injuries": 17
+     },
+     "finishedMatches": 7,
+     "matchesWithWinnerQuote": 7
+    },
+    {
+     "name": "ATP Tour",
+     "key": "tour",
+     "sources": [],
+     "fromOutlets": 0,
+     "counts": {
+      "candidates": 0,
+      "droppedNotVerbatim": 0,
+      "droppedNoPlayer": 0,
+      "droppedAmbiguous": 0,
+      "notTranslatedNoKey": 0,
+      "notTranslatedApiError": 0,
+      "droppedTranslationCheck": 0,
+      "droppedEnglishExists": 0,
+      "mergedSameQuote": 0,
+      "alreadyHeld": 0,
+      "items": 0,
+      "tokens": {
+       "input": 0,
+       "output": 0
+      },
+      "modelError": null,
+      "retryUrls": 0
+     },
+     "digests": {
+      "cards": 51,
+      "kept": 19,
+      "made": 5,
+      "failed": 0,
+      "waiting": 0,
+      "single": 27
+     },
+     "added": 0,
+     "held": 121,
+     "byCategory": {
+      "Interviews": 89,
+      "Injuries": 8,
+      "Quotes": 24
+     },
+     "finishedMatches": 0,
+     "matchesWithWinnerQuote": 0
+    }
+   ],
+   "newItems": 3,
+   "tokens": {
+    "input": 10858,
+    "output": 3447
+   },
+   "press": {
+    "matchesLookedUp": 0,
+    "answers": 0
+   },
+   "ttvInbox": {
+    "held": 95,
+    "routed": 39
+   },
+   "atpInbox": {
+    "held": 37,
+    "routed": 23
+   },
+   "outlets": {
+    "read": 131,
+    "withCandidates": 2,
+    "blocked": [
+     "El Deber: the site refuses a plain request",
+     "Tenniskafe: the site refuses a plain request",
+     "TenisovySvet.cz: the site refuses a plain request",
+     "The Indian Express: the site refuses a plain request",
+     "ESPN México (Tenis): unexpected answer",
+     "AS (Diario AS): the site refuses a plain request",
+     "Aftonbladet: unexpected answer",
+     "ESPN: unexpected answer"
+    ],
+    "articlesFetched": 11,
+    "paywalled": 0,
+    "unnamed": 24,
+    "byOutlet": [
+     {
+      "outlet": "tennisnet.com",
+      "country": "Austria",
+      "language": "de",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Sport1",
+      "country": "Germany",
+      "language": "de",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Tennis Actu",
+      "country": "France",
+      "language": "fr",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "iSport.cz",
+      "country": "Czech Republic",
+      "language": "cs",
+      "fetched": 2,
+      "candidates": 0
+     },
+     {
+      "outlet": "TennisUpToDate",
+      "country": "INT",
+      "language": "en",
+      "fetched": 1,
+      "candidates": 1
+     },
+     {
+      "outlet": "Tennis Majors",
+      "country": "INT",
+      "language": "en",
+      "fetched": 2,
+      "candidates": 2
+     },
+     {
+      "outlet": "La Gazzetta dello Sport",
+      "country": "Italy",
+      "language": "it",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "SuperTennis (FITP)",
+      "country": "Italy",
+      "language": "it",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "A Bola",
+      "country": "Portugal",
+      "language": "pt",
       "fetched": 1,
       "candidates": 0
      }
