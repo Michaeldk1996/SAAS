@@ -53,8 +53,17 @@ Rationale: `BUILD-NOTES.md` "2026-11-15 — Tournaments tab rebuild".
   the 2023 values agree with TA's archive), the current season from TA's last-52-week page (rows dated in that season);
   `cpi[event][year]` = courtspeed.com Court Pace Index (2012–), Slams, Masters 1000, ATP Finals. Canadian rows follow the
   host-year rule (to 2019 Toronto even; from 2021 Toronto odd); Lyon 2026 = "Lyon (France)". A source that fails to load
-  writes nothing. **CPI shows for Masters 1000 only** (speed card first row, trend Speed index · CPI switch, Compare all CPI
+  writes nothing. A finished draw's statistics are keyed by the progression's own `tournamentKey` once its board cards
+  expire (`draw-matches.json` keeps 16 days). **CPI shows for Masters 1000 only** (speed card first row, trend Speed index · CPI switch, Compare all CPI
   table; the Canadian Open = Montreal + Toronto by year), credited to courtspeed.com on hover.
+- **One speed figure on every page** (founder 2026-11-20, "fix both"): `COURT_CONDITIONS` `abstractSpeed` /
+  `abstractSpeedYear` (both copies: bsp-pipeline.js and the dashboard) = the LATEST season reading in
+  `court-speed-history.json`, written by `tools/refresh-court-conditions-speed.mjs` (run after the history builder). The
+  0–100 `speed` index keeps its original anchors (0.41 = 0, 1.42 = 100, clamped), so a venue's Slow / Medium / Fast label
+  moves only when its own reading moves (20 of 64 moved at the 2026-11-20 refresh: e.g. Paris 0.97 → 1.44 Fast, Roland
+  Garros 0.68 → 0.84 still Slow, Los Cabos 1.02 → 0.55 Slow). Match analysis, Key factors, the profile's court-speed
+  bands, Market edge and this page print the same figure. **Test:** `tools/test-ten321-rg-court-speed.js`,
+  `tools/test-pp2-reconcile.js` N4.
 - **Court speed = the Tennis Abstract readings we hold** (founder 2026-11-16, "we have court speed data"; replaces the
   2026-11-15 dashes). The figure, its band word, the rank line and the Court speed box read `COURT_CONDITIONS`
   (`abstractSpeed`) — the same figures

@@ -229,6 +229,13 @@ check('progression: 1st-serve counts are the opponent\'s ret1 inverted; walkover
   eq([c.n, c.metrics.firstServeWon.num, c.metrics.firstServeWon.den, c.metrics.secondServeWon.num, c.metrics.secondServeWon.den, c.metrics.tiebreaksPerSet.num, c.metrics.tiebreaksPerSet.den, c.incompleteExcluded],
      [1, 30 + 28, 40 + 41, 10 + 10, 20 + 22, 1, 2, 1], 'current');
 });
+check('a finished draw off the board (no card) is keyed by the progression\'s own tournamentKey; control: without it, nothing', () => {
+  const ev = Object.assign(progEv(), { tournamentKey: '11851' });
+  const o = build([], { progression: { tournaments: {}, drawResults: { Almaty: ev } }, matches: [] });
+  eq(o.events['11851'] && o.events['11851'].current && o.events['11851'].current.n, 1, 'keyed by its own key');
+  const c = build([], { progression: { tournaments: {}, drawResults: { Almaty: progEv() } }, matches: [] });
+  eq(!!(c.events['11851'] && c.events['11851'].current), false, 'control: no key, no card -> unresolved');
+});
 check('progression row already in the box scores counts once (box score wins)', () => {
   const b = withTd(box({ ek: 77, d: '2026-10-20' }));
   const o = build([b], { progression: { tournaments: { Almaty: progEv() } }, matches: [{ tour: 'ATP Almaty', tournamentKey: '11851' }] });

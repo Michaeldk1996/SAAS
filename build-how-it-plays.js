@@ -392,7 +392,8 @@ function buildHowItPlays(inp) {
   const progEvents = Object.entries((inp.progression && inp.progression.tournaments) || {})
     .concat(Object.entries((inp.progression && inp.progression.drawResults) || {}).filter(([n]) => !(inp.progression.tournaments || {})[n]));
   for (const [pname, ev] of progEvents) {
-    const ks = cardKeys.get(pname) || (ev && ev.feedName && cardKeys.get(String(ev.feedName).replace(/^ATP\s+/i, '').trim()));
+    const ks = cardKeys.get(pname) || (ev && ev.feedName && cardKeys.get(String(ev.feedName).replace(/^ATP\s+/i, '').trim()))
+      || (ev && ev.tournamentKey != null ? new Set([String(ev.tournamentKey)]) : null);   // the progression's own key
     if (!ks || ks.size !== 1) { unresolved.push({ key: null, name: pname, reason: ks ? 'progression name maps to several tournament keys' : 'no match card carries this progression event\'s tournamentKey' }); continue; }
     const k = [...ks][0];
     if (excludedApiEvent(k, pname)) continue;

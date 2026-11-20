@@ -790,9 +790,10 @@ n4Mutant('the retired grass-is-Very-fast rule comes back (as Fast)', 'player-pro
 n4Mutant('the profile bands off raw Abstract Speed with its own cut-offs', 'player-profile-v2.js',
   '    return bandByLabel(s.cat(c.speed));',
   "    return bandByLabel(c.abstractSpeed <= 0.938 ? 'Slow' : c.abstractSpeed <= 1.076 ? 'Medium' : 'Fast');");
-n4Mutant('the Report copy of courtSpeedCategory drifts one index point (68 -> 67)', 'bsp-consult-dashboard.html',
+// (2026-11-20 refresh: no venue sits on index 68 any more; Roland Garros sits on 43, so the drift is tested on that edge)
+n4Mutant('the Report copy of courtSpeedCategory drifts one index point (43 -> 42)', 'bsp-consult-dashboard.html',
   "return speed <= 43 ? 'Slow' : speed <= 68 ? 'Medium' : 'Fast';",
-  "return speed <= 43 ? 'Slow' : speed <= 67 ? 'Medium' : 'Fast';");
+  "return speed <= 42 ? 'Slow' : speed <= 68 ? 'Medium' : 'Fast';");
 
 // ════════════════════════════════════════════════════════════════════════════
 // 8 · HEADLINE SIZE RULE (README §5)

@@ -10,17 +10,17 @@ let pass = 0, fail = 0;
 const check = (n, f) => { try { f(); pass++; console.log('  ok   ' + n); } catch (e) { fail++; console.log('  FAIL ' + n + ' :: ' + e.message); } };
 
 // Mutation: delete `'French Open': 'Roland Garros'` from COURT_CONDITIONS_ALIASES → courtSpeed null → red.
-check('an RG match (api-tennis name and round string) resolves its AS 0.68 · Slow, 35 m, 74% hold', () => {
+check('an RG match (api-tennis name and round string) resolves its AS 0.84 (2026) · Slow, 35 m, 74% hold', () => {
   for (const name of ['French Open', 'ATP French Open - 1/64-finals']) {
     const cs = P.venueAndCourtSpeedFor(name).courtSpeed;
     assert.ok(cs, `${name}: no courtSpeed`);
-    assert.deepStrictEqual([cs.abstractSpeed, cs.category, cs.altitude, cs.serviceHold], [0.68, 'Slow', 35, 74], name);
+    assert.deepStrictEqual([cs.abstractSpeed, cs.category, cs.altitude, cs.serviceHold], [0.84, 'Slow', 35, 74], name);
   }
 });
-// Mutation: map the alias to 'Paris' → RG reads Bercy's 0.97 · Medium → red.
-check('the RG join never reaches Paris (Bercy, indoor hard 0.97)', () => {
+// Mutation: map the alias to 'Paris' → RG reads Bercy's 1.44 · Fast → red.
+check('the RG join never reaches Paris (Bercy, indoor hard 1.44)', () => {
   assert.strictEqual(P.venueAndCourtSpeedFor('French Open').courtSpeed.abstractSpeed, P.COURT_CONDITIONS['Roland Garros'].abstractSpeed);
-  assert.strictEqual(P.venueAndCourtSpeedFor('ATP Paris - 1/32-finals').courtSpeed.abstractSpeed, 0.97);
+  assert.strictEqual(P.venueAndCourtSpeedFor('ATP Paris - 1/32-finals').courtSpeed.abstractSpeed, 1.44);
 });
 
 // Mutation: drop the alias fallback line in courtConditionsFor → the RG win is not counted (null) → red.
@@ -61,7 +61,7 @@ check('the matching surface, or an unknown one, keeps the reading (clay Lyon 0.7
   assert.strictEqual(P.venueAndCourtSpeedFor('ATP Lyon', 'clay').courtSpeed.abstractSpeed, 0.7);
   assert.strictEqual(P.venueAndCourtSpeedFor('ATP Lyon', null).courtSpeed.abstractSpeed, 0.7);
   assert.strictEqual(P.venueAndCourtSpeedFor('ATP Lyon').courtSpeed.abstractSpeed, 0.7);
-  assert.strictEqual(P.venueAndCourtSpeedFor('French Open', 'clay').courtSpeed.abstractSpeed, 0.68);
+  assert.strictEqual(P.venueAndCourtSpeedFor('French Open', 'clay').courtSpeed.abstractSpeed, 0.84);
 });
 // Mutation: a build path that calls the join without the fixture's own surface → red.
 check('all three build paths pass the fixture\'s own feed surface (fixtureSurface), never a default', () => {
