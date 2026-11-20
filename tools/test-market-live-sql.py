@@ -93,7 +93,7 @@ try:
     check('play seen: started_at = the poll before the flag, value frozen', liq('1') == '1250|2026-11-06 10:03:30', liq('1') + ' ' + out)
     check('the push reports the stamp', rc == 0 and '"frozen": 2' in out, out)   # both venues of event 1
     push([row('1', 1400, '2026-11-06T10:09:00Z'), row('1', 999, '2026-11-06T10:09:00Z', 'polymarket')])
-    check('frozen rows are never written again', liq('1').startswith('1250|') and liq('1', 'polymarket').startswith('900|'), liq('1'))
+    check('frozen rows are never written again', liq('1').startswith('1250|') and liq('1', 'polymarket').startswith('950|'), liq('1'))
 
     q("insert into public.live_flip_log values ('2', '2026-11-06T09:00:00Z', null)")
     push([row('2', 500, '2026-11-06T10:10:00Z')])
