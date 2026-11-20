@@ -1,19 +1,19 @@
 {
- "generatedAt": "2026-11-20T12:18:16.579Z",
+ "generatedAt": "2026-11-20T13:01:17.878Z",
  "tournaments": [
   {
    "key": "2794",
    "season": "2026",
    "name": "Finals - Turin",
    "file": "news-ticker/2794-2026.json",
-   "items": 219,
+   "items": 220,
    "byType": {
+    "quote": 181,
     "digest": 29,
-    "quote": 180,
     "report": 10
    },
-   "latestTimestamp": "2026-11-20T09:12:00.000Z",
-   "updatedAt": "2026-11-20T10:25:51.951Z"
+   "latestTimestamp": "2026-11-20T12:00:47.000Z",
+   "updatedAt": "2026-11-20T13:01:17.878Z"
   },
   {
    "key": "tour",
@@ -26,7 +26,7 @@
     "digest": 23
    },
    "latestTimestamp": "2026-11-19T10:14:06.285Z",
-   "updatedAt": "2026-11-20T12:18:16.579Z"
+   "updatedAt": "2026-11-20T13:01:17.878Z"
   },
   {
    "key": "1681",
@@ -56,6 +56,37 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-c4990284beea40",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": null,
+   "player": "C. Alcaraz",
+   "opponent": null,
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-20T12:00:47.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Injuries",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "Right now, I’m just feeling okay. We will see with my team, with my physio, but I think the rest of the day and tomorrow is really going to be important days ahead of me.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Tennis365",
+   "sourceUrl": "https://www.tennis365.com/tennis-news/carlos-alcaraz-cancels-atp-finals-warmup-flavio-cobolli-match",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his hamstring problem at the ATP Finals",
+   "sourceHash": "f48d7c6708343fde",
+   "publishedAt": "2026-11-20T13:01:17.878Z",
+   "file": "news-ticker/2794-2026.json"
+  },
   {
    "id": "digest-1de430ec7f6e90",
    "type": "digest",
@@ -1700,37 +1731,6 @@
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "topic": "On his hamstring problem after the Medvedev match",
    "sourceHash": "b4aa3e894f91720e",
-   "publishedAt": "2026-11-19T16:11:40.130Z",
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-fd6595077d0123",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": "1093",
-   "player": "C. Alcaraz",
-   "opponent": "D. Medvedev",
-   "tournament": "Finals - Turin",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-19T15:22:41.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Injuries",
-   "context": "after beating D. Medvedev",
-   "eventKey": "12179696",
-   "won": true,
-   "text": "We will see with my team, with my physio, but I think the rest of the day and tomorrow is really going to be important days ahead of me.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "Tennis365",
-   "sourceUrl": "https://www.tennis365.com/tennis-news/carlos-alcaraz-injury-update-atp-finals-report",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On assessing his hamstring problem with his physio",
-   "sourceHash": "3b003ddf3d9dec98",
    "publishedAt": "2026-11-19T16:11:40.130Z",
    "file": "news-ticker/2794-2026.json"
   }
