@@ -6,8 +6,7 @@
 //   R · RENDER: the header reads "Field" with the note "Field = tracked players under the same filters"; Field = the cell's rate; vs Field = the player's rate minus it, in points;
 //       Challenger & ITF on a favourite / underdog card is blank (no prices there); a field of n < 10 is dimmed; neither
 //       Field column is ever green or red (a comparison with other players); no field file = a dash, never a number.
-//   K · (founder 2026-10-24) only the table's highest / lowest undimmed vs Field is green / red, ties all, never a
-//       dimmed value, never the Rate.
+//   K · (founder 2026-11-20) every vs Field takes its sign (green / red), grey only at 0.0, never the Rate.
 //   N · vs Field dims exactly when |gap| <= 2 x sqrt(f(1 - f) / n) (founder ruling 2026-10-23).
 //   [neg] a builder that counts retirements, a page without the noise dimming, or one that shows a Challenger & ITF
 //   favourite field, is caught.
@@ -130,7 +129,7 @@ function main() {
     return k + ' rows';
   });
 
-  H.check('N · vs Field dims exactly when |gap| <= 2 x sqrt(f(1 - f) / n) (founder ruling 2026-10-23), and only then', () => {
+  H.check('N · vs Field is flagged noise exactly when |gap| <= 2 x sqrt(f(1 - f) / n) (founder ruling 2026-10-23), and only then', () => {
     // a synthetic field around the player's own rates: one line far from him (beyond noise), one near (within)
     const { I, p } = page(null);
     const c = I.lineCoverage(p, 'bo3', 'all');
@@ -154,14 +153,14 @@ function main() {
       const seg = html.slice(html.indexOf('data-lc-line="' + r.label + '"'));
       const v = /data-lc-vsfield="[^"]*" data-lc-noise="(\d)" data-lc-pick="\w*" style="([^"]*)"/.exec(seg);
       assert.strictEqual(v[1] === '1', want, r.label + ': noise flag');
-      if (!r.thin) assert.strictEqual(/text-label/.test(v[2]), want, r.label + ': dimmed ink');
+      // founder 2026-11-20: the flag stays as data; the ink is the sign colour whatever the noise (check K)
       if (want) dimmed++; else bright++;
     });
     assert(dimmed && bright, 'both cases: dimmed ' + dimmed + ', bright ' + bright);
     return dimmed + ' within noise (dimmed) · ' + bright + ' beyond noise (full ink)';
   });
 
-  H.check('K · one green and one red: the highest / lowest undimmed vs Field on screen, ties all, a dimmed value never, the Rate never (founder 2026-10-24)', () => {
+  H.check('K · every vs Field by its sign: green above, red below, grey only at 0.0, the Rate never (founder 2026-11-20)', () => {
     const { I, W } = (() => { const m = page(null); return { I: m.I, W: global.window || null }; })();
     // the pick on a synthetic table: rows with chosen gaps, field cells big enough that nothing is thin
     const mk = (spec) => {
@@ -175,16 +174,18 @@ function main() {
     // big samples (n = 4000): every gap beyond noise except the 0.5pp one
     const a = mk([{ label: 'A', rate: 60, gap: 12, n: 4000 }, { label: 'B', rate: 60, gap: 8, n: 4000 }, { label: 'C', rate: 50, gap: -9, n: 4000 },
       { label: 'D', rate: 50, gap: -3, n: 4000 }, { label: 'E', rate: 50, gap: 0.5, n: 4000 }]);
-    assert.deepStrictEqual(a, { A: 'pos', C: 'neg' }, JSON.stringify(a));
+    assert.deepStrictEqual(a, { A: 'pos', B: 'pos', C: 'neg', D: 'neg', E: 'pos' }, JSON.stringify(a));
     // a tie on the top value: both green; only positives undimmed: no red
     const b = mk([{ label: 'A', rate: 60, gap: 10, n: 4000 }, { label: 'B', rate: 70, gap: 10, n: 4000 }, { label: 'C', rate: 50, gap: 4, n: 4000 }]);
-    assert.deepStrictEqual(b, { A: 'pos', B: 'pos' }, JSON.stringify(b));
+    assert.deepStrictEqual(b, { A: 'pos', B: 'pos', C: 'pos' }, JSON.stringify(b));
     // the largest gap is noise on a small sample (n = 20): never coloured; the next undimmed one takes green
     const c = mk([{ label: 'A', rate: 60, gap: 15, n: 20 }, { label: 'B', rate: 60, gap: 6, n: 4000 }]);
-    assert.deepStrictEqual(c, { B: 'pos' }, JSON.stringify(c));
+    assert.deepStrictEqual(c, { A: 'pos', B: 'pos' }, JSON.stringify(c));
     // everything dimmed: nothing coloured
     const e = mk([{ label: 'A', rate: 60, gap: 5, n: 20 }, { label: 'B', rate: 40, gap: -5, n: 20 }]);
-    assert.deepStrictEqual(e, {}, JSON.stringify(e));
+    assert.deepStrictEqual(e, { A: 'pos', B: 'neg' }, JSON.stringify(e));
+    // a gap that rounds to 0.0: grey
+    assert.deepStrictEqual(mk([{ label: 'A', rate: 60, gap: 0.02, n: 4000 }]), {}, 'a 0.0pp gap is coloured');
     // the rendered table: no Rate value coloured, no dimmed vs Field coloured, at most one value per colour (or a tie)
     const { I: J, p } = page(field);
     let tables = 0;
@@ -193,11 +194,8 @@ function main() {
       const html = J.renderLinesTab(p);
       assert(!/font-size:14px;font-weight:700;[^"]*color:var\(--(pos|neg)\)/.test(html), [tier, role, win].join('/') + ': a Rate is coloured');
       const v = [...html.matchAll(/data-lc-vsfield="([^"]*)" data-lc-noise="(\d)" data-lc-pick="(\w*)" style="[^"]*color:([^;]+);"/g)];
-      v.forEach((x) => { if (/text-label/.test(x[4])) assert(!/--pos|--neg/.test(x[4]), 'a dimmed value is coloured'); });
-      ['pos', 'neg'].forEach((c) => {
-        const got = v.filter((x) => x[4] === 'var(--' + c + ')');
-        assert(new Set(got.map((x) => x[1])).size <= 1, [tier, role, win, c].join('/') + ': more than one ' + c + ' value');
-      });
+      v.forEach((x) => { if (x[1] === '' || +x[1] === 0) return;
+        assert.strictEqual(x[4], +x[1] > 0 ? 'var(--pos)' : 'var(--neg)', [tier, role, win].join('/') + ': ' + x[1] + ' is not in its sign colour'); });
       tables++;
     }
     return '4 synthetic tables · ' + tables + ' rendered tables, no Rate coloured, one value per colour';
@@ -219,25 +217,9 @@ function main() {
     fs.writeFileSync(f, src.replace("require('./ten384-figures-lib.js')", 'require(' + JSON.stringify(path.join(__dirname, 'ten384-figures-lib.js')) + ')'));
     try { oneDefinition(build(f)); } finally { fs.unlinkSync(f); }
   });
-  H.mustFail('vs Field without the noise dimming is caught', () => {
-    const SRC = fs.readFileSync(path.join(L.ROOT, 'player-profile-v2.js'), 'utf8');
-    const f = path.join(os.tmpdir(), 'pp2-noise-mutant-' + process.pid + '.js');
-    assert(SRC.includes('dimmed: gap != null && (fl.thin || r.thin || inNoise)'), 'mutation anchor missing');
-    fs.writeFileSync(f, SRC.replace('dimmed: gap != null && (fl.thin || r.thin || inNoise)', 'dimmed: gap != null && (fl.thin || r.thin)'));
-    try {
-      const p = Object.assign({}, FX.profile, { tournamentHistory: FX.tournamentHistory });
-      const m = L.loadPp2({ src: f, players: { [KEY]: p }, careerHistory: { [KEY]: FX.careerHistory }, marketEdge: { [KEY]: FX.marketEdge }, bet365History: FX.bet365History });
-      m.W.pp2Field = () => ({ st: 'ready', d: field }); m.W.pp2FieldNeed = () => {};   // one player: every gap 0, so every cell is noise
-      Object.assign(m.I.state, { key: p.key, marketTab: 'lines', lcFmt: 'bo3', lcRole: 'all', lcWin: 'career', lcTier: 'all', lcSurf: 'all', lcSpeed: 'all', lcDrill: null });
-      const html = m.I.renderLinesTab(p);
-      const noisy = html.match(/data-lc-noise="1" data-lc-pick="\w*" style="([^"]*)"/g) || [];
-      assert(noisy.length > 0, 'no noise cell to check');
-      noisy.forEach((x) => assert(/text-label/.test(x), 'a noise gap in full ink'));
-    } finally { fs.unlinkSync(f); }
-  });
   for (const [name, from, to, shape] of [
-    ['a dimmed value coloured', 'if (v.gap != null && !v.dimmed) vals.push', 'if (v.gap != null) vals.push', 'near'],
-    ['every positive value coloured', "pos.forEach(function (x) { if (x.gap === hi) out[x.label] = 'pos'; });", "pos.forEach(function (x) { out[x.label] = 'pos'; });", 'far'],
+    ['a noise value left grey (the old dead zone)', 'if (v.gap != null && v.gap !== 0) out', 'if (v.gap != null && v.gap !== 0 && !v.dimmed) out', 'near'],
+    ['only the top value coloured (the old one-green rule)', "out[r.label] = v.gap > 0 ? 'pos' : 'neg';", "if (!Object.keys(out).length) out[r.label] = v.gap > 0 ? 'pos' : 'neg';", 'far'],
     ['the Rate coloured green again', "var rateInk = r.rate == null ? DASH_COLOUR : r.thin ? 'var(--text-label)' : 'var(--text)';", "var rateInk = r.rate == null ? DASH_COLOUR : r.thin ? 'var(--text-label)' : 'var(--pos)';", 'far']]) {
     H.mustFail(name + ' is caught', () => {
       const SRC = fs.readFileSync(path.join(L.ROOT, 'player-profile-v2.js'), 'utf8');
@@ -257,15 +239,7 @@ function main() {
         const html = m.I.renderLinesTab(p);
         assert(!/font-size:14px;font-weight:700;[^"]*color:var\(--(pos|neg)\)/.test(html), 'a Rate is coloured');
         const v = [...html.matchAll(/data-lc-vsfield="([^"]*)" data-lc-noise="(\d)" data-lc-pick="(\w*)" style="[^"]*color:([^;]+);"/g)];
-        assert(v.filter((x) => x[4] === 'var(--pos)').length <= 1, 'more than one green');
-        // a dimmed value: noise flag set; it must never be coloured — on screen, and in the pick itself (the render greys a
-        // dimmed value first, so the pick is checked on its own)
-        v.forEach((x) => assert(!(x[2] === '1' && /--pos|--neg/.test(x[4])), 'a noise value is coloured'));
-        const cov = m.I.lineCoverage(p, 'bo3', 'all', {}), picked = m.I.lcBestWorst(cov, 'bo3');
-        Object.keys(picked).forEach((label) => {
-          const r = rowsOf(cov).find((y) => y.label === label);
-          assert(!m.I.lcVsField(cov, 'bo3', r).dimmed, label + ' is picked while dimmed');
-        });
+        v.forEach((x) => { if (x[1] !== '' && +x[1] !== 0) assert.strictEqual(x[4], +x[1] > 0 ? 'var(--pos)' : 'var(--neg)', x[1] + ' (noise ' + x[2] + ') is not in its sign colour'); });
       } finally { fs.unlinkSync(f); }
     });
   }

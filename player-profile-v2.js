@@ -4819,7 +4819,8 @@
       (pend ? T('Units backing him', '&nbsp;', 'var(--text)', '&nbsp;')
         : T('Units backing him', priced.length ? signed(units, 1, 'u') : DASH,
           !priced.length ? 'var(--text-label)' : units > 0 ? 'var(--pos)' : units < 0 ? 'var(--neg)' : 'var(--text-label)',
-          priced.length + ' priced match' + (priced.length === 1 ? '' : 'es'))) +
+          // founder 2026-11-20 ("choose what's best"): units stay the figure, the yield sits under it with its n
+          priced.length + ' priced match' + (priced.length === 1 ? '' : 'es') + ' ' + MIDDOT + ' yield ' + signed(100 * units / priced.length, 1, '%'))) +
       role('As favourite', fav) + role('As underdog', dog) + '</div>';
   }
   function drillPanelHtml(o) {
@@ -8404,21 +8405,15 @@
     var inNoise = gap != null && noise != null && Math.abs(r.rate - fl.rate) <= noise;
     return { fl: fl, gap: gap, inNoise: inNoise, dimmed: gap != null && (fl.thin || r.thin || inNoise) };
   }
-  // Founder 2026-10-24 · the table's ONE green and ONE red: among the vs Field values on screen (this card, these
-  // filters) that are not dimmed, the highest positive is green and the lowest negative red — ties all coloured, a
-  // dimmed value never. Everything else on the row (Rate included) is the default ink. Returns { label: 'pos' | 'neg' }.
+  // Founder 2026-11-20 (replaces 2026-10-24's one green / one red): every vs Field value on screen takes its sign —
+  // green above the field, red below; grey only at a rounded 0.0pp or with no field figure (v5: no noise dead zone). Everything
+  // else on the row (Rate included) is the default ink. Returns { label: 'pos' | 'neg' }.
   function lcBestWorst(d, fmt) {
-    var vals = [];
+    var out = {};
     d.groups.forEach(function (g) { g.rows.forEach(function (r) {
       var v = lcVsField(d, fmt, r);
-      if (v.gap != null && !v.dimmed) vals.push({ label: r.label, gap: v.gap });
+      if (v.gap != null && v.gap !== 0) out[r.label] = v.gap > 0 ? 'pos' : 'neg';
     }); });
-    var pos = vals.filter(function (x) { return x.gap > 0; }), neg = vals.filter(function (x) { return x.gap < 0; });
-    var hi = pos.length ? Math.max.apply(null, pos.map(function (x) { return x.gap; })) : null;
-    var lo = neg.length ? Math.min.apply(null, neg.map(function (x) { return x.gap; })) : null;
-    var out = {};
-    pos.forEach(function (x) { if (x.gap === hi) out[x.label] = 'pos'; });
-    neg.forEach(function (x) { if (x.gap === lo) out[x.label] = 'neg'; });
     return out;
   }
   function lcFieldOf(d, fmt, label) {
@@ -9181,7 +9176,7 @@
         var bar = '<span style="position:relative;display:block;height:6px;border-radius:3px;background:var(--track);">' +
           fill + '<span style="position:absolute;left:' + LC_HOT + '%;top:-4px;bottom:-4px;width:1px;background:var(--bar-2);"></span></span>';
         var rateTxt = r.rate == null ? DASH : r.rate.toFixed(1) + '%';
-        // founder 2026-10-24 · the Rate is never coloured: the one green / red on the table is vs Field's (lcBestWorst)
+        // the Rate is never coloured: green / red on the table is vs Field's only (lcBestWorst, founder 2026-11-20)
         var rateInk = r.rate == null ? DASH_COLOUR : r.thin ? 'var(--text-label)' : 'var(--text)';
         var softRow = false;
         // Brief 2026-10-21 · every line with a match behind it opens its matches (renderLineDrill).
@@ -9201,14 +9196,14 @@
             : '<span style="' + MK_MONO + 'font-size:14px;font-weight:700;text-align:right;color:' + rateInk + ';">' + rateTxt + '</span>') +
           '<span style="' + MK_MONO + 'font-size:12px;text-align:right;white-space:nowrap;color:var(--text-label);">' + r.record + '</span>' +
           // the Field and the gap to it: neutral ink, dimmed when either side is thin or the gap is noise; only the
-          // table's best and worst undimmed gap take green / red (lcBestWorst, founder 2026-10-24)
+          // undimmed gap takes its sign's green / red (lcBestWorst, founder 2026-11-20)
           (function () {
             var v = lcVsField(d, fmt, r), fl = v.fl, gap = v.gap, inNoise = v.inNoise;
             var fTxt = fl ? fl.rate.toFixed(1) + '%' : DASH;
             var gTxt = gap == null ? DASH : (gap > 0 ? '+' : gap < 0 ? MINUS : '') + Math.abs(gap).toFixed(1) + 'pp';
             var dim = function (thin) { return thin ? 'var(--text-label)' : 'var(--text)'; };
-            var gInk = gap == null ? DASH_COLOUR : v.dimmed ? 'var(--text-label)' : pick[r.label] === 'pos' ? 'var(--pos)' :
-              pick[r.label] === 'neg' ? 'var(--neg)' : 'var(--text)';
+            var gInk = gap == null ? DASH_COLOUR : pick[r.label] === 'pos' ? 'var(--pos)' :
+              pick[r.label] === 'neg' ? 'var(--neg)' : 'var(--text-label)';
             return '<span data-lc-field="' + (fl ? fl.cover + '-' + fl.miss : '') + '" title="' + (fl ? esc(fl.cover + ENDASH + fl.miss +
                 (fl.voids ? ' (' + fl.voids + ' void)' : '') + ' over ' + fl.players + ' player' + (fl.players === 1 ? '' : 's')) : '') + '" ' +
                 'style="' + MK_MONO + 'font-size:12.5px;text-align:right;white-space:nowrap;color:' + (fl ? dim(fl.thin) : DASH_COLOUR) + ';">' + fTxt + '</span>' +
@@ -12640,9 +12635,9 @@
     ['Speed', 'The court\'s measured speed minus the average of its surface. The row shows the range of the editions in the band.'],
     ['Figure', 'His win rate in that band. The small line is his record.'],
     ['Signed figure', 'Units won or lost at 1 unit on him, closing price, on his priced matches in that band.'],
-    ['Level', 'Behind Filters: ATP, Challenger or ITF. Court speed is measured at ATP venues only, so Challenger and ITF matches have no band yet.'],
+    ['ATP only', 'Court speed covers ATP matches only (founder 2026-11-20): Tennis Abstract rates tour venues only, so Challenger and ITF matches are left out.'],
     ['Click a row', 'Opens its tiles and every match in it. A second click closes it.'],
-    ['Filters', 'Window and surface sit in the bar. Level, price role, altitude and opponent archetype sit behind Filters. Every figure follows them, and the gap then compares with his unfiltered rate in that band.'],
+    ['Filters', 'Window and surface sit in the bar. Price role, altitude and opponent archetype sit behind Filters. Every figure follows them, and the gap then compares with his unfiltered rate in that band.'],
     ['Thin sample', 'A band with fewer than ' + PP4.SPEED_FLOOR + ' matches shows a dash and the count, never a rate.'],
     ['Bar', 'His win rate from 0 to 100%. The tick marks 50%.']] };
   var SPD_INFO2 = { what: 'The selected band in detail.', defs: [
@@ -12776,7 +12771,7 @@
   var SPD_ROLES = [['all', 'All'], ['fav', 'As favourite'], ['dog', 'As underdog']];
   var SPD_ALTS = [['all', 'All'], ['sea', 'Sea level'], ['alt', 'Altitude']];
   var SPD_LVLS = [['all', 'All'], ['atp', 'ATP'], ['ch', 'Challenger'], ['itf', 'ITF']];
-  var SPD_FM_KEYS = ['spdLvl', 'spdRole', 'spdAlt', 'spdArch'];
+  var SPD_FM_KEYS = ['spdRole', 'spdAlt', 'spdArch'];
   // v4 §5 · the drawer title's sample: "n of m matches" when anything narrows it, else "m matches".
   function spdTitleCount(p) {
     if (!speedRows(p).length) return '';
@@ -12823,8 +12818,6 @@
     };
     var archOpts = [['all', 'All archetypes']].concat(STYLE_AXIS.map(function (a) { return [a.label, a.label]; }));
     var groups = [
-      { key: 'spdLvl', title: 'Level', cur: F.lvl, options: SPD_LVLS, count: function (v) { return countOf('lvl', v); },
-        hint: 'Court speed is measured at ATP venues only.' },
       { key: 'spdRole', title: 'Price role', cur: F.role, options: SPD_ROLES, count: function (v) { return countOf('role', v); } },
       { key: 'spdAlt', title: 'Altitude', cur: F.alt, options: SPD_ALTS, count: function (v) { return countOf('alt', v); },
         hint: 'Altitude = venues at ' + PP4.ALT_CUT_M + ' m or higher.' },

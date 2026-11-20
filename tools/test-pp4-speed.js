@@ -55,12 +55,12 @@ const checks = {
   // the popover: Level · Price role · Altitude · Opponent archetype; every count = the banded rows the filter keeps
   popover(html) {
     const t = T(html);
-    assert(/Level/.test(t) && /Price role/.test(t) && /Altitude/.test(t) && /Opponent archetype/.test(t), 'a group is missing');
-    const lv = (html.match(/data-g="spdLvl" data-v="(\w+)"/g) || []).map(x => x.replace(/.*data-v="(\w+)"/, '$1'));
-    assert.deepStrictEqual(lv, ['all', 'atp', 'ch', 'itf'], 'the Level options are not All · ATP · Challenger · ITF');
+    assert(/Price role/.test(t) && /Altitude/.test(t) && /Opponent archetype/.test(t), 'a group is missing');
+    // founder 2026-11-20: Court speed is ATP only, so there is no Level filter
+    assert(!/data-g="spdLvl"/.test(html) && !/>Level</.test(html), 'a Level filter is back');
     assert(t.includes('Altitude = venues at ' + PP4.ALT_CUT_M + ' m or higher.'), 'the altitude hint does not name PP4.ALT_CUT_M');
     const pool = I.spdPool(p), f = I.spdFilter(), cut = I.last52Cutoff();
-    [['spdRole', 'role', ['all', 'fav', 'dog']], ['spdAlt', 'alt', ['all', 'sea', 'alt']], ['spdLvl', 'lvl', ['all', 'atp', 'ch', 'itf']]].forEach(([g, k, vs]) => vs.forEach(v => {
+    [['spdRole', 'role', ['all', 'fav', 'dog']], ['spdAlt', 'alt', ['all', 'sea', 'alt']]].forEach(([g, k, vs]) => vs.forEach(v => {
       const n = pool.filter(r => I.spdRowOk(r, Object.assign({}, f, { [k]: v }), cut)).length;
       const re = new RegExp('data-pp2="fm-set" data-g="' + g + '" data-v="' + v + '"[\\s\\S]*?font-weight:400;">(\\d+)<');
       const m = re.exec(html); assert(m, g + '=' + v + ' has no count');
@@ -98,7 +98,7 @@ H.check('1 · the v5 filter card (Window · Surface · Filters), no Applied row 
   assert(!/data-pp2-applied=/.test(html), 'an Applied row with no hidden filter on');
   assert.strictEqual((I.MODAL_TITLE_COUNT || {}).speed(p), I.spdPool(p).length + ' matches', 'the unfiltered title sample');
 });
-H.check('2 · the Filters popover: Level, Price role, Altitude, archetype; every count = the rows it keeps', () => {
+H.check('2 · the Filters popover: Price role, Altitude, archetype (no Level, ATP only); every count = the rows it keeps', () => {
   checks.popover(render({ fmOpen: 'spd' }));
   checks.archOpen(render({ fmOpen: 'spd', fmSel: 'spd|spdArch' }));
 });
@@ -166,7 +166,7 @@ H.check('8 · Clear all resets Level, Window and Surface; Reset filters clears t
   const src = fs.readFileSync(process.env.PP4_SRC || path.join(L.ROOT, 'player-profile-v2.js'), 'utf8');
   assert(/kind === 'spd-clearall'\) \{ state\.spdLvl = 'all'; state\.spdRole = 'all'; state\.spdAlt = 'all'; state\.spdArch = 'all'; state\.spdWin = 'career'; state\.spdSurf = 'all';/.test(src), 'spd-clearall does not reset everything');
   render();
-  assert.deepStrictEqual(I.SPD_FM_KEYS, ['spdLvl', 'spdRole', 'spdAlt', 'spdArch'], 'Reset filters does not clear Level with the hidden filters');
+  assert.deepStrictEqual(I.SPD_FM_KEYS, ['spdRole', 'spdAlt', 'spdArch'], 'the hidden filters are not Price role · Altitude · archetype');
 });
 // ── CONTROL: the v4 drawer's markers, fed to the same checks, must go red (each check is not vacuous)
 const V4 = '<div data-pp2-band="standalone-card" style="padding:20px 24px;"><span data-pp2="spd-win" data-v="l52">L</span><span data-pp2="spd-win" data-v="career" aria-pressed="true">C</span>' +

@@ -99,7 +99,7 @@ H.check('drill · history box tiles: Win rate · Units backing him · As favouri
   ];
   const t = T(I.drillTilesHtml(rows, { won: 4, lost: 2 }, false));
   assert(/Win rate 66\.7% 4–2 · 6 matches/.test(t), 'win rate tile: ' + t);
-  assert(/Units backing him −0\.6u 4 priced matches/.test(t), 'units tile (0.5 − 1 + 0.9 − 1 = −0.6): ' + t);
+  assert(/Units backing him −0\.6u 4 priced matches · yield −15\.0%/.test(t), 'units tile (0.5 − 1 + 0.9 − 1 = −0.6): ' + t);
   assert(/As favourite 50\.0% 1–1 · 2 matches/.test(t) && /As underdog 0\.0% 0–1 · 1 match\b(?!e)/.test(t), 'role tiles: ' + t);
   const ctl = T(I.drillTilesHtml(rows.map(r => Object.assign({}, r, { retired: false })), { won: 4, lost: 2 }, false));
   assert(!/−0\.6u/.test(ctl), 'CONTROL: settling the void retirement as a match does not move the units');
