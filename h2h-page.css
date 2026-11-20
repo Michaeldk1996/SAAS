@@ -42,10 +42,9 @@
   padding: 16px 18px; box-shadow: var(--h2h-shadow-sticky); }
 
 /* ---- shared components ---- */
-#h2hRoot .x-cap, .h2hx-pop .x-cap { font-family: 'Hanken Grotesk', sans-serif; font-size: 10.5px; font-weight: 700; letter-spacing: 0.10em;
-  text-transform: uppercase; color: var(--h2h-grey); }
-#h2hRoot .x-help, .h2hx-pop .x-help { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--h2h-white) 16%, transparent); display: flex;
-  align-items: center; justify-content: center; font-family: 'Hanken Grotesk', sans-serif; font-size: 12px; font-weight: 700;
+#h2hRoot .x-cap, .h2hx-pop .x-cap { font-family: 'Hanken Grotesk', sans-serif; font-size: 11.5px; font-weight: 600; color: var(--h2h-grey); } /* 20 Nov §8: no uppercase */
+#h2hRoot .x-help, .h2hx-pop .x-help { flex: none; width: 16px; height: 16px; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--h2h-white) 22%, transparent); display: flex;
+  align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700;
   color: var(--h2h-grey); cursor: help; }
 #h2hRoot .seg, .h2hx-pop .seg { cursor: pointer; transition: background 120ms ease, color 120ms ease, border-color 120ms ease; }
 #h2hRoot .x-mono, .h2hx-pop .x-mono { font-family: 'IBM Plex Mono', monospace; }
@@ -59,12 +58,12 @@
 /* the small avatar heading a price column has no ring (CHANGES 2026-11-17 §2): 22px Meetings, 20px career and tournament lists */
 #h2hRoot .x-av.mini, .h2hx-pop .x-av.mini { box-shadow: none; }
 /* pill switch (DF L140–142: track inner, 6% edge, r9, pad 2, gap 3; item 5/11, r7; on = raised + 16% ring) */
-#h2hRoot .x-sw, .h2hx-pop .x-sw { display: inline-flex; gap: 3px; background: var(--h2h-inner); border: 1px solid color-mix(in srgb, var(--h2h-white) 6%, transparent);
+#h2hRoot .x-sw, .h2hx-pop .x-sw { display: inline-flex; gap: 3px; background: var(--h2h-track); border: 1px solid color-mix(in srgb, var(--h2h-white) 10%, transparent);
   border-radius: 9px; padding: 2px; }
 #h2hRoot .x-sw > .x-sw__o, .h2hx-pop .x-sw > .x-sw__o { white-space: nowrap; padding: 5px 11px; border-radius: 7px; font-size: 11px; font-weight: 600;
   color: var(--h2h-grey); background: transparent; border: 1px solid transparent; font-family: inherit; line-height: normal; }
 #h2hRoot .x-sw > .x-sw__o.on, .h2hx-pop .x-sw > .x-sw__o.on { font-weight: 700; color: var(--h2h-text); background: var(--h2h-raised);
-  border-color: color-mix(in srgb, var(--h2h-white) 16%, transparent); }
+  border-color: color-mix(in srgb, var(--h2h-white) 14%, transparent); }
 #h2hRoot .x-sw.r8 { border-radius: 8px; }
 #h2hRoot .x-sw.r8 > .x-sw__o { padding: 5px 12px; border-radius: 6px; font-size: 12px; }
 #h2hRoot .x-sw.f12 > .x-sw__o { font-size: 12px; }
@@ -72,32 +71,31 @@
 
 /* ---- sections (DF L213 / L253 …) ---- */
 #h2hRoot .x-body { display: flex; flex-direction: column; gap: 16px; padding: 6px 40px 80px; }
-#h2hRoot .x-sec { background: var(--h2h-card); border: 1.25px solid color-mix(in srgb, var(--h2h-white) 6%, transparent); border-radius: 14px; padding: 24px 26px;
+#h2hRoot .x-sec { background: var(--h2h-card); border: 1px solid color-mix(in srgb, var(--h2h-white) 6%, transparent); border-radius: 16px; padding: 24px;
   display: flex; flex-direction: column; min-width: 0; scroll-margin-top: var(--x-stick-h, 0px); }
 #h2hRoot .x-sh { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; }
 #h2hRoot .x-sh__t { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: -0.01em; color: var(--h2h-text); }
 #h2hRoot .x-sh__s { font-size: 12.5px; color: var(--h2h-grey); }
 #h2hRoot .x-grow { flex: 1; }
-#h2hRoot .x-inner { background: var(--h2h-card); border: 1px solid color-mix(in srgb, var(--h2h-white) 9%, transparent); border-radius: 12px; min-width: 0; }
+#h2hRoot .x-inner { background: var(--h2h-card); border: 1px solid color-mix(in srgb, var(--h2h-white) 6%, transparent); border-radius: 12px; min-width: 0; }
 
 /* ---- hover / focus states (the reference's style-hover attributes and its <style> block, DF L12–21) ---- */
 @keyframes h2hpulse { 0%,100% { opacity: 0.35; } 50% { opacity: 0.7; } }
 #h2hRoot a { color: var(--h2h-blue); text-decoration: none; }
 #h2hRoot a:hover { color: var(--h2h-blue-hov); }
 #h2hRoot .h2hin::placeholder, .h2hx-pop .h2hin::placeholder { color: var(--h2h-grey); }
-#h2hRoot .h2hin:focus, .h2hx-pop .h2hin:focus { outline: none; border-color: color-mix(in srgb, var(--h2h-white) 16%, transparent) !important; }
-#h2hRoot .x-change:hover { color: var(--h2h-text) !important; border-color: color-mix(in srgb, var(--h2h-white) 16%, transparent) !important; }
-#h2hRoot .x-swap:hover { color: var(--h2h-text) !important; border-color: color-mix(in srgb, var(--h2h-white) 28%, transparent) !important; }
-#h2hRoot .x-mrow:hover { background: color-mix(in srgb, var(--h2h-white) 5%, transparent); }
-#h2hRoot .x-nav:hover { color: var(--h2h-text) !important; background: color-mix(in srgb, var(--h2h-white) 5%, transparent); }
-#h2hRoot .x-sugg:hover { color: var(--h2h-text) !important; border-color: color-mix(in srgb, var(--h2h-white) 16%, transparent) !important; }
+#h2hRoot .h2hin:focus, .h2hx-pop .h2hin:focus { outline: none; border-color: color-mix(in srgb, var(--h2h-white) 14%, transparent) !important; }
+#h2hRoot .x-change:hover { color: var(--h2h-text) !important; border-color: color-mix(in srgb, var(--h2h-white) 14%, transparent) !important; }
+#h2hRoot .x-swap:hover { color: var(--h2h-text) !important; border-color: color-mix(in srgb, var(--h2h-white) 22%, transparent) !important; }
+#h2hRoot .x-mrow:hover { background: var(--h2h-hover); }
+#h2hRoot .x-nav:hover { color: var(--h2h-text) !important; background: var(--h2h-hover); }
+#h2hRoot .x-sugg:hover { color: var(--h2h-text) !important; border-color: color-mix(in srgb, var(--h2h-white) 14%, transparent) !important; }
 /* rows and controls (DF style-hover): a row / band / career / tournament / news / line row = the raised tone; the Overall
    box lifts with a 16% edge; a ✕ and the Filters button brighten their ring */
-#h2hRoot .x-row:hover, #h2hRoot .x-hl:hover, #h2hRoot .x-more:hover, #h2hRoot .x-topt:hover { background: var(--h2h-raised) !important; }
-#h2hRoot .x-evchip:hover { background: var(--h2h-raised) !important; color: var(--h2h-text) !important; }
-#h2hRoot .x-ovbox:hover { border-color: color-mix(in srgb, var(--h2h-white) 16%, transparent) !important; background: var(--h2h-raised) !important; }
-#h2hRoot .x-close:hover { color: var(--h2h-text) !important; border-color: color-mix(in srgb, var(--h2h-white) 30%, transparent) !important; }
-#h2hRoot .x-filt:hover { border-color: color-mix(in srgb, var(--h2h-white) 30%, transparent) !important; }
+#h2hRoot .x-row:hover, #h2hRoot .x-hl:hover, #h2hRoot .x-more:hover, #h2hRoot .x-topt:hover, #h2hRoot .x-lift:hover, #h2hRoot .x-filt:hover, #h2hRoot .x-pickrow:hover { background: var(--h2h-hover) !important; } /* 20 Nov §8 */
+#h2hRoot .x-evchip:hover { background: var(--h2h-hover) !important; color: var(--h2h-text) !important; }
+#h2hRoot .x-ovbox:hover { background: var(--h2h-hover) !important; } /* 20 Nov: hover = fill only, no edge change */
+#h2hRoot .x-close:hover, .h2hx-pop .x-close:hover { color: var(--h2h-text) !important; border-color: color-mix(in srgb, var(--h2h-white) 22%, transparent) !important; }
 /* Narrow pane (the reference cuts the names and lets the hot-lines table spill at 760; ours does neither): below 900px
    the two pickers stack around the VS / swap row, a picked name wraps instead of being cut, and the hot-lines table
    scrolls sideways inside its card. */
@@ -111,3 +109,11 @@
 /* the radar's axis labels sit outside its box: below 900px it takes its own row (centred, max 440) so they never run
    into the face-to-face rows */
 @media (max-width: 900px) { #h2hRoot .x-radar { flex-basis: 100% !important; } }
+/* A match report in Latest news carries the News page's own stats box (newsMsBoxHtml, News v2 §4, founder 2026-11-20):
+   its rules live in news-page.css and read the --nx-* edges the News tab defines, so the box defines them here too. */
+#h2hRoot .x-newsms { display: flex; max-width: 720px;
+  --nx-e06: color-mix(in srgb, var(--news-white) 6%, transparent); --nx-e07: color-mix(in srgb, var(--news-white) 7%, transparent);
+  --nx-e09: color-mix(in srgb, var(--news-white) 9%, transparent); --nx-e10: color-mix(in srgb, var(--news-white) 10%, transparent);
+  --nx-e14: color-mix(in srgb, var(--news-white) 14%, transparent); --nx-mono: 'IBM Plex Mono', monospace; }
+#h2hRoot .x-newsms > .nx-div { display: none; }
+#h2hRoot .x-newsms > .nx-box { max-width: none; flex: 1 1 auto; }
