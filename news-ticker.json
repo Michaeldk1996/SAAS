@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-20T07:43:32.523Z",
+ "generatedAt": "2026-11-20T09:18:14.552Z",
  "tournaments": [
   {
    "key": "2794",
@@ -13,20 +13,20 @@
     "report": 10
    },
    "latestTimestamp": "2026-11-19T23:57:49.000Z",
-   "updatedAt": "2026-11-20T01:20:56.945Z"
+   "updatedAt": "2026-11-20T09:18:14.552Z"
   },
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 119,
+   "items": 117,
    "byType": {
-    "quote": 96,
+    "quote": 94,
     "digest": 23
    },
-   "latestTimestamp": "2026-11-19T18:43:47.000Z",
-   "updatedAt": "2026-11-20T07:43:32.523Z"
+   "latestTimestamp": "2026-11-19T10:14:06.285Z",
+   "updatedAt": "2026-11-20T09:18:14.552Z"
   },
   {
    "key": "1681",
@@ -40,7 +40,7 @@
     "status": 7
    },
    "latestTimestamp": "2026-11-14T16:03:27.000Z",
-   "updatedAt": "2026-11-19T07:48:44.144Z"
+   "updatedAt": "2026-11-20T09:18:14.552Z"
   },
   {
    "key": "1725",
@@ -52,7 +52,7 @@
     "report": 1
    },
    "latestTimestamp": "2026-11-08T14:20:00.000Z",
-   "updatedAt": "2026-11-19T07:48:44.144Z"
+   "updatedAt": "2026-11-20T09:18:14.552Z"
   }
  ],
  "latest": [
@@ -603,10 +603,10 @@
       "1"
      ],
      [
-      "Return quality",
-      8.2,
-      7.8,
-      "1"
+      "Unreturned serves",
+      40,
+      30,
+      "%"
      ],
      [
       "1st serve in",
@@ -615,22 +615,22 @@
       "%"
      ],
      [
-      "Unreturned serves",
-      40,
-      30,
-      "%"
-     ],
-     [
-      "1st serve won",
+      "1st serve points won",
       83,
       76,
       "%"
      ],
      [
-      "2nd serve won",
+      "2nd serve points won",
       53,
       71,
       "%"
+     ],
+     [
+      "Return quality",
+      8.2,
+      7.8,
+      "1"
      ],
      [
       "Baseline points won",
@@ -639,32 +639,19 @@
       "0"
      ],
      [
-      "Winners / unforced",
+      "Ratio W/UE",
       1.05,
       1.71,
       "2"
      ],
      [
-      "Winners",
-      23,
-      24,
-      "0"
-     ],
-     [
-      "Unforced errors",
-      22,
-      14,
-      "0",
-      1
-     ],
-     [
-      "Winners / points",
+      "Winners / point",
       0.17,
       0.18,
       "2"
      ],
      [
-      "Unforced / points",
+      "Unforced / point",
       0.17,
       0.11,
       "2",
@@ -826,10 +813,10 @@
    "sourceUrl": "pbp/12179706.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "02ca514fcc221aaa",
+   "sourceHash": "a9aafef00a75ec0a",
    "publishedAt": "2026-11-19T21:41:50.197Z",
-   "revisedAt": "2026-11-20T00:11:12.005Z",
-   "revision": 3,
+   "revisedAt": "2026-11-20T09:18:14.552Z",
+   "revision": 4,
    "file": "news-ticker/2794-2026.json"
   },
   {
@@ -1143,37 +1130,6 @@
    "sourceHash": "7a5a8f82d60ada4a",
    "publishedAt": "2026-11-19T19:25:43.670Z",
    "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-d10ed57de6825e",
-   "type": "quote",
-   "playerId": "6011",
-   "opponentId": null,
-   "player": "K. Smith",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-19T18:43:47.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "I know that David didn’t get to see Michael and Alex grow up. You didn’t get to see him ride a bike or go to school. And I’m really, really sorry for that, and I would go back and change all of that if I could, I would, OK? I’m not the same person I was 32 years ago,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "Hindustan Times",
-   "sourceUrl": "https://www.hindustantimes.com/world-news/us-news/susan-smith-is-denied-parole-again-32-years-after-drowning-her-sons-in-a-south-carolina-lake-101795113827571.html",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On her remorse for killing her sons",
-   "sourceHash": "4e309d32b0de9e67",
-   "publishedAt": "2026-11-19T19:45:50.143Z",
-   "file": "news-ticker/tour-2026.json"
   },
   {
    "id": "quote-273340e98f9369",
@@ -1726,10 +1682,10 @@
       "1"
      ],
      [
-      "Return quality",
-      7.4,
-      7,
-      "1"
+      "Unreturned serves",
+      47,
+      32,
+      "%"
      ],
      [
       "1st serve in",
@@ -1738,22 +1694,22 @@
       "%"
      ],
      [
-      "Unreturned serves",
-      47,
-      32,
-      "%"
-     ],
-     [
-      "1st serve won",
+      "1st serve points won",
       77,
       74,
       "%"
      ],
      [
-      "2nd serve won",
+      "2nd serve points won",
       61,
       35,
       "%"
+     ],
+     [
+      "Return quality",
+      7.4,
+      7,
+      "1"
      ],
      [
       "Baseline points won",
@@ -1762,32 +1718,19 @@
       "0"
      ],
      [
-      "Winners / unforced",
+      "Ratio W/UE",
       0.84,
       0.81,
       "2"
      ],
      [
-      "Winners",
-      27,
-      25,
-      "0"
-     ],
-     [
-      "Unforced errors",
-      32,
-      31,
-      "0",
-      1
-     ],
-     [
-      "Winners / points",
+      "Winners / point",
       0.15,
       0.14,
       "2"
      ],
      [
-      "Unforced / points",
+      "Unforced / point",
       0.18,
       0.18,
       "2",
@@ -1985,10 +1928,10 @@
    "sourceUrl": "pbp/12179704.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "d73c043df2b03244",
+   "sourceHash": "c51b9dd5772d20a7",
    "publishedAt": "2026-11-19T15:48:11.688Z",
-   "revisedAt": "2026-11-19T17:36:15.260Z",
-   "revision": 3,
+   "revisedAt": "2026-11-20T09:18:14.552Z",
+   "revision": 4,
    "file": "news-ticker/2794-2026.json"
   },
   {
@@ -2020,6 +1963,37 @@
    "topic": "On his left hamstring discomfort",
    "sourceHash": "48cb5714682bc1a4",
    "publishedAt": "2026-11-19T15:48:11.688Z",
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "quote-3831b0bf80ec3d",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": "1093",
+   "player": "C. Alcaraz",
+   "opponent": "D. Medvedev",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-19T14:00:38.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating D. Medvedev",
+   "eventKey": "12179696",
+   "won": true,
+   "text": "The Davis Cup, it is a goal as well. I really want to achieve that for my country, for Spain.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Tennis365",
+   "sourceUrl": "https://www.tennis365.com/tennis-news/david-ferrer-carlos-alcaraz-injury-davis-cup-finals",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On winning the Davis Cup for Spain",
+   "sourceHash": "d9a113f2c4f43ae0",
+   "publishedAt": "2026-11-19T15:26:56.725Z",
    "file": "news-ticker/2794-2026.json"
   }
  ]
