@@ -591,7 +591,7 @@ const M3 = [{ date: '2023-10-25', won: true, sets: [[6, 4], [6, 3]] }, { date: '
 test('the Head to head record (DF §3): the design card, the overall score 42 mono 800, player one blue / player two white, surface tabs with counts (a surface with none is dead)', async () => {
   const h = await pairPage(M3);
   const c = h.call(h.h2hCard, h.view());
-  assert.ok(c.startsWith('<div id="h2h-rec" class="x-sec" style="background:var(--h2h-card); border:1.25px solid color-mix(in srgb, var(--h2h-white) 6%, transparent); border-radius:14px; padding:24px 26px;'));
+  assert.ok(c.startsWith('<div id="h2h-rec" class="x-sec" style="background:var(--h2h-card); border:1px solid color-mix(in srgb, var(--h2h-white) 6%, transparent); border-radius:16px; padding:24px;'), '20 Nov §8: the section card');
   assert.match(c, /<span style="font-family:'IBM Plex Mono',monospace; font-size:42px; font-weight:800; line-height:1; white-space:nowrap; color:var\(--h2h-text\);">2<span style="color:var\(--h2h-grey\);"> – <\/span>1<\/span>/);
   assert.match(text(c), /J\. Sinner 2 wins Overall 2 – 1 3 meetings C\. Alcaraz 1 win/);
   const rings = [...c.matchAll(/class="x-av"[^>]*box-shadow:0 0 0 2px ([^;]+);/g)].map(m => m[1]);
@@ -604,7 +604,7 @@ test('the Head to head record (DF §3): the design card, the overall score 42 mo
   // the surface tabs: counts from the meetings, a surface with no meeting drawn dead (no handler)
   assert.match(text(c), /All 3 Hard 3 Clay 0 Grass 0/);
   assert.match(c, /<span class="" style="display:flex; align-items:baseline; gap:6px; padding:5px 11px; border-radius:8px; font-size:12\.5px; font-weight:600; color:var\(--h2h-dead\);[^>]*><span>Clay<\/span>/);
-  assert.match(c, /<span class="seg" data-hid="\d+" style="[^"]*font-weight:700; color:var\(--h2h-text\); background:var\(--h2h-raised\); border:1px solid color-mix\(in srgb, var\(--h2h-white\) 16%, transparent\);[^"]*"><span>All<\/span>/);
+  assert.match(c, /<span class="seg" data-hid="\d+" style="[^"]*font-weight:700; color:var\(--h2h-text\); background:var\(--h2h-raised\); border:1px solid color-mix\(in srgb, var\(--h2h-white\) 14%, transparent\);[^"]*"><span>All<\/span>/, '20 Nov §8: the lifted ring is 14%');
   // a scope: "On hard" and only its meetings
   h.state.h2hSurf = 'Hard';
   assert.match(text(h.call(h.h2hCard, h.view())), /Overall|On hard/);
@@ -639,8 +639,8 @@ test('founder ruling 3 (2026-11-18): Hot lines ranked from 2 meetings (H2H_HOT_M
   const top = rows.filter(r => /Most covered/.test(r.text));
   assert.equal(top.length, 1, 'one line is marked "Most covered"');
   assert.ok(top[0].text.includes(sc.slice().sort(h.call(() => h.run('fhHotLineRank')))[0].name), 'the ranked first line');
-  assert.match(top[0].html, /background:var\(--h2h-raised\); box-shadow:inset 0 0 0 1px color-mix\(in srgb, var\(--h2h-white\) 16%, transparent\);/);
-  const fam = [...c.matchAll(/<span style="font-family:'Hanken Grotesk',sans-serif; font-size:10\.5px; font-weight:700; letter-spacing:0\.10em; text-transform:uppercase; color:var\(--h2h-grey\);">([^<]+)<\/span><span style="font-size:13\.5px; font-weight:700;">/g)].map(m => m[1].replace('&amp;', '&'));
+  assert.match(top[0].html, /background:var\(--h2h-raised\); box-shadow:inset 0 0 0 1px color-mix\(in srgb, var\(--h2h-white\) 14%, transparent\);/, '20 Nov §8: the lifted ring is 14%');
+  const fam = [...c.matchAll(/<span style="font-family:'Hanken Grotesk',sans-serif; font-size:11\.5px; font-weight:600; color:var\(--h2h-grey\);">([^<]+)<\/span><span style="font-size:13\.5px; font-weight:700;">/g)].map(m => m[1].replace('&amp;', '&'));
   assert.deepEqual(fam, Array.from(famsWant));
   const N = +/Show all lines \((\d+)\)/.exec(c)[1];
   const elig = defs.filter(L => F.filter(r => h.call(() => h.run('fhEligible'))(r, L)).length >= 1).length;
@@ -722,12 +722,12 @@ test('the meetings box: the design grid, newest first by year ("2025 1–0 · 1 
   // a row opens the shared sheet and stays selected (raised + 16% ring) while the box is open
   runH(h, rows[2].hid);
   assert.deepEqual(h.sheets, [rows[2].mid]);
-  assert.match(h.call(h.h2hBoxHTML, h.view()), new RegExp(`data-fh-mid="${rows[2].mid}" style="[^"]*background:var\\(--h2h-raised\\); box-shadow:inset 0 0 0 1px color-mix\\(in srgb, var\\(--h2h-white\\) 16%, transparent\\);`));
+  assert.match(h.call(h.h2hBoxHTML, h.view()), new RegExp(`data-fh-mid="${rows[2].mid}" style="[^"]*background:var\\(--h2h-raised\\); box-shadow:inset 0 0 0 1px color-mix\\(in srgb, var\\(--h2h-white\\) 14%, transparent\\);`), '20 Nov §8: the open row is lifted, 14% ring');
   // the price columns' heads: each player's initials, 26px, 1px 16% edge, no ring, never a photo (DF L404; founder ruling 10)
   const minis = [...box.matchAll(/<span class="x-avmini" title="([^"]+)&#39;s closing price" style="([^"]*)">([^<]*)<\/span>/g)].map(m => [m[1], m[2], m[3]]);
   assert.deepEqual(minis.map(m => m[0]), ['J. Sinner', 'C. Alcaraz']);
   assert.deepEqual(minis.map(m => m[2]), ['JS', 'CA'], 'initials');
-  minis.forEach(m => { assert.match(m[1], /width:26px; height:26px; border-radius:50%; border:1px solid color-mix\(in srgb, var\(--h2h-white\) 16%, transparent\);[^"]*font-size:10px;/); assert.doesNotMatch(m[1], /box-shadow/, 'no ring on a mini avatar'); });
+  minis.forEach(m => { assert.match(m[1], /width:26px; height:26px; border-radius:50%; border:1px solid color-mix\(in srgb, var\(--h2h-white\) 14%, transparent\);[^"]*font-size:10px;/); assert.doesNotMatch(m[1], /box-shadow/, 'no ring on a mini avatar'); });
   assert.doesNotMatch(box, /<img/, 'no photo anywhere in the box (its head is initials too, DF L388)');
   assert.match(text(box), /Meetings 4 on record · Sinner leads 3–1/, 'the record in the sentence: en dash');
 });
@@ -751,12 +751,14 @@ test('the meetings box tiles: Total points won from the box scores over k of n m
   assert.match(text(h.call(h.h2hBoxHTML, h.view())), /Total points won Loading the box scores…/, 'never a guess while the box scores load');
   await new Promise(r => setTimeout(r, 5));
   const t = text(h.call(h.h2hBoxHTML, h.view()));
-  // founder ruling 9 (2026-11-18): ONE short sentence under each value; the counts it leaves out move to the hover
-  assert.match(t, /Total points won 52\.3% Sinner over 2 of 3 meetings, Alcaraz 47\.7%/, '115 of 220 points from the two box scores on file; the third meeting has none');
+  // founder ruling 9 (2026-11-18) + 20 Nov: the sub is the other player's share only; the meetings counted move to the hover
+  assert.match(t, /Total points won 52\.3% Alcaraz 47\.7% On hard/, '115 of 220 points from the two box scores on file; the third meeting has none');
+  assert.match(h.call(h.h2hBoxHTML, h.view()), /<div title="Sinner leads on points over 2 of 3 meetings with a box score" style="flex:1 1 180px; min-width:max-content;[^"]*border:1px solid color-mix\(in srgb, var\(--h2h-white\) 6%, transparent\);[^"]*"><span[^>]*>Total points won</, 'the counted meetings on the tile hover; a flex tile, 6% edge');
+  assert.equal((h.call(h.h2hBoxHTML, h.view()).match(/<div class="x-boxtiles" style="display:flex; flex-wrap:wrap; gap:10px;">/g) || []).length, 1, 'the tiles are a wrapping flex row');
   assert.match(t, /On hard 2–1 0–0 on clay, 0–0 on grass/);
   assert.match(t, /Went to a deciding set 2 of 3 Sinner won 1, Alcaraz won 1/);
   assert.match(t, /Favourite won 1 of 2 Sinner won as underdog at Swiss Indoors 2025 Meetings /, 'an exact tie is no favourite; the underdog win is named — the sentence ends there');
-  assert.match(h.call(h.h2hBoxHTML, h.view()), /<div title="1 level-priced, not counted" style="background:var\(--h2h-card\);[^"]*"><span[^>]*>Favourite won</, 'the level-priced meeting is in the hover, not the sentence');
+  assert.match(h.call(h.h2hBoxHTML, h.view()), /<div title="1 level-priced, not counted" style="flex:1 1 180px;[^"]*background:var\(--h2h-card\);[^"]*"><span[^>]*>Favourite won</, 'the level-priced meeting is in the hover, not the sentence');
   // no box score at all → a dash and the reason, never estimated from games
   const h0 = await pairPage(M3); h0.state.h2hBox = true; h0.call(h0.h2hBoxHTML, h0.view()); await new Promise(r => setTimeout(r, 5));
   assert.match(text(h0.call(h0.h2hBoxHTML, h0.view())), /Total points won — No box score on record for these meetings/);

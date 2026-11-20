@@ -29561,9 +29561,9 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
     // lives in the card head's "?" (the design's model help, DF L220) — never in the card body. Plain text, one line each.
     const f = m.foot;
     let help = !m.priced || !f ? '' : 'Win chance ' + f.aShort + ' ' + f.aPct + '% · ' + f.bShort + ' ' + f.bPct + '% · ' + f.surface + ', best of ' + f.bestOf + '\n'
+      + 'Elo base ' + f.basePct + '% for ' + f.aShort + ', moved by ' + f.layers + ' of ' + f.of + ' model layers · plus Pinnacle’s typical opening margin, ' + f.margin + '%' + (f.marginN ? ' (n=' + f.marginN + ')' : '') + (f.at ? ' · model run ' + f.at : '');
     // 20 Nov (founder): the card body shows the likely opening price only, as the design; the Elo-only price lives in the "?"
     if (help && m.aBase && m.bBase) help += '\nElo alone, no model layer: ' + m.aName + ' ' + m.aBase + ' · ' + m.bName + ' ' + m.bBase;
-      + 'Elo base ' + f.basePct + '% for ' + f.aShort + ', moved by ' + f.layers + ' of ' + f.of + ' model layers · plus Pinnacle’s typical opening margin, ' + f.margin + '%' + (f.marginN ? ' (n=' + f.marginN + ')' : '') + (f.at ? ' · model run ' + f.at : '');
     return `<div id="h2h-model" class="x-sec" data-h2h-model="${m.priced ? 'priced' : (m.loading ? 'loading' : 'empty')}" style="background:var(--h2h-card); border:1px solid color-mix(in srgb, var(--h2h-white) 6%, transparent); border-radius:16px; padding:24px; display:flex; flex-direction:column; gap:16px;">
       <div style="display:flex; align-items:center; flex-wrap:wrap; gap:6px 12px;"><h2 style="margin:0; font-size:18px; font-weight:800; letter-spacing:-0.01em; color:var(--h2h-text);">Stennisfy Model</h2><span style="font-size:12.5px; color:${G};">Where the model expects the market to open this matchup</span>${help ? '<span style="flex:1;"></span>' + xHelp(help) : ''}</div>
       ${m.priced ? `<div style="display:flex; flex-direction:column; gap:14px;"><div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:14px;">${box(v.a, 'a', m.aName, m.aPrice, m.aBase)}${box(v.b, 'b', m.bName, m.bPrice, m.bBase)}</div></div>`

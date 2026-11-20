@@ -47,7 +47,7 @@ const DB = (() => { const h = page(); return h.call(() => h.run('dbPriceJoinRows
 const DB_ONLY = { rows: DB_BASE.rows, names: DB_NAMES.names, meta: DB_BASE.meta };   // the Database page's rows alone (control)
 
 // The design's values (reference/Head to Head.dc.html, read through the page's --h2h-* tokens).
-const SEC = 'background:var(--h2h-card); border:1.25px solid color-mix(in srgb, var(--h2h-white) 6%, transparent); border-radius:14px; padding:24px 26px;';
+const SEC = 'background:var(--h2h-card); border:1px solid color-mix(in srgb, var(--h2h-white) 6%, transparent); border-radius:16px; padding:24px;';   // 20 Nov §8
 const LEDGER_COLS = '52px minmax(0,1fr) 34px minmax(0,1.1fr) 56px 44px 44px 8px';   // DF career + tournament rows
 const BAND_COLS = 'minmax(0,1.1fr) 46px minmax(0,1fr) 54px 60px 8px';              // DF price-band rows
 const BLUE = 'var(--h2h-blue)', WHITE = 'var(--h2h-text)';
@@ -82,7 +82,7 @@ test('page order (README "Page structure"): Model → Playing style → Head to 
   assert.ok(!/H2H_SHOW_STAT_CARDS|function holdbreakCard\(|function statCard\(/.test(h2h), 'the retired stat cards and their flag are deleted');
 });
 
-test('surfaces: every section is the design card (--h2h-card #0E1019, 1.25px 6% white edge, radius 14, padding 24/26); tokens hold the design hexes', () => {
+test('surfaces: every section is the design card (--h2h-card #0E1019, 1px 6% white edge, radius 16, padding 24 — 20 Nov §8); tokens hold the design hexes', () => {
   const h = page({ db: DB });
   assert.equal(h.consts.X_SEC, SEC + ' display:flex; flex-direction:column;');
   const A = playerWith(rowsOf([[20, 1.10, true]])), B = playerWith(rowsOf([[20, 2.2, false]]));
@@ -90,7 +90,7 @@ test('surfaces: every section is the design card (--h2h-card #0E1019, 1.25px 6% 
   assert.ok(h.call(h.stylesCard, styleView([], [])).startsWith(`<div id="h2h-styles" class="x-sec" style="${SEC}`), 'Record against each style');
   assert.ok(h.call(h.tourneyCard, { tourney: { empty: true, emptyText: 'x' } }).startsWith(`<div id="h2h-tour" class="x-sec" style="${SEC}`), 'Tournament record');
   const tok = readFileSync(join(HERE, 'tokens.css'), 'utf8');
-  for (const [k, v] of [['--h2h-card', '#0E1019'], ['--h2h-inner', '#0C0E16'], ['--h2h-raised', '#131623'], ['--h2h-blue', '#5B9BFF'], ['--h2h-text', '#E7E9EE'], ['--h2h-grey', '#8B96B5'], ['--h2h-soft', '#C6CCDB']])
+  for (const [k, v] of [['--h2h-card', '#0E1019'], ['--h2h-inner', '#0C0E16'], ['--h2h-raised', '#121521'], ['--h2h-hover', '#171B28'], ['--h2h-track', '#0A0C13'], ['--h2h-blue', '#5B9BFF'], ['--h2h-text', '#E7E9EE'], ['--h2h-grey', '#8B96B5'], ['--h2h-soft', '#C6CCDB']])
     assert.match(tok, new RegExp(`${k}:\\s*${v};`, 'i'), k);
 });
 
@@ -179,11 +179,11 @@ test('Market edge windows: Last 52 weeks (default) · Last 24 months (the same d
   assert.equal(n({ mScope: 'm24' }), 2, 'Last 24 months: 20 and 500 days back, not 800');
   assert.equal(n({ mScope: 'career' }), 4);
   const card = marketOf(h, A, A, { mScope: 'm24' }).html;
-  const sws = [...card.matchAll(/<div class="x-sw x-sw--lg" style="display:inline-flex; gap:3px; background:var\(--h2h-inner\); border:1px solid color-mix\(in srgb, var\(--h2h-white\) 8%, transparent\); border-radius:10px; padding:3px;">([\s\S]*?)<\/div>/g)];
+  const sws = [...card.matchAll(/<div class="x-sw x-sw--lg" style="display:inline-flex; gap:3px; background:var\(--h2h-track\); border:1px solid color-mix\(in srgb, var\(--h2h-white\) 10%, transparent\); border-radius:10px; padding:3px;">([\s\S]*?)<\/div>/g)];
   assert.equal(sws.length, 2, 'the large switch (lg) in the head and again on the chart card');
   for (const sw of sws) {
     assert.deepEqual([...sw[1].matchAll(/>([^<]+)<\/span>/g)].map(x => x[1]), ['Last 52 weeks', 'Last 24 months', 'Career']);
-    assert.match(sw[1], /class="seg x-sw__o on"[^>]*padding:6px 14px; border-radius:7px; font-size:13px; font-weight:700; color:var\(--h2h-text\); background:var\(--h2h-raised\); box-shadow:inset 0 0 0 1px color-mix\(in srgb, var\(--h2h-white\) 16%, transparent\);[^>]*>Last 24 months</);
+    assert.match(sw[1], /class="seg x-sw__o on"[^>]*padding:6px 14px; border-radius:7px; font-size:13px; font-weight:700; color:var\(--h2h-text\); background:var\(--h2h-raised\); box-shadow:inset 0 0 0 1px color-mix\(in srgb, var\(--h2h-white\) 14%, transparent\);[^>]*>Last 24 months</);
   }
   // both switches write the same state (meScope): the n-th tab of each carries the same handler
   assert.deepEqual([...sws[0][1].matchAll(/data-hid="(\d+)"/g)].map(x => x[1]), [...sws[1][1].matchAll(/data-hid="(\d+)"/g)].map(x => x[1]));
@@ -221,13 +221,15 @@ const SIN = { key: '2072', full: 'J. Sinner', short: 'J. Sinner', mono: 'JS' }, 
 function styleView(rowsA, rowsB, o) {
   const opt = o || {};
   return { a: opt.a || SIN, b: opt.b || ALC, styles: { sides: [
-    { p: opt.a || SIN, R: Object.assign({ state: 'ready', oppLab: opt.labA || 'All Court Elite', avg: opt.avgA == null ? 50 : opt.avgA, rows: rowsA }, opt.RA || {}) },
-    { p: opt.b || ALC, R: Object.assign({ state: 'ready', oppLab: opt.labB || 'Big Server', avg: opt.avgB == null ? 55 : opt.avgB, rows: rowsB }, opt.RB || {}) }],
+    { p: opt.a || SIN, oth: opt.othA || null, R: Object.assign({ state: 'ready', oppLab: opt.labA || 'All Court Elite', avg: opt.avgA == null ? 50 : opt.avgA, rows: rowsA }, opt.RA || {}) },
+    { p: opt.b || ALC, oth: opt.othB || null, R: Object.assign({ state: 'ready', oppLab: opt.labB || 'Big Server', avg: opt.avgB == null ? 55 : opt.avgB, rows: rowsB }, opt.RB || {}) }],
     arch: opt.arch || ['All Court Elite', 'All Court Elite'] } };
 }
 const recRow = (ago, won, extra) => Object.assign({ won, opponent: 'Player ' + ago, surface: 'hard', tournament: 'Basel', result: won ? '6-4 6-4' : '4-6 4-6', date: iso(day0 - ago), round: 'R32' }, extra || {});
-// the three figures (Record · Win rate · Vs style average) of each player's record card
-const styleCards = h => [...h.matchAll(/<div style="display:grid; grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\) minmax\(0,1\.35fr\);[\s\S]*?(?=<div style="display:flex; flex-direction:column; gap:9px;">)/g)].map(x => text(x[0]));
+// his matches against every OTHER style (stylesVals' side.oth): w wins of n, dated inside the last 52 weeks
+const othRows = (w, n) => Array.from({ length: n }, (_, i) => recRow(30 + i, i < w, { opponent: 'Other ' + i }));
+// the three tiles (Record · Win rate · Vs other styles, 20 Nov §6) of each player's record card
+const styleCards = h => [...h.matchAll(/<div style="display:grid; grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\) minmax\(0,1\.2fr\);[\s\S]*?(?=<div style="display:flex; flex-direction:column; gap:9px;">)/g)].map(x => text(x[0]));
 
 test('founder ruling 2 (2026-11-16): Record against each style opens on Career; Window = Last 52 weeks (364 days) · Last 24 months · Career', () => {
   const h = page({ db: DB });
@@ -242,26 +244,50 @@ test('founder ruling 2 (2026-11-16): Record against each style opens on Career; 
   assert.match(styleCards(h.call(h.stylesCard, styleView(rows, [])))[0], /^Record 2–1 /, 'Last 24 months = the same day two years back');
 });
 
-test('Record vs style: under 5 no rate, 5–9 grey "small sample", 10+ white; Vs style average = win % − the matrix cell, signed (its sign colour at 5–9 too, founder 2026-11-17), a bar from the centre', () => {
+test('Record vs style (20 Nov §6): three tiles; under 5 no rate, 5–9 the rate white with a "small sample" hover, 10+ white; Vs other styles = his win % v this style − HIS OWN win % v every other style (same filters, walkovers out, 5+ each), signed, a bar from the centre', () => {
   const h = page({ db: DB });
+  const O = othRows(10, 20);   // 10–10 against every other style → 50%
   const four = [recRow(10, true), recRow(11, true), recRow(12, true), recRow(13, false)];
-  assert.equal(styleCards(h.call(h.stylesCard, styleView(four, [])))[0], 'Record 3–1 Win rate — Vs style average —', 'n 4: record only');
+  assert.equal(styleCards(h.call(h.stylesCard, styleView(four, [], { othA: O })))[0], 'Record 3–1 Win rate — Vs other styles —', 'n 4: record only');
   const seven = four.concat([recRow(14, true), recRow(15, true), recRow(16, false)]);
-  const c7 = h.call(h.stylesCard, styleView(seven, [], { avgA: 50 }));
-  assert.equal(styleCards(c7)[0], 'Record 5–2 Win rate 71% Vs style average +21 pts');
+  const c7 = h.call(h.stylesCard, styleView(seven, [], { othA: O, avgA: 99 }));
+  assert.equal(styleCards(c7)[0], 'Record 5–2 Win rate 71% Vs other styles +21 pts', 'the tour matrix average (avg 99) is never read');
   assert.match(c7, /title="Small sample · n=7"/);
-  assert.match(c7, /font-size:20px; font-weight:700; line-height:1;">71%</, '5–9: the rate stays white as the design (founder 2026-11-19); the hover says small sample');
-  assert.match(c7, /color:var\(--h2h-up\);">\+21 pts</, 'founder 2026-11-17: the gap keeps its sign colour at n 5–9 (only the win rate greys)');
-  const twelve = Array.from({ length: 12 }, (_, i) => recRow(10 + i, i < 9));
-  const c12 = h.call(h.stylesCard, styleView(twelve, [], { avgA: 50 }));
-  assert.equal(styleCards(c12)[0], 'Record 9–3 Win rate 75% Vs style average +25 pts');
-  assert.match(c12, /font-size:20px; font-weight:700; line-height:1;">75%</, '10+: the card\'s white');
-  assert.match(c12, /color:var\(--h2h-up\);">\+25 pts</);
+  assert.match(c7, /font-size:20px; font-weight:700; line-height:1; color:var\(--h2h-white\);">71%</, '5–9: the rate stays white as the design (founder 2026-11-19); the hover says small sample');
+  assert.match(c7, /color:var\(--h2h-up\);">\+21 pts</, 'founder 2026-11-17: the gap keeps its sign colour at n 5–9');
+  const ten = Array.from({ length: 10 }, (_, i) => recRow(10 + i, i < 7));   // 7–3 → 70%
+  const c10 = h.call(h.stylesCard, styleView(ten, [], { othA: O }));
+  assert.equal(styleCards(c10)[0], 'Record 7–3 Win rate 70% Vs other styles +20 pts');
+  assert.match(text(c10), /He wins 50% against all other styles/);
+  assert.match(c10, /font-size:20px; font-weight:700; line-height:1; color:var\(--h2h-white\);">70%</, '10+: white');
+  assert.match(c10, /color:var\(--h2h-up\);">\+20 pts</);
+  // the tiles: inner tone, 6% edge, r11, 14/8; labels 11.5/600 grey; the record figure white
+  assert.equal((c10.match(/background:var\(--h2h-inner\); border:1px solid color-mix\(in srgb, var\(--h2h-white\) 6%, transparent\); border-radius:11px; padding:14px 8px;/g) || []).length, 6, 'three tiles per card, two cards');
+  assert.match(c10, /<span style="font-size:11\.5px; font-weight:600; color:var\(--h2h-grey\);">Record<\/span><span style="[^"]*color:var\(--h2h-white\);">7–3</);
+  assert.match(c10, /border:1px solid color-mix\(in srgb, var\(--h2h-white\) 14%, transparent\); border-radius:12px; padding:20px 20px 18px;/, 'the record card edge 14%');
   // the bar: from the centre tick, width = |gap| / 40 × 46%, capped at 46%
-  assert.match(c12, /top:4px; height:6px; border-radius:2px; background:var\(--h2h-up\); left:50\.0%; width:28\.8%;/);
-  const lose = h.call(h.stylesCard, styleView(Array.from({ length: 12 }, (_, i) => recRow(10 + i, i < 2)), [], { avgA: 60 }));
-  assert.match(lose, /background:var\(--h2h-down\); left:4\.0%; width:46\.0%;/, '−43 pts: capped at 46%, toward the left');
-  assert.match(text(c12), /All Court Elites win 50% against All Court Elites on tour/);
+  assert.match(c10, /top:4px; height:6px; border-radius:2px; background:var\(--h2h-up\); left:50\.0%; width:23\.0%;/);
+  const lose = h.call(h.stylesCard, styleView(Array.from({ length: 12 }, (_, i) => recRow(10 + i, i < 2)), [], { othA: othRows(12, 20) }));
+  assert.match(lose, /background:var\(--h2h-down\); left:4\.0%; width:46\.0%;/, '17% − 60% = −43 pts: capped at 46%, toward the left');
+  // the other-styles rows follow the same filters: a Last 52 weeks window drops the 400-day half
+  const Ow = othRows(10, 10).concat(Array.from({ length: 10 }, (_, i) => recRow(400 + i, false, { opponent: 'Old ' + i })));
+  h.state.psRecWin = 'w52';
+  assert.match(text(h.call(h.stylesCard, styleView(ten, [], { othA: Ow }))), /Vs other styles −30 pts[\s\S]*He wins 100% against all other styles/, 'the window cuts both sides');
+  h.state.psRecWin = 'career';
+  assert.match(text(h.call(h.stylesCard, styleView(ten, [], { othA: Ow }))), /Vs other styles \+20 pts/);
+  // fewer than 5 against other styles → no rate, no gap
+  const c4 = h.call(h.stylesCard, styleView(ten, [], { othA: othRows(3, 4) }));
+  assert.equal(styleCards(c4)[0], 'Record 7–3 Win rate 70% Vs other styles —');
+  assert.match(text(c4), /Too few matches against other styles for a rate/);
+});
+test('Record vs style (20 Nov §6): stylesVals builds "other styles" from his own shard — every archetype but the opponent\'s, walkovers out', () => {
+  const h = page({ db: DB, globals: { ps2Record: (m, i) => ({ state: 'ready', oppLab: 'Big Server', rows: [], avg: 50 }), ppStyleFor: () => null } });
+  const A = { key: 'a', full: 'A. One', short: 'A. One', styleMeetings: { 'Big Server': [recRow(1, true)], 'Counterpuncher': [recRow(2, true), recRow(3, false)], 'Solid Baseliner': [recRow(4, true), Object.assign(recRow(5, true), { result: 'w/o' })] } };
+  const B = { key: 'b', full: 'B. Two', short: 'B. Two', styleMeetings: null };
+  h.need('ps2IsWalkover');   // the page's own walkover rule (a typeof guard would hide its absence)
+  const v = h.call(h.stylesVals, A, B, {});
+  assert.deepEqual(Array.from(v.sides[0].oth, r => r.date), [recRow(2, true).date, recRow(3, false).date, recRow(4, true).date], 'the opponent\'s style and the walkover are out');
+  assert.equal(v.sides[1].oth, null, 'no shard → no other-styles rate');
 });
 
 test('Record vs style filters: Window by the row date, Surface by the row surface, Court speed by the profile\'s one speed rule; a row with no speed rating leaves a picked speed and is counted', () => {
@@ -339,8 +365,8 @@ test('career-match card: the design\'s grid, six rows then "Show N more matches"
   assert.match(text(c), /Showing 6 of 8/);
   assert.match(text(c), /Show 2 more matches/);
   assert.match(c, new RegExp(`grid-template-columns:${re(LEDGER_COLS)}; gap:0 10px; align-items:center; padding:8px 18px; background:var\\(--h2h-card\\); border-top:1px solid color-mix\\(in srgb, var\\(--h2h-white\\) 6%, transparent\\);`), 'the column head on the design grid, card tone (CHANGES 2026-11-18 §3)');
-  // the price column head: the player's initials, 24px, 1px 16% edge, no ring, never a photo (DF L559; founder ruling 10)
-  assert.match(c, /<span class="x-avmini" title="J\. Sinner’s closing price" style="justify-self:end; width:24px; height:24px; border-radius:50%; border:1px solid color-mix\(in srgb, var\(--h2h-white\) 16%, transparent\);[^"]*font-size:9\.5px;[^"]*">JS<\/span>/);
+  // the price column head: the player's initials, 24px, 1px 14% edge (20 Nov §8), no ring, never a photo (DF L559; founder ruling 10)
+  assert.match(c, /<span class="x-avmini" title="J\. Sinner’s closing price" style="justify-self:end; width:24px; height:24px; border-radius:50%; border:1px solid color-mix\(in srgb, var\(--h2h-white\) 14%, transparent\);[^"]*font-size:9\.5px;[^"]*">JS<\/span>/);
   // the card head (founder 2026-11-19, replaces ruling 10 here): the player's avatar, photo when stored, NO blue / white ring
   assert.match(c, /<span class="x-av"  style="[^"]*width:38px; height:38px; border-radius:50%; background:var\(--h2h-raised\); box-shadow:none;[^"]*"><span class="x-av__i"[^>]*font-size:13px;[^>]*>JS<\/span>(<img[^>]*>)?<\/span><div[^>]*><span[^>]*>J\. Sinner<\/span><span[^>]*>Career matches against/);
   assert.match(text(c), /Shanghai Masters Hard · Masters 1000/, 'the group header prints the one event name (sfEventName)');
@@ -430,7 +456,7 @@ test('Tournament default (brief 2026-11-16): an event of THIS week whose posted 
 test('Tournament picker: a search input (no <select>) on the design menu — raised, 10% edge, radius 12, max 300, the menu shadow', () => {
   const h = page({ db: null });
   const c = h.call(h.tourneyCard, tourView(null, { listOpen: true, options: [{ name: 'US Open', label: 'US Open', meta: 'Hard · Grand Slam', selected: true, hPick: 5 }, { name: 'Halle', label: 'Halle', meta: '', selected: false, hPick: 6 }] }));
-  assert.match(c, /<input class="h2hin" id="h2h-input-tour"[^>]*placeholder="Search a tournament…"[^>]*style="background:var\(--h2h-inner\); border:1px solid color-mix\(in srgb, var\(--h2h-white\) 8%, transparent\); border-radius:10px;/);
+  assert.match(c, /<input class="h2hin" id="h2h-input-tour"[^>]*placeholder="Search a tournament…"[^>]*style="background:var\(--h2h-inner\); border:1px solid color-mix\(in srgb, var\(--h2h-white\) 6%, transparent\); border-radius:10px;/);
   assert.match(c, /<div role="listbox" style="position:absolute; top:calc\(100% \+ 6px\); left:0; right:0; z-index:5; background:var\(--h2h-raised\); border:1px solid color-mix\(in srgb, var\(--h2h-white\) 10%, transparent\); border-radius:12px; padding:6px;[^"]*box-shadow:var\(--h2h-shadow-menu\); max-height:300px; overflow:auto;/);
   assert.match(c, /role="option" aria-selected="true"[^>]*background:var\(--h2h-card\);/);
   assert.ok(!/<select/i.test(c) && !/<select/i.test(h2h.slice(h2h.indexOf('==== H2H REBUILD'))), 'no native <select> in the rebuilt page');

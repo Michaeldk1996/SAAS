@@ -56,14 +56,27 @@ const boxTiles = async (meetings, o) => {
   const t = text(h.call(h.h2hBoxHTML, h.view()));
   return t.slice(t.indexOf('Total points won'), t.indexOf('Meetings '));
 };
+// the Total points won tile's hover (20 Nov: the meetings counted moved from the sub to the tile's title)
+const ptsTip = async (meetings, o) => {
+  const h = await pairPage(meetings, o);
+  h.state.h2hBox = true;
+  h.call(h.h2hBoxHTML, h.view());
+  await new Promise(r => setTimeout(r, 5));
+  return (/<div title="([^"]*)" style="flex:1 1 180px;[^"]*"><span[^>]*>Total points won</.exec(h.call(h.h2hBoxHTML, h.view())) || [])[1] || null;
+};
 const shard = (a, b) => ({ own: { raw: { 'Points:Total Points Won': { won: a, total: a + b } } }, opp: { raw: { 'Points:Total Points Won': { won: b, total: a + b } } } });
 
-test('meetings box tiles (founder 2026-11-17): Total points won ends "· N meetings" when every meeting has a box score, else "· k of n meetings"', async () => {
+test('meetings box tiles (founder 2026-11-20): Total points won\'s sub = "<other player> <his share>%" only; its hover ends "N meetings" when every meeting has a box score, else "k of n meetings"', async () => {
   const M2 = [{ date: '2024-10-25', won: true, sets: [[6, 4], [6, 3]] }, { date: '2025-10-25', won: false, sets: [[4, 6], [3, 6]] }];
-  const all = await boxTiles(M2, { statsIx: new Set(['100', '101']), shards: { 100: shard(60, 40), 101: shard(40, 60) } });
-  assert.match(all, /^Total points won 50\.0% Sinner over 2 meetings, Alcaraz 50\.0% /, 'every meeting has a box score: the plain count (one sentence, founder ruling 9, 2026-11-18)');
-  const part = await boxTiles(M2, { statsIx: new Set(['100']), shards: { 100: shard(60, 40) } });
-  assert.match(part, /^Total points won 60\.0% Sinner over 1 of 2 meetings, Alcaraz 40\.0% /, 'one of two: "k of n"');
+  const o2 = { statsIx: new Set(['100', '101']), shards: { 100: shard(60, 40), 101: shard(40, 60) } };
+  assert.match(await boxTiles(M2, o2), /^Total points won 50\.0% Alcaraz 50\.0% On /, 'the sub names the other player and his share only');
+  assert.equal(await ptsTip(M2, o2), 'Sinner leads on points over 2 meetings with a box score', 'every meeting has a box score: the plain count, in the hover');
+  const o1 = { statsIx: new Set(['100']), shards: { 100: shard(60, 40) } };
+  assert.match(await boxTiles(M2, o1), /^Total points won 60\.0% Alcaraz 40\.0% On /);
+  assert.equal(await ptsTip(M2, o1), 'Sinner leads on points over 1 of 2 meetings with a box score', 'one of two: "k of n"');
+  const oB = { statsIx: new Set(['100']), shards: { 100: shard(35, 65) } };
+  assert.match(await boxTiles(M2, oB), /^Total points won 65\.0% Sinner 35\.0% On /, 'Alcaraz leads: the sub names Sinner');
+  assert.equal(await ptsTip(M2, oB), 'Alcaraz leads on points over 1 of 2 meetings with a box score');
 });
 test('meetings box tiles (founder 2026-11-17): Went to a deciding set with exactly one decider names it — "<Winner> <x>–<y> <event> <year>"', async () => {
   const M = [{ date: '2024-10-25', won: true, sets: [[6, 4], [6, 3]] }, { date: '2025-10-25', won: false, sets: [[6, 4], [3, 6], [4, 6]] }];
@@ -97,27 +110,31 @@ test('hot line panel (founder 2026-11-17): under the rate floor the Covered tile
   assert.deepEqual([none[1], none[2]], ['0 of 3', 'Not covered yet']);
 });
 
-// ── Record against each style: the Vs style average keeps its sign colour at n 5–9 ──
-function styleView(rows, avg) {
-  return { a: SIN, b: ALC, styles: { sides: [{ p: SIN, R: { state: 'ready', oppLab: 'Big Server', avg, rows } }, { p: ALC, R: { state: 'ready', oppLab: 'Big Server', avg, rows: [] } }], arch: ['All Court Elite', 'All Court Elite'] } };
+// ── Record against each style: "Vs other styles" keeps its sign colour at n 5–9 ──
+// oth = his matches against every other style (stylesVals' side.oth); `avg` (the old tour matrix cell) is no longer read
+function styleView(rows, oth) {
+  return { a: SIN, b: ALC, styles: { sides: [{ p: SIN, oth, R: { state: 'ready', oppLab: 'Big Server', avg: 99, rows } }, { p: ALC, oth: null, R: { state: 'ready', oppLab: 'Big Server', avg: 99, rows: [] } }], arch: ['All Court Elite', 'All Court Elite'] } };
 }
 const recRow = (ago, won) => ({ won, opponent: 'Player ' + ago, surface: 'hard', tournament: 'Basel', result: won ? '6-4 6-4' : '4-6 4-6', date: iso(day0 - ago), round: 'R32' });
-test('Record against each style (founder 2026-11-17 / 2026-11-19): the "Vs style average" keeps its sign colour at n 5–9; the win rate stays white as the design (the small sample is its hover); under 5 still "—"', () => {
+test('Record against each style (founder 2026-11-17 / 2026-11-19 / 2026-11-20): "Vs other styles" keeps its sign colour at n 5–9; the win rate stays white as the design (the small sample is its hover); under 5 still "—"', () => {
   const h = HX.load({ html, globals: { _careerHistoryShards: {}, _sfDbJoinSt: 'loading', _sfDbJoinP: new Promise(() => {}) } });
   const six = (w) => Array.from({ length: 6 }, (_, i) => recRow(10 + i, i < w));
-  const up = h.call(h.stylesCard, styleView(six(5), 50));   // 83% v 50 → +33 pts, n 6
+  const half = Array.from({ length: 20 }, (_, i) => Object.assign(recRow(30 + i, i < 10), { opponent: 'Other ' + i }));   // 10–10 v every other style
+  const up = h.call(h.stylesCard, styleView(six(5), half));   // 83% v 50 → +33 pts, n 6
   assert.match(up, /title="Small sample · n=6"/);
-  assert.match(up, /font-size:20px; font-weight:700; line-height:1;">83%</, 'the rate stays white at 5–9 (founder 2026-11-19: the design\'s colours)');
+  assert.match(up, /font-size:20px; font-weight:700; line-height:1; color:var\(--h2h-white\);">83%</, 'the rate stays white at 5–9 (founder 2026-11-19: the design\'s colours)');
+  assert.match(text(up), /He wins 50% against all other styles/);
   assert.match(up, /color:var\(--h2h-up\);">\+33 pts</, 'the gap stays green');
   assert.match(up, /background:var\(--h2h-up\); left:50\.0%;/, 'and its bar');
-  const dn = h.call(h.stylesCard, styleView(six(1), 50));   // 17% v 50 → −33 pts
+  const dn = h.call(h.stylesCard, styleView(six(1), half));   // 17% v 50 → −33 pts
   assert.match(dn, /color:var\(--h2h-down\);">−33 pts</, 'a negative gap stays red');
-  const four = h.call(h.stylesCard, styleView(six(4).slice(0, 4), 50));
-  assert.match(text(four), /Record 4–0 Win rate — Vs style average —/, 'under 5: no rate, no gap');
+  const four = h.call(h.stylesCard, styleView(six(4).slice(0, 4), half));
+  assert.match(text(four), /Record 4–0 Win rate — Vs other styles —/, 'under 5: no rate, no gap');
+  assert.match(text(h.call(h.stylesCard, styleView(six(5), null))), /Vs other styles — [\s\S]*Too few matches against other styles for a rate/, 'no other-styles rows: no gap, never the tour average');
 });
 
-// ── the Stennisfy Model: "Elo only <price>" beside each likely opening price ──
-test('Stennisfy Model (founder 2026-11-17): each price box also shows "Elo only <price>" = the engine\'s base (cell[1]) on the same margin', () => {
+// ── the Stennisfy Model: the likely opening price only; the Elo-only prices live in the head's "?" (founder 2026-11-20) ──
+test('Stennisfy Model (founder 2026-11-20): each box shows the likely opening price only — no "Elo only" line; the Elo-only prices (cell[1], same margin) are the "?" help\'s last line', () => {
   const h = HX.load({ html });
   const A = { key: '10', full: 'A. One', short: 'A. One', mono: 'AO' }, B = { key: '20', full: 'B. Two', short: 'B. Two', mono: 'BT' };
   const px = h.X.__eval('_pairPx');
@@ -128,8 +145,14 @@ test('Stennisfy Model (founder 2026-11-17): each price box also shows "Elo only 
   assert.deepEqual([m.aPrice, m.bPrice, m.aBase, m.bBase], [f(0.334), f(0.666), f(0.3465), f(0.6535)], 'with the layers / Elo only, both on the 3.39% margin');
   assert.notEqual(m.aBase, m.aPrice, 'the two prices differ when the layers move the price (control: not a copy)');
   const card = h.call(h.modelCard, { model: m, a: A, b: B });
-  const elo = [...card.matchAll(/>Elo only <span style="font-family:'IBM Plex Mono',monospace;">([^<]+)<\/span>/g)].map(x => x[1]);
-  assert.deepEqual(elo, [m.aBase, m.bBase], 'one "Elo only" line in each box, A then B');
+  assert.doesNotMatch(card.replace(/title="[^"]*"/g, ''), /Elo only|Elo alone/, 'no Elo-only price in the card body');
+  assert.equal((card.match(/>Likely opening price</g) || []).length, 2, 'one likely opening price per box');
+  const tip = (/<span class="x-help" title="([^"]*)"/.exec(card) || [])[1] || '';
+  assert.match(tip, /model layers[^\n]*\nElo alone, no model layer: A\. One (\S+) · B\. Two (\S+)$/, 'the Elo-only prices end the help, after the model line');
+  assert.deepEqual(/Elo alone, no model layer: A\. One (\S+) · B\. Two (\S+)$/.exec(tip).slice(1), [m.aBase, m.bBase]);
+  // control: no base price → no Elo-alone line
+  const m0 = Object.assign({}, m, { aBase: null, bBase: null });
+  assert.doesNotMatch(h.call(h.modelCard, { model: m0, a: A, b: B }), /Elo alone/);
 });
 
 // ── Tournament record: group mode (Surface / Court speed), the window, the "Back to" link ──
@@ -248,7 +271,7 @@ test('avatars: xAv = ringed initials under the photo (A blue, B white); xIni = i
   const ini = h.call(h.X.__eval('xIni'), SIN, 'a', 38, 13);
   assert.equal(ini, `<span class="x-ini" style="flex:none; width:38px; height:38px; border-radius:50%; background:var(--h2h-card); box-shadow:0 0 0 2px var(--h2h-blue); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:700; letter-spacing:0; color:var(--h2h-text);">JS</span>`);
   const mini = h.call(h.X.__eval('xMini'), SIN, 24, 9.5, 'J. Sinner’s closing price');
-  assert.match(mini, /^<span class="x-avmini" title="J\. Sinner’s closing price" style="justify-self:end; width:24px; height:24px; border-radius:50%; border:1px solid color-mix\(in srgb, var\(--h2h-white\) 16%, transparent\);[^"]*font-size:9\.5px;[^"]*">JS<\/span>$/);
+  assert.match(mini, /^<span class="x-avmini" title="J\. Sinner’s closing price" style="justify-self:end; width:24px; height:24px; border-radius:50%; border:1px solid color-mix\(in srgb, var\(--h2h-white\) 14%, transparent\);[^"]*font-size:9\.5px;[^"]*">JS<\/span>$/, '20 Nov §8: the 14% edge');
   assert.doesNotMatch(ini + mini, /<img|box-shadow:0 0 0 2px[^;]*;[^"]*<img/, 'no photo in xIni / xMini');
 });
 test('ruling 6: a render made before the photo index landed repaints once it lands (the picker never stays on initials while a photo exists)', async () => {
@@ -317,8 +340,8 @@ test('ruling 3: the page ranks its hot lines from 2 meetings; Match analysis (fh
 
 // ── Playing style windows (founder ruling 8, 2026-11-18) ──
 function dnaHarness(o) {
-  const sr = { players: [{ key: '1', name: 'J. Sinner', surfaces: { Hard: { career: { serve: { rating: 301.2, index: 97.5, firstWonPct: 77.1, secondWonPct: 56.2, holdPct: 89.9 }, return: { rating: 155.4, index: 96.1, breakPct: 29.8, bpConvPct: 41.7 }, underPressure: { rating: 241.3, index: 93.2 }, dominance: { rating: 1.12, index: 95.0 }, sample: { matches: (o && o.n) || 180 } } } } },
-    { key: '2', name: 'C. Alcaraz', surfaces: { Hard: { career: { serve: { rating: 284.3, index: 93.5, firstWonPct: 73.3, secondWonPct: 56.6, holdPct: 86.4 }, return: { rating: 157.1, index: 98.5, breakPct: 28.7, bpConvPct: 41.2 }, underPressure: { rating: 238.4, index: 91.6 }, dominance: { rating: 1.1, index: 92.0 }, sample: { matches: 226 } } } } }] };
+  const sr = { players: [{ key: '1', name: 'J. Sinner', surfaces: { Hard: { career: { serve: { rating: 301.2, index: 97.5, firstInPct: 64.3, firstWonPct: 77.1, secondWonPct: 56.2, holdPct: 89.9 }, return: { rating: 155.4, index: 96.1, breakPct: 29.8, bpConvPct: 41.7 }, underPressure: { rating: 241.3, index: 93.2 }, dominance: { rating: 1.12, index: 95.0 }, sample: { matches: (o && o.n) || 180 } } } } },
+    { key: '2', name: 'C. Alcaraz', surfaces: { Hard: { career: { serve: { rating: 284.3, index: 93.5, firstInPct: 62.0, firstWonPct: 73.3, secondWonPct: 56.6, holdPct: 86.4 }, return: { rating: 157.1, index: 98.5, breakPct: 28.7, bpConvPct: 41.2 }, underPressure: { rating: 238.4, index: 91.6 }, dominance: { rating: 1.1, index: 92.0 }, sample: { matches: 226 } } } } }] };
   const elo = { elo: { 'sinner|j': { all: { rating: 2210 }, peak: { rating: 2341, month: '2025-06' } }, 'alcaraz|c': { all: { rating: 2195 }, peak: { rating: 2309, month: '2026-03' } } } };
   if (o && o.noDom) sr.players.forEach(x => { delete x.surfaces.Hard.career.dominance; });
   const h = HX.load({ html, globals: { surfaceRatings: sr, eloRatings: elo } });
@@ -333,10 +356,12 @@ test('ruling 8 + career radar (founder 2026-11-19): Career = surface-ratings car
   assert.deepEqual(J(D.a.vals.map(x => x.raw)), [301.2, 155.4, 241.3, 1.12, 2341], 'serve, return, under pressure, dominance, the Elo peak');
   assert.deepEqual(J(D.a.vals.map(x => x.pct)), [97.5, 96.1, 93.2, 95, 50], 'the shape = the pool percentile; the peak = its place among every peak (1 of 2 below it)');
   assert.deepEqual(J(D.b.vals.map(x => x.pct)), [93.5, 98.5, 91.6, 92, 0]);
-  assert.deepEqual(J(D.extra.a), [77.1, 56.2, 89.9, 29.8, 41.7], 'the rows read the same career node (return games won = breakPct)');
+  assert.deepEqual(J(D.extra.a), [64.3, 77.1, 56.2, 89.9, 29.8], 'the rows read the same career node in the 20 Nov order: 1st serve in, 1st / 2nd won, held, return games won = breakPct');
   const t = text(h.call(h.dnaCard, { a: SIN, b: ALC, dna: D }));
   assert.match(t, /Elo peak 2341 · 2309/, 'the radar axis names the peak');
-  assert.match(t, /Ratings 2341 Elo peak 32 2309 /, 'the row is the peak, its gap on the line');
+  assert.match(t, /Ratings 2341 Elo peak 32 2309 1\.12 Dominance ratio 0\.02 1\.10 301 Serve rating /, 'the row is the peak, its gap on the line; then Dominance ratio, Serve rating (20 Nov §1)');
+  assert.match(t, /Serve 64\.3% 1st serve in 2\.3 62\.0% /, '1st serve in reads serve.firstInPct');
+  assert.doesNotMatch(t, /Break points converted/);
   assert.match(t, /Dominance ratio 1\.12 · 1\.10/);
   // control: a node built before the field existed draws no dominance point (a dash, never a guess)
   const hOld = dnaHarness({ noDom: true }); hOld.state.dnaWin = 'career'; hOld.state.ctxSurface = 'Hard';
@@ -382,6 +407,34 @@ test('item 12: the news ticker\'s reports and quotes join the card by player key
   const card = h.call(h.newsCard, { a: SIN, b: ALC, news: h.call(h.newsVals, SIN, ALC) });
   assert.match(text(card), /C\. Alcaraz beat F\. Tiafoe, 6-3, 6-2 C\. Alcaraz · Match report · Stennisfy · 1h ago › Alcaraz beat Tiafoe\. Match report Stennisfy · 1h ago Close/, 'the opened item: body, kind pill, source · time, Close (CHANGES 2026-11-18 §7)');
   assert.match(card, /background:var\(--h2h-layer\); box-shadow:inset 0 0 0 1px color-mix\(in srgb, var\(--h2h-white\) 12%, transparent\);/);  assert.doesNotMatch(card, /class="x-av"[^>]*box-shadow:0 0 0 2px/, 'founder 2026-11-19: no blue / white ring around a news avatar');
+});
+
+test('20 Nov (founder): an opened news-ticker match report carries the News page\'s stats box (newsMsBoxHtml); an item without ms has no box', () => {
+  const ms = { a: 'C. Alcaraz', b: 'F. Tiafoe', sets: [[6, 3], [6, 2]], rows: [['Aces', 7, 3, '0'], ['1st serve points won', 78, 61, '%'], ['Double faults', 1, 4, '0', 1]] };
+  const items = [
+    { kind: 'ticker', id: 'treport-1', ts: Date.now() - 3600e3, players: [{ key: '2', name: 'C. Alcaraz' }, { key: '9', name: 'F. Tiafoe' }], title: 'C. Alcaraz beat F. Tiafoe, 6-3, 6-2', bodyParas: ['Alcaraz beat Tiafoe.'], cat: 'Match Reports', source: 'Stennisfy', ms },
+    { kind: 'ticker', id: 'tquote-2', ts: Date.now() - 7200e3, players: [{ key: '1', name: 'J. Sinner' }], title: 'J. Sinner in the press', bodyParas: ['“I felt good.”'], cat: 'Quotes', source: 'Sky Sports' }];
+  // newsEscape writes through the DOM (textContent → innerHTML): the vm has no DOM, so the escape is the one I/O stub
+  const newsEscape = x => String(x == null ? '' : x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const h = HX.load({ html, preload: ['newsMsBoxHtml'], globals: { _newsData: { articles: [] }, newsTickerItems: () => items, newsEscape } });
+  h.X.__eval('_xTickerKick = true');
+  const v = h.call(h.newsVals, SIN, ALC);
+  const rep1 = v.feed.find(x => x.id === 'treport-1');
+  assert.ok(rep1 && rep1.ms, 'newsFor keeps ms');
+  assert.deepEqual(J(rep1.players.map(p => p.key)), ['2', '9'], 'and players (the box\'s two heads)');
+  h.state.newsOpen = 'treport-1';
+  const card = h.call(h.newsCard, { a: SIN, b: ALC, news: h.call(h.newsVals, SIN, ALC) });
+  const at = card.indexOf('<div class="x-newsms">');
+  assert.ok(at > 0, 'the opened report draws its stats box');
+  const box = card.slice(at);
+  assert.match(box, /^<div class="x-newsms"><span class="nx-div"><\/span><div class="nx-box c">/, 'the News page\'s own compact box');
+  assert.equal((box.match(/<div class="nx-r[ "]/g) || []).length, 3, 'one row per ms row');
+  assert.match(text(box), /^CA C\. Alcaraz Won 6 -3 6 -2 F\. Tiafoe FT 7 Aces 3 4 78% 1st serve points won 61% 17 pts 1 Double faults 4 3 /);
+  // control: the quote (no ms) opened → no box; nothing opened → no box
+  h.state.newsOpen = 'tquote-2';
+  assert.doesNotMatch(h.call(h.newsCard, { a: SIN, b: ALC, news: h.call(h.newsVals, SIN, ALC) }), /x-newsms/);
+  h.state.newsOpen = null;
+  assert.doesNotMatch(h.call(h.newsCard, { a: SIN, b: ALC, news: h.call(h.newsVals, SIN, ALC) }), /x-newsms/, 'a closed report shows no box');
 });
 
 // ── the return chart keeps the design's style (founder ruling 2, 2026-11-18) ──
