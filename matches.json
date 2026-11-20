@@ -8142,13 +8142,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.36,
+      "p2": 3.0,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.44,
+        "bookmaker": "1xBet"
+      },
+      "p2": {
+        "price": 3.0,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": "ATP Finals - Turin - Semi-finals",
     "qualifying": false,
@@ -30373,7 +30379,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(8), 7-5",
+      "display": "7-6, 7-5",
       "sets": [
         {
           "p1": 7,
@@ -35714,7 +35720,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 7-6(6)",
+      "display": "6-4, 7-6",
       "sets": [
         {
           "p1": 6,
