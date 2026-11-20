@@ -2,8 +2,68 @@
  "tournament": "Finals - Turin",
  "tournamentKey": "2794",
  "season": "2026",
- "updatedAt": "2026-11-20T00:54:20.896Z",
+ "updatedAt": "2026-11-20T09:26:43.564Z",
  "items": [
+  {
+   "id": "quote-cc316e93e9cdd9",
+   "type": "quote",
+   "playerId": "2973",
+   "opponentId": "50323",
+   "player": "B. Shelton",
+   "opponent": "R. Jodar",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-20T09:12:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating R. Jodar",
+   "eventKey": "12179704",
+   "won": true,
+   "text": "When I manage to win long rallies without losing focus, without making bad decisions or committing unforced errors, that's when my opponents have the hardest time playing against me. Everyone knows I have a big serve, but if my opponents only have to get a few balls back because they know I'm going to make an error, they feel more comfortable and take the initiative away from me.",
+   "originalText": "Quand je parviens à gagner des échanges longs sans me décon­cen­trer, sans prendre de mauvaises déci­sions ni commettre de fautes directes, c’est là que mes adver­saires ont le plus de mal à jouer contre moi.Tout le monde sait que j’ai un grand service, mais si mes adver­saires n’ont qu’à renvoyer quelques balles parce qu’ils savent que je vais faire une faute, ils se sentent plus à l’aise et me prennent l’initiative.",
+   "language": "fr",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "We Love Tennis",
+   "sourceUrl": "https://www.welovetennis.fr/atp/shelton-lucide-sur-ses-axes-de-progression-tout-le-monde-sait-que-jai-un-grand-service-mais-si-mes-adversaires-nont-qua-renvoyer-quelques-balles-parce-quils-sa",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On winning long rallies without unforced errors",
+   "sourceHash": "2c92a17a91e5daab",
+   "publishedAt": "2026-11-20T09:26:43.564Z"
+  },
+  {
+   "id": "quote-0e3ac1fe5e1bdf",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": "1759",
+   "player": "A. Zverev",
+   "opponent": "A. Fils",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-20T08:55:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating A. Fils",
+   "eventKey": "12179706",
+   "won": true,
+   "text": "I know what it is. It's nothing out of the ordinary",
+   "originalText": "ich weiß, was es ist. Es ist nichts Außergewöhnliches",
+   "language": "de",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "tennisnet.com",
+   "sourceUrl": "https://www.tennisnet.com/news/atp-finals-knoechelprobleme-in-turin-zverev-gibt-entwarnung",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his ankle problems at the ATP Finals",
+   "sourceHash": "91e64fac9146d91e",
+   "publishedAt": "2026-11-20T09:26:43.564Z"
+  },
   {
    "id": "quote-b773f5774eca9a",
    "type": "quote",
@@ -155,6 +215,36 @@
    "publishedAt": "2026-11-19T22:53:13.285Z"
   },
   {
+   "id": "quote-5ca52ceb129acb",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": "1759",
+   "player": "A. Zverev",
+   "opponent": "A. Fils",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-19T22:00:31.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Injuries",
+   "context": "after beating A. Fils",
+   "eventKey": "12179706",
+   "won": true,
+   "text": "Unfortunately I started feeling my ankle again,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Tennis365",
+   "sourceUrl": "https://www.tennis365.com/tennis-news/alexander-zverev-injury-scare-carlos-alcaraz-atp-finals",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his recurring ankle pain against Fils",
+   "sourceHash": "642bdd3cf5957f43",
+   "publishedAt": "2026-11-20T09:26:43.564Z"
+  },
+  {
    "id": "quote-7343a31f09b20f",
    "type": "quote",
    "playerId": "2973",
@@ -304,8 +394,17 @@
    "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
    "interview": "on-court",
    "topic": "On his ankle",
-   "sourceHash": "5d8fa5f2dc9e111c",
-   "publishedAt": "2026-11-19T22:23:31.835Z"
+   "alsoReportedBy": [
+    {
+     "sourceName": "Tennis365",
+     "sourceUrl": "https://www.tennis365.com/tennis-news/alexander-zverev-injury-scare-carlos-alcaraz-atp-finals",
+     "language": "en"
+    }
+   ],
+   "sourceHash": "83234b8daa44d9fe",
+   "publishedAt": "2026-11-19T22:23:31.835Z",
+   "revisedAt": "2026-11-20T09:26:43.564Z",
+   "revision": 1
   },
   {
    "id": "quote-8e57904c63490e",
@@ -5461,67 +5560,6 @@
    "publishedAt": "2026-11-18T15:42:11.714Z"
   },
   {
-   "id": "digest-89717aaeffd77b",
-   "type": "digest",
-   "version": 1,
-   "playerId": "1980",
-   "player": "A. Zverev",
-   "opponentId": "1759",
-   "opponent": "A. Fils",
-   "tournament": "Finals - Turin",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "eventKey": "12179706",
-   "context": "after beating A. Fils",
-   "category": "Quotes",
-   "timestamp": "2026-11-19T23:57:49.000Z",
-   "members": [
-    "quote-457f5fc72870b1",
-    "quote-66cb8e13cf2e2e",
-    "quote-744f7514c73108",
-    "quote-8e57904c63490e",
-    "quote-996590d99b7dc6",
-    "quote-b773f5774eca9a",
-    "quote-f2600aec033d84"
-   ],
-   "memberHash": "d0f07d271a0304a1",
-   "digestedAt": "2026-11-20T00:23:49.908Z",
-   "blocks": [
-    {
-     "label": "after his win over Fils",
-     "text": "I thought the first two matches were very, very high level. Today I thought I played a little bit worse from the baseline, but I'm very happy to have won all three matches against three very difficult opponents. I'm happy to be through in straight sets.",
-     "from": [
-      "quote-66cb8e13cf2e2e",
-      "quote-996590d99b7dc6"
-     ]
-    },
-    {
-     "label": "on his recurring ankle pain",
-     "text": "Unfortunately, I started feeling my ankle again. I'll probably feel my ankle sometimes until the end of my career. It's unfortunately the injury that I had, it's quite big. Every once in a while, it happens like that. There is no particular reason why it happens. There is nothing like a single movement that makes it go. I'm going to do everything I can to be pain-free on Saturday, but this is something that I have to live with nowadays. I hope I'll be 100 percent on Saturday.",
-     "from": [
-      "quote-744f7514c73108",
-      "quote-f2600aec033d84",
-      "quote-b773f5774eca9a"
-     ]
-    },
-    {
-     "label": "on how the ankle affects his serve",
-     "text": "On the serve more than on the baseline, because I feel like I can still move well. But you can see immediately my serve speed goes down, my percentage goes down when that happens.",
-     "from": [
-      "quote-8e57904c63490e"
-     ]
-    },
-    {
-     "label": "on playing Fils",
-     "text": "Arthur for me personally is a very difficult opponent as well because of how much power he has.",
-     "from": [
-      "quote-457f5fc72870b1"
-     ]
-    }
-   ],
-   "model": "claude-opus-5-5"
-  },
-  {
    "id": "digest-1de430ec7f6e90",
    "type": "digest",
    "version": 1,
@@ -5535,7 +5573,7 @@
    "eventKey": "12179704",
    "context": "after beating R. Jodar",
    "category": "Quotes",
-   "timestamp": "2026-11-19T23:57:49.000Z",
+   "timestamp": "2026-11-20T09:12:00.000Z",
    "members": [
     "quote-0966b288973b14",
     "quote-1b563e462a5cb2",
@@ -5548,41 +5586,42 @@
     "quote-7bd379763dae1c",
     "quote-95cfcdccb3326b",
     "quote-beb4cfc3f7ed5c",
+    "quote-cc316e93e9cdd9",
     "quote-e2a919b2c55d88"
    ],
-   "memberHash": "7d2cf3654945232c",
-   "digestedAt": "2026-11-20T00:23:49.908Z",
+   "memberHash": "88690c5828d59075",
+   "digestedAt": "2026-11-20T09:26:43.564Z",
    "blocks": [
     {
      "label": "after his win over Jodar",
-     "text": "I knew it wasn't going to be an easy match going in. I was happy that I was able to get through some tough moments in the first set, early when I was down break points, to be able to hold serve and get to that tiebreaker. Once I was in the tiebreaker I felt confident, fending off those set points and coming through it in the end. It was a tricky second set as well, being up a break and losing it, but I thought I fought well and competed well.",
+     "text": "I knew it wasn't going to be an easy match going in. I was happy that I was able to get through some tough moments in the first set, early when I was down break points, to be able to hold serve and get to that tiebreaker. Once I was in the tiebreaker I felt confident, fending off those set points and coming through it in the end. It was a tricky second set as well, being up a break and losing it, but I thought I fought well, competed well.",
      "from": [
       "quote-0966b288973b14",
       "quote-1b563e462a5cb2"
      ]
     },
     {
-     "label": "on his semi-final hopes and the Fritz–Zverev match",
-     "text": "I'm looking forward to it either way. I think both those guys are great guys. I'd love to make the semi-finals here for the first time. I did my job today and let's see what happens. I'm always rooting for him. I think him and Sasha are going to have a great match. I think if he takes Sasha out in straights, he gets through to the semi-finals.",
+     "label": "on reaching the semi-finals and Fritz vs Zverev",
+     "text": "I'm always rooting for him. I think him and Sasha are going to have a great match. I think if he takes Sasha out in straights, he gets through to the semi-finals. I'm looking forward to it either way. I think both those guys are great guys. I'd love to make the semi-finals here for the first time. I did my job today and, yeah, let's see what happens.",
      "from": [
-      "quote-2fe349224f3c56",
-      "quote-e2a919b2c55d88"
+      "quote-e2a919b2c55d88",
+      "quote-2fe349224f3c56"
      ]
     },
     {
-     "label": "on Jodar's rookie-year qualification for Turin",
-     "text": "Rafa is one of the best young talents that tennis has seen in a long time. To be here playing in Turin in his first year on tour, starting the year outside of the top 100, is a ridiculous feat. So I hope all you guys recognize how special that is.",
+     "label": "on Jodar qualifying for Turin in his rookie season",
+     "text": "Rafa is one of the best young talents that tennis has seen in a long time. To be here playing in Turin in his first year on tour, starting the year outside of top 100, is a ridiculous feat. So I hope all you guys recognize how special that is.",
      "from": [
       "quote-30f5644d5c213e",
       "quote-7343a31f09b20f"
      ]
     },
     {
-     "label": "on his aggressive game and return mindset",
-     "text": "I'm trying to be smart in the decisions I make. I still play very aggressively. I pay attention above all to my footwork and I try to take the ball early. I think that when I manage to win the long rallies and come out of them without making wrong decisions or committing unforced errors, that's where opponents struggle the most against me. When I step on court, everyone knows I have a big serve. But if opponents think: Ok, I just have to get a few balls back in play and then Ben will miss, it becomes much easier for them to take control and feel comfortable in the rally. When instead the opponent feels he has to do something special to beat me, with the way I'm able to move and cover the court now, which is much better than before, it becomes harder for him to find solutions. So I try to stay true to my identity, play aggressively and come to the net when I can, all this without falling apart from the baseline. It's not a tournament where you arrive and immediately feel at ease. This year I changed my mindset on the return.",
+     "label": "on his aggressive game and improved baseline play",
+     "text": "I'm trying to be smart in the decisions I make. I still play very aggressively. I pay attention above all to my footwork and I try to take the ball early. I think that when I manage to win the long rallies and come out of them without making wrong decisions or committing unforced errors, that's where opponents struggle the most against me. When I step on court, everyone knows I have a big serve. But if opponents think: OK, I just have to get a few balls back in play and then Ben will miss, it becomes much easier for them to take control and feel comfortable in the rally. When instead the opponent feels he has to do something special to beat me, with the way I'm able to move and cover the court now, which is much better than before, it becomes harder for him to find solutions. So I try to stay true to my identity, play aggressively and come to the net when I can. All this without falling apart from the baseline.",
      "from": [
       "quote-273340e98f9369",
-      "quote-95cfcdccb3326b"
+      "quote-cc316e93e9cdd9"
      ]
     },
     {
@@ -5593,11 +5632,77 @@
      ]
     },
     {
-     "label": "on bringing Juan Carlos Ferrero into his team",
+     "label": "on hiring Juan Carlos Ferrero as coach",
      "text": "The reason that we brought him on is for a different philosophy from the tennis perspective, the experience that he has from a coaching perspective and a playing perspective. I think there are so many improvements I can make on the other surfaces, with my groundstrokes, technically, strategically as well. From what I can see in a small amount of time, I think it'll work very well. I think the great thing is that, outside of a tennis perspective, the philosophy is similar in how they approach the game, the type of people they are. With the little amount of time I've spent with Juan Carlos, things have become pretty clear: the type of guy he is, the character that he has, the non-negotiables in terms of attitude. There are so many things that go hand in hand with my dad as well. So that part is easy.",
      "from": [
       "quote-3fc8643ada29cd",
       "quote-7bd379763dae1c"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5"
+  },
+  {
+   "id": "digest-89717aaeffd77b",
+   "type": "digest",
+   "version": 1,
+   "playerId": "1980",
+   "player": "A. Zverev",
+   "opponentId": "1759",
+   "opponent": "A. Fils",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "eventKey": "12179706",
+   "context": "after beating A. Fils",
+   "category": "Quotes",
+   "timestamp": "2026-11-20T08:55:00.000Z",
+   "members": [
+    "quote-0e3ac1fe5e1bdf",
+    "quote-457f5fc72870b1",
+    "quote-5ca52ceb129acb",
+    "quote-66cb8e13cf2e2e",
+    "quote-744f7514c73108",
+    "quote-8e57904c63490e",
+    "quote-996590d99b7dc6",
+    "quote-b773f5774eca9a",
+    "quote-f2600aec033d84"
+   ],
+   "memberHash": "917fd57a8f44d1f6",
+   "digestedAt": "2026-11-20T09:26:43.564Z",
+   "blocks": [
+    {
+     "label": "after his win over Fils",
+     "text": "I thought the first two matches were very, very high level. Today I thought I played a little bit worse from the baseline, but I'm very happy to have won all three matches against three very difficult opponents. I'm happy to be through in straight sets.",
+     "from": [
+      "quote-66cb8e13cf2e2e",
+      "quote-996590d99b7dc6"
+     ]
+    },
+    {
+     "label": "on his recurring ankle pain against Fils",
+     "text": "Unfortunately, I started feeling my ankle again. I'll probably feel my ankle sometimes until the end of my career. It's unfortunately the injury that I had, it's quite big. The ankle unfortunately is a topic for me that probably will stay until the end of my career with the injury I had four years ago. Every once in a while, it happens like that. There is no particular reason why it happens. There is nothing like a single movement that makes it go. I know what it is. It's nothing out of the ordinary. Look, I'm going to do everything I can to be pain-free on Saturday, but this is something that I have to live with nowadays. I hope I'll be 100 percent on Saturday.",
+     "from": [
+      "quote-744f7514c73108",
+      "quote-f2600aec033d84",
+      "quote-0e3ac1fe5e1bdf",
+      "quote-b773f5774eca9a",
+      "quote-5ca52ceb129acb"
+     ]
+    },
+    {
+     "label": "on how the ankle affects his serve",
+     "text": "On the serve more than on the baseline, because I feel like I can still move well. But you can see immediately my serve speed goes down, my percentage goes down when that happens.",
+     "from": [
+      "quote-8e57904c63490e",
+      "quote-b773f5774eca9a"
+     ]
+    },
+    {
+     "label": "on playing Fils",
+     "text": "Arthur for me personally is a very difficult opponent as well because of how much power he has.",
+     "from": [
+      "quote-457f5fc72870b1"
      ]
     }
    ],
