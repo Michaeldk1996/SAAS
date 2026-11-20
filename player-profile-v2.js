@@ -10936,6 +10936,7 @@
   var CAL_SW = [
     { k: 'aus', name: 'Australian', code: 'AUS', surf: 'Hard' },
     { k: 'me', name: 'Middle East', code: 'M·EAST', surf: 'Hard' },
+    { k: 'naw', name: 'North American winter', code: 'NA WINTER', hover: 'Dallas, Delray Beach, Acapulco, Memphis … · February', surf: 'Hard' },
     { k: 'gold', name: 'Golden swing', code: 'GOLDEN', surf: 'Clay' },
     { k: 'eei', name: 'Early Euro indoor', code: 'EU INDOOR', hover: 'Euro indoor \u00b7 February', surf: 'Indoors' },
     { k: 'sun', name: 'Sunshine double', code: 'SUNSHINE', surf: 'Hard' },
@@ -10953,6 +10954,8 @@
     Mixed: 'color-mix(in srgb, var(--text) 14%, transparent)' };
   var CAL_TEAM_RE = /davis cup|laver cup|united cup|atp cup|hopman|olympic/i;
   var CAL_MIDEAST = { QA: 1, AE: 1, SA: 1, BH: 1, KW: 1, OM: 1 };
+  var CAL_ASIA = { CN: 1, JP: 1, KR: 1, TH: 1, MY: 1, SG: 1, IN: 1, HK: 1, TW: 1, PH: 1, ID: 1, VN: 1 };
+  var CAL_SUNSHINE_RE = /indian wells|miami|bnp paribas open|sony (ericsson )?open|key biscayne/i;
   var CAL_AMERICAS = { US: 1, CA: 1, MX: 1, AR: 1, BR: 1, CL: 1, CO: 1, EC: 1, PE: 1, UY: 1, PY: 1, BO: 1 };
   var CAL_FM_KEYS = ['calSpeed', 'calFmt', 'calBand', 'calArch', 'calOpp', 'calCtry'];
   // v4 (handoff 2026-11-14): the Melbourne summer events are Australian. The event catalog has no country for them, so
@@ -10975,9 +10978,19 @@
     var m = r.mon, s = String(r.surface || '').toLowerCase(), indoor = String(r.court || '') === 'Indoor' || r.seasonIndoor === true;
     if (s === 'grass') return 'grass';
     if (s === 'clay') return m <= 2 ? 'gold' : m <= 5 ? 'eclay' : 'sclay';
-    if (indoor) return m <= 5 ? 'eei' : 'ein';
-    if (m === 0) return cc && !{ AU: 1, NZ: 1 }[cc] && CAL_MIDEAST[cc] ? 'me' : 'aus';
-    if (m === 1) return cc === 'AU' || cc === 'NZ' ? 'aus' : cc && CAL_AMERICAS[cc] ? 'sun' : 'me';
+    // founder 2026-11-20: the US / Mexico hard courts of January–March (Dallas, Delray Beach, Acapulco, Memphis, New York,
+    // San Jose, Los Cabos), indoors or out, are their own swing — never the Middle East, Euro indoor or the Sunshine double
+    // (Indian Wells + Miami only). Dubai / Doha in March stay in the Middle East.
+    // Same day: Indian Wells / Miami are the Sunshine double in any month (Oct 2021); an event starting in late December
+    // is the next season's opener; an indoor event in Asia (Bangkok, Kuala Lumpur) is the Asian swing, not Euro indoor.
+    var am = cc && CAL_AMERICAS[cc], sunshine = CAL_SUNSHINE_RE.test(String(r.tournament || '') + ' ' + String(r.event || ''));
+    if (sunshine) return 'sun';
+    if (m === 11) m = 0;
+    if (am && m <= 2) return 'naw';
+    if (indoor) return cc && CAL_ASIA[cc] ? 'asia' : m <= 5 ? 'eei' : 'ein';
+    if (m <= 2 && cc && CAL_MIDEAST[cc]) return 'me';
+    if (m === 0) return 'aus';
+    if (m === 1) return cc === 'AU' || cc === 'NZ' ? 'aus' : am ? 'sun' : 'me';
     if (m <= 4) return cc && !CAL_AMERICAS[cc] && !CAL_MIDEAST[cc] ? 'asia' : 'sun';
     if (m <= 7) return cc && !CAL_AMERICAS[cc] ? 'asia' : 'nah';
     if (m === 8) return cc && CAL_AMERICAS[cc] ? 'nah' : 'asia';

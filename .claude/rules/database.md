@@ -131,12 +131,18 @@ inside every mount (`[data-db-root]`). Ratings and Lines rules: `ratings.md`, `l
   16%, then a 1px 12% divider and the DRAWN remove cross (22px, radius 6; never a "×" glyph). Years = one plain box "Years
   2010 to 2026". No rolling windows (Last 52 weeks / 24 months) on this bar.
 - Filters per view: Tour and Fade finder = **Level · Surface · Round · Swing · Years**; Tournament = event search
-  (1–4 chips) · Level · Surface · Round · Years; Player = player search (1–2 chips) · Surface · Period · **Level · Round**
+  (1–4 chips) · Level · Surface · Round · Years; Player = player search (1–2 chips) · Surface · **Years + Last 52 weeks · Career** · **Level · Round**
   (founder 2026-11-19: tournament type and round, on his rows and the tour beside them) · Tournament · Side;
   Lines and Ratings in their files.
-- **Swing** = the 11 swings of the Player Profile's swing calendar ("Team / other" left out), ONE rule with the profile:
-  `PlayerProfileV2._internals.calSwingOf` over the match month, its surface and the tournament catalog's indoor flag and
-  country (`db3SwingOf`). **No Tour (ATP / Challenger / ITF) filter** (founder 2026-11-19, replacing the 2026-11-18 greyed
+- **Swing** = the 12 swings of the Player Profile's swing calendar ("Team / other" left out), ONE rule with the profile:
+  `PlayerProfileV2._internals.calSwingOf` over the match month, its surface, Tennis-Data's own court and the event's
+  country (`db3SwingOf`). **Country** = the site's tournament catalog (`TOURNAMENT_CATALOG`, through `sfEventKey`) for the
+  Tennis-Data name or its city, else the host city's country (`DB3_CITY_CC`, geography); **indoor** = `meta.indoor`
+  (`build-database-yield.js`: the seasons in which most of an event's rows carry Tennis-Data's Court = Indoor), else the
+  catalog. Founder 2026-11-20: the lookup used to read the Database's own name list, which carries no country or court, so
+  every February match outside Australia read as Middle East (Dallas, Delray Beach, Acapulco, Montpellier). **Test:** does a
+  February Dallas / Delray Beach / Acapulco row read North American winter, Dubai in March Middle East, Montpellier Euro
+  indoor? (`test-database-v2.mjs` "swing", `test-pp2-reconcile.js` "North American winter swing"). **No Tour (ATP / Challenger / ITF) filter** (founder 2026-11-19, replacing the 2026-11-18 greyed
   menu): the Database holds ATP main draw only, so there is nothing to choose. **Test:** the Tour bar has Level · Surface ·
   Round · Swing · Years and no Tour trigger (`test-ten399-database-frame.mjs` "caret").
 - Search with chips: well `--db2-inset`, radius 9; chips 26px, radius 6, `--db2-raised` + 16%, **a player chip carries a
@@ -223,17 +229,28 @@ inside every mount (`[data-db-root]`). Ratings and Lines rules: `ratings.md`, `l
   underdog on HIS price, with the Tour column. The chart: x = his match number over every match in view, each line stepping
   on its own matches. Side = Backing him / Fading him flips every figure; fading hides the Tour column. Two players = the
   pair compare above with circle avatars.
+- **Record under the match count** (founder design 2026-11-20, every band card): the band's W–L under its count (Plex
+  11.5/600 `--db2-ink-2`, right aligned, 4px under), hover "70 won · 3 lost · 96% won"; fading = the bet's own record. The card
+  head reads "363 matches · 251–112 · median price 1.44", the record over the same matches as the count. **Test:** do the two
+  record figures add up to the count beside them? They must.
+- **Years + Last 52 weeks · Career** (founder design 2026-11-20, replacing the Period menu): the shared Years range (the same
+  `yearMin` / `yearMax` the Tour, Tournament and Fade finder read, as the design shares it) and a two-option switch (track
+  `--db2-track` + 10% edge, r10, pad 3, 36px; picked `--db2-layer` + 14% ring, white 700; idle `--db2-ink-2` 600; 12.5px, r7,
+  0 12px). Career (default) resets the years; Last 52 weeks greys the year figures and counts the 364 days to the archive's
+  last match; picking a year turns both options off. The label reads "Career", "Last 52 weeks", "Season 2024" or "2019–2023".
+  **Test:** `test-database-v2.mjs` "playerPeriod".
 
 ## Fade finder (CHANGES §7; founder export 2026-11-18)
 - "Which players should I bet against in this round?" Sixth tab, after Player; opening it with no round chosen presets
   Round = 1st Round. The Tour filter bar. **Every figure is the Database's own rows** under those filters (Pinnacle closing):
   per player, a flat 1% stake on his opponent (To fade) or on him (To back), All · As favourite · As underdog by the shorter
   price of the match. **The list = players with a Database match in the 24 months to the archive's end** (the export lists the
-  current tour; built 2026-11-18, the founder to confirm); his whole filtered record counts. Players under HARD_GATE (30) are
-  unranked, grey, at the bottom. **24 months** = the same filters over the
+  current tour; built 2026-11-18, the founder to confirm); his whole filtered record counts. **A player is listed from
+  FADE_MIN = 5 matches under the filters, and every listed player is ranked** (founder 2026-11-20: "a sample start of 5
+  matches … not list players with 1 match"; replaces the unranked under-30 block). **24 months** = the same filters over the
   24 months to the archive's last match. **Vs price** = the backed side's win rate minus the mean implied chance of its
   closing price, in points ("lost 41% · priced 33%"). Opp. price / His price = the backed side's mean closing price.
-- The card: "Players to fade / back" over the scope line (filters only) | "n of N players ranked" + "?" (every explanation).
+- The card: "Players to fade / back" over the scope line (filters only) | "N players ranked" + "?" (every explanation).
   Controls on one line: the pin search (well, max 320px), To fade · To back, All · As favourite · As underdog. Table grid
   `26px minmax(140px,1.1fr) minmax(100px,1.3fr) 90px 122px 68px 54px 14px`, min 684px; 12 rows, then "Show all N players".
 - **Today:** a player with a match on today's board (`matches`, `matchDayBucket` = today, not finished, his key from `db2Who`)

@@ -3251,7 +3251,7 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
      reference's inline styles (Database.dc.html L44-135), unrounded. ===== */
   [data-db-root] .db3-lr.go{ cursor:pointer; }
   [data-db-root] .db3-lr.go:hover{ background:var(--db2-hover); }
-  [data-db-root] .db3-bm small{ display:block; margin-top:3px; font:500 11px var(--db-mono); color:var(--db2-muted); }
+  [data-db-root] .db3-bm small{ display:block; margin-top:4px; font:600 11.5px var(--db-mono); color:var(--db2-ink-2); text-align:right; }
   [data-db-root]{ line-height:normal; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }   /* as the export renders: line-height normal on every element, antialiased text (without it every glyph draws heavier) */
   [data-db-root]{ --card:var(--db2-card); --inner:var(--db2-inset); --selected:var(--db2-raised);
     --text:var(--db2-ink); --text-soft:var(--db2-ink-2); --text-label:var(--db2-muted);
@@ -3352,6 +3352,12 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   /* year range (L234-246) */
   [data-db-root] .db-yr{ align-items:stretch; height:36px; box-sizing:border-box; border-radius:9px; background:transparent; border:1px solid var(--db2-h6); }
   [data-db-root] .db-yr.on{ background:transparent; border-color:var(--db2-h16); }
+  [data-db-root] .db-yr.dim .db-yrend, [data-db-root] .db-yr.dim .db-yrend *{ color:var(--db2-muted); }
+  [data-db-root] .db3-psw{ display:inline-flex; align-items:stretch; height:36px; box-sizing:border-box; padding:3px; gap:2px; border-radius:10px;
+    background:var(--db2-track); border:1px solid var(--db2-h10); }
+  [data-db-root] .db3-psw button{ border:0; border-radius:7px; padding:0 12px; background:transparent; color:var(--db2-ink-2);
+    font:600 12.5px var(--db-ui); cursor:pointer; white-space:nowrap; }
+  [data-db-root] .db3-psw button.on{ background:var(--db2-layer); color:var(--db2-white); font-weight:700; box-shadow:0 0 0 1px var(--db2-h14); }
   [data-db-root] .db-yrlab{ display:inline-flex; align-items:center; padding:0 2px 0 13px; font-family:var(--db-ui); font-size:12px; font-weight:500; color:var(--db2-muted); }
   [data-db-root] .db-yrsep{ padding:0 5px; font-size:12px; color:var(--db2-muted); }
   [data-db-root] .db-yrend .db-trig, [data-db-root] .db-yrend .db-trig.open{ height:100%; background:transparent; border:0; box-shadow:none; }
@@ -31075,7 +31081,7 @@ window.DatabaseTab = (function(){
   // as-built value stays until the founder answers.
   var PLAYER_BASELINE_SCOPE='recompute';
   function playerBaselines(){
-    if(PLAYER_BASELINE_SCOPE==='gate' && (state.psurf!=null || state.plevel!=null || state.ptourn!=null || state.period!=='all')) return null;
+    if(PLAYER_BASELINE_SCOPE==='gate' && (state.psurf!=null || state.plevel!=null || state.ptourn!=null || state.period!=='all' || state.yearMin!=null || state.yearMax!=null)) return null;
     var rows=DATA.rows, anchor=dnum(+(''+M.dateRange[1]).replace(/-/g,''));
     var fp=0, dp=0, n=0;
     for(var i=0;i<rows.length;i++){
@@ -31123,19 +31129,45 @@ window.DatabaseTab = (function(){
     if(f.months && !f.months.has(Math.floor(r[0]/100)%100)) return false;
     return true;
   }
-  // Database v3 (CHANGES §1): Swing = the 11 swings of the player profile's swing calendar ("Team / other" left out), one
+  // Database v3 (CHANGES §1): Swing = the 12 swings of the player profile's swing calendar ("Team / other" left out), one
   // rule with the profile (PlayerProfileV2._internals.calSwingOf over the match month, surface, the catalog's indoor flag
   // and country). Tour = ATP · Challenger · ITF; the Database holds the ATP main draw only (founder 2026-10-30), so the
   // two lower tours are listed and disabled (founder ruling 2026-11-18: "ATP only, others greyed"; DB3_LOWER_IN_DB).
-  var DB3_SWINGS=[['aus','Australian'],['me','Middle East'],['gold','Golden swing'],['eei','Early Euro indoor'],['sun','Sunshine double'],
+  var DB3_SWINGS=[['aus','Australian'],['me','Middle East'],['naw','North American winter'],['gold','Golden swing'],['eei','Early Euro indoor'],['sun','Sunshine double'],
     ['eclay','Euro clay'],['grass','Grass'],['sclay','Summer clay'],['nah','North American hard'],['asia','Asian swing'],['ein','Euro indoor']];
   var DB3_CIRCUITS=[['ATP','ATP'],['Challenger','Challenger'],['ITF','ITF']], DB3_LOWER_IN_DB=false;
   var DB3_SWC=new Map();
+  // The site's tournament catalog entry (country, indoor) for a Tennis-Data name: the name itself, then its city
+  // ("Delray Beach Open" -> Delray Beach), each through the site's one event key. The Database's own name list
+  // (catalogEntryForNames) carries neither field, so the swing used to fall back to Middle East for every February
+  // match outside Australia (founder 2026-11-20: Dallas, Delray Beach, Acapulco, Montpellier read as Middle East).
+  // The host city's country for the Database cities the site's catalog has no entry for (geography, not data).
+  var DB3_CITY_CC={ Chennai:'IN', Zagreb:'HR', Johannesburg:'ZA', 'Sao Paulo':'BR', 'San Jose':'US', Memphis:'US', Nice:'FR',
+    Atlanta:'US', 'Los Angeles':'US', 'New Haven':'US', 'Kuala Lumpur':'MY', Bangkok:'TH', Moscow:'RU', 'St. Petersburg':'RU',
+    Valencia:'ES', Dusseldorf:'DE', Bogota:'CO', Shenzhen:'CN', Quito:'EC', Istanbul:'TR', Nottingham:'GB', Sofia:'BG',
+    Budapest:'HU', Antalya:'TR', 'New York':'US', Sardinia:'IT', Cologne:'DE', Melbourne:'AU', Singapore:'SG', Marbella:'ES',
+    Parma:'IT', 'San Diego':'US', 'Adelaide 1':'AU', 'Adelaide 2':'AU', Seoul:'KR', Florence:'IT', Gijon:'ES', Naples:'IT',
+    'Banja Luka':'BA', Athens:'GR' };
+  var DB3_CAT=new Map();
+  function db3CatEntry(nm){
+    if(DB3_CAT.has(nm)) return DB3_CAT.get(nm);
+    var e=null, C=typeof TOURNAMENT_CATALOG!=='undefined' ? TOURNAMENT_CATALOG : [];
+    var city=tdCity(nm), town=city && String(city).split(' \u00b7 ')[0], tries=[nm, city, town];
+    for(var i=0;i<tries.length && !e;i++){
+      var t=tries[i]; if(!t) continue;
+      var k=typeof sfEventKey==='function' ? sfEventKey(t) : null;
+      e=C.find(function(c){ return c.name===k || c.name===t; }) || null;
+    }
+    var cc=(e && e.country) || (town && DB3_CITY_CC[town]) || null;
+    e={ country: cc, indoor: !!(e && e.indoor) };
+    DB3_CAT.set(nm, e); return e;
+  }
   function db3SwingOf(r){
-    var k=r[4]+'|'+(Math.floor(r[0]/100)%100)+'|'+r[2]; if(DB3_SWC.has(k)) return DB3_SWC.get(k);
+    var k=r[4]+'|'+Math.floor(r[0]/100)+'|'+r[2]; if(DB3_SWC.has(k)) return DB3_SWC.get(k);   // year + month: indoor is per season
     var I2=window.PlayerProfileV2 && window.PlayerProfileV2._internals, f=I2 && I2.calSwingOf; if(!f) return null;   // module not in: no swing yet
-    var nm=M.tournaments[r[4]], e=catalogEntryForNames([nm]);
-    var sw=f({ tournament:nm, mon:Math.floor(r[0]/100)%100-1, surface:M.surfaces[r[2]], court: e && e.indoor ? 'Indoor' : '' }, e && e.country ? String(e.country).toUpperCase() : null);
+    var nm=M.tournaments[r[4]], e=db3CatEntry(nm), yr=Math.floor(r[0]/10000), IN=M.indoor;
+    var ind=IN ? !!(IN[r[4]] && IN[r[4]].indexOf(yr)>=0) : e.indoor;   // Tennis-Data's own court, else the catalog
+    var sw=f({ tournament:nm, mon:Math.floor(r[0]/100)%100-1, surface:M.surfaces[r[2]], court: ind ? 'Indoor' : '' }, e.country ? String(e.country).toUpperCase() : null);
     DB3_SWC.set(k, sw); return sw;
   }
   function db3TourOk(r){
@@ -31219,7 +31251,7 @@ window.DatabaseTab = (function(){
     // (no comparator). Measured 16 Nov over the 42k-row archive: an object sort cost ~150ms, this ~10ms.
     var D=DB2_BANDS[sideKey], nb=D.length, acc=D.map(function(){ return { ps:[], pr:0, vs:[] }; }), all={ ps:new Float64Array(values.length), pr:0 };
     for(var i=0;i<values.length;i++){
-      var v=values[i], pr=v.w?(v.p-1):-1; all.ps[i]=v.p; all.pr+=pr;
+      var v=values[i], pr=v.w?(v.p-1):-1; all.ps[i]=v.p; all.pr+=pr; if(v.w) all.w=(all.w||0)+1;
       for(var k=0;k<nb;k++){ if(db2InBand(D[k], v.p)){ acc[k].ps.push(v.p); acc[k].pr+=pr; acc[k].vs.push(v); break; } }
     }
     function fin(ps, pr){
@@ -31227,7 +31259,8 @@ window.DatabaseTab = (function(){
       var a=(ps instanceof Float64Array) ? ps : Float64Array.from(ps); a.sort();
       var m=n>>1; return { n:n, median: n%2 ? a[m] : (a[m-1]+a[m])/2, yield:pr/n, lo:a[0], hi:a[n-1] };
     }
-    return { all:fin(all.ps, all.pr), bands:D.map(function(B,k){ return { def:B, agg:fin(acc[k].ps, acc[k].pr), vs:acc[k].vs }; }) };
+    var A=fin(all.ps, all.pr); if(A) A.w=all.w||0;
+    return { all:A, bands:D.map(function(B,k){ return { def:B, agg:fin(acc[k].ps, acc[k].pr), vs:acc[k].vs }; }) };
   }
   // The tour figure for one fixed band (Tournament / Player "Tour" column): the same half-open edges.
   function db2TourBand(sideKey, B){
@@ -31463,9 +31496,9 @@ window.DatabaseTab = (function(){
       w.classList.add('db-yrend');
       return w;
     }
-    box.appendChild(end('y0', lo, function(v){ state.yearMin=v; if(state.yearMax!=null && v>state.yearMax) state.yearMax=v; }));
+    box.appendChild(end('y0', lo, function(v){ state.period='all'; state.yearMin=v; if(state.yearMax!=null && v>state.yearMax) state.yearMax=v; }));
     box.appendChild(el('span','db-yrsep','to'));
-    box.appendChild(end('y1', hi, function(v){ state.yearMax=v; if(state.yearMin!=null && v<state.yearMin) state.yearMin=v; }));
+    box.appendChild(end('y1', hi, function(v){ state.period='all'; state.yearMax=v; if(state.yearMin!=null && v<state.yearMin) state.yearMin=v; }));
     return box;
   }
   function resetFilters(){
@@ -31733,10 +31766,17 @@ window.DatabaseTab = (function(){
       var SURF=[[null,'All']].concat(M.surfaces.map(function(s,i){return [i,s];}));
       zR.appendChild(trigger('Surface', state.psurf==null?'All':M.surfaces[state.psurf], state.psurf!=null, 'psurf', function(){
         return singleMenu(SURF, state.psurf, function(v){ state.psurf=v; }, false); }));
-      var PERIODS=[['all','All time'],['w52','Last 52 weeks'],['y2','Last 2Y'],['y5','Last 5Y']];
-      var curP=PERIODS.filter(function(p){return p[0]===state.period;})[0];
-      zR.appendChild(trigger('Period', curP?curP[1]:'All time', state.period!=='all', 'period', function(){
-        return singleMenu(PERIODS, state.period, function(v){ state.period=v; }, false); }));
+      // founder design 2026-11-20: the Period menu is replaced by the Fade finder's Years range + a Last 52 weeks · Career
+      // switch. Career (default) resets the years; Last 52 weeks greys the years; picking a year turns both off.
+      var yc=yearControl(); if(state.period==='w52') yc.classList.add('dim'); zR.appendChild(yc);
+      var yMoved=state.yearMin!=null || state.yearMax!=null, pw=el('div','db3-psw');
+      [['w52','Last 52 weeks'],['all','Career']].forEach(function(o){
+        var on = o[0]==='w52' ? state.period==='w52' : state.period!=='w52' && !yMoved;
+        var b=el('button', on?'on':null, o[1]); b.type='button'; b.setAttribute('aria-pressed', on?'true':'false');
+        b.onclick=function(){ state.period=o[0]; if(o[0]==='all'){ state.yearMin=null; state.yearMax=null; } render(); };
+        pw.appendChild(b);
+      });
+      zR.appendChild(pw);
       state.plevel=null;
       var lvP=tourLevelOpts(); if(!lvP) state.plevs=null;
       if(lvP) zR.appendChild(trigger('Level', countOf(state.plevs, lvP), !!state.plevs, 'plev', function(){ return multiMenu(lvP, state.plevs, function(st){ state.plevs=st; }); }, function(){ state.plevs=null; }));
@@ -34157,7 +34197,11 @@ window.DatabaseTab = (function(){
     return '<div class="db3-yl"><u style="left:'+(y>=0?50:50-w).toFixed(1)+'%;width:'+w.toFixed(1)+'%;background:'+c+'"></u><span style="color:'+c+'">'+(hard?'\u2014':dp===1?(y>0?'+':y<0?'\u2212':'')+Math.abs(y).toFixed(1)+'%':fmtPct(g.yield))+'</span></div>';
   }
   // the band's record on the backed side, under its match count (founder 2026-11-19: "he won 10 of 13")
-  function db3Wl(vs, fade){ var w=0; (vs||[]).forEach(function(v){ if(fade ? !v.w : !!v.w) w++; }); return (vs||[]).length ? w+'\u2013'+((vs||[]).length-w) : ''; }
+  // founder design 2026-11-20: "70–3" under the match count, hover "70 won · 3 lost · 96% won" (the bet's own side)
+  function db3WlHtml(vs, fade){
+    var n=(vs||[]).length, w=0; (vs||[]).forEach(function(v){ if(fade ? !v.w : !!v.w) w++; }); if(!n) return '';
+    return '<small title="'+w+' won \u00b7 '+(n-w)+' lost \u00b7 '+Math.round(100*w/n)+'% won">'+w+'\u2013'+(n-w)+'</small>';
+  }
   function bandCard2(sideKey, res, mode, opts){
     opts=opts||{};
     var isPl = mode==='player', withBase = mode==='tourn' || (isPl && !opts.fade);
@@ -34173,14 +34217,14 @@ window.DatabaseTab = (function(){
     var tourAll = withBase ? (baseKnown ? (opts.baseAll!==undefined ? opts.baseAll : (function(){ var b=baseAll(sideKey); return b?fmtPct(b.yield):'\u2014'; })()) : '\u2014') : null;
     var inRows=res.bands.reduce(function(t,b){ return t+(b.agg?b.agg.n:0); },0), outRows=a?a.n-inRows:0;
     card.innerHTML='<div class="db3-bhead"><span class="t"><b>'+esc(title)+'</b><span>'+esc(hint)+'</span></span>'+
-      '<span class="a"'+(outRows>0?' title="'+fmtInt(outRows)+' '+dbMatchWord(outRows)+' priced under 2.00 on this side (near-even) count in this total and in no band"':'')+'><b style="color:'+allCol+'">'+allTxt+'</b><span>'+(a?fmtInt(a.n):'0')+' matches \u00b7 median price '+(a?fmtP(a.median):'\u2014')+(tourAll!=null?' \u00b7 tour '+tourAll:'')+'</span></span></div>';
+      '<span class="a"'+(outRows>0?' title="'+fmtInt(outRows)+' '+dbMatchWord(outRows)+' priced under 2.00 on this side (near-even) count in this total and in no band"':'')+'><b style="color:'+allCol+'">'+allTxt+'</b><span>'+(a?fmtInt(a.n):'0')+' matches'+(a && a.w!=null?' \u00b7 '+a.w+'\u2013'+(a.n-a.w):'')+' \u00b7 median price '+(a?fmtP(a.median):'\u2014')+(tourAll!=null?' \u00b7 tour '+tourAll:'')+'</span></span></div>';
     var hd=el('div','db3-bcols'); hd.style.gridTemplateColumns=cols;
     hd.innerHTML='<span>Odds</span><span style="text-align:center">'+(isPl?'Player':mode==='tourn'?'Event':'Yield')+'</span><span style="text-align:right">Matches</span>'+(withBase?'<span style="text-align:right">Tour</span>':'')+'<span></span>';
     card.appendChild(hd);
     res.bands.forEach(function(b, bi){
       var B=b.def, g=b.agg, n=g?g.n:0, row=el('div','db3-brow'); row.style.gridTemplateColumns=cols;
       if(n && n<HARD_GATE) row.title='Small sample: '+fmtInt(n)+' '+dbMatchWord(n);
-      var h='<span class="db3-odds"><span class="o">'+db3OddsHtml(B)+'</span><span class="n">'+esc(B[0])+'</span></span>'+db3YieldLine(g)+'<span class="db3-bm">'+fmtInt(n)+(n?'<small>'+db3Wl(b.vs, isPl&&opts.fade)+'</small>':'')+'</span>';
+      var h='<span class="db3-odds"><span class="o">'+db3OddsHtml(B)+'</span><span class="n">'+esc(B[0])+'</span></span>'+db3YieldLine(g)+'<span class="db3-bm">'+fmtInt(n)+(n?db3WlHtml(b.vs, isPl&&opts.fade):'')+'</span>';
       if(withBase){
         var tb = baseKnown ? (opts.baseFor ? opts.baseFor(B) : db2TourBand(sideKey, B)) : null, tv = tb ? fmtPct(tb.yield) : '\u2014';
         var tc = tb ? (tv.charAt(0)==='+'?'var(--db2-green)':tv.charAt(0)==='\u2212'?'var(--db2-red)':'var(--db2-muted)') : 'var(--db2-muted)';
@@ -34391,7 +34435,7 @@ window.DatabaseTab = (function(){
 
   // ===== Database v3 Fade finder (CHANGES §7; export 2026-11-18). "Which players should I bet against in this round?" Every
   // figure is the Database's own rows under the Tour bar's filters (Pinnacle closing): per player, a flat 1% stake on his
-  // opponent (To fade) or on him (To back). Players under HARD_GATE (30) are unranked, grey, at the bottom. 24 months = the
+  // opponent (To fade) or on him (To back). A player is listed (and ranked) from FADE_MIN (5) matches. 24 months = the
   // same filters over the 24 months to the archive's last match. Vs price = the backed side's win rate minus the mean
   // implied chance of its closing price, in points.
   function db3Ini(name){
@@ -34412,6 +34456,7 @@ window.DatabaseTab = (function(){
     }
     return null;
   }
+  var FADE_MIN=5;
   function db3FadeModel(){
     var rows=filteredRows(), back=state.fadeMode==='back', role=state.fadeRole||'all', P={};
     var end=M.dateRange[1], ed=+(''+end).replace(/-/g,''), cut24=ed-20000, cut12=ed-10000;
@@ -34434,9 +34479,10 @@ window.DatabaseTab = (function(){
     // founder 2026-11-19: filter by this week's ATP rank (Top 25 / 50 / 100) and by when he plays (today / tomorrow)
     var topN=state.fadeTop||0, plays=state.fadePlays||'all';
     var keep=function(nm){ if(topN){ var w=db2Who(nm); if(!w || w.rank==null || w.rank>topN) return false; } if(plays!=='all' && !db3Today(nm, plays)) return false; return true; };
-    var list=Object.keys(P).filter(active).filter(keep).map(function(k){ var x=P[k]; x.y=x.pr/x.n; x.gated=x.n<HARD_GATE; return x; })
-      .sort(function(a,b){ return (a.gated-b.gated) || (b.y-a.y) || (b.n-a.n); });
-    list.forEach(function(x,i){ x.rank = x.gated ? null : i+1; });
+    // founder 2026-11-20: a player is listed from FADE_MIN (5) matches and every listed player is ranked; fewer are not listed
+    var list=Object.keys(P).filter(active).filter(keep).filter(function(k){ return P[k].n>=FADE_MIN; }).map(function(k){ var x=P[k]; x.y=x.pr/x.n; x.gated=false; return x; })
+      .sort(function(a,b){ return (b.y-a.y) || (b.n-a.n); });
+    list.forEach(function(x,i){ x.rank=i+1; });
     return { list:list, ranked:list.filter(function(x){ return !x.gated; }).length, back:back, role:role, cut12:cut12, cut24:cut24 };
   }
   function db3FadeScope(role){
@@ -34463,10 +34509,10 @@ window.DatabaseTab = (function(){
     var card=el('div','db3-fcard');
     var help='Yield of a flat 1% stake '+(back?'on the player':'on his opponent')+' in every match under the chosen filters, at Pinnacle closing prices. '+
       'A blue dot with a time means he plays today; click it to open the match. Search a player to pin him above the list with his real rank. '+
-      'The list holds the players with a Database match in the 24 months to the archive\u2019s last match. Players with fewer than '+HARD_GATE+' matches are not ranked and sit at the bottom (their figures still show). Top 25 / 50 / 100 is this week\u2019s ATP ranking; Plays today / tomorrow keeps the players with a match on Today\u2019s Matches. 12 months and 24 months are the same bet over the 12 and 24 months to the archive\u2019s last match ('+fmtDate(M.dateRange[1])+'), to show whether the edge is still alive. '+
+      'The list holds the players with a Database match in the 24 months to the archive\u2019s last match. A player needs '+FADE_MIN+' matches under these filters to be listed; every listed player is ranked. Top 25 / 50 / 100 is this week\u2019s ATP ranking; Plays today / tomorrow keeps the players with a match on Today\u2019s Matches. 12 months and 24 months are the same bet over the 12 and 24 months to the archive\u2019s last match ('+fmtDate(M.dateRange[1])+'), to show whether the edge is still alive. '+
       'Vs price is how many points more often the backed side won than its closing price implied. Click a row to see his matches.';
     card.innerHTML='<div class="db3-fhead"><span class="db3-tt"><b>'+(back?'Players to back':'Players to fade')+'</b><span>'+esc(db3FadeScope(role))+'</span></span>'+
-      '<span style="flex:none;margin-left:auto;display:flex;align-items:center;gap:10px"><span class="db3-pill">'+fmtInt(F.ranked)+' of '+fmtInt(F.list.length)+' players ranked</span><span class="db2-q" title="'+esc(help)+'">?</span></span></div>';
+      '<span style="flex:none;margin-left:auto;display:flex;align-items:center;gap:10px"><span class="db3-pill">'+fmtInt(F.ranked)+' players ranked</span><span class="db2-q" title="'+esc(help)+'">?</span></span></div>';
     var ctl=el('div','db3-fctl'), pin=el('div','db3-pin'), well=el('div','db3-well');
     var pinned=state.fadePin && F.list.filter(function(x){ return x.name===state.fadePin; })[0];
     if(pinned){ var ch=el('span','db3-chip', db3Ava(pinned.name,20,8.5)+'<span>'+esc(pinned.name)+'</span>'); var xb=el('button','db3-xs'); xb.type='button'; xb.title='Unpin';
@@ -34535,7 +34581,7 @@ window.DatabaseTab = (function(){
           !n?'No match in this window':n<HARD_GATE?'Small sample: '+fmtInt(n)+' '+dbMatchWord(n):'Flat 1% stake on '+(back?'him':'his opponent')],
         [back?'He won':'He lost', bw==null?'\u2014':(bw*100).toFixed(1)+'%', 'var(--db2-ink)', 'His record '+fmtInt(hisW)+' won \u00b7 '+fmtInt(n-hisW)+' lost'],
         ['Market expected', imp==null?'\u2014':(imp*100).toFixed(1)+'%', 'var(--db2-ink)', imp==null?'From the average price':sg((bw-imp)*100,1,' pts')+' against the price'],
-        ['Rank', x.rank?x.rank+' of '+F.ranked:'\u2014', 'var(--db2-ink)', x.rank?(back?'Among players to back':'Among players to fade')+(win!=='all'?', whole period':''):'Not ranked under '+HARD_GATE+' matches']],
+        ['Rank', x.rank?x.rank+' of '+F.ranked:'\u2014', 'var(--db2-ink)', x.rank?(back?'Among players to back':'Among players to fade')+(win!=='all'?', whole period':''):'Not listed under '+FADE_MIN+' matches']],
       listTitle:(one?one+' matches':'Matches')+(back?', backing him':', backing his opponent'), n:n, ms:ms,
       wire:function(bx, close){
         bx.querySelector('.lnk').onclick=function(){ close(); state.view='players'; state.player=x.name; state.player2=null; state.stance=back?'back':'fade'; state.pq=''; render(); };
@@ -34730,9 +34776,9 @@ window.DatabaseTab = (function(){
 
   // ================= Players =================
   function inPeriod(di, anchor){
-    if(state.period==='all') return true;
-    var days={w52:364, y2:730, y5:1826}[state.period];
-    return dnum(di) >= anchor-days;   // rolling window back from the archive's last match (C9)
+    if(state.period==='w52') return dnum(di) >= anchor-364;   // rolling window back from the archive's last match (C9)
+    var y=Math.floor(di/10000);   // founder design 2026-11-20: else the shared Years range
+    return !(state.yearMin!=null && y<state.yearMin) && !(state.yearMax!=null && y>state.yearMax);
   }
   function playerRecs(){
     var all=playerIndex[state.player]||[];
@@ -34774,7 +34820,7 @@ window.DatabaseTab = (function(){
   // Per band of HIS price, both roles, on the shape fixedBands returns (so the band card and the compare page read it).
   function db2RecBands(recs, sideKey, fading){
     var role=recs.filter(function(v){ return sideKey==='fav' ? v.fav : !v.fav; });
-    var mk=function(rs){ if(!rs.length) return null; var a=aggRecs(rs, fading); return { n:a.n, yield:a.yield, median:a.median }; };
+    var mk=function(rs){ if(!rs.length) return null; var a=aggRecs(rs, fading); return { n:a.n, w:a.wins, yield:a.yield, median:a.median }; };
     return { all:mk(role), recs:role, bands:DB2_BANDS[sideKey].map(function(B){
       var rs=role.filter(function(v){ return db2InBand(B, v.p); }); return { def:B, agg:mk(rs), vs:rs }; }) };
   }
@@ -34844,7 +34890,12 @@ window.DatabaseTab = (function(){
     if(state.plevs && lv) o+=' \u00b7 '+lv.filter(function(x){ return state.plevs.has(x[0]); }).map(function(x){ return x[1]; }).join(', ');
     if(state.prnds && rd) o+=' \u00b7 '+rd.filter(function(x){ return state.prnds.has(x[0]); }).map(function(x){ return x[1]; }).join(', ');
     return o; }
-  function db2PeriodLabel(){ return ({all:'All time', w52:'Last 52 weeks', y2:'Last 2Y', y5:'Last 5Y'})[state.period] || 'All time'; }
+  function db2PeriodLabel(){
+    if(state.period==='w52') return 'Last 52 weeks';
+    if(state.yearMin==null && state.yearMax==null) return 'Career';
+    var ys=presentYears(), lo=state.yearMin!=null?state.yearMin:ys[0], hi=state.yearMax!=null?state.yearMax:ys[ys.length-1];
+    return lo===hi ? 'Season '+lo : lo+'\u2013'+hi;
+  }
   function renderPlayers(body){
     if(!NAMES){
       body.appendChild(el('div','db-loading','Loading player archive…'));
@@ -35499,7 +35550,7 @@ window.DatabaseTab = (function(){
           var res=e[g[0]+'B'];
           res.bands.forEach(function(b,bi){
             var n=b.agg?b.agg.n:0, r=el('div','db3-pgr');
-            r.innerHTML='<span class="db3-odds"><span class="o">'+db3OddsHtml(b.def)+'</span><span class="n">'+esc(b.def[0])+'</span></span>'+db3YieldLine(b.agg)+'<span class="db3-bm">'+fmtInt(n)+(n?'<small>'+db3Wl(b.vs, PM && state.stance==='fade')+'</small>':'')+'</span><span class="db3-chev">\u203a</span>';
+            r.innerHTML='<span class="db3-odds"><span class="o">'+db3OddsHtml(b.def)+'</span><span class="n">'+esc(b.def[0])+'</span></span>'+db3YieldLine(b.agg)+'<span class="db3-bm">'+fmtInt(n)+(n?db3WlHtml(b.vs, PM && state.stance==='fade'):'')+'</span><span class="db3-chev">\u203a</span>';
             r.title=fmtInt(n)+' '+dbMatchWord(n)+(n && n<HARD_GATE?', small sample':'');
             r.onclick=function(){ db3BandBox({ sideKey:g[0], bi:bi, res:res, title:g[1], hint:g[0]==='fav'?(PM?'He is the shorter price':'Back the shorter price'):(PM?'He is the longer price':'Back the longer price'),
               mode:mode, player:PM?e.label:null, fade:PM && state.stance==='fade', evName:e.label, more:0 }, c); };
@@ -35846,7 +35897,7 @@ window.DatabaseTab = (function(){
   // The player profile's event names (founder 2026-11-14): a Tennis-Data sponsor name → its city, by this page's own name
   // map; a name TOURN_SPLIT shares between events by season needs the row's date, so it reads null here.
   window.sfSponsorCity = function (n) { return Object.prototype.hasOwnProperty.call(TOURN_SPLIT, n) ? null : tdCity(n); };
-  return { mount: mount, init: init, instanceCount: function(){ return INSTANCES.length; }, priceRows: priceRows, tdCity: tdCity,
+  return { mount: mount, init: init, instanceCount: function(){ return INSTANCES.length; }, priceRows: priceRows, tdCity: tdCity, swingOf: function(r){ return M ? db3SwingOf(r) : null; },
     lnCutTally: db2LnCutTally, lnLoadField: loadLinesField, dogBands: DB2_BANDS.dog.length };
 })();
 </script>

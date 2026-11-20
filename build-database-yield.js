@@ -889,6 +889,21 @@ function band8Of(list) {
 }
 const TB_BANDS = band8Of(dbList);
 
+// founder 2026-11-20: the page's Swing filter needs indoor / outdoor, which Tennis-Data records on every match (its
+// Court column). meta.indoor = { tournamentIdx: [years played indoors] } (a year counts when most of that event's
+// rows that year are Indoor), over rows + retRows. The page reads it beside the tournament catalog.
+const INDOOR = (() => {
+  const acc = new Map();
+  const add = (ti, d, a) => { if (ti < 0 || !a) return; const k = ti + '|' + Math.floor(d / 10000);
+    const c = acc.get(k) || [0, 0]; c[1]++; if (/^indoor$/i.test(a[1])) c[0]++; acc.set(k, c); };
+  rows.forEach((r, i) => add(r[4], r[0], rowsAtt[i]));
+  retRaw.forEach((x, i) => add(tournaments.indexOf(x[4]), x[0], retAtt[i]));
+  const out = {};
+  for (const [k, c] of acc) if (c[0] * 2 > c[1]) { const [t, y] = k.split('|'); (out[t] = out[t] || []).push(+y); }
+  Object.values(out).forEach(v => v.sort((a, b) => a - b));
+  return out;
+})();
+
 // --- write artefacts --------------------------------------------------------
 const meta = {
   schema: 1,
@@ -912,6 +927,7 @@ const meta = {
     preWindow: bucket.preWindow,   // pre-2010 regime cut (otherwise-usable rows dropped by the window)
   },
   windowStart: WINDOW_START,
+  indoor: INDOOR,
   books: approxOn ? BOOKS : BOOKS.slice(0, 2),
   priceRule: PRICE_RULE,
   bookCounts: BOOK_COUNTS,   // FIGURE rows per book ACTUALLY used (r[8]; rows + standing retRows); 'Pinnacle (approx.)' only when its feed exists

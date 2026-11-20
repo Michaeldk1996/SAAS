@@ -166,6 +166,40 @@ const CHECKS = {
     if (m.join('|') !== 'Tour|Tournament|Player|Fade finder|Lines|Ratings') return 'tabs ' + m.join(', ');
     return null;
   },
+  // founder 2026-11-20: the Fade finder lists a player from FADE_MIN (5) matches and ranks every listed player.
+  fadeFloor(src) {
+    if (!/var FADE_MIN=5;/.test(src)) return 'FADE_MIN is not 5';
+    const f = fnSource(src, 'db3FadeModel');
+    if (!/\.filter\(function\(k\)\{ return P\[k\]\.n>=FADE_MIN; \}\)/.test(f)) return 'players under 5 matches are listed';
+    if (!/list\.forEach\(function\(x,i\)\{ x\.rank=i\+1; \}\);/.test(f)) return 'a listed player is left unranked';
+    return null;
+  },
+  // founder design 2026-11-20: Players reads the shared Years range, or the last 52 weeks; the label names it.
+  playerPeriod(src) {
+    const state = { period: 'all', yearMin: null, yearMax: null };
+    const code = 'var state=arguments[0]; function dnum(di){ var s=""+di; return Date.UTC(+s.slice(0,4), (+s.slice(4,6))-1, +s.slice(6,8))/86400000; }\n' +
+      'function presentYears(){ return [2010,2011,2024,2025,2026]; }\n' + fnSource(src, 'inPeriod') + '\n' + fnSource(src, 'db2PeriodLabel') + '\nreturn {inPeriod, db2PeriodLabel};';
+    const { inPeriod, db2PeriodLabel } = new Function(code)(state);
+    const anchor = Date.UTC(2026, 10, 14) / 86400000;
+    if (!inPeriod(20110301, anchor) || db2PeriodLabel() !== 'Career') return 'Career is not every year';
+    state.yearMin = 2024; state.yearMax = 2024;
+    if (inPeriod(20230301, anchor) || !inPeriod(20240301, anchor) || db2PeriodLabel() !== 'Season 2024') return 'one season does not read "Season 2024"';
+    state.yearMin = 2019; state.yearMax = 2023;
+    if (db2PeriodLabel() !== '2019\u20132023') return 'a range does not read 2019–2023';
+    state.period = 'w52';
+    if (inPeriod(20251101, anchor) || !inPeriod(20251201, anchor) || db2PeriodLabel() !== 'Last 52 weeks') return 'Last 52 weeks is not the year to the archive end';
+    if (!/\[\['w52','Last 52 weeks'\],\['all','Career'\]\]/.test(src)) return 'no Last 52 weeks · Career switch';
+    if (/trigger\('Period'/.test(src)) return 'the Period menu is back';
+    return null;
+  },
+  // founder 2026-11-20: the swing reads the event's country (catalog, else its city) and Tennis-Data's indoor seasons.
+  swing(src) {
+    if (!/\['naw','North American winter'\]/.test(src)) return 'no North American winter swing';
+    const f = fnSource(src, 'db3SwingOf');
+    if (!/db3CatEntry\(nm\)/.test(f) || !/M\.indoor/.test(f)) return 'the swing does not read country + indoor';
+    if (/catalogEntryForNames/.test(f)) return 'the swing reads the Database name list (no country there)';
+    return null;
+  },
   // The design's own colours, read through tokens.css (identical colours).
   tokens(src) {
     const want = { card: '#0E1019', inset: '#0C0E16', raised: '#131623', ink: '#E7E9EE', 'ink-2': '#C6CCDB', muted: '#8B96B5', blue: '#5B9BFF', green: '#3DD68C', red: '#E0616F' };
@@ -176,6 +210,9 @@ const CHECKS = {
 };
 
 const MUTANTS = [
+  ['fade floor gone', 'fadeFloor', s => s.replace(".filter(function(k){ return P[k].n>=FADE_MIN; })", "")],
+  ['period ignores years', 'playerPeriod', s => s.replace("return !(state.yearMin!=null && y<state.yearMin) && !(state.yearMax!=null && y>state.yearMax);", "return true;")],
+  ['swing back on the name list', 'swing', s => s.replace("var nm=M.tournaments[r[4]], e=db3CatEntry(nm),", "var nm=M.tournaments[r[4]], e=catalogEntryForNames([nm])||{},")],
   ['band edges inclusive', 'bands', s => s.replace("function db2InBand(B, p){ return p>=B[3]-1e-9 && p<B[4]-1e-9; }", "function db2InBand(B, p){ return p>=B[3]-1e-9 && p<=B[4]+1e-9; }")],
   ['terciles back', 'bands', s => s.replace("['Clear favourite','1.21','1.35',1.21,1.36]", "['Firm favourite','1.21','1.35',1.21,1.36]")],
   ['dates back', 'dates', s => s.replace("{ N:n, seasons:db3Seasons(ordered.map(function(r){ return r[0]; }))", "{ N:n, xs:ordered.map(function(r){ return db2Ms(r[0]); }), seasons:db3Seasons(ordered.map(function(r){ return r[0]; }))")],

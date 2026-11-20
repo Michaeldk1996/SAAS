@@ -1792,6 +1792,19 @@ check('profile v2 · the swing rule places the tour\'s own events where the expo
   const want = ['aus', 'me', 'gold', 'eei', 'sun', 'eclay', 'grass', 'sclay', 'nah', 'asia', 'ein', 'team'];
   assert.deepStrictEqual(got.map(g => g[0]), want, got.map(g => g[1] + ' → ' + g[0]).join(', '));
 });
+// founder 2026-11-20: the US / Mexico hard courts of January–March are the North American winter swing (never Middle East,
+// Euro indoor or Sunshine); Dubai in March stays Middle East; Indian Wells is Sunshine in any month; Bangkok indoors is Asia.
+check('founder 2026-11-20 · North American winter swing', () => {
+  const R = (event, date, surface, court, cc) => I.calSwingOf({ event, tournament: event, mon: +date.slice(5, 7) - 1, surface, court }, cc);
+  assert.strictEqual(R('Dallas Open', '2026-02-10', 'hard', 'Indoor', 'US'), 'naw', 'Dallas (indoor) is not North American winter');
+  assert.strictEqual(R('Delray Beach Open', '2026-02-17', 'hard', 'Outdoor', 'US'), 'naw', 'Delray Beach');
+  assert.strictEqual(R('Abierto Mexicano', '2026-03-02', 'hard', 'Outdoor', 'MX'), 'naw', 'Acapulco in March');
+  assert.strictEqual(R('Dubai Tennis Championships', '2025-03-01', 'hard', 'Outdoor', 'AE'), 'me', 'Dubai in March is the Middle East');
+  assert.strictEqual(R('BNP Paribas Open', '2021-10-08', 'hard', 'Outdoor', 'US'), 'sun', 'Indian Wells (October) is the Sunshine double');
+  assert.strictEqual(R('Thailand Open', '2012-10-01', 'hard', 'Indoor', 'TH'), 'asia', 'Bangkok indoors is the Asian swing');
+  assert.strictEqual(R('Brisbane International', '2018-12-31', 'hard', 'Outdoor', 'AU'), 'aus', 'a late-December opener is the Australian swing');
+  assert.ok(I.CAL_SW ? I.CAL_SW.some(s => s.k === 'naw') : true);
+});
 // Profile v2 (founder 2026-11-09): Opponent level = the opponent's Elo RANK in the weekly snapshot strictly before the
 // match day (≤ 7 days old) — the dashboard's own pp2OppEloRank over its fhEloAt guards, run on a two-snapshot history.
 check('profile v2 · opponent Elo rank: the snapshot before the match, ranked by rating; none in the week before → unknown', () => {
