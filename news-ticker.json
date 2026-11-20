@@ -1,19 +1,19 @@
 {
- "generatedAt": "2026-11-20T14:56:51.554Z",
+ "generatedAt": "2026-11-20T15:22:03.868Z",
  "tournaments": [
   {
    "key": "2794",
    "season": "2026",
    "name": "Finals - Turin",
    "file": "news-ticker/2794-2026.json",
-   "items": 227,
+   "items": 228,
    "byType": {
+    "quote": 187,
     "report": 11,
-    "digest": 30,
-    "quote": 186
+    "digest": 30
    },
-   "latestTimestamp": "2026-11-20T14:17:13.400Z",
-   "updatedAt": "2026-11-20T14:56:51.554Z"
+   "latestTimestamp": "2026-11-20T14:39:31.000Z",
+   "updatedAt": "2026-11-20T15:22:03.868Z"
   },
   {
    "key": "tour",
@@ -26,7 +26,7 @@
     "digest": 23
    },
    "latestTimestamp": "2026-11-19T10:14:06.285Z",
-   "updatedAt": "2026-11-20T14:56:51.554Z"
+   "updatedAt": "2026-11-20T15:22:03.868Z"
   },
   {
    "key": "1681",
@@ -56,6 +56,37 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-a23a6fe561d02a",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": "372",
+   "player": "C. Alcaraz",
+   "opponent": "F. Cobolli",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-20T14:39:31.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating F. Cobolli",
+   "eventKey": "12179697",
+   "won": true,
+   "text": "The biggest challenges right now lie off the court … Recovering is the most important thing now, we'll see how I feel tomorrow.",
+   "originalText": "De grootste uitdagingen liggen op dit moment buiten de baan … Herstellen is nu het belangrijkst, we zullen zien hoe ik me morgen voel.",
+   "language": "nl",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "NOS Sport",
+   "sourceUrl": "https://nos.nl/artikel/2640297-ondanks-hamstringklachten-rekent-alcaraz-snel-af-met-cobolli-op-atp-finals",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On recovering from his hamstring problem",
+   "sourceHash": "1df9a3a6617fbcb8",
+   "publishedAt": "2026-11-20T15:22:03.868Z",
+   "file": "news-ticker/2794-2026.json"
+  },
   {
    "id": "report-12179697",
    "type": "report",
@@ -1866,37 +1897,6 @@
    "topic": "On his left thigh pain at ATP Finals",
    "sourceHash": "c1a3fd5275d58274",
    "publishedAt": "2026-11-19T16:55:22.352Z",
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-236b0fff2eba7a",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": "1093",
-   "player": "C. Alcaraz",
-   "opponent": "D. Medvedev",
-   "tournament": "Finals - Turin",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-19T15:46:07.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Quotes",
-   "context": "after beating D. Medvedev",
-   "eventKey": "12179696",
-   "won": true,
-   "text": "I feel it a little bit. I'm not going to lie",
-   "originalText": "Jag känner av det lite grand. Jag tänker inte ljuga",
-   "language": "sv",
-   "translated": true,
-   "translationModel": "claude-opus-5-5",
-   "sourceName": "SVT Sport",
-   "sourceUrl": "https://www.svt.se/sport/tennis/carlos-alcaraz-tvingas-spela-annars-diskas-han",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On his thigh injury at the ATP Finals",
-   "sourceHash": "a41bf34bc0e1b270",
-   "publishedAt": "2026-11-19T16:11:40.130Z",
    "file": "news-ticker/2794-2026.json"
   }
  ]
