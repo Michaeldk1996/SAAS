@@ -2,8 +2,142 @@
  "tournament": "ATP Tour",
  "tournamentKey": "tour",
  "season": "2026",
- "updatedAt": "2026-11-20T17:54:02.583Z",
+ "updatedAt": "2026-11-20T18:15:20.889Z",
  "items": [
+  {
+   "id": "digest-59e3486f77d8bc",
+   "type": "digest",
+   "version": 1,
+   "playerId": "6011",
+   "player": "K. Smith",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-20T17:30:00.000Z",
+   "members": [
+    "quote-15714bf956d0b0",
+    "quote-73fd0c7cff0b11",
+    "quote-9c46f721840336"
+   ],
+   "memberHash": "71d8a80760b7447f",
+   "digestedAt": "2026-11-20T18:00:42.494Z",
+   "blocks": [
+    {
+     "label": "on Andy Murray as future Davis Cup captain",
+     "text": "He obviously is the standout candidate, isn't he? I think it is timing for him, he's busy with his life. But I really hope at some point in the future that he does take it on.",
+     "from": [
+      "quote-15714bf956d0b0",
+      "quote-9c46f721840336",
+      "quote-73fd0c7cff0b11"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "030998330ad16b39",
+   "publishedAt": "2026-11-20T18:15:20.889Z"
+  },
+  {
+   "id": "quote-9c46f721840336",
+   "type": "quote",
+   "playerId": "6011",
+   "opponentId": null,
+   "player": "K. Smith",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-20T17:30:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "I think it is timing for him, he's busy with his life,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Sky Sports",
+   "sourceUrl": "https://www.skysports.com/tennis/news/12110/13614421/andy-murray-great-britains-outgoing-davis-cup-captain-leon-smith-hopes-scot-will-one-day-take-the-role",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On Andy Murray as future Davis Cup captain",
+   "sourceHash": "a23648ffef326d58",
+   "publishedAt": "2026-11-20T18:15:20.889Z"
+  },
+  {
+   "id": "quote-15714bf956d0b0",
+   "type": "quote",
+   "playerId": "6011",
+   "opponentId": null,
+   "player": "K. Smith",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-20T12:00:10.992Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "He obviously is the standout candidate, isn't he?",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "BBC Sport",
+   "sourceUrl": "https://www.bbc.co.uk/sport/tennis/articles/cvze7d03880ko?at_medium=RSS&at_campaign=rss",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On Andy Murray as future Davis Cup captain",
+   "sourceHash": "81059367efe6f5c6",
+   "publishedAt": "2026-11-20T18:15:20.889Z"
+  },
+  {
+   "id": "quote-73fd0c7cff0b11",
+   "type": "quote",
+   "playerId": "6011",
+   "opponentId": null,
+   "player": "K. Smith",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-20T12:00:10.992Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "But I really hope at some point in the future that he does take it on.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "BBC Sport",
+   "sourceUrl": "https://www.bbc.co.uk/sport/tennis/articles/cvze7d03880ko?at_medium=RSS&at_campaign=rss",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On Murray becoming Britain's Davis Cup captain",
+   "alsoReportedBy": [
+    {
+     "sourceName": "Sky Sports",
+     "sourceUrl": "https://www.skysports.com/tennis/news/12110/13614421/andy-murray-great-britains-outgoing-davis-cup-captain-leon-smith-hopes-scot-will-one-day-take-the-role",
+     "language": "en"
+    }
+   ],
+   "sourceHash": "39b97b58d1cc74bd",
+   "publishedAt": "2026-11-20T18:15:20.889Z"
+  },
   {
    "id": "quote-d4b9ea18a3b0d7",
    "type": "quote",
@@ -727,7 +861,7 @@
     "quote-a20ad7c6e979e3"
    ],
    "memberHash": "2a5d041b1162e6f2",
-   "digestedAt": "2026-11-20T17:29:53.444Z",
+   "digestedAt": "2026-11-20T18:00:42.494Z",
    "blocks": [
     {
      "label": "on Carlos Alcaraz's level of play",
@@ -739,10 +873,10 @@
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "ee9043b6bf22f0f3",
+   "sourceHash": "cff2e118873e8574",
    "publishedAt": "2026-11-19T03:47:45.956Z",
-   "revisedAt": "2026-11-20T17:54:02.583Z",
-   "revision": 32
+   "revisedAt": "2026-11-20T18:15:20.889Z",
+   "revision": 33
   },
   {
    "id": "quote-611789d4998d31",
@@ -1093,7 +1227,7 @@
     "quote-758fd4e2661882"
    ],
    "memberHash": "1602bcb2f6f16728",
-   "digestedAt": "2026-11-20T17:29:53.444Z",
+   "digestedAt": "2026-11-20T18:00:42.494Z",
    "blocks": [
     {
      "label": "after his opening win over Frances Tiafoe",
@@ -1111,10 +1245,10 @@
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "6f3dd3fc20b7fadc",
+   "sourceHash": "6a7aa08c857e7b60",
    "publishedAt": "2026-11-19T03:47:45.956Z",
-   "revisedAt": "2026-11-20T17:54:02.583Z",
-   "revision": 31
+   "revisedAt": "2026-11-20T18:15:20.889Z",
+   "revision": 32
   },
   {
    "id": "quote-1484fc62d72637",
@@ -1486,18 +1620,18 @@
     "quote-f2b49767a36019"
    ],
    "memberHash": "c0a714cecf99b5f9",
-   "digestedAt": "2026-11-20T17:29:53.444Z",
+   "digestedAt": "2026-11-20T18:00:42.494Z",
    "blocks": [
     {
-     "label": "on the physical rallies in his win over Fils",
+     "label": "after his win over Fils",
      "text": "That was really intense, especially in the first set. I don't know that I've played that many rallies out there on tour on a court this fast. So it was physical, really physical. A tough contest.",
      "from": [
       "quote-f2b49767a36019"
      ]
     },
     {
-     "label": "on constant questions about coach Juan Carlos Ferrero",
-     "text": "Obviously I get a lot of questions, but I think it comes with the territory. It's not something that surprises me and I'm used to it.",
+     "label": "on the constant questions about coach Ferrero",
+     "text": "Obviously I get a lot of questions, but I think it comes with the territory. I think that the questions are going to come, it's not something that surprises me and I'm used to it. But yes, there have been many, many questions.",
      "from": [
       "quote-b2f1172a530332",
       "quote-cb6747ca9b29e9"
@@ -1505,10 +1639,10 @@
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "345d6bf27f84b194",
+   "sourceHash": "94082c3c88c889aa",
    "publishedAt": "2026-11-19T03:47:45.956Z",
-   "revisedAt": "2026-11-20T17:54:02.583Z",
-   "revision": 73
+   "revisedAt": "2026-11-20T18:15:20.889Z",
+   "revision": 74
   },
   {
    "id": "quote-b2f1172a530332",
@@ -1682,7 +1816,7 @@
     "quote-c97b20550b80b5"
    ],
    "memberHash": "31dca0b43f47f574",
-   "digestedAt": "2026-11-20T17:29:53.444Z",
+   "digestedAt": "2026-11-20T18:00:42.494Z",
    "blocks": [
     {
      "label": "after his opening ATP Finals win over Jodar",
@@ -1700,10 +1834,10 @@
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "7e5a4826444cc587",
+   "sourceHash": "f991b1266d309172",
    "publishedAt": "2026-11-19T03:47:45.956Z",
-   "revisedAt": "2026-11-20T17:54:02.583Z",
-   "revision": 73
+   "revisedAt": "2026-11-20T18:15:20.889Z",
+   "revision": 74
   },
   {
    "id": "quote-5c8fc89fea1cd6",
@@ -2040,7 +2174,7 @@
     "quote-91909bb6648e25"
    ],
    "memberHash": "631d2375c215fb2f",
-   "digestedAt": "2026-11-20T17:29:53.444Z",
+   "digestedAt": "2026-11-20T18:00:42.494Z",
    "blocks": [
     {
      "label": "on practicing with a stringless racket in Turin",
@@ -2058,10 +2192,10 @@
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "2fff8a91fd80fcf0",
+   "sourceHash": "401f7584204b0778",
    "publishedAt": "2026-11-19T03:47:45.956Z",
-   "revisedAt": "2026-11-20T17:54:02.583Z",
-   "revision": 73
+   "revisedAt": "2026-11-20T18:15:20.889Z",
+   "revision": 74
   },
   {
    "id": "quote-74899a9a78880b",
