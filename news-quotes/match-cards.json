@@ -476,6 +476,69 @@
     "maxDiff": 0
    }
   },
+  "12179697": {
+   "p1": {
+    "performance": 9.5,
+    "serveQuality": 8.9,
+    "unreturnedPct": 30,
+    "firstInPct": 73,
+    "firstWonPct": 84,
+    "secondWonPct": 50,
+    "secondSpeed": 168,
+    "returnQuality": 9.2,
+    "fhWinners": 14,
+    "bhWinners": 9,
+    "fhUnforced": 8,
+    "bhUnforced": 5,
+    "forcedErrors": 18,
+    "baselineWon": 35,
+    "under9Won": 61,
+    "over9Won": 1,
+    "bpWon": [
+     4,
+     9
+    ],
+    "netWon": [
+     4,
+     6
+    ]
+   },
+   "p2": {
+    "performance": 6.9,
+    "serveQuality": 7.5,
+    "unreturnedPct": 24,
+    "firstInPct": 69,
+    "firstWonPct": 56,
+    "secondWonPct": 39,
+    "secondSpeed": 157,
+    "returnQuality": 8.9,
+    "fhWinners": 6,
+    "bhWinners": 1,
+    "fhUnforced": 2,
+    "bhUnforced": 11,
+    "forcedErrors": 20,
+    "baselineWon": 19,
+    "under9Won": 41,
+    "over9Won": 0,
+    "bpWon": [
+     0,
+     0
+    ],
+    "netWon": [
+     4,
+     5
+    ]
+   },
+   "postedAt": "2026-11-20T14:22:11.000Z",
+   "readAt": "2026-11-20T21:27:35.131Z",
+   "sourceName": "ATP broadcast match statistics (via @ATP_Entry)",
+   "sourceUrl": "https://x.com/ATP_Entry/status/2123783970043081093",
+   "agreed": "6 of 6 serve figures within 3 points of ours; set scores and break points equal",
+   "wue": {
+    "compared": 4,
+    "maxDiff": 1
+   }
+  },
   "12179698": {
    "p1": {
     "performance": 9.6,
@@ -1224,5 +1287,5 @@
   }
  },
  "walkovers": {},
- "updatedAt": "2026-11-19T23:36:30.914Z"
+ "updatedAt": "2026-11-20T21:27:35.131Z"
 }
