@@ -130,7 +130,7 @@ test('market context: Pinnacle else Bet365, best soft never Pinnacle or an excha
   assert.equal(api.edgeSharp(pulled).name, 'Bet365', 'Pinnacle with no price now falls to Bet365');
   const ex = JSON.parse(JSON.stringify(M)); ex.bookNow['Betfair Exchange'] = { p1: 9.5, p2: 9.5 };
   assert.equal(api.edgeBestSoft(ex, 'p1').key, 'bet365', 'an exchange never counts as a soft book (R2 fix 4)');
-  assert.match(t, /LD L\. Darderi 2\.90 Model base 34\.5% · 65\.5% ST S\. Tsitsipas 1\.53 Edge Odds Book Odds Edge \+2\.7pp 3\.00 Soft open Bet365 \/ Betano · margin 4\.8% \/ 4\.9% 1\.42 −1\.6pp \+2\.7pp 3\.00 Soft now margin 4\.8% \/ 4\.5% 1\.44 −0\.9pp \+1\.6pp 2\.94 Pinnacle open 8 Oct · 11:22 · margin 3\.5% 1\.44 −1\.6pp \+2\.4pp 3\.03 Pinnacle now L\. Darderi −0\.8pp since open · margin 2\.9% 1\.43 −2\.4pp Soft book Bet365 \/ Betano · market opened 8 Oct · 11:22/);
+  assert.match(t, /LD L\. Darderi 2\.90 Model base 34\.5% · 65\.5% ST S\. Tsitsipas 1\.53 Edge Odds Book Odds Edge \+2\.7pp 3\.00 Soft open Bet365 \/ Betano · margin 4\.8% \/ 4\.9% 1\.42 −1\.6pp \+2\.7pp 3\.00 Soft now margin 4\.8% \/ 4\.5% 1\.44 −0\.9pp \+1\.6pp 2\.94 Pinnacle open 8 Oct · 11:22 · margin 3\.5% 1\.44 −1\.6pp \+2\.4pp 3\.03 Pinnacle now L\. Darderi −0\.8pp since open · margin 2\.9% 1\.43 −2\.4pp — — Prediction open not listed — — — — Prediction now not listed — — Soft book Bet365 \/ Betano · market opened 8 Oct · 11:22/);
   api.edgeSetMkView && api.edgeSetMkView('pct');
 });
 test('market context: Implied % shows the no-vig % and the model base as %, the odds under "Model base"', () => {
@@ -203,7 +203,7 @@ test('value layers: 14 rows by weight then shift; strip by quality (gated / not 
   assert.equal(JSON.stringify(api.open), JSON.stringify([true, 'surface']));
   assert.equal(calls.scrollIntoView, 0); assert.equal(calls.scrollBy.length, 1);
   assert.match(text(h), /Hide the layer breakdown ▾ LD L\. Darderi 2 layers in his favour \+1\.3pp Net adjustment \+4\.3pp toward S\. Tsitsipas ST S\. Tsitsipas 7 layers in his favour \+5\.6pp Shift Rating Layer Rating Shift/);
-  assert.match(text(h), /44% Surface record High weight · good data 63% \+1\.0pp › Why High weight Favours S\. Tsitsipas Hard-court record 44% vs 63% over career and the last 52 weeks, each against their own career baseline\. Data quality Good The inputs behind this layer are complete for both players in this match\./);
+  assert.match(text(h), /44% Surface record High weight · good data 63% \+1\.0pp › Why Hard-court record 44% vs 63% over career and the last 52 weeks, each against their own career baseline\. High weight Favours S\. Tsitsipas Good Data quality The inputs behind this layer are complete for both players in this match\./);
   assert.match(h, /id="emLayer-surface"/);
 });
 test('value layers: the players’ real figures, the one it favours white, the shift pill on that side only; level under 0.05pp', () => {
@@ -230,15 +230,15 @@ test('value layers: inactive and not-applicable rows: dashes, no pill, the reaso
   const { api } = boot();
   api.edgeToggleLayer('formatSplit'); api.edgeToggleLayers();
   let t = text(api.render());
-  assert.match(t, /— Format split \(Bo5\) Not applicable · best of 3 — › Why Medium-high weight Not applicable Best of 3 ?: this layer applies to best-of-five only\. Data quality Not applicable The layer does not apply to a best-of-three match\./);
+  assert.match(t, /— Format split \(Bo5\) Not applicable · best of 3 — › Why Best of 3 ?: this layer applies to best-of-five only\. Medium-high weight Not applicable Not applicable Data quality The layer does not apply to a best-of-three match\./);
   api.edgeToggleLayer('weather');
-  assert.match(text(api.render()), /Weather \/ conditions Not applicable · switched off — › Why Medium-high weight Not applicable Switched off for every match until the match-time fix and an indoor check are both in\. Data quality Not applicable The layer is switched off by a model rule for every match, not by missing data\./);
+  assert.match(text(api.render()), /Weather \/ conditions Not applicable · switched off — › Why Switched off for every match until the match-time fix and an indoor check are both in\. Medium-high weight Not applicable Not applicable Data quality The layer is switched off by a model rule for every match, not by missing data\./);
   api.edgeToggleLayer('subjective');
-  assert.match(text(api.render()), /— Match context Highest weight · no analyst note — › Why Highest weight No data No match report read or analyst note for this match yet, so the layer stays neutral\./, 'one name: Match context');
+  assert.match(text(api.render()), /— Match context Highest weight · no analyst note — › Why No match report read or analyst note for this match yet, so the layer stays neutral\. Highest weight No data Poor Data quality/, 'one name: Match context');
   api.edgeToggleLayer('styleMatchup');
-  assert.match(text(api.render()), /Style matchup Highest weight · no data — › Why Highest weight No data On the Playing Styles grid, Attacking Baseliners win 38% of 1,259 matches against Big Server \+ Complete Baseliners\. The model doesn’t read playing styles yet, so this layer doesn’t move the price\. Data quality Poor The model doesn’t read playing styles yet\./);
+  assert.match(text(api.render()), /Style matchup Highest weight · no data — › Why On the Playing Styles grid, Attacking Baseliners win 38% of 1,259 matches against Big Server \+ Complete Baseliners\. The model doesn’t read playing styles yet, so this layer doesn’t move the price\. Highest weight No data Poor Data quality The model doesn’t read playing styles yet\./);
   api.edgeToggleLayer('qualityForm');
-  assert.match(text(api.render()), /Why Medium-high weight Favours S\. Tsitsipas Win rate against top-50 opponents minus the player’s overall win rate, in percentage points \(recent matches weigh more\): L\. Darderi −22\.0pp over \d+ top-50 matches, S\. Tsitsipas −8\.0pp over \d+\. On hard courts, top-50 win rate there minus top-50 win rate overall: L\. Darderi −8\.3pp over 21 matches, S\. Tsitsipas −1\.7pp over 228\./, 'the number says what it is, who is who, true minus (R2 fix 3, R3 fix 3)');
+  assert.match(text(api.render()), /Why Win rate against top-50 opponents minus the player’s overall win rate, in percentage points \(recent matches weigh more\): L\. Darderi −22\.0pp over \d+ top-50 matches, S\. Tsitsipas −8\.0pp over \d+\. On hard courts, top-50 win rate there minus top-50 win rate overall: L\. Darderi −8\.3pp over 21 matches, S\. Tsitsipas −1\.7pp over 228\. Medium-high weight Favours S\. Tsitsipas Good/, 'the number says what it is, who is who, true minus (R2 fix 3, R3 fix 3)');
   const all = api.render();
   assert.ok(!/career\+52wk|recency-wtd|Nₑₓ|rel-to-archetype/.test(all), 'no engine shorthand on the page');
   assert.ok(!/TEN-\d/.test(text(all)), 'no ticket numbers on the page (R3 fix 1)');
@@ -248,7 +248,7 @@ test('value layers: inactive and not-applicable rows: dashes, no pill, the reaso
   const ev = JSON.parse(JSON.stringify(FIX.e1)); const fa = ev.stage2.adjustments.find(x => x.key === 'fatigue');
   Object.assign(fa, { applied: false, confidence: 'none', direction: 'neutral', signal: 0, deltaP1: 0, detail: '10d load even on Hard: 6s/3m=6.0u vs 7s/3m=7.0u (gap -1.0u < 2).' });
   const evb = boot({ e: ev }); evb.api.render(); evb.api.edgeJumpLayer('fatigue');
-  assert.match(text(evb.api.render()), /6\.0 Fatigue \(recent load\) Medium-high weight · good data · level 7\.0 › Why Medium-high weight Even Match load over the last 10 days: L\. Darderi 6 sets in 3 matches \(6\.0 units\), S\. Tsitsipas 7 sets in 3 matches \(7\.0 units\)\. The loads are too close for the layer to move the price\. Data quality Good/);
+  assert.match(text(evb.api.render()), /6\.0 Fatigue \(recent load\) Medium-high weight · good data · level 7\.0 › Why Match load over the last 10 days: L\. Darderi 6 sets in 3 matches \(6\.0 units\), S\. Tsitsipas 7 sets in 3 matches \(7\.0 units\)\. The loads are too close for the layer to move the price\. Medium-high weight Even Good Data quality/);
   const thin = boot({ cell: { pct: null, n: 12 } }); thin.api.render(); thin.api.edgeJumpLayer('styleMatchup');
   assert.match(text(thin.api.render()), /Attacking Baseliner v Big Server \+ Complete Baseliner: 12 matches, under 30\./, 'the pair cell under 30, with its count');
 });

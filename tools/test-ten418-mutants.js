@@ -28,7 +28,7 @@ const MUTANTS = [
   ['prices: an exchange counted as soft', "filter(k => k !== 'Pncl' && k !== sk && !/exchange|matchbook|smarkets|betdaq/i.test(k) && edgeQuote(m.bookNow, k));", "filter(k => k !== 'Pncl' && k !== sk && edgeQuote(m.bookNow, k));"],
   ['market: edge against the raw implied, not the no-vig', "const d = (q && base[s] != null) ? smPP((base[s] - edgeNoVig(q, s)) * 100) : { t: '—', c: '' };", "const d = (q && base[s] != null) ? smPP((base[s] - 1 / q[s]) * 100) : { t: '—', c: '' };"],
   ['market: Implied % shows the odds', "const v = !q ? '—' : (pct ? (edgeNoVig(q, s) * 100).toFixed(1) + '%' : mxOddsTxt(q[s]));", "const v = !q ? '—' : mxOddsTxt(q[s]);"],
-  ['market: no anchor read time', "+ (pinRead ? ` The model anchors to Pinnacle’s quote from api-tennis, read ${edgeClock(pinRead, 'full')}.` : '');", ";"],
+  ['market: no anchor read time', "+ (pinRead ? ` The model anchors to Pinnacle’s quote from api-tennis, read ${edgeClock(pinRead, 'full')}.` : '')\n", "\n"],
   ['fair: an odd of 1.00 or below is priced', "return (isFinite(v) && v > 1) ? v : null;", "return (isFinite(v) && v > 0) ? v : null;"],
   ['fair: gap from the unrounded fair (R1 fix 6)', "function edgeGapOf(prob, odd){ return (prob == null || odd == null) ? null : Math.round(prob * 1000) / 10 - 100 / odd; }", "function edgeGapOf(prob, odd){ return (prob == null || odd == null) ? null : prob * 100 - 100 / odd; }"],
   ['verdict: recomputed from the page’s gap, not the model’s flag', "const by = s => { const f = flags.filter(x => x.side === s);", "const by = s => { const f = []; if (((st3.sharp && st3.sharp.edge) || {})[s] > 0) f.push({ type: 'Sharp Value' });"],

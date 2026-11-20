@@ -38,6 +38,10 @@ alter table public.market_live_current add column if not exists backfill jsonb;
 -- board at the first sighting — the start is not verified, so the read kept is the last one taken before the match was
 -- first listed live). Null on a row frozen before this column existed.
 alter table public.market_live_current add column if not exists cut text;
+-- The first read we recorded (founder 2026-11-20, the Stennisfy Model's "Prediction open" row): {read_at, outcomes}, set
+-- once and never moved — the site's "Open" = the first price Stennisfy recorded. A row older than this column takes its
+-- current read as its first on its next write.
+alter table public.market_live_current add column if not exists first jsonb;
 create table if not exists public.market_live_beat (
   id       int         primary key default 1 check (id = 1),
   beat_at  timestamptz not null,
@@ -112,13 +116,16 @@ begin
      where coalesce(x->>'event_key', '') <> '' and x->>'venue' in ('kalshi', 'polymarket') and x->>'read_at' is not null
      order by x->>'event_key', x->>'venue', (x->>'read_at')::timestamptz desc
   )
-  insert into public.market_live_current as c (event_key, venue, ref, liquidity, outcomes, flow, status, read_at)
-  select ek, v, ref, liq, oc, fl, st, ra from r
+  insert into public.market_live_current as c (event_key, venue, ref, liquidity, outcomes, flow, status, read_at, first)
+  select ek, v, ref, liq, oc, fl, st, ra,
+         case when oc is not null then jsonb_build_object('read_at', ra, 'outcomes', oc) end from r
    where not exists (select 1 from public.live_flip_log_current l where l.event_key = r.ek)
      and not exists (select 1 from public.live_flip_pending p where p.event_key = r.ek)
   on conflict (event_key, venue) do update
      set ref = excluded.ref, liquidity = excluded.liquidity, outcomes = excluded.outcomes, flow = coalesce(excluded.flow, c.flow),
          status = excluded.status, read_at = excluded.read_at,
+         first = coalesce(c.first, case when jsonb_typeof(c.outcomes) = 'array' then jsonb_build_object('read_at', c.read_at, 'outcomes', c.outcomes) end,
+                          excluded.first),
          recent = (select jsonb_agg(e order by i) from jsonb_array_elements(
                      jsonb_build_array(jsonb_build_object('read_at', c.read_at, 'liquidity', c.liquidity, 'outcomes', c.outcomes, 'flow', c.flow))
                      || case when jsonb_typeof(c.recent) = 'array' then c.recent else '[]'::jsonb end) with ordinality t(e, i)

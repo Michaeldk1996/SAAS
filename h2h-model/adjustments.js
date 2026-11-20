@@ -432,10 +432,17 @@ function styleMatchup(ctx) {
     return res;
   }
   // pct = win% of p1 archetype vs p2 archetype. 50 = neutral.
-  const signal = (cell.pct - 50) / 50;
+  let signal = (cell.pct - 50) / 50;
   const conf = n >= 500 ? 'high' : (n >= 100 ? 'med' : 'low');
+  // A strong favourite gets the smaller cap: the backtest found the grid cell overshoots once his base is 80%+.
+  const favBase = ctx.baseP1 == null ? null : (signal > 0 ? ctx.baseP1 : 1 - ctx.baseP1);
+  let capNote = '';
+  if (c.strongFavCap != null && favBase != null && favBase >= c.strongFavAt) {
+    signal *= c.strongFavCap / c.maxMagnitude;
+    capNote = ` Capped at ${Math.round(c.strongFavCap * 100)}pp: the favoured player is already ${Math.round(favBase * 100)}% on the base.`;
+  }
   return apply(res, signal, conf,
-    `${a1} win ${cell.pct}% of ${n} matches against ${a2}.`);
+    `${a1} win ${cell.pct}% of ${n} matches against ${a2}.${capNote}`);
 }
 
 // =========================================================================

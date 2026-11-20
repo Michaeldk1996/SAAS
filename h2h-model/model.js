@@ -72,6 +72,7 @@ function runModel(match, opts = {}) {
   // ---- Stage 2 ----
   const ctx = {
     p1, p2, match, surface, bestOf,
+    baseP1,                                   // stage-1 base, for layers whose cap depends on it (style matchup)
     subjectiveSignal: opts.subjectiveSignal,
     contextRead: opts.contextRead || null,   // context.js read of the match reports (layer #2), pipeline-supplied
     matchupMatrix: data.loadMatchupMatrix(),

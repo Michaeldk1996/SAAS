@@ -73,6 +73,13 @@ try:
     check('an older read never does', liq('1').startswith('1100|'), liq('1'))
     rc, out = q("select outcomes->1->>'mid' from public.market_live_current where event_key='1' and venue='kalshi'")
     check('per-player prices kept', out == '0.545', out)
+    # founder 2026-11-20: the first read is kept for the Model page's "Prediction open" row, never moved by later reads
+    rc, out = q("select first->>'read_at' from public.market_live_current where event_key='1' and venue='kalshi'")
+    check('first read kept (the insert)', rc == 0 and out.startswith('2026-11-06T10:00:00'), out)
+    q("update public.market_live_current set first = null where event_key='1' and venue='polymarket'")
+    push([row('1', 950, '2026-11-06T10:02:00Z', 'polymarket')])
+    rc, out = q("select first->>'read_at' from public.market_live_current where event_key='1' and venue='polymarket'")
+    check('a row older than the column takes its stored read as first', out.startswith('2026-11-06T10:00:00'), out)
 
     q("insert into public.live_flip_pending values ('1', '2026-11-06T10:01:30Z', '2026-11-06T10:01:20Z')")
     push([row('1', 1200, '2026-11-06T10:02:00Z')])

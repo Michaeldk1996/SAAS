@@ -57,8 +57,15 @@ Founder rulings: TEN-418 card 7a80b6fe, R1 review and R2 review 73f754f9 (2026-1
   M matches against Ys. The model doesn't read playing styles yet, so this layer doesn't move the price." (founder R3
   copy). **The model reads that cell since founder 2026-11-19** (`styleMatchup.readLabels`: the step-9 label, n ≥ 30,
   same style = no edge; backtest out-of-sample log-loss 0.62399 → 0.62278 on 14,668 matches): an applied row's Why drops
-  the "doesn't read" sentence. Staged, not live: Bet105 as the movement lead (`oddsMovement.lead`), the court speed
-  record layer #18 (`courtSpeedRecord.gated`; no gain in the backtest). Two-player figures name
+  the "doesn't read" sentence. **Cap (founder 2026-11-20, "too much weight")**: 5pp, 3pp once the favoured player is at
+  80%+ on the base (cap sweep: 80%+ favourites score best at 0.01–0.03, n 1,173); a personal record-v-style version was
+  tested and made predictions worse, so it is not built. **Odds market movement reads Bet105** (founder 2026-11-20,
+  `oddsMovement.lead = 'Bet105'`: the Kibl chart line, the other chart books as the steam check). Staged, not live: the
+  court speed record layer #18 (`courtSpeedRecord.gated`; no gain in the backtest).
+- **Prediction market rows (founder 2026-11-20, handoff CHANGELOG_2026-11-20):** Market context Prediction open / now and
+  a Fair price row, from `market_live_current` (Polymarket, else Kalshi), the ask as decimal odds; open = the first read
+  we recorded (`first`, set once by `market_live_push`); a typed field never changes the verdict. **Test:**
+  `tools/test-model-layers-1119.js`, `tools/test-market-live-sql.py`. Two-player figures name
   each player ("L. Darderi −8.3pp over 21 matches, S. Tsitsipas −1.7pp over 228"), never "A vs B" unnamed; a court
   figure under the engine's 10-match floor (`qualityForm.surfaceFloorM`) reads "under 10 top-50 matches there (not counted)",
   never the engine's placeholder +0.0pp. Soft scan also skips exchange-named keys (Matchbook, Smarkets, Betdaq). **Data quality** = one

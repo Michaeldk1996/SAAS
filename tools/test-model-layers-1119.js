@@ -19,7 +19,7 @@ const baseCtx = (a, b, match) => ({ p1: P(a), p2: P(b), match: match || {}, matc
 
 // --- the switches ship off: today's output is unchanged until the founder approves ---
 assert.strictEqual(config.adjustments.styleMatchup.readLabels, true, 'style matchup live (founder 2026-11-19)');
-assert.strictEqual(config.adjustments.oddsMovement.lead, null);
+assert.strictEqual(config.adjustments.oddsMovement.lead, 'Bet105', 'odds movement on Bet105 (founder 2026-11-20)');
 assert.strictEqual(config.adjustments.courtSpeedRecord.gated, true);
 assert.strictEqual(config.adjustments.subjective.context.mode, 'shadow', 'reads are made and shown, never priced');
 ok('style matchup live; Bet105 lead, court speed record and the context read still staged');
@@ -31,7 +31,7 @@ assert.strictEqual(byKey(r, 'styleMatchup').applied, false, 'off: the label is n
 config.adjustments.styleMatchup.readLabels = true;
 r = adj.runAll(baseCtx('Big Server', 'Solid Defender'));
 const st = byKey(r, 'styleMatchup');
-assert.ok(st.applied && Math.abs(st.deltaP1 - 0.2 * 0.10) < 1e-9, 'signal (60−50)/50 × 10pp');
+assert.ok(st.applied && Math.abs(st.deltaP1 - 0.2 * config.adjustments.styleMatchup.maxMagnitude) < 1e-9, 'signal (60−50)/50 × the cap');
 assert.match(st.detail, /^Big Server win 60% of 400 matches against Solid Defender\.$/);
 r = adj.runAll(baseCtx('Big Server', 'Counterpuncher'));
 assert.strictEqual(byKey(r, 'styleMatchup').applied, false, 'a cell under the page floor of 30 is not applied');
@@ -54,6 +54,7 @@ assert.strictEqual(s.opening.p1, 1.80); assert.strictEqual(s.current.p1, 1.60); 
 assert.ok(s.shift > 0.06, 'P1 shortened: a positive no-vig move');
 ok('chartSeries pairs change-only sides and stops at the start');
 
+config.adjustments.oddsMovement.lead = null;
 r = adj.runAll({ p1: P(null), p2: P(null), match, matchupMatrix: mm, surface: 'hard', bestOf: 3 });
 assert.match(byKey(r, 'oddsMovement').detail, /No clean pre-match Pinnacle line/, 'off: the legacy Pinnacle series');
 config.adjustments.oddsMovement.lead = 'Bet105';
@@ -113,5 +114,35 @@ const inp2 = ctxMod.contextInputs({ p1: 'A', p2: 'B', p1Key: '1', p2Key: '2', to
   { items: items.slice(1), nowMs: Date.parse('2026-11-19T00:00:00Z'), styles: new Map() });
 assert.notStrictEqual(inp.hash, inp2.hash, 'a new report or quote changes the hash (a new read)');
 ok('context inputs: ranked items, decoded quotes, styles, a hash that moves with the texts');
+
+// --- style matchup: the strong-favourite cap (founder 2026-11-20) ---
+{
+  const c = config.adjustments.styleMatchup;
+  const run = (base) => byKey(adj.runAll(Object.assign(baseCtx('Big Server', 'Solid Defender'), { baseP1: base })), 'styleMatchup');
+  const lo = run(0.70), hi = run(0.84), dog = run(0.15);
+  assert.ok(Math.abs(lo.deltaP1 - 0.2 * c.maxMagnitude) < 1e-9, 'a 70% favourite: the general cap');
+  assert.ok(Math.abs(hi.deltaP1 - 0.2 * c.strongFavCap) < 1e-9 && /Capped at 3pp/.test(hi.detail), 'an 84% favourite: the 3pp cap');
+  assert.ok(Math.abs(dog.deltaP1 - 0.2 * c.maxMagnitude) < 1e-9, 'style backing a 15% underdog keeps the general cap');
+  assert.ok(c.maxMagnitude <= 0.05 && c.strongFavCap === 0.03 && c.strongFavAt === 0.80);
+}
+ok('style matchup: 5pp cap, 3pp once the favoured player is at 80%+ on the base');
+
+// --- the page's prediction market reader (Model page, founder 2026-11-20) ---
+{
+  const html = require('fs').readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
+  const src = /\nfunction edgePredOf\(m\)\{[\s\S]*?\n\}\n/.exec(html)[0];
+  const sur = s => String(s).toLowerCase().replace(/[^a-z]+/g, ' ').trim().split(' ').pop();
+  const mk = rows => new Function('mktLive', 'mcSigSurKey', 'eventKeyOfMatch', src + ' return edgePredOf;')({ byEvent: rows }, sur, m => m.ek);
+  const oc = (a, b) => [{ name: 'Carlos Alcaraz', bid: a - 0.01, ask: a, mid: a - 0.005 }, { name: 'Flavio Cobolli', bid: b - 0.01, ask: b, mid: b - 0.005 }];
+  const m = { ek: '9', p1: 'C. Alcaraz', p2: 'F. Cobolli' };
+  let f = mk({ '9|kalshi': { outcomes: oc(0.80, 0.22), read_at: 'x' } })(m);
+  assert.strictEqual(f.name, 'Kalshi'); assert.ok(Math.abs(f.now.p1 - 1 / 0.80) < 1e-9 && f.open === null, 'decimal odds at the ask; no first read = no open');
+  f = mk({ '9|kalshi': { outcomes: oc(0.80, 0.22) }, '9|polymarket': { outcomes: oc(0.79, 0.23), first: { read_at: 't0', outcomes: oc(0.75, 0.27) } } })(m);
+  assert.strictEqual(f.name, 'Polymarket', 'Polymarket first when both list it');
+  assert.ok(Math.abs(f.open.p2 - 1 / 0.27) < 1e-9 && f.open.seenAt === 't0', 'open = the first read');
+  assert.strictEqual(mk({ '9|kalshi': { outcomes: [{ name: 'Carlos Alcaraz', ask: 0.8 }] } })(m), null, 'one player priced = not listed');
+  assert.strictEqual(mk({})(m), null);
+}
+ok('prediction market: Polymarket else Kalshi, ask as decimal odds, open = first recorded read');
 
 console.log(`model layers 2026-11-19: ${n} checks passed`);

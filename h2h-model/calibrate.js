@@ -185,10 +185,18 @@ function newState() {
     serve: { ace: 0, svpt: 0, firstIn: 0, firstWon: 0, matches: 0 },
     recent: [], // {day, sets}
     yr: [], // {day, won, band} — last 364 days, for #18
+    vs: {}, // opponent archetype_label -> {w, p}, career from the warm-up year (#1 personal)
   };
 }
 const rate = (o, min) => (o && o.p >= min ? o.w / o.p : null);
 const clamp1 = x => Math.max(-1, Math.min(1, x));
+// #1 style record (personal): his win rate vs the opponent's label minus his overall rate,
+// shrunk by n/(n+20), 0 when n < 10. Point-in-time: st holds only matches before this one.
+const styleRecordTerm = (st, oppLabel) => {
+  const r = st.vs[oppLabel];
+  if (!r || r.p < 10 || !st.all.p) return 0;
+  return (r.w / r.p - st.all.w / st.all.p) * r.p / (r.p + 20);
+};
 
 // ---------- LAYERS: signal from p1's perspective, or null to abstain --------
 // Each takes the two players' state objects + match context, returns [-1,1]|null.
@@ -200,6 +208,12 @@ const LAYERS = [
       const cell = STYLE.matrix[a1] && STYLE.matrix[a1][a2];
       if (!cell || cell.pct == null || (cell.n || 0) < STYLE.minN) return null;
       return clamp1((cell.pct - 50) / 50);
+    } },
+  { id: 19, key: 'styleRecord', min: 10, scale: 0.20, fn: (s1, s2, ctx) => {
+      if (!ctx.a1 || !ctx.a2) return null;
+      const t1 = styleRecordTerm(s1, ctx.a2), t2 = styleRecordTerm(s2, ctx.a1);
+      if (t1 === 0 && t2 === 0) return null;
+      return clamp1((t1 - t2) / 0.20);
     } },
   { id: 4, key: 'surface', min: 10, scale: 0.30, fn: (s1, s2, ctx) => {
       const a = rate(s1.surf[ctx.surface], 10), b = rate(s2.surf[ctx.surface], 10);
@@ -265,6 +279,10 @@ const LAYERS = [
       return (a == null || b == null) ? null : clamp1((a - b) / 0.20);
     } },
 ];
+
+// #19 (personal style record) did not help out of sample (fit-report-style2.md, 20 Nov 2026):
+// out of the default run; CAL_STYLE_RECORD=1 puts it back for a re-check.
+if (!process.env.CAL_STYLE_RECORD) LAYERS.splice(LAYERS.findIndex(L => L.id === 19), 1);
 
 // ---------- load spine ------------------------------------------------------
 function loadSpine(y0, y1) {
@@ -408,13 +426,23 @@ function buildRows(spine, market, scoreFromYear) {
       const mkRaw = ym && ym.get(m.wSurname + '|' + m.lSurname); // prob winner wins
       const mkt = mkRaw == null ? null : (asWinner ? mkRaw : 1 - mkRaw);
 
-      rows.push({ y, baseLogit, signals, active, year: m.year, mkt, band: m.band, turin: m.courtKey === 'Turin' });
+      const row = { y, baseLogit, signals, active, year: m.year, mkt, band: m.band, turin: m.courtKey === 'Turin',
+        r1: asWinner ? m.wRank : m.lRank, r2: asWinner ? m.lRank : m.wRank };
+      if (ctx.a1 && ctx.a2) row.sr = { date: m.date, tourney: m.tourney, p1: p1Sn, p2: p2Sn, a1: ctx.a1, a2: ctx.a2,
+        t1: styleRecordTerm(s1, ctx.a2), t2: styleRecordTerm(s2, ctx.a1), n1: (s1.vs[ctx.a2] || {}).p || 0, n2: (s2.vs[ctx.a1] || {}).p || 0,
+        r1: s1.vs[ctx.a2] ? s1.vs[ctx.a2].w + '-' + (s1.vs[ctx.a2].p - s1.vs[ctx.a2].w) : '0-0', r2: s2.vs[ctx.a1] ? s2.vs[ctx.a1].w + '-' + (s2.vs[ctx.a1].p - s2.vs[ctx.a1].w) : '0-0',
+        o1: s1.all.w / (s1.all.p || 1), o2: s2.all.w / (s2.all.p || 1), base: 1 / (1 + Math.exp(-baseLogit)) };
+      rows.push(row);
     }
 
     // ---- update state AFTER recording (point-in-time) ----
     const uW = get(m.wId), uL = get(m.lId);
     // overall
     uW.all.w++; uW.all.p++; uL.all.p++;
+    // personal record vs the opponent's (today's) label; unknown label -> nothing recorded
+    const lLab = STYLE.primaryBySurname.get(m.lSurname), wLab = STYLE.primaryBySurname.get(m.wSurname);
+    if (lLab) { const r = (uW.vs[lLab] = uW.vs[lLab] || { w: 0, p: 0 }); r.w++; r.p++; }
+    if (wLab) { const r = (uL.vs[wLab] = uL.vs[wLab] || { w: 0, p: 0 }); r.p++; }
     // surface
     (uW.surf[m.surface] = uW.surf[m.surface] || { w: 0, p: 0 }); uW.surf[m.surface].w++; uW.surf[m.surface].p++;
     (uL.surf[m.surface] = uL.surf[m.surface] || { w: 0, p: 0 }); uL.surf[m.surface].p++;
@@ -551,7 +579,7 @@ function layerReport(rows, train, test) {
   console.log('--- court-speed band coverage (scored rows) ---');
   console.log('  train', JSON.stringify(bandCount(train)), ' test', JSON.stringify(bandCount(test)));
   const out = { train: train.length, test: test.length, bands: { train: bandCount(train), test: bandCount(test) }, layers: {} };
-  for (const id of [1, 18]) {
+  for (const id of [1, 19, 18].filter(id => LAYERS.some(L => L.id === id))) {
     const i = LAYERS.findIndex(L => L.id === id), L = LAYERS[i];
     const act = rs => rs.filter(r => r.active[i]).length;
     const nz = rs => rs.filter(r => r.active[i] && r.signals[i] !== 0).length;
@@ -578,6 +606,30 @@ function layerReport(rows, train, test) {
     console.log(`  base + #${id} only:   ${fmt(alone)}`);
     if (o.activeOnly) { console.log(`  active rows only: base ${fmt(o.activeOnly.base)} | base+#${id} ${fmt(o.activeOnly.baseThis)}`); }
   }
+  capSweep(train, test, out);
+  // #19 personal vs #1 generic: joint without generic, with generic, and the two alone together
+  if (LAYERS.some(L => L.id === 19)) {
+    const i1 = LAYERS.findIndex(L => L.id === 1), i19 = LAYERS.findIndex(L => L.id === 19);
+    const noGen = all.filter(j => j !== i1), noBoth = all.filter(j => j !== i1 && j !== i19);
+    const P = {
+      jointNoGeneric: fitEval(train, test, noGen), jointNoGenericNoPersonal: fitEval(train, test, noBoth),
+      genericPlusPersonal: fitEval(train, test, [i1, i19]), genericOnly: fitEval(train, test, [i1]),
+    };
+    const at = (f, cols, i) => ({ beta: f.w[2 + cols.indexOf(i)], se: f.se[2 + cols.indexOf(i)] });
+    P.b19NoGen = at(P.jointNoGeneric, noGen, i19);
+    P.b19WithGen = at(P.genericPlusPersonal, [i1, i19], i19); P.b1WithPers = at(P.genericPlusPersonal, [i1, i19], i1);
+    out.personal = P;
+    console.log('\n--- #19 personal vs #1 generic ---');
+    console.log(`  joint (all but #1) beta #19 ${P.b19NoGen.beta.toFixed(3)} ± ${P.b19NoGen.se.toFixed(3)}`);
+    console.log(`  all but #1:          ${fmt(P.jointNoGeneric)}`);
+    console.log(`  all but #1 and #19:  ${fmt(P.jointNoGenericNoPersonal)}`);
+    console.log(`  base + #1 + #19:     ${fmt(P.genericPlusPersonal)}  beta #1 ${P.b1WithPers.beta.toFixed(3)} ± ${P.b1WithPers.se.toFixed(3)}, #19 ${P.b19WithGen.beta.toFixed(3)} ± ${P.b19WithGen.se.toFixed(3)}`);
+    console.log(`  base + #1:           ${fmt(P.genericOnly)}`);
+    const ex = test.filter(r => r.sr && r.active[i19] && r.sr.t1 !== 0 && r.sr.t2 !== 0).sort((a, b) => Math.abs(b.signals[i19]) - Math.abs(a.signals[i19]));
+    const pick = [ex[0], ex[Math.floor(ex.length / 4)], ex[Math.floor(ex.length / 2)]].filter(Boolean);
+    out.examples = pick.map(r => ({ ...r.sr, y: r.y, signal: r.signals[i19], generic: r.signals[i1] }));
+    console.log('  examples:', JSON.stringify(out.examples));
+  }
   // Fast-band only (founder: fast courts like the ATP Finals)
   const i18 = LAYERS.findIndex(L => L.id === 18);
   const trF = train.filter(r => r.band === 'Fast'), teF = test.filter(r => r.band === 'Fast');
@@ -602,6 +654,49 @@ function layerReport(rows, train, test) {
   console.log(`  all layers:         ${fmt(F.all)}   beta #18 ${F.betaJoint.toFixed(3)} ± ${F.seJoint.toFixed(3)}`);
   console.log(`  #18-active Fast rows: base ${fmt(F.activeOnly.base)} | base+#18 ${fmt(F.activeOnly.base18)} beta ${F.activeOnly.beta.toFixed(3)} ± ${F.activeOnly.se.toFixed(3)}`);
   if (process.env.CAL_JSON) fs.writeFileSync(process.env.CAL_JSON, JSON.stringify(out, null, 1));
+}
+
+// ---------- #1 cap sweep in probability space (live engine rule) ------------------
+// adjusted = clamp(base + signal × cap, probFloor, probCeil), then the rank-tier ceiling
+// (model.js tierProbCeil). "base" = the Elo base recalibrated on train; "base+layers" = the
+// logistic fit of base + every other layer (#1 out) on train, used as the base the cap adds to.
+// Bands = the base-only probability of the player #1 favours (sign of the signal).
+function capSweep(train, test, out) {
+  const i1 = LAYERS.findIndex(L => L.id === 1);
+  const others = LAYERS.map((_, i) => i).filter(i => i !== i1);
+  const fitP = cols => { const f = fitEval(train, test, cols); return r => sigmoid([1, r.baseLogit, ...cols.map(i => r.signals[i])].reduce((a, x, j) => a + f.w[j] * x, 0)); };
+  const pBase = fitP([]), pLayers = fitP(others);
+  const tier = r => { const c = config.rankTierCutoff, t = x => x && x <= c, a = t(r.r1), b = t(r.r2);
+    return a && b ? config.probCeilBothTop50 : (a !== b ? config.probCeilOneTop50 : config.probCeil); };
+  const adj = (pb, cap) => r => { const t = tier(r); const p = Math.max(config.probFloor, Math.min(config.probCeil, pb(r) + r.signals[i1] * cap)); return Math.max(1 - t, Math.min(t, p)); };
+  const favBase = r => { const p = pBase(r), s = r.signals[i1]; return s > 0 ? p : 1 - p; };
+  const bands = [['<60%', 0, 0.6], ['60-70%', 0.6, 0.7], ['70-80%', 0.7, 0.8], ['80%+', 0.8, 2]];
+  const sets = [['all test', test], ['#1 non-zero', test.filter(r => r.signals[i1] !== 0)],
+    ...bands.map(([k, lo, hi]) => [k, test.filter(r => r.signals[i1] !== 0 && favBase(r) >= lo && favBase(r) < hi)])];
+  const CAPS = [0, 0.02, 0.03, 0.05, 0.07, 0.10, 0.14];
+  const FINE = Array.from({ length: 41 }, (_, k) => k * 0.005);
+  const res = {};
+  for (const [bn, pb] of [['base', pBase], ['base+layers', pLayers]]) {
+    res[bn] = {};
+    console.log(`\n--- #1 cap sweep, probability space, ${bn} ---`);
+    for (const [sn, rs] of sets) {
+      const grid = CAPS.map(c => ({ cap: c, ...brierLL(rs, adj(pb, c)) }));
+      const fine = FINE.map(c => ({ cap: c, ...brierLL(rs, adj(pb, c)) }));
+      const bestLL = fine.reduce((a, b) => b.ll < a.ll ? b : a), bestB = fine.reduce((a, b) => b.brier < a.brier ? b : a);
+      const meanSig = rs.length ? rs.reduce((a, r) => a + Math.abs(r.signals[i1]), 0) / rs.length : 0;
+      res[bn][sn] = { n: rs.length, meanAbsSignal: meanSig, grid, bestLL: bestLL.cap, bestBrier: bestB.cap };
+      console.log(`  ${sn} (n ${rs.length}, mean |signal| ${meanSig.toFixed(3)}): best cap log-loss ${bestLL.cap.toFixed(3)}, Brier ${bestB.cap.toFixed(3)}`);
+      for (const g of grid) console.log(`    cap ${g.cap.toFixed(2)}  logloss ${g.ll.toFixed(5)}  Brier ${g.brier.toFixed(5)}`);
+      // paired per-match log-loss difference, cap c minus cap 0.10, with its standard error
+      const ll1 = (pf, r) => { const q = Math.min(1 - 1e-6, Math.max(1e-6, pf(r))); return -(r.y * Math.log(q) + (1 - r.y) * Math.log(1 - q)); };
+      const ref = adj(pb, 0.10);
+      res[bn][sn].vs010 = [0, 0.03, 0.05].map(c => { const f = adj(pb, c); const d = rs.map(r => ll1(f, r) - ll1(ref, r));
+        const m = d.reduce((x, y) => x + y, 0) / (d.length || 1), v = d.reduce((x, y) => x + (y - m) ** 2, 0) / Math.max(1, d.length - 1);
+        return { cap: c, diff: m, se: Math.sqrt(v / (d.length || 1)) }; });
+      console.log('    log-loss vs cap 0.10 (negative = better): ' + res[bn][sn].vs010.map(o => `cap ${o.cap.toFixed(2)} ${(o.diff * 1e3).toFixed(2)}±${(o.se * 1e3).toFixed(2)}e-3`).join(', '));
+    }
+  }
+  out.capSweep = res;
 }
 
 main();

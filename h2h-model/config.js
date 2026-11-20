@@ -96,7 +96,12 @@ module.exports = {
     //    since step 9, so the layer never applied); minN = the Playing Styles page's 30. LIVE by founder ruling 2026-11-19
     //    ("Yes, switch it on", on model-layers-1119-report.md: out-of-sample log-loss 0.62399 → 0.62278, n 14,668).
     //    Rollback = readLabels false, one commit.
-    styleMatchup:   { id: 1,  maxMagnitude: 0.10, gated: false, readLabels: true, minN: 30 },
+    //    Cap (founder 2026-11-20: "too much weight… make it lower"): 5pp, and 3pp once the player the style favours is
+    //    already at strongFavAt or more on the base. Backtest (calibrate.js cap sweep, test 2021–2025): favourites at 80%+
+    //    (n 1,173) score best at 0.01–0.03 (0.03 beats 0.10 by 2.4 ± 1.2 ×10⁻³ log-loss); overall the grid cell still
+    //    helps, but the harness has no Pinnacle anchor and the live base is half Pinnacle, which already prices part of
+    //    a style edge, so the general cap is halved from 10pp. Rollback = maxMagnitude 0.10, strongFavCap null.
+    styleMatchup:   { id: 1,  maxMagnitude: 0.05, gated: false, readLabels: true, minN: 30, strongFavCap: 0.03, strongFavAt: 0.80 },
     // 2. Subjective input — Michael's manual read (passthrough, default 0)
     //    context (founder 2026-11-19): the model's own read of our match reports and quotes (h2h-model/context.js),
     //    used when the match has no manual-inputs.json row. mode 'off' | 'shadow' (read and shown, never moves the
@@ -423,7 +428,8 @@ module.exports = {
                       steamMidMult: 0.8,     // discount for partial cross-book agreement
                       // Lead book (founder 2026-11-19): 'Bet105' = its chart line (Kibl stream); null = the legacy
                       // Pinnacle series (oddsMovement.books.Pinnacle, empty since the Oddspapi bet365 capture ended). Go-live switch.
-                      lead: null,
+                      // LIVE by founder ruling 2026-11-20 ("it's still not working… we have bet105 so base yourself on that").
+                      lead: 'Bet105',
                       reverseLineMove: { available: false,
                         reason: 'needs public-betting/ticket %; no licensed feed carries it' } },
     // 18. Court speed record (founder 2026-11-19): last-52-week win rate at this event's court speed band minus the

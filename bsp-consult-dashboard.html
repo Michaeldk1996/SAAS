@@ -4955,6 +4955,7 @@ window.EntryListsTab = (function(){
   .sm-mk .sm-row.now .sm-bk-l{ font-weight:700; color:var(--sm-text); }
   .sm-mk-line{ font-size:12px; color:var(--sm-muted); }
   .sm-mk-line .sm-mono{ font-family:'IBM Plex Mono', monospace; }
+  .sm-mk-line .sm-mk-v{ color:var(--sm-soft); }
 
   /* 3 · value layers */
   .sm-vl-cov{ display:flex; flex-direction:column; gap:10px; }
@@ -4983,7 +4984,6 @@ window.EntryListsTab = (function(){
   .sm-ich-c .tw{ font-size:11.5px; color:var(--sm-muted); white-space:nowrap; }
   .sm-vl .sm-cs, .sm-lrg{ grid-template-columns:minmax(14px,1fr) 62px 46px minmax(92px,240px) 46px 62px minmax(14px,1fr); gap:6px; }
   .sm-lr{ display:flex; flex-direction:column; border-top:1px solid color-mix(in srgb, var(--sm-white) 6%, transparent); background:transparent; box-shadow:none; transition:box-shadow .3s ease, background .2s ease; min-width:400px; }
-  .sm-lr.open{ background:var(--sm-raised); }
   .sm-lr.flash{ box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--sm-white) 35%, transparent); }
   .sm-lrg{ display:grid; align-items:center; padding:12px 14px; text-align:center; cursor:pointer; }
   .sm-lrg:hover{ background:var(--sm-raised); }
@@ -5000,16 +5000,19 @@ window.EntryListsTab = (function(){
   .sm-chev{ justify-self:end; width:14px; height:14px; display:inline-flex; align-items:center; justify-content:center; font-size:14px; line-height:1; color:var(--sm-blue); transition:transform .16s; }
   .sm-lr.open .sm-chev{ transform:rotate(90deg); }
   .sm-lp{ position:sticky; left:0; width:100cqw; max-width:100%; padding:2px 16px 16px; }
-  .sm-lp-in{ background:var(--sm-card); border:1px solid color-mix(in srgb, var(--sm-white) 9%, transparent); border-radius:10px; padding:14px 16px; display:grid; grid-template-columns:repeat(auto-fit, minmax(min(200px,100%),1fr)); gap:14px 24px; text-align:left; }
-  .sm-lp-c{ display:flex; flex-direction:column; gap:6px; }
-  .sm-lp-h{ display:flex; align-items:center; flex-wrap:wrap; gap:6px 8px; min-height:22px; }
-  .sm-lp-h.dq{ flex-wrap:nowrap; gap:8px; }
+  .sm-lp{ box-sizing:border-box; }
+  /* Opened layer panel, design 1c (CHANGELOG 2026-11-20 §3): Why | the three chips between hairlines | Data quality, centred. */
+  .sm-lp-in{ background:var(--sm-card); border:1px solid color-mix(in srgb, var(--sm-white) 9%, transparent); border-radius:10px; padding:16px 18px; display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:18px; align-items:center; }
+  .sm-lp-c{ display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px; min-width:0; }
+  .sm-lp-chips{ display:flex; flex-direction:column; align-items:center; gap:6px; max-width:170px; padding:0 14px; border-left:1px solid color-mix(in srgb, var(--sm-white) 6%, transparent); border-right:1px solid color-mix(in srgb, var(--sm-white) 6%, transparent); }
+  .sm-lp-chips .sm-lp-p{ text-align:center; }
+  @container (max-width: 640px){ .sm-lp-in{ grid-template-columns:minmax(0,1fr); gap:12px; } .sm-lp-chips{ order:-1; flex-direction:row; flex-wrap:wrap; justify-content:center; max-width:none; padding:0; border:none; } }
   .sm-lp-p{ font-size:11.5px; font-weight:600; color:var(--sm-soft); background:color-mix(in srgb, var(--sm-white) 5%, transparent); border-radius:999px; padding:3px 9px; }
   .sm-lp-p.nw{ white-space:nowrap; }
   .sm-lp-st{ font-size:11.5px; font-weight:700; color:var(--sm-q); background:color-mix(in srgb, var(--sm-q) 12%, transparent); border-radius:999px; padding:3px 9px; white-space:nowrap; }
   .sm-lp-st.q-na{ color:var(--sm-muted); background:color-mix(in srgb, var(--sm-white) 5%, transparent); }
-  .sm-lp-why{ font-size:13px; line-height:1.55; color:var(--sm-body); text-wrap:pretty; }
-  .sm-lp-dq{ font-size:13px; line-height:1.55; color:var(--sm-muted); text-wrap:pretty; }
+  .sm-lp-why{ font-size:13px; line-height:1.55; color:var(--sm-body); text-wrap:balance; }
+  .sm-lp-dq{ font-size:13px; line-height:1.55; color:var(--sm-muted); text-wrap:balance; }
 
   /* 4 · fair price & value */
   .sm-fp .sm-cs, .sm-fp .sm-row{ grid-template-columns:minmax(0,1fr) 60px 64px minmax(92px,200px) 64px 60px minmax(0,1fr); gap:6px; }
@@ -9724,7 +9727,7 @@ function loadMarketLive(){
   // The traded-money column arrives with the recorder's next schema apply: until then the same read without it.
   const rowsOf = cols => get(`market_live_current?select=${cols}&read_at=gte.${encodeURIComponent(since)}`);
   // founder 2026-11-12: + backfill (the rebuilt-from-history mark); without the column yet, the read without it.
-  mktLiveP = Promise.all([rowsOf('event_key,venue,liquidity,outcomes,flow,backfill,cut,read_at,started_at').then(r => r || rowsOf('event_key,venue,liquidity,outcomes,flow,backfill,read_at,started_at')).then(r => r || rowsOf('event_key,venue,liquidity,outcomes,flow,read_at,started_at')).then(r => r || rowsOf('event_key,venue,liquidity,outcomes,read_at,started_at')), get('market_live_beat?select=beat_at')])
+  mktLiveP = Promise.all([rowsOf('event_key,venue,liquidity,outcomes,flow,backfill,cut,first,read_at,started_at').then(r => r || rowsOf('event_key,venue,liquidity,outcomes,flow,backfill,cut,read_at,started_at')).then(r => r || rowsOf('event_key,venue,liquidity,outcomes,flow,backfill,read_at,started_at')).then(r => r || rowsOf('event_key,venue,liquidity,outcomes,flow,read_at,started_at')).then(r => r || rowsOf('event_key,venue,liquidity,outcomes,read_at,started_at')), get('market_live_beat?select=beat_at')])
     .then(([rows, beat]) => {
       if (Array.isArray(rows)) { const by = {}; for (const r of rows) by[r.event_key + '|' + r.venue] = r; mktLive.byEvent = by; }
       if (Array.isArray(beat)) mktLive.beatAt = beat[0] ? Date.parse(beat[0].beat_at) : NaN;
@@ -11946,6 +11949,36 @@ function edgeSoftNow(m, s){
   const typed = edgeParseOdd((edgeOddEdits[edgeCurrentId] || {})['soft:' + s]);
   return typed ? Object.assign({}, soft.now, { [s]: typed }) : soft.now;
 }
+// Prediction market (founder 2026-11-20, CHANGELOG §1–2): Polymarket, else Kalshi — whichever lists the match — from the
+// Market Signal's per-minute table (market_live_current). A contract price (0..1) reads as decimal odds at the ask, the
+// price a buyer pays (the mid when no ask), so its margin = the two asks − 1. Open = the first read we recorded (`first`);
+// now = the current read (a row frozen at the start keeps its last pre-start read). Both players must be priced.
+function edgePredOf(m){
+  if (!m || typeof mktLive === 'undefined' || typeof mcSigSurKey !== 'function') return null;
+  const ek = eventKeyOfMatch(m), k1 = mcSigSurKey(m.p1), k2 = mcSigSurKey(m.p2);
+  if (!ek || k1 === k2) return null;
+  const px = o => (o && o.ask > 0 && o.ask < 1) ? o.ask : ((o && o.mid > 0 && o.mid < 1) ? o.mid : null);
+  const pair = oc => {
+    const a = (Array.isArray(oc) ? oc : []).filter(o => o && mcSigSurKey(o.name) === k1), b = (Array.isArray(oc) ? oc : []).filter(o => o && mcSigSurKey(o.name) === k2);
+    if (a.length !== 1 || b.length !== 1) return null;
+    const x = px(a[0]), y = px(b[0]);
+    return x && y ? { p1: 1 / x, p2: 1 / y } : null;
+  };
+  for (const [venue, name] of [['polymarket', 'Polymarket'], ['kalshi', 'Kalshi']]){
+    const r = mktLive.byEvent[ek + '|' + venue];
+    const now = r && pair(r.outcomes);
+    if (!now) continue;
+    const open = r.first ? pair(r.first.outcomes) : null;
+    return { name, now, open: open ? Object.assign(open, { seenAt: r.first.read_at }) : null, readAt: r.read_at, frozen: !!r.started_at };
+  }
+  return null;
+}
+// A typed Prediction market price folds into its side of "Prediction now" (as the Best soft field into Soft now).
+function edgePredNow(pr, s){
+  if (!pr) return null;
+  const typed = edgeParseOdd((edgeOddEdits[edgeCurrentId] || {})['pred:' + s]);
+  return typed ? Object.assign({}, pr.now, { [s]: typed }) : pr.now;
+}
 function edgeMarketHtml(m, e, names, keys, noModel, notes){
   // noModel (R1 fix 14): no model price for this match — the book rows only; no model base, edges read —.
   const st1 = (!noModel && e && e.stage1) || {};
@@ -11971,11 +12004,16 @@ function edgeMarketHtml(m, e, names, keys, noModel, notes){
   const sn = sharp ? sharp.name : 'Pinnacle';
   const pinOpenSub = sharp && sharp.open ? `${edgeClock(sharp.open.seenAt, 'stamp') || '—'} · margin ${marg(sharp.open)}` : 'not quoted';
   const pinNowSub = sharp && sharp.now ? [move(sharp.open, sharp.now) ? `${names.p1} ${move(sharp.open, sharp.now)} since open` : null, `margin ${marg(sharp.now)}`].filter(Boolean).join(' · ') : 'not quoted';
+  const pred = edgePredOf(m), predNow = pred ? { p1: edgePredNow(pred, 'p1'), p2: edgePredNow(pred, 'p2') } : { p1: null, p2: null };
+  const predOpenSub = !pred ? 'not listed' : (pred.open ? `${pred.name} · margin ${marg(pred.open)}` : `${pred.name} · no first read stored`);
+  const predNowSub = !pred ? 'not listed' : [pred.open && move(pred.open, predNow.p1) ? `${names.p1} ${move(pred.open, predNow.p1)} since open` : null, `margin ${marg(predNow.p1)}`].filter(Boolean).join(' · ');
   const rows = [
     { l: 'Soft open', sub: softOpenSub, q: { p1: softA ? softA.open : null, p2: softB ? softB.open : null } },
     { l: 'Soft now', sub: softNowSub, q: softNow, now: true },
     { l: `${sn} open`, sub: pinOpenSub, q: { p1: sharp ? sharp.open : null, p2: sharp ? sharp.open : null } },
     { l: `${sn} now`, sub: pinNowSub, q: { p1: sharp ? sharp.now : null, p2: sharp ? sharp.now : null }, now: true },
+    { l: 'Prediction open', sub: predOpenSub, q: { p1: pred && pred.open, p2: pred && pred.open } },
+    { l: 'Prediction now', sub: predNowSub, q: predNow, now: true },
   ].map(r => {
     const a = cell(r.q.p1, 'p1'), b = cell(r.q.p2, 'p2');
     return `<div class="sm-row${r.now ? ' now' : ''}"><span></span><span class="sm-ep ${a.d.c}">${a.d.t}</span><span class="sm-mk-px">${a.v}</span>`
@@ -11993,7 +12031,8 @@ function edgeMarketHtml(m, e, names, keys, noModel, notes){
   const pinRead = edgePinRead(m);
   const help = `${unit}. Edge = the model base probability minus the no-vig probability of the book; green = the model has the player shorter than the book.`
     + (sharp && sharp.now ? ` ${sharp.name} margin ${marg(sharp.now)}` : '') + (softM ? `, soft margin at open ${softM}` : '') + '.'
-    + (pinRead ? ` The model anchors to Pinnacle’s quote from api-tennis, read ${edgeClock(pinRead, 'full')}.` : '');
+    + (pinRead ? ` The model anchors to Pinnacle’s quote from api-tennis, read ${edgeClock(pinRead, 'full')}.` : '')
+    + (pred ? ` Prediction market: ${pred.name}’s contract prices at the ask, as decimal odds; open = the first price Stennisfy recorded${pred.open ? ' (' + edgeClock(pred.open.seenAt, 'stamp') + ')' : ''}, now = read ${edgeClock(pred.readAt, 'full')}${pred.frozen ? ', the last read before the start' : ''}.` : '');
   const seg = (v, l, tip) => `<button type="button" class="sm-sw-t sm-seg${edgeMkView === v ? ' on' : ''}" role="tab" title="${tip}" onclick="edgeSetMkView('${v}')">${l}</button>`;
   const opened = sharp && sharp.open ? edgeClock(sharp.open.seenAt, 'stamp') : null;
   const softNames = books2(softA ? softA.name : '', softB ? softB.name : '');
@@ -12006,7 +12045,7 @@ function edgeMarketHtml(m, e, names, keys, noModel, notes){
         <div class="sm-cs"><span></span><span title="Model base probability minus the book's probability with the margin removed">Edge</span><span>${pct ? 'Implied' : 'Odds'}</span><span>Book</span><span>${pct ? 'Implied' : 'Odds'}</span><span>Edge</span><span></span></div>
         ${rows}
       </div>
-      <span class="sm-mk-line">Soft book ${edgeEsc(softNames)} · market opened <span class="sm-mono">${edgeEsc(opened || '—')}</span></span>
+      <span class="sm-mk-line">Soft book ${edgeEsc(softNames)} · market opened <span class="sm-mono">${edgeEsc(opened || '—')}</span>${pred ? ` · prediction market <span class="sm-mk-v">${edgeEsc(pred.name)}</span>` : ''}</span>
     </div>`;
 }
 
@@ -12074,8 +12113,9 @@ function edgeLayersHtml(e, names, keys){
       const sp = s => `<span class="sm-sp${lead(s) ? ' on' : ''}">${lead(s) ? v.shift : ''}</span>`;
       const why = a.key === 'styleMatchup' ? edgeStyleWhy(names, keys, a.applied) : edgeWhyText(a, names);
       const det = open ? `<div class="sm-lp"><div class="sm-lp-in">
-          <span class="sm-lp-c"><span class="sm-lp-h"><span class="sm-caps">Why</span><span class="sm-lp-p nw">${edgeEsc(v.r.w.word)} weight</span><span class="sm-lp-p">${edgeEsc(v.fav)}</span></span><span class="sm-lp-why">${edgeEsc(why || '—')}</span></span>
-          <span class="sm-lp-c"><span class="sm-lp-h dq"><span class="sm-caps">Data quality</span><span class="sm-lp-st q-${v.qk}">${EDGE_QWORD[v.qk]}</span></span><span class="sm-lp-dq">${edgeEsc(v.r.cell ? 'The model doesn’t read playing styles yet.' : edgeDqText(a))}</span></span>
+          <span class="sm-lp-c"><span class="sm-caps">Why</span><span class="sm-lp-why">${edgeEsc(why || '—')}</span></span>
+          <span class="sm-lp-chips"><span class="sm-lp-p nw">${edgeEsc(v.r.w.word)} weight</span><span class="sm-lp-p">${edgeEsc(v.fav)}</span><span class="sm-lp-st q-${v.qk}">${EDGE_QWORD[v.qk]}</span></span>
+          <span class="sm-lp-c"><span class="sm-caps">Data quality</span><span class="sm-lp-dq">${edgeEsc(v.r.cell ? 'The model doesn’t read playing styles yet.' : edgeDqText(a))}</span></span>
         </div></div>` : '';
       return `<div class="sm-lr${open ? ' open' : ''}${edgeLayerFlash === a.key ? ' flash' : ''}" id="emLayer-${edgeEsc(a.key)}">
           <div class="sm-lrg" onclick="edgeToggleLayer('${edgeJs(a.key)}')"><span></span>${sp('p1')}${rt('p1')}
@@ -12139,7 +12179,7 @@ function edgeFairHtml(m, e, names, keys){
     + `<span class="sm-ich-big" title="Adjusted fair odd: the model base price after the value layers. No margin.">${fair[s] && fair[s].odds != null ? Number(fair[s].odds).toFixed(2) : '—'}</span></div>`;
   const field = (kind, s, def) => {
     const raw = edits[kind + ':' + s] != null ? edits[kind + ':' + s] : (def != null ? mxOddsTxt(def) : '');
-    return `<input type="text" inputmode="decimal" class="sm-odd" title="Edit to check another price" aria-label="${kind === 'soft' ? 'Best soft' : (sharp ? sharp.name : 'Pinnacle')} odd for ${edgeEsc(names[s])}" value="${edgeEsc(raw)}" oninput="edgeOddInput(this,'${edgeJs(edgeCurrentId)}','${kind}','${s}')">`;
+    return `<input type="text" inputmode="decimal" class="sm-odd" title="Edit to check another price" aria-label="${kind === 'soft' ? 'Best soft' : kind === 'pred' ? 'Prediction market' : (sharp ? sharp.name : 'Pinnacle')} odd for ${edgeEsc(names[s])}" value="${edgeEsc(raw)}" oninput="edgeOddInput(this,'${edgeJs(edgeCurrentId)}','${kind}','${s}')">`;
   };
   const gap = (kind, s, def) => {
     const raw = edits[kind + ':' + s] != null ? edits[kind + ':' + s] : (def != null ? mxOddsTxt(def) : '');
@@ -12151,11 +12191,13 @@ function edgeFairHtml(m, e, names, keys){
   const sd = { p1: softA ? softA.price : null, p2: softB ? softB.price : null };
   const pd = { p1: sharp && sharp.now ? sharp.now.p1 : null, p2: sharp && sharp.now ? sharp.now.p2 : null };
   const po = s => sharp && sharp.open ? mxOddsTxt(sharp.open[s]) : '—';
+  const pred = edgePredOf(m), pdm = { p1: pred ? pred.now.p1 : null, p2: pred ? pred.now.p2 : null };
+  const pro = s => pred && pred.open ? mxOddsTxt(pred.open[s]) : '—';
   const b105Row = s => `<span class="sm-b105" id="emB105-v-${s}" onmouseenter="edgeB105In(this,'${s}')" onmouseleave="edgeB105Out()">${edgeB105Cell(b105, s)}</span>`;
   const b105Gap = s => { const g = edgeB105Gap(b105, s, prob(s)); return `<span class="sm-ep ${g.c}" id="emB105-g-${s}">${g.t}</span>`; };
   const surf = edgeCap((m && m.surface) || (e.match && e.match.surface) || '');
   const pctOf = s => prob(s) != null ? (prob(s) * 100).toFixed(1) + '%' : '—';
-  const help = 'Gap = adjusted fair probability minus the probability implied by the book price. Green means the book pays more than our fair price. The Best soft and Pinnacle odds are fields: type another price to see its gap to our fair price; the verdict is the model’s own and does not change. Bet105 is shown with its margin removed and is not editable.';
+  const help = 'Gap = adjusted fair probability minus the probability implied by the book price. Green means the book pays more than our fair price. The Best soft, Pinnacle and Prediction market odds are fields: type another price to see its gap to our fair price; the verdict is the model’s own and does not change. Bet105 is shown with its margin removed and is not editable.';
   return `
     <div class="sm-card sm-fp">
       ${smHead('Fair price &amp; value', `Adjusted model price against the market${surf ? ' · ' + edgeEsc(surf) : ''}`,
@@ -12165,6 +12207,7 @@ function edgeFairHtml(m, e, names, keys){
         <div class="sm-cs"><span></span><span title="Adjusted fair probability minus the probability implied by the book price">Gap</span><span>Odds</span><span>Book</span><span>Odds</span><span>Gap</span><span></span></div>
         <div class="sm-row"><span></span>${gap('soft', 'p1', sd.p1)}${field('soft', 'p1', sd.p1)}<span class="sm-bk"><span class="sm-bk-l">Best soft</span><span class="sm-bk-s">${edgeEsc(softName)}</span></span>${field('soft', 'p2', sd.p2)}${gap('soft', 'p2', sd.p2)}<span></span></div>
         <div class="sm-row"><span></span>${gap('pin', 'p1', pd.p1)}${field('pin', 'p1', pd.p1)}<span class="sm-bk"><span class="sm-bk-l">${edgeEsc(sharp ? sharp.name : 'Pinnacle')}</span><span class="sm-bk-s sm-mono nw">open ${po('p1')} · ${po('p2')}</span></span>${field('pin', 'p2', pd.p2)}${gap('pin', 'p2', pd.p2)}<span></span></div>
+        <div class="sm-row"><span></span>${gap('pred', 'p1', pdm.p1)}${field('pred', 'p1', pdm.p1)}<span class="sm-bk"><span class="sm-bk-l">Prediction market</span><span class="sm-bk-s">${edgeEsc(pred ? pred.name : 'not listed')} · <span class="sm-mono nw">open ${pro('p1')} · ${pro('p2')}</span></span></span>${field('pred', 'p2', pdm.p2)}${gap('pred', 'p2', pdm.p2)}<span></span></div>
         <div class="sm-row"><span></span>${b105Gap('p1')}${b105Row('p1')}<span class="sm-bk" title="${edgeEsc(edgeB105Tip(b105, m))}"><span class="sm-bk-l">Bet105</span><span class="sm-bk-s nw">margin removed</span></span>${b105Row('p2')}${b105Gap('p2')}<span></span></div>
       </div></div>
     </div>`;
@@ -12324,10 +12367,16 @@ function edgeAnalysisHtml(m, e, id, free){
 
 // ── Main render ────────────────────────────────────────────────────────────
 // Every figure is the pipeline's model run (model-output.json) or the match's odds record; nothing is sampled.
+let edgePredAsked = 0;
 function renderEdgeModel(id){
   const body = document.getElementById('edgeBody');
   if (!body) return;
   edgeRenderRail();
+  // Prediction market rows (founder 2026-11-20): the Market Signal's per-minute table, read once a minute at most.
+  if (typeof loadMarketLive === 'function' && Date.now() - edgePredAsked > 60e3){
+    edgePredAsked = Date.now();
+    loadMarketLive().then(() => { if (edgeCurrentId === id) renderEdgeModel(id); });
+  }
   const e = modelOutput.matches && modelOutput.matches[id];
   const m = matches.find(x => x.id === id) || null;
   const names0 = { p1: edgePlayerName(m, e, 'p1'), p2: edgePlayerName(m, e, 'p2') };
