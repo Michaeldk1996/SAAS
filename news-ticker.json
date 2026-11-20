@@ -1,6 +1,20 @@
 {
- "generatedAt": "2026-11-20T20:27:40.548Z",
+ "generatedAt": "2026-11-20T20:50:12.635Z",
  "tournaments": [
+  {
+   "key": "2794",
+   "season": "2026",
+   "name": "Finals - Turin",
+   "file": "news-ticker/2794-2026.json",
+   "items": 256,
+   "byType": {
+    "digest": 33,
+    "quote": 212,
+    "report": 11
+   },
+   "latestTimestamp": "2026-11-20T20:30:00.000Z",
+   "updatedAt": "2026-11-20T20:50:12.635Z"
+  },
   {
    "key": "tour",
    "season": "2026",
@@ -12,21 +26,7 @@
     "quote": 97
    },
    "latestTimestamp": "2026-11-20T17:30:00.000Z",
-   "updatedAt": "2026-11-20T20:27:40.548Z"
-  },
-  {
-   "key": "2794",
-   "season": "2026",
-   "name": "Finals - Turin",
-   "file": "news-ticker/2794-2026.json",
-   "items": 252,
-   "byType": {
-    "digest": 32,
-    "quote": 209,
-    "report": 11
-   },
-   "latestTimestamp": "2026-11-20T16:46:26.000Z",
-   "updatedAt": "2026-11-20T20:27:40.548Z"
+   "updatedAt": "2026-11-20T20:50:12.635Z"
   },
   {
    "key": "1681",
@@ -56,6 +56,142 @@
   }
  ],
  "latest": [
+  {
+   "id": "digest-4abff17ff9d239",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2382",
+   "player": "C. Alcaraz",
+   "opponentId": "372",
+   "opponent": "F. Cobolli",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "eventKey": "12179697",
+   "context": "after beating F. Cobolli",
+   "category": "Quotes",
+   "timestamp": "2026-11-20T20:30:00.000Z",
+   "members": [
+    "quote-016570c8f685fe",
+    "quote-01c122a6ef801f",
+    "quote-23c258e915dd45",
+    "quote-2681b027ae22ee",
+    "quote-35406e7c45599f",
+    "quote-393c5e2ea1527d",
+    "quote-44116633fe2c40",
+    "quote-61b36f14b59acb",
+    "quote-6d8d488187c26a",
+    "quote-7ca3a03fa97b89",
+    "quote-8b294ede63a64b",
+    "quote-8fc6dccf871461",
+    "quote-9f07840a839743",
+    "quote-a23a6fe561d02a",
+    "quote-a520b291ff9b0e",
+    "quote-a5b48705c2b006",
+    "quote-c19f1599437899",
+    "quote-d302c67a9ec2c5",
+    "quote-e3f945003eaba2",
+    "quote-e67e75cba52738",
+    "quote-ee7a752c80e2bb",
+    "quote-fb0b42149606d7"
+   ],
+   "memberHash": "de973a0f0b25494c",
+   "digestedAt": "2026-11-20T20:31:05.338Z",
+   "blocks": [
+    {
+     "label": "after his win over Cobolli",
+     "text": "I'm proud about the level that I'm playing today and the way that I'm feeling. The way that I felt on the court today was incredible. I'm just really happy that I'm getting more confident the way that I'm hitting the ball, the way that I'm seeing what's going on in the match and after that trying to find solutions. I'm getting more confident after every match.",
+     "from": [
+      "quote-35406e7c45599f",
+      "quote-fb0b42149606d7",
+      "quote-d302c67a9ec2c5"
+     ]
+    },
+    {
+     "label": "on playing aggressively despite his thigh problem",
+     "text": "Today's match, for me, was an important match because we were testing myself. I just felt great on court today. I try not to move that much, I try to be aggressive, to dominate the match as much as I can … I could do it. I tried to play as aggressive as I can, hitting the ball as hard as I could, trying not to move that much. So I'm just happy about it. I'm looking forward to tomorrow.",
+     "from": [
+      "quote-a520b291ff9b0e",
+      "quote-e67e75cba52738",
+      "quote-e3f945003eaba2",
+      "quote-44116633fe2c40",
+      "quote-61b36f14b59acb"
+     ]
+    },
+    {
+     "label": "on recovering in time for the semi-final",
+     "text": "The challenge now is not on the court, it's off the court, to do whatever it takes to be in a good shape, to feel physically ready for a battle tomorrow. It's going to be a really important half a day that I have ahead of me with my team, with my physio, with the doctor. Recovering is the most important thing now, we'll see how I feel tomorrow.",
+     "from": [
+      "quote-8b294ede63a64b",
+      "quote-8fc6dccf871461",
+      "quote-a5b48705c2b006",
+      "quote-6d8d488187c26a",
+      "quote-23c258e915dd45",
+      "quote-a23a6fe561d02a"
+     ]
+    },
+    {
+     "label": "on managing the injury scare before this match",
+     "text": "Yesterday was a really important day for me, to be honest. Obviously I felt something in the last match. Yesterday with the test, we decided not to practice, to rest. We went to have a walk, chill. And getting treatment morning, afternoon with my physio, this morning once again, really careful. Doing, I'm going to say, as best as we can do the things off the court to be ready and to be in a good shape for this match. I'm trying to learn from these moments. I'm trying to know myself a little bit better. I think these kinds of moments help you a lot to know yourself much better.",
+     "from": [
+      "quote-01c122a6ef801f",
+      "quote-2681b027ae22ee",
+      "quote-c19f1599437899"
+     ]
+    },
+    {
+     "label": "on speculation about his physical problem",
+     "text": "I've seen so many things, that I'm going to retire, that I'm not going to play. Well, I'll leave it to you to choose the diagnosis that I really have after today's game.",
+     "from": [
+      "quote-016570c8f685fe"
+     ]
+    },
+    {
+     "label": "on supporting his friend Flavio Cobolli",
+     "text": "I'm here, whatever he needs, to talk, whatever it is, I'm here for him, because he's a great friend. We're going to see more about Flavio Cobolli in the future. I'm going to say that, because I'm sure about it.",
+     "from": [
+      "quote-ee7a752c80e2bb"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "12d2f65089bef605",
+   "publishedAt": "2026-11-20T15:46:01.892Z",
+   "revisedAt": "2026-11-20T20:50:12.635Z",
+   "revision": 5,
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "quote-016570c8f685fe",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": "372",
+   "player": "C. Alcaraz",
+   "opponent": "F. Cobolli",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-20T20:30:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating F. Cobolli",
+   "eventKey": "12179697",
+   "won": true,
+   "text": "I've seen so many things, that I'm going to retire, that I'm not going to play. Well, I'll leave it to you to choose the diagnosis that I really have after today's game,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "TennisUpToDate",
+   "sourceUrl": "https://tennisuptodate.com/atp/there-is-always-a-risk-carlos-alcaraz-opens-up-on-atp-finals-injury",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On speculation about his undisclosed physical problem",
+   "sourceHash": "97ebd4f9f91ded1c",
+   "publishedAt": "2026-11-20T20:50:12.635Z",
+   "file": "news-ticker/2794-2026.json"
+  },
   {
    "id": "digest-59e3486f77d8bc",
    "type": "digest",
@@ -126,111 +262,6 @@
    "file": "news-ticker/tour-2026.json"
   },
   {
-   "id": "digest-4abff17ff9d239",
-   "type": "digest",
-   "version": 1,
-   "playerId": "2382",
-   "player": "C. Alcaraz",
-   "opponentId": "372",
-   "opponent": "F. Cobolli",
-   "tournament": "Finals - Turin",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "eventKey": "12179697",
-   "context": "after beating F. Cobolli",
-   "category": "Quotes",
-   "timestamp": "2026-11-20T16:46:26.000Z",
-   "members": [
-    "quote-01c122a6ef801f",
-    "quote-23c258e915dd45",
-    "quote-2681b027ae22ee",
-    "quote-35406e7c45599f",
-    "quote-393c5e2ea1527d",
-    "quote-44116633fe2c40",
-    "quote-61b36f14b59acb",
-    "quote-6d8d488187c26a",
-    "quote-7ca3a03fa97b89",
-    "quote-8b294ede63a64b",
-    "quote-8fc6dccf871461",
-    "quote-9f07840a839743",
-    "quote-a23a6fe561d02a",
-    "quote-a520b291ff9b0e",
-    "quote-a5b48705c2b006",
-    "quote-c19f1599437899",
-    "quote-d302c67a9ec2c5",
-    "quote-e3f945003eaba2",
-    "quote-e67e75cba52738",
-    "quote-ee7a752c80e2bb",
-    "quote-fb0b42149606d7"
-   ],
-   "memberHash": "bcfc8b6dbc1b2b80",
-   "digestedAt": "2026-11-20T20:01:09.577Z",
-   "blocks": [
-    {
-     "label": "after his win over Cobolli",
-     "text": "I'm proud about the level that I'm playing today and the way that I'm feeling. Today's match, for me, was an important match because we were testing myself. I just felt great on court today. I try not to move that much, I try to be aggressive, to dominate the match as much as I can … I could do it. I tried to play as aggressive as I can, hitting the ball as hard as I could, trying not to move that much. I try not to go too hard with myself physically, which I just tried to play really hard, really strong, and aggressive, and I think I could do it. So I'm just happy about it.",
-     "from": [
-      "quote-35406e7c45599f",
-      "quote-a520b291ff9b0e",
-      "quote-e67e75cba52738",
-      "quote-e3f945003eaba2",
-      "quote-61b36f14b59acb"
-     ]
-    },
-    {
-     "label": "on recovering from his thigh problem before the semi-final",
-     "text": "The challenge now is not on the court, it's off the court, to do whatever it takes to be in a good shape, to feel physically ready for a battle tomorrow. It's going to be a really important half a day that I have ahead of me with my team, with my physio, with the doctor. Recovering is the most important thing now, we'll see how I feel tomorrow. I'm looking forward to tomorrow.",
-     "from": [
-      "quote-8fc6dccf871461",
-      "quote-a5b48705c2b006",
-      "quote-6d8d488187c26a",
-      "quote-23c258e915dd45",
-      "quote-a23a6fe561d02a",
-      "quote-8b294ede63a64b",
-      "quote-9f07840a839743",
-      "quote-61b36f14b59acb"
-     ]
-    },
-    {
-     "label": "on how he handled the injury scare before this match",
-     "text": "Yesterday was a really important day for me, to be honest. Obviously I felt something in the last match. Yesterday with the test, we decided not to practice, to rest. We went to have a walk, chill. And getting treatment morning, afternoon with my physio, this morning once again, really careful. Doing, I'm going to say, as best as we can do the things off the court to be ready and to be in a good shape for this match. I'm trying to learn from these moments. I'm trying to know myself a little bit better. I think these kinds of moments help you a lot to know yourself much better.",
-     "from": [
-      "quote-01c122a6ef801f",
-      "quote-2681b027ae22ee",
-      "quote-c19f1599437899"
-     ]
-    },
-    {
-     "label": "on his growing confidence",
-     "text": "The way that I felt on the court today was incredible … I'm getting more confident after every match. I'm just really happy that I'm getting more confident the way that I'm hitting the ball, the way that I'm seeing what's going on in the match and after that trying to find solutions.",
-     "from": [
-      "quote-fb0b42149606d7",
-      "quote-d302c67a9ec2c5"
-     ]
-    },
-    {
-     "label": "on supporting his friend Flavio Cobolli",
-     "text": "I'm here, whatever he needs, to talk, whatever it is, I'm here for him, because he's a great friend … We're going to see more about Flavio Cobolli in the future. I'm going to say that, because I'm sure about it.",
-     "from": [
-      "quote-ee7a752c80e2bb"
-     ]
-    },
-    {
-     "label": "on the Davis Cup Finals contenders",
-     "text": "There are many countries with a strong doubles team, and on top of that, anything can happen in singles.",
-     "from": [
-      "quote-393c5e2ea1527d"
-     ]
-    }
-   ],
-   "model": "claude-opus-5-5",
-   "sourceHash": "1b14cfec954ed819",
-   "publishedAt": "2026-11-20T15:46:01.892Z",
-   "revisedAt": "2026-11-20T20:27:40.548Z",
-   "revision": 4,
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
    "id": "quote-393c5e2ea1527d",
    "type": "quote",
    "playerId": "2382",
@@ -259,6 +290,76 @@
    "topic": "On the Davis Cup Finals contenders",
    "sourceHash": "c9286fca670979df",
    "publishedAt": "2026-11-20T17:54:02.583Z",
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "digest-6acaf2c0e68a20",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2846",
+   "player": "F. Tiafoe",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-20T16:43:00.000Z",
+   "members": [
+    "quote-4b714930325012",
+    "quote-6580db748ba1f1",
+    "quote-6968f682f0debf"
+   ],
+   "memberHash": "a92b10e8c9325b3c",
+   "digestedAt": "2026-11-20T20:31:05.338Z",
+   "blocks": [
+    {
+     "label": "on inspiring the next generation of kids",
+     "text": "First of all, I just love kids. I think it's a cool thing that we do. It's awesome to have them have that experience, something they're never going to forget. And them going through what they're going through, a shoutout to them. Shoutout to all the kids. They're the next generation, so hopefully they get some type of inspiration from being out here.",
+     "from": [
+      "quote-4b714930325012",
+      "quote-6968f682f0debf"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "a7ce26051d21d6a1",
+   "publishedAt": "2026-11-20T13:23:46.864Z",
+   "revisedAt": "2026-11-20T20:50:12.635Z",
+   "revision": 1,
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "quote-6580db748ba1f1",
+   "type": "quote",
+   "playerId": "2846",
+   "opponentId": null,
+   "player": "F. Tiafoe",
+   "opponent": null,
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-20T16:43:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "This is definitely the match that makes me the saddest of my career,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Tennis Majors",
+   "sourceUrl": "https://www.tennismajors.com/atp/atp-finals-debut-roland-garros-final-acapulco-everything-you-always-wanted-to-know-about-flavio-cobolli-867336.html",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his loss to Frances Tiafoe in Turin",
+   "sourceHash": "2401fe8ae64eafd8",
+   "publishedAt": "2026-11-20T20:50:12.635Z",
    "file": "news-ticker/2794-2026.json"
   },
   {
@@ -1474,42 +1575,6 @@
    "file": "news-ticker/2794-2026.json"
   },
   {
-   "id": "digest-6acaf2c0e68a20",
-   "type": "digest",
-   "version": 1,
-   "playerId": "2846",
-   "player": "F. Tiafoe",
-   "opponentId": null,
-   "opponent": null,
-   "tournament": "Finals - Turin",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "eventKey": null,
-   "context": null,
-   "category": "Quotes",
-   "timestamp": "2026-11-20T00:00:00.000Z",
-   "members": [
-    "quote-4b714930325012",
-    "quote-6968f682f0debf"
-   ],
-   "memberHash": "9002d11003435750",
-   "digestedAt": "2026-11-20T12:58:12.783Z",
-   "blocks": [
-    {
-     "label": "on inspiring kids with an unforgettable experience",
-     "text": "First of all, I just love kids. I think it's a cool thing that we do. It's awesome to have them have that experience, something they're never going to forget. And them going through what they're going through, a shoutout to them. Shoutout to all the kids. They're the next generation, so hopefully they get some type of inspiration from being out here.",
-     "from": [
-      "quote-4b714930325012",
-      "quote-6968f682f0debf"
-     ]
-    }
-   ],
-   "model": "claude-opus-5-5",
-   "sourceHash": "581f7f06e98f1a6d",
-   "publishedAt": "2026-11-20T13:23:46.864Z",
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
    "id": "quote-01c122a6ef801f",
    "type": "quote",
    "playerId": "2382",
@@ -1631,68 +1696,6 @@
    "topic": "On playing aggressively without overexerting physically",
    "sourceHash": "432f1c1f6e515c4b",
    "publishedAt": "2026-11-20T16:34:14.512Z",
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-6968f682f0debf",
-   "type": "quote",
-   "playerId": "2846",
-   "opponentId": null,
-   "player": "F. Tiafoe",
-   "opponent": null,
-   "tournament": "Finals - Turin",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-20T00:00:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "Shoutout to all the kids, man, … They're the next generation, so hopefully they get some type of inspiration from being out here.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "ATP Tour",
-   "sourceUrl": "https://www.atptour.com/en/news/tiafoe-mascot-nitto-atp-finals-2026",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "topic": "On inspiring the next generation of kids",
-   "sourceHash": "ef86a96454f3194e",
-   "publishedAt": "2026-11-20T13:23:46.864Z",
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-6ebfb0d0b5e969",
-   "type": "quote",
-   "playerId": "372",
-   "opponentId": "2382",
-   "player": "F. Cobolli",
-   "opponent": "C. Alcaraz",
-   "tournament": "Finals - Turin",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-20T00:00:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Quotes",
-   "context": "after losing to C. Alcaraz",
-   "eventKey": "12179697",
-   "won": false,
-   "text": "We have, more or less, the same character, … He's really silent and calm during the day… He has a great talent and he has a good coach and a good family behind him: a lot of people that love him.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "ATP Tour",
-   "sourceUrl": "https://www.atptour.com/en/news/cina-next-gen-atp-finals-2026-qualification",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "topic": "On a fellow player's character and talent",
-   "sourceHash": "6a7b6b19d5c28999",
-   "publishedAt": "2026-11-20T17:16:54.750Z",
    "file": "news-ticker/2794-2026.json"
   }
  ]
