@@ -2,8 +2,111 @@
  "tournament": "ATP Tour",
  "tournamentKey": "tour",
  "season": "2026",
- "updatedAt": "2026-11-20T21:53:52.018Z",
+ "updatedAt": "2026-11-20T22:43:49.714Z",
  "items": [
+  {
+   "id": "digest-7d1c7fc96f2ddf",
+   "type": "digest",
+   "version": 1,
+   "playerId": "1093",
+   "player": "D. Medvedev",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-20T21:18:00.000Z",
+   "members": [
+    "quote-ee76d95cb28ab2",
+    "quote-fd5f6cae3df5ce"
+   ],
+   "memberHash": "d4c4c9081a416779",
+   "digestedAt": "2026-11-20T22:01:36.716Z",
+   "blocks": [
+    {
+     "label": "on the finals and his approach to winning",
+     "text": "I said before the tournament that actually a lot of times for me the Finals is a great tournament because whenever you finish, great. Some rest after a tough end of the season, etc. Well, if you continue playing, it's great as well because that's my job and I love to win. But of course, when I'm on court, I'm always fighting to win and happy that I managed to fight well today.",
+     "from": [
+      "quote-fd5f6cae3df5ce"
+     ]
+    },
+    {
+     "label": "on facing Zverev in the semi-final",
+     "text": "A lot of tie breaks, match point saves. The last match we played, he saved the match point to beat me. I'm really looking forward to it because it's our first meeting this year. So, it's going to be fun.",
+     "from": [
+      "quote-ee76d95cb28ab2"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "384e3ed0fe393546",
+   "publishedAt": "2026-11-20T22:43:49.714Z"
+  },
+  {
+   "id": "quote-ee76d95cb28ab2",
+   "type": "quote",
+   "playerId": "1093",
+   "opponentId": null,
+   "player": "D. Medvedev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-20T21:18:00.000Z",
+   "timestampKind": "observed (Tennis TV published the clip then)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "A lot of tie breaks, match point saves, I mean, the last match we played, he saved the match point to beat me … really looking forward to it because it's our first meeting this year. So, it's going to be fun.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "On-court interview",
+   "sourceUrl": "https://www.tennistv.com/videos/4612172/turin-2026-rr-medvedev-interview",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
+   "interview": "on-court",
+   "topic": "On facing Zverev in the semi-final",
+   "sourceHash": "ef729fdb030396f7",
+   "publishedAt": "2026-11-20T22:43:49.714Z"
+  },
+  {
+   "id": "quote-fd5f6cae3df5ce",
+   "type": "quote",
+   "playerId": "1093",
+   "opponentId": null,
+   "player": "D. Medvedev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-20T21:18:00.000Z",
+   "timestampKind": "observed (Tennis TV published the clip then)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "Look, I said before the tournament that actually a lot of times for me the finals is a great tournament because whenever you finish, great. I mean, some rest after a tough end of the season, etc. Well, if you continue playing, it's great as well because that's my job and I love to win. … But of course, when I'm on court, always fighting to win and happy that I managed to fight well today.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "On-court interview",
+   "sourceUrl": "https://www.tennistv.com/videos/4612172/turin-2026-rr-medvedev-interview",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
+   "interview": "on-court",
+   "topic": "On the Finals and his approach to winning",
+   "sourceHash": "ff7058b02708d64e",
+   "publishedAt": "2026-11-20T22:43:49.714Z"
+  },
   {
    "id": "digest-59e3486f77d8bc",
    "type": "digest",
@@ -403,85 +506,6 @@
    "revision": 1
   },
   {
-   "id": "digest-0ac82a410e4008",
-   "type": "digest",
-   "version": 1,
-   "playerId": "1980",
-   "player": "A. Zverev",
-   "opponentId": null,
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "eventKey": null,
-   "context": null,
-   "category": "Quotes",
-   "timestamp": "2026-11-17T21:41:29.624Z",
-   "members": [
-    "quote-1743cd78835834",
-    "quote-bfb2f6a2be0684",
-    "quote-f0c3c24bd7725a"
-   ],
-   "memberHash": "f178432fada5f5cc",
-   "digestedAt": "2026-11-19T03:16:57.592Z",
-   "blocks": [
-    {
-     "label": "after his win over Shelton to reach the semifinals",
-     "text": "The first set was close to perfect, which of course helps. I'm very happy that I won and that I'm in the semifinal.",
-     "from": [
-      "quote-bfb2f6a2be0684"
-     ]
-    },
-    {
-     "label": "on receiving the year-end world number one trophy",
-     "text": "A year ago, I could not have imagined standing here with this trophy. This is the biggest success of my career.",
-     "from": [
-      "quote-1743cd78835834"
-     ]
-    },
-    {
-     "label": "on a possible private talk with Boris Becker",
-     "text": "If he approaches me, then I would be very happy to see him. I would also like to ask him why he started all this in the first place, with such strange topics. If it comes to that, we will clear the air, but not on television. You can forget that.",
-     "from": [
-      "quote-f0c3c24bd7725a"
-     ]
-    }
-   ],
-   "model": "claude-opus-5-5",
-   "sourceHash": "5dcd536c48b12d1d",
-   "publishedAt": "2026-11-19T03:47:45.956Z"
-  },
-  {
-   "id": "quote-bfb2f6a2be0684",
-   "type": "quote",
-   "playerId": "1980",
-   "opponentId": null,
-   "player": "A. Zverev",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-17T21:41:29.624Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "The first set was close to perfect, which of course helps. I'm very happy that I won and that I'm in the semifinal",
-   "originalText": "D er erste Satz war nahe an perfekt, das hilft natürlich. Ich bin sehr glücklich, dass ich gewonnen habe und im Halbfinale bin",
-   "language": "de",
-   "translated": true,
-   "translationModel": "claude-opus-5-5",
-   "sourceName": "Sportschau (ARD)",
-   "sourceUrl": "https://www.sportschau.de/tennis/zverev-vorzeitig-im-finals-halbfinale,spielbericht-zverev-shelton-102.html",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On his win over Shelton to reach semifinals",
-   "sourceHash": "b147ae47ce898c59",
-   "publishedAt": "2026-11-17T22:26:26.835Z"
-  },
-  {
    "id": "quote-54bf04d2309cb4",
    "type": "quote",
    "playerId": "50323",
@@ -510,6 +534,49 @@
    "topic": "On the close first set against Fils",
    "sourceHash": "065cb65670909083",
    "publishedAt": "2026-11-17T21:06:54.957Z"
+  },
+  {
+   "id": "digest-0ac82a410e4008",
+   "type": "digest",
+   "version": 1,
+   "playerId": "1980",
+   "player": "A. Zverev",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-17T18:00:00.000Z",
+   "members": [
+    "quote-1743cd78835834",
+    "quote-f0c3c24bd7725a"
+   ],
+   "memberHash": "ee42c66214e8352d",
+   "digestedAt": "2026-11-20T22:01:36.716Z",
+   "blocks": [
+    {
+     "label": "on receiving the year-end world number one trophy",
+     "text": "A year ago, I could not have imagined standing here with this trophy … This is the biggest success of my career.",
+     "from": [
+      "quote-1743cd78835834"
+     ]
+    },
+    {
+     "label": "on a possible private talk with Boris Becker",
+     "text": "If he approaches me, then I would be very happy to see him. I would also like to ask him why he started all this in the first place, with such strange topics … If it comes to that, we will clear the air, but not on television. You can forget that.",
+     "from": [
+      "quote-f0c3c24bd7725a"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "a5f4ef6985863640",
+   "publishedAt": "2026-11-19T03:47:45.956Z",
+   "revisedAt": "2026-11-20T22:43:49.714Z",
+   "revision": 1
   },
   {
    "id": "quote-f0c3c24bd7725a",
@@ -861,7 +928,7 @@
     "quote-a20ad7c6e979e3"
    ],
    "memberHash": "2a5d041b1162e6f2",
-   "digestedAt": "2026-11-20T21:31:16.446Z",
+   "digestedAt": "2026-11-20T22:01:36.716Z",
    "blocks": [
     {
      "label": "on Carlos Alcaraz's level of play",
@@ -873,10 +940,10 @@
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "7095e3f2adfa39aa",
+   "sourceHash": "458b4c7052fcd39f",
    "publishedAt": "2026-11-19T03:47:45.956Z",
-   "revisedAt": "2026-11-20T21:53:52.018Z",
-   "revision": 40
+   "revisedAt": "2026-11-20T22:43:49.714Z",
+   "revision": 41
   },
   {
    "id": "quote-611789d4998d31",
@@ -1227,7 +1294,7 @@
     "quote-758fd4e2661882"
    ],
    "memberHash": "1602bcb2f6f16728",
-   "digestedAt": "2026-11-20T21:31:16.446Z",
+   "digestedAt": "2026-11-20T22:01:36.716Z",
    "blocks": [
     {
      "label": "after his opening win over Frances Tiafoe",
@@ -1245,10 +1312,10 @@
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "cc2e9dbfe1b3af7b",
+   "sourceHash": "d06c859903b56f4d",
    "publishedAt": "2026-11-19T03:47:45.956Z",
-   "revisedAt": "2026-11-20T21:53:52.018Z",
-   "revision": 39
+   "revisedAt": "2026-11-20T22:43:49.714Z",
+   "revision": 40
   },
   {
    "id": "quote-1484fc62d72637",
@@ -1620,7 +1687,7 @@
     "quote-f2b49767a36019"
    ],
    "memberHash": "c0a714cecf99b5f9",
-   "digestedAt": "2026-11-20T21:31:16.446Z",
+   "digestedAt": "2026-11-20T22:01:36.716Z",
    "blocks": [
     {
      "label": "after his win over Fils",
@@ -1638,10 +1705,10 @@
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "e52a4e95ef541db5",
+   "sourceHash": "1036bf715171382d",
    "publishedAt": "2026-11-19T03:47:45.956Z",
-   "revisedAt": "2026-11-20T21:53:52.018Z",
-   "revision": 81
+   "revisedAt": "2026-11-20T22:43:49.714Z",
+   "revision": 82
   },
   {
    "id": "quote-b2f1172a530332",
@@ -1815,7 +1882,7 @@
     "quote-c97b20550b80b5"
    ],
    "memberHash": "31dca0b43f47f574",
-   "digestedAt": "2026-11-20T21:31:16.446Z",
+   "digestedAt": "2026-11-20T22:01:36.716Z",
    "blocks": [
     {
      "label": "after his opening ATP Finals win over Jodar",
@@ -1833,10 +1900,10 @@
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "c7122a3b9b295f52",
+   "sourceHash": "a10959d6851d6dbf",
    "publishedAt": "2026-11-19T03:47:45.956Z",
-   "revisedAt": "2026-11-20T21:53:52.018Z",
-   "revision": 81
+   "revisedAt": "2026-11-20T22:43:49.714Z",
+   "revision": 82
   },
   {
    "id": "quote-5c8fc89fea1cd6",
@@ -2173,7 +2240,7 @@
     "quote-91909bb6648e25"
    ],
    "memberHash": "631d2375c215fb2f",
-   "digestedAt": "2026-11-20T21:31:16.446Z",
+   "digestedAt": "2026-11-20T22:01:36.716Z",
    "blocks": [
     {
      "label": "on practicing with a stringless racket in Turin",
@@ -2191,10 +2258,10 @@
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "9de6f247e3d8b7ee",
+   "sourceHash": "ee744f90bed3094d",
    "publishedAt": "2026-11-19T03:47:45.956Z",
-   "revisedAt": "2026-11-20T21:53:52.018Z",
-   "revision": 81
+   "revisedAt": "2026-11-20T22:43:49.714Z",
+   "revision": 82
   },
   {
    "id": "quote-74899a9a78880b",

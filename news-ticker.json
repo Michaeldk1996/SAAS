@@ -1,32 +1,32 @@
 {
- "generatedAt": "2026-11-20T22:19:10.703Z",
+ "generatedAt": "2026-11-20T22:43:49.714Z",
  "tournaments": [
-  {
-   "key": "2794",
-   "season": "2026",
-   "name": "Finals",
-   "file": "news-ticker/2794-2026.json",
-   "items": 258,
-   "byType": {
-    "report": 12,
-    "digest": 33,
-    "quote": 213
-   },
-   "latestTimestamp": "2026-11-20T21:04:35.316Z",
-   "updatedAt": "2026-11-20T22:19:10.703Z"
-  },
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 121,
+   "items": 123,
    "byType": {
-    "digest": 24,
-    "quote": 97
+    "digest": 25,
+    "quote": 98
    },
-   "latestTimestamp": "2026-11-20T17:30:00.000Z",
-   "updatedAt": "2026-11-20T21:53:52.018Z"
+   "latestTimestamp": "2026-11-20T21:18:00.000Z",
+   "updatedAt": "2026-11-20T22:43:49.714Z"
+  },
+  {
+   "key": "2794",
+   "season": "2026",
+   "name": "Finals",
+   "file": "news-ticker/2794-2026.json",
+   "items": 260,
+   "byType": {
+    "report": 12,
+    "digest": 34,
+    "quote": 214
+   },
+   "latestTimestamp": "2026-11-20T21:04:35.316Z",
+   "updatedAt": "2026-11-20T22:43:49.714Z"
   },
   {
    "key": "1681",
@@ -57,6 +57,112 @@
  ],
  "latest": [
   {
+   "id": "digest-7d1c7fc96f2ddf",
+   "type": "digest",
+   "version": 1,
+   "playerId": "1093",
+   "player": "D. Medvedev",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-20T21:18:00.000Z",
+   "members": [
+    "quote-ee76d95cb28ab2",
+    "quote-fd5f6cae3df5ce"
+   ],
+   "memberHash": "d4c4c9081a416779",
+   "digestedAt": "2026-11-20T22:01:36.716Z",
+   "blocks": [
+    {
+     "label": "on the finals and his approach to winning",
+     "text": "I said before the tournament that actually a lot of times for me the Finals is a great tournament because whenever you finish, great. Some rest after a tough end of the season, etc. Well, if you continue playing, it's great as well because that's my job and I love to win. But of course, when I'm on court, I'm always fighting to win and happy that I managed to fight well today.",
+     "from": [
+      "quote-fd5f6cae3df5ce"
+     ]
+    },
+    {
+     "label": "on facing Zverev in the semi-final",
+     "text": "A lot of tie breaks, match point saves. The last match we played, he saved the match point to beat me. I'm really looking forward to it because it's our first meeting this year. So, it's going to be fun.",
+     "from": [
+      "quote-ee76d95cb28ab2"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "384e3ed0fe393546",
+   "publishedAt": "2026-11-20T22:43:49.714Z",
+   "file": "news-ticker/tour-2026.json"
+  },
+  {
+   "id": "quote-ee76d95cb28ab2",
+   "type": "quote",
+   "playerId": "1093",
+   "opponentId": null,
+   "player": "D. Medvedev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-20T21:18:00.000Z",
+   "timestampKind": "observed (Tennis TV published the clip then)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "A lot of tie breaks, match point saves, I mean, the last match we played, he saved the match point to beat me … really looking forward to it because it's our first meeting this year. So, it's going to be fun.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "On-court interview",
+   "sourceUrl": "https://www.tennistv.com/videos/4612172/turin-2026-rr-medvedev-interview",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
+   "interview": "on-court",
+   "topic": "On facing Zverev in the semi-final",
+   "sourceHash": "ef729fdb030396f7",
+   "publishedAt": "2026-11-20T22:43:49.714Z",
+   "file": "news-ticker/tour-2026.json"
+  },
+  {
+   "id": "quote-fd5f6cae3df5ce",
+   "type": "quote",
+   "playerId": "1093",
+   "opponentId": null,
+   "player": "D. Medvedev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-20T21:18:00.000Z",
+   "timestampKind": "observed (Tennis TV published the clip then)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "Look, I said before the tournament that actually a lot of times for me the finals is a great tournament because whenever you finish, great. I mean, some rest after a tough end of the season, etc. Well, if you continue playing, it's great as well because that's my job and I love to win. … But of course, when I'm on court, always fighting to win and happy that I managed to fight well today.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "On-court interview",
+   "sourceUrl": "https://www.tennistv.com/videos/4612172/turin-2026-rr-medvedev-interview",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
+   "interview": "on-court",
+   "topic": "On the Finals and his approach to winning",
+   "sourceHash": "ff7058b02708d64e",
+   "publishedAt": "2026-11-20T22:43:49.714Z",
+   "file": "news-ticker/tour-2026.json"
+  },
+  {
    "id": "report-12179702",
    "type": "report",
    "playerId": "1093",
@@ -77,7 +183,7 @@
     "minutes": 81
    },
    "category": "Statistics",
-   "text": "Medvedev beat Tiafoe for the 7th time in 9 meetings, 6-3, 6-4 in the group stage.\n\nMedvedev: W: 28 / UE: 13 | DR: 1.38\n\nTiafoe: W: 22 / UE: 15 | DR: 0.73",
+   "text": "Medvedev beat Tiafoe 6–3, 6–4 in the group stage to pick up a win in his second group match in Turin. It was the first appearance of Tiafoe at this event.\n\nThe start was not easy for Medvedev. He was the first to come under pressure and had to save two break points. He held, broke soon after and took the first set 6–3. Tiafoe came out aggressive in the second set and showed fine touch near the net. Medvedev stayed calm, broke late in the set and served out the match. Whatever happens next, he enjoys being here: \"The Finals is a great tournament because whenever you finish it is great because you have some rest at the end of the season. But if you continue playing that is great because I love to win, …\" Today he got that win.\n\nMedvedev was at his best when it mattered most. He saved every break point he faced and his defence kept Tiafoe chasing. His serve was the base of it, with 76% of first serves in against his 65% average on hard. The score stayed close only because Tiafoe saved most of the break points against him.\n\nA win that says a lot about Medvedev's experience on this stage, against a player new to it. He won this event in London in 2020 and played like a man who knows it well. Up next: his last group match.\n\nMedvedev: W: 28 / UE: 13 | DR: 1.38\n\nTiafoe: W: 22 / UE: 15 | DR: 0.73",
    "ms": {
     "a": "D. Medvedev",
     "b": "F. Tiafoe",
@@ -137,7 +243,7 @@
      ]
     ]
    },
-   "baseText": "Medvedev beat Tiafoe for the 7th time in 9 meetings, 6-3, 6-4 in the group stage.",
+   "baseText": "Medvedev beat Tiafoe 6–3, 6–4 in the group stage to pick up a win in his second group match in Turin. It was the first appearance of Tiafoe at this event.\n\nThe start was not easy for Medvedev. He was the first to come under pressure and had to save two break points. He held, broke soon after and took the first set 6–3. Tiafoe came out aggressive in the second set and showed fine touch near the net. Medvedev stayed calm, broke late in the set and served out the match. Whatever happens next, he enjoys being here: \"The Finals is a great tournament because whenever you finish it is great because you have some rest at the end of the season. But if you continue playing that is great because I love to win, …\" Today he got that win.\n\nMedvedev was at his best when it mattered most. He saved every break point he faced and his defence kept Tiafoe chasing. His serve was the base of it, with 76% of first serves in against his 65% average on hard. The score stayed close only because Tiafoe saved most of the break points against him.\n\nA win that says a lot about Medvedev's experience on this stage, against a player new to it. He won this event in London in 2020 and played like a man who knows it well. Up next: his last group match.",
    "rating": [
     "Medvedev: W: 28 / UE: 13 | DR: 1.38",
     "Tiafoe: W: 22 / UE: 15 | DR: 0.73"
@@ -146,6 +252,20 @@
     "text": "Medvedev started poorly and was the first to come under pressure but he saved a couple of break points and then won the first set 6-3. His defence was the strongest part of his game and he chased down ball after ball. Tiafoe made a perfect start to the second set with aggressive play and a crucial hold and he showed fine touch with his hands near the net. Medvedev stayed too solid and used his experience to win. He reached another semifinal at the season-ending championships in Turin, which he won in London in 2020 and his semifinal is on Saturday night.",
     "sourceName": "Tennis TV highlights commentary",
     "sourceUrl": "https://www.tennistv.com/videos/4612170/turin-2026-rr-medvedev-tiafoe-highlights"
+   },
+   "composed": {
+    "version": 3,
+    "sheetHash": "2e1523a7b3042890",
+    "status": "ok",
+    "model": "claude-opus-5-5",
+    "tries": 1,
+    "runs": 1,
+    "usage": {
+     "input": 7678,
+     "output": 2151,
+     "calls": 1
+    },
+    "body": "Medvedev beat Tiafoe 6–3, 6–4 in the group stage to pick up a win in his second group match in Turin. It was the first appearance of Tiafoe at this event.\n\nThe start was not easy for Medvedev. He was the first to come under pressure and had to save two break points. He held, broke soon after and took the first set 6–3. Tiafoe came out aggressive in the second set and showed fine touch near the net. Medvedev stayed calm, broke late in the set and served out the match. Whatever happens next, he enjoys being here: \"The Finals is a great tournament because whenever you finish it is great because you have some rest at the end of the season. But if you continue playing that is great because I love to win, …\" Today he got that win.\n\nMedvedev was at his best when it mattered most. He saved every break point he faced and his defence kept Tiafoe chasing. His serve was the base of it, with 76% of first serves in against his 65% average on hard. The score stayed close only because Tiafoe saved most of the break points against him.\n\nA win that says a lot about Medvedev's experience on this stage, against a player new to it. He won this event in London in 2020 and played like a man who knows it well. Up next: his last group match."
    },
    "fields": {
     "score": "6-3, 6-4",
@@ -204,10 +324,10 @@
    "sourceUrl": "pbp/12179702.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "3230ec4caf018564",
+   "sourceHash": "38d985e14f982ced",
    "publishedAt": "2026-11-20T21:30:29.553Z",
-   "revisedAt": "2026-11-20T22:19:10.703Z",
-   "revision": 1,
+   "revisedAt": "2026-11-20T22:43:49.714Z",
+   "revision": 2,
    "file": "news-ticker/2794-2026.json"
   },
   {
@@ -1076,7 +1196,7 @@
    "opponentId": "372",
    "player": "C. Alcaraz",
    "opponent": "F. Cobolli",
-   "tournament": "Finals - Turin",
+   "tournament": "Finals",
    "tournamentKey": "2794",
    "season": "2026",
    "round": null,
@@ -1092,12 +1212,14 @@
    "translated": true,
    "translationModel": "claude-opus-5-5",
    "sourceName": "NOS Sport",
-   "sourceUrl": "https://nos.nl/artikel/2640297-ondanks-hamstringklachten-rekent-alcaraz-snel-af-met-cobolli-op-atp-finals",
+   "sourceUrl": "https://nos.nl/artikel/2640297-ondanks-klachten-rekent-alcaraz-af-met-cobolli-ook-medvedev-naar-halve-finales-atp-finals",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "topic": "On recovering from his hamstring problem",
-   "sourceHash": "1df9a3a6617fbcb8",
+   "sourceHash": "088ba09c986d2dcf",
    "publishedAt": "2026-11-20T15:22:03.868Z",
+   "revisedAt": "2026-11-20T22:43:49.714Z",
+   "revision": 1,
    "file": "news-ticker/2794-2026.json"
   },
   {
@@ -1813,99 +1935,6 @@
    "topic": "On his ankle problems at the ATP Finals",
    "sourceHash": "91e64fac9146d91e",
    "publishedAt": "2026-11-20T10:02:14.954Z",
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-01c122a6ef801f",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": "372",
-   "player": "C. Alcaraz",
-   "opponent": "F. Cobolli",
-   "tournament": "Finals - Turin",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-20T00:00:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Injuries",
-   "context": "after beating F. Cobolli",
-   "eventKey": "12179697",
-   "won": true,
-   "text": "Yesterday [was a] really important day. Obviously I felt something in the last match. Yesterday with the test, we decided not to practice, to rest. We went to have a walk, chill. And getting treatment morning, afternoon with my physio, this morning once again, really careful. Doing, I'm going to say, as best as we can do the things off the court to be ready and to be in a good shape for this match.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "ATP Tour",
-   "sourceUrl": "https://www.atptour.com/en/news/alcaraz-nitto-atp-finals-2026-reaction-friday",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "topic": "On recovering from an injury scare before this match",
-   "sourceHash": "899de75ffabb6a04",
-   "publishedAt": "2026-11-20T16:34:14.512Z",
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-2681b027ae22ee",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": "372",
-   "player": "C. Alcaraz",
-   "opponent": "F. Cobolli",
-   "tournament": "Finals - Turin",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-20T00:00:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Quotes",
-   "context": "after beating F. Cobolli",
-   "eventKey": "12179697",
-   "won": true,
-   "text": "Yesterday was a really important day for me, to be honest. I'm trying to learn from these moments. I'm trying to know myself a little bit better. I think these kind of moments helps you a lot to know yourself much better,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "ATP Tour",
-   "sourceUrl": "https://www.atptour.com/en/news/alcaraz-nitto-atp-finals-2026-reaction-friday",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "topic": "On what yesterday taught him about himself",
-   "sourceHash": "e846516e34e7bb89",
-   "publishedAt": "2026-11-20T16:34:14.512Z",
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-4b714930325012",
-   "type": "quote",
-   "playerId": "2846",
-   "opponentId": null,
-   "player": "F. Tiafoe",
-   "opponent": null,
-   "tournament": "Finals - Turin",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-20T00:00:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "First of all, I just love kids. I think it's a cool thing that we do… It's awesome to have them have that experience, something they're never going to forget, … And them going through what they're going through, a shoutout to them.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "ATP Tour",
-   "sourceUrl": "https://www.atptour.com/en/news/tiafoe-mascot-nitto-atp-finals-2026",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "topic": "On giving children an unforgettable experience",
-   "sourceHash": "b3a02424957c0f2c",
-   "publishedAt": "2026-11-20T13:23:46.864Z",
    "file": "news-ticker/2794-2026.json"
   }
  ]
