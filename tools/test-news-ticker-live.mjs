@@ -549,7 +549,8 @@ await ok('digest: one block per subject from his own words; an added fact, a rep
 });
 await ok('stats box rows: ours where we hold the figure, else the verified card; a row only with both figures; per point from our total points', async () => {
   const { msRows, MS_ROWS } = await import('./news-ticker/news-core.mjs');
-  assert.equal(MS_ROWS.length, 13);
+  assert.equal(MS_ROWS.length, 11);
+  assert.deepEqual(MS_ROWS.map((r) => r[0]), ['Dominance ratio', 'Serve quality', 'Unreturned serves', '1st serve in', '1st serve points won', '2nd serve points won', 'Return quality', 'Baseline points won', 'Ratio W/UE', 'Winners / point', 'Unforced / point']);
   const st = (o) => ({ 'Service:1st serve percentage': 66, 'Service:1st serve points won': 75.5, 'Service:2nd serve points won': 68, 'Points:Winners': 28, 'Points:Unforced errors': 32,
     'Points:Service Points Won': 73, 'Points:Return Points Won': 37, raw: { 'Points:Total Points Won': { won: 88, total: 166 } }, ...o });
   const m = { matchStats: { p1: st({}), p2: st({ 'Service:1st serve percentage': 76, 'Points:Winners': 21, 'Points:Unforced errors': 22, 'Points:Service Points Won': 63, 'Points:Return Points Won': 27 }) } };
@@ -557,8 +558,9 @@ await ok('stats box rows: ours where we hold the figure, else the verified card;
   const r = Object.fromEntries(msRows(m, 'p1', 'p2', card).map((x) => [x[0], x.slice(1)]));
   assert.deepEqual(r['1st serve in'], [66, 76, '%'], 'ours over the card (the card said 99)');
   assert.deepEqual(r['Serve quality'], [9.4, 8.4, '1']);
-  assert.deepEqual(r['Winners / points'], [0.17, 0.13, '2'], 'winners ÷ our 166 total points');
-  assert.deepEqual(r['Unforced errors'], [32, 22, '0', 1]);
+  assert.deepEqual(r['Winners / point'], [0.17, 0.13, '2'], 'winners ÷ our 166 total points');
+  assert.deepEqual(r['Ratio W/UE'], [0.88, 0.95, '2']);
+  assert.ok(!('Winners' in r) && !('Unforced errors' in r), 'no raw counts in the box');
   assert.deepEqual(Object.keys(r)[0], 'Dominance ratio');
   const noCard = msRows(m, 'p1', 'p2', null).map((x) => x[0]);
   assert.ok(!noCard.includes('Serve quality') && !noCard.includes('Baseline points won') && noCard.includes('1st serve in'), 'no card: its rows are dropped, ours stay');
@@ -594,6 +596,7 @@ await ok('tour-wide: another sport is never a tennis quote; a scrambled three-wo
   assert.deepEqual(tp.map((p) => p.name), ['J. Schwaerzler Joel', 'A. De Minaur', 'J. Sinner'], 'CONTROL before the fix: "J. Joel"');
   assert.equal(surnameOf(tp[0].name), 'schwaerzler joel');
   assert.ok(notTennis('https://www.gulf-times.com/article/1/sport/football/diallo-fifa-bid') && !notTennis('https://www.ubitennis.net/2026/11/zverev'));
+  assert.ok(notTennis('https://www.hindustantimes.com/world-news/us-news/susan-smith-is-denied-parole-again-1.html') && !notTennis('https://www.hindustantimes.com/sports/tennis/sinner-wins-1.html'), 'a general news section is never a tennis quote (K. Smith, 20 Nov)');
 });
 await ok('tour-wide: a held quote whose URL names a tournament now on moves to it (once, never copied); others stay', async () => {
   const { rehomeTourItems, urlMentions, eventAliases } = await import('./news-ticker/collect-quotes.mjs');

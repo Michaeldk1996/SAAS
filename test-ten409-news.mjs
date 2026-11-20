@@ -84,7 +84,7 @@ function page(opts = {}, set = {}) {
   const P = load(opts); P.api.data = 'feed' in opts ? opts.feed : FEED(); P.api.state = opts.state || 'ok';
   Object.assign(P.api, set); P.api.renderNews(); return P;
 }
-const stats = P => [...P.get('newsHeaderStats').matchAll(/<span class="nx-stat-v">([^<]*)<\/span><span class="nx-stat-l">([^<]+)</g)].map(m => [m[2], m[1]]);
+const stats = P => [...P.get('newsHeaderStats').matchAll(/<span class="nx-stat-l">([^<]+)<\/span><span class="nx-stat-v">([^<]*)</g)].map(m => [m[1], m[2]]);
 
 
 // Data 2 — mutation: restore `|| newsPlayerFor(a.title)` / drop the player_key filter in newsWireItems.
@@ -102,7 +102,9 @@ test('Data 3: no sample article anywhere in the News page code or markup', () =>
 });
 
 // v2 §2 — mutation: Updated from `new Date()`; Players counted per article; a zero for an unsourced value.
-test('Header pills: Articles after every filter, Players distinct, Updated = the feed refresh, never the clock', () => {
+test('Header stats: caps label over value, no boxes; Articles after every filter, Players distinct, Updated = the feed refresh', () => {
+  assert.match(CSS, /\.nx-stats \{ display: flex; align-items: flex-end; gap: 30px;/); assert.match(CSS, /\.nx-stat \{ display: flex; flex-direction: column; gap: 4px; align-items: flex-end; \}/);
+  assert.match(CSS, /\.nx-stat-l \{ font-size: 10\.5px; font-weight: 700; letter-spacing: 0\.10em; text-transform: uppercase;/);
   const P = page(), hm = GEN.toISOString().slice(11, 16);
   assert.deepEqual(stats(P), [['Articles', '3'], ['Players', '3'], ['Updated', hm]]);
   const now = new Date().toISOString().slice(11, 16);
@@ -116,7 +118,7 @@ test('Header pills: Articles after every filter, Players distinct, Updated = the
 
 // v2 §7 empty state — mutation: always offer "Try a wider date range." / offer Clear search without a search.
 test('Empty state: names the filter, widens only when a wider window has results, Clear search only with a search', () => {
-  const fw = FEED(); fw.articles[0].title = 'Alcaraz beats Rune in Shanghai';   // the only Tour News left is the 100 h-old draw article
+  const fw = FEED(); fw.articles[0].title = 'Alcaraz withdraws from Shanghai with a knee injury';   // the only Tour News left is the 100 h-old draw article
   const W = page({ feed: fw }, { hours: 6, cats: ['Tour News'] });
   assert.equal(text(W.get('newsList')), 'No articles match these filters. No Tour News articles in the last 6 hours. Try a wider date range.');
   W.api.newsWiden(); assert.equal(W.api.hoursNow, 168, 'widen jumps to the first window with results');
@@ -145,6 +147,8 @@ test('Tournament menu lists events in the window; filters combine; Reset filters
   assert.deepEqual([...P.get('newsTourFilter').matchAll(/data-v="[^"]*" onclick="[^"]*">([^<]+)<span/g)].map(m => m[1]), ['All tournaments', 'China Open', 'Shanghai Masters']);
   assert.match(P.get('newsTourFilter'), /class="nx-trig nx-seg"[^>]*>All tournaments<span class="nx-chev"/);
   assert.match(P.get('newsResetHost'), /Reset filters/, 'a window other than 7 days shows Reset');
+  assert.match(CSS, /\.nx-reset \{ margin-left: auto; display: inline-flex; align-items: center; height: 34px;[^}]*background: var\(--news-lifted\); border: 1px solid var\(--nx-e14\);/, 'a lifted 34px button, not a blue link');
+  assert.match(CSS, /\.nx-reset:hover \{ background: var\(--news-hover\); \}/);
   assert.equal(page().get('newsResetHost'), '', 'no filter: no Reset');
   const C = page({}, { tour: 'china-open', cats: ['Withdrawals & Injuries'], q: 'knee' });
   assert.equal(stats(C)[0][1], '1');
@@ -213,36 +217,50 @@ const REPORT = (rows, o = {}) => [Object.assign({ id: 'report-9', type: 'report'
   timestamp: new Date(Date.now() - H).toISOString(), text: 'Tiafoe beat Cobolli.\n\nSecond.\n\nTiafoe: performance rating 8.1 | W: 20 / UE: 19 | DR: 1.64',
   rating: ['Tiafoe: performance rating 8.1 | W: 20 / UE: 19 | DR: 1.64'], fields: { score: '7-6, 6-0' },
   ms: rows ? { a: 'F. Tiafoe', b: 'F. Cobolli', sets: [[7, 6], [6, 0]], rows } : undefined }, o)];
-test('Match report: text | divider | stats box from the rows held; row maths; missing data', () => {
-  const rows = [['Dominance ratio', 1.64, 0.61, 'dr'], ['1st serve in', 59, 61, '%'], ['Winners', 20, 17, '0'], ['Unforced errors', 19, 29, '0', 1], ['Winners / points', 0.16, 0.14, '2']];
+test('Match report: two avatars, text | divider | stats box; fixed order, new labels; row maths; missing data', () => {
+  // the feed's older labels and order on purpose: the page puts them in the design's order with its labels
+  const rows = [['Unforced / points', 0.11, 0.17, '2', 1], ['Winners', 20, 17, '0'], ['Unforced errors', 19, 29, '0', 1], ['Winners / points', 0.16, 0.14, '2'],
+    ['1st serve in', 59, 61, '%'], ['Return quality', 7.2, 5.1, '1'], ['Dominance ratio', 1.64, 0.61, 'dr'], ['Serve quality', 8.1, 8.1, '1'], ['Winners / unforced', 1.05, 0.59, '2']];
   const c = card(page({}, { ticker: REPORT(rows) }).get('newsList'), 'treport-9');
+  assert.match(c, /<span class="nx-avs"><span class="nx-av">FT[\s\S]*?<span class="nx-av">FC[\s\S]*?<span class="nx-nl">F\. Tiafoe · F\. Cobolli<\/span>/, 'both players, winner first');
   assert.match(c, /<span class="nx-sl">\d\d:\d\d · Match Reports · 7-6 6-0 · Finals - Turin<\/span>/);
   assert.match(c, /<div class="nx-title"[^>]*>F\. Tiafoe beat F\. Cobolli, 7-6, 6-0<\/div>/);
-  assert.match(c, /<div class="nx-col ms">/); assert.match(c, /<span class="nx-div"><\/span><div class="nx-box">/);
+  assert.match(c, /<span class="nx-div"><\/span><div class="nx-box">/);
   assert.ok(!/performance rating/.test(c), 'the closing lines leave the text when the box carries the numbers');
   assert.match(c, /<span class="nx-bs"><span>7<i>-6<\/i><\/span><span>6<i>-0<\/i><\/span><\/span>/);
-  assert.match(c, /<span class="nx-won">Won<\/span>/);
-  assert.match(c, /<div class="nx-r full"><div class="nx-rf"><span class="nx-fa up lead">1\.64<\/span><span class="nx-lab">Dominance ratio<\/span><span class="nx-fb down ">0\.61<\/span>/);
+  assert.deepEqual([...c.matchAll(/<span class="nx-lab">([^<]+)</g)].map(m => m[1]),
+    ['Dominance ratio', 'Serve quality', '1st serve in', 'Return quality', 'Ratio W/UE', 'Winners / point', 'Unforced / point'], 'the fixed order; raw counts never shown');
+  assert.match(c, /<div class="nx-r full"><div class="nx-rf"><span class="nx-fa lead">1\.64<\/span><span class="nx-lab">Dominance ratio<\/span><span class="nx-fb ">0\.61<\/span>/, 'DR: leader white, no green / red');
+  assert.equal((c.match(/nx-r full/g) || []).length, 1, 'only the dominance ratio spans');
   assert.match(c, /<span class="nx-fa ">59%<\/span><span class="nx-lab">1st serve in<\/span><span class="nx-fb lead">61%<\/span>[\s\S]*?<span class="nx-chip">2 pts<\/span>/);
-  assert.match(c, /<span class="nx-fa lead">19<\/span><span class="nx-lab">Unforced errors<\/span><span class="nx-fb ">29<\/span>/, 'the lower figure leads on unforced errors');
-  // bar = 12 + |a-b| / max × 88: winners 20 v 17 → 12 + 3/20×88 = 25.2%, on A's side
-  assert.match(c, /<span class="nx-tr a"><span class="nx-bar" style="width:25\.2%"><\/span><\/span><span class="nx-chip">3<\/span><span class="nx-tr b"><span class="nx-bar" style="width:0%">/);
-  // 4 rows other than DR is even → the last row does not span; 3 others → it does
-  assert.match(c, /<div class="nx-r"><div class="nx-rf"><span class="nx-fa lead">0\.16/);
-  const odd = card(page({}, { ticker: REPORT(rows.slice(0, 4)) }).get('newsList'), 'treport-9');
-  assert.match(odd, /<div class="nx-r full"><div class="nx-rf"><span class="nx-fa lead">19/, 'an odd last row spans both columns');
-  assert.match(card(page({}, { ticker: REPORT([['Winners', 20, 20, '0']]) }).get('newsList'), 'treport-9'), /<span class="nx-fa ">20<\/span>[\s\S]*<span class="nx-chip">Level<\/span>/);
+  assert.match(c, /<span class="nx-fa lead">0\.11<\/span><span class="nx-lab">Unforced \/ point<\/span><span class="nx-fb ">0\.17/, 'the lower figure leads on unforced per point');
+  assert.match(c, /<span class="nx-fa ">8\.1<\/span><span class="nx-lab">Serve quality<\/span><span class="nx-fb ">8\.1<\/span>[\s\S]*?<span class="nx-chip">Level<\/span>/);
+  // bar = 12 + |a-b| / max × 88: return quality 7.2 v 5.1 → 12 + 2.1/7.2×88 = 37.7%, on A's side
+  assert.match(c, /<span class="nx-tr a"><span class="nx-bar" style="width:37\.7%"><\/span><\/span><span class="nx-chip">2\.1<\/span>/);
+  assert.match(CSS, /\.nx-grid \{ columns: 190px 2; column-gap: 28px; padding-top: 12px; flex: 1; \}/, 'down the left column, then the right');
+  assert.match(CSS, /\.nx-r \{ break-inside: avoid;[^}]*padding-bottom: 10px; \}/); assert.match(CSS, /\.nx-r\.full \{ column-span: all; \}/);
+  assert.ok(!/news-green|news-red/.test(CSS.slice(CSS.indexOf('.nx-fa'), CSS.indexOf('.nx-fa') + 400)), 'no green / red on the figures');
+  const only = card(page({}, { ticker: REPORT([['Winners', 20, 17, '0'], ['Unforced errors', 19, 29, '0', 1]]) }).get('newsList'), 'treport-9');
+  assert.ok(!/nx-box|nx-div/.test(only) && /performance rating/.test(only), 'only raw counts: no box, a plain text article');
   const none = card(page({}, { ticker: REPORT(null) }).get('newsList'), 'treport-9');
   assert.ok(!/nx-box|nx-div/.test(none) && /<div class="nx-col">/.test(none) && /performance rating/.test(none), 'no rows: a plain text article');
   // Read more: above 7 paragraphs with more than 6 rows, else above 5
-  const long = REPORT(rows.concat([['Serve quality', 8.1, 7.7, '1'], ['Return quality', 7.2, 5.1, '1']]), { text: Array.from({ length: 7 }, (_, i) => 'P' + i).join('\n\n') });
+  const long = REPORT(rows, { text: Array.from({ length: 7 }, (_, i) => 'P' + i).join('\n\n') });
   assert.ok(!/nx-more/.test(card(page({}, { ticker: long }).get('newsList'), 'treport-9')), '7 paragraphs with 7 rows show whole');
+});
+
+// founder 2026-11-20: the Match Reports filter holds only the reports we write
+test('Match Reports = our reports only: an outlet result article is Tour News', () => {
+  const f = FEED(); f.articles[0].title = 'Alcaraz beats Sinner 6-4 6-4 in Shanghai';
+  const P = page({ feed: f }, { cats: ['Match Reports'] });
+  assert.ok(!/data-id="w1"/.test(P.get('newsList')), 'an outlet result is not a match report');
+  assert.match(card(page({ feed: f }).get('newsList'), 'w1'), /Tour News/);
 });
 
 // v2 §5 — mutation: a Close link; the opened report losing its box; the 184px indent kept beside the box.
 test('Compact: the opened row = card colour + ring, no Close link; an opened report carries the same box at full width', () => {
-  const P = page({}, { ticker: REPORT([['Winners', 20, 17, '0']]), view: 'compact' });
-  assert.match(P.get('newsList'), /<div class="nx-wc"><span class="nx-wn"><span class="nx-avs"><span class="nx-av s">FT<\/span><\/span><b>F\. Tiafoe<\/b><\/span><span class="nx-wh"[^>]*>F\. Tiafoe beat F\. Cobolli, 7-6, 6-0<\/span><span class="nx-wk">Match Reports · 7-6 6-0<\/span><span class="nx-car" aria-hidden="true">›<\/span>/);
+  const P = page({}, { ticker: REPORT([['Winners / points', 0.16, 0.14, '2']]), view: 'compact' });
+  assert.match(P.get('newsList'), /<div class="nx-wc"><span class="nx-wn"><span class="nx-avs"><span class="nx-av s">FT<\/span><span class="nx-av s"[^>]*>FC<\/span><\/span><b>F\. Tiafoe<\/b><\/span><span class="nx-wh"[^>]*>F\. Tiafoe beat F\. Cobolli, 7-6, 6-0<\/span><span class="nx-wk">Match Reports · 7-6 6-0<\/span><span class="nx-car" aria-hidden="true">›<\/span>/);
   P.api.newsToggleRow('treport-9');
   const o = P.get('newsList');
   assert.match(o, /<div class="nx-wr open"/); assert.ok(!/>Close</.test(o));
@@ -263,7 +281,7 @@ test('Post intel: player from the search required, group = category, destination
   let c = P.get('newsComposer');
   assert.match(P.get('newsPostIntelHost'), /class="nx-post nx-seg open"[^>]*>Post intel <span class="nx-post-n">0\/5<\/span>/);
   assert.match(c, /placeholder="Search a player…"/); assert.match(c, /Pick a player to publish\./);
-  assert.deepEqual([...c.matchAll(/intelSetCat\('([^']+)'\)/g)].map(m => m[1].replace("\\'", "'")), ['Match Reports', 'Quotes', 'Withdrawals & Injuries', 'Tour News']);
+  assert.deepEqual([...c.matchAll(/intelSetCat\('([^']+)'\)/g)].map(m => m[1].replace("\\'", "'")), ['Quotes', 'Withdrawals & Injuries', 'Tour News'], 'Match Reports holds only our reports (founder 2026-11-20)');
   assert.match(c, /class="nx-tab nx-seg on"[^>]*>Tour News</, 'Tour News by default');
   assert.deepEqual(P.api.intelPlayerHits('alca').map(h => [h.key, h.tour]), [['2382', 'Finals - Turin']], 'the real player list, with his tournament');
   P.api.intelOnText('Practised fully. Looked sharp.');

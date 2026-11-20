@@ -145,7 +145,8 @@ export function candidatesFromOutletArticle({ url, html, outlet, language, playe
   return { candidates: out, unnamed, published: ts };
 }
 
-export const OTHER_SPORT_PATH = /\/(hockey|nhl|ishockey|fotboll|football|fussball|soccer|calcio|futbol|basket\w*|handball|nfl|nba|cricket|rugby|golf|f1|motorsport|cycling)\//i;
+// another sport, or a general news section (a crime story that only links to tennis: K. Smith, Hindustan Times, 20 Nov)
+export const OTHER_SPORT_PATH = /\/(hockey|nhl|ishockey|fotboll|football|fussball|soccer|calcio|futbol|basket\w*|handball|nfl|nba|cricket|rugby|golf|f1|motorsport|cycling|world-news|us-news|india-news|uk-news|politics|crime|business|entertainment|lifestyle|opinion|cities)\//i;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function get(url, fetchFn) {
   try {

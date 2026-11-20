@@ -134,9 +134,11 @@ export function ratingLines(m, w, l, card) {
 // baseline points; card = cardsByMatch entry, its p1/p2 = the card's). A figure either side lacks leaves the row out
 // (the page draws only rows with both figures). Values are rounded to the format they print in, so the chip difference
 // is the difference of the printed figures.
-export const MS_ROWS = [['Dominance ratio', 'dr'], ['Serve quality', '1'], ['Return quality', '1'], ['1st serve in', '%'], ['Unreturned serves', '%'],
-  ['1st serve won', '%'], ['2nd serve won', '%'], ['Baseline points won', '0'], ['Winners / unforced', '2'], ['Winners', '0'],
-  ['Unforced errors', '0', 1], ['Winners / points', '2'], ['Unforced / points', '2', 1]];
+// the box's 11 rows in the design's fixed order (News 2026-11-20 §4): Dominance ratio on top, then the left column
+// (serve), then the right; no raw Winners / Unforced errors counts
+export const MS_ROWS = [['Dominance ratio', 'dr'], ['Serve quality', '1'], ['Unreturned serves', '%'], ['1st serve in', '%'],
+  ['1st serve points won', '%'], ['2nd serve points won', '%'], ['Return quality', '1'], ['Baseline points won', '0'],
+  ['Ratio W/UE', '2'], ['Winners / point', '2'], ['Unforced / point', '2', 1]];
 export function msRows(m, w, l, card) {
   const ms = m.matchStats || {}, ok = wueUsable(ms), rnd = (v, k) => v == null || !Number.isFinite(v) ? null : k === '%' || k === '0' ? Math.round(v) : +v.toFixed(k === '1' ? 1 : 2);
   const tot = num(ms[w] && ms[w].raw && ms[w].raw['Points:Total Points Won'] && ms[w].raw['Points:Total Points Won'].total);
@@ -149,14 +151,12 @@ export function msRows(m, w, l, card) {
       case 'Return quality': return num(c.returnQuality);
       case '1st serve in': return our('Service:1st serve percentage') != null ? our('Service:1st serve percentage') : num(c.firstInPct);
       case 'Unreturned serves': return num(c.unreturnedPct);
-      case '1st serve won': return our('Service:1st serve points won') != null ? our('Service:1st serve points won') : num(c.firstWonPct);
-      case '2nd serve won': return our('Service:2nd serve points won') != null ? our('Service:2nd serve points won') : num(c.secondWonPct);
+      case '1st serve points won': return our('Service:1st serve points won') != null ? our('Service:1st serve points won') : num(c.firstWonPct);
+      case '2nd serve points won': return our('Service:2nd serve points won') != null ? our('Service:2nd serve points won') : num(c.secondWonPct);
       case 'Baseline points won': return num(c.baselineWon);
-      case 'Winners / unforced': return W != null && U ? W / U : null;
-      case 'Winners': return W;
-      case 'Unforced errors': return U;
-      case 'Winners / points': return W != null && tot ? W / tot : null;
-      case 'Unforced / points': return U != null && tot ? U / tot : null;
+      case 'Ratio W/UE': return W != null && U ? W / U : null;
+      case 'Winners / point': return W != null && tot ? W / tot : null;
+      case 'Unforced / point': return U != null && tot ? U / tot : null;
     }
     return null;
   };

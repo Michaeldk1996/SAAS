@@ -1,12 +1,13 @@
-# News page v2 (founder 2026-11-19, handoff `design_handoff_news_v2`; replaces the TEN-409 step-10 look)
+# News page v3 (founder 2026-11-19 / 2026-11-20, handoff `design_handoff_news_2026-11-20`; replaces the TEN-409 step-10 look)
 
 Applies to the News page block of `bsp-consult-dashboard.html` (`renderNews`, the `news*` helpers from "TEN-409 step 10"
 to the Post intel section, `newsRenderComposer`, `intelPublish`) and `news-page.css`. Reference =
-`design_handoff_news_v2/reference/News.dc.html` + its `README.md` (night only, high fidelity): every size and colour is the
+`design_handoff_news_2026-11-20/reference/News.dc.html` + its `README.md` (diff: `CHANGELOG_2026-11-20.md`) (night only, high fidelity): every size and colour is the
 export's own, as `--news-*` tokens in `tokens.css` read by `news-page.css` only. The page draws its own header card (not
 the 35b `.sfh`; `test-ten403-header.mjs` lists it beside Stennisfy Model). **Test:** `test-ten409-news.mjs` (each check
-names its mutation). Measured against the reference in Chrome at 1512: header 93.5, filter card 137, stat pills 102×55.5,
-switch 171×39, menu trigger 35, stats box head 67, Compact row 55, opened report box 540 — all equal.
+names its mutation). Measured against the reference in Chrome on the same match (Zverev v Fils), 2026-11-20: at 1440 the
+header card, its stats, Reset filters, the Reading report card (590) and box (479) and every text element in them, the
+Compact row (54) and the opened report (535, box 540×450) equal to the pixel; at 800 the box (560×370, one column) equal.
 
 ## Data
 - **One feed: `news-feed.json`** (`build-news-feed.js`, api-tennis `get_news`), the same `_newsData` as Match analysis →
@@ -42,9 +43,11 @@ switch 171×39, menu trigger 35, stats box head 67, Compact row 55, opened repor
 - **Four categories, single select** (v2 §2): Match Reports · Quotes · Withdrawals & Injuries · Tour News; the switch reads
   "All" + these four; a click replaces the active one, a click on it returns to All. There is no Draws & Schedules: what
   `newsClassify` (title keywords) used to file there, and a ticker status item about a qualifier or lucky loser, is Tour
-  News. An intel post takes the group chosen in the composer (an older note: Tour News); there is no Stennisfy Intel
-  category. **Test:** "Four categories, single select".
-- **Header pills:** Articles = the list after every filter; Players = distinct players across it (by key); Updated =
+  News. **Match Reports holds only the reports we write** (founder 2026-11-20): an outlet article that reads like a result
+  and a posted note are Tour News (`newsOwnCat`); the composer offers Quotes · Withdrawals & Injuries · Tour News. An intel
+  post takes the group chosen in the composer (an older note: Tour News); there is no Stennisfy Intel category. **Test:** "Four categories, single select".
+- **Header stats** (v3 §2, the Today's Matches / Players style): caps label 10.5/700 over a mono 15/700 value, right
+  aligned, gap 30, no boxes. Articles = the list after every filter; Players = distinct players across it (by key); Updated =
   `generatedAt` of `news-feed.json` (HH:MM, member zone; hover = full date-time), **never the clock** (the reference's clock
   is its placeholder).
 - **Source = the outlet's display name from ONE table** (`NEWS_SOURCE_NAMES`: espn-tennis → ESPN, tennis365 → Tennis365,
@@ -73,13 +76,17 @@ switch 171×39, menu trigger 35, stats box head 67, Compact row 55, opened repor
 - **The feed = the articles + the news ticker's items** (`news-ticker.json` → the tournament files with an item in the
   last 8 days; `loadNewsTicker`, `newsTickerItems`). This amends "One feed": the ticker is our own data and verbatim
   player quotes, never a sample. A failed ticker read shows no ticker item; a failed article feed still shows the ticker.
-- **Report** → category Match Reports, title "{winner} beat {loser}, {score}", head = the winner, sub line "time · Match
+- **Report** → category Match Reports, title "{winner} beat {loser}, {score}", head = both players, winner first (v3: two
+  avatars and "A · B" in Reading; the Compact row two avatars and the winner's name), sub line "time · Match
   Reports · 7-6 6-0 · event", body = the report. **The stats box** (v2 §4) = the item's `ms` rows (built by the feed build,
   `news-core.mjs` `msRows`: ours where we hold the figure, else the verified broadcast card; a row only with both figures;
-  13 rows in the design's order): text | 1px divider | box; leader = the higher figure (the lower on Unforced errors and
-  Unforced / points), white 700, the other grey 500, equal = both grey and no bar; a dominance ratio coloured by value
-  (≥ 1.00 green, below red); bar = 12 + |a − b| / max(a, b) × 88 % of the leader's half from the chip outwards; chip = the
-  unsigned difference ("19 pts", "3", "0.4", "1.03", "Level"); Dominance ratio and an odd last row span both columns. With
+  ordered on the page by ONE fixed list, `NEWS_MS_ORDER`, whatever the feed sends, older labels read through aliases):
+  Dominance ratio across the box, then DOWN the left column Serve quality · Unreturned serves · 1st serve in · 1st serve
+  points won · 2nd serve points won, then DOWN the right Return quality · Baseline points won · Ratio W/UE · Winners / point
+  · Unforced / point (`columns: 190px 2`, one column under ~430px); no raw Winners / Unforced errors rows; text | 1px divider
+  | box; leader = the higher figure (the lower on Unforced / point), white 700, the other grey 500, equal = both grey and no
+  bar; the dominance ratio follows the same rule (no green / red); bar = 12 + |a − b| / max(a, b) × 88 % of the leader's half from the chip outwards; chip = the
+  unsigned difference ("19 pts", "3", "0.4", "1.03", "Level"); only the dominance ratio spans both columns. With
   the box, the closing per-player lines leave the text (the box carries their numbers); no rows = no box, no divider, a
   plain text article. **Quote** → a quotes card (below). **Status** → Withdrawals & Injuries (walkover, withdrawal,
   retirement) or Tour News; title = the item's text. **Test:** "Match report", "Compact".
@@ -97,7 +104,7 @@ switch 171×39, menu trigger 35, stats box head 67, Compact row 55, opened repor
 - Filters combine: tournament AND category AND window (6h · 24h · 48h · 7 days · **All time**, default 7 days) AND search
   (title, players, tournament, body — not the source). "All time" (founder 2026-11-18, after the export: nothing leaves the
   archive) loads every tournament file. The tournament menu lists only events with articles in the current window.
-  **Reset filters** (blue, right of row 2) shows only when a category, tournament, search or window other than 7 days is
+  **Reset filters** (v3: a 34px lifted button, `--news-lifted` + 14% edge, white 600, hover `--news-hover`; right of row 2) shows only when a category, tournament, search or window other than 7 days is
   on, and clears them all. Opening one menu closes the other; a click outside or Escape closes it.
 - Reading / Compact persists to `stennisfy.newsView`. **Read more** above 5 paragraphs (above 7 when the stats box has more
   than 6 rows): the card shows 4. Compact: one card per day; closed row = avatar + player · headline · "category · score |

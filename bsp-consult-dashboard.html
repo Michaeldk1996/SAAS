@@ -5667,8 +5667,9 @@ function newsRenderHeaderStats(list){
   const ok = _newsState === 'ok' && Array.isArray(list);
   const who = new Set();
   if (ok) list.forEach(x => x.players.forEach(p => who.add(p.key != null ? 'k' + p.key : 'n' + p.name.toLowerCase())));
-  // News v2 §2: three stat pills, value over label; Updated = the feed's own refresh time, never the clock
-  const stat = (l, v, title) => `<div class="nx-stat"${title ? ` title="${newsAttr(title)}"` : ''}><span class="nx-stat-v">${v}</span><span class="nx-stat-l">${l}</span></div>`;
+  // News v3 §2: the Today's Matches / Players header style, caps label over a mono value, no boxes; Updated = the
+  // feed's own refresh time, never the clock
+  const stat = (l, v, title) => `<div class="nx-stat"${title ? ` title="${newsAttr(title)}"` : ''}><span class="nx-stat-l">${l}</span><span class="nx-stat-v">${v}</span></div>`;
   el.innerHTML = stat('Articles', ok ? String(list.length) : '—')
     + stat('Players', ok ? String(who.size) : '—')
     + stat('Updated', f.known ? newsEscape(newsFmtTime(f.ts)) : '—', f.known ? 'Feed refreshed ' + newsFmtAbs(f.ts) : '');
@@ -5997,6 +5998,9 @@ const newsAttr = v => newsEscape(v).replace(/"/g, '&quot;').replace(/'/g, '&#39;
 // ---- Feed items {kind, id, ts, players:[{key,name}], tour, title, bodyParas, cat, source}. ----
 // Data 2 (standing ruling, founder): an article shows only if the builder's resolver attached a player (player_key).
 // This page never reads a headline for a name, and tournament-only articles do not come back as a "bug fix".
+// Match Reports holds only the reports we write (founder 2026-11-20): an outlet article or a posted note that reads
+// like a result goes to Tour News
+const newsOwnCat = c => c === 'Match Reports' ? 'Tour News' : c;
 function newsWireItems(){
   const all = Array.isArray(_newsData && _newsData.articles) ? _newsData.articles : [];
   return all.filter(a => a && a.player_key != null && String(a.player_key) !== '').map((a, i) => {
@@ -6007,7 +6011,7 @@ function newsWireItems(){
       players: name ? [{ key, name }] : [],
       tour: ev ? newsEventLabel(ev.key) : '', tourKey: ev ? ev.key : '', tourFrom: ev ? ev.from : '',
       title: newsDecode(a.title) || 'Untitled', bodyParas: newsSplitParas(newsDecode(a.content)),
-      cat: newsClassify(a.title, a.content), source: newsSourceNames(a.sources),
+      cat: newsOwnCat(newsClassify(a.title, a.content)), source: newsSourceNames(a.sources),
     };
   }).filter(x => x.players.length);
 }
@@ -6025,7 +6029,8 @@ function newsTickerItems(){
       const sc = x.fields && x.fields.score ? String(x.fields.score) : '';
       // News v2 §4: the stats box from the report's rows (both figures held); with it, the closing per-player lines leave
       // the text (the box carries their numbers). No rows = no box, the report reads as a text article.
-      const ms = x.ms && Array.isArray(x.ms.rows) && x.ms.rows.length ? { a: x.ms.a, b: x.ms.b, sets: x.ms.sets || [], rows: x.ms.rows } : null;
+      const msRows = x.ms && Array.isArray(x.ms.rows) ? newsMsOrdered(x.ms.rows) : [];
+      const ms = msRows.length ? { a: x.ms.a, b: x.ms.b, sets: x.ms.sets || [], rows: msRows } : null;
       const rating = new Set((x.rating || []).map(t => String(t).trim()));
       const paras = newsSplitParas(newsDecode(x.text)).filter(t => !(ms && rating.has(t)));
       return Object.assign(base, { players: both, title: both.length === 2 ? `${both[0].name} beat ${both[1].name}${sc ? ', ' + sc : ''}` : paras[0] || '',
@@ -6110,7 +6115,7 @@ function newsPageIntelItems(){
     // player's tournament; a note being edited leaves the feed until it is published again
     return { kind: 'intel', id: 'i' + it.intelId, intelId: it.intelId, ts: it.ts,
       players: named ? [{ key: it.playerKey != null ? String(it.playerKey) : null, name: String(it.player) }] : [],
-      tour: it.tour || '', tourKey: '', tourFrom: '', title: first || it.title, bodyParas: it.bodyParas || [], cat: NEWS_CATEGORIES.indexOf(it.cat) >= 0 ? it.cat : 'Tour News', source: 'Stennisfy' };
+      tour: it.tour || '', tourKey: '', tourFrom: '', title: first || it.title, bodyParas: it.bodyParas || [], cat: NEWS_CATEGORIES.indexOf(it.cat) >= 0 ? newsOwnCat(it.cat) : 'Tour News', source: 'Stennisfy' };
   }).filter(x => x.intelId !== _intelEditingId);
 }
 
@@ -6297,16 +6302,20 @@ function newsQuotesShown(it){
 const newsMoreBtn = (it, label) => `<button type="button" class="nx-more nx-seg" data-id="${newsAttr(it.id)}" onclick="event.stopPropagation();newsToggleMore(this.dataset.id)">${label}</button>`;
 const newsQuotesHtml = qs => qs.map(q => `<div class="nx-q">${q.topic ? `<span class="nx-qt">${newsEscape(q.topic)}</span>` : ''}<div class="nx-qx">${newsEscape(q.text)}</div></div>`).join('');
 
-// The match report's stats box (README §4). Built from the rows both players have, in the pipeline's order; a row
-// missing a figure never reaches it. Leader = the higher figure (the lower one on unforced errors); bar = 12 + |a−b| /
+// The match report's stats box (README §4). Built from the rows both players have, in ONE fixed order (whatever the
+// feed sends; older feed labels read through their aliases); a row missing a figure never reaches it. Leader = the higher figure (the lower one on unforced errors); bar = 12 + |a−b| /
 // max(a,b) × 88 % of the leader's half, growing from the chip outwards; the chip = the unsigned difference.
 function newsFigFmt(v, k){ return k === '%' ? Math.round(v) + '%' : k === '0' ? String(Math.round(v)) : Number(v).toFixed(k === '1' ? 1 : 2); }
-function newsMsRow(r, i, rows){
+const NEWS_MS_ORDER = [['Dominance ratio'], ['Serve quality'], ['Unreturned serves'], ['1st serve in'], ['1st serve points won', '1st serve won'],
+  ['2nd serve points won', '2nd serve won'], ['Return quality'], ['Baseline points won'], ['Ratio W/UE', 'Winners / unforced'],
+  ['Winners / point', 'Winners / points'], ['Unforced / point', 'Unforced / points']];
+const newsMsOrdered = rows => NEWS_MS_ORDER.map(names => { const r = (rows || []).find(z => names.includes(z[0]));
+  return r && r[1] != null && r[2] != null && Number.isFinite(+r[1]) && Number.isFinite(+r[2]) ? [names[0], +r[1], +r[2], ...r.slice(3)] : null; }).filter(Boolean);
+function newsMsRow(r){
   const [label, x, y, k, low] = r, lowWins = !!low;
   const aLead = lowWins ? x < y : x > y, bLead = lowWins ? y < x : y > x, hi = Math.max(Math.abs(x), Math.abs(y)) || 1, d = Math.abs(x - y);
   const w = (12 + d / hi * 88).toFixed(1) + '%';
-  const cls = (lead, v) => (k === 'dr' ? (v >= 1 ? 'up ' : 'down ') : '') + (lead ? 'lead' : '');   // a dominance ratio is coloured by its value
-  const others = rows.filter(z => z[3] !== 'dr').length, full = k === 'dr' || (i === rows.length - 1 && others % 2 === 1);
+  const cls = lead => lead ? 'lead' : '', full = k === 'dr';   // v3: the dominance ratio follows the leader rule too, no green / red
   const diff = d === 0 ? 'Level' : k === '%' ? Math.round(d) + ' pts' : k === '0' ? String(Math.round(d)) : d.toFixed(k === '1' ? 1 : 2);
   return `<div class="nx-r${full ? ' full' : ''}"><div class="nx-rf"><span class="nx-fa ${cls(aLead, x)}">${newsFigFmt(x, k)}</span><span class="nx-lab">${newsEscape(label)}</span><span class="nx-fb ${cls(bLead, y)}">${newsFigFmt(y, k)}</span></div>`
     + `<div class="nx-rl"><span class="nx-tr a"><span class="nx-bar" style="width:${aLead ? w : '0%'}"></span></span><span class="nx-chip">${diff}</span><span class="nx-tr b"><span class="nx-bar" style="width:${bLead ? w : '0%'}"></span></span></div></div>`;
@@ -6318,11 +6327,10 @@ function newsMsBoxHtml(it, compact){
     + `<div class="nx-bh"><span class="nx-bp">${newsAvHtml(A, 'b')}<span class="nx-bpn"><span class="nx-bn">${newsEscape(A.name)}</span><span class="nx-won">Won</span></span></span>`
     + `<span class="nx-bs">${sets}</span>`
     + `<span class="nx-bp r"><span class="nx-bn">${newsEscape(B.name)}</span>${newsAvHtml(B, 'b g')}</span></div>`
-    + `<div class="nx-grid">${ms.rows.map((r, i) => newsMsRow(r, i, ms.rows)).join('')}</div></div>`;
+    + `<div class="nx-grid">${ms.rows.map(newsMsRow).join('')}</div></div>`;
 }
-// A match report's head names the winner only (the reference's report: players = [winner]); search and the Players
-// count still read both players.
-const newsHeadPlayers = it => (it.cat === 'Match Reports' && it.kind === 'ticker') ? it.players.slice(0, 1) : it.players;
+// v3: a match report's head shows both players, winner first (the Compact row keeps the winner's name only)
+const newsHeadPlayers = it => it.players;
 const newsMeta = it => it.quotes ? it.quotes.length + (it.quotes.length === 1 ? ' topic' : ' topics') : (it.score || '');
 
 // Reading: one card per article, one head line for every kind (avatars · names · time · category · score · tournament).
@@ -6338,7 +6346,7 @@ function newsReadingCard(it, admin){
   return `<article class="nx-card nx-art" data-id="${idA}"><div class="nx-ahead">${newsAvsHtml(hp)}<div class="nx-names"><span class="nx-nl">${names}</span><span class="nx-sl">${newsEscape(sub)}</span></div></div>`
     + `<div class="nx-body"><div class="nx-col${it.ms ? ' ms' : ''}"><div class="nx-title"${newsTipAttr(it)}>${newsEscape(it.title)}</div>`
     + s.paras.map(p => `<div class="nx-p">${newsEscape(p)}</div>`).join('')
-    + (links ? `<div class="nx-links">${links}</div>` : '') + `</div>${it.ms ? newsMsBoxHtml(it, false) : ''}</div></article>`;
+    + `<div class="nx-links">${links}</div></div>${it.ms ? newsMsBoxHtml(it, false) : ''}</div></article>`;   // the links line is always there, empty or not (the reference: one more 12px gap under the text)
 }
 function newsToggleMore(id){ _newsMore[id] = !_newsMore[id]; renderNews(); }
 
@@ -6606,7 +6614,7 @@ function newsRenderComposer(force){
       <div class="nx-cmph"><span class="nx-cmph-t"><b>Post intel</b><span>Your own update, published straight to the top of the feed</span></span><span class="nx-cnt"><span>${n}/${INTEL_MAX}</span> active</span></div>
       <div class="nx-cmpr">
         <div class="nx-fld"><span class="nx-cap">Player</span>${who}</div>
-        <div class="nx-fld g"><span class="nx-cap">Group</span><span class="nx-sw">${NEWS_CATEGORIES.map(c => newsTabHtml(c, c === _cmpCat, `intelSetCat('${c.replace(/'/g, "\\'")}')`)).join('')}</span></div>
+        <div class="nx-fld g"><span class="nx-cap">Group</span><span class="nx-sw">${NEWS_CATEGORIES.filter(c => c !== 'Match Reports').map(c => newsTabHtml(c, c === _cmpCat, `intelSetCat('${c.replace(/'/g, "\\'")}')`)).join('')}</span></div>
       </div>
       <label class="nx-upd"><span class="nx-cap">Update</span><textarea id="intelText" class="nx-ta" rows="4" placeholder="What happened? The first sentence becomes the headline." oninput="intelOnText(this.value)">${newsEscape(_cmpText)}</textarea></label>
       <div class="nx-cmpf" id="intelFoot">${intelFootHtml()}</div>
