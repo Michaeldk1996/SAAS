@@ -3033,8 +3033,9 @@ checkCareer('item 23 · an under-minimum archetype stays listed, dashed and grey
     const html = I.renderStylesModal(p);
     thin.forEach((r) => {
       const lab = esc17(r.axis.label);
-      assert(html.indexOf('data-box="styles" data-v="' + lab + '" class="pp2-styrow"') > -1, `${p.name}: thin archetype ${r.axis.label} dropped out or is not openable`);
-      const row = html.slice(html.indexOf('data-box="styles" data-v="' + lab + '" class="pp2-styrow"'));
+      const at = html.indexOf('data-box="styles" data-v="' + lab + '" class="pp2-styrow');
+      assert(at > -1, `${p.name}: thin archetype ${r.axis.label} dropped out or is not openable`);
+      const row = html.slice(at);
       const one = row.slice(0, row.indexOf('</div>', row.indexOf('Backing') > -1 ? 0 : 0) + 2000);
       assert(/color:var\(--text-label\);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">/.test(one.slice(0, 900)), `${p.name}: thin ${r.axis.label} name is not grey`);
       // founder 2026-11-14 ("follow design"): the thin row carries the reference's "under 5" tag
@@ -3253,16 +3254,15 @@ checkCareer('items 5,12,17-21,25,27-29 · the v2 controls, chart, table and dril
   const want = [
     ['surface pills', 'data-pp2="sty-surf" data-v="Indoors"'],
     ['window', 'data-pp2="sty-win" data-v="l52"'],
-    // v4 §7 (handoff 2026-11-14, replaces v3 B2): the band joins the card on the card tone (r16), the chart card is
-    // the card tone with the 6% ring, padded 22/24/18; no "dot size = matches" caption (§0.4); one table head line.
-    ['joined band', 'data-pp2-band="joined-card"'],
-    ['chart card', 'background:var(--card);border:1.25px solid var(--edge-6);border-top:0;border-radius:0 0 16px 16px;padding:22px 24px 18px;'],
-    ['chart head', '>Win rate by archetype</span>'],
-    ['his average line', 'his average · '],
+    // v5 §6.1 (handoff 2026-11-19, replaces v4 §7): a filter card, ONE card (dot chart over table), the average label in
+    // the y gutter, brackets under the axis, the table on the 8-track grid.
+    ['filter card', 'data-pp2-band="v5"'],
+    ['one card', 'data-pp2-sty="card" style="position:relative;background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;margin-bottom:16px;"'],
+    ['his average label', '>avg '],
     ['brackets', '>Serve-first</span>'],
-    ['table head', '>Record by archetype</span>'],
+    ['table head', '>Archetype</span>'],
     ['sortable heads', 'data-pp2="sty-sort" data-v="pct"'],
-    ['table tracks', 'grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) 56px 60px 52px 76px 64px;gap:0 12px;'],
+    ['table tracks', 'grid-template-columns:minmax(0,2.6fr) minmax(0,1fr) 56px 60px 56px 76px 68px 8px;gap:0 12px;'],
     ['(?) icons', 'data-pp2="info" data-v="sty1"'],
   ];
   assert(html.indexOf('dot size = matches') < 0, `${subject.name}: the v3 unit caption is back (v4 §0.4)`);
@@ -3975,6 +3975,8 @@ check('the all-stores table covers every data store the module reads', () => {
     'pp2OpenMatchSheet', 'pp2CloseMatchSheet', 'pp2EloFor', 'playerPhotoUrl', 'pp2NextMatchFor', 'pp2LiveRank',
     // fx6 item 6: the host's match-closes join (meRowFromCareer -> fhCloseFor over the page's own closes cache) — logic
     'pp2ClosesOf', 'pp2CareerClose',
+    // v5 §6.2 (2026-11-19): Match-up record → Playing styles opens an example player through the page's psOpenProfile — navigation
+    'psOpenProfile',
     // TEN-402 R2 (founder card 7bc622d5): the host's "Record per tournament was opened — request the Database join now"
     // hook (pp2DbJoinNeed: one fetch per session, test-ten402-r2l.mjs) — a trigger, not a data store
     'pp2DbJoinNeed',
@@ -5972,7 +5974,7 @@ check('§5.3 items 2-3 · the subtitle is the design string; the helper and foot
     'Career win–loss at every event he has played');
   assert(!/Search a tournament to see/.test(T_HTML), 'the helper sentence is still painted');
   assert(!/Each W–L is the sum of the editions/.test(T_HTML), 'the list footnote is still painted');
-  assert(/>Record per tournament · career</.test(T_HTML), 'the caps head is missing');
+  assert(/>Tournaments<\/span>/.test(T_HTML), 'the v5 "Tournaments" title is missing');   // v5 §4 (2026-11-19)
   I.state.tournOpen = 'Australian Open';
   const open = I.renderTournModal(ZVEREV);
   I.state.tournOpen = null;
@@ -5989,10 +5991,11 @@ check('§5.3 item 5 · the search field is the reference\'s compact control + 14
   assert(/<svg width="14" height="14"[^>]*>\s*<circle cx="9" cy="9" r="6"/.test(T_HTML),
     'the 14px magnifier is missing');
   // v4 §4 (handoff 2026-11-14): the field is transparent on an 8% ring, r8, 6/12, flex:none beside the pills.
-  assert(/<label style="display:flex;align-items:center;gap:9px;width:220px;box-sizing:border-box;flex:none;background:transparent;border:1px solid color-mix\(in srgb, var\(--text\) 8%, transparent\);border-radius:8px;padding:6px 12px;/.test(T_HTML),
-    'the field is not the v4 transparent control on an 8% ring');
+  // v5 §4 (2026-11-19): the search is a well, 38 high, radius 10
+  assert(/<label style="display:flex;align-items:center;gap:9px;width:220px;height:38px;box-sizing:border-box;flex:none;background:var\(--inner\);border:1px solid color-mix\(in srgb, var\(--text\) 8%, transparent\);border-radius:10px;padding:0 12px;/.test(T_HTML),
+    'the field is not the v5 well');
   assert(/placeholder="Search a tournament"/.test(T_HTML), 'the placeholder drifted');
-  assert(/data-pp2="tourn-search"[^>]*font-size:12\.5px/.test(T_HTML), 'the input is not 12.5px');
+  assert(/data-pp2="tourn-search"[^>]*font-size:13px/.test(T_HTML), 'the input is not 13px');
 });
 mustFail('[neg] the search check would catch the retired full-width field', () => {
   const shipped = '<label style="display:flex;align-items:center;gap:12px;background:var(--inner);' +
@@ -6006,20 +6009,21 @@ mustFail('[neg] the search check would catch the retired full-width field', () =
 // padding 0 10px shared by head and rows, sortable heads, an always-on 6px --bar on --track (no 50% tick), the 6% white
 // row hover, the level and surface pills.
 check('§5.3 items 6-7 · seven columns on the v2 grid, with SURFACE, the bar and BACKING', () => {
-  const grid = 'grid-template-columns:minmax(0,1.3fr) 64px 76px 56px minmax(120px,1fr) 56px 64px;gap:0 12px';
+  const grid = 'grid-template-columns:minmax(0,1.5fr) 64px 78px 60px minmax(100px,1fr) 56px 68px 8px;gap:0 12px';   // v5 §4
   assert(T_HTML.indexOf(grid) > 0, 'the head/row grid tracks are not the v2 export\'s');
   ['Tournament', 'Surface', 'Best', 'W–L', 'Wins · losses', 'Win %', 'Backing'].forEach((h) => {
     assert(T_HTML.indexOf('>' + h + '</span>') > 0, `the ${h} column head is missing`);
   });
   ['name', 'wl', 'pct', 'roi'].forEach(k => assert(T_HTML.indexOf('data-pp2="tourn-sort" data-v="' + k + '"') > 0, `the ${k} head is not sortable`));
-  assert(/padding:11px 10px;border-radius:8px;cursor:pointer;border-top:1px solid var\(--line\)/.test(T_HTML), 'the row padding or border-top drifted');
-  assert(/data-pp2-tbar="1"[^>]*height:6px;\s*border-radius:3px;background:var\(--track\);/.test(T_HTML) ||
-    /data-pp2-tbar="1"[^>]*height:6px;border-radius:3px;background:var\(--track\);/.test(T_HTML), 'the 6px bar track is missing');
-  // v4 §4 / §0.1: a 1x12 tick at 50% (white 35%); every closed row's fill is the neutral bar, never blue.
-  assert(/left:50%;top:-3px;width:1px;height:12px;background:color-mix\(in srgb, var\(--text\) 35%, transparent\)/.test(T_HTML), 'the 50% tick is missing');
-  assert(/background:var\(--pp-x-bar-neutral\);/.test(T_HTML), 'a closed row\'s bar is not the neutral bar');
-  assert(!/border-radius:3px;width:[\d.]+%;background:var\(--pp-x-link\)/.test(T_HTML), 'a closed row\'s bar is blue');
-  assert(/\.pp2-trow:hover\{background:color-mix\(in srgb, var\(--text\) 6%, transparent\)!important;\}/.test(PP2_SRC), 'the row has no 6% hover');
+  // v5 §4 / §0.5 / §0.6: rows 60 on a straight 6% hairline, a 4px bar on a 7% track with a 1x12 tick at 50%, the 55% blue
+  // resting bar (blue only on the open tournament), hover = the hover tone, radius 10, the hairline hidden.
+  assert(/min-height:60px;padding:0 10px;border-radius:0px;cursor:pointer;border-top:1px solid var\(--edge-6\)/.test(T_HTML), 'the row height, padding or hairline drifted');
+  assert(/data-pp2-tbar="1"[^>]*height:4px;border-radius:2px;background:var\(--pp-x-track-7\);/.test(T_HTML), 'the 4px bar track is missing');
+  assert(/left:50%;top:-4px;width:1px;height:12px;background:color-mix\(in srgb, var\(--text\) 35%, transparent\)/.test(T_HTML), 'the 50% tick is missing');
+  assert(/background:var\(--pp-x-bar-55\);/.test(T_HTML), 'a closed row\'s bar is not the 55% blue');
+  assert(!/border-radius:2px;width:[\d.]+%;background:var\(--pp-x-link\)/.test(T_HTML), 'a closed row\'s bar is full blue');
+  assert(/\.pp2-v5row\[data-pp2\]:hover\{background:var\(--pp-x-hover\)!important;border-radius:10px!important;border-top-color:transparent!important;\}/.test(PP2_SRC), 'the row has no v5 hover');
+  assert(/class="pp2-trow pp2-v5row"/.test(T_HTML), 'the row is not a v5 row');
   ['tourn-level', 'tourn-surf'].forEach(k => assert(T_HTML.indexOf('data-pp2="' + k + '"') > 0, `the ${k} pills are missing`));
 });
 mustFail('[neg] the column check would catch the retired TEN-384 grid', () => {
@@ -6110,9 +6114,9 @@ check('§5.3 items 11-12 · the open row is highlighted and BACKING is the Tourn
   const open = I.renderTournModal(ZVEREV);
   // TEN-384 T6: selection is lift — the open row takes the --selected wash, spread ±10px; closed rows carry none.
   // Profile v2: the open row is the export's #131623 (= --selected), radius 8; closed rows are transparent.
-  assert(/data-pp2="tourn-row" data-t="Australian Open" style="[^"]*background:var\(--selected\);/.test(open),
+  assert(/data-pp2="tourn-row" data-t="Australian Open" style="[^"]*background:var\(--pp-x-hover\);/.test(open),
     'the selected row carries no highlight');
-  assert(!/data-pp2="tourn-row" data-t="Australian Open" style="[^"]*background:var\(--selected\);/.test(T_HTML),
+  assert(!/data-pp2="tourn-row" data-t="Australian Open" style="[^"]*background:var\(--pp-x-hover\);/.test(T_HTML),
     'a closed row carries the selected highlight');
   I.state.tournOpen = null;
   // BACKING (founder Q8, 2026-09-30; supersedes the N5 market-shard sum): the Match analysis Tournament tab's row join,
@@ -6144,12 +6148,12 @@ check('§5.3 items 13-14 · the detail is the file\'s container and carries the 
   I.state.tournOpen = 'Australian Open';
   const open = I.renderTournModal(ZVEREV);
   I.state.tournOpen = null;
-  // v4 §4 (handoff 2026-11-14): --card on a 1.25px 10% ring, r12, 6/12 margin, 16 16 12 padding
-  assert(open.indexOf('background:var(--card);border:1.25px solid var(--edge-10);border-radius:12px;' +
-    'margin:6px 0 12px;padding:16px 16px 12px;') > 0, 'the detail container drifted from the reference');
+  // v5 §11.1 (handoff 2026-11-19): the history box — a fixed overlay, 820 wide, r14, 20/22/22, the box shadow
+  assert(/data-pp2="tourn-scrim" style="position:fixed;/.test(open), 'the detail is not a fixed overlay');
+  assert(open.indexOf('max-width:820px;background:var(--card);border:1px solid var(--edge-16);border-radius:14px;padding:20px 22px 22px;') > 0, 'the history box drifted from the reference');
   assert(/position:sticky;top:0;z-index:1;align-self:stretch;min-height:14px;background:var\(--card\)[^"]*border-bottom:1px solid var\(--edge-10\);">Date</.test(open), 'the detail head row is not the v4 sticky --card head');
-  assert(/\d+–\d+ · \d+% · \d+ matches listed/.test(open), 'the header meta line is missing');
-  assert(/>Australian Open · career</.test(open), 'the detail caps head is missing');
+  assert(/\d+ matches · grouped by edition · click a match/.test(open), 'the foot line is missing');
+  assert(/font-size:24px;font-weight:800;[^"]*">Australian Open</.test(open), 'the 24/800 title is missing');
 });
 mustFail('[neg] the detail check would catch the shipped header-less container', () => {
   const shipped = '<div style="background:var(--card);border:1px solid var(--edge-6);' +
@@ -6165,7 +6169,7 @@ check('§5.3 item 15 · five tiles, and a Slam\'s middle three differ from a non
   const sHtml = I.renderTournDetail(ZVEREV, slam);
   const oHtml = I.renderTournDetail(ZVEREV, other);
   // TEN-376: the tile caption is the foundation caps label (Hanken 10.5/700/0.10em, was mono 0.12em caps)
-  const tiles = h => (h.match(/font-family:var\(--font-words\);font-size:10\.5px;font-weight:700;letter-spacing:0\.10em;text-transform:uppercase;color:var\(--text-label\);[^"]*">([^<]+)</g) || [])
+  const tiles = h => (h.match(/font-size:11\.5px;font-weight:600;color:var\(--text-label\);max-width:100%;[^"]*">([^<]+)</g) || [])
     .map(x => x.replace(/.*">/, '').replace(/</, '')).filter(x => !/ · career$/.test(x));
   assert.deepStrictEqual(tiles(sHtml),
     ['W–L record', 'Grand Slam career', 'Over 3.5 sets · here',
@@ -6173,11 +6177,12 @@ check('§5.3 item 15 · five tiles, and a Slam\'s middle three differ from a non
   assert.deepStrictEqual(tiles(oHtml),
     ['W–L record', 'Best result', 'Sets won', 'Last played', 'Backing him here']);
   // v4 §4 (handoff 2026-11-14): five SEPARATE --card tiles on the card ring, r12, gap 8 (was one joined strip).
-  assert(/data-pp2-tourn-tiles="1" style="display:grid;grid-template-columns:repeat\(5,minmax\(0,1fr\)\);gap:8px;margin-bottom:14px;"/.test(sHtml),
-    'the tiles are not a 5-column grid, gap 8');
-  assert((sHtml.match(/padding:13px 10px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px;min-width:0;background:var\(--card\);border:1\.25px solid var\(--edge-6\);border-radius:12px;/g) || []).length === 5,
-    'the five tiles are not separate --card tiles on the card ring');
-  assert(/font-size:24px;font-weight:700/.test(sHtml), 'the tile figure is not mono 24/700');
+  // v5 §11.1 / §0.9: five tiles on one line (min 140), 9% ring, r11, pad 13/12; label 11.5/600 sentence case, figure 20/700
+  assert(/data-pp2-tourn-tiles="1" style="display:grid;grid-template-columns:repeat\(auto-fit,minmax\(140px,1fr\)\);gap:8px;"/.test(sHtml),
+    'the tiles are not the auto-fit 140 grid, gap 8');
+  assert((sHtml.match(/padding:13px 12px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;min-width:0;background:var\(--card\);border:1px solid var\(--pp-x-edge-9\);border-radius:11px;/g) || []).length === 5,
+    'the five tiles are not the v5 tile');
+  assert(/font-size:20px;font-weight:700/.test(sHtml), 'the tile figure is not mono 20/700');
 });
 mustFail('[neg] the tile check would catch the v3 joined strip', () => {
   const shipped = '<div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;background:var(--inner);border:1.25px solid var(--edge-6);border-radius:12px;overflow:hidden;">';
@@ -6308,9 +6313,9 @@ mustFail('[neg] the ordering check would catch a draw-order list', () => {
 // ── Profile v4 (handoff 2026-11-14, CHANGES §0.1 · §0.2 · §2 · §3 · §4) ─────────────────────────────────────────────
 const V4_TOURN_OPEN = (() => { I.state.tournOpen = 'Australian Open'; const h = I.renderTournModal(ZVEREV); I.state.tournOpen = null; return h; })();
 function v4TournChrome(html) {
-  // §4: the band is --card on the 6% card ring, padded 20px 24px
-  assert(/data-pp2-band="standalone" style="[^"]*padding:20px 24px;background:var\(--card\);border:1\.25px solid var\(--edge-6\);border-radius:12px;/.test(html),
-    'the filter band is not --card + card ring, padded 20/24');
+  // v5 §4: the filter card is --card on the 6% card ring, r16, padded 22px 24px
+  assert(/data-pp2-band="v5" style="[^"]*padding:22px 24px;background:var\(--card\);border:1\.25px solid var\(--edge-6\);border-radius:16px;/.test(html),
+    'the filter band is not the v5 filter card');
   // §4: header + list in ONE --card card: the head is its top (no bottom edge, r16 top), the list its bottom (no top edge, r16 bottom)
   assert(/data-pp2-tourn-head="1"[^>]*background:var\(--card\);border:1\.25px solid var\(--edge-6\);border-bottom:0;border-radius:16px 16px 0 0;/.test(html),
     'the column header is not the top of the one --card card');
@@ -6319,8 +6324,8 @@ function v4TournChrome(html) {
   // §4: the header draws no rule of its own
   const head = html.slice(html.indexOf('data-pp2-tourn-head="1"'), html.indexOf('data-pp2-tourn-list="1"'));
   assert(!/border-bottom:1px/.test(head), 'the column header still draws its own rule');
-  // §4: W–L in soft ink
-  assert(/font-size:12px;color:var\(--text-soft\);text-align:right;white-space:nowrap;">\d+–\d+</.test(html), 'the W–L is not soft ink');
+  // v5 §4: W–L 13 mono grey
+  assert(/font-size:13px;color:var\(--text-label\);text-align:right;white-space:nowrap;">\d+–\d+</.test(html), 'the W–L is not 13 grey');
 }
 check('v4 §4 · Record per tournament: band, one card, no header rule, W–L soft ink', () => v4TournChrome(T_HTML));
 mustFail('[neg] the v4 §4 check would catch the v3 standalone header and --inner band', () => {
@@ -6331,10 +6336,10 @@ mustFail('[neg] the v4 §4 check would catch the v3 standalone header and --inne
 });
 check('v4 §0.1 · Record per tournament: the bar is neutral, blue only on the open tournament', () => {
   const row = h => h.slice(h.indexOf('data-t="Australian Open"'), h.indexOf('data-pp2-tourn-detail') > 0 ? h.indexOf('data-pp2-tourn-detail') : h.indexOf('data-t="Australian Open"') + 4000);
-  assert(/border-radius:3px;width:[\d.]+%;background:var\(--pp-x-link\);/.test(row(V4_TOURN_OPEN)), 'the open tournament\'s bar is not blue');
-  assert(/border-radius:3px;width:[\d.]+%;background:var\(--pp-x-bar-neutral\);/.test(row(T_HTML)), 'the closed tournament\'s bar is not neutral');
+  assert(/border-radius:2px;width:[\d.]+%;background:var\(--pp-x-link\);/.test(row(V4_TOURN_OPEN)), 'the open tournament\'s bar is not blue');
+  assert(/border-radius:2px;width:[\d.]+%;background:var\(--pp-x-bar-55\);/.test(row(T_HTML)), 'the closed tournament\'s bar is not the 55% blue');
   const others = V4_TOURN_OPEN.replace(row(V4_TOURN_OPEN), '');
-  assert(!/border-radius:3px;width:[\d.]+%;background:var\(--pp-x-link\);/.test(others), 'a tournament that is not open has a blue bar');
+  assert(!/border-radius:2px;width:[\d.]+%;background:var\(--pp-x-link\);/.test(others), 'a tournament that is not open has a full blue bar');
   assert(!/background:var\(--bar\);/.test(T_HTML.slice(T_HTML.indexOf('data-pp2-tourn-list'))), 'a row bar still reads --bar (value-tinted blue)');
 });
 mustFail('[neg] the §0.1 check would catch the v3 always-blue bar', () => {
@@ -6391,7 +6396,7 @@ check('§5.3 item 20 · both lists scroll under the file\'s caps', () => {
   I.state.tournOpen = 'Australian Open';
   const open = I.renderTournModal(ZVEREV);
   I.state.tournOpen = null;
-  assert(open.indexOf('max-height:calc(100vh - 430px);min-height:300px;overflow-y:auto') > 0,
+  assert(open.indexOf('max-height:calc(100vh - 330px);min-height:200px;overflow-y:auto') > 0,   // v5 §11.1 history box
     'the match list has no scroll cap');
 });
 mustFail('[neg] the scroll-cap check would catch the shipped uncapped list', () => {

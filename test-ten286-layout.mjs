@@ -228,7 +228,7 @@ const GLYPHS = {
   'Tournaments': [['path', 'M6 4h8v3a4 4 0 01-8 0V4ZM10 11v3M7.5 16.5h5']],
   'Database': [['path', 'M10 3.4c3 0 5.4.8 5.4 1.9v9.4c0 1.1-2.4 1.9-5.4 1.9s-5.4-.8-5.4-1.9V5.3c0-1.1 2.4-1.9 5.4-1.9ZM4.6 5.3c0 1.1 2.4 1.9 5.4 1.9s5.4-.8 5.4-1.9M4.6 10c0 1.1 2.4 1.9 5.4 1.9s5.4-.8 5.4-1.9']],
   'Stennisfy Model': [['path', 'M10 3l1.9 3.9 4.3.6-3.1 3 .7 4.3L10 16.8 6.3 18.8l.7-4.3-3.1-3 4.3-.6z']],
-  'Playing Styles': [['path', 'M4 15V9M8 15V5M12 15v-4M16 15V7']],
+  // 'Playing Styles' left the rail (Profile v5 handoff 2026-11-19 §12)
   'News': [['path', 'M4 5h9v10H4zM13 8h3v5.5a1.5 1.5 0 01-3 0zM6 8h5M6 11h5']],
   // Bet Tracker (design_handoff_bet_tracker, LOCKED 2026-10-28): Betting group after Picks
   'Bet Tracker': [['path', 'M3.5 5.5h13v9h-13zM3.5 9h13M6.5 12h3M13 5.5v9']],
@@ -245,7 +245,7 @@ function glyphProblems(html) {
   if (Object.keys(got).length !== Object.keys(GLYPHS).length) p.push(`nav has ${Object.keys(got).length} items`);
   return p;
 }
-test('C · all 14 nav glyphs are the design paths, element for element', () => {
+test('C · all 13 nav glyphs are the design paths, element for element', () => {
   assert.deepEqual(glyphProblems(DASH), []);
   const mut = {
     liveCircle: DASH.replace('<svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 8.5a1.5', '<svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2.2"/><path d="M10 8.5a1.5'),

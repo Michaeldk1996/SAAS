@@ -82,8 +82,8 @@ H.check('sty · hover: CSS turns any dot blue; gridlines, average label and brac
   Object.assign(I.state, { key: KEY, modal: 'styles', styWin: 'career' });
   const html = I.renderStylesModal(p);
   const chart = html.slice(html.indexOf('pp2-stychart'));
-  assert(/his average[\s\S]{0,10}/.test(chart), 'vacuous: no average label drawn');
-  assert(/pointer-events:none;">his average/.test(chart), 'the average label catches the pointer');
+  assert(/avg \d+%/.test(chart), 'vacuous: no average label drawn');
+  assert(!/(left|right):0;right:0;top:[^"]*height:1px;background:[^;]*;"/.test(chart), 'a line catches the pointer');
   assert(!/;height:1px;background:var\(--line\);"/.test(chart), 'a gridline catches the pointer');
 });
 H.done();

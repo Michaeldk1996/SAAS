@@ -340,7 +340,14 @@
     '.pp2-clearall:hover{color:var(--text)!important;}' +
     // v4 §7 · Match-up record hovers: a row = inset 4% white wash edge to edge; a summary tile lifts; a hovered dot takes the
     // selected look (blue fill + ring + 4px halo; a thin sample keeps its hollow look with the soft ring), its label and code white.
-    '.pp2-styrow[data-pp2]:hover{box-shadow:inset 0 0 0 100px var(--wash-4);}' +
+    '.pp2-styrow[data-pp2]:not(.pp2-v5row):hover{box-shadow:inset 0 0 0 100px var(--wash-4);}' +
+    // v5 §0.5 · a resting row is a straight hairline; hover = the hover tone, radius 10, the hairline hidden
+    '.pp2-v5row{transition:background .12s ease;}.pp2-v5row[data-pp2]:hover{background:var(--pp-x-hover)!important;border-radius:10px!important;border-top-color:transparent!important;}' +
+    // v5 §6.2 · the Playing styles grid: a hovered cell lights its row + column, lifts itself, dims the rest
+    '.pp2-psgrid.pp2-iso .pp2-psx{opacity:.35;}.pp2-psgrid .pp2-psx.pp2-lit{opacity:1;background:var(--pp-x-hover);}' +
+    '.pp2-psgrid .pp2-psx.pp2-x{background:var(--pp-x-lifted)!important;box-shadow:inset 0 0 0 1px ' + 'color-mix(in srgb, var(--text) 14%, transparent);z-index:5;}' +
+    '.pp2-psgrid .pp2-psh.pp2-lit{background:var(--pp-x-hover);}.pp2-psgrid.pp2-iso .pp2-psh:not(.pp2-lit) .pp2-psc{color:var(--text-label)!important;}' +
+    '.pp2-psarch:hover{border-color:color-mix(in srgb, var(--text) 22%, transparent)!important;}' +
     '.pp2-stytile:hover{border-color:color-mix(in srgb, var(--text) 22%, transparent)!important;transform:translateY(-1px);}' +
     '.pp2-stydot.pp2-hov,.pp2-stydot:hover{background:var(--link)!important;border-color:var(--link)!important;box-shadow:0 0 0 4px color-mix(in srgb, var(--link) 18%, transparent)!important;z-index:2;}' +
     '.pp2-stycode:hover{color:var(--text)!important;font-weight:700!important;}' +
@@ -355,7 +362,7 @@
     // .dc.html:489). An inline style cannot express :hover, so it lands here,
     // scoped to the one class that carries it. The selected row sets its own
     // inline background, which outranks this.
-    '.pp2-trow:hover{background:color-mix(in srgb, var(--text) 6%, transparent)!important;}' +   // v2: hover 6% white
+    '.pp2-trow:hover{background:var(--pp-x-hover)!important;border-radius:10px!important;border-top-color:transparent!important;}' +   // v5 §0.5
     '.pp2-csrow:hover{background:color-mix(in srgb, var(--text) 6%, transparent);}' +   // v4: Career record surface row hover
     // v4 §4 · the reference's 9px scrollbar (thumb white 13%) on the tournament head, list and match list, so the
     // stable gutter they reserve is the reference's width and the head's columns line up with the rows.
@@ -3700,6 +3707,8 @@
             'stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg></span>' +
         '</div>' +
         (spec.scope ? '<span style="font-size:12px;color:var(--text-label);line-height:1.5;text-wrap:pretty;">' + esc(spec.scope) + '</span>' : '') +
+        (spec.scopeChip ? '<div style="background:var(--pp-x-lifted);box-shadow:inset 0 0 0 1px ' + EDGE_14 + ';border-radius:8px;padding:9px 11px;font-family:\'IBM Plex Mono\',monospace;' +
+          'font-size:11.5px;font-weight:600;line-height:1.5;color:var(--text);white-space:normal;text-wrap:pretty;">' + esc(spec.scopeChip) + '</div>' : '') +
         (notes ? '<div style="display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--edge-10);padding-top:10px;margin-top:2px;">' + notes + '</div>' : '') +
         (defs ? '<div style="display:flex;flex-direction:column;border-top:1px solid ' + (v4 ? EDGE_8 : 'var(--edge-10)') + ';' + (v4 ? '' : 'margin-top:2px;') + '">' + defs + '</div>' : '') +
       '</div>';
@@ -4003,6 +4012,7 @@
   var PAGE_SWITCH = {
     career: function () { return { hook: 'career-tab', tabs: [['record', 'Record'], ['ratings', 'Ratings']], cur: state.careerTab === 'ratings' ? 'ratings' : 'record' }; },
     season: function () { return { hook: 'cal-tab', tabs: [['calendar', 'Calendar'], ['streaks', 'Streaks']], cur: state.seasonTab === 'streaks' ? 'streaks' : 'calendar' }; },
+    styles: function () { return { hook: 'sty-tab', tabs: [['record', 'Record'], ['grid', 'Playing styles']], cur: state.styTab === 'grid' ? 'grid' : 'record' }; },
     market: function () { return { hook: 'market-tab', tabs: [['winner', 'Match winner'], ['lines', 'Derived lines']], cur: state.marketTab === 'lines' ? 'lines' : 'winner' }; },
     splits: function () { return { hook: 'spl-view', tabs: [['results', 'Results'], ['sets', 'Sets & games'], ['service', 'Service']],
       cur: state.splView === 'sets' || state.splView === 'service' ? state.splView : 'results' }; }
@@ -6573,7 +6583,42 @@
       return (v || B.n - A.n || a.display.localeCompare(b.display)) * (v ? so.d : 1);
     });
   }
-  function tournPills(hook, opts, cur) { return bandPills(hook, opts, cur); }   // v3 B2 · a band of pills
+  function tournPills(hook, opts, cur) { return v5Seg(hook, opts, cur); }   // v5 §0.2 · the one switch
+  // v5 §4 / §11.1 · tournament logos: tournament-logos/index.json `logos` keyed by the Tournaments registry key (the same key
+  // the name link opens). Loaded once; no file = the mono code stand-in (the reference's), never a guessed image.
+  var TLOGO = { idx: null, asked: false };
+  function tournLogoFile(key) {
+    if (!TLOGO.idx) {
+      if (!TLOGO.asked && typeof fetch === 'function') {
+        TLOGO.asked = true;
+        fetch('./tournament-logos/index.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : {}; })
+          .then(function (j) { TLOGO.idx = (j && j.logos) || {}; repaint(); }).catch(function () { TLOGO.idx = {}; });
+      }
+      return null;
+    }
+    return key ? TLOGO.idx[key] || null : null;
+  }
+  function tournCode(name) {
+    var w = String(name || '').replace(/[^A-Za-z0-9 ]/g, ' ').split(/\s+/).filter(Boolean);
+    if (!w.length) return DASH;
+    return (w.length > 1 ? w.slice(0, 3).map(function (x) { return x[0]; }).join('') : w[0].slice(0, 3)).toUpperCase();
+  }
+  // size 32 (row: radius 8, 10% ring, code 9.5) or 60 (history box: radius 14, 14% ring, code 16)
+  function tournLogoTile(key, name, big) {
+    var f = tournLogoFile(key), sz = big ? 60 : 32;
+    return '<span style="flex:none;width:' + sz + 'px;height:' + sz + 'px;border-radius:' + (big ? 14 : 8) + 'px;background:var(--pp-x-lifted);' +
+      'box-shadow:inset 0 0 0 1px ' + (big ? EDGE_14 : 'var(--edge-10)') + ';display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;">' +
+      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:' + (big ? 16 : 9.5) + 'px;font-weight:700;letter-spacing:0.02em;color:' + (big ? 'var(--text)' : 'var(--text-soft)') + ';">' + esc(tournCode(name)) + '</span>' +
+      (f ? '<img src="./tournament-logos/' + esc(f) + '" alt="" loading="lazy" onerror="this.remove()" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:var(--pp-x-lifted);">' : '') +
+      '</span>';
+  }
+  // v5 §0.4 · the scope line inside the "?" (career, events, record, rate, Backing summed over the events that have it)
+  function tournScopeLine(views) {
+    var w = 0, l = 0, u = 0, pu = 0;
+    views.forEach(function (t) { w += t.won; l += t.lost; if (t.pinN) { u += t.pinPl; pu++; } });
+    return 'Career ' + MIDDOT + ' ' + views.length + ' events ' + MIDDOT + ' ' + recordText(w, l) + ' ' + MIDDOT + ' ' + rateText0(w, l) +
+      (pu ? ' ' + MIDDOT + ' ' + signed(u, 1, 'u') + ' backing him' : '');
+  }
   function renderTournModal(p) {
     var views = tournViews(p);
     var q = String(state.tournQuery || '').toLowerCase();
@@ -6587,7 +6632,7 @@
       return true;
     }));
 
-    var GRID = 'display:grid;grid-template-columns:minmax(0,1.3fr) 64px 76px 56px minmax(120px,1fr) 56px 64px;' +
+    var GRID = 'display:grid;grid-template-columns:minmax(0,1.5fr) 64px 78px 60px minmax(100px,1fr) 56px 68px 8px;' +
       'gap:0 12px;align-items:center;';
     var MONO = 'font-family:\'IBM Plex Mono\',monospace;font-variant-numeric:tabular-nums;';
     var so = tournSortKey();
@@ -6597,7 +6642,7 @@
     // v4 §4 (handoff 2026-11-14): the column header and the list sit in ONE --card card (6% ring, radius 16); the
     // header is its top half (padding 16 24 0, no bottom edge) and draws no rule of its own — the first row's 5%
     // hairline is the only line between them.
-    var head = '<div data-pp2-tourn-head="1" class="pp2-tscroll" style="' + GRID + 'padding:16px 24px 0;overflow-y:auto;scrollbar-gutter:stable;' +
+    var head = '<div data-pp2-tourn-head="1" class="pp2-tscroll" style="' + GRID + 'padding:20px 24px 0;overflow-y:auto;scrollbar-gutter:stable;' +
       'background:var(--card);border:1.25px solid var(--edge-6);border-bottom:0;border-radius:16px 16px 0 0;">' +
       HEAD.map(function (h) {
         var on = h[2] && so.k === h[2];
@@ -6613,7 +6658,7 @@
           (arrow ? '<span style="pointer-events:none;font-family:\'IBM Plex Mono\',monospace;font-size:10px;letter-spacing:0;color:' +
             (on ? 'var(--text)' : 'color-mix(in srgb, var(--text-label) 45%, transparent)') + ';">' + arrow + '</span>' : '') +
           '</span>';
-      }).join('') + '</div>';
+      }).join('') + '<span></span></div>';
 
     var rows = shown.map(function (t) {
       var open = state.tournOpen === t.name;
@@ -6623,57 +6668,62 @@
       var regKey = typeof window.pp2TournamentKey === 'function' ? window.pp2TournamentKey(t.name, t.display) : null;
       var nameHtml = '<span ' + (regKey ? 'data-pp2="tourn-page" data-v="' + esc(regKey) + '" class="pp2-tlink" title="Open ' +
           esc(t.display) + ' ' + RARROW + ' Tournaments" ' : '') +
-        'style="font-size:13.5px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;' +
+        'style="align-self:flex-start;max-width:100%;font-size:14.5px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;' +
         (regKey ? 'cursor:pointer;text-decoration:underline;text-decoration-color:transparent;text-underline-offset:3px;' : '') + '">' +
         esc(t.display) + '</span>';
       return '<div style="flex:none;display:flex;flex-direction:column;">' +
-        '<div class="pp2-trow" data-pp2="tourn-row" data-t="' + esc(t.name) + '" style="' + GRID +
-          'padding:11px 10px;border-radius:8px;cursor:pointer;border-top:1px solid var(--line);' +
-          'background:' + (open ? 'var(--selected)' : 'transparent') + ';">' +
-          '<span style="display:flex;align-items:baseline;gap:8px;min-width:0;">' + nameHtml +
-          (tournLevelMeta(t.level) ? '<span class="pp2-tlevel" style="flex:none;font-size:12px;color:var(--text-label);white-space:nowrap;">' +
-            esc(tournLevelMeta(t.level)) + '</span>' : '') + '</span>' +
-          '<span style="font-size:12px;color:var(--text-label);white-space:nowrap;">' + (t.surface ? esc(t.surface) : DASH) + '</span>' +
+        '<div class="pp2-trow pp2-v5row" data-pp2="tourn-row" data-t="' + esc(t.name) + '" style="' + GRID +
+          'min-height:60px;padding:0 10px;border-radius:' + (open ? 10 : 0) + 'px;cursor:pointer;border-top:1px solid var(--edge-6);' +
+          'background:' + (open ? 'var(--pp-x-hover)' : 'transparent') + ';">' +
+          '<span style="display:flex;align-items:center;gap:12px;min-width:0;">' + tournLogoTile(regKey, t.display) +
+            '<span style="display:flex;flex-direction:column;gap:3px;min-width:0;">' + nameHtml +
+            (tournLevelMeta(t.level) ? '<span class="pp2-tlevel" style="font-size:12px;color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' +
+              esc(tournLevelMeta(t.level)) + '</span>' : '') + '</span></span>' +
+          '<span style="font-size:13px;color:var(--text-label);white-space:nowrap;">' + (t.surface ? esc(t.surface) : DASH) + '</span>' +
           '<span style="display:inline-flex;align-items:baseline;gap:6px;white-space:nowrap;overflow:hidden;">' +
             (bp ? '<span title="' + esc(bp.label) + '" style="' + MONO + 'font-size:12px;font-weight:700;color:var(--text);">' + esc(bp.code) + '</span>' +
               (bp.year ? '<span style="' + MONO + 'font-size:11px;color:var(--text-label);">' + esc(bp.year) + '</span>' : '')
               : '<span style="color:' + DASH_COLOUR + ';">' + DASH + '</span>') + '</span>' +
           // v4 §4: W–L in soft ink; §0.1 the bar is neutral, blue only on the open tournament; a 1x12 tick marks 50%.
-          '<span style="' + MONO + 'font-size:12px;color:var(--text-soft);text-align:right;white-space:nowrap;">' + recordText(t.won, t.lost) + '</span>' +
-          '<span data-pp2-tbar="1" title="Win rate ' + MIDDOT + ' tick = 50%" style="position:relative;display:block;width:100%;height:6px;' +
-            'border-radius:3px;background:var(--track);">' +
-            (pct != null ? '<span style="display:block;height:100%;border-radius:3px;width:' + pct.toFixed(1) + '%;background:' +
-              pp4Bar(open) + ';"></span>' : '') +
+          '<span style="' + MONO + 'font-size:13px;color:var(--text-label);text-align:right;white-space:nowrap;">' + recordText(t.won, t.lost) + '</span>' +
+          '<span data-pp2-tbar="1" title="Win rate ' + MIDDOT + ' tick = 50%" style="position:relative;display:block;width:100%;height:4px;' +
+            'border-radius:2px;background:var(--pp-x-track-7);">' +
+            (pct != null ? '<span style="display:block;height:100%;border-radius:2px;width:' + pct.toFixed(1) + '%;background:' +
+              (open ? 'var(--pp-x-link)' : 'var(--pp-x-bar-55)') + ';"></span>' : '') +
+              '<span style="position:absolute;left:50%;top:-4px;width:1px;height:12px;background:color-mix(in srgb, var(--text) 35%, transparent);"></span></span>' +
+          '<span style="display:none;">' +
             '<span style="position:absolute;left:50%;top:-3px;width:1px;height:12px;' +
               'background:color-mix(in srgb, var(--text) 35%, transparent);"></span></span>' +
-          '<span style="' + MONO + 'font-size:13.5px;font-weight:700;text-align:right;white-space:nowrap;color:' +
+          '<span style="' + MONO + 'font-size:14px;font-weight:700;text-align:right;white-space:nowrap;color:' +
             (t.n ? 'var(--text)' : DASH_COLOUR) + ';">' + (t.n ? Math.round(pct) + '%' : DASH) + '</span>' +
-          '<span style="' + MONO + 'font-size:12px;font-weight:600;text-align:right;white-space:nowrap;color:' +
+          '<span style="' + MONO + 'font-size:13px;font-weight:700;text-align:right;white-space:nowrap;color:' +
             (pin == null ? 'var(--text-label)' : pin > 0 ? 'var(--pos)' : pin < 0 ? 'var(--neg)' : 'var(--text-label)') + ';">' +
             (t.backingPending ? BACKING_PEND_HTML : pin == null ? DASH : t.pinTxt || signed(pin, 1, 'u')) + '</span>' +
+          '<span style="font-size:15px;font-weight:700;color:var(--pp-x-link);line-height:1;pointer-events:none;">›</span>' +
         '</div>' +
-        (open ? renderTournDetail(p, t) : '') +
+        (open ? renderTournDetail(p, t, regKey) : '') +
         '</div>';
     }).join('');
 
     return '' +
-      // v4 §4 / §0.2: the band is --card on the 6% card ring, padded 20px 24px.
-      '<div data-pp2-band="standalone" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 14px;padding:20px 24px;' +
-        'background:var(--card);border:1.25px solid var(--edge-6);border-radius:12px;">' +
-        '<span style="display:inline-flex;align-items:center;gap:8px;margin-right:auto;white-space:nowrap;">' +
-          recCaps('Record per tournament ' + MIDDOT + ' career') +
-          '<span style="position:relative;display:inline-flex;z-index:3;">' + infoIcon('tourn1', Object.assign({ width: 400 }, TOURN_INFO)) + '</span>' +
+      // v5 §4 · the filter card: "Tournaments" 18/800 + "?" (the career scope as a lifted chip inside it) | Level and
+      // Surface switches | the search well (38 high, radius 10).
+      '<div data-pp2-band="v5" style="display:flex;align-items:center;gap:12px 10px;flex-wrap:wrap;margin-bottom:16px;padding:22px 24px;' +
+        'background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;">' +
+        '<span style="display:inline-flex;align-items:center;gap:9px;margin-right:auto;white-space:nowrap;">' +
+          '<span style="font-size:18px;font-weight:800;letter-spacing:-0.01em;color:var(--text);">Tournaments</span>' +
+          '<span style="position:relative;display:inline-flex;z-index:3;">' + infoIcon('tourn1', Object.assign({ width: 400, v4: true, scopeChip: tournScopeLine(views) }, TOURN_INFO)) + '</span>' +
         '</span>' +
-        tournPills('tourn-level', TOURN_LEVELS, lvl) + bandDiv() +
+        tournPills('tourn-level', TOURN_LEVELS, lvl) +
         tournPills('tourn-surf', TOURN_SURFS, sf) +
-        '<label style="display:flex;align-items:center;gap:9px;width:220px;box-sizing:border-box;flex:none;' +
-          'background:transparent;border:1px solid ' + EDGE_8 + ';border-radius:8px;padding:6px 12px;">' +
+        '<label style="display:flex;align-items:center;gap:9px;width:220px;height:38px;box-sizing:border-box;flex:none;' +
+          'background:var(--inner);border:1px solid ' + EDGE_8 + ';border-radius:10px;padding:0 12px;">' +
           '<svg width="14" height="14" viewBox="0 0 20 20" fill="none" style="flex:none;">' +
             '<circle cx="9" cy="9" r="6" stroke="var(--text-label)" stroke-width="1.7"></circle>' +
             '<path d="m14 14 3 3" stroke="var(--text-label)" stroke-width="1.7" stroke-linecap="round"></path></svg>' +
           '<input type="search" data-pp2="tourn-search" value="' + esc(state.tournQuery || '') + '" ' +
             'placeholder="Search a tournament" aria-label="Search a tournament" style="flex:1;background:transparent;' +
-            'border:0;outline:none;font-family:inherit;font-size:12.5px;color:var(--text);min-width:0;padding:1px 2px;"></label>' +
+            'border:0;outline:none;font-family:inherit;font-size:13px;color:var(--text);min-width:0;padding:1px 2px;"></label>' +
       '</div>' +
       head +
       '<div data-pp2-tourn-list="1" class="pp2-tscroll" style="max-height:calc(100vh - 270px);min-height:420px;overflow-y:auto;display:flex;' +
@@ -6705,12 +6755,16 @@
 
   // TEN-384 T6 · a detail tile is one cell of a joined strip (recTileStrip): caps cap, mono 24/700 value,
   // an 11px Hanken sub. `value` is already-escaped markup.
+  // v5 §0.9 · a box tile: label 11.5/600 grey sentence case, figure 20 mono 700, sub 11.5 grey
   function tile(cap, value, sub, colour) {
-    return { pad: '13px 12px', html: recTileCell(cap, value, colour,
-      '<span style="font-size:11px;color:var(--text-label);">' + esc(sub == null ? '' : sub) + '</span>') };
+    var lab = esc(cap);   // callers write sentence case ("Grand Slam career" keeps its proper noun)
+    return { pad: '13px 12px', html:
+      '<span style="font-size:11.5px;font-weight:600;color:var(--text-label);max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + lab + '</span>' +
+      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:20px;font-weight:700;line-height:1;color:' + (colour || 'var(--text)') + ';">' + value + '</span>' +
+      '<span style="font-size:11.5px;line-height:1.35;color:var(--text-label);max-width:100%;text-wrap:balance;">' + esc(sub == null ? '' : sub) + '</span>' };
   }
 
-  function renderTournDetail(p, t) {
+  function renderTournDetail(p, t, regKey) {
     var views = tournViews(p);
     var n = 0;
     t.editions.forEach(function (e) { n += e.matches.length; });
@@ -6876,26 +6930,35 @@
     // stays is the stored-record disagreement, which is a data disclosure, not an explainer.
     // v4 §4: the open tournament's box is --card on a 10% ring (1.25px), radius 12; its five tiles are separate
     // --card tiles on the card ring, gap 8.
-    return '<div data-pp2-tourn-detail="1" style="background:var(--card);border:1.25px solid var(--edge-10);border-radius:12px;' +
-      'margin:6px 0 12px;padding:16px 16px 12px;">' +
-      '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px;">' +
-        recCaps(esc(t.display) + ' ' + MIDDOT + ' career', 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;') +
-        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--text-label);' +
-          'white-space:nowrap;flex:none;">' + esc(recordText(t.won, t.lost) + ' ' + MIDDOT + ' ' +
-          rateText0(t.won, t.lost) + ' ' + MIDDOT + ' ' + n + ' matches listed') + '</span>' +
+    var surfWord = t.surface ? (tournIsIndoor(t) ? 'Indoors' : t.surface) : null;
+    return '<div class="pp2-fb" data-pp2="tourn-scrim" style="position:fixed;inset:0 0 0 var(--sf-side, 0px);z-index:64;background:var(--pp-x-backdrop);' +
+        'display:flex;align-items:flex-start;justify-content:center;padding:40px 24px;overflow-y:auto;clip-path:inset(0);">' +
+      '<div data-pp2-tourn-detail="1" data-pp2="card" style="position:relative;width:100%;max-width:820px;background:var(--card);border:1px solid var(--edge-16);border-radius:14px;' +
+        'padding:20px 22px 22px;display:flex;flex-direction:column;gap:16px;box-shadow:var(--pp-x-shadow-box);box-sizing:border-box;line-height:normal;">' +
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;">' +
+        '<span style="display:flex;align-items:center;gap:16px;min-width:0;">' + tournLogoTile(regKey, t.display, true) +
+          '<span style="display:flex;flex-direction:column;gap:6px;min-width:0;">' +
+            '<span style="font-size:24px;font-weight:800;letter-spacing:-0.02em;line-height:1.15;color:var(--text);text-wrap:balance;">' + esc(t.display) + '</span>' +
+            '<span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
+              '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;color:var(--text);background:var(--pp-x-lifted);box-shadow:inset 0 0 0 1px ' + EDGE_14 + ';border-radius:8px;padding:3px 8px;">' +
+                esc(recordText(t.won, t.lost)) + '</span>' +
+              '<span style="font-size:13px;color:var(--text-label);">' + esc([tournLevelMeta(t.level), surfWord, 'Career'].filter(Boolean).join(' ' + MIDDOT + ' ')) + '</span>' +
+            '</span></span></span>' +
+        '<span data-pp2="tourn-close" role="button" aria-label="Close" style="flex:none;width:32px;height:32px;border-radius:9px;background:var(--wash-5);border:1.25px solid var(--edge-6);' +
+          'color:var(--text-label);cursor:pointer;display:flex;align-items:center;justify-content:center;box-sizing:border-box;"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" style="pointer-events:none;">' +
+          '<path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg></span>' +
       '</div>' +
-      '<div data-pp2-tourn-tiles="1" style="display:grid;grid-template-columns:repeat(' + tiles.length + ',minmax(0,1fr));gap:8px;margin-bottom:14px;">' +
+      '<div data-pp2-tourn-tiles="1" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;">' +
         tiles.map(function (c) {
-          return '<div style="padding:13px 10px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px;' +
-            'min-width:0;background:var(--card);border:1.25px solid var(--edge-6);border-radius:12px;">' + c.html + '</div>';
+          return '<div style="padding:13px 12px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;' +
+            'min-width:0;background:var(--card);border:1px solid var(--pp-x-edge-9);border-radius:11px;">' + c.html + '</div>';
         }).join('') + '</div>' +
-      '<div class="pp2-tscroll" style="max-height:calc(100vh - 430px);min-height:300px;overflow-y:auto;padding-right:12px;scrollbar-gutter:stable;">' +
+      '<div class="pp2-tscroll" style="max-height:calc(100vh - 330px);min-height:200px;overflow-y:auto;padding-right:10px;scrollbar-gutter:stable;">' +
         '<div style="' + MGRID + '">' + mhead + body + '</div>' +
       '</div>' +
-      (t.reconciles ? '' : '<div style="font-size:11px;color:var(--text-label);line-height:1.5;margin-top:10px;">' +
-        'The stored record for this event reads ' + recordText(t.storedWon, t.storedLost) + ' against ' +
-        recordText(t.won, t.lost) + ' in the editions listed.</div>') +
-      '</div>';
+      '<div style="font-size:12px;color:var(--text-label);line-height:1.5;">' + n + ' matches ' + MIDDOT + ' grouped by edition ' + MIDDOT + ' click a match for its stats' +
+        (t.reconciles ? '' : '. The stored record for this event reads ' + recordText(t.storedWon, t.storedLost) + ' against ' + recordText(t.won, t.lost) + ' in the editions listed.') + '</div>' +
+      '</div></div>';
   }
 
   // §5.7 Splits — THREE tabs (Results · Sets & Games · Service), per the export's
@@ -13572,40 +13635,323 @@
         '<span>' + recordText(d.w, d.l) + ' ' + MIDDOT + ' ' + d.n + ' matches</span><span>' + (STYLE_PEND ? '&nbsp;' : y == null ? DASH : styU(d.units)) + '</span></span>' +
       '</div>';
   }
+  // ── Profile v5 (handoff 2026-11-19, CHANGES §6.1) · Match-up record: filter card + ONE card (dot chart over table) ──
+  // Best / Toughest = the two summary picks (styTiles): their dots blue with a ring, a lifted badge "Best" (green) /
+  // "Toughest" (red) + the rate in place of the value label, their code white; the table row carries the word chip
+  // (full label as its title) and no code, its bar full blue. Money stays in units (founder 2026-11-14 "use units").
+  function styMarks(D) {
+    var MK = {};
+    styTiles(D).forEach(function (t, i) { MK[t.d.name] = { word: i ? 'Toughest' : 'Best', color: i ? 'var(--neg)' : 'var(--pos)', tip: t.label }; });
+    return MK;
+  }
+  var STY5_CHIP = 'background:var(--pp-x-lifted);box-shadow:inset 0 0 0 1px ' + EDGE_14 + ';border-radius:7px;white-space:nowrap;';
+  function styChartV5(D, MK) {
+    var pts = D.data.filter(function (d) { return !d.empty; });
+    if (!pts.length) return '<div style="padding:30px 0;text-align:center;font-size:12.5px;color:var(--text-label);">No archetyped opponent in this filter</div>';
+    var AVG = D.avg, H = 220;
+    var vals = pts.map(function (d) { return d.pct; }).concat(AVG == null ? [] : [AVG]);
+    var LO = Math.max(0, Math.floor((Math.min.apply(null, vals) - 8) / 10) * 10);
+    var HI = Math.min(100, Math.ceil((Math.max.apply(null, vals) + 8) / 10) * 10);
+    if (HI - LO < 30) { LO = Math.max(0, LO - 10); HI = Math.min(100, HI + 10); }
+    var frac = function (v) { return 1 - (v - LO) / (HI - LO); };
+    var top = function (v) { return (frac(v) * 100).toFixed(1) + '%'; };
+    var maxN = Math.max.apply(null, [1].concat(pts.map(function (d) { return d.n; })));
+    var xOf = function (i) { return pts.length > 1 ? 8 + 84 * i / (pts.length - 1) : 50; };
+    var sel = state.fb && state.fb.box === 'styles' ? state.fb.v : null;
+    var STEP = HI - LO > 60 ? 20 : 10, ticks = '';
+    for (var t = LO; t <= HI; t += STEP) {
+      if (AVG != null && Math.abs(t - AVG) < STEP * 0.4) continue;   // the avg label takes that slot
+      ticks += '<span style="position:absolute;right:0;top:' + top(t) + ';transform:translateY(-50%);' + STY_MONO + 'font-size:10.5px;color:var(--text-label);">' + t + '%</span>';
+    }
+    if (AVG != null) ticks += '<span title="His average win rate across all archetypes" style="position:absolute;right:0;top:' + top(AVG) + ';transform:translateY(-50%);' +
+      STY_MONO + 'font-size:10.5px;font-weight:700;color:var(--text);white-space:nowrap;">avg ' + Math.round(AVG) + '%</span>';
+    var marks = '', codes = '';
+    pts.forEach(function (d, i) {
+      var size = Math.round(14 + d.n / maxN * 20), mk = MK[d.name], on = sel === d.name, x = xOf(i).toFixed(1) + '%', y = top(d.pct);
+      var under = AVG != null && d.pct < AVG && (d.pct - LO) / (HI - LO) * H > size / 2 + 34, sg = under ? '' : '-';
+      var tip = d.thin ? recordText(d.w, d.l) + ' ' + MIDDOT + ' ' + d.n + ' matches' : d.name + ' ' + MIDDOT + ' ' + recordText(d.w, d.l) + ' ' + MIDDOT + ' ' + d.n + ' matches';
+      var lit = on || mk;
+      if (AVG != null) {
+        var a = frac(AVG), b = frac(d.pct);
+        marks += '<span style="position:absolute;left:' + x + ';top:' + (Math.min(a, b) * 100) + '%;height:' + (Math.abs(a - b) * 100) + '%;width:1px;' +
+          'background:' + (d.thin ? 'var(--edge-10)' : STY_C.stem) + ';pointer-events:none;"></span>';
+      }
+      marks += '<span data-pp2="fb-open" data-box="styles" data-v="' + esc(d.name) + '" data-sty-i="' + i + '" title="' + esc(tip) + '" class="pp2-stydot' + (on ? ' pp2-on' : '') + '" ' +
+        'style="cursor:pointer;position:absolute;left:' + x + ';top:' + y + ';transform:translate(-50%,-50%);width:' + size + 'px;height:' + size + 'px;border-radius:50%;box-sizing:border-box;' +
+        'background:' + (d.thin ? 'var(--card)' : lit ? 'var(--pp-x-link)' : STY_C.dot) + ';' +
+        'border:1px solid ' + (d.thin ? (on ? 'var(--text-soft)' : STY_C.muted) : lit ? 'var(--pp-x-link)' : 'var(--pp-x-bar-55)') + ';' +
+        'box-shadow:' + (lit ? (d.thin ? '0 0 0 4px color-mix(in srgb, var(--text) 8%, transparent)' : '0 0 0 4px color-mix(in srgb, var(--pp-x-link) 18%, transparent)') : 'none') + ';' +
+        'transition:background .12s, border-color .12s, box-shadow .12s;"></span>';
+      var val = d.thin ? recordText(d.w, d.l) : Math.round(d.pct) + '%';
+      if (mk) marks += '<span title="' + esc(mk.tip) + '" style="position:absolute;left:' + x + ';top:' + y + ';transform:translate(-50%,-50%) translateY(' + sg + (size / 2 + 20) + 'px);' +
+        'display:inline-flex;align-items:baseline;gap:6px;' + STY5_CHIP + 'padding:4px 8px 5px;pointer-events:none;z-index:2;">' +
+        '<span style="font-size:11px;font-weight:700;color:' + mk.color + ';">' + mk.word + '</span>' +
+        '<span style="' + STY_MONO + 'font-size:11.5px;font-weight:700;color:var(--text);">' + val + '</span></span>';
+      else marks += '<span data-sty-i="' + i + '" class="pp2-stylab' + (on ? ' pp2-on' : '') + '" style="position:absolute;left:' + x + ';top:' + y + ';' +
+        'transform:translate(-50%,-50%) translateY(' + sg + (size / 2 + 12) + 'px);' + STY_MONO + 'font-size:11px;font-weight:700;' +
+        'color:' + (d.thin ? 'var(--text-label)' : on ? 'var(--text)' : 'var(--text-soft)') + ';white-space:nowrap;pointer-events:none;">' + val + '</span>';
+      codes += '<span data-pp2="fb-open" data-box="styles" data-v="' + esc(d.name) + '" data-sty-i="' + i + '" title="' + esc(tip) + '" class="pp2-stycode' + (on ? ' pp2-on' : '') + '" ' +
+        'style="cursor:pointer;position:absolute;left:' + x + ';top:10px;transform:translateX(-50%);' + STY_MONO + 'font-size:10.5px;' +
+        'font-weight:' + (lit ? 700 : 600) + ';letter-spacing:0.06em;color:' + (lit ? 'var(--text)' : 'var(--text-label)') + ';white-space:nowrap;">' + esc(d.code) + '</span>';
+      d._x = xOf(i);
+    });
+    var brackets = ['serve', 'base', 'all'].map(function (g) {
+      var xs = pts.filter(function (d) { return d.group === g; }).map(function (d) { return d._x; });
+      if (!xs.length) return '';
+      var l = Math.min.apply(null, xs) - 5, r = Math.max.apply(null, xs) + 5;
+      return '<span style="position:absolute;left:' + l.toFixed(1) + '%;width:' + (r - l).toFixed(1) + '%;bottom:0;height:16px;pointer-events:none;' +
+        'border-top:1px solid var(--pp-x-edge-12);display:flex;justify-content:center;align-items:flex-end;">' +
+        '<span style="font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;' +
+        'color:var(--text-label);white-space:nowrap;background:var(--card);padding:0 6px;transform:translateY(-9px);">' + STY_GROUP_LABEL[g] + '</span></span>';
+    }).join('');
+    return '<div class="pp2-stychart" style="display:grid;grid-template-columns:50px minmax(0,1fr);gap:0 10px;">' +
+      '<div style="position:relative;height:' + H + 'px;">' + ticks + '</div>' +
+      '<div style="position:relative;height:' + H + 'px;border-left:1px solid var(--pp-x-edge-12);border-bottom:1px solid var(--pp-x-edge-12);">' +
+        (AVG != null ? '<span style="position:absolute;left:0;right:0;top:' + top(AVG) + ';height:1px;background:color-mix(in srgb, var(--text) 30%, transparent);pointer-events:none;"></span>' : '') +
+        marks + '</div>' +
+      '<span></span><div style="position:relative;height:58px;">' + codes + brackets + '</div></div>';
+  }
+  var STY5_GRID = 'display:grid;grid-template-columns:minmax(0,2.6fr) minmax(0,1fr) 56px 60px 56px 76px 68px 8px;gap:0 12px;align-items:center;';
+  function styTableV5(D, MK) {
+    var so = state.stySort || { k: 'pct', d: -1 };
+    var keyOf = function (d) { return so.k === 'name' ? d.name : so.k === 'wl' ? d.w - d.l : so.k === 'n' ? d.n : so.k === 'u' ? (d.priced ? d.units : -Infinity) : (d.pct == null ? -Infinity : d.pct); };
+    var list = D.data.slice().sort(function (a, b) {
+      var ta = a.thin || a.empty ? 1 : 0, tb = b.thin || b.empty ? 1 : 0;
+      if (ta !== tb) return ta - tb;
+      if (ta) return b.n - a.n;
+      var ka = keyOf(a), kb = keyOf(b);
+      if (ka === kb) return b.n - a.n;
+      return (ka < kb ? -1 : 1) * so.d;
+    });
+    var cols = [['Archetype', 'left', 'name', 'Sort A to Z'], ['Win rate', 'left'], ['W' + ENDASH + 'L', 'right', 'wl', 'Sort by wins minus losses'],
+      ['Matches', 'right', 'n', 'Sort by matches played'], ['Win %', 'right', 'pct', 'Sort by win rate'],
+      ['vs his avg', 'right', null, 'Win rate minus his average across all archetypes'],
+      ['Backing', 'right', 'u', 'Backing him: units at 1 unit on him at closing price, every priced match. Click to sort']];
+    var head = '<div style="' + STY5_GRID + '">' + cols.map(function (c) {
+      var on = c[2] && so.k === c[2];
+      return '<span' + (c[2] ? ' data-pp2="sty-sort" data-v="' + c[2] + '"' : '') + ' title="' + esc(c[3] || '') + '" style="display:flex;align-items:baseline;gap:5px;' +
+        'justify-content:' + (c[1] === 'right' ? 'flex-end' : 'flex-start') + ';cursor:' + (c[2] ? 'pointer' : 'default') + ';' +
+        'font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;' +
+        'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';padding-bottom:12px;white-space:nowrap;">' +
+        '<span style="pointer-events:none;">' + esc(c[0]) + '</span><span style="pointer-events:none;' + STY_MONO + 'font-size:10px;letter-spacing:0;color:' +
+          (on ? 'var(--text)' : 'color-mix(in srgb, var(--text-label) 45%, transparent)') + ';">' + (on ? (so.d < 0 ? '↓' : '↑') : c[2] ? '⇅' : '') + '</span></span>';
+    }).join('') + '<span></span></div>';
+    var sel = state.fb && state.fb.box === 'styles' ? state.fb.v : null;
+    var MONO = STY_MONO + 'font-variant-numeric:tabular-nums;';
+    var rows = list.map(function (d) {
+      var dim = d.thin || d.empty, on = sel === d.name, mk = MK[d.name], gp = dim ? null : styGap(d, D.avg), y = styYield(d);
+      return '<div ' + (d.empty ? '' : 'data-pp2="fb-open" data-box="styles" data-v="' + esc(d.name) + '" ') + 'class="pp2-styrow pp2-v5row' + (on ? ' on' : '') + '" ' +
+        'style="' + STY5_GRID + 'min-height:54px;padding:0 10px;margin:0 -10px;border-top:1px solid var(--edge-6);border-radius:' + (on ? 10 : 0) + 'px;' +
+        'cursor:' + (d.empty ? 'default' : 'pointer') + ';background:' + (on ? 'var(--pp-x-hover)' : 'transparent') + ';">' +
+        '<span style="display:inline-flex;align-items:baseline;gap:8px;min-width:0;pointer-events:none;"><span style="font-size:14px;font-weight:700;' +
+          'color:' + (dim ? 'var(--text-label)' : 'var(--text)') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(d.name) + '</span>' +
+          (mk ? '' : '<span style="' + MONO + 'font-size:10.5px;color:var(--text-label);flex:none;">' + esc(d.code) + '</span>') +
+          (d.thin ? '<span class="pp2-stytag" style="font-size:11.5px;color:var(--text-label);flex:none;white-space:nowrap;">under ' + STY_FLOOR + '</span>' : '') +
+          (mk ? '<span title="' + esc(mk.tip) + '" style="flex:none;margin-left:2px;' + STY5_CHIP + 'padding:3px 8px 4px;font-size:11px;font-weight:700;color:' + mk.color + ';pointer-events:auto;">' + mk.word + '</span>' : '') +
+          '</span>' +
+        '<span style="position:relative;display:block;width:100%;height:4px;border-radius:2px;background:var(--pp-x-track-7);pointer-events:none;">' +
+          '<span style="position:absolute;left:0;top:0;bottom:0;width:' + (dim ? 0 : d.pct).toFixed(1) + '%;border-radius:2px;background:' + (on || mk ? 'var(--pp-x-link)' : 'var(--pp-x-bar-55)') + ';"></span>' +
+          (D.avg == null ? '' : '<span title="his average" style="position:absolute;left:calc(' + D.avg.toFixed(1) + '% - 1px);top:-3px;bottom:-3px;width:2px;background:var(--text);"></span>') + '</span>' +
+        '<span style="' + MONO + 'font-size:13px;color:var(--text-label);text-align:right;pointer-events:none;">' + recordText(d.w, d.l) + '</span>' +
+        '<span style="' + MONO + 'font-size:13px;color:var(--text-label);text-align:right;white-space:nowrap;pointer-events:none;">' + d.n + '</span>' +
+        '<span style="' + MONO + 'font-size:14px;font-weight:700;text-align:right;pointer-events:none;color:' + (dim ? 'var(--text-label)' : 'var(--text)') + ';">' + (dim ? DASH : Math.round(d.pct) + '%') + '</span>' +
+        '<span style="' + MONO + 'font-size:13px;font-weight:700;text-align:right;white-space:nowrap;pointer-events:none;color:' + styGapColour(gp) + ';">' + (gp == null ? DASH : signed(gp, 1, 'pp')) + '</span>' +
+        '<span style="' + MONO + 'font-size:13px;font-weight:700;text-align:right;pointer-events:none;color:' + (STYLE_PEND || dim || y == null ? 'var(--text-label)' : signColour(d.units)) + ';">' +
+          (STYLE_PEND ? '&nbsp;' : dim || y == null ? DASH : styU(d.units)) + '</span>' +
+        '<span style="text-align:right;font-size:15px;line-height:1;color:var(--pp-x-link);opacity:' + (d.empty ? 0 : 1) + ';pointer-events:none;">›</span>' +
+        '</div>';
+    }).join('');
+    return head + rows;
+  }
+  function stySwitch(hook, opts, cur) {   // the reference's Match-up switch: option 6/14, no ring on the picked one
+    return '<span style="display:flex;flex-wrap:wrap;gap:3px;background:var(--inner);border:1px solid ' + EDGE_8 + ';border-radius:10px;padding:3px;">' +
+      opts.map(function (o) {
+        var on = cur === o[0];
+        return '<span data-pp2="' + esc(hook) + '" data-v="' + esc(o[0]) + '" role="button" aria-pressed="' + (on ? 'true' : 'false') + '" class="pp2-v5seg" ' +
+          'style="cursor:pointer;white-space:nowrap;padding:6px 14px;border-radius:7px;font-size:13px;font-weight:' + (on ? 700 : 600) + ';' +
+          'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';background:' + (on ? 'var(--selected)' : 'transparent') + ';">' + esc(o[1]) + '</span>';
+      }).join('') + '</span>';
+  }
   function renderStylesModalV2(p) {
-    var D = styData(p);
-    var scope = styScope();
-    // the headline yield: every rated archetype's priced matches pooled (thin rows out, as the table's own figures)
+    if (state.styTab === 'grid') return styGridTabV5();
+    var D = styData(p), MK = styMarks(D);
+    var win = state.styWin || 'career', surf = state.stySurf || 'all';
+    var title = (win === 'l52' ? 'Last 52 weeks' : win === 'l24' ? 'Last 24 months' : 'Career') + (surf === 'all' ? '' : ' ' + MIDDOT + ' ' + surf);
     var TU = 0, TP = 0;
     D.data.forEach(function (d) { if (!d.thin && d.priced) { TU += d.units; TP += d.priced; } });
-    var TY = TP ? 100 * TU / TP : null;
-    var tiles = styTiles(D);
-    var summary = '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px 16px;flex-wrap:wrap;margin-bottom:20px;padding-right:32px;">' +
-        '<span style="display:inline-flex;align-items:baseline;gap:12px;flex-wrap:wrap;">' + recCaps(esc(scope)) +
-          '<span style="' + STY_MONO + 'font-size:22px;font-weight:700;color:var(--text);line-height:1;">' + (D.TN ? recordText(D.TW, D.TN - D.TW) : DASH) + '</span>' +
-          (D.TN ? '<span style="font-size:13px;font-weight:600;color:var(--text);">' + Math.round(100 * D.TW / D.TN) + '% win rate</span>' : '') +
-          '<span style="font-size:12px;color:var(--text-label);">' + D.TN + (D.TN === 1 ? ' match' : ' matches') + '</span></span>' +
-        '<span style="display:inline-flex;align-items:baseline;gap:6px;white-space:nowrap;">' +
-          '<span style="' + STY_MONO + 'font-size:13px;font-weight:700;color:' + (STYLE_PEND || TY == null ? 'var(--pp-x-faint)' : styGapColour(TY)) + ';">' +
-            (STYLE_PEND ? '&nbsp;' : TY == null ? DASH : styU(TU)) + '</span>' +
-          '<span style="font-size:12px;color:var(--text-label);">backing him</span></span>' +
+    var scopeLine = title + ' ' + MIDDOT + ' ' + D.TN + ' matches ' + MIDDOT + ' by the opponent’s playing style ' + MIDDOT + ' a bigger dot is more matches ' + MIDDOT + ' click a dot or a row for its matches';
+    var filter = '<div data-pp2-band="v5" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:22px 24px;margin-bottom:16px;' +
+      'background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;">' +
+      stySwitch('sty-surf', STY_SURFS, surf) + stySwitch('sty-win', [['l52', 'Last 52 weeks'], ['l24', 'Last 24 months'], ['career', 'Career']], win) + '</div>';
+    return filter +
+      '<div data-pp2-sty="card" style="position:relative;background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;margin-bottom:16px;">' +
+        '<div style="position:relative;padding:24px 24px 0;">' +
+          '<span style="position:absolute;top:26px;right:24px;z-index:3;display:flex;">' +
+            infoIcon('sty1', Object.assign({ width: 400, align: 'right', v4: true }, STY_INFO1, { scopeChip: scopeLine, notes: [styCoverageText(p)] })) + '</span>' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px 24px;flex-wrap:wrap;margin-bottom:30px;padding-right:36px;">' +
+            '<span style="font-size:18px;font-weight:800;letter-spacing:-0.01em;color:var(--text);">' + esc(title) + '</span>' +
+            '<span style="display:inline-flex;align-items:baseline;gap:10px;flex-wrap:wrap;">' +
+              '<span style="' + STY_MONO + 'font-size:26px;font-weight:700;color:var(--text);line-height:1;">' + (D.TN ? recordText(D.TW, D.TN - D.TW) : DASH) + '</span>' +
+              '<span style="' + STY_MONO + 'font-size:14px;color:var(--text-label);white-space:nowrap;">' + (D.TN ? Math.round(100 * D.TW / D.TN) + '% win rate' : '') + '</span>' +
+              '<span style="display:inline-flex;align-items:baseline;gap:6px;white-space:nowrap;margin-left:8px;">' +
+                '<span style="' + STY_MONO + 'font-size:14px;font-weight:700;color:' + (STYLE_PEND || !TP ? 'var(--text-label)' : signColour(TU)) + ';">' + (STYLE_PEND ? '&nbsp;' : TP ? styU(TU) : DASH) + '</span>' +
+                '<span style="font-size:13px;color:var(--text-label);">backing him</span></span></span></div>' +
+          styChartV5(D, MK) +
+        '</div>' +
+        '<div style="position:relative;padding:0 24px 10px;"><div style="height:1px;background:var(--edge-6);margin:18px 0 20px;"></div>' + styTableV5(D, MK) + '</div>' +
       '</div>';
-    return bandBox('<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' + stySegPills('sty-surf', STY_SURFS, state.stySurf || 'all') + '</div>' +
-        winSeg('sty-win', state.styWin || 'career', true), 'joined-card', 'justify-content:space-between;gap:12px;') +
-      '<div data-pp2-sty="card" style="position:relative;background:var(--card);border:1.25px solid var(--edge-6);border-top:0;border-radius:0 0 16px 16px;' +
-        'padding:22px 24px 18px;margin-bottom:16px;">' +
-        '<span style="position:absolute;top:20px;right:20px;z-index:3;display:flex;">' +
-          infoIcon('sty1', Object.assign({ width: 400, align: 'right', v4: true }, STY_INFO1, { notes: [styCoverageText(p)] })) + '</span>' +
-        summary +
-        (tiles.length ? '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:28px;">' +
-          tiles.map(function (t) { return styTileHtml(t, D); }).join('') + '</div>' : '') +
-        '<div style="margin-bottom:16px;font-size:16px;">' + recCaps('Win rate by archetype') + '</div>' +   // the reference's 16px strut: a 21px line
+  }
 
-        styChart(D) +
-      '</div>' +
-      '<div data-pp2-sty="table" style="position:relative;background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;padding:20px 24px 8px;margin-bottom:16px;">' +
-        styTable(D) +
-      '</div>';
+  // ── v5 §6.2 · Match-up record → Playing styles: the tour-wide grid (the Playing Styles page's own model, psStylesModel),
+  // embedded: no page header, cards radius 16, 16px apart. Hover lights the row + column (the hover tone), the hovered cell is
+  // lifted, everything else 35%; the hover box is a fixed layer so the side scroller never clips it.
+  function styGridTabV5() {
+    var W = typeof window !== 'undefined' ? window : {};
+    /* global psStylesModel, psMatrixData, ensurePsMatrix, playerIndex, eloRatings, psFmtEdge, psVerdict, PS_SMALL_N */
+    if (typeof psStylesModel !== 'function') return speedEmptyBox('The playing styles grid is not available on this page.');
+    if (typeof psMatrixData === 'undefined' || !psMatrixData) {
+      if (typeof ensurePsMatrix === 'function' && !styGridTabV5._asked) { styGridTabV5._asked = true; ensurePsMatrix().then(function () { styGridTabV5._asked = false; repaint(); }); }
+      return speedEmptyBox('Loading the playing styles grid…');
+    }
+    var idx = typeof playerIndex !== 'undefined' && Array.isArray(playerIndex) && playerIndex.length ? playerIndex : null;
+    var P = psStylesModel({ matrix: psMatrixData, styles: W.playingStyles, index: idx, elo: typeof eloRatings !== 'undefined' ? eloRatings : null });
+    var A = P.arch, C = P.cells, M = STY_MONO;
+    var band = function (e) { return e == null ? 'var(--text-label)' : e > 2 ? 'var(--pos)' : e < -2 ? 'var(--neg)' : 'var(--text-label)'; };
+    var fmt = function (e) { return psFmtEdge(e); };
+    var GRID = 'display:grid;grid-template-columns:168px repeat(' + A.length + ',minmax(64px,1fr));gap:0 4px;';
+    var head = '<div style="' + GRID + 'align-items:end;padding-bottom:10px;"><span></span>' + A.map(function (c) {
+      return '<span data-c="' + c.i + '" title="' + esc(c.name) + '" class="pp2-psh" style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;border-radius:8px;transition:background 120ms ease;">' +
+        '<span class="pp2-psc" style="' + M + 'font-size:12.5px;font-weight:700;color:var(--text);">' + esc(c.code) + '</span>' +
+        '<span style="font-size:10.5px;color:var(--text-label);line-height:1.25;text-align:center;text-wrap:balance;">' + esc(c.name) + '</span></span>';
+    }).join('') + '</div>';
+    var rows = A.map(function (r) {
+      return '<div style="' + GRID + 'align-items:center;min-height:58px;border-top:1px solid var(--edge-6);">' +
+        '<span data-r="' + r.i + '" class="pp2-psh" style="display:flex;flex-direction:column;gap:2px;padding:8px 10px;margin:3px 0;border-radius:8px;transition:background 120ms ease;min-width:0;">' +
+          '<span style="font-size:13.5px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(r.name) + '</span>' +
+          '<span style="font-size:11.5px;color:var(--text-label);white-space:nowrap;"><span style="' + M + '">' + esc(r.code) + '</span> ' + MIDDOT + ' ' + (r.count == null ? DASH : r.count) + ' players</span></span>' +
+        A.map(function (c) {
+          var x = C[r.i][c.i], at = 'data-r="' + r.i + '" data-c="' + c.i + '"';
+          var tip = x.diag || x.edge == null ? '' : ' data-tip-h="' + esc(r.name + ' against ' + c.name) + '" data-tip-r="' + x.wr + '%" data-tip-e="' +
+            esc(x.edge === 0 ? '' : fmt(x.edge) + ' points') + '" data-tip-t="' + esc(x.edge > 0 ? ' over an even split' : x.edge < 0 ? ' under an even split' : 'level with an even split') + '" data-tip-c="' + band(x.edge) + '"';
+          var title = !x.diag && x.edge == null && x.n != null ? ' title="' + esc(r.name + ' vs ' + c.name + ': ' + x.n + ' matches, under 30') + '"' : '';
+          return '<span ' + at + tip + title + ' class="pp2-psx" style="position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:46px;border-radius:8px;transition:opacity 120ms ease,background 120ms ease;">' +
+            '<span style="' + M + 'font-size:15px;font-weight:700;line-height:1;color:' + (x.diag || x.edge == null ? 'color-mix(in srgb, var(--text-label) 55%, transparent)' : band(x.edge)) + ';">' + (x.diag || x.edge == null ? DASH : fmt(x.edge)) + '</span>' +
+            '<span style="' + M + 'font-size:11px;color:var(--text-label);line-height:1;">' + (x.diag || x.edge == null ? '' : x.wr + '%') + '</span></span>';
+        }).join('') + '</div>';
+    }).join('');
+    var legend = [['var(--pos)', 'Row style wins more'], ['var(--neg)', 'Row style wins less'], ['var(--text-label)', 'Within 2 points of even']].map(function (l) {
+      return '<span style="display:flex;align-items:center;gap:7px;"><span style="width:6px;height:6px;border-radius:50%;background:' + l[0] + ';"></span>' + l[1] + '</span>';
+    }).join('');
+    var small = A.filter(function (a) { return a.small; });
+    var info = { what: 'How each playing style does against every other style on the tour.', defs: [
+      ['Large figure', 'How far the row style is from an even 50% split against the column style.'],
+      ['Small figure', 'The row style’s win rate in that match-up.'],
+      ['Colour', 'Green when the row style wins more, red when it wins less, grey within 2 points of even.']]
+      .concat(small.length ? [['Small sample', small.map(function (a) { return a.name + ' (' + a.count + ' players)'; }).join(' and ') + (small.length === 1 ? ' has' : ' have') + ' fewer than ' + PS_SMALL_N + ' players, so read those figures with care.']] : [])
+      .concat([['Archetypes', 'Each card shows its two best and two worst match-ups. Click a card for all seven and its players.']]),
+      notes: P.note ? [P.note] : [] };
+    var gridCard = '<div data-pp2-psgrid="1" style="background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;padding:24px 26px 14px;display:flex;flex-direction:column;">' +
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px 24px;flex-wrap:wrap;padding-bottom:18px;">' +
+        '<span style="display:inline-flex;align-items:center;gap:10px;"><span style="font-size:18px;font-weight:800;letter-spacing:-0.005em;color:var(--text);">Row against column</span>' +
+          '<span style="position:relative;display:inline-flex;z-index:3;">' + infoIcon('psg', Object.assign({ width: 400, v4: true }, info)) + '</span></span>' +
+        '<span style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--text-label);padding-top:4px;">' + legend + '</span></div>' +
+      '<div style="overflow-x:auto;scrollbar-width:thin;margin:0 -10px;padding:0 10px;"><div class="pp2-psgrid" style="min-width:712px;">' + head + rows + '</div></div></div>';
+    var open = state.psOpen;
+    var cards = A.map(function (a) {
+      var isOpen = open === a.i;
+      var bar = function (j) {
+        var x = C[a.i][j], e = x.edge;
+        var w = e == null ? 0 : Math.max(1, Math.abs(e)), l = e == null ? 50 : Math.min(50 + e, 50);
+        return '<div style="display:grid;grid-template-columns:minmax(0,1fr) 84px 44px;align-items:center;gap:10px;">' +
+          '<span style="min-width:0;"><span style="display:block;font-size:11.5px;font-weight:600;color:var(--text-label);line-height:1.3;">' + (e > 2 ? 'Strong against' : e < -2 ? 'Weak against' : 'Even against') + '</span>' +
+            '<span style="display:block;font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(A[j].name) + '</span></span>' +
+          '<span style="position:relative;display:block;height:4px;border-radius:2px;background:var(--pp-x-track-7);">' +
+            '<span style="position:absolute;left:' + l + '%;top:0;bottom:0;width:' + w + '%;border-radius:2px;background:' + (e > 2 ? 'var(--pos)' : e < -2 ? 'var(--neg)' : 'color-mix(in srgb, var(--text) 35%, transparent)') + ';"></span>' +
+            '<span style="position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--text);"></span></span>' +
+          '<span style="text-align:right;' + M + 'font-size:13px;font-weight:700;color:' + band(e) + ';">' + (e == null ? DASH : fmt(e)) + '</span></div>';
+      };
+      var html = '<div data-pp2-psarch="' + a.i + '" class="pp2-psarch" style="background:var(--card);border:1.25px solid ' + (isOpen ? EDGE_14 : 'var(--edge-6)') + ';border-radius:16px;padding:20px 24px;transition:border-color 120ms;">' +
+        '<div data-pp2="ps-open" data-v="' + a.i + '" style="display:grid;grid-template-columns:24px minmax(0,1fr) minmax(260px,320px) 12px;gap:18px;align-items:start;cursor:pointer;">' +
+          '<span style="' + M + 'font-size:12px;color:var(--text-label);margin-top:3px;pointer-events:none;">' + String(a.i + 1).padStart(2, '0') + '</span>' +
+          '<div style="min-width:0;pointer-events:none;"><div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">' +
+            '<span style="font-size:16px;font-weight:800;letter-spacing:-0.01em;color:var(--text);">' + esc(a.name) + '</span>' +
+            '<span style="font-size:12px;color:var(--text-label);white-space:nowrap;"><span style="' + M + '">' + esc(a.code) + '</span> ' + MIDDOT + ' ' + (a.count == null ? DASH : a.count) + ' players</span>' +
+            (a.small ? '<span style="align-self:center;' + STY5_CHIP + 'padding:3px 8px 4px;font-size:11px;font-weight:600;color:var(--text-soft);">Small sample</span>' : '') + '</div>' +
+            '<div style="font-size:13px;color:var(--text-label);line-height:1.55;margin-top:6px;max-width:620px;text-wrap:pretty;">' + esc(a.description) + '</div></div>' +
+          '<div style="display:flex;flex-direction:column;gap:9px;pointer-events:none;">' + (a.picks || []).map(bar).join('') + '</div>' +
+          '<span style="display:inline-flex;justify-content:center;font-size:15px;line-height:1;color:var(--pp-x-link);transform:rotate(' + (isOpen ? 90 : 0) + 'deg);transition:transform .16s;margin-top:3px;pointer-events:none;">›</span></div>';
+      if (isOpen) {
+        var avg = a.avg, tw = avg == null ? 0 : Math.min(50, Math.abs(avg) / 40 * 50);
+        var ec = avg == null ? 'var(--text-label)' : avg > 0 ? 'var(--pos)' : avg < 0 ? 'var(--neg)' : 'var(--text)';
+        var ex = (a.examples || []).map(function (e) {
+          var ini = String(e.name || '').split(/[\s.-]+/).filter(Boolean), iniTxt = (ini.length > 1 ? ini[0][0] + ini[ini.length - 1][0] : String(e.name || '').slice(0, 2)).toUpperCase();
+          var ph = e.key && typeof W.playerPhotoImg === 'function' ? W.playerPhotoImg(e.key, e.name) : '';
+          return '<span style="display:inline-flex;align-items:center;gap:8px;' + STY5_CHIP + 'border-radius:8px;padding:5px 11px 5px 6px;">' +
+            '<span style="position:relative;overflow:hidden;flex:none;width:24px;height:24px;border-radius:50%;background:var(--card);box-shadow:inset 0 0 0 1px var(--edge-10);display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;color:var(--text-soft);">' + esc(iniTxt) + ph + '</span>' +
+            (e.key && e.hasProfile ? '<span data-pp2="ps-player" data-v="' + esc(e.key) + '" class="pp2-ulink" style="cursor:pointer;font-size:12.5px;font-weight:700;color:var(--text);">' + esc(e.name) + '</span>'
+              : '<span style="font-size:12.5px;font-weight:700;color:var(--text);">' + esc(e.name) + '</span>') +
+            '<span style="' + M + 'font-size:11.5px;color:var(--text-label);">' + e.elo + '</span></span>';
+        }).join('');
+        html += '<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:36px;margin-top:20px;padding:20px 0 2px 42px;border-top:1px solid var(--edge-6);">' +
+          '<div style="display:flex;flex-direction:column;gap:12px;">' +
+            '<span style="font-size:11.5px;font-weight:600;color:var(--text-label);">Average edge across its ' + ({ 7: 'seven', 6: 'six', 5: 'five', 4: 'four', 3: 'three', 2: 'two', 1: 'one' }[a.rated] || a.rated) + ' match-up' + (a.rated === 1 ? '' : 's') + '</span>' +
+            '<span style="display:flex;align-items:baseline;gap:10px;"><span style="' + M + 'font-size:26px;font-weight:700;line-height:1;color:' + ec + ';">' + (avg == null ? DASH : fmt(avg)) + '</span>' +
+              '<span style="font-size:14px;font-weight:700;color:var(--text);">' + (avg == null ? '' : psVerdict(avg)) + '</span></span>' +
+            '<span style="position:relative;display:block;height:4px;border-radius:2px;background:var(--pp-x-track-7);"><span style="position:absolute;top:0;bottom:0;left:' + (avg >= 0 ? 50 : 50 - tw).toFixed(1) + '%;width:' + tw.toFixed(1) + '%;background:' + ec + ';border-radius:2px;"></span>' +
+              '<span style="position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--text);"></span></span>' +
+            '<span style="display:flex;justify-content:space-between;' + M + 'font-size:10.5px;color:var(--text-label);"><span>−40</span><span>0</span><span>+40</span></span>' +
+            '<span style="font-size:11.5px;font-weight:600;color:var(--text-label);margin-top:10px;">Example players ' + MIDDOT + ' by Elo</span>' +
+            '<div style="display:flex;flex-wrap:wrap;gap:8px;">' + (ex || '<span style="font-size:12.5px;color:var(--text-label);">' + DASH + '</span>') + '</div></div>' +
+          '<div style="display:flex;flex-direction:column;"><div style="display:grid;grid-template-columns:minmax(0,1fr) 56px 64px;gap:0 12px;padding-bottom:10px;">' +
+            recCaps('Against ' + MIDDOT + ' best to worst') + recCaps('Win %', 'text-align:right;') + recCaps('Edge', 'text-align:right;') + '</div>' +
+            (a.vs || []).map(function (j) {
+              var x = C[a.i][j];
+              return '<div style="display:grid;grid-template-columns:minmax(0,1fr) 56px 64px;gap:0 12px;align-items:center;min-height:40px;border-top:1px solid var(--edge-6);">' +
+                '<span style="font-size:13.5px;font-weight:600;color:var(--text);">' + esc(A[j].name) + '</span>' +
+                '<span style="' + M + 'font-size:13px;color:var(--text-label);text-align:right;">' + (x.edge == null ? DASH : x.wr + '%') + '</span>' +
+                '<span style="' + M + 'font-size:13px;font-weight:700;color:' + band(x.edge) + ';text-align:right;">' + (x.edge == null ? DASH : fmt(x.edge)) + '</span></div>';
+            }).join('') + '</div></div>';
+      }
+      return html + '</div>';
+    }).join('');
+    return '<div style="display:flex;flex-direction:column;gap:16px;">' + gridCard +
+      '<div style="display:flex;flex-direction:column;gap:8px;"><div style="padding:8px 2px 8px;"><span style="font-size:18px;font-weight:800;letter-spacing:-0.01em;color:var(--text);">Eight archetypes</span></div>' + cards + '</div></div>';
+  }
+  // v5 §6.2 hover: row + column lit, the cell lifted, the rest 35%; the hover box sits in a fixed layer (never clipped).
+  function psGridHover(e) {
+    var grid = mounted && mounted.querySelector('.pp2-psgrid');
+    if (!grid) return;
+    var t = e.target && e.target.closest ? e.target.closest('.pp2-psgrid [data-r],.pp2-psgrid [data-c]') : null;
+    var tipEl = document.getElementById('pp2PsTip');
+    if (!t || !grid.contains(t)) {
+      if (e.target && e.target.closest && e.target.closest('.pp2-psgrid')) return;   // a gap between cells keeps the isolation
+      grid.classList.remove('pp2-iso');
+      grid.querySelectorAll('.pp2-lit').forEach(function (el) { el.classList.remove('pp2-lit', 'pp2-x'); });
+      if (tipEl) tipEl.style.display = 'none';
+      return;
+    }
+    var r = t.getAttribute('data-r'), c = t.getAttribute('data-c');
+    grid.classList.add('pp2-iso');
+    grid.querySelectorAll('[data-r],[data-c]').forEach(function (el) {
+      var er = el.getAttribute('data-r'), ec = el.getAttribute('data-c');
+      var lit = (r != null && er === r) || (c != null && ec === c);
+      el.classList.toggle('pp2-lit', lit);
+      el.classList.toggle('pp2-x', r != null && c != null && er === r && ec === c);
+    });
+    if (!tipEl) {
+      tipEl = document.createElement('div'); tipEl.id = 'pp2PsTip';
+      tipEl.style.cssText = 'position:fixed;z-index:90;display:none;flex-direction:column;gap:6px;background:var(--pp-x-lifted);box-shadow:inset 0 0 0 1px ' + EDGE_14 + ',var(--shadow-menu);' +
+        'border-radius:10px;padding:12px 16px 13px;white-space:nowrap;pointer-events:none;text-align:left;font-family:var(--font-words);';
+      document.body.appendChild(tipEl);
+    }
+    if (r == null || c == null || !t.getAttribute('data-tip-h')) { tipEl.style.display = 'none'; return; }
+    tipEl.innerHTML = '<span style="font-size:12.5px;font-weight:700;color:var(--text);">' + t.getAttribute('data-tip-h') + '</span>' +
+      '<span style="font-size:12px;color:var(--text-label);">Wins <span style="' + STY_MONO + 'font-weight:700;color:var(--text);">' + t.getAttribute('data-tip-r') + '</span> of their matches' +
+      (t.getAttribute('data-tip-e') ? ', <span style="' + STY_MONO + 'font-weight:700;color:' + t.getAttribute('data-tip-c') + ';">' + t.getAttribute('data-tip-e') + '</span>' : ', ') + t.getAttribute('data-tip-t') + '</span>';
+    tipEl.style.display = 'flex';
+    var b = t.getBoundingClientRect(), w = tipEl.offsetWidth, right = +c >= 5;
+    tipEl.style.left = Math.max(8, right ? b.right - w : b.left + b.width / 2 - w / 2) + 'px';
+    tipEl.style.top = (b.top - 24 - tipEl.offsetHeight) + 'px';
   }
   // The archetype drill box (the export's selBox): tiles + every match, latest first; rows open the match sheet.
   var FB_LIST_COLS = '12px 64px minmax(0,1fr) minmax(0,0.8fr) 36px minmax(128px,auto) 46px 46px 54px';
@@ -16394,7 +16740,7 @@
     // Compare-with popover and its query. Each is one value, so only one of each can be open.
     info: null, fmOpen: null, fb: null, cmpOpen: false, cmpQ: '', mtoOpen: false,
     tourLevel: 'all', tourSurf: 'all', tourSort: { k: 'wl', d: -1 },
-    stySurf: 'all', styWin: 'career', stySort: { k: 'pct', d: -1 },
+    stySurf: 'all', styWin: 'career', styTab: 'record', psOpen: null, stySort: { k: 'pct', d: -1 },
     mkSurf: 'all', mkWin: 'career', mkRole: 'all', mkFmt: 'all', mkSpeed: 'all', mkLvl: 'all', mkArch: 'all',
     lcBandF: 'all', lcArch: 'all', spdSurf: 'all', spdBand: null,
     // v4 §5 · Court speed's shared filter bar: Window (default Career) and the three hidden filters; fmSel = the open
@@ -16608,6 +16954,7 @@
   }
   function onOver(e) {
     styHover(e);
+    psGridHover(e);
     var bar = e.target && e.target.closest ? e.target.closest('[data-pp2-run]') : null;
     if (bar || _runHov) runHover(bar && mounted && mounted.contains(bar) ? bar : null);
     var el = e.target && e.target.closest ? e.target.closest('[data-pp2="info"]') : null;
@@ -16767,6 +17114,9 @@
     }
     else if (kind === 'sty-surf') { state.stySurf = v; state.fb = null; }
     else if (kind === 'sty-win') { state.styWin = v; state.fb = null; }
+    else if (kind === 'sty-tab') { state.styTab = v === 'grid' ? 'grid' : 'record'; state.fb = null; state.info = null; }
+    else if (kind === 'ps-open') { state.psOpen = state.psOpen === +v ? null : +v; }
+    else if (kind === 'ps-player') { if (typeof window.psOpenProfile === 'function') window.psOpenProfile(v); return; }
     else if (kind === 'sty-sort') { var sc = state.stySort || { k: 'pct', d: -1 }; state.stySort = sc.k === v ? { k: v, d: -sc.d } : { k: v, d: v === 'name' ? 1 : -1 }; }
     else if (kind === 'mk-surf') { state.mkSurf = v; state.fb = null; }
     else if (kind === 'mk-win') { state.mkWin = v; state.fb = null; }
@@ -16784,6 +17134,7 @@
     else if (kind === 'cal-cell2') { state.calCellV2 = v && state.calCellV2 !== v ? v : null; }
     else if (kind === 'run-sel') { state.runSel = +v; _runHov = null; }
     else if (kind === 'tourn-row') { state.tournOpen = toggleVal(state.tournOpen, el.getAttribute('data-t')); tournNeedJoin(); }
+    else if (kind === 'tourn-close' || (kind === 'tourn-scrim' && e.target === el)) { state.tournOpen = null; }
     else if (kind === 'cal-tab') { state.calTab = v; state.calCell = null; }
     else if (kind === 'cal26-month') state.cal26Month = toggleVal(state.cal26Month, v);
     else if (kind === 'cal-surface') { state.calSurface = v; state.calCell = null; }

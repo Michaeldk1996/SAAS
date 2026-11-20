@@ -74,28 +74,35 @@ const E = mod('elite');
 const HTML = render(E.I, E.p);
 const TXT = T(HTML);
 
-H.check('band · joined to the card on the card tone, padded 20px 24px (§0.2)', () => {
-  assert(/data-pp2-band="joined-card"[^>]*padding:20px 24px/.test(HTML), 'the band is not the joined card-tone band');
-  assert(/border-top:0;border-radius:0 0 16px 16px;padding:22px 24px 18px/.test(HTML), 'the chart card is not joined at r16 with 22/24/18 padding');
-  assert(/border-radius:16px;padding:20px 24px 8px/.test(HTML), 'the table card is not r16 with 20/24/8 padding');
+// v5 (handoff 2026-11-19, CHANGES §6.1) · filter card + ONE card (dot chart over table); Best / Toughest marks, no tiles
+H.check('v5 · filter card (Surface + Window well switches) and one card radius 16, chart over table', () => {
+  assert(/data-pp2-band="v5"[^>]*padding:22px 24px/.test(HTML), 'no v5 filter card');
+  const wins = (HTML.match(/data-pp2="sty-win" data-v="(\w+)"/g) || []).map(x => x.replace(/.*="(\w+)"/, '$1'));
+  assert.deepStrictEqual(wins, ['l52', 'l24', 'career'], 'the Window switch');
+  assert(/data-pp2-sty="card"[^>]*border-radius:16px;margin-bottom:16px/.test(HTML), 'the one card');
+  assert(!/data-pp2-sty="table"/.test(HTML), 'a second (table) card is back');
+  assert(HTML.indexOf('pp2-stychart') < HTML.indexOf('pp2-styrow'), 'the chart is not over the table');
 });
-H.check('summary · scope · record · "% win rate" · matches · units "backing him" (founder 2026-11-14: units)', () => {
-  assert(/CAREER|career/.test(TXT), 'no scope');
+H.check('v5 · head: title, record, "% win rate", units "backing him"; the scope sits in the "?" as a lifted chip', () => {
+  assert(/font-size:18px;font-weight:800;[^>]*>Career</.test(HTML), 'no 18/800 title');
   assert(/\d+% win rate/.test(TXT), 'no "N% win rate"');
   assert(/[+−]\d+\.\d\du\s*backing him/.test(TXT), 'no units backing him headline');
-  assert(!/yield backing him/.test(TXT), 'the headline is back on a yield %');
+  const open = render(E.I, E.p, { info: 'sty1' });
+  assert(/background:var\(--pp-x-lifted\);box-shadow:inset 0 0 0 1px [^;]+;border-radius:8px;[^"]*">Career · \d+ matches · by the opponent/.test(open), 'no scope chip in the "?"');
 });
-H.check('tiles · exactly Best match-up + Toughest outside the elite when All Court Elite is his worst; no Most played', () => {
-  const tiles = HTML.match(/class="pp2-stytile"/g) || [];
-  assert.strictEqual(tiles.length, 2, tiles.length + ' tiles');
-  assert(/Best match-up/.test(TXT) && /Toughest outside the elite/.test(TXT), 'tile labels');
-  assert(!/Most played/i.test(TXT), '"Most played" is back');
+H.check('v5 · Best / Toughest: blue dots with a badge in the chart, a word chip on the row, no summary tiles', () => {
+  assert(!/class="pp2-stytile"/.test(HTML), 'summary tiles are back');
+  assert(/>Best<\/span>/.test(HTML) && /title="Toughest outside the elite"/.test(HTML), 'no Best / Toughest (outside the elite) marks');
+  const badges = (HTML.match(/translateY\(-?[\d.]+px\);display:inline-flex;align-items:baseline;gap:6px;background:var\(--pp-x-lifted\)/g) || []).length;
+  assert.strictEqual(badges, 2, badges + ' badges in the chart');
+  const best = HTML.split('class="pp2-styrow').find(r => />Best<\/span>/.test(r.slice(0, 1500)));
+  assert(best && /background:var\(--pp-x-link\)/.test(best), 'the Best row bar is not full blue');
 });
-H.check('tiles · hidden with fewer than 2 rated archetypes', () => {
+H.check('tiles · no marks with fewer than 2 rated archetypes', () => {
   const O = mod('one');
   const h = render(O.I, O.p);
   assert(/Attacking Baseliner/.test(T(h)), 'vacuous: no archetype row');
-  assert(!/pp2-stytile/.test(h) && !/Best match-up/.test(T(h)), 'a tile with one rated archetype');
+  assert(!/>Best<\/span>/.test(h), 'a Best mark with one rated archetype');
 });
 H.check('chart · a stem from his average to each dot; no "dot size = matches" caption (§0.4)', () => {
   const dots = (HTML.match(/class="pp2-stydot/g) || []).length;
@@ -104,8 +111,8 @@ H.check('chart · a stem from his average to each dot; no "dot size = matches" c
   assert.strictEqual(stems, dots, stems + ' stems for ' + dots + ' dots');
   assert(!/dot size = matches/.test(TXT), 'the unit caption is still on the page');
 });
-H.check('table · one header line: Record by archetype … vs his avg (not sortable) · Backing in units (founder 2026-11-14)', () => {
-  assert(/Record by archetype/.test(TXT) && /vs his avg/.test(TXT) && /Backing/.test(TXT), 'heads');
+H.check('table · heads Archetype … vs his avg (not sortable) · Backing in units (founder 2026-11-14)', () => {
+  assert(/ARCHETYPE|Archetype/.test(TXT) && /vs his avg/.test(TXT) && /Backing/.test(TXT), 'heads');
   assert(!/data-pp2="sty-sort" data-v="[^"]*"[^>]*>\s*<span[^>]*>vs his avg/.test(HTML), 'vs his avg is sortable');
   assert(/data-pp2="sty-sort" data-v="u"/.test(HTML), 'Backing is not sortable');
 });
@@ -118,7 +125,7 @@ H.check('table · a thin row (under the floor) dashes win %, the gap and the yie
   assert(/[+−]\d+\.\dpp/.test(TXT), 'no vs his avg figure on a rated row');
 });
 H.check('table · bars neutral unless selected (§0.1); the selected archetype\'s bar is blue', () => {
-  assert(/background:var\(--pp-x-bar-neutral\)/.test(HTML), 'no neutral bar');
+  assert(/background:var\(--pp-x-bar-55\)/.test(HTML), 'no 55% blue resting bar (v5 §0.6)');
   assert(!/background:var\(--bar\)/.test(HTML), 'a value-blue bar');
   const sel = render(E.I, E.p, { fb: { box: 'styles', v: 'Attacking Baseliner' } });
   assert(/background:var\(--pp-x-link\)/.test(sel), 'the selected archetype keeps a neutral bar');
