@@ -2,8 +2,186 @@
  "tournament": "Finals - Turin",
  "tournamentKey": "2794",
  "season": "2026",
- "updatedAt": "2026-11-20T13:48:31.181Z",
+ "updatedAt": "2026-11-20T14:37:46.495Z",
  "items": [
+  {
+   "id": "report-12179697",
+   "type": "report",
+   "playerId": "2382",
+   "opponentId": "372",
+   "player": "C. Alcaraz",
+   "opponent": "F. Cobolli",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "stage": "main draw",
+   "round": "group stage",
+   "eventKey": "12179697",
+   "timestamp": "2026-11-20T14:17:13.400Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-20T14:17:13.400Z",
+    "startedAt": "2026-11-20T13:12:24.970Z",
+    "minutes": 65
+   },
+   "category": "Statistics",
+   "text": "Alcaraz beat Cobolli for the 2nd time in 2 meetings, 6-4, 6-1 in the group stage.\n\nAlcaraz: W: 29 / UE: 14 | DR: 1.97\n\nCobolli: W: 9 / UE: 13 | DR: 0.51",
+   "ms": {
+    "a": "C. Alcaraz",
+    "b": "F. Cobolli",
+    "sets": [
+     [
+      6,
+      4
+     ],
+     [
+      6,
+      1
+     ]
+    ],
+    "rows": [
+     [
+      "Dominance ratio",
+      1.97,
+      0.51,
+      "dr"
+     ],
+     [
+      "1st serve in",
+      73,
+      69,
+      "%"
+     ],
+     [
+      "1st serve points won",
+      84,
+      56,
+      "%"
+     ],
+     [
+      "2nd serve points won",
+      50,
+      39,
+      "%"
+     ],
+     [
+      "Ratio W/UE",
+      2.07,
+      0.69,
+      "2"
+     ],
+     [
+      "Winners / point",
+      0.28,
+      0.09,
+      "2"
+     ],
+     [
+      "Unforced / point",
+      0.14,
+      0.13,
+      "2",
+      1
+     ]
+    ]
+   },
+   "baseText": "Alcaraz beat Cobolli for the 2nd time in 2 meetings, 6-4, 6-1 in the group stage.",
+   "rating": [
+    "Alcaraz: W: 29 / UE: 14 | DR: 1.97",
+    "Cobolli: W: 9 / UE: 13 | DR: 0.51"
+   ],
+   "fields": {
+    "score": "6-4, 6-1",
+    "round": "group stage",
+    "retired": false,
+    "h2h": {
+     "a": 2,
+     "b": 0,
+     "n": 2
+    },
+    "durationMinutes": 65,
+    "facts": {
+     "longestRun": {
+      "side": "p1",
+      "n": 4,
+      "set": 2,
+      "from": {
+       "me": 2,
+       "opp": 1
+      },
+      "afterBeingBroken": false,
+      "toTheEnd": true
+     }
+    },
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "firstWon",
+      "value": 84,
+      "won": 27,
+      "total": 32,
+      "baseline": 74,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 43
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "ret1Won",
+      "value": 44,
+      "won": 18,
+      "total": 41,
+      "baseline": 34,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 43
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "breakPoints",
+      "saved": 0,
+      "faced": 0
+     },
+     {
+      "player": "loser",
+      "tone": "bad",
+      "metric": "secondWon",
+      "value": 39,
+      "won": 7,
+      "total": 18,
+      "baseline": 51,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 38
+     }
+    ],
+    "winner": {
+     "aces": 6,
+     "winners": 29,
+     "unforcedErrors": 14,
+     "breakPointsSaved": 0,
+     "breakPointsFaced": 0,
+     "breakPointsSource": "point-by-point"
+    },
+    "loser": {
+     "aces": 1,
+     "winners": 9,
+     "unforcedErrors": 13,
+     "breakPointsSaved": 5,
+     "breakPointsFaced": 9,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12179697.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "7c984ec86763ec3c",
+   "publishedAt": "2026-11-20T14:37:46.495Z"
+  },
   {
    "id": "digest-1de430ec7f6e90",
    "type": "digest",
