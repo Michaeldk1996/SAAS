@@ -110,7 +110,10 @@ const priceReads = fnBody == null ? ['pinnacleSeries / apiTennisPinnacle not fou
 // the model never reads the bet105 stream or the page's derived line (founder 2026-11-01): no h2h-model file names it
 const modelDir = path.join(ROOT, 'h2h-model');
 const b105Reads = fs.readdirSync(modelDir).filter(f => /\.js$/.test(f) && !/^test-|^\.price-mut-/.test(f))
-  .flatMap(f => fs.readFileSync(path.join(modelDir, f), 'utf8').split('\n').filter(l => /bet105|kibl|EDGE_B105|margin removed/i.test(l) && !/^\s*(\/\/|\*)/.test(l)).map(l => f + ': ' + l.trim()));
+  .flatMap(f => fs.readFileSync(path.join(modelDir, f), 'utf8').split('\n').filter(l => /bet105|kibl|EDGE_B105|margin removed/i.test(l) && !/^\s*(\/\/|\*)/.test(l))
+    // founder 2026-11-20 ("we have bet105 so base yourself on that"): the odds movement layer's lead book is the ONE
+    // allowed Bet105 read (config oddsMovement.lead → chartSeries); the anchor and every price reader stay Bet105-free.
+    .filter(l => !(f === 'config.js' && /^\s*lead: 'Bet105',/.test(l))).map(l => f + ': ' + l.trim()));
 priceReads.push(...b105Reads);
 const staticOk = pipeReads.length === 0 && priceReads.length === 0;
 console.log((staticOk ? '  PASS  ' : '  FAIL  ') + 'no code line in bsp-pipeline.js, or in price.js\'s Pinnacle reader, reads oddsMovement.books.Pinnacle / bestOdds / sharpBooks' + (staticOk ? '' : ' :: ' + pipeReads.concat(priceReads).join(' | ')));
