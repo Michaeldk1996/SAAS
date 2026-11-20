@@ -2,7 +2,7 @@
  "tournament": "Finals - Turin",
  "tournamentKey": "2794",
  "season": "2026",
- "updatedAt": "2026-11-20T16:57:11.067Z",
+ "updatedAt": "2026-11-20T17:16:54.750Z",
  "items": [
   {
    "id": "digest-4abff17ff9d239",
@@ -131,6 +131,54 @@
    "topic": "On supporting his friend Flavio Cobolli",
    "sourceHash": "a93631b58c1ab9e7",
    "publishedAt": "2026-11-20T16:34:14.512Z"
+  },
+  {
+   "id": "digest-4106115495c4bd",
+   "type": "digest",
+   "version": 1,
+   "playerId": "372",
+   "player": "F. Cobolli",
+   "opponentId": "2382",
+   "opponent": "C. Alcaraz",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "eventKey": "12179697",
+   "context": "after losing to C. Alcaraz",
+   "category": "Quotes",
+   "timestamp": "2026-11-20T15:44:16.000Z",
+   "members": [
+    "quote-3a1a611843c844",
+    "quote-6ebfb0d0b5e969"
+   ],
+   "memberHash": "ecb433ba9165b319",
+   "digestedAt": "2026-11-20T16:59:46.633Z",
+   "blocks": [
+    {
+     "label": "on what This tournament means for his career",
+     "text": "This tournament is the icing on the cake of my career.",
+     "from": [
+      "quote-3a1a611843c844"
+     ]
+    },
+    {
+     "label": "on fragility showing on court",
+     "text": "You can be the toughest guy around, but if you're fragile it shows right away.",
+     "from": [
+      "quote-3a1a611843c844"
+     ]
+    },
+    {
+     "label": "on a fellow player's character and talent",
+     "text": "We have, more or less, the same character. He's really silent and calm during the day. He has a great talent and he has a good coach and a good family behind him: a lot of people that love him.",
+     "from": [
+      "quote-6ebfb0d0b5e969"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "28e116be81944fc6",
+   "publishedAt": "2026-11-20T17:16:54.750Z"
   },
   {
    "id": "quote-3a1a611843c844",
@@ -1290,6 +1338,36 @@
    "topic": "On inspiring the next generation of kids",
    "sourceHash": "ef86a96454f3194e",
    "publishedAt": "2026-11-20T13:23:46.864Z"
+  },
+  {
+   "id": "quote-6ebfb0d0b5e969",
+   "type": "quote",
+   "playerId": "372",
+   "opponentId": "2382",
+   "player": "F. Cobolli",
+   "opponent": "C. Alcaraz",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-20T00:00:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after losing to C. Alcaraz",
+   "eventKey": "12179697",
+   "won": false,
+   "text": "We have, more or less, the same character, … He's really silent and calm during the day… He has a great talent and he has a good coach and a good family behind him: a lot of people that love him.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "ATP Tour",
+   "sourceUrl": "https://www.atptour.com/en/news/cina-next-gen-atp-finals-2026-qualification",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
+   "topic": "On a fellow player's character and talent",
+   "sourceHash": "6a7b6b19d5c28999",
+   "publishedAt": "2026-11-20T17:16:54.750Z"
   },
   {
    "id": "quote-a520b291ff9b0e",
