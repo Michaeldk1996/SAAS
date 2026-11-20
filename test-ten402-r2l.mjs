@@ -298,7 +298,8 @@ function withState(I, patch, fn) {
 }
 const PEND = /data-pp2-pending="backing"/g;
 // the Backing column = each list row's last cell
-const backingCells = h => [...h.matchAll(/data-pp2="tourn-row"[\s\S]*?<\/span><\/div>/g)].map(x => { const c = x[0].lastIndexOf('<span'); return x[0].slice(c); });
+// v5 §4 (2026-11-19): the row ends with the blue › — Backing is the cell before it
+const backingCells = h => [...h.matchAll(/data-pp2="tourn-row"[\s\S]*?<\/span><\/div>/g)].map(x => { const r = x[0].slice(0, x[0].lastIndexOf('<span')); const c = r.lastIndexOf('<span'); return r.slice(c); });
 
 test('R2 · until the join lands Record per tournament is a neutral loading state — never 0, never "—"', () => {
   const { I, p } = mod(null);   // trProfileBacking → null: not answered yet

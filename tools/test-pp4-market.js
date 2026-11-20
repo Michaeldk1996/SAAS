@@ -57,20 +57,22 @@ H.check('8.1 no placeholder tour figure: with no tour-baselines file the subline
   return 'dashed without the file, the file\'s own figures with it';
 });
 H.check('8.1 chart: padding 24, one head line (caps title + n matches, total right), "break even" in sentence case, units (founder 2026-11-14)', () => {
-  const h = win(), ch = /<div data-mk-chart[\s\S]*$/.exec(h)[0];
+  const h = win(), ch = /<div data-mk-chart[\s\S]*?(?=<div data-mk-ps )/.exec(h)[0];
   assert(/data-mk-chart style="padding:24px 24px 20px;/.test(h), 'chart padding');
-  assert(/>break even<\/span>/.test(ch) && !/text-transform:uppercase;[^"]*">break even/.test(ch), 'break even caps');
+  // v5 §8 (2026-11-19): caps "Break even" at the zero line's right end; the head is "Cumulative return" 18/800
+  assert(/text-transform:uppercase;[^"]*">Break even<\/span>/.test(ch), 'Break even is not the caps label');
+  assert(/font-size:18px;font-weight:800;[^"]*">Cumulative return</.test(ch), 'the 18/800 head is missing');
   assert(/data-mk-total[^>]*>([+−]\d+\.\du|—)</.test(ch), 'total in units');
   assert(!/RETURN · FLAT|Return · flat/i.test(T(ch)) && !/white-space:nowrap;">[+−]?[\d.]+%<\/span>/.test(ch), 'second caption or a % axis on the chart');
   return 'one head line';
 });
-H.check('8.1 Price sensitivity (LOCKED): one card 22/24/6, two role groups on All, one on a picked role, 58px rows on the locked grid, no Matches column, no total row', () => {
+// v5 §8 (handoff 2026-11-19, replaces the locked 5a bars): the Database band row — odds over band name, a yield line from the
+// centre with a lifted chip, W–L, Win %, blue ›; card 24/24/10, 18/800 title.
+H.check('v5 §8 Price sensitivity: one card 24/24/10, two role groups on All, one on a picked role, 64px Database band rows', () => {
   const h = win(), ps = /<div data-mk-ps [\s\S]*$/.exec(h)[0];
-  assert(/data-mk-ps style="[^"]*border-radius:16px;padding:22px 24px 6px;/.test(h), 'card');
+  assert(/data-mk-ps style="[^"]*border-radius:16px;padding:24px 24px 10px;/.test(h), 'card');
+  assert(/font-size:18px;font-weight:800;[^"]*">Price sensitivity</.test(ps), '18/800 title');
   assert.deepStrictEqual((ps.match(/data-mk-psgroup="(\w+)"/g) || []).map((x) => x.slice(17, -1)), ['fav', 'dog']);
-  // one 58px row per MK_BANDS entry (the band count is not pinned here: the ladder may grow, rows follow MK_BANDS)
-  // founder 2026-11-15: a group is its ROLE (shorter price = favourite); its rows are that role's matches by price band —
-  // every band of its own side, plus any other band the role reaches (a favourite at 2.10 v 2.20), in ladder order
   const ids = (ps.match(/data-mk-band="(\d+)"/g) || []).map((x) => +/(\d+)/.exec(x)[1]);
   for (const g of ['fav', 'dog']) {
     const gi = (ps.match(new RegExp('data-mk-band="(\\d+)" data-mk-role="' + g + '"', 'g')) || []).map((x) => +/(\d+)/.exec(x)[1]);
@@ -78,22 +80,32 @@ H.check('8.1 Price sensitivity (LOCKED): one card 22/24/6, two role groups on Al
     assert(own.every((i) => gi.includes(i)) && gi.every((v, k) => !k || v > gi[k - 1]), g + ' rows: ' + gi.join(','));
   }
   assert(ids.length >= 8, 'band rows ' + ids.length);
-  assert.strictEqual((ps.match(/min-height:58px/g) || []).length, ids.length, '58px band rows');
-  assert((ps.match(/grid-template-columns:minmax\(120px,200px\) 64px 64px minmax\(0,1fr\) 68px;gap:0 20px;/g) || []).length === ids.length + 2, 'locked grid');
-  const heads = (ps.match(/<span[^>]*>(Price|W–L|Win %|Yield vs break even|Yield)<\/span>/g) || []).length;
-  assert.strictEqual(heads, 10, 'heads ' + heads);
-  assert(!/>Matches</.test(ps) && !/>Total</.test(ps), 'a Matches column or a total row');
+  assert.strictEqual((ps.match(/min-height:64px/g) || []).length, ids.length, '64px band rows');
+  assert((ps.match(/grid-template-columns:168px minmax\(0,1fr\) 64px 64px 8px;gap:0 16px;/g) || []).length === ids.length + 2, 'v5 grid');
+  const heads = (ps.match(/<span[^>]*>(Odds|Yield|W–L|Win %)<\/span>/g) || []).length;
+  assert.strictEqual(heads, 8, 'heads ' + heads);
+  assert(!/Yield vs break even/.test(ps), 'the retired locked head is back');
+  assert(/font-size:19px;font-weight:700;line-height:1;/.test(ps), 'the odds are not mono 19/700');
   assert(/margin:0 -24px;padding:26px 24px 0;border-top:1px solid var\(--edge-10\)/.test(ps), 'second group: full-bleed 10% hairline + 26px');
   const fav = win({ mkRole: 'fav' });
   assert.deepStrictEqual((fav.match(/data-mk-psgroup="(\w+)"/g) || []).map((x) => x.slice(17, -1)), ['fav'], 'a picked role draws one group');
-  return 'locked layout';
+  return 'v5 layout';
 });
-H.check('8.1 Price sensitivity: one scale across the bands (max half-width 46%), bars green / red by sign, a thin band dashes', () => {
+H.check('v5 §8 Price sensitivity: the yield line = 14% + min(|y| / 30, 1) × 32% by sign, a chip on its centre; a thin band dashes grey', () => {
   const ps = /<div data-mk-ps [\s\S]*$/.exec(win())[0];
-  const ws = (ps.match(/data-mk-psbar style="[^"]*width:([\d.]+)%/g) || []).map((x) => +/width:([\d.]+)%/.exec(x)[1]);
-  assert(ws.length && Math.max.apply(null, ws) === 46, 'max half-width ' + Math.max.apply(null, ws));
-  (ps.match(/data-mk-psbar style="[^"]*"/g) || []).forEach((b) => assert(/background:var\(--(pos|neg)\)/.test(b), 'bar colour ' + b));
-  return ws.length + ' bars, widest 46%';
+  const bars = ps.match(/data-mk-psbar style="[^"]*"/g) || [];
+  assert(bars.length, 'vacuous: no yield line');
+  let full = 0;
+  bars.forEach((b) => {
+    const w = +/width:([\d.]+)%/.exec(b)[1];
+    if (w === 0) { assert(/background:var\(--text-label\)/.test(b), 'an empty line is not grey ' + b); return; }
+    full++;
+    assert(w >= 14 && w <= 46, 'width outside 14–46%: ' + w);
+    assert(/background:var\(--(pos|neg)\)/.test(b), 'line colour ' + b);
+  });
+  assert(full > 0, 'no signed yield line drawn');
+  assert(/background:var\(--pp-x-lifted\);box-shadow:0 0 0 1px [^;]+;border-radius:9px;padding:0 7px;white-space:nowrap;">[+−]\d+\.\d%</.test(ps), 'no yield chip');
+  return bars.length + ' lines, ' + full + ' signed';
 });
 H.check('8.1 a role under 5 priced matches shows its count and a dash, never a yield', () => {
   let seen = 0;

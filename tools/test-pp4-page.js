@@ -115,7 +115,7 @@ check('Calendar Country: the export\'s search field, filtering in place, with "N
   /search: true, searchPh: 'Type a country…', noHits: 'No country matches'/.test(SRC) && /data-pp4-search/.test(SRC) && /oninput="\(function\(i\)/.test(SRC) || 'country search');
 const tok = fs.readFileSync(path.join(ROOT, 'tokens.css'), 'utf8');
 check('tokens: the v4 profile colours are named once in tokens.css', () =>
-  /--pp-x-bar-neutral:\s*#4A5470/i.test(tok) && /--pp-x-faint:\s*#5B6480/i.test(tok) && /--pp-x-shadow-pop:\s*0 18px 48px rgba\(0, 0, 0, 0\.55\)/.test(tok) || 'tokens');
+  /--pp-x-bar-neutral:\s*rgba\(91, 155, 255, 0\.55\)/.test(tok) && /--pp-x-faint:\s*#5B6480/i.test(tok) && /--pp-x-shadow-pop:\s*0 18px 48px rgba\(0, 0, 0, 0\.55\)/.test(tok) || 'tokens');
 const html = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
 check('host: the profile loads mto-matches.json once per session, a failed read is "no file"', () =>
   /function loadPp2Mto\(key\)/.test(html) && /fetch\('\.\/mto-matches\.json'/.test(html) && /loadPp2Mto\(key\);\n\}/.test(html) || 'loader');

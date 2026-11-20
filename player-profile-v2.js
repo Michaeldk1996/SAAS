@@ -352,7 +352,7 @@
     '.pp2-stydot.pp2-hov,.pp2-stydot:hover{background:var(--link)!important;border-color:var(--link)!important;box-shadow:0 0 0 4px color-mix(in srgb, var(--link) 18%, transparent)!important;z-index:2;}' +
     '.pp2-stycode:hover{color:var(--text)!important;font-weight:700!important;}' +
     '.pp2-stylab.pp2-hov{color:var(--text)!important;}.pp2-stycode.pp2-hov{color:var(--text)!important;font-weight:700!important;}' +
-    '.pp2-mkcard:hover{background:var(--wash-4)!important;}.pp2-mkps:hover{box-shadow:inset 0 0 0 100px var(--wash-4);}.pp2-lchip:hover{filter:brightness(1.35);}.pp2-mkband:hover{background:var(--wash-4)!important;box-shadow:-10px 0 0 var(--wash-4),10px 0 0 var(--wash-4)!important;}.pp2-utab:hover{color:var(--text)!important;}' +
+    '.pp2-mkcard[aria-pressed="false"]:hover{background:var(--pp-x-hover)!important;}.pp2-lchip:hover{filter:brightness(1.35);}.pp2-mkband:hover{background:var(--wash-4)!important;box-shadow:-10px 0 0 var(--wash-4),10px 0 0 var(--wash-4)!important;}.pp2-utab:hover{color:var(--text)!important;}' +
     '.pp2-v5fmrow:hover{background:var(--pp-x-hover)!important;}.pp2-fmrow:hover{background:var(--wash-5)!important;}.pp2-fmtrig:hover{border-color:var(--edge-24)!important;color:var(--text)!important;}' +
     '.pp2-splbox:hover{border-color:var(--edge-16)!important;background:var(--selected)!important;}.pp2-splrow:hover{background:var(--line)!important;}' +   // v4 §6
     '.pp2-calc:hover{filter:brightness(1.6);}' +
@@ -3818,7 +3818,7 @@
     var active = groups.filter(function (g) { return g.cur !== 'all'; });
     var lit = open || active.length;
     var BLUE12 = 'color-mix(in srgb, var(--bar) 12%, transparent)', BLUE35 = 'color-mix(in srgb, var(--bar) 35%, transparent)';
-    var V5 = !!o.v5;
+    var V5 = !!(o.v5 || o.v4 || o.x);   // v5 §0.3: one Filters button for every drawer
     var trig = '<span data-pp2="fm-toggle" data-v="' + esc(id) + '" class="' + (V5 ? 'pp2-v5fm' : 'pp2-fmtrig') + '" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;' +
       (V5 ? 'white-space:nowrap;height:38px;padding:0 12px 0 13px;border-radius:10px;box-sizing:border-box;font-size:13px;font-weight:600;' +
           'color:' + (lit ? 'var(--text)' : 'var(--text-soft)') + ';background:' + (active.length ? 'var(--pp-x-lifted)' : open ? 'var(--selected)' : 'var(--inner)') + ';' +
@@ -3898,8 +3898,8 @@
         active.map(function (g) {
           var x = g.options.filter(function (y) { return y[0] === g.cur; })[0];
           return '<span data-pp2="fm-set" data-g="' + esc(g.key) + '" data-v="all" title="Remove" class="pp2-fmchip" style="cursor:pointer;display:inline-flex;align-items:center;' +
-            'gap:6px;padding:4px 7px 4px 10px;border-radius:7px;background:' + (o.v5 ? 'var(--pp-x-lifted)' : 'color-mix(in srgb, var(--bar) 12%, transparent)') + ';' +
-            'border:1px solid ' + (o.v5 ? EDGE_14 : 'color-mix(in srgb, var(--bar) 35%, transparent)') + ';font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;">' +
+            'gap:6px;padding:4px 7px 4px 10px;border-radius:7px;background:var(--pp-x-lifted);' +
+            'border:1px solid ' + EDGE_14 + ';font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;">' +
             esc((g.chipPrefix || '') + (x ? x[1] : g.cur)) +
             '<svg width="9" height="9" viewBox="0 0 10 10" fill="none" style="pointer-events:none;"><path d="M2 2l6 6M8 2L2 8" stroke="var(--text-soft)" ' +
             'stroke-width="1.4" stroke-linecap="round"></path></svg></span>';
@@ -3968,10 +3968,16 @@
       'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';background:' + (on ? 'var(--selected)' : 'transparent') + ';' +
       'border:1px solid ' + (on ? 'var(--edge-16)' : (offEdge || EDGE_8)) + ';">' + esc(label) + '</span>';
   }
-  function bandPills(hook, items, cur, attrOf, offEdge) {
-    return '<span style="display:flex;gap:8px;flex-wrap:wrap;">' + items.map(function (t) {
-      return bandPill(hook, t[0], t[1], cur === t[0], attrOf ? attrOf(t) : '', offEdge);
-    }).join('') + '</span>';
+  // v5 §0.2 (handoff 2026-11-19): every drawer's pill band is THE switch (a well track); attrOf kept for callers
+  function bandPills(hook, items, cur, attrOf) {
+    return '<span style="display:flex;gap:3px;background:var(--inner);border:1px solid ' + EDGE_8 + ';border-radius:10px;padding:3px;flex:none;">' +
+      items.map(function (t) {
+        var on = cur === t[0];
+        return '<span data-pp2="' + esc(hook) + '" data-v="' + esc(t[0]) + '"' + (attrOf ? attrOf(t) : '') + ' role="button" aria-pressed="' + (on ? 'true' : 'false') + '" class="pp2-v5seg" ' +
+          'style="cursor:pointer;white-space:nowrap;padding:5px 13px;border-radius:7px;font-size:13px;font-weight:' + (on ? 700 : 600) + ';' +
+          'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';background:' + (on ? 'var(--selected)' : 'transparent') + ';' +
+          'border:1px solid ' + (on ? 'var(--edge-16)' : 'transparent') + ';">' + esc(t[1]) + '</span>';
+      }).join('') + '</span>';
   }
   // Profile v5 (handoff 2026-11-19, CHANGES §0.2) · THE switch: a well track (padding 3, gap 3, radius 10); option 5/13,
   // radius 7, 13px 600 grey, no outline; picked 700 white on --selected + 16% ring. Boxes move onto it as v5 lands.
@@ -3985,9 +3991,7 @@
           'border:1px solid ' + (on ? 'var(--edge-16)' : 'transparent') + ';">' + esc(o[1]) + '</span>';
       }).join('') + '</span>';
   }
-  function bandDiv(m) {
-    return '<span style="width:1px;height:18px;background:var(--edge-10);margin:' + (m || '0 6px') + ';flex:none;"></span>';
-  }
+  function bandDiv() { return ''; }   // v5 §0.2: two switches in a row sit side by side, no divider line
   // The band itself. kind: 'joined' (--inner, 5% ring, r12 top, sits on the card it changes), 'joined-card'
   // (Career record · Record: --card, 6% ring, r16 top), 'joined-8' (Career record · Ratings: --inner, 8% ring, r12 top),
   // 'standalone' (--inner, 5% ring, r12, margin-bottom 16), 'standalone-card' (Calendar record: --card, 6% ring, r12).
@@ -4000,10 +4004,10 @@
     // the export's rings are 1.25px (the Ratings band's 8% ring is 1px); a joined band's bottom rule is 1px 6%
     var bw = k === 'joined-8' ? '1px' : '1.25px';
     // v4 §0.2 (handoff 2026-11-14): every drawer's filter band is padded 20px 24px (was 10px 16px).
-    return '<div data-pp2-band="' + k + '" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:20px 24px;' +
+    return '<div data-pp2-band="' + k + '" style="display:flex;align-items:center;gap:12px 10px;flex-wrap:wrap;padding:22px 24px;' +
       'background:' + bg + ';border:' + bw + ' solid ' + ring + ';' +
       (joined ? 'border-bottom:1px solid var(--edge-6);border-radius:' + (k === 'joined-card' ? '16px 16px' : '12px 12px') + ' 0 0;'
-        : 'border-radius:12px;margin-bottom:' + (k === 'standalone-card' ? 16 : 16) + 'px;') + (extra || '') + '">' + inner + '</div>';
+        : 'border-radius:16px;margin-bottom:16px;') + (extra || '') + '">' + inner + '</div>';
   }
   // B1 · the drawer's pages are ONE sliding switch in the header, left of the close button: track --inner + 6% ring,
   // radius 11, padding 3; cells 116 x 34, 13px (600 --text-label off, 700 --text on); thumb --selected + 14% ring,
@@ -8908,7 +8912,7 @@
     var fGroups = groups.map(function (g) { return g.key === 'lcFmt' ? Object.assign({}, g, { cur: fmt === 'bo5' ? 'bo5' : 'all', options: [['all', 'Best of 3'], ['bo5', 'Best of 5']] }) : g; });
     var filterRow = mkBandHtml('<div style="display:flex;align-items:center;gap:8px;min-width:0;">' +
         stySegPills('lc-surf', [['all', 'All surfaces'], ['hard', 'Hard'], ['clay', 'Clay'], ['grass', 'Grass'], ['indoors', 'Indoors']], O.surf) +
-        bandDiv('0 4px') + filtersTriggerHtml('lc', fGroups, d.all, base, null, false, { x: true, noEllipsis: true }) + '</div>',
+        filtersTriggerHtml('lc', fGroups, d.all, base, null, true, { x: true, noEllipsis: true }) + '</div>',
       winSeg('lc-win', O.win, true), filtersAppliedHtml('lc', fGroups, d.all, base, { v4: true, count: true }));
     var pct = function (a, b) { return b ? Math.round(100 * a / b) + '%' : DASH; };
     var poolOf = function (r) { return r === 'all' ? d.pool : d.pool.filter(function (m) { return m.role === r; }); };
@@ -9474,18 +9478,18 @@
       var on = filt === c[0], has = s.n >= MK_FLOOR, ty = TOURY[c[0]], gap = has && ty != null ? s.y - ty : null;
       var pos = gap == null ? 50 : Math.max(4, Math.min(96, 50 + gap * 6));
       return '<div data-pp2="mk-role" data-v="' + c[0] + '" class="pp2-mkcard" aria-pressed="' + (on ? 'true' : 'false') + '" style="cursor:pointer;' +
-        'background:' + (on ? 'var(--selected)' : 'transparent') + ';border-right:' + (i < 2 ? '1px solid var(--edge-6)' : 'none') + ';' +
-        'box-shadow:inset 0 -2px 0 ' + (on ? 'var(--link)' : 'transparent') + ';padding:20px ' + (i === 2 ? '48px' : '24px') + ' 20px 24px;' +
+        'background:' + (on ? 'var(--pp-x-lifted)' : 'transparent') + ';border-right:' + (i < 2 ? '1px solid var(--edge-6)' : 'none') + ';' +
+        'box-shadow:inset 0 -2px 0 ' + (on ? 'var(--pp-x-link)' : 'transparent') + ';padding:20px ' + (i === 2 ? '48px' : '24px') + ' 20px 24px;' +
         'display:flex;flex-direction:column;gap:12px;min-width:0;">' +
         '<span style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;pointer-events:none;">' +
-          '<span style="' + MK_CELL_CAPS + 'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';">' + c[1] + '</span>' +
-          '<span data-mk-meta style="' + M + 'font-size:11px;color:var(--text-label);white-space:nowrap;">' + (s.n ? s.n + (s.n === 1 ? ' match' : ' matches') : 'no matches') + '</span></span>' +
+          '<span style="font-size:13px;font-weight:700;color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';white-space:nowrap;">' + c[1] + '</span>' +
+          '<span data-mk-meta style="' + M + 'font-size:12px;color:var(--text-label);white-space:nowrap;">' + (s.n ? s.n + (s.n === 1 ? ' match' : ' matches') : 'no matches') + '</span></span>' +
         '<span style="display:flex;align-items:baseline;gap:10px;pointer-events:none;">' +
           '<span data-mk-yield style="' + M + 'font-size:26px;font-weight:700;line-height:1;color:' + (has ? 'var(--text)' : 'var(--pp-x-faint)') + ';">' +
             (has ? signed(s.u, 2, 'u') : DASH) + '</span>' +   // founder 2026-11-14: money in units (the gap and the tour stay yields)
-          '<span data-mk-gap style="' + M + 'font-size:12px;font-weight:700;color:' + (gap == null ? 'var(--text-label)' : signColour(gap)) + ';">' +
+          '<span data-mk-gap style="' + M + 'font-size:13px;font-weight:700;color:' + (gap == null ? 'var(--text-label)' : signColour(gap)) + ';">' +
             (gap == null ? '' : signed(gap, 1, 'pp')) + '</span></span>' +
-        '<span style="position:relative;display:block;height:4px;border-radius:2px;background:var(--track);pointer-events:none;">' +
+        '<span style="position:relative;display:block;height:4px;border-radius:2px;background:var(--pp-x-track-7);pointer-events:none;">' +
           '<span style="position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:color-mix(in srgb, var(--text) 18%, transparent);"></span>' +
           '<span data-mk-bar style="position:absolute;top:0;bottom:0;border-radius:2px;left:' + (gap == null || gap >= 0 ? 50 : pos).toFixed(1) + '%;width:' +
             (gap == null ? 0 : Math.abs(pos - 50)).toFixed(1) + '%;background:' + pp4Bar(on) + ';"></span></span>' +
@@ -9507,7 +9511,7 @@
     for (var g = Math.ceil(lo / step) * step; g <= hi; g += step) {
       var gg = Math.round(g * 100) / 100;
       grid += '<span style="position:absolute;right:0;top:' + (Y(gg) / H * 100).toFixed(2) + '%;transform:translateY(-50%);' + M +
-        'font-size:10px;color:var(--text-label);white-space:nowrap;">' + (gg > 0 ? '+' : gg < 0 ? MINUS : '') + Math.abs(gg) + 'u</span>';   // founder 2026-11-14: units
+        'font-size:10.5px;color:var(--text-label);white-space:nowrap;">' + (gg > 0 ? '+' : gg < 0 ? MINUS : '') + Math.abs(gg) + 'u</span>';   // founder 2026-11-14: units
     }
     // x labels: real dates of the matches at even steps through the series (the line is drawn per match)
     var ticks = '';
@@ -9519,20 +9523,20 @@
         var lab = (state.mkWin || 'career') === 'career' ? d.slice(0, 4) : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][parseInt(d.slice(5, 7), 10) - 1] + ' ' + d.slice(2, 4);
         if (lab === lastLab) continue;   // a short series repeats a month: each label once
         lastLab = lab;
-        ticks += '<span style="position:absolute;left:' + (t / k * 100).toFixed(1) + '%;top:5px;transform:translateX(-50%);' + MK_CELL_CAPS + '">' + esc(lab) + '</span>';
+        ticks += '<span style="position:absolute;left:' + (t / k * 100).toFixed(1) + '%;top:7px;transform:translateX(-50%);' + M + 'font-size:11px;color:var(--text-label);white-space:nowrap;">' + esc(lab) + '</span>';
       }
     }
     var roleWord = filt === 'fav' ? 'as favourite' : filt === 'dog' ? 'as underdog' : 'all matches';
     var chart = '<div data-mk-chart style="padding:24px 24px 20px;min-width:0;">' +
       '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap;">' +
-        '<span style="display:inline-flex;align-items:baseline;gap:12px;flex-wrap:wrap;">' +
-          '<span style="' + MK_CAPS + '">Cumulative return ' + MIDDOT + ' ' + roleWord + '</span>' +
-          '<span style="font-size:12px;color:var(--text-label);">' + pool.length + ' matches</span></span>' +
-        '<span data-mk-total style="' + M + 'font-size:22px;font-weight:700;line-height:1;color:' + (pool.length ? signColour(last) : 'var(--pp-x-faint)') + ';">' +
+        '<span style="display:flex;flex-direction:column;gap:5px;min-width:0;">' +
+          '<span style="font-size:18px;font-weight:800;letter-spacing:-0.01em;color:var(--text);">Cumulative return</span>' +
+          '<span style="font-size:13px;color:var(--text-label);">' + roleWord.charAt(0).toUpperCase() + roleWord.slice(1) + ' ' + MIDDOT + ' ' + pool.length + ' matches</span></span>' +
+        '<span data-mk-total style="' + M + 'font-size:26px;font-weight:700;line-height:1;color:' + (pool.length ? signColour(last) : 'var(--text-label)') + ';">' +
           (pool.length ? signed(last, 1, 'u') : DASH) + '</span>' +
       '</div>' +
       (pool.length ? '<div style="display:flex;gap:10px;">' +
-        '<div style="position:relative;width:40px;height:240px;flex:none;">' + grid + '</div>' +
+        '<div style="position:relative;width:46px;height:240px;flex:none;">' + grid + '</div>' +
         '<div style="position:relative;flex:1;height:240px;min-width:0;">' +
           '<span style="position:absolute;left:0;right:0;top:' + (Y(0) / H * 100).toFixed(2) + '%;height:1px;background:color-mix(in srgb, var(--text) 18%, transparent);"></span>' +
           '<svg viewBox="0 0 1000 300" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;display:block;">' +
@@ -9540,10 +9544,10 @@
             '<path d="' + line + '" fill="none" stroke="var(--link)" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path></svg>' +
           '<span style="position:absolute;right:-4px;top:' + (Y(last) / H * 100).toFixed(2) + '%;width:8px;height:8px;margin-top:-4px;border-radius:50%;' +
             'background:var(--link);border:2px solid var(--card);"></span>' +
-          '<span style="position:absolute;right:0;top:' + (Y(0) / H * 100).toFixed(2) + '%;transform:translateY(-130%);font-size:11px;color:var(--text-label);">break even</span>' +
+          '<span style="position:absolute;right:0;top:' + (Y(0) / H * 100).toFixed(2) + '%;transform:translateY(-130%);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">Break even</span>' +
         '</div></div>' +
-        '<div style="display:flex;gap:10px;margin-top:8px;"><span style="width:40px;flex:none;"></span><div style="position:relative;flex:1;height:16px;' +
-          'min-width:0;border-top:1px solid var(--edge-10);">' + ticks + '</div></div>'
+        '<div style="display:flex;gap:10px;margin-top:8px;"><span style="width:46px;flex:none;"></span><div style="position:relative;flex:1;height:18px;' +
+          'min-width:0;border-top:1px solid var(--edge-6);">' + ticks + '</div></div>'
         : '<div style="padding:30px 0;text-align:center;font-size:12.5px;color:var(--text-label);">No priced match in this filter</div>') +
       '</div>';
     return { cards: cards, chart: chart, pool: pool };
@@ -9556,7 +9560,7 @@
   var MK_INFO2 = { what: 'His record and return by how short his own closing price was.', defs: [
     ['Band', 'His own closing price, grouped. A band says how short he was, not whether he was favourite.'],
     ['Win %', 'Wins divided by matches in the band.'],
-    ['Yield', 'Return per unit staked at a flat 1 unit in the band; the bar shows it against break even.'],
+    ['Yield', 'Return per unit staked at a flat 1 unit in the band. The line grows from the centre: right and green above break even, left and red below; the chip states the figure.'],
     ['Under ' + MK_FLOOR, 'Fewer than ' + MK_FLOOR + ' matches: the record is shown and no rate.'],
     ['Click a band', 'Opens the band box: win rate and yield against the tour at the same price, the win rate the market expected, his losses and every match.']] };
   // Price sensitivity · LOCKED (§8.1): per role group a title line (role 17/700 · "W–L · win % won" grey mono · role
@@ -9564,7 +9568,7 @@
   // minmax(120px,200px) 64px 64px minmax(0,1fr) 68px gap 20, an 8px green / red bar on a 4px 5% track around a soft-ink
   // zero tick, one scale across every shown band (max half-width 46%), the second group after a full-bleed 10% hairline
   // + 26px. No total row. A role under MK_FLOOR matches = a dash.
-  var MK_PS_COLS = 'display:grid;grid-template-columns:minmax(120px,200px) 64px 64px minmax(0,1fr) 68px;gap:0 20px;';
+  var MK_PS_COLS = 'display:grid;grid-template-columns:168px minmax(0,1fr) 64px 64px 8px;gap:0 16px;';   // v5 §8
   function mkLadder(pool) {
     var filt = state.mkRole || 'all';
     var stats = MK_BANDS.map(function (B, i) {
@@ -9586,26 +9590,29 @@
       var gstats = statsOf(gpool);
       var gs = mkStat(gpool), ok = gs.n >= MK_FLOOR;
       var rec = !gs.n ? 'no matches' : recordText(gs.w, gs.l) + ' ' + MIDDOT + ' ' + (ok ? gs.win.toFixed(1) + '% won' : 'under ' + MK_FLOOR);
+      // v5 §8 (handoff 2026-11-19) · rows = the Database band row: odds low – high (mono 19/700, the dash 500 grey) over the
+      // band name; a yield line (4px, 7% track) from the centre, green right / red left, width 14% + min(|yield| / 30, 1) × 32%,
+      // with a lifted chip on its centre (grey "—" under the floor); W–L 13 grey · Win % 14/700 white · blue ›.
       var rows = gstats.filter(function (b) { return b.B[0] === key || b.n > 0; }).map(function (b) {
         var thin = b.n < MK_FLOOR, empty = !b.n, on = sel === key + ':' + b.i;
-        var half = thin ? 0 : Math.abs(b.y) / max * 46;
-        return '<div ' + (empty ? '' : 'data-pp2="fb-open" data-box="mkband" data-v="' + key + ':' + b.i + '" ') + 'data-mk-band="' + b.i + '" data-mk-role="' + key + '" class="pp2-mkps" style="' + MK_PS_COLS +
-          'align-items:center;box-sizing:border-box;min-height:58px;margin:0 -24px;padding:8px 24px;cursor:' + (empty ? 'default' : 'pointer') + ';' +
-          'background:' + (on ? 'var(--selected)' : 'transparent') + ';border-top:1px solid var(--line);">' +
-          '<span style="display:flex;flex-direction:column;gap:4px;min-width:0;pointer-events:none;">' +
-            '<span style="' + M + 'font-size:14.5px;font-weight:700;line-height:1.1;color:' + (thin ? 'var(--text-label)' : 'var(--text)') + ';white-space:nowrap;">' + b.B[1] + '</span>' +
-            '<span style="display:flex;align-items:baseline;gap:8px;min-width:0;"><span style="font-size:12px;line-height:1.2;color:var(--text-label);white-space:nowrap;' +
-              'overflow:hidden;text-overflow:ellipsis;">' + b.B[2] + '</span><span style="' + M + 'font-size:9.5px;color:var(--pp-x-ink-muted);white-space:nowrap;">' +
-              (empty || !thin ? '' : 'under ' + MK_FLOOR) + '</span></span></span>' +
-          '<span style="' + M + 'font-size:12px;color:var(--text-soft);text-align:right;pointer-events:none;">' + (empty ? DASH : recordText(b.w, b.l)) + '</span>' +
-          '<span style="' + M + 'font-size:12px;color:var(--text-soft);text-align:right;pointer-events:none;">' + (thin ? DASH : b.win.toFixed(1) + '%') + '</span>' +
-          '<span style="position:relative;display:block;height:20px;pointer-events:none;">' +
-            '<span style="position:absolute;left:0;right:0;top:8px;height:4px;border-radius:2px;background:var(--line);"></span>' +
-            (thin ? '' : '<span data-mk-psbar style="position:absolute;top:6px;height:8px;border-radius:2px;background:' + (b.y >= 0 ? 'var(--pos)' : 'var(--neg)') + ';' +
-              'left:' + (b.y >= 0 ? 50 : 50 - half).toFixed(1) + '%;width:' + half.toFixed(1) + '%;"></span>') +
-            '<span style="position:absolute;left:50%;top:1px;width:1.5px;margin-left:-0.75px;height:18px;background:var(--text-soft);"></span></span>' +
-          '<span style="' + M + 'font-size:14px;font-weight:700;text-align:right;pointer-events:none;color:' + (thin ? 'var(--pp-x-faint)' : (b.y >= 0 ? 'var(--pos)' : 'var(--neg)')) + ';">' +
-            (thin ? DASH : signed(b.y, 1, '%')) + '</span>' +
+        var w = thin || Math.abs(b.y) < 0.005 ? 0 : 14 + Math.min(Math.abs(b.y) / 30, 1) * 32;
+        var chipC = thin ? 'var(--text-label)' : b.y > 0 ? 'var(--pos)' : b.y < 0 ? 'var(--neg)' : 'var(--text-label)';
+        var parts = String(b.B[1]).split(' ' + ENDASH + ' '), lo = parts[0].replace(/\s*\+$/, ''), hi = parts[1] || '';
+        return '<div ' + (empty ? '' : 'data-pp2="fb-open" data-box="mkband" data-v="' + key + ':' + b.i + '" ') + 'data-mk-band="' + b.i + '" data-mk-role="' + key + '" class="pp2-mkps pp2-v5row" ' +
+          (empty ? '' : thin ? 'title="' + esc(b.n + ' matches, under ' + MK_FLOOR + ', too few for a yield') + '" ' : '') + 'style="' + MK_PS_COLS +
+          'align-items:center;box-sizing:border-box;min-height:64px;margin:0 -10px;padding:0 10px;cursor:' + (empty ? 'default' : 'pointer') + ';' +
+          'background:' + (on ? 'var(--pp-x-hover)' : 'transparent') + ';border-radius:' + (on ? 8 : 0) + 'px;border-top:1px solid ' + (on ? 'transparent' : 'var(--edge-6)') + ';">' +
+          '<span style="display:flex;flex-direction:column;gap:6px;min-width:0;pointer-events:none;">' +
+            '<span style="display:flex;align-items:baseline;gap:9px;' + M + 'font-size:19px;font-weight:700;line-height:1;white-space:nowrap;color:var(--text);">' +
+              '<span>' + lo + '</span><span style="font-weight:500;color:var(--text-label);">' + (hi ? ENDASH : '+') + '</span><span>' + hi + '</span></span>' +
+            '<span style="font-size:12px;color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + b.B[2] + '</span></span>' +
+          '<div style="position:relative;height:4px;border-radius:2px;background:var(--pp-x-track-7);pointer-events:none;">' +
+            '<span data-mk-psbar style="position:absolute;top:0;height:4px;border-radius:2px;left:' + (b.y >= 0 ? 50 : 50 - w).toFixed(1) + '%;width:' + w.toFixed(1) + '%;background:' + chipC + ';"></span>' +
+            '<span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);' + M + 'font-size:11px;font-weight:700;line-height:18px;color:' + chipC + ';' +
+              'background:var(--pp-x-lifted);box-shadow:0 0 0 1px ' + EDGE_14 + ';border-radius:9px;padding:0 7px;white-space:nowrap;">' + (thin ? DASH : signed(b.y, 1, '%')) + '</span></div>' +
+          '<span style="' + M + 'font-size:13px;color:var(--text-label);text-align:right;white-space:nowrap;pointer-events:none;">' + (empty ? DASH : recordText(b.w, b.l)) + '</span>' +
+          '<span style="' + M + 'font-size:14px;font-weight:700;color:var(--text);text-align:right;pointer-events:none;">' + (thin ? DASH : b.win.toFixed(1) + '%') + '</span>' +
+          '<span style="color:' + (empty ? 'transparent' : 'var(--pp-x-link)') + ';font-size:14px;font-weight:700;pointer-events:none;">›</span>' +
           '</div>';
       }).join('');
       return '<div data-mk-psgroup="' + key + '" style="display:flex;flex-direction:column;min-width:0;margin:0 -24px;padding:' + (gi ? '26px' : '0') + ' 24px 0;' +
@@ -9613,16 +9620,15 @@
         '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;">' +
           '<span style="font-size:17px;font-weight:700;letter-spacing:-0.01em;color:var(--text);">' + (key === 'fav' ? 'As favourite' : 'As underdog') + '</span>' +
           '<span style="display:flex;align-items:baseline;gap:14px;"><span style="' + M + 'font-size:12px;color:var(--text-label);white-space:nowrap;">' + rec + '</span>' +
-            '<span data-mk-pssum style="' + M + 'font-size:17px;font-weight:700;color:' + (!ok ? 'var(--pp-x-faint)' : (gs.y >= 0 ? 'var(--pos)' : 'var(--neg)')) + ';">' +
+            '<span data-mk-pssum style="' + M + 'font-size:17px;font-weight:700;color:' + (!ok ? 'var(--text-label)' : (gs.y >= 0 ? 'var(--pos)' : 'var(--neg)')) + ';">' +
               (ok ? signed(gs.y, 1, '%') : DASH) + '</span></span></div>' +
-        '<div style="' + MK_PS_COLS + 'align-items:baseline;padding:18px 0 12px;' + MK_CELL_CAPS + 'color:var(--pp-x-ink-muted);">' +
-          '<span>Price</span><span style="text-align:right;">W' + ENDASH + 'L</span><span style="text-align:right;">Win %</span>' +
-          '<span style="text-align:center;overflow:hidden;text-overflow:ellipsis;">Yield vs break even</span><span style="text-align:right;">Yield</span></div>' +
+        '<div style="' + MK_PS_COLS + 'align-items:end;padding:18px 0 10px;' + MK_CELL_CAPS + 'color:var(--text-label);white-space:nowrap;">' +
+          '<span>Odds</span><span style="text-align:center;">Yield</span><span style="text-align:right;">W' + ENDASH + 'L</span><span style="text-align:right;">Win %</span><span></span></div>' +
         rows + '</div>';
     }).join('');
-    return '<div data-mk-ps style="position:relative;min-width:0;background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;padding:22px 24px 6px;">' +
-      '<div style="padding-bottom:22px;' + MK_CAPS + '">Price sensitivity</div>' +
-      mkInfoAt('mk2', MK_INFO2, 18, 20) + groups + '</div>';
+    return '<div data-mk-ps style="position:relative;min-width:0;background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;padding:24px 24px 10px;">' +
+      '<div style="padding-bottom:20px;font-size:18px;font-weight:800;letter-spacing:-0.01em;color:var(--text);">Price sensitivity</div>' +
+      mkInfoAt('mk2', MK_INFO2, 26, 24) + groups + '</div>';
   }
   function mkFiltered(p, mk) {
     return mkBase(mk).filter(function (m) { return mkFilterOk(m); });
@@ -9634,10 +9640,9 @@
     var base = mkBase(mk), scoped = mkFiltered(p, mk);
     var lvl = state.mkLvl || 'all';
     var bandL = '<div style="display:flex;align-items:center;gap:8px;min-width:0;">' + stySegPills('mk-surf', STY_SURFS, state.mkSurf || 'all', 'var(--edge-6)') +
-        bandDiv('0 4px') + filtersTriggerHtml('mk', groups, scoped.length, base.length, null, false, { x: true, noEllipsis: true }) + '</div>';
+        filtersTriggerHtml('mk', groups, scoped.length, base.length, null, true, { x: true, noEllipsis: true }) + '</div>';
     // the reference draws Match winner's off pills (surfaces and window) on a 6% ring; Derived lines keeps the 8% one
-    var bandR = '<span style="display:flex;gap:8px;flex:none;">' + [['l52', 'Last 52 weeks'], ['l24', 'Last 24 months'], ['career', 'Career']].map(function (o) {
-      return bandPill('mk-win', o[0], o[1], (state.mkWin || 'career') === o[0], '', 'var(--edge-6)'); }).join('') + '</span>';
+    var bandR = v5Seg('mk-win', [['l52', 'Last 52 weeks'], ['l24', 'Last 24 months'], ['career', 'Career']], state.mkWin || 'career');
     var appliedMk = filtersAppliedHtml('mk', groups, scoped.length, base.length, { v4: true, count: true });
     if (lvl === 'Challenger' || lvl === 'ITF') {
       return mkBandHtml(bandL, bandR, appliedMk, 'standalone-card') + renderLevelRecords(p, lvl === 'Challenger' ? 'ch' : 'itf');
@@ -9645,7 +9650,7 @@
     var cc = mkCardsAndChart(scoped);
     return '<div data-mk-v4 style="display:flex;flex-direction:column;gap:16px;">' +
       '<div style="display:flex;flex-direction:column;">' + mkBandHtml(bandL, bandR, appliedMk) +
-        '<div style="position:relative;background:var(--card);border:1.25px solid var(--edge-6);border-top:0;border-radius:0 0 16px 16px;min-width:0;">' +
+        '<div style="position:relative;background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;min-width:0;">' +
           mkInfoAt('mk1', MK_INFO1, 18, 20) +
           '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid var(--edge-6);">' +
             cc.cards + '</div>' + cc.chart +
@@ -13431,19 +13436,15 @@
     var TW = data.reduce(function (s, d) { return s + d.w; }, 0), TN = data.reduce(function (s, d) { return s + d.n; }, 0);
     return { data: data, TW: TW, TN: TN, avg: TN ? 100 * TW / TN : null };
   }
-  function stySegPills(hook, opts, cur, offEdge) {   // v3 B2 · band pills (Market edge draws its surfaces on a 6% ring)
-    return opts.map(function (o) { return bandPill(hook, o[0], o[1], cur === o[0], '', offEdge); }).join('');
-  }
-  function winSeg(hook, cur, withL24) {   // v3 B2 · the window as pills, no track
-    var opts = withL24 ? [['l52', 'Last 52 weeks'], ['l24', 'Last 24 months'], ['career', 'Career']] : [['l52', 'Last 52 weeks'], ['career', 'Career']];
-    return '<span style="display:flex;gap:8px;flex:none;">' + opts.map(function (o) { return bandPill(hook, o[0], o[1], cur === o[0]); }).join('') + '</span>';
+  function stySegPills(hook, opts, cur) { return v5Seg(hook, opts, cur); }   // v5 §0.2 · the one switch
+  function winSeg(hook, cur, withL24) {   // v5 §0.2 · the one switch
+    return v5Seg(hook, withL24 ? [['l52', 'Last 52 weeks'], ['l24', 'Last 24 months'], ['career', 'Career']] : [['l52', 'Last 52 weeks'], ['career', 'Career']], cur);
   }
   // v3 B2 · the joined band of Market edge (both pages): surfaces · divider · Filters left, window right, Applied inside.
   // v4 §8 · the band is joined to the card it changes: --card, 1.25px 6% ring, radius 16 16 0 0, padding 20/24, gap 14 to
   // the Applied row (the reference's `modal.isMarket` / `modal.linesOn` band).
-  function mkBandHtml(left, right, applied, kind) {
-    return bandBox('<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;">' + left + right + '</div>' +
-      (applied ? applied.replace('margin:-6px 0 16px;', 'margin:0;') : ''), kind || 'joined-card', 'flex-direction:column;align-items:stretch;gap:14px;');
+  function mkBandHtml(left, right, applied) {
+    return bandBox(right + left.replace('<div style="display:flex;align-items:center;gap:8px;min-width:0;">', '<div style="display:contents;">'), 'standalone-card') + (applied || '');
   }
   var JOIN_TOP = 'border-top:0;border-radius:0 0 12px 12px;';
   // v4 §7 · the styles drawer's colours. Every value is a token or a token mix (no raw colour):

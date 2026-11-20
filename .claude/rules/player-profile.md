@@ -514,3 +514,20 @@ Supersedes the v3 values it restates. Reference = `Player Stat Boxes.dc.html` / 
   **Test:** `tools/test-pp4-speed.js` 4.
 - **Match-up record:** Window = Last 52 weeks · Last 24 months · Career. A dot turns blue on hover by CSS (thin dots
   too); gridlines, the average label, group dividers and brackets never catch the pointer. **Test:** `tools/test-pp5-r1.js` sty.
+- **Round 2 (2026-11-20, v5 CHANGES §0, §4, §6, §7, §8, §12):**
+  - **Shared pieces:** every drawer's pill band is the one well switch (`bandPills` / `v5Seg` / `winSeg`), no divider
+    between two switches; filter bands are radius-16 cards padded 22/24; every Filters button, popover and Applied chip is
+    the v5 one (lifted, never blue). Resting bars are 55% blue (`--pp-x-bar-neutral`), hover is `#171B28`
+    (`--pp-x-tile-hover`, `--pp-x-hover`). **Test:** `tools/test-pp4-page.js` (tokens), `tools/test-pp4-market.js`.
+  - **Match-up record:** one card (dot chart over table), Best / Toughest as blue dots with a lifted badge and a word chip on
+    the row (no summary tiles), the scope in the "?" as a lifted chip; a second page **Playing styles** = the tour grid from
+    the Playing Styles page's own model (`psStylesModel`), embedded. Money stays in units (founder 2026-11-14 "use units";
+    the export prints a yield % here). **Test:** `tools/test-pp4-styles.js`, `tools/test-pp2-reconcile.js`.
+  - **Playing Styles left the rail** (v5 §12): 13 rail items; the page still exists and opens from player links.
+    **Test:** `test-ten242-rulings.mjs` 1.1, `test-ten286-layout.mjs` C.
+  - **Record per tournament:** "Tournaments" filter card (Level, Surface, search well), rows with the event's logo
+    (`tournament-logos/index.json` by the Tournaments registry key; the mono code when no file), a row opens the
+    **history box** (fixed overlay: 60px logo tile, name 24/800, record chip, five tiles, the editions).
+  - **Market edge:** its own filter card (Window, Surface, Filters right), role strip labels 13/700 sentence case (picked =
+    lifted + blue underline), "Cumulative return" 18/800; **Price sensitivity rows = the Database band row** (odds over band
+    name, a yield line from the centre 14% + min(|y| / 30, 1) × 32% with a lifted chip). **Test:** `tools/test-pp4-market.js`.
