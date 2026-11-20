@@ -531,3 +531,20 @@ Supersedes the v3 values it restates. Reference = `Player Stat Boxes.dc.html` / 
   - **Market edge:** its own filter card (Window, Surface, Filters right), role strip labels 13/700 sentence case (picked =
     lifted + blue underline), "Cumulative return" 18/800; **Price sensitivity rows = the Database band row** (odds over band
     name, a yield line from the centre 14% + min(|y| / 30, 1) × 32% with a lifted chip). **Test:** `tools/test-pp4-market.js`.
+- **Round 3 (2026-11-20, v5 CHANGES §0.9, §1 Ratings, §2, §5, §9, §10, §11.2):**
+  - **Row box** (Level & round, Match-up, Price sensitivity, Derived lines): four centred v5 tiles (sentence-case label,
+    figure 20 mono, signed figures green / red), then the match list. **Level & round** = the v5 head card, section cards
+    and the scope in the "?" chip.
+  - **Calendar record:** separate tiles; one grid for Swing and Month (`128px`, n columns, `72px`); a cell's tint grows with
+    its W–L margin; Month view columns are the twelve month codes (JAN … DEC), no Surface row; heads 18/800.
+  - **Streaks:** one card, three sections (Runs · Run timeline · What follows a run), each a 18/800 title over a 13 grey
+    line, sections 2–3 under a 6% hairline; ladders are tiles with 4px bars; tooltip and "Scroll for earlier years" lifted.
+  - **Career record · Ratings:** DNA panel and the Serve / Return / Under pressure groups are section cards (no well);
+    group titles stay centred caps; DNA head 18/800 + "Centre is the lowest ATP player, the edge the highest".
+  - **Derived lines:** head "Cover rate by line" 18/800 + 13 grey meta, family titles 14/700, row labels 11.5/600 sentence
+    case; the right panel has no wash (26 mono rate, 4px bar, 13/700 facts, lifted button). The vs Field colouring keeps the
+    founder's one-green-one-red rule (2026-10-24), not §0.7's "every signed figure".
+  - **Live trading:** v5 filter card (well switches, Filters button / popover / chips lifted); three tiles auto-fit 240
+    with a blue ›; Record by situation 18/800, group chevrons blue, rows 13.5/600. **Vs his norm and Vs tour are both 13
+    mono 700, green / red by sign on every row, small samples included** (v5 §0.7; was 12/400 grey under 10). Grey only at
+    an exact zero.

@@ -1854,18 +1854,16 @@ check('profile v2 · By swing states its priced count over the matches it shows'
   const t = TXT(I.renderSeasonModal(CAL_P));
   assert(t.includes(`${CAL_EXPECT.priced} of ${CAL_EXPECT.grid} matches · flat 1u`), 'the priced count is not stated: ' + (/BY SWING.{0,80}/i.exec(t) || [''])[0]);
 }));
-check('items 13 + 12 · empty months are a middot, and the tint is the file\'s flat 0.10', () => withCal(() => {
+check('items 13 + 12 · empty months are a middot; v5 §2 (2026-11-20): the tint grows with the W–L margin', () => withCal(() => {
   I.state.calTab = 'calendar'; I.state.calSurface = 'all'; I.state.calCell = null;
   const html = I.renderSeasonModal(CAL_P);
-  // TEN-376 Foundation: the flat 0.10 tints are the --pos / --neg tokens at 10%.
-  assert(html.includes('color-mix(in srgb, var(--pos) 10%, transparent)'), 'the win tint is not the file\'s flat 0.10');
-  assert(html.includes('color-mix(in srgb, var(--neg) 10%, transparent)'), 'the loss tint is not the file\'s flat 0.10');
-  // The ramped alpha cal-0 drew (0.10 + 0.32 * ...) produced fractional
-  // percentages. If one reappears the tint went back to a gradient.
-  assert(!/color-mix\(in srgb, var\(--pos\) \d+\.\d+%/.test(html), 'a ramped green alpha is back in the grid');
-  assert(!/color-mix\(in srgb, var\(--neg\) \d+\.\d+%/.test(html), 'a ramped red alpha is back in the grid');
+  // v5 CHANGES §2: alpha = 0.05 + 0.42 × |W − L| / (W + L + 2), green when W > L, red when W < L, none when level
+  const want = (w, l) => (5 + 42 * Math.abs(w - l) / (w + l + 2)).toFixed(1);
+  assert(html.includes('color-mix(in srgb, var(--pos) ' + want(8, 4) + '%, transparent)'), 'the 8–4 cell is not tinted ' + want(8, 4) + '% green');
+  assert(/color-mix\(in srgb, var\(--neg\) \d+\.\d%, transparent\)/.test(html), 'no losing cell is tinted red');
+  assert(!/color-mix\(in srgb, var\(--pos\) 10%, transparent\)/.test(html), 'the v4 flat 0.10 tint is back');
   assert(html.includes('>·</span>'), 'an empty month does not render the file\'s middot');
-  console.log('        flat 0.10 tints, no ramp, empty months render ·');
+  console.log('        graded tints (8–4 = ' + want(8, 4) + '%), empty months render ·');
 }));
 
 // profile v2 (founder 2026-11-09): the Calendar record is the export's swing grid + Streaks.
@@ -1927,11 +1925,12 @@ check('profile v2 · By swing carries every row the export draws', () => withCal
   ['Vs other swings', 'Win rate', 'Priced matches', 'Yield', 'Vs others', 'Winning seasons'].forEach((r) => assert(new RegExp('>' + r + '<').test(html), `the ${r} row is missing`));
   assert(!/>Surface<\/span>/.test(html.slice(html.indexOf('Vs other swings'))) && !/>Swing<\/span>/.test(html.slice(html.indexOf('Vs other swings'))), 'the Swing view kept its own Surface / Swing rows');
   assert(/>not in yield</.test(html), 'Team / other is not marked out of the yield');
-  // Month view keeps them
+  // v5 §2: the Month view is a By month table on the same grid — twelve month codes, no Surface row
   I.state.calView = 'month';
   const hm = I.renderSeasonModal(CAL_P);
   I.state.calView = 'swing';
-  ['Surface', 'Swing'].forEach((r) => assert(new RegExp('>' + r + '</span>').test(hm.slice(hm.indexOf('Vs other swings'))), `the Month view lost its ${r} row`));
+  ['JAN', 'JUN', 'DEC'].forEach((r) => assert(new RegExp('>' + r + '<').test(hm), `the Month view has no ${r} column`));
+  assert(!/>Surface<\/span>/.test(hm.slice(hm.indexOf('Vs other'))), 'the Month view kept a Surface row');
 }));
 // ── item 20 · the event display name ────────────────────────────────────────
 // Found by the CDP read-back, not by this file: the name vote keyed on

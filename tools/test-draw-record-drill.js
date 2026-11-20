@@ -390,7 +390,7 @@ const cellsOf = (h, label) => {
   return { row, cells: (row.match(/text-align:right;white-space:nowrap;">([^<]*)</g) || []).map(x => x.replace(/^.*">/, '').replace(/<$/, '')) };
 };
 const boxesOf = h => (h.match(/data-pp2-splbox="[^"]+"/g) || []).map(x => x.slice(17, -1));
-H.check('F1 · v4 structure: 1180 drawer, band 20/24, boxes (4 · 4 · 3), four blocks in two columns, 36px rows, the export\'s column heads', () => {
+H.check('F1 · v5 structure (2026-11-20): 1180 drawer, head card 22/24, boxes (4 · 4 · 3), four blocks in two columns, 44px rows, the export\'s column heads', () => {
   const { I } = load();
   assert.strictEqual(I.MODAL_WIDTH.splits, 1180, 'drawer width');
   const want = { results: ['Strongest level', 'Weakest level', 'Best round', 'vs Top 10'], sets: ['Tiebreaks', 'Sets won', 'Strongest situation', 'Weakest situation'],
@@ -400,12 +400,12 @@ H.check('F1 · v4 structure: 1180 drawer, band 20/24, boxes (4 · 4 · 3), four 
   Object.keys(want).forEach(v => {
     I.state.splView = v;
     const h = I.renderSplitsModal(P);
-    assert(/data-pp2-band="standalone" style="[^"]*padding:20px 24px;/.test(h), 'band padding ' + v);
+    assert(/data-pp2-band="v5" style="[^"]*padding:22px 24px;/.test(h), 'head card padding ' + v);
     assert.deepStrictEqual(boxesOf(h), want[v], 'boxes ' + v);
     assert.strictEqual((h.match(/data-pp2-splsec=/g) || []).length, 4, 'four blocks ' + v);
     assert(/grid-template-columns:repeat\(2,minmax\(0,1fr\)\);gap:12px;/.test(h), '2-column grid ' + v);
     assert(T(h).includes(heads[v]), 'column heads ' + v);
-    assert(/class="pp2-splrow" style="[^"]*min-height:36px;/.test(h), '36px rows ' + v);
+    assert(/class="pp2-splrow pp2-v5row" style="[^"]*min-height:44px;/.test(h), '44px rows ' + v);
   });
   I.state.splView = 'results';
 });
@@ -429,23 +429,25 @@ H.check('F3 · the tour figure = Σ wins ÷ Σ matches of every tracked player i
   ['Round 1', 'ATP 250', 'vs Top 20', 'Over 3.5 sets', 'Tiebreak record'].forEach(r => assert.strictEqual(cellsOf(h, r).cells[3], '—', r));
   // the boxes: largest gap among rows with ≥ MINB matches and a tour figure
   const t = T(h);
-  assert(/Strongest level\s+Matches ›\s+Masters 1000/.test(t) && /Weakest level\s+Matches ›\s+Grand Slams/.test(t), t.slice(0, 400));
-  assert(/Best round\s+Matches ›\s+Quarter-finals/.test(t) && /tour 50\.0%/.test(t) && /tour 30\.0%/.test(t), 'best round / vs Top 10 tour');
+  // v5 §0.8: the blue › alone, no "Matches ›" text
+  assert(/Strongest level\s+›\s+Masters 1000/.test(t) && /Weakest level\s+›\s+Grand Slams/.test(t), t.slice(0, 400));
+  assert(/Best round\s+›\s+Quarter-finals/.test(t) && /tour 50\.0%/.test(t) && /tour 30\.0%/.test(t), 'best round / vs Top 10 tour');
   m.I.state.splitScope = 'last52';
   const h2 = m.I.renderSplitsModal(P);
   assert.strictEqual(cellsOf(h2, 'Masters 1000').cells[3], '—', 'last 52 reads the last52 pool only');
   m.I.state.splitScope = 'career';
 });
-H.check('F4 · vs tour is coloured bold, grey under MINB (' + 15 + '); vs his avg is grey 11px regular', () => {
+H.check('F4 · v5 §0.7: vs tour and vs his avg are 13 mono 700, green / red by sign, small samples included', () => {
   const m = load(); m.W.careerSplitsTour = { pooled: { a: { last52: { 'Finals': { M: 100, W: 50 }, 'Grand Slams': { M: 100, W: 50 } } } } };
   m.I.state.splitScope = 'last52';
   const h = m.I.renderSplitsModal(P), S = m.I.splModel(P);
   const fin = S.groups['By round'].find(x => x.label === 'Finals').s, gs = S.groups.Level.find(x => x.label === 'Grand Slams').s;
   assert(fin.n >= 5 && fin.n < 15 && gs.n >= 15, 'fixture: Finals ' + fin.n + ', Grand Slams ' + gs.n);
-  const tc = r => { const row = cellsOf(h, r).row; return /font-size:12\.5px;font-weight:700;color:([^;]+);/.exec(row.slice(row.lastIndexOf('<span')))[1]; };
-  assert.strictEqual(tc('Finals'), 'var(--text-label)', 'Finals ' + fin.n + ' matches: grey');
-  assert(/var\(--(pos|neg)\)/.test(tc('Grand Slams')), 'Grand Slams coloured');
-  assert(/font-size:11px;color:var\(--text-label\);text-align:right;white-space:nowrap;">[+−]?\d/.test(cellsOf(h, 'Grand Slams').row), 'vs his avg grey 11px');
+  const cellsCol = r => { const row = cellsOf(h, r).row, sp = row.split('<span').filter(x => /text-align:right;white-space:nowrap;">[+−]\d/.test(x));
+    return sp.map(x => /font-size:13px;font-weight:700;color:([^;]+);/.exec(x)[1]); };
+  cellsCol('Finals').forEach(c => assert(/var\(--(pos|neg)\)/.test(c), 'Finals ' + fin.n + ' matches: signed colour, not grey (' + c + ')'));
+  const gsC = cellsCol('Grand Slams');
+  assert(gsC.length === 2 && gsC.every(c => /var\(--(pos|neg)\)/.test(c)), 'Grand Slams: vs his avg and vs tour coloured (' + gsC + ')');
   m.I.state.splitScope = 'career';
 });
 H.check('F5 · a zero-match row shows dashes, a grey label, and opens nothing', () => {

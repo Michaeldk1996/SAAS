@@ -354,7 +354,7 @@
     '.pp2-stylab.pp2-hov{color:var(--text)!important;}.pp2-stycode.pp2-hov{color:var(--text)!important;font-weight:700!important;}' +
     '.pp2-mkcard[aria-pressed="false"]:hover{background:var(--pp-x-hover)!important;}.pp2-lchip:hover{filter:brightness(1.35);}.pp2-mkband:hover{background:var(--wash-4)!important;box-shadow:-10px 0 0 var(--wash-4),10px 0 0 var(--wash-4)!important;}.pp2-utab:hover{color:var(--text)!important;}' +
     '.pp2-v5fmrow:hover{background:var(--pp-x-hover)!important;}.pp2-fmrow:hover{background:var(--wash-5)!important;}.pp2-fmtrig:hover{border-color:var(--edge-24)!important;color:var(--text)!important;}' +
-    '.pp2-splbox:hover{border-color:var(--edge-16)!important;background:var(--selected)!important;}.pp2-splrow:hover{background:var(--line)!important;}' +   // v4 §6
+    '.pp2-splbox[data-pp2]:hover{border-color:color-mix(in srgb, var(--text) 22%, transparent)!important;background:var(--pp-x-hover)!important;}' +   // v4 §6
     '.pp2-calc:hover{filter:brightness(1.6);}' +
     '.pp2-tlink:hover{text-decoration-color:color-mix(in srgb, var(--text) 45%, transparent)!important;}' +
     // §5.3 item 7 — the file gives the tournament row a hover fill
@@ -3730,8 +3730,15 @@
     // fb.tileRing (additive, v4 §7 Match-up record): tiles on the card ring (1.25px 6%, radius 12) and the tail line wraps.
     // fb.lineNormal (additive): the card's line-height is the reference's `normal` (rows 32px), not the page's 1.5.
     var tRing = !!fb.tileRing;
-    var tiles = (fb.tiles || []).map(function (t) {
-      return '<div style="background:var(--card);border:' + (tRing ? '1.25px' : '1px') + ' solid var(--edge-6);border-radius:' + (tRing ? 12 : 10) + 'px;padding:11px 14px 12px;' +
+    var tiles = fb.v5 ? (fb.tiles || []).map(function (t) {
+      return '<div style="background:var(--card);border:1.25px solid var(--pp-x-edge-9);border-radius:11px;padding:14px 12px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;min-width:0;">' +
+        '<span style="font-size:11.5px;font-weight:600;color:var(--text-label);max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(t.label) + '</span>' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:20px;font-weight:700;line-height:1.1;color:' + (t.figColor || 'var(--text)') + ';">' + (t.fig == null ? DASH : t.fig) + '</span>' +
+        '<span style="font-size:11.5px;color:var(--text-label);max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (t.sub || '&nbsp;') + '</span>' +
+        (t.tail ? '<span style="font-size:11.5px;font-weight:600;color:' + (t.tailColor || 'var(--text-label)') + ';line-height:1.4;text-wrap:balance;">' + t.tail + '</span>' : '') +
+        '</div>';
+    }).join('') : (fb.tiles || []).map(function (t) {
+      return '<div style="background:' + (tRing ? 'var(--card)' : 'var(--pp-x-track)') + ';border:' + (tRing ? '1.25px' : '1px') + ' solid var(--edge-6);border-radius:' + (tRing ? 12 : 10) + 'px;padding:11px 14px 12px;' +
         'display:flex;flex-direction:column;gap:6px;min-width:0;">' +
         '<span style="font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;' +
           'color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(t.label) + '</span>' +
@@ -3767,11 +3774,11 @@
           '<div style="display:grid;grid-template-columns:' + fb.cols + ';gap:0 10px;align-items:start;">' + head + rows + '</div></div>'
       : '<div style="padding:18px 0;font-size:12.5px;color:var(--text-label);">' + esc(fb.empty || 'No matches on record') + '</div>';
     return '<div class="pp2-fb" data-pp2="fb-scrim" style="position:fixed;inset:0 0 0 var(--sf-side, 0px);z-index:64;' +
-      'background:color-mix(in srgb, var(--page) 72%, transparent);display:flex;align-items:flex-start;justify-content:center;' +
+      'background:var(--pp-x-backdrop);display:flex;align-items:flex-start;justify-content:center;' +
       'padding:40px 24px;overflow-y:auto;clip-path:inset(0);">' +
       '<div data-pp2="card" style="position:relative;width:100%;max-width:900px;max-height:calc(100vh - 80px);overflow-y:auto;' +
         'background:var(--card);border:1px solid var(--edge-16);border-radius:14px;padding:20px 22px 22px;min-width:0;' +
-        'box-shadow:var(--shadow-modal);box-sizing:border-box;' + (fb.lineNormal ? 'line-height:normal;' : '') + '">' +
+        'box-shadow:var(--pp-x-shadow-box);box-sizing:border-box;' + (fb.lineNormal ? 'line-height:normal;' : '') + '">' +
         '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px;">' +
           '<div style="display:flex;flex-direction:column;gap:4px;min-width:0;">' +
             '<span style="display:inline-flex;align-items:baseline;gap:8px;">' +
@@ -3785,7 +3792,7 @@
             'align-items:center;justify-content:center;box-sizing:border-box;"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" ' +
             'style="pointer-events:none;"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg></span>' +
         '</div>' +
-        (tiles ? '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:14px;">' + tiles + '</div>' : '') +
+        (tiles ? '<div style="display:grid;grid-template-columns:' + (fb.v5 ? 'repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-bottom:16px;' : 'repeat(4,minmax(0,1fr));gap:8px;margin-bottom:14px;') + '">' + tiles + '</div>' : '') +
         // fb.foot (additive, v4 §8.1 band box): one grey line under the tiles saying what the tour figure is
         (fb.foot ? '<div data-pp2-fbfoot="1" style="font-size:11.5px;color:var(--text-label);line-height:1.5;margin:-6px 0 12px;">' + esc(fb.foot) + '</div>' : '') +
         pills + list +
@@ -5357,7 +5364,7 @@
     var has = v != null && isFinite(v);
     var dp = spec.dp, unit = spec.unit || '';
     var d = dnaDeltaParts(has ? dnaDelta(v, avg, dp) : null, dp, spec.lower);
-    return '<div data-pp2-dnabox="' + esc(spec.f) + '" style="background:var(--card);border:1px solid var(--edge-6);border-radius:10px;' +
+    return '<div data-pp2-dnabox="' + esc(spec.f) + '" style="background:var(--card);border:1px solid var(--pp-x-edge-9);border-radius:11px;' +
       'padding:14px 12px;display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0;">' +
       '<div style="display:flex;align-items:baseline;justify-content:center;gap:8px;">' +
         '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:21px;font-weight:700;color:' + (has ? 'var(--text)' : DNA_FAINT) + ';">' +
@@ -5372,8 +5379,8 @@
   }
   // A group frame: --inner + 8% ring, r12, padding 14 16 16, centred caps heading in soft ink (margin-bottom 12).
   function dnaGroupFrame(label, boxes, cols, span) {
-    return '<div style="' + (span ? 'grid-column:1/-1;' : 'display:flex;flex-direction:column;') + 'background:var(--inner);' +
-      'border:1px solid ' + EDGE_8 + ';border-radius:12px;padding:14px 16px 16px;min-width:0;">' +
+    return '<div style="' + (span ? 'grid-column:1/-1;' : 'display:flex;flex-direction:column;') + 'background:var(--card);' +
+      'border:1.25px solid var(--edge-6);border-radius:16px;padding:16px;min-width:0;">' +
       '<div style="text-align:center;font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;' +
         'text-transform:uppercase;color:var(--text-soft);margin-bottom:12px;">' + esc(label) + '</div>' +
       '<div style="' + (span ? '' : 'flex:1;') + 'display:grid;grid-template-columns:repeat(' + cols + ',minmax(0,1fr));' +
@@ -5402,8 +5409,8 @@
     var m = dnaModel(p);
     var sn = shortName(p);
     // The band sits on this panel (joined): side and bottom 8% ring, r 0 0 12 12.
-    var PANEL = 'position:relative;background:var(--inner);border:1px solid ' + EDGE_8 + ';border-top:0;border-radius:0 0 12px 12px;' +
-      'padding:18px 20px 16px;margin-bottom:20px;display:flex;flex-direction:column;gap:14px;';
+    var PANEL = 'position:relative;background:var(--card);border:1.25px solid var(--edge-6);border-top:0;border-radius:0 0 16px 16px;' +
+      'padding:24px 24px 18px;margin-bottom:16px;display:flex;flex-direction:column;gap:16px;';
     function stateBox(msg) {
       return '<div style="' + PANEL + '"><div style="padding:26px;text-align:center;font-size:13px;color:' + DASH_COLOUR +
         ';line-height:1.6;">' + msg + '</div></div>';
@@ -5465,14 +5472,14 @@
       '</div>';
 
     var HEAD = CAPS;
-    var CELL = 'padding:7px 0;border-top:1px solid var(--line);';
+    var CELL = 'padding:13px 0;border-top:1px solid var(--edge-6);';
     var rows = axes.map(function (a) {
       var d = dnaDeltaParts(a.delta, a.dp, false);
-      return '<span style="font-size:12px;color:var(--text-label);' + CELL + '">' + esc(a.label) + '</span>' +
-        '<span style="' + MONO + 'font-size:12px;font-weight:400;color:' + (a.rating == null ? DASH_COLOUR : 'var(--text)') + ';text-align:right;' + CELL + '">' +
+      return '<span style="font-size:13.5px;font-weight:600;color:var(--text);' + CELL + '">' + esc(a.label) + '</span>' +
+        '<span style="' + MONO + 'font-size:13.5px;font-weight:700;color:' + (a.rating == null ? DASH_COLOUR : 'var(--text)') + ';text-align:right;' + CELL + '">' +
           esc(dnaFmt(a.rating, a.dp)) + '</span>' +
-        '<span style="' + MONO + 'font-size:12px;font-weight:700;color:' + d.col + ';text-align:right;' + CELL + '">' + esc(d.txt) + '</span>' +
-        '<span style="' + MONO + 'font-size:11px;font-weight:400;color:var(--text-label);text-align:right;' + CELL + '">' + esc(dnaFmt(a.tour, a.dp)) + '</span>';
+        '<span style="' + MONO + 'font-size:13px;font-weight:700;color:' + d.col + ';text-align:right;' + CELL + '">' + esc(d.txt) + '</span>' +
+        '<span style="' + MONO + 'font-size:13px;font-weight:400;color:var(--text-label);text-align:right;' + CELL + '">' + esc(dnaFmt(a.tour, a.dp)) + '</span>';
     }).join('');
 
     var notes = [m.matches + ' match' + (m.matches === 1 ? '' : 'es') + ' with box scores in this window.',
@@ -5492,20 +5499,19 @@
       }).join('');
     }
     return '<div style="' + PANEL + '">' +
-        infoCorner('cr3', Object.assign({ notes: notes }, cr3Info(m))) +
-        '<div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;padding-right:28px;">' +
-          '<span style="' + HEAD + '">Player DNA</span>' +
-          '<span style="' + MONO + 'font-size:11px;color:var(--text-label);">centre = lowest ATP player ' + MIDDOT + ' edge = highest</span>' +
-          '<span style="display:flex;align-items:center;gap:14px;margin-left:auto;">' +
-            '<span style="display:flex;align-items:center;gap:6px;"><span style="width:14px;height:2px;background:var(--bar);"></span>' +
+        infoCorner('cr3', Object.assign({ notes: notes }, cr3Info(m))).replace('top:14px;right:14px', 'top:26px;right:24px') +
+        '<div style="display:flex;align-items:flex-start;gap:10px 14px;flex-wrap:wrap;padding-right:36px;">' +
+          '<span style="display:flex;flex-direction:column;gap:4px;"><span style="font-size:18px;font-weight:800;letter-spacing:-0.005em;color:var(--text);">Player DNA</span>' +
+            '<span style="font-size:13px;color:var(--text-label);">Centre is the lowest ATP player, the edge the highest</span></span>' +
+          '<span style="display:flex;align-items:center;gap:16px;margin-left:auto;padding-top:4px;">' +
+            '<span style="display:flex;align-items:center;gap:6px;"><span style="width:14px;height:2px;border-radius:1px;background:var(--pp-x-link);"></span>' +
               // v4 reference: the legend names him as the profile does ("P. Martinez"), not by surname alone
-              '<span style="' + CAPS + '">' + esc(p && p.name || sn) + '</span></span>' +
-            '<span style="display:flex;align-items:center;gap:6px;"><span style="width:14px;height:2px;background:var(--text-soft);"></span>' +
-              '<span style="' + CAPS + '">ATP average</span></span>' +
+              '<span style="font-size:12px;color:var(--text-label);">' + esc(p && p.name || sn) + '</span></span>' +
+            '<span style="display:flex;align-items:center;gap:6px;"><span style="width:14px;height:2px;border-radius:1px;background:var(--text-soft);"></span>' +
+              '<span style="font-size:12px;color:var(--text-label);">ATP average</span></span>' +
           '</span>' +
         '</div>' + chart +
-        '<div style="display:grid;grid-template-columns:minmax(0,1fr) 74px 70px 84px;gap:0 12px;align-items:center;' +
-          'border-top:1px solid var(--edge-6);padding-top:10px;">' +
+        '<div style="display:grid;grid-template-columns:minmax(0,1fr) 74px 70px 84px;gap:0 12px;align-items:center;padding-top:4px;">' +
           '<span style="' + HEAD + '">Raw rating</span>' +
           '<span style="' + HEAD + 'text-align:right;">Player</span>' +
           '<span style="' + HEAD + 'text-align:right;">Δ vs ATP</span>' +
@@ -7397,7 +7403,7 @@
     var tourCell = function (v, tv) {
       if (tourPend) return ['t', '', 'var(--text-label)'];
       if (thin || v == null || tv == null) return ['t', DASH, 'var(--text-label)'];
-      return ['t', splPp(v - tv), n < PP4.SPL_MINB ? 'var(--text-label)' : splPpColour(v - tv)];
+      return ['t', splPp(v - tv), splPpColour(v - tv)];   // v5 §0.7: a signed figure is green / red, small samples too
     };
     if (x.tb) {   // the tiebreak record (Results only): W–L · won % · vs his win % · vs the tour's tiebreaks won
       return [['d', recordText(s.w, s.l)], ['k', pc(s.win)], ['h', his(s.win, B.win)], tourCell(s.win, tour && tour.tbPct)];
@@ -7413,15 +7419,22 @@
   }
   // the band: caps scope · 20px figure · descriptor · matches · (?) left, the Window pills right (reference modal.isSplits)
   function splBandHtml(base, scope, p) {
-    return '<div data-pp2-band="standalone" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;' +
-        'padding:20px 24px;background:var(--inner);border:1.25px solid var(--line);border-radius:12px;">' +
-      '<span style="display:inline-flex;align-items:center;gap:8px;font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:var(--text-label);white-space:nowrap;position:relative;">' +
-        recCaps(base.label) +
-        '<span data-pp2-splbase style="color:var(--text);font-weight:700;font-size:20px;line-height:1;margin-left:4px;white-space:nowrap;">' + base.rec + '</span>' +
-        '<span style="color:var(--text-soft);font-size:12.5px;">' + base.pct + '</span><span>' + base.n + '</span>' +
-        '<span style="position:relative;display:inline-flex;z-index:3;">' + infoIcon('spl1', splInfo1(p)) + '</span></span>' +
-      bandPills('split-scope', [['last52', 'Last 52 weeks'], ['career', 'Career']], scope,
-        function (t) { return ' data-scope="' + t[0] + '"'; }) + '</div>';
+    return '<div data-pp2-band="v5" style="display:flex;align-items:center;justify-content:space-between;gap:14px 24px;flex-wrap:wrap;' +
+        'padding:22px 24px;background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;">' +
+      '<span style="display:inline-flex;align-items:center;gap:10px;">' +
+        '<span style="font-size:18px;font-weight:800;letter-spacing:-0.01em;color:var(--text);white-space:nowrap;">' + esc(base.label) + '</span>' +
+        '<span style="position:relative;display:inline-flex;z-index:3;">' + infoIcon('spl1', Object.assign({ v4: true, scopeChip: base.label + ' ' + MIDDOT + ' ' + base.rec + ' ' + MIDDOT + ' ' + base.pct + ' ' + MIDDOT + ' ' + base.n }, splInfo1(p))) + '</span></span>' +
+      '<span style="display:flex;align-items:center;gap:14px 22px;flex-wrap:wrap;">' +
+        '<span style="display:inline-flex;align-items:baseline;gap:10px;white-space:nowrap;">' +
+          '<span data-pp2-splbase style="font-family:\'IBM Plex Mono\',monospace;font-size:26px;font-weight:700;line-height:1;color:var(--text);white-space:nowrap;">' + base.rec + '</span>' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:14px;color:var(--text-label);">' + base.pct + '</span></span>' +
+        '<span style="display:flex;gap:3px;background:var(--inner);border:1px solid ' + EDGE_8 + ';border-radius:10px;padding:3px;flex:none;">' +
+          [['last52', 'Last 52 weeks'], ['career', 'Career']].map(function (t) {
+            var on = scope === t[0];
+            return '<span data-pp2="split-scope" data-v="' + t[0] + '" data-scope="' + t[0] + '" role="button" aria-pressed="' + (on ? 'true' : 'false') + '" class="pp2-v5seg" ' +
+              'style="cursor:pointer;white-space:nowrap;padding:6px 14px;border-radius:7px;font-size:13px;font-weight:' + (on ? 700 : 600) + ';color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';' +
+              'background:' + (on ? 'var(--selected)' : 'transparent') + ';">' + t[1] + '</span>';
+          }).join('') + '</span></span></div>';
   }
   function renderSplitsModalV2(p) {
     if (typeof window.pp2DrawNeed === 'function') window.pp2DrawNeed(p.key);
@@ -7461,31 +7474,32 @@
     else extra.push({ group: 'Extra stats', label: 'Tiebreak record', tb: true, s: { n: B.tw + B.tl, w: B.tw, l: B.tl, win: B.tw + B.tl ? 100 * B.tw / (B.tw + B.tl) : null } });
     var GROUPS = [['By round', S.groups['By round']], ['Level', S.groups['Level']], ['Opponent rank', S.groups['Opponent rank']], ['Extra stats', extra]];
     var COLS = SPL_COLS[view];
-    var CELL = { d: M + 'font-size:12px;color:var(--text-label);', k: M + 'font-size:12.5px;font-weight:600;color:var(--text);',
-      h: M + 'font-size:11px;color:var(--text-label);', t: M + 'font-size:12.5px;font-weight:700;' };
+    var CELL = { d: M + 'font-size:12.5px;color:var(--text-label);', k: M + 'font-size:13px;font-weight:700;color:var(--text);',
+      h: M + 'font-size:13px;font-weight:700;', t: M + 'font-size:13px;font-weight:700;' };
     var infos = [];
     function section(group, items) {
-      var hd = '<div style="display:grid;grid-template-columns:' + COLS + ';align-items:center;padding-bottom:11px;border-bottom:1px solid var(--edge-10);">' +
-        '<span style="display:flex;align-items:center;gap:8px;">' + recCaps(group, 'color:var(--text-soft);white-space:nowrap;') +
+      var hd = '<div style="display:grid;grid-template-columns:' + COLS + ' 10px;align-items:center;padding-bottom:12px;">' +
+        '<span style="display:flex;align-items:center;gap:10px;"><span style="font-size:16px;font-weight:800;letter-spacing:-0.01em;color:var(--text);white-space:nowrap;">' + group + '</span>' +
           (group === 'Extra stats' ? '<span style="position:relative;display:inline-flex;z-index:3;">' + infoIcon('spl2', Object.assign({ width: 400 }, SPL_INFO2)) + '</span>' : '') + '</span>' +
         SPL_HEADS[view].map(function (h) {
-          return '<span style="text-align:right;font-size:10.5px;font-weight:' + (h[1] ? 800 : 700) + ';color:' + (h[1] ? 'var(--text)' : 'var(--text-label)') + ';white-space:nowrap;">' + h[0] + '</span>';
-        }).join('') + '</div>';
+          return '<span style="text-align:right;font-size:11px;font-weight:' + (h[1] ? 800 : 700) + ';color:' + (h[1] ? 'var(--text)' : 'var(--text-label)') + ';white-space:nowrap;">' + h[0] + '</span>';
+        }).join('') + '<span></span></div>';
       var rows = items.map(function (x) {
         var n = x.s.n, none = !n, tour = splTourFor(x.tb ? 'All matches' : x.label, scope);
         var target = x.tb ? 'spltb:' : 'spl:' + x.group + '|' + x.label, on = openKey === target;
         if (!x.tb && n >= PP4.SPL_MINB) infos.push({ x: x, tour: tour, target: target });
         var hook = none ? '' : 'data-pp2="fb-open" data-box="' + (x.tb ? 'spltb' : 'spl') + '" data-v="' + esc(x.tb ? 'Extra stats|Tiebreak record' : x.group + '|' + x.label) + '" ';
-        return '<div ' + hook + 'data-pp2-splrow="' + esc(x.label) + '" class="pp2-splrow" style="display:grid;grid-template-columns:' + COLS + ';align-items:center;min-height:36px;' +
-          'border-top:1px solid var(--line);margin:0 -8px;padding:0 8px;border-radius:6px;cursor:' + (none ? 'default' : 'pointer') + ';' +
-          'background:' + (on ? 'var(--selected)' : 'transparent') + ';">' +
-          '<span style="font-size:13px;font-weight:600;color:' + (none ? 'var(--text-label)' : 'var(--text)') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(x.label) + '</span>' +
+        return '<div ' + hook + 'data-pp2-splrow="' + esc(x.label) + '" class="pp2-splrow pp2-v5row" style="display:grid;grid-template-columns:' + COLS + ' 10px;align-items:center;min-height:44px;' +
+          'border-top:1px solid ' + (on ? 'transparent' : 'var(--edge-6)') + ';margin:0 -8px;padding:0 8px;border-radius:' + (on ? 10 : 0) + 'px;cursor:' + (none ? 'default' : 'pointer') + ';' +
+          'background:' + (on ? 'var(--pp-x-hover)' : 'transparent') + ';">' +
+          '<span style="font-size:13.5px;font-weight:600;color:' + (none ? 'var(--text-label)' : 'var(--text)') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(x.label) + '</span>' +
           splRowCellsV4(view, x, B, tour, tourPend).map(function (c) {
             var col = c[2] || (c[1] === DASH ? 'var(--text-label)' : '');   // a dash is grey whatever its column
+            if (c[0] === 'h' && c[1] !== DASH) col = /^\+/.test(c[1]) ? 'var(--pos)' : /^[−-]/.test(c[1]) ? 'var(--neg)' : 'var(--text-label)';   // v5 §0.7
             return '<span style="' + CELL[c[0]] + (col ? 'color:' + col + ';' : '') + 'text-align:right;white-space:nowrap;">' + (c[1] === '' ? '&nbsp;' : c[1]) + '</span>';
-          }).join('') + '</div>';
+          }).join('') + '<span style="text-align:right;font-size:15px;line-height:1;color:var(--pp-x-link);opacity:' + (none ? 0 : 1) + ';">›</span></div>';
       }).join('');
-      return '<div data-pp2-splsec="' + esc(group) + '" style="background:var(--card);border:1.25px solid var(--edge-6);border-radius:14px;padding:13px 16px 6px;">' + hd + rows + '</div>';
+      return '<div data-pp2-splsec="' + esc(group) + '" style="background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;padding:20px 18px 8px;">' + hd + rows + '</div>';
     }
     var secHtml = GROUPS.map(function (g) { return section(g[0], g[1]); });
 
@@ -7499,7 +7513,7 @@
       return { label: label, name: name, fig: val == null ? DASH : val.toFixed(1) + '%', gap: hasT && val != null ? splPp(val - tourRate) : '',
         gapColor: hasT && val != null ? splPpColour(val - tourRate) : 'var(--text-label)', gapTail: hasT && val != null ? 'vs tour' : '',
         sub: sub, tour: tourPend ? '' : 'tour ' + (hasT ? tourRate.toFixed(1) + '%' : DASH), barW: val == null ? '0%' : pcw(100 * val / max),
-        tickX: hasT ? pcw(100 * tourRate / max) : '0%', tickOp: hasT ? 1 : 0, cue: target ? 'Matches ' + RANGLE : '', barColor: pp4Bar(sel),
+        tickX: hasT ? pcw(100 * tourRate / max) : '0%', tickOp: hasT ? 1 : 0, cue: target ? '›' : '', barColor: pp4Bar(sel),
         v: target ? key + '~' + target : null };
     }
     function nob(label, why) { return { label: label, name: DASH, fig: DASH, gap: '', gapColor: 'var(--text-label)', gapTail: '', sub: why, tour: '', barW: '0%', tickX: '0%', tickOp: 0, cue: '', barColor: pp4Bar(false), v: null }; }
@@ -7536,27 +7550,27 @@
         box('Return games won', 'Opponents' + '’' + ' service games won', B.brk, TS && TS.brk, 40, svSub, B.svN ? 'spl:Overall|All matches' : null),
         box('Aces', 'Aces per 100 serve points', B.acePct, TS && TS.acePct, 12, svSub, B.svN ? 'spl:Overall|All matches' : null)];
     }
-    var boxHtml = '<div style="display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:10px;">' + boxes.map(function (b) {
+    var boxHtml = '<div style="display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px;">' + boxes.map(function (b) {
       return '<div ' + (b.v ? 'data-pp2="fb-open" data-box="splbox" data-v="' + esc(b.v) + '" ' : '') + 'data-pp2-splbox="' + esc(b.label) + '" class="pp2-splbox" ' +
-        'style="cursor:' + (b.v ? 'pointer' : 'default') + ';background:var(--card);border:1.25px solid var(--edge-6);border-radius:12px;padding:14px 16px 13px;' +
+        'style="cursor:' + (b.v ? 'pointer' : 'default') + ';background:var(--card);border:1.25px solid var(--pp-x-edge-9);border-radius:11px;padding:16px 18px 14px;' +
         'display:flex;flex-direction:column;gap:6px;min-width:0;transition:border-color 120ms, background 120ms;">' +
-        '<span style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;">' + recCaps(esc(b.label), 'white-space:nowrap;') +
-          '<span style="font-size:11px;font-weight:600;color:var(--text-label);white-space:nowrap;">' + b.cue + '</span></span>' +
+        '<span style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span style="font-size:11.5px;font-weight:600;color:var(--text-label);white-space:nowrap;">' + esc(b.label) + '</span>' +
+          '<span style="font-size:15px;line-height:1;color:var(--pp-x-link);">' + b.cue + '</span></span>' +
         '<span style="font-size:15px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(b.name) + '</span>' +
         '<span style="display:flex;align-items:baseline;gap:10px;white-space:nowrap;margin-top:4px;">' +
           '<span style="' + M + 'font-size:26px;font-weight:700;line-height:1;color:var(--text);">' + b.fig + '</span>' +
           '<span style="' + M + 'font-size:13px;font-weight:700;color:' + b.gapColor + ';">' + (b.gap || '&nbsp;') + '</span>' +
-          '<span style="font-size:11px;color:var(--text-label);">' + b.gapTail + '</span></span>' +
-        '<span style="position:relative;display:block;height:4px;border-radius:2px;background:var(--edge-7);margin:7px 0 3px;">' +
+          '<span style="font-size:11.5px;color:var(--text-label);">' + b.gapTail + '</span></span>' +
+        '<span style="position:relative;display:block;height:4px;border-radius:2px;background:var(--pp-x-track-7);margin:8px 0 4px;">' +
           '<span data-pp2-splbar style="position:absolute;left:0;top:0;bottom:0;width:' + b.barW + ';border-radius:2px;background:' + b.barColor + ';"></span>' +
           '<span data-pp2-spltick style="position:absolute;left:' + b.tickX + ';top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--text);opacity:' + b.tickOp + ';"></span></span>' +
-        '<span style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;' + M + 'font-size:10.5px;color:var(--text-label);white-space:nowrap;">' +
+        '<span style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;' + M + 'font-size:11.5px;color:var(--text-label);white-space:nowrap;">' +
           '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + b.sub + '</span><span>' + b.tour + '</span></span>' +
         '</div>';
     }).join('') + '</div>';
 
     return '<div style="display:flex;flex-direction:column;gap:16px;">' + head +
-      '<div style="overflow-x:auto;"><div style="min-width:1136px;display:flex;flex-direction:column;gap:16px;">' + boxHtml +
+      '<div style="overflow-x:auto;"><div style="min-width:1200px;display:flex;flex-direction:column;gap:16px;">' + boxHtml +
         '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start;">' + secHtml.join('') + '</div>' +
       '</div></div></div>';
   }
@@ -8812,12 +8826,12 @@
       var top = fam === 'Total games' ? rowsR : rowsL, bot = fam === 'Total games' ? rowsL : rowsR;
       var cols = '52px repeat(' + top.length + ',minmax(0,1fr))';
       var row = function (lab, xs) {
-        return '<div style="display:grid;grid-template-columns:' + cols + ';gap:6px;align-items:center;"><span style="' + CAPS + '">' + lab + '</span>' +
+        return '<div style="display:grid;grid-template-columns:' + cols + ';gap:6px;align-items:center;"><span style="font-size:11.5px;font-weight:600;color:var(--text-label);white-space:nowrap;">' + lab + '</span>' +
           xs.map(function (x) { return lcChipHtml(x, picked); }).join('') + '</div>';
       };
       return '<div data-lc-block="' + esc(fam) + '" style="display:flex;flex-direction:column;gap:6px;margin-top:' + (first ? 0 : 26) + 'px;padding-top:' + (first ? 0 : 26) + 'px;' +
         'border-top:' + (first ? '0' : '1px solid var(--edge-6)') + ';">' +
-        '<div style="display:grid;grid-template-columns:52px minmax(0,1fr);gap:6px;padding-bottom:8px;"><span style="grid-column:2;font-size:15px;font-weight:700;' +
+        '<div style="display:grid;grid-template-columns:52px minmax(0,1fr);gap:6px;padding-bottom:8px;"><span style="grid-column:2;font-size:14px;font-weight:700;' +
           'color:var(--text);white-space:nowrap;">' + fam + '</span></div>' +
         row(labels[0], top) + row(labels[1], bot) + '</div>';
     };
@@ -8825,37 +8839,37 @@
       .concat(byFam('Set handicap', 1).slice().sort(function (a, b) { return a.spec[2] - b.spec[2]; }));
     return block('Games handicap', ['Minus', 'Plus'], true) + block('Total games', ['Over', 'Under'], false) +
       '<div data-lc-block="Set handicap" style="display:flex;flex-direction:column;gap:6px;margin-top:26px;padding-top:26px;border-top:1px solid var(--edge-6);">' +
-        '<div style="display:grid;grid-template-columns:52px minmax(0,1fr);gap:6px;padding-bottom:8px;"><span style="grid-column:2;font-size:15px;font-weight:700;' +
+        '<div style="display:grid;grid-template-columns:52px minmax(0,1fr);gap:6px;padding-bottom:8px;"><span style="grid-column:2;font-size:14px;font-weight:700;' +
           'color:var(--text);white-space:nowrap;">Set handicap</span></div>' +
         '<div style="display:grid;grid-template-columns:52px repeat(' + sets.length + ',minmax(0,1fr));gap:6px;align-items:center;"><span></span>' +
           sets.map(function (x) { return lcChipHtml(x, picked, lcSetNote(x.spec, fmt)); }).join('') + '</div></div>' +
       // the reference draws this key under the grid (its block outranks CHANGES §0.3 "no colour legends"; flagged)
-      '<div data-lc-legend style="margin-top:auto;padding-top:28px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:11.5px;color:var(--text-label);">' +
-        '<span>rarely covers</span><span style="width:120px;height:8px;border-radius:4px;background:linear-gradient(90deg,' +
+      '<div data-lc-legend style="margin-top:auto;padding-top:28px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--text-label);">' +
+        '<span>Rarely covers</span><span style="width:120px;height:4px;border-radius:2px;background:linear-gradient(90deg,' +
           'color-mix(in srgb, var(--neg) 85%, transparent),color-mix(in srgb, var(--neg) 10%, transparent) 48%,' +
           'color-mix(in srgb, var(--pos) 10%, transparent) 52%,color-mix(in srgb, var(--pos) 85%, transparent));"></span>' +
-        '<span>covers most of the time</span><span style="margin-left:14px;display:inline-flex;align-items:center;gap:7px;">' +
-          '<span style="width:5px;height:5px;border-radius:50%;background:var(--text);"></span>also above the field</span></div>';
+        '<span>Covers most of the time</span><span style="margin-left:14px;display:inline-flex;align-items:center;gap:7px;">' +
+          '<span style="width:4px;height:4px;border-radius:50%;background:var(--text);"></span>Also above the field</span></div>';
   }
   function lcPanelHtml(model, fmt) {
     var x = model.picked, CAPS = MK_CAPS + 'white-space:nowrap;', M = 'font-family:\'IBM Plex Mono\',monospace;';
     var wrap = function (inner) {
-      return '<div data-lc-panel style="border-left:1px solid var(--edge-6);background:color-mix(in srgb, var(--text) 1.8%, transparent);' +
-        'border-radius:0 0 15px 0;padding:22px 24px 24px;display:flex;flex-direction:column;gap:20px;min-width:0;">' + inner + '</div>';
+      return '<div data-lc-panel style="border-left:1px solid var(--edge-6);' +
+        'border-radius:0 0 15px 0;padding:24px;display:flex;flex-direction:column;gap:20px;min-width:0;">' + inner + '</div>';
     };
     var head = function (market, sw, name, mean) {
-      return '<div style="display:flex;flex-direction:column;gap:6px;"><span style="' + CAPS + '">' + esc(market) + '</span>' +
+      return '<div style="display:flex;flex-direction:column;gap:6px;"><span style="font-size:11.5px;font-weight:600;color:var(--text-label);white-space:nowrap;">' + esc(market) + '</span>' +
         '<span style="display:flex;align-items:center;gap:10px;"><span style="flex:none;width:12px;height:12px;border-radius:4px;background:' + sw + ';' +
-          'box-shadow:0 0 0 2px var(--text);"></span><span data-lc-pickname style="font-size:22px;font-weight:700;color:var(--text);">' + esc(name) + '</span></span>' +
+          'box-shadow:0 0 0 2px var(--text);"></span><span data-lc-pickname style="font-size:20px;font-weight:800;color:var(--text);">' + esc(name) + '</span></span>' +
         '<span style="font-size:13px;color:var(--text-soft);line-height:1.5;text-wrap:pretty;">' + esc(mean) + '</span></div>';
     };
     var fact = function (k, v) {
       return '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:11px 0;border-bottom:1px solid var(--edge-6);">' +
-        '<span style="font-size:12.5px;color:var(--text-label);">' + k + '</span><span style="' + M + 'font-size:12.5px;font-weight:600;color:var(--text);white-space:nowrap;">' + v + '</span></div>';
+        '<span style="font-size:13px;color:var(--text-label);">' + k + '</span><span style="' + M + 'font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;">' + v + '</span></div>';
     };
     var btn = function (label, attrs) {
       return '<span ' + (attrs || '') + 'class="pp2-lcbtn" style="margin-top:auto;display:flex;align-items:center;justify-content:center;height:40px;border-radius:10px;' +
-        'background:var(--selected);border:1px solid var(--edge-16);font-size:13px;font-weight:700;color:var(--text);cursor:' + (attrs ? 'pointer' : 'default') + ';">' + label + '</span>';
+        'background:var(--pp-x-lifted);border:1px solid ' + EDGE_14 + ';font-size:13px;font-weight:700;color:var(--text);cursor:' + (attrs ? 'pointer' : 'default') + ';">' + label + '</span>';
     };
     if (!x) return wrap(head('', 'transparent', 'No line to show', 'No completed match in this filter.') +
       '<div style="display:flex;flex-direction:column;gap:8px;"><span style="' + M + 'font-size:36px;font-weight:700;line-height:1;color:var(--text);">' + DASH + '</span></div>' +
@@ -8874,19 +8888,19 @@
     var wordInk = !x.rated ? 'var(--text-label)' : thin10 ? 'var(--text-label)' : rel.colour;
     var ppInk = x.gap == null ? 'var(--text-label)' : x.mark === 'pos' ? 'var(--pos)' : x.mark === 'neg' ? 'var(--neg)' : x.dimmed ? 'var(--text-label)' : 'var(--text)';
     return wrap(head(x.fam, x.rated ? lcTint(r.rate) : 'color-mix(in srgb, var(--text) 4%, transparent)', x.label, lcMeaning(x.spec, fmt)) +
-      '<div style="display:flex;flex-direction:column;gap:8px;"><span data-lc-rate style="' + M + 'font-size:36px;font-weight:700;line-height:1;color:' + rateInk + ';">' + rateTxt + '</span>' +
-        '<span data-lc-word style="font-size:13.5px;font-weight:700;color:' + wordInk + ';">' + word + '</span></div>' +
-      '<span style="position:relative;display:block;height:8px;border-radius:4px;background:var(--line);">' +
-        '<span style="position:absolute;left:0;top:0;bottom:0;width:' + (x.rated ? r.rate.toFixed(1) : 0) + '%;border-radius:4px;background:' + wordInk + ';' +
+      '<div style="display:flex;flex-direction:column;gap:8px;"><span data-lc-rate style="' + M + 'font-size:26px;font-weight:700;line-height:1;color:' + rateInk + ';">' + rateTxt + '</span>' +
+        '<span data-lc-word style="font-size:13px;font-weight:700;color:' + wordInk + ';">' + word + '</span></div>' +
+      '<span style="position:relative;display:block;height:4px;border-radius:2px;background:var(--pp-x-track-7);">' +
+        '<span style="position:absolute;left:0;top:0;bottom:0;width:' + (x.rated ? r.rate.toFixed(1) : 0) + '%;border-radius:2px;background:' + wordInk + ';' +
           (thin10 ? 'opacity:0.4;' : '') + '"></span>' +
         '<span style="position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--text-soft);"></span></span>' +
       '<div style="display:flex;flex-direction:column;border-top:1px solid var(--edge-6);">' +
         fact('Record', rn ? recordText(r.hit, rn - r.hit) + (r.voids ? ' ' + MIDDOT + ' ' + r.voids + ' pushed' : '') : DASH) +
         fact('Last ' + l20.length, l20.length ? recordText(c20, l20.length - c20) : DASH) +
         fact('Longest run of misses', rn ? String(longMiss) : DASH) + '</div>' +
-      '<div style="display:flex;flex-direction:column;gap:10px;"><span style="' + CAPS + '">Against the field</span>' +
+      '<div style="display:flex;flex-direction:column;gap:10px;"><span style="font-size:11.5px;font-weight:600;color:var(--text-label);">Against the field</span>' +
         '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;">' +
-          '<span data-lc-pp style="' + M + 'font-size:17px;font-weight:700;color:' + ppInk + ';">' + (x.gap == null ? DASH : signed(x.gap, 1, 'pp')) + '</span>' +
+          '<span data-lc-pp style="' + M + 'font-size:13px;font-weight:700;color:' + ppInk + ';">' + (x.gap == null ? DASH : signed(x.gap, 1, 'pp')) + '</span>' +
           '<span style="' + M + 'font-size:12px;color:var(--text-label);white-space:nowrap;">' + (x.fl ? 'field covers ' + x.fl.rate.toFixed(1) + '%' : 'field ' + DASH) + '</span></div></div>' +
       btn('See the ' + r.n + ' matches ' + RANGLE, 'data-pp2="fb-open" data-box="lcline" data-v="' + esc(x.label) + '" '));
   }
@@ -8937,12 +8951,12 @@
       '<div data-lc-v4 style="position:relative;background:var(--card);border:1.25px solid var(--edge-6);border-top:0;border-radius:0 0 16px 16px;min-width:0;">' +
         '<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 340px;border-bottom:1px solid var(--edge-6);">' + cards + '</div>' +
         '<div style="position:relative;min-width:0;">' +
-          '<span style="position:absolute;top:22px;right:364px;z-index:3;display:flex;">' + infoIcon('ln1', Object.assign({ width: 400, align: 'right' }, LC_INFO1_V4)) + '</span>' +
+          '<span style="position:absolute;top:26px;right:364px;z-index:3;display:flex;">' + infoIcon('ln1', Object.assign({ width: 400, align: 'right' }, LC_INFO1_V4)) + '</span>' +
           '<div style="display:grid;grid-template-columns:minmax(0,1fr) 340px;">' +
-            '<div style="display:flex;flex-direction:column;min-width:0;padding:22px 24px 24px;">' +
+            '<div style="display:flex;flex-direction:column;min-width:0;padding:24px;">' +
               '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:22px;flex-wrap:wrap;padding-right:28px;">' +
-                '<span style="' + MK_CAPS + '">Cover rate by line ' + MIDDOT + ' ' + esc(lcScopeTxt(d, fmt)) + '</span>' +
-                '<span style="' + M + 'font-size:11px;color:var(--text-label);white-space:nowrap;">' + total + ' matches' + (retN ? ' ' + MIDDOT + ' ' + retN + ' retired, not counted' : '') + '</span></div>' +
+                '<span style="font-size:18px;font-weight:800;color:var(--text);line-height:1.2;">Cover rate by line</span>' +
+                '<span style="font-size:13px;color:var(--text-label);white-space:nowrap;">' + esc(lcScopeTxt(d, fmt)) + ' ' + MIDDOT + ' ' + total + ' matches' + (retN ? ' ' + MIDDOT + ' ' + retN + ' retired, not counted' : '') + '</span></div>' +
               lcGridHtml(model, fmt) +
             '</div>' + lcPanelHtml(model, fmt) +
           '</div></div></div>';
@@ -11120,33 +11134,33 @@
     }
     var col2 = function (big, bigCol, label, sub, first) {
       return '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;border-left:1px solid ' + (first ? 'transparent' : 'var(--edge-6)') + ';">' +
-        '<span style="' + M_ + 'font-size:19px;font-weight:700;line-height:1;color:' + bigCol + ';">' + big + '</span>' +
-        '<span style="font-size:11px;color:var(--text-soft);">' + label + '</span>' +
+        '<span style="' + M_ + 'font-size:20px;font-weight:700;line-height:1;color:' + bigCol + ';">' + big + '</span>' +
+        '<span style="font-size:11.5px;color:var(--text-label);">' + label + '</span>' +
         '<span style="' + M_ + 'font-size:10.5px;color:var(--text-label);white-space:nowrap;">' + sub + '</span></div>';
     };
-    var tilesHtml = '<div data-pp2-caltiles="1" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1.25px solid var(--edge-6);border-radius:12px;overflow:hidden;background:var(--card);margin-bottom:20px;">' +
+    var tilesHtml = '<div data-pp2-caltiles="1" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin-bottom:20px;">' +
       tiles.map(function (t, i) {
         var st = t.st, wr = st && st.n >= CAL_MIN ? wordPct(st.pct) : DASH;
         var yTxt = st ? yieldTxt(st) : DASH, yCol = yTxt === DASH ? 'var(--text-label)' : signColour(Math.round(st.y * 10) / 10);
-        return '<div style="padding:14px 16px 13px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:9px;min-width:0;border-left:1px solid ' + (i ? 'var(--edge-6)' : 'transparent') + ';">' +
-          recCaps(t.cap) +
+        return '<div style="padding:16px 18px 14px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:9px;min-width:0;background:var(--card);border:1px solid var(--pp-x-edge-9);border-radius:11px;">' +
+          '<span style="font-size:11.5px;font-weight:600;color:var(--text-label);">' + t.cap + '</span>' +
           '<span style="font-size:16px;font-weight:700;line-height:1.1;color:' + (t.name === DASH ? 'var(--text-label)' : 'var(--text)') + ';max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (t.name === '&nbsp;' ? t.name : esc(t.name)) + '</span>' +
           '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;border-top:1px solid var(--edge-6);padding-top:10px;">' +
             (t.pend ? col2('&nbsp;', 'var(--text)', 'Win rate', '&nbsp;', true) + col2('&nbsp;', 'var(--text)', 'Yield', '&nbsp;', false)
               : col2(wr, wr === DASH ? 'var(--text-label)' : 'var(--text)', 'Win rate', st ? recordText(st.w, st.l) : DASH, true) +
                 col2(yTxt, yCol, 'Yield', st ? st.priced + ' priced' : DASH, false)) +
           '</div>' +
-          '<span style="font-size:10.5px;color:var(--text-label);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (t.line === '&nbsp;' ? t.line : esc(t.line || '')) + '&nbsp;</span></div>';
+          '<span style="font-size:11.5px;color:var(--text-label);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (t.line === '&nbsp;' ? t.line : esc(t.line || '')) + '&nbsp;</span></div>';
       }).join('') + '</div>';
     // ── the grid ──
-    var GCOLS = (view === 'swing' ? '128px' : '56px') + ' repeat(' + cols.length + ',minmax(0,1fr)) 72px', MINW = view === 'swing' ? 972 : 900;
-    var heads = '<span style="align-self:end;' + 'padding:0 0 9px;border-bottom:1px solid var(--edge-10);">' + recCaps('Year') + '</span>' +
+    var GCOLS = '128px repeat(' + cols.length + ',minmax(0,1fr)) 72px', MINW = 972;   // v5 §2: Month uses Swing's grid
+    var heads = '<span style="align-self:end;' + 'padding:0 0 9px;border-bottom:1px solid var(--edge-6);">' + recCaps('Year') + '</span>' +
       cols.map(function (c) {
-        return '<span title="' + esc(c.hover || c.label) + '" style="align-self:end;display:flex;flex-direction:column;align-items:center;gap:3px;padding:0 2px 9px;border-bottom:1px solid var(--edge-10);min-width:0;cursor:default;">' +
+        return '<span title="' + esc(c.hover || c.label) + '" style="align-self:end;display:flex;flex-direction:column;align-items:center;gap:3px;padding:0 2px 9px;border-bottom:1px solid var(--edge-6);min-width:0;cursor:default;">' +
           '<span style="font-size:9.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:' + (c.muted ? 'var(--text-faint, var(--text-label))' : 'var(--text-label)') + ';white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;border-bottom:1px dotted var(--edge-24);padding-bottom:1px;">' + esc(c.code) + '</span>' +
           '<span style="' + M_ + 'font-size:9px;color:var(--text-label);opacity:0.7;white-space:nowrap;">' + esc(c.sub) + '</span></span>';
       }).join('') +
-      '<span style="align-self:end;text-align:right;padding:0 0 9px;border-bottom:1px solid var(--edge-10);">' + recCaps('Season') + '</span>';
+      '<span style="align-self:end;text-align:right;padding:0 0 9px;border-bottom:1px solid var(--edge-6);">' + recCaps('Season') + '</span>';
     var body = years.map(function (y) {
       var Y = M.filter(function (x) { return x.r.year === y; }), ty = calStat(Y);
       return '<span style="' + M_ + 'font-size:12px;font-weight:700;color:var(--text);padding:7px 0;">' + esc(y) + '</span>' +
@@ -11154,10 +11168,12 @@
           var ms = Y.filter(c.pred), key = c.key + '|' + y;
           if (!ms.length) return '<span style="display:block;margin:3px 0;' + M_ + 'font-size:11.5px;text-align:center;color:var(--text-label);opacity:0.6;padding:5px 0;border-radius:4px;cursor:default;">' + MIDDOT + '</span>';
           var t = calStat(ms), on = cell === key;
-          var bg = on ? 'var(--selected)' : c.muted ? 'transparent' : t.w > t.l ? 'color-mix(in srgb, var(--pos) 10%, transparent)' : t.w < t.l ? 'color-mix(in srgb, var(--neg) 10%, transparent)' : 'transparent';
+          // v5 §2 · graded tint: alpha = 0.05 + 0.42 × |W − L| / (W + L + 2); green above .500, red below, none when level
+          var tint = (5 + 42 * Math.abs(t.w - t.l) / (t.w + t.l + 2)).toFixed(1) + '%';
+          var bg = on ? 'var(--selected)' : c.muted ? 'transparent' : t.w > t.l ? 'color-mix(in srgb, var(--pos) ' + tint + ', transparent)' : t.w < t.l ? 'color-mix(in srgb, var(--neg) ' + tint + ', transparent)' : 'transparent';
           return '<span data-pp2="cal-cell2" data-v="' + esc(key) + '" class="pp2-calc" title="' + esc(c.title(y) + ' ' + MIDDOT + ' ' + recordText(t.w, t.l)) + '" style="display:block;margin:3px 0;' + M_ +
             'font-size:11.5px;font-variant-numeric:tabular-nums;text-align:center;color:' + (c.muted ? 'var(--text-label)' : 'var(--text)') + ';background:' + bg + ';' +
-            'outline:' + (on ? '1px solid var(--link)' : 'none') + ';outline-offset:-1px;border-radius:4px;padding:5px 0;cursor:pointer;">' + recordText(t.w, t.l) + '</span>';
+            'outline:' + (on ? '1px solid var(--link)' : 'none') + ';outline-offset:-1px;border-radius:6px;padding:6px 0;cursor:pointer;">' + recordText(t.w, t.l) + '</span>';
         }).join('') +
         '<span style="' + M_ + 'font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text);align-self:stretch;display:flex;align-items:center;justify-content:flex-end;margin-left:5px;border-left:1px solid var(--edge-6);">' + (ty.n ? recordText(ty.w, ty.l) : DASH) + '</span>';
     }).join('');
@@ -11166,28 +11182,31 @@
       cols.map(function (c) { var t = calStat(M.filter(c.pred));
         return '<span style="' + M_ + 'font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums;text-align:center;color:' + (c.muted ? 'var(--text-label)' : 'var(--text)') + ';padding:10px 0 0;border-top:1px solid ' + EDGE_14 + ';">' + (t.n ? recordText(t.w, t.l) : DASH) + '</span>'; }).join('') +
       '<span style="' + M_ + 'font-size:12px;font-weight:700;text-align:right;color:var(--text);padding:10px 0 0;border-top:1px solid ' + EDGE_14 + ';">' + (tm.n ? recordText(tm.w, tm.l) : DASH) + '</span>';
-    var viewSeg = '<span style="display:flex;gap:3px;background:var(--inner);border:1.25px solid var(--edge-6);border-radius:9px;padding:2px;flex:none;">' +
-      [['swing', 'Swing'], ['month', 'Month']].map(function (t) { var on = view === t[0];
-        return '<span data-pp2="cal-view" data-v="' + t[0] + '" style="cursor:pointer;white-space:nowrap;padding:4px 11px;border-radius:7px;font-size:11px;font-weight:' + (on ? 700 : 600) + ';' +
-          'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';background:' + (on ? 'var(--selected)' : 'transparent') + ';border:1px solid ' + (on ? 'var(--selected)' : 'transparent') + ';">' + t[1] + '</span>'; }).join('') + '</span>';
-    var card1 = '<div style="position:relative;background:var(--card);border:1.25px solid var(--edge-6);border-bottom:0;border-radius:16px 16px 0 0;padding:20px 24px 18px;">' +
+    var viewSeg = v5Seg('cal-view', [['swing', 'Swing'], ['month', 'Month']], view);
+    var card1 = '<div style="position:relative;background:var(--card);border:1.25px solid var(--edge-6);border-bottom:0;border-radius:16px 16px 0 0;padding:24px 24px 18px;">' +
       infoCorner('cal1', Object.assign({ notes: (calWinOf() === 'career' && calSurfOf() === 'all' && !nAct
         ? [calResidualNote(calResidual(p)).replace(/<[^>]+>/g, '').trim()].filter(Boolean) : []).concat((function () {
           if (!(typeof window.pp2EloReady === 'function' && window.pp2EloReady())) return [];
           var unk = W0.filter(function (x) { return x.lvl === 'unk'; }).length;
           return unk ? [unk + ' of these ' + W0.length + ' matches have no Elo snapshot in the week before them, so they sit in no opponent level (All only).'] : [];
-        }())) }, CAL_INFO1)).replace('top:14px;right:14px', 'top:16px;right:16px') +
-      '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px;padding-right:28px;">' +
-        recCaps('Calendar form ' + MIDDOT + ' ' + esc(calScopeText(nAct))) +
-        '<span style="display:inline-flex;align-items:center;gap:12px;"><span style="' + M_ + 'font-size:12px;color:var(--text-label);white-space:nowrap;">' +
-          M.length + ' matches' + (years.length ? ' ' + MIDDOT + ' ' + years[years.length - 1] + '–' + years[0] : '') + '</span>' + viewSeg + '</span></div>' +
+        }())) }, CAL_INFO1)).replace('top:14px;right:14px', 'top:26px;right:24px') +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;padding-right:32px;flex-wrap:wrap;">' +
+        '<span style="display:flex;flex-direction:column;gap:5px;min-width:0;"><span style="font-size:18px;font-weight:800;letter-spacing:-0.01em;color:var(--text);">Calendar form</span>' +
+          '<span style="font-size:13px;color:var(--text-label);">' + esc(calScopeText(nAct).charAt(0).toUpperCase() + calScopeText(nAct).slice(1)) + ' ' + MIDDOT + ' ' + M.length + ' matches' +
+            (years.length ? ' ' + MIDDOT + ' ' + years[years.length - 1] + '–' + years[0] : '') + '</span></span>' + viewSeg + '</div>' +
       tilesHtml +
       '<div data-pp2-calsc="a" style="overflow-x:auto;"><div style="display:grid;grid-template-columns:' + GCOLS + ';gap:0 4px;align-items:center;min-width:' + MINW + 'px;">' + heads + body + foot + '</div></div></div>';
     // ── By swing (v3 D3) — one aligned table with the season grid in the Swing view ──
     var maxPP = Math.max.apply(null, [1].concat(rated.map(function (x) { return Math.abs(x.pp); })));
-    var nC = CAL_SW.length, swingV = view === 'swing';
-    var TCA = '128px repeat(' + nC + ',minmax(0,1fr))' + (swingV ? ' 72px' : ''), IN = 'repeat(' + nC + ',minmax(0,1fr))';
-    var rowsT = CAL_SW.map(function (s) {
+    var swingV = view === 'swing';
+    var nC = swingV ? CAL_SW.length : 12;
+    var TCA = '128px repeat(' + nC + ',minmax(0,1fr)) 72px', IN = 'repeat(' + nC + ',minmax(0,1fr))';
+    var moRatedPP = moStats.filter(function (x) { return x.st.priced >= CAL_MIN && x.pp != null; });
+    if (!swingV) maxPP = Math.max.apply(null, [1].concat(moRatedPP.map(function (x) { return Math.abs(x.pp); })));
+    var rowsT = !swingV ? moStats.map(function (x, i) {
+      return { s: { k: 'm' + i, name: CAL_MONF[i], code: CAL_MON[i].toUpperCase(), hover: CAL_MONF[i] }, x: x, m: x.st,
+        ok: x.st.priced >= CAL_MIN && x.pp != null, n: x.st.priced, played: x.played, above: x.above };
+    }) : CAL_SW.map(function (s) {
       if (s.team) {
         var ms = M.filter(function (x) { return x.sw === 'team'; }), ss = seasonsOf(ms), t = calStat(ms);
         return { s: s, team: true, m: t, played: ss.played, above: ss.above };
@@ -11208,14 +11227,14 @@
     }).join('');
     var FAINT = 'color-mix(in srgb, var(--text-label) 60%, transparent)';
     var cellsOf = function (fn) { return rowsT.map(fn).join(''); };
-    var codeRows = swingV ? '' :
-      '<span style="' + LAB + 'padding:10px 8px 8px 0;">Surface</span>' +
-      cellsOf(function (r) { return '<span style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 2px 8px;">' +
-        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;color:var(--text-label);text-transform:lowercase;">' + (r.team ? 'mixed' : r.s.surf.toLowerCase()) + '</span>' +
-        '<span style="display:block;width:100%;height:3px;border-radius:2px;background:' + CAL_SURFC[r.team ? 'Mixed' : r.s.surf] + ';"></span></span>'; }) +
-      '<span style="' + LAB + 'padding:10px 8px 10px 0;border-top:1px solid var(--edge-10);align-self:stretch;display:flex;align-items:center;">Swing</span>' +
-      cellsOf(function (r) { return '<span title="' + esc(r.s.hover || r.s.name) + '" style="display:flex;justify-content:center;align-items:center;align-self:stretch;padding:10px 2px;border-top:1px solid var(--edge-10);cursor:default;">' +
-        '<span style="font-size:9.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;text-align:center;color:' + (r.team ? 'var(--text-label)' : 'var(--text)') + ';white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;border-bottom:1px dotted var(--edge-24);padding-bottom:1px;">' + esc(r.s.code) + '</span></span>'; });
+    // v5 §2 · the name row under the bars, both views: the grid heads' short codes (9.5/700 caps 0.06em), two lines when the
+    // code has two parts, dotted underline, the full name on hover; team events grey. No Surface row.
+    var codeRows = '<span style="' + LAB + 'padding:10px 8px 10px 0;align-self:stretch;display:flex;align-items:center;"></span>' +
+      cellsOf(function (r) {
+        var parts = String(r.s.code).split(/\s+|·/).filter(Boolean);
+        return '<span title="' + esc(r.s.hover || r.s.name) + '" style="display:flex;justify-content:center;align-items:center;align-self:stretch;padding:10px 2px;cursor:default;">' +
+          '<span style="font-size:9.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;text-align:center;line-height:1.3;color:' + (r.team ? 'var(--text-label)' : 'var(--text)') + ';max-width:100%;border-bottom:1px dotted var(--edge-24);padding-bottom:1px;">' +
+          parts.map(esc).join('<br>') + '</span></span>'; }) + '<span></span>';
     var winRow = '<span style="' + LAB + 'padding:10px 8px 10px 0;' + RULE + 'align-self:stretch;display:flex;align-items:center;">Win rate</span>' +
       cellsOf(function (r) {
         var okW = r.m.n >= CAL_MIN;
@@ -11269,18 +11288,20 @@
         var gap = mkn - tm.priced;
         return gap > 0 ? ['Market edge prices ' + mkn + ' matches; ' + gap + (gap === 1 ? ' of them carries' : ' of them carry') +
           ' no dated career row the calendar can place, so the swings rest on ' + tm.priced + '.'] : [];
-      }()) }, CAL_INFO2)).replace('top:14px;right:14px', 'top:16px;right:16px') +
-      '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;padding:16px 28px 0 0;border-top:1px solid var(--edge-10);">' +
-        '<span style="display:inline-flex;align-items:center;gap:8px;position:relative;">' + recCaps('By swing ' + MIDDOT + ' ' + esc(calScopeText(nAct))) +
+      }()) }, CAL_INFO2)).replace('top:14px;right:14px', 'top:24px;right:24px') +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;padding:24px 32px 0 0;border-top:1px solid var(--edge-6);">' +
+        '<span style="display:flex;flex-direction:column;gap:5px;min-width:0;"><span style="display:inline-flex;align-items:center;gap:8px;position:relative;">' +
+          '<span style="font-size:18px;font-weight:800;letter-spacing:-0.01em;color:var(--text);">' + (swingV ? 'By swing' : 'By month') + '</span>' +
           infoIcon('calI', CAL_SWING_INFO, 'How this is counted') + '</span>' +
-        '<span style="' + M_ + 'font-size:12px;color:var(--text-label);white-space:nowrap;">' + (pend ? '&nbsp;' : tm.priced + ' of ' + M.length + ' matches ' + MIDDOT + ' flat 1u') + '</span></div>' +
+          '<span style="font-size:13px;color:var(--text-label);">' + esc(calScopeText(nAct).charAt(0).toUpperCase() + calScopeText(nAct).slice(1)) +
+            (pend ? '' : ' ' + MIDDOT + ' ' + tm.priced + ' of ' + M.length + ' matches ' + MIDDOT + ' flat 1u') + '</span></span></div>' +
       '<div data-pp2-calsc="b" style="overflow-x:auto;"><div style="display:grid;grid-template-columns:' + TCA + ';gap:0 4px;align-items:end;min-width:' + MINW + 'px;">' +
-        '<span style="' + LAB + 'padding-bottom:6px;">Vs other swings</span>' +
-        '<span style="grid-column:' + (swingV ? '2 / ' + (nC + 2) : '2 / -1') + ';position:relative;display:grid;grid-template-columns:' + IN + ';gap:0 4px;height:96px;border-bottom:1px solid var(--edge-6);">' +
+        '<span style="' + LAB + 'padding-bottom:6px;">' + (swingV ? 'Vs other swings' : 'Vs other months') + '</span>' +
+        '<span style="grid-column:2 / ' + (nC + 2) + ';position:relative;display:grid;grid-template-columns:' + IN + ';gap:0 4px;height:96px;border-bottom:1px solid var(--edge-6);">' +
           '<span style="position:absolute;left:0;right:0;top:50%;height:1px;background:color-mix(in srgb, var(--text) 18%, transparent);"></span>' +
           '<span style="position:absolute;right:0;top:2px;' + M_ + 'font-size:9.5px;color:var(--text-label);">+' + maxPP.toFixed(1) + '</span>' +
           '<span style="position:absolute;right:0;bottom:2px;' + M_ + 'font-size:9.5px;color:var(--text-label);">' + MINUS + maxPP.toFixed(1) + '</span>' + bars + '</span>' +
-        codeRows + winRow + pricedRow + yieldRow + vsRow + consRow +
+        codeRows + [winRow, pricedRow, yieldRow, vsRow, consRow].map(function (r) { return r + '<span></span>'; }).join('') +
       '</div></div></div>';
     var trig = filtersTriggerHtml('cal', groups, M.length, W0.length, 620, true, { x: true, gap: '18px 18px', gutter: true });   // the export's Calendar menu is 620px, anchored right
     return calHeadRow(p, trig) + filtersAppliedHtml('cal', groups, M.length, W0.length) + card1 + card2 + calDrawerV2(p, M, cols, view);
@@ -11409,19 +11430,22 @@
       if (!c || c.vs * dir <= STK_EDGE) return { value: DASH, faint: true, fig: '', sub: 'no state stands out' };
       return { value: esc(STK_NAMES[c.k]), fig: signed(c.vs, 1, 'pp'), figColor: dir > 0 ? 'var(--pos)' : 'var(--neg)', sub: 'yield vs ' + (calWinOf() === 'career' ? 'career' : 'the window') };
     };
-    var TILE = 'background:var(--card);border:1.25px solid var(--edge-6);border-radius:12px;padding:13px 12px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px;min-width:0;';
+    var secHead = function (title, sub) { return '<span style="display:flex;flex-direction:column;gap:4px;min-width:0;"><span style="font-size:18px;font-weight:800;color:var(--text);line-height:1.2;">' + title + '</span>' +
+      '<span style="font-size:13px;color:var(--text-label);line-height:1.4;">' + sub + '</span></span>'; };
+    var tLab = function (cap) { return '<span style="font-size:11.5px;font-weight:600;color:var(--text-label);">' + cap + '</span>'; };
+    var TILE = 'background:var(--card);border:1px solid var(--pp-x-edge-9);border-radius:11px;padding:14px 12px 13px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px;min-width:0;';
     var wordTile = function (cap, t) {
-      return '<div style="' + TILE + '">' + recCaps(cap) +
+      return '<div style="' + TILE + '">' + tLab(cap) +
         '<span style="font-size:16px;font-weight:700;line-height:20px;color:' + (t.faint ? 'var(--text-label)' : 'var(--text)') + ';">' + t.value + '</span>' +
-        '<span style="font-size:11px;color:var(--text-label);line-height:19px;white-space:nowrap;">' +
+        '<span style="font-size:11.5px;color:var(--text-label);line-height:19px;white-space:nowrap;">' +
           (t.fig ? '<span style="' + M_ + 'font-weight:600;color:' + t.figColor + ';">' + t.fig + '</span> ' : '') + t.sub + '</span></div>';
     };
     var runTile = function (cap, run, letter) {
-      return '<div style="' + TILE + '">' + recCaps(cap) +
+      return '<div style="' + TILE + '">' + tLab(cap) +
         '<span style="' + M_ + 'font-size:20px;font-weight:700;line-height:20px;color:' + (run ? 'var(--text)' : 'var(--text-label)') + ';">' + (run ? letter + run.len : DASH) + '</span>' +
-        '<span style="font-size:11px;color:var(--text-label);line-height:19px;">' + (run ? esc(stkSpan(seq, run)) : DASH) + '</span></div>';
+        '<span style="font-size:11.5px;color:var(--text-label);line-height:19px;">' + (run ? esc(stkSpan(seq, run)) : DASH) + '</span></div>';
     };
-    var tiles = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:20px;">' +
+    var tiles = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-bottom:22px;">' +
       wordTile('Back him', pickT(1)) + wordTile('Fade him', pickT(-1)) + runTile('Longest win run', bw, 'W') + runTile('Longest losing run', bl, 'L') + '</div>';
     // ── the run timeline: one 6px bar per run, 1px apart; height = run ÷ longest × 68 (min 3); wins up, losses down ──
     var RW = 7, specW = runs.length * RW - 1;
@@ -11440,15 +11464,15 @@
     runs.forEach(function (x) { var y = seq[x.start].r.year, last = yrs[yrs.length - 1]; if (last && last.y === y) last.n++; else yrs.push({ y: y, n: 1 }); });
     var yearsHtml = yrs.map(function (s) {
       var w = s.n * RW;
-      return '<span style="width:' + w + 'px;flex:none;box-sizing:border-box;border-left:1px solid ' + EDGE_8 + ';font-family:var(--font-words);font-size:10.5px;' +
+      return '<span style="width:' + w + 'px;flex:none;box-sizing:border-box;border-left:1px solid var(--edge-6);font-family:var(--font-words);font-size:10.5px;' +
         'font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);padding:6px 0 0 5px;overflow:hidden;white-space:nowrap;">' + (w >= 34 ? esc(s.y) : '') + '</span>';
     }).join('');
     var firstYear = seq[0].r.year;
-    var timeline = '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 8px;">' +
-        recCaps('Run timeline ' + MIDDOT + ' one bar per run') +
-        '<span style="display:inline-flex;gap:14px;">' +
-          '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:8px;height:8px;border-radius:2px;background:color-mix(in srgb, var(--pos) 62%, transparent);"></span>' + recCaps('Wins up') + '</span>' +
-          '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:8px;height:8px;border-radius:2px;background:color-mix(in srgb, var(--neg) 55%, transparent);"></span>' + recCaps('Losses down') + '</span></span></div>' +
+    var timeline = '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 14px;padding-top:22px;border-top:1px solid var(--edge-6);">' +
+        secHead('Run timeline', 'One bar per run ' + MIDDOT + ' click a bar for its matches') +
+        '<span style="display:inline-flex;gap:16px;font-size:12px;color:var(--text-label);">' +
+          '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:6px;height:6px;border-radius:50%;background:var(--pos);"></span>Wins up</span>' +
+          '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:6px;height:6px;border-radius:50%;background:var(--neg);"></span>Losses down</span></span></div>' +
       '<div style="display:grid;grid-template-columns:28px minmax(0,1fr);gap:0 8px;margin-bottom:22px;">' +
         '<span style="position:relative;height:140px;margin-top:30px;' + M_ + 'font-size:9.5px;color:var(--text-label);"><span style="position:absolute;right:0;top:0;">' + maxRun + '</span>' +
           '<span style="position:absolute;right:0;top:50%;transform:translateY(-50%);">0</span><span style="position:absolute;right:0;bottom:0;">' + maxRun + '</span></span>' +
@@ -11456,16 +11480,16 @@
           '<div data-pp2-runsc="1" data-specw="' + specW + '" style="overflow-x:auto;padding-bottom:4px;"><div style="position:relative;width:' + specW + 'px;padding-top:30px;">' +
             // the hover tip: one element, filled and moved by the pointer handler (no repaint), hidden until a bar is under it
             '<span data-pp2-runtip="1" style="display:none;position:absolute;top:0;left:0;transform:translateX(-50%);z-index:2;pointer-events:none;white-space:nowrap;' +
-              'background:var(--selected);border:1px solid color-mix(in srgb, var(--text) 18%, transparent);border-radius:7px;padding:5px 9px;box-shadow:var(--shadow-menu);' +
+              'background:var(--pp-x-lifted);border:1px solid ' + EDGE_14 + ';border-radius:8px;padding:6px 10px;box-shadow:var(--shadow-menu);' +
               M_ + 'font-size:11px;color:var(--text-soft);"></span>' +
             '<div data-pp2-runbars="1" style="position:relative;display:flex;align-items:center;gap:1px;height:140px;">' +
               '<span style="position:absolute;left:0;right:0;top:50%;height:1px;background:color-mix(in srgb, var(--text) 18%, transparent);"></span>' + barsHtml + '</div>' +
-            '<div style="display:flex;border-top:1px solid var(--edge-10);">' + yearsHtml + '</div></div></div>' +
+            '<div style="display:flex;border-top:1px solid var(--edge-6);">' + yearsHtml + '</div></div></div>' +
           // while not at the start: a 72px fade and the chip that scrolls back by 80% of the width (shown by onRunScroll)
           '<span data-pp2-runfade="1" style="display:none;position:absolute;left:0;top:30px;height:140px;width:72px;pointer-events:none;' +
             'background:linear-gradient(90deg, var(--card) 0%, color-mix(in srgb, var(--card) 0%, transparent) 100%);"></span>' +
-          '<span data-pp2="run-earlier" class="pp2-runchip" style="display:none;position:absolute;left:0;top:0;cursor:pointer;white-space:nowrap;background:var(--selected);' +
-            'border:1px solid var(--edge-16);border-radius:7px;padding:5px 10px;font-size:11px;font-weight:600;color:var(--text-soft);">' +
+          '<span data-pp2="run-earlier" class="pp2-runchip" style="display:none;position:absolute;left:0;top:0;cursor:pointer;white-space:nowrap;background:var(--pp-x-lifted);' +
+            'border:1px solid ' + EDGE_14 + ';border-radius:8px;padding:6px 11px;font-size:12px;font-weight:600;color:var(--text-soft);">' +
             '← Scroll for earlier years ' + MIDDOT + ' back to ' + esc(firstYear) + '</span>' +
         '</div></div>';
     // ── what follows a run: two ladders ──
@@ -11476,29 +11500,28 @@
         '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;">' +
           '<span style="' + M_ + 'font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;">' + k + ' <span style="color:var(--text-label);font-weight:400;">→</span> ' + STK_NEXT[k] + '</span>' +
           '<span style="' + M_ + 'font-size:18px;font-weight:700;line-height:1;color:' + (ch == null ? 'var(--text-label)' : 'var(--text)') + ';">' + (ch == null ? DASH : ch.toFixed(1) + '%') + '</span></div>' +
-        '<span style="position:relative;display:block;height:6px;border-radius:3px;background:var(--line);">' +
+        '<span style="position:relative;display:block;height:4px;border-radius:2px;background:var(--pp-x-track-7);">' +
           (ch == null ? '' : '<span style="position:absolute;left:0;top:0;bottom:0;width:' + ch.toFixed(1) + '%;background:' +
-            (win ? 'color-mix(in srgb, var(--pos) 62%, transparent)' : 'color-mix(in srgb, var(--neg) 55%, transparent)') + ';border-radius:3px;"></span>') +
+            (win ? 'color-mix(in srgb, var(--pos) 62%, transparent)' : 'color-mix(in srgb, var(--neg) 55%, transparent)') + ';border-radius:2px;"></span>') +
           '<span style="position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:color-mix(in srgb, var(--text) 32%, transparent);"></span></span>' +
         '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">' +
-          '<span style="' + M_ + 'font-size:11px;color:var(--text-label);white-space:nowrap;">' + (st.n ? recordText(st.w, st.l) : DASH) + ' next match</span>' +
+          '<span style="' + M_ + 'font-size:11.5px;color:var(--text-label);white-space:nowrap;">' + (st.n ? recordText(st.w, st.l) : DASH) + ' next match</span>' +
           '<span style="display:flex;align-items:center;gap:8px;white-space:nowrap;">' +
             (pend ? '&nbsp;' : '<span style="' + M_ + 'font-size:10.5px;color:var(--text-label);">' + v.note + '</span>' +
               '<span style="font-size:11.5px;font-weight:600;color:' + v.color + ';">' + v.label + '</span>') + '</span></div></div>';
     };
     var ladder = function (title, keys) {
-      return '<div style="background:var(--card);border:1.25px solid var(--edge-6);border-radius:12px;padding:14px 16px 4px;min-width:0;">' +
-        '<div style="font-family:var(--font-words);font-size:10.5px;font-weight:800;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-soft);' +
-          'padding-bottom:10px;border-bottom:1px solid var(--edge-10);">' + title + '</div>' + keys.map(ladRow).join('') + '</div>';
+      return '<div style="background:var(--card);border:1px solid var(--pp-x-edge-9);border-radius:11px;padding:16px 18px 4px;min-width:0;">' +
+        '<div style="font-size:14px;font-weight:700;color:var(--text);padding-bottom:12px;border-bottom:1px solid var(--edge-6);">' + title + '</div>' + keys.map(ladRow).join('') + '</div>';
     };
-    var follows = '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;">' +
-        recCaps('What follows a run') + '<span style="position:relative;z-index:3;display:inline-flex;">' + infoIcon('run2', Object.assign({ align: 'right', width: 420 }, RUN_INFO2)) + '</span></div>' +
-      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;">' +
+    var follows = '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;padding-top:22px;border-top:1px solid var(--edge-6);">' +
+        secHead('What follows a run', 'How often he wins the next match, against 50%') + '<span style="position:relative;z-index:3;display:inline-flex;">' + infoIcon('run2', Object.assign({ align: 'right', width: 420 }, RUN_INFO2)) + '</span></div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:8px;">' +
         ladder('After a win', ['W1', 'W2', 'W3+']) + ladder('After a loss', ['L1', 'L2', 'L3+']) + '</div>';
-    var card = '<div style="position:relative;background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;padding:20px 24px 22px;">' +
-      infoCorner('run1', RUN_INFO1).replace('top:14px;right:14px', 'top:16px;right:16px') +
-      '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px;padding-right:28px;">' + recCaps('Runs ' + MIDDOT + ' ' + esc(scope)) +
-        '<span style="' + M_ + 'font-size:12px;color:var(--text-label);white-space:nowrap;">' + runs.length + ' runs ' + MIDDOT + ' longest ' + maxRun + '</span></div>' +
+    var card = '<div style="position:relative;background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;padding:24px 24px 22px;">' +
+      infoCorner('run1', RUN_INFO1).replace('top:14px;right:14px', 'top:26px;right:24px') +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;padding-right:32px;">' +
+        secHead('Runs', esc(scope.charAt(0).toUpperCase() + scope.slice(1)) + ' ' + MIDDOT + ' ' + runs.length + ' runs ' + MIDDOT + ' longest ' + maxRun) + '</div>' +
       tiles + timeline + follows + '</div>';
     return card + stkRunBox(p, S, scope);
   }
@@ -15509,7 +15532,12 @@
     }
     var fbHtml = '';
     if (state.fb && FB_BUILD[state.fb.box]) {
-      try { fbHtml = floatBoxHtml(FB_BUILD[state.fb.box](p, state.fb.v, ctx)); } catch (e) { fbHtml = ''; }
+      try {
+        var fbo = FB_BUILD[state.fb.box](p, state.fb.v, ctx);
+        // v5 §0.9 / §11.2: Level & round and Match-up open the row box with four centred tiles
+        if (fbo && /^(styles|spl|splbox|spltb)$/.test(state.fb.box)) fbo.v5 = true;
+        fbHtml = floatBoxHtml(fbo);
+      } catch (e) { fbHtml = ''; }
     }
     return modalShell(k, p, ctx, body) + fbHtml;
   }
@@ -16087,7 +16115,8 @@
     'stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>';
   var LT_STYLE = '<style>' +
     '.pp2-lttile{transition:border-color .15s,transform .15s;}' +
-    '.pp2-lttile:hover{border-color:color-mix(in srgb, var(--text) 22%, transparent)!important;transform:translateY(-1px);}' +
+    '.pp2-lttile:hover{background:var(--pp-x-hover)!important;border-color:color-mix(in srgb, var(--text) 22%, transparent)!important;}' +
+    '.pp2-v5opt:hover{background:var(--pp-x-hover);}' +
     '.pp2-ltx:hover{color:var(--text)!important;border-color:var(--pp-x-edge-20)!important;}' +
     '.pp2-ltpill:hover{border-color:color-mix(in srgb, var(--text) 30%, transparent)!important;}' +
     '.pp2-ltdone:hover,.pp2-ltchip:hover{border-color:color-mix(in srgb, var(--text) 40%, transparent)!important;}' +
@@ -16189,8 +16218,9 @@
     function gapCell(gap, inv, lead, base, thin, tip) {
       if (gap == null) return { txt: DASH, base: '', color: LT_GREY50, size: '12.5px', weight: 400, edge: null, tip: tip };
       var r = Math.round(gap * 10) / 10, e = inv ? -r : r;
-      return { txt: ltPP(gap), base: base, color: thin || e === 0 ? 'var(--text-label)' : e > 0 ? 'var(--pos)' : 'var(--neg)',
-        size: lead ? '13.5px' : '12px', weight: lead ? 700 : 400, edge: e, tip: tip };
+      // v5 §0.7 / §10: both gap columns 13 mono 700, green / red by sign even on a small sample; grey only for an exact zero
+      return { txt: ltPP(gap), base: base, color: e === 0 ? 'var(--text-label)' : e > 0 ? 'var(--pos)' : 'var(--neg)',
+        size: '13px', weight: 700, edge: e, tip: tip, lead: lead, thin: thin };
     }
     // A row whose SOURCE is absent for this player is not a row (TEN-206 item 3): set rows need set scores somewhere in
     // his career-history (until it has answered they stay, dashed: loading claims nothing); pbp rows need his pbp record.
@@ -16256,19 +16286,19 @@
     var active = (o.groups || []).filter(function (g) { return g.cur !== 'all'; });
     var open = state.fmOpen === o.id, on = active.length > 0;
     var tabs = (o.tabs || []).map(function (t) {
-      return '<span style="display:flex;gap:6px;">' + t.items.map(function (it) { return pp4PillHtml(t.hook, it[0], it[1], t.cur === it[0]); }).join('') + '</span>';
-    }).join('<span style="width:1px;height:20px;background:var(--edge-10);"></span>');
+      return v5Seg(t.hook, t.items, t.cur);
+    }).join('');
     var trig = '<span data-pp2="fm-toggle" data-v="' + esc(o.id) + '" class="pp2-ltpill" style="cursor:pointer;display:inline-flex;align-items:center;gap:8px;' +
-      'padding:6px 13px;border-radius:8px;font-size:11.5px;font-weight:700;white-space:nowrap;color:' + (on ? 'var(--link)' : 'var(--text)') + ';' +
-      'background:' + (on ? 'color-mix(in srgb, var(--link) 10%, transparent)' : 'transparent') + ';' +
-      'border:1px solid ' + (on ? 'color-mix(in srgb, var(--link) 45%, transparent)' : 'var(--edge-16)') + ';">' +
-      '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="pointer-events:none;"><path d="M1 3h10M3 6h6M5 9h2" stroke="currentColor" ' +
-      'stroke-width="1.5" stroke-linecap="round"></path></svg><span style="pointer-events:none;">Filters' + (on ? ' ' + MIDDOT + ' ' + active.length : '') + '</span></span>';
+      'height:38px;box-sizing:border-box;padding:0 13px;border-radius:10px;font-size:13px;font-weight:600;white-space:nowrap;color:' + (on || open ? 'var(--text)' : 'var(--text-label)') + ';' +
+      'background:' + (on || open ? 'var(--pp-x-lifted)' : 'var(--inner)') + ';' +
+      'border:1px solid ' + (open ? 'color-mix(in srgb, var(--text) 22%, transparent)' : on ? EDGE_14 : EDGE_8) + ';">' +
+      '<svg width="11" height="11" viewBox="0 0 12 12" fill="none" style="pointer-events:none;"><path d="M1 3h10M3 6h6M5 9h2" stroke="currentColor" ' +
+      'stroke-width="1.5" stroke-linecap="round"></path></svg><span style="pointer-events:none;">Filters' + (on ? ' <span style="' + LT_MONO + 'font-size:10.5px;font-weight:700;color:var(--text);">' + MIDDOT + ' ' + active.length + '</span>' : '') + '</span></span>';
     var pop = '';
     if (open) {
       pop = '<div data-pp2="fm-close" style="position:fixed;inset:0;z-index:8;"></div>' +
         '<div data-pp2="card" data-pp4-pop="' + esc(o.id) + '" style="position:absolute;top:calc(100% + 10px);right:0;z-index:9;width:' + (o.width || 620) + 'px;' +
-          'max-width:calc(100vw - 48px);box-sizing:border-box;background:var(--card);border:1px solid var(--pp-x-edge-12);border-radius:14px;' +
+          'max-width:calc(100vw - 48px);box-sizing:border-box;background:var(--card);border:1px solid var(--pp-x-edge-9);border-radius:14px;' +
           'box-shadow:var(--pp-x-shadow-pop);padding:20px 22px;display:flex;flex-direction:column;gap:20px;cursor:default;">' +
           o.groups.map(function (g) {
             return '<div style="display:flex;flex-direction:column;gap:10px;"><span style="font-size:10.5px;font-weight:700;letter-spacing:0.10em;' +
@@ -16277,18 +16307,18 @@
                 var sel = g.cur === op[0], n = g.count(op[0]);
                 return '<span data-pp2="fm-set" data-g="' + esc(g.key) + '" data-v="' + esc(op[0]) + '" style="cursor:pointer;display:inline-flex;' +
                   'align-items:baseline;gap:7px;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:' + (sel ? 700 : 600) + ';' +
-                  'color:' + (sel ? 'var(--text)' : 'var(--text-label)') + ';background:' + (sel ? 'var(--selected)' : 'transparent') + ';' +
-                  'border:1px solid ' + (sel ? 'var(--edge-16)' : EDGE_8) + ';white-space:nowrap;"><span style="pointer-events:none;">' + esc(op[1]) +
+                  'color:' + (sel ? 'var(--text)' : 'var(--text-label)') + ';background:' + (sel ? 'var(--pp-x-lifted)' : 'transparent') + ';' +
+                  'border:1px solid ' + (sel ? EDGE_14 : EDGE_8) + ';white-space:nowrap;" class="pp2-v5opt"><span style="pointer-events:none;">' + esc(op[1]) +
                   '</span><span style="pointer-events:none;' + LT_MONO + 'font-size:10.5px;color:var(--text-label);">' + (n == null ? DASH : n) + '</span></span>';
               }).join('') + '</div></div>';
           }).join('') +
-          '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:16px;border-top:1px solid ' + EDGE_8 + ';">' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:16px;border-top:1px solid var(--edge-6);">' +
             '<span data-pp2="fm-reset" data-v="' + esc(o.id) + '" class="pp2-ltclear" style="cursor:pointer;font-size:12px;font-weight:600;color:var(--text-label);">Clear all</span>' +
-            '<span data-pp2="fm-close" class="pp2-ltdone" style="cursor:pointer;padding:8px 18px;border-radius:9px;background:var(--selected);' +
-              'border:1px solid var(--edge-16);font-size:12.5px;font-weight:700;color:var(--text);">Done</span></div>' +
+            '<span data-pp2="fm-close" class="pp2-ltdone" style="cursor:pointer;padding:8px 18px;border-radius:9px;background:var(--pp-x-lifted);' +
+              'border:1px solid ' + EDGE_14 + ';font-size:12.5px;font-weight:700;color:var(--text);">Done</span></div>' +
         '</div>';
     }
-    var band = '<div data-pp2-band="pp4" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:20px 24px;background:var(--card);' +
+    var band = '<div data-pp2-band="pp4" style="display:flex;align-items:center;gap:12px 10px;flex-wrap:wrap;padding:22px 24px;background:var(--card);' +
       'border:1.25px solid var(--edge-6);border-radius:16px;">' + tabs +
       '<span style="margin-left:auto;position:relative;display:flex;">' + trig + pop + '</span></div>';
     var chips = !on ? '' : '<div data-pp4-applied="' + esc(o.id) + '" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:-2px;padding:0 4px;">' +
@@ -16296,7 +16326,7 @@
       active.map(function (g) {
         var op = g.options.filter(function (x) { return x[0] === g.cur; })[0];
         return '<span data-pp2="fm-set" data-g="' + esc(g.key) + '" data-v="all" class="pp2-ltchip" style="cursor:pointer;display:inline-flex;align-items:center;gap:7px;' +
-          'padding:5px 10px;border-radius:8px;font-size:11.5px;font-weight:600;color:var(--text);background:var(--selected);border:1px solid var(--edge-16);">' +
+          'padding:4px 9px 4px 10px;border-radius:7px;font-size:11px;font-weight:600;color:var(--text);background:var(--pp-x-lifted);border:1px solid ' + EDGE_14 + ';">' +
           '<span style="pointer-events:none;">' + esc(op ? (g.chip ? g.chip(op) : op[1]) : g.cur) + '</span><span style="pointer-events:none;color:var(--text-label);">' + TIMES + '</span></span>';
       }).join('') +
       '<span data-pp2="fm-reset" data-v="' + esc(o.id) + '" class="pp2-ltclear" style="cursor:pointer;font-size:11.5px;font-weight:600;color:var(--text-label);margin-left:4px;">Clear all</span>' +
@@ -16322,29 +16352,31 @@
   }
 
   // ── tiles ───────────────────────────────────────────────────────────────────
-  var LT_TILE = 'cursor:pointer;display:flex;flex-direction:column;gap:10px;min-width:0;padding:18px 20px;border-radius:14px;' +
-    'background:var(--card);border:1.25px solid var(--edge-6);box-sizing:border-box;';
+  var LT_TILE = 'cursor:pointer;display:flex;flex-direction:column;gap:10px;min-width:0;padding:16px 18px 14px;border-radius:11px;' +
+    'background:var(--card);border:1px solid var(--pp-x-edge-9);box-sizing:border-box;';
+  var LT_LAB = 'font-size:11.5px;font-weight:600;color:var(--text-label);';
+  var LT_GO = '<span style="font-size:14px;font-weight:700;line-height:1;color:var(--pp-x-link);">›</span>';
   function ltTileHtml(cap, r) {
     if (!r) {
       return '<div style="' + LT_TILE + 'cursor:default;">' +
-        '<span style="' + LT_CAPS + '">' + esc(cap) + '</span>' +
-        '<span style="font-size:13px;font-weight:700;color:var(--text-label);">' + DASH + '</span>' +
+        '<span style="' + LT_LAB + '">' + esc(cap) + '</span>' +
+        '<span style="font-size:15px;font-weight:700;color:var(--text-label);">' + DASH + '</span>' +
         '<span style="font-size:12px;color:var(--text-label);">No situation on 10+ matches in this scope</span></div>';
     }
     var picked = state.ltPicked === r.id;
     return '<div data-pp2="lt-tile" data-v="' + esc(r.id) + '" class="pp2-lttile" style="' + LT_TILE + '">' +
-      '<span style="display:flex;justify-content:space-between;gap:8px;pointer-events:none;"><span style="' + LT_CAPS + '">' + esc(cap) +
-        '</span><span style="font-size:11.5px;font-weight:600;color:var(--text-label);white-space:nowrap;">Matches ›</span></span>' +
-      '<span style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;">' + esc(r.label) + '</span>' +
+      '<span style="display:flex;justify-content:space-between;gap:8px;pointer-events:none;"><span style="' + LT_LAB + '">' + esc(cap) +
+        '</span>' + LT_GO + '</span>' +
+      '<span style="font-size:15px;font-weight:700;letter-spacing:-0.01em;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;">' + esc(r.label) + '</span>' +
       '<span style="display:flex;align-items:baseline;gap:10px;pointer-events:none;"><span style="' + LT_MONO + 'font-size:26px;font-weight:700;line-height:1;color:var(--text);">' +
-        esc(r.rate.toFixed(1) + '%') + '</span><span style="' + LT_MONO + 'font-size:12px;font-weight:700;color:' +
+        esc(r.rate.toFixed(1) + '%') + '</span><span style="' + LT_MONO + 'font-size:13px;font-weight:700;color:' +
         (r.key.edge > 0 ? 'var(--pos)' : r.key.edge < 0 ? 'var(--neg)' : 'var(--text-label)') + ';white-space:nowrap;">' + esc(r.key.txt) + '</span>' +
         '<span style="font-size:12px;color:var(--text-label);white-space:nowrap;">' + esc(r.against) + '</span></span>' +
-      '<span style="position:relative;display:block;height:4px;border-radius:2px;background:var(--line);pointer-events:none;">' +
+      '<span style="position:relative;display:block;height:4px;border-radius:2px;background:var(--pp-x-track-7);pointer-events:none;">' +
         '<span data-lt-bar="' + (picked ? 'on' : 'off') + '" style="position:absolute;left:0;top:0;bottom:0;width:' + r.rate.toFixed(1) + '%;border-radius:2px;background:' + pp4Bar(picked) + ';"></span>' +
         (r.base == null ? '' : '<span style="position:absolute;left:' + Math.max(0, Math.min(100, r.base)).toFixed(1) + '%;top:-3px;bottom:-3px;width:2px;background:var(--text);"></span>') +
       '</span>' +
-      '<span style="display:flex;justify-content:space-between;gap:8px;' + LT_MONO + 'font-size:11.5px;color:var(--text-label);white-space:nowrap;pointer-events:none;">' +
+      '<span style="display:flex;justify-content:space-between;gap:8px;' + LT_MONO + 'font-size:12px;color:var(--text-label);white-space:nowrap;pointer-events:none;">' +
         '<span>' + esc(r.w + ' of ' + r.n) + '</span><span>' + esc(r.baseTxt) + '</span></span>' +
     '</div>';
   }
@@ -16354,22 +16386,22 @@
       var why = !hbEngine() || !hbStore() ? 'Hold/break data is not loaded.'
         : sn + ' has no point-by-point data on record, so holds and breaks by game cannot be shown.';
       return '<div title="' + esc(why) + '" style="' + LT_TILE + 'cursor:default;">' +
-        '<span style="' + LT_CAPS + '">Hold / break heatmap</span>' +
-        '<span style="font-size:13px;font-weight:700;color:var(--text-label);">No point-by-point data</span>' +
+        '<span style="' + LT_LAB + '">Hold / break heatmap</span>' +
+        '<span style="font-size:15px;font-weight:700;color:var(--text-label);">No point-by-point data</span>' +
         '<span style="' + LT_MONO + 'font-size:26px;font-weight:700;line-height:1;color:var(--text-label);">' + DASH + '</span></div>';
     }
     var h = M.heat && M.heat.hold, b = M.heat && M.heat.brk, picked = state.ltPicked === 'heat';
     var pct = h ? h.pct.toFixed(1) + '%' : DASH;
     return '<div data-pp2="heat" class="pp2-lttile" style="' + LT_TILE + '"' + (h ? '' : ' title="Held for the last 24 months only, on all surfaces, clay or grass, with no other filter"') + '>' +
-      '<span style="display:flex;justify-content:space-between;gap:8px;pointer-events:none;"><span style="' + LT_CAPS + '">Hold / break heatmap</span>' +
-        '<span style="font-size:11.5px;font-weight:600;color:var(--text-label);">Open ›</span></span>' +
-      '<span style="font-size:13px;font-weight:700;color:var(--text);pointer-events:none;">By game pair, set by set</span>' +
+      '<span style="display:flex;justify-content:space-between;gap:8px;pointer-events:none;"><span style="' + LT_LAB + '">Hold / break heatmap</span>' +
+        LT_GO + '</span>' +
+      '<span style="font-size:15px;font-weight:700;letter-spacing:-0.01em;color:var(--text);pointer-events:none;">By game pair, set by set</span>' +
       '<span style="display:flex;align-items:baseline;gap:10px;pointer-events:none;"><span style="' + LT_MONO + 'font-size:26px;font-weight:700;line-height:1;color:' +
         (h ? 'var(--text)' : 'var(--text-label)') + ';">' + pct + '</span><span style="font-size:12px;color:var(--text-label);">service games held</span></span>' +
-      '<span style="position:relative;display:block;height:4px;border-radius:2px;background:var(--line);pointer-events:none;">' +
+      '<span style="position:relative;display:block;height:4px;border-radius:2px;background:var(--pp-x-track-7);pointer-events:none;">' +
         (h ? '<span data-lt-bar="' + (picked ? 'on' : 'off') + '" style="position:absolute;left:0;top:0;bottom:0;width:' + pct + ';border-radius:2px;background:' + pp4Bar(picked) + ';"></span>' : '') +
       '</span>' +
-      '<span style="display:flex;justify-content:space-between;gap:8px;' + LT_MONO + 'font-size:11.5px;color:var(--text-label);white-space:nowrap;pointer-events:none;">' +
+      '<span style="display:flex;justify-content:space-between;gap:8px;' + LT_MONO + 'font-size:12px;color:var(--text-label);white-space:nowrap;pointer-events:none;">' +
         '<span>' + (h ? esc(h.w.toLocaleString('en-US') + ' of ' + h.n.toLocaleString('en-US') + ' games') : DASH) + '</span>' +
         '<span>' + (b ? 'breaks ' + b.pct.toFixed(1) + '%' : '') + '</span></span>' +
     '</div>';
@@ -16380,7 +16412,7 @@
   function ltGapHtml(c) {
     return '<span title="' + esc(c.tip || '') + '" style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">' +
       '<span style="' + LT_MONO + 'font-size:' + c.size + ';font-weight:' + c.weight + ';color:' + c.color + ';">' + esc(c.txt) + '</span>' +
-      '<span style="' + LT_MONO + 'font-size:10.5px;color:var(--text-label);white-space:nowrap;">' + esc(c.base) + '</span></span>';
+      '<span style="' + LT_MONO + 'font-size:11px;color:var(--text-label);white-space:nowrap;">' + esc(c.base) + '</span></span>';
   }
   function ltInfoSpec(p, M) {
     var pbpN = M.pbp ? M.pbp.matches : null;
@@ -16401,32 +16433,32 @@
       (M.pbp && M.pbp.matches != null ? ' and ' + M.pbp.matches + ' with point-by-point data' : '') + ' we hold for ' + shortName(p) +
       ', not the full career figure shown in Career record. Situations are counted per match, so a match can appear in several rows. ' +
       'Nothing here is estimated.';
-    var head = '<div style="display:grid;grid-template-columns:190px ' + LT_COLS + ';gap:0 20px;align-items:baseline;padding:24px 0 12px;">' +
+    var head = '<div style="display:grid;grid-template-columns:190px ' + LT_COLS + ';gap:0 20px;align-items:baseline;padding:20px 0 10px;white-space:nowrap;">' +
       '<span></span>' + ['Situation', 'Record', 'Rate', 'Vs his norm', 'Vs tour'].map(function (h, i) {
         return '<span style="' + LT_CAPS + 'text-align:' + (i ? 'right' : 'left') + ';">' + h + '</span>';
       }).join('') + '</div>';
     var body = M.groups.map(function (g) {
       var on = open[g.title] == null ? true : !!open[g.title];
-      return '<div style="display:grid;grid-template-columns:190px minmax(0,1fr);gap:0 20px;margin:0 -24px;padding:0 24px;border-top:1px solid var(--edge-10);">' +
+      return '<div style="display:grid;grid-template-columns:190px minmax(0,1fr);gap:0 20px;border-top:1px solid var(--edge-6);">' +
         '<div data-pp2="sit-toggle" data-v="' + esc(g.title) + '" role="button" aria-expanded="' + (on ? 'true' : 'false') + '" ' +
           'style="cursor:pointer;display:flex;align-items:center;gap:10px;height:54px;align-self:start;">' +
-          '<span style="font-size:15px;font-weight:700;color:var(--text);white-space:nowrap;pointer-events:none;">' + esc(g.title) + '</span>' +
+          '<span style="font-size:14.5px;font-weight:700;letter-spacing:-0.01em;color:var(--text);white-space:nowrap;pointer-events:none;">' + esc(g.title) + '</span>' +
           '<svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="transform:rotate(' + (on ? '90deg' : '0deg') + ');transition:transform .14s ease;flex:none;pointer-events:none;">' +
-            '<path d="M3 1l4 4-4 4" stroke="var(--text-label)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>' +
+            '<path d="M3 1l4 4-4 4" stroke="var(--pp-x-link)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>' +
         '<div style="display:flex;flex-direction:column;margin-bottom:-1px;min-width:0;">' +
         (on ? g.rows.map(function (r) {
-          return '<div data-lt-row="' + esc(r.id) + '" style="display:grid;grid-template-columns:' + LT_COLS + ';gap:0 20px;align-items:center;height:54px;border-bottom:1px solid var(--line);"' +
+          return '<div data-lt-row="' + esc(r.id) + '" style="display:grid;grid-template-columns:' + LT_COLS + ';gap:0 20px;align-items:center;height:54px;border-bottom:1px solid var(--edge-6);"' +
             (r.why ? ' title="' + esc(r.why) + '"' : '') + '>' +
-            '<span style="display:flex;align-items:baseline;gap:10px;min-width:0;"><span style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' +
+            '<span style="display:flex;align-items:baseline;gap:10px;min-width:0;"><span style="font-size:13.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' +
               esc(r.label) + '</span>' + (r.note ? '<span style="font-size:11.5px;color:var(--text-label);white-space:nowrap;">' + esc(r.note) + '</span>' : '') + '</span>' +
-            '<span style="' + LT_MONO + 'font-size:12.5px;color:var(--text-soft);text-align:right;">' + esc(r.rec) + '</span>' +
+            '<span style="' + LT_MONO + 'font-size:13px;color:var(--text-label);text-align:right;white-space:nowrap;">' + esc(r.rec) + '</span>' +
             '<span style="' + LT_MONO + 'font-size:14px;font-weight:700;color:' + r.rateColor + ';text-align:right;">' + esc(r.rateTxt) + '</span>' +
             ltGapHtml(r.N) + ltGapHtml(r.T) + '</div>';
         }).join('') : '') + '</div></div>';
     }).join('');
-    return '<div data-lt="card" style="display:flex;flex-direction:column;background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;overflow:hidden;padding:24px 24px 8px;">' +
+    return '<div data-lt="card" style="display:flex;flex-direction:column;background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;overflow:hidden;padding:24px 24px 10px;">' +
       '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px;"><span style="display:inline-flex;align-items:center;gap:10px;position:relative;">' +
-        '<span data-sit="head" title="' + esc(noteTip) + '" style="font-size:16px;font-weight:800;letter-spacing:-0.01em;color:var(--text);">Record by situation</span>' +
+        '<span data-sit="head" title="' + esc(noteTip) + '" style="font-size:18px;font-weight:800;letter-spacing:-0.01em;color:var(--text);">Record by situation</span>' +
         infoIcon('lt-sit', ltInfoSpec(p, M), 'About these figures') + '</span></div>' +
       head + body + '</div>';
   }
@@ -16534,7 +16566,7 @@
     var bar = pp4FilterBarHtml({ id: 'lt', tabs: [
       { hook: 'lt-win', items: LT_WIN, cur: M.S.win },
       { hook: 'lt-surf', items: LT_SURF, cur: M.S.surf }], groups: ltFilterGroups(p, M) });
-    var tiles = '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;">' +
+    var tiles = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px;">' +
       ltTileHtml('Strongest spot', M.best) + ltTileHtml('Weakest spot', M.worst) + ltHeatTileHtml(p, M) + '</div>';
     return LT_STYLE + '<div data-lt="body" style="display:flex;flex-direction:column;gap:16px;">' + bar + tiles +
       (M.groups.length ? ltCardHtml(p, M) : renderSituational(p)) + '</div>' + ltSpotBoxHtml(p, M);

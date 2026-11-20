@@ -97,7 +97,8 @@ function readers(I) {
     const st = { key: p.key, seasonTab: 'calendar', calWin: 'career', calSurf: 'all', calCellV2: null, calSpeed: 'all', calFmt: 'all', calBand: 'all', calArch: 'all', calCtry: 'all' };
     const h = withState(Object.assign({ info: 'cal1' }, st), () => I.renderSeasonModal(p)) + withState(Object.assign({ info: 'cal2' }, st), () => I.renderSeasonModal(p));
     const t = text(h);
-    const head = /Calendar form · career · all surfaces ([\d,]+) matches/i.exec(t);
+    // v5 §2 (2026-11-20): "Calendar form" 18/800 over "Career · all surfaces · 981 matches · 2011–2026"
+    const head = /Calendar form\b.{0,40}?career · all surfaces · ([\d,]+) matches/i.exec(t);
     const und = /([\d,]+) (?:matches carry|match carries) no dated match row/.exec(t);
     const out = /([\d,]+) dated match(?:es)? falls? outside/.exec(t);
     // Footer rows, one cell per month, in the order the renderer writes them (Month · n · Yield · Vs others).

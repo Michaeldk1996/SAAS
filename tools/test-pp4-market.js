@@ -140,7 +140,7 @@ H.check('8.2 grids: role strip minmax(0,1fr) minmax(0,1fr) 340px, body minmax(0,
   const h = lines();
   assert(/grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\) 340px;/.test(h), 'strip grid');
   assert(/grid-template-columns:minmax\(0,1fr\) 340px;/.test(h), 'body grid');
-  assert(/top:22px;right:364px;/.test(h), '(?) placement');
+  assert(/top:26px;right:364px;/.test(h), '(?) placement');   // v5 §9: both columns pad 24, the (?) beside the 18/800 head
   assert(!/have no closing price|Retirements are left out of every line\./.test(T(h)), 'a foot note');
   return 'grids';
 });
@@ -181,9 +181,9 @@ H.check('8.2 the panel: default pick = the rated line with the largest gap above
   assert(!/data-pp2="fb-open"[^>]*data-lc-chip/.test(h), 'a chip opens the match box');
   return 'default ' + picked + ' · pick kept';
 });
-H.check('8.2 the panel: rate 36px, "Covers n in 10 · word" on the 8 / 6 / 4 cut-offs, Record · Last N · Longest run of misses · Against the field', () => {
+H.check('8.2 the panel: rate 26px (v5 §9), "Covers n in 10 · word" on the 8 / 6 / 4 cut-offs, Record · Last N · Longest run of misses · Against the field', () => {
   const h = lines({ lcPick: '+2.5 games' }), pan = /<div data-lc-panel[\s\S]*$/.exec(h)[0];
-  assert(/data-lc-rate style="[^"]*font-size:36px/.test(pan), 'rate size');
+  assert(/data-lc-rate style="[^"]*font-size:26px/.test(pan), 'rate size');   // v5 §9: cover rate 26 mono 700
   const w = /data-lc-word[^>]*>([^<]+)</.exec(pan)[1];
   const m = /^Covers (\d+) in 10 · (very reliable|reliable|coin flip|unreliable)$/.exec(w);
   assert(m, 'word ' + w);

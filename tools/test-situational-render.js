@@ -139,18 +139,15 @@ check('rows with no natural norm dash Vs his norm (first break, break back, Afte
   assert(/title="His sets won rate: [\d.]+%"/.test(r.winSet1), 'Win first set has no sets-won norm');
 });
 
-check('bold = vs his norm on hold / break rows, vs tour elsewhere; lower-is-better inverted', () => {
+check('v5 §0.7 / §10 (2026-11-20): vs his norm and vs tour are both 13 mono 700, coloured by "good for him"; lower-is-better inverted', () => {
   const I = load();
   const r = rowsOf(I.renderSituational(SUBJECT));
-  // brokenFirstSvc 10.0% vs his broken norm 20.0% (hold 80%): −10.0pp, GOOD for him → green, bold
-  assert(/font-size:13\.5px;font-weight:700;color:var\(--pos\);">−10\.0pp/.test(r.brokenFirstSvc), 'inverted row not green / bold: ' + text(r.brokenFirstSvc));
-  assert(/font-size:12px;font-weight:400;color:var\(--pos\);">−10\.0pp/.test(r.brokenFirstSvc), 'its vs tour (−10.0 vs 20%) is not regular green');
-  // holdWinSet 77.3% vs hold norm 80% → red bold
-  assert(/font-size:13\.5px;font-weight:700;color:var\(--neg\);">−2\.7pp/.test(r.holdWinSet), 'hold row vs his norm not bold red');
-  // Win first set: vs his norm regular, vs tour bold
-  const cells = r.winSet1.split('title="');
-  assert(/font-size:12px;font-weight:400/.test(cells[1]) && /^Tour rate[\s\S]*font-size:13\.5px;font-weight:700/.test(cells[2]),
-    'Win first set: vs tour is not the bold figure');
+  // brokenFirstSvc 10.0% vs his broken norm 20.0% (hold 80%): −10.0pp, GOOD for him → green; its vs tour (−10.0 vs 20%) green too
+  assert((r.brokenFirstSvc.match(/font-size:13px;font-weight:700;color:var\(--pos\);">−10\.0pp/g) || []).length === 2, 'inverted row not green on both: ' + text(r.brokenFirstSvc));
+  // holdWinSet 77.3% vs hold norm 80% → red
+  assert(/font-size:13px;font-weight:700;color:var\(--neg\);">−2\.7pp/.test(r.holdWinSet), 'hold row vs his norm not red');
+  // no 12px / 400 gap cell is left anywhere (the v4 "lead" split is retired)
+  assert(!/font-size:12px;font-weight:400;color:var\(--(pos|neg)\)/.test(r.winSet1 + r.holdWinSet + r.brokenFirstSvc), 'a v4 regular gap cell');
 });
 
 check('Window re-derives the set rows; any scope the pbp store cannot honour dashes the pbp rows with its reason', () => {
