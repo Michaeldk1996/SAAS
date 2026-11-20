@@ -1,16 +1,18 @@
 # Head to Head page — the design build (founder 2026-11-16, design_handoff_head_to_head)
 
 Applies to `window.H2HPage` in `bsp-consult-dashboard.html` (the block after "H2H REBUILD (design_handoff_head_to_head)")
-and `h2h-page.css`. **Design source:** `design_handoff_head_to_head/` (repo root, never published): `README.md` and
-`reference/Head to Head.dc.html` — the reference file wins over the README for every pixel; its own `PROMPT_STEP8*.md`,
-`FIXES_STEP8_*.md` and `PROMPT_CLAUDE_CODE.md` are the old version's history and are not followed. Night only. **This file
+and `h2h-page.css`. **Design source:** `design_handoff_head_to_head_2026-11-20/` (repo root, never published; it replaces
+`design_handoff_head_to_head/`): `README.md`, `CHANGELOG_2026-11-20.md` and `reference/Head to Head.dc.html` — the
+reference file wins over the README for every pixel; `reference_options/` are option studies (not built), `history/` the
+older change notes. Night only. **This file
 replaces the TEN-402 look** (white bars, caps section heads, the darker-track rows, the 35b header card): founder brief
 2026-11-16, "the live Head to Head page matches the design … pixel for pixel". A display rebuild: every figure keeps its
 live calculation (Data below).
 
 ## Page
 - **Colours = the export's own values**, page-scoped tokens `--h2h-*` in `tokens.css` (`--h2h-card` #0E1019,
-  `--h2h-layer` #121521, `--h2h-inner` #0C0E16, `--h2h-raised` #131623, `--h2h-text` #E7E9EE, `--h2h-soft` #C6CCDB, `--h2h-grey` #8B96B5,
+  `--h2h-layer` #121521, `--h2h-inner` #0C0E16, `--h2h-raised` #121521 (lifted, with a 14% edge), `--h2h-hover` #171B28
+  (every hover fill, never a white or blue wash), `--h2h-track` #0A0C13 (every switch track, 10% edge) — 20 Nov §8, `--h2h-text` #E7E9EE, `--h2h-soft` #C6CCDB, `--h2h-grey` #8B96B5,
   `--h2h-blue` #5B9BFF, `--h2h-up` / `--h2h-down`; white alphas = `color-mix` of `--h2h-white`). Nothing else reads them.
   **Test:** `tools/lint-raw-colours.mjs` (0 raw colours) and the H2H suites (each role's token).
 - **One colour for every box (design change 2026-11-18 §3):** every box inside a section or pop-up AND every caps column
@@ -28,13 +30,16 @@ live calculation (Data below).
   **Test:** with a pair AND with none, `.tabpage[data-page="h2h"]` and `.x-wrap` compute transparent and the sticky band
   reads `--page` under the page glow (`--glow`, the `--page-bg` geometry).
 - **Page title = the header card** (design change 2026-11-18 §2, as on Database / Tournaments / Stennisfy Model): card
-  tone, 1.25px 6% edge, r12, 18/26; "Head to Head" 24/800, the sub 13 grey, the "?" (coverage) at the right; it scrolls,
+  tone, 1px 6% edge, r12, 18/26; "Head to Head" 24/800, the sub 13 grey, the "?" (coverage) at the right; it scrolls,
   only the picker is sticky.
-- **Switches, one size everywhere** (design change 2026-11-18 §8): track well, 8% edge, r10, pad 3, gap 3; tabs 6/14, r7,
-  13px, on = raised + 16% (`xSw` 'lg' / 'fill' as an inset ring; 'lgb' as a 1px border — Playing style window, Latest news
+- **Switches, one size everywhere** (design change 2026-11-18 §8; 20 Nov §8): track `--h2h-track` + 10% edge, r10, pad 3,
+  gap 3; tabs 6/14, r7, 13px, on = raised + 14% (`xSw` 'lg' / 'fill' as an inset ring; 'lgb' as a 1px border — Playing style window, Latest news
   kind); the match sheet's scope and set switches take the same size on this page only (`maSeg` while
   `fhSheetTone()` is 'h2h'). **Test:** no switch on the page or its sheet has a 2px pad or 11–12px tabs.
-- **Section cards:** padding 24/26, inner gap 16, 1.25px 6% edge, r14 — all seven (design change 2026-11-18 §8).
+- **Section cards:** padding 24, inner gap 16, 1px 6% edge, r16 — all seven (20 Nov §8). Every card edge and divider is 1px
+  at 6% white. **No uppercase label anywhere** (20 Nov §8): every small label (column heads, group heads, tile labels, "vs",
+  "Change", country chips) is Hanken 11.5 / 600 `--h2h-grey`, normal case, no letter-spacing (`X_CAP`, `.x-cap`). Small grey
+  notes are 11.5px. **Test:** no `text-transform:uppercase` in the page block.
 - **Returns read in %, never u** (2026-11-17 §4): "Return at a flat 1% stake" (1% of bankroll a match), its band rows,
   totals, chart axis and line ends, and the Tournament Backing ("flat 1% stake · N bets").
 - **Player one is blue, player two white, wherever two players' stats meet** (README): avatar rings, the radar polygons, the
@@ -59,10 +64,11 @@ live calculation (Data below).
   initials, 1px 16% edge, no ring, never a photo (`xMini`; ruling 10). **Test:** the picker's `<img>` carries
   `loading="eager"`; no `<img>` in the Meetings head, the tournament list heads or any `xIni`; no `box-shadow:0 0 0 2px` on
   a picker, Career matches head, Market edge or news avatar (`test-ten402-a.mjs`, `test-ten402-c.mjs`, `test-h2h-1117.mjs`).
-- **One component each:** the "?" `xHelp` (22px, its explanation is the hover title — **no footnotes**; every
+- **One component each:** the "?" `xHelp` (16px circle, 22% edge, Plex Mono 10/700 — 20 Nov §8; its explanation is the hover title — **no footnotes**; every
   definition lives in a "?" or a label's title), the pill switch `xSw`, the section head `xHead`. Hovers are classes in
-  `h2h-page.css` (the reference's style-hover): rows, bands and lines → the raised tone; the Overall box lifts with a 16%
-  edge; a ✕ / Filters ring brightens to 30%.
+  `h2h-page.css` (the reference's style-hover): every hover fill is `--h2h-hover` (rows, bands, lines, the Overall box,
+  lifted buttons); a ✕ / swap ring brightens to 22%. Lifted buttons (Filters, Reset filters, Done) = raised + 14% edge,
+  white 600 (Reset / Done 34px high) — no blue button fill or edge (20 Nov §6).
 - **Narrow (< 900px; the reference breaks there):** the pickers stack around the VS row, a picked name wraps instead of
   being cut, the radar takes its own row, the hot-lines table scrolls sideways inside its card.
 - **Hand-over:** `?a=&b=` (player keys, or a name that resolves to exactly one player), else sessionStorage
@@ -72,17 +78,24 @@ live calculation (Data below).
 
 ## Sections (what the design build shows, on which live data)
 - **Stennisfy Model:** the pair estimate (Data → Model) in two inner cards; a Surface / Format switch flashes both prices
-  blue for 520 ms. Under each price, the **Elo-only price** (founder 2026-11-17: the engine's Elo base `cell[1]`, before
-  any layer, on the same margin), so the layers' effect reads directly. **The explanation lives in the card head's "?"**
+  blue for 520 ms. **Each box shows the likely opening price only, as the design draws it** (founder 2026-11-20, replacing
+  the 2026-11-17 "Elo only" line under the price); the **Elo-only price** (the engine's Elo base `cell[1]`, before any
+  layer, on the same margin) is the last line of the head "?": "Elo alone, no model layer: <A> x · <B> y". **The explanation lives in the card head's "?"**
   (founder ruling 7, 2026-11-18): "Win chance A x% · B y% · <surface>, best of N" / "Elo base x% for A, moved by k of 10
   model layers · plus Pinnacle's typical opening margin, m% (n=…) · model run HH:MM". **Test:** the card body holds no
   "Win chance" or "Elo base" text; the "?" title holds both lines.
-- **Playing style:** radar (both polygons solid, A blue on top) + ten face-to-face rows: Elo, Serve, Return, Under
-  pressure, Dominance ratio · 1st / 2nd serve points won, Service games held · Return games won, Break points converted.
+- **Playing style (20 Nov §1–4, design 1a radar + 3d layout):** a round radar — outer ring r105 (1.5% fill, 10% stroke),
+  three dotted inner rings (r 78.75 / 52.5 / 26.25, 6%, dash 2 4), 6% spokes, viewBox `55 0 310 270`; B's shape (text 7%
+  fill, stroke 1.5) under A's (blue 16%, stroke 2), a dot r3.5 on every value (B hollow, A solid, drawn last); Return and
+  Surface Elo labels in the top corners of the box, Serve above, Under pressure / Dominance ratio beside the lower spokes;
+  the row `align-items:center`, gap 18/32, radar column `flex:1 1 340px` max 500, list `flex:1.05 1 330px`; nothing under
+  the radar. Ten rows in a fixed order: **Ratings** Elo, Dominance ratio, Serve rating, Return rating, Under pressure ·
+  **Serve** 1st serve in, 1st serve points won, 2nd serve points won, Service games held · **Return** Return games won. No
+  break point row.
   **Windows Last 52 weeks · Career** (founder ruling 8, 2026-11-18, re-ruled the same day: "skip Last 24 months" — no
   file holds that window, so the option is gone; "Since Mar 2024" is gone too). What each reads:
-  - Last 52 weeks = the DNA file's `last52` (ratings, percentiles, `serve.firstWonPct` / `secondWonPct` / `holdPct`,
-    `return.returnGamesWonPct` / `bpConvPct`); Elo = the current weekly Elo on the surface.
+  - Last 52 weeks = the DNA file's `last52` (ratings, percentiles, `serve.firstInPct` / `firstWonPct` / `secondWonPct` /
+    `holdPct`, `return.returnGamesWonPct`); Elo = the current weekly Elo on the surface.
   - Career = `surface-ratings.json` `career` (2010–now, the Database → Ratings figures): Serve, Return, Under pressure
     ratings, the shape their pool-percentile `index`; **Dominance ratio** = the node's `dominance` (founder 2026-11-19:
     return points won % ÷ (100 − service points won %), tour-level counts, built by `surface-ratings.js` with its pool
@@ -105,9 +118,10 @@ live calculation (Data below).
 - **Hot-line panel, Covered tile** (founder 2026-11-17): under the rate floor (n < 5) the figure is the count ("1 of 3"),
   never a dash, and the sub names the covered meetings ("At Barcelona Open 2026, …" / "Not covered yet"); from 5 the rate.
   "Most covered" is a white pill (11/700 on white 7%, r999), the dots stay blue (design change 2026-11-17 §6).
-- **Head to head box:** four tiles, each value with **ONE short sentence under it, never more** (founder ruling 9,
-  2026-11-18) — Total points won (the meetings' own box scores, `setstats/`, summed: "<leader> over N meetings, <other>
-  y%", "k of n meetings" when some lack one; none → "—"), On <global surface> ("a–b on clay, c–d on grass"), Went to a
+- **Head to head box:** four tiles, each value with **ONE short sentence under it, on one line, never more** (founder
+  ruling 9, 2026-11-18; founder 2026-11-20 "on one line": the subs never wrap, the tiles grow to fit, `x-boxtiles`) —
+  Total points won (the meetings' own box scores, `setstats/`, summed; the sub is the OTHER player's share only, "Zverev
+  48.7%" — founder 2026-11-20; the leader and the meetings counted are the tile's hover; none → "—"), On <global surface> ("a–b on clay, c–d on grass"), Went to a
   deciding set (one: "<Winner> won it 2–1 at <event> <year>"; more: "A won x, B won y"), Favourite won (the shorter
   closing price; "<last underdog winner> won as underdog at <event> <year>", or "The favourite won every one"; the
   count of underdog wins, level-priced and unpriced meetings move to the tile's hover). **Test:** no tile sub holds a
@@ -116,14 +130,14 @@ live calculation (Data below).
   weeks · Last 24 months · Career — **Career by default**, founder 2026-11-16), Surface and Court speed (the profile's one
   speed rule, `speedRowOf` → `speedBandForRow`; a venue with no rating leaves a picked speed and the card says how many).
   Win rate from `H2H_STYLE_FLOOR` = 5 matches (= the profile's Match-up record floor), **white at every n it prints, as the
-  design draws it** (founder 2026-11-19; the 5–9 "Small sample · n=" is its hover); the **Vs style average
-  keeps its sign colour at 5–9** (founder 2026-11-17: a filter never takes the green away), "—" under 5. **Vs style average** =
-  his win rate minus the matchup-matrix cell for his own style against that style (career, all surfaces — the only
-  population the matrix holds; it does not follow the filters, the label's title says so). Career match cards: 6 rows,
-  "Show n more", opponents by surname, every row opens the sheet. *Why a figure can read "0 pts"* (investigated 18 Nov):
-  Alcaraz v Solid Defenders, Career, is 21–5 (81%) against the tour cell All Court Elite v Solid Defender 81% (83 of 103)
-  — level at the printed whole points, so a grey "0 pts"; on Last 52 weeks he has 4 such matches (under 5, no rate).
-- **Tournament record (design change 2026-11-17 §3):** a filter box — Tournament search, then Window (Career default ·
+  design draws it** (founder 2026-11-19; the 5–9 "Small sample · n=" is its hover). Three separate tiles (inner tone, 6%
+  edge, r11, gap 8; 20 Nov §6): Record and Win rate white, **Vs other styles** green / red. **Vs other styles = his win rate
+  against THIS style minus HIS OWN win rate against every other playing style** (20 Nov §6, replacing the matchup-matrix
+  "Vs style average"): the other styles' rows are the rest of his style-meetings shard, under the same Window / Surface /
+  Court speed filters, walkovers out, each side from `H2H_STYLE_FLOOR` matches; the bar's centre tick is that rate and the
+  caption reads "He wins x% against all other styles". It keeps its sign colour at 5–9 (founder 2026-11-17). Career match cards: 6 rows,
+  "Show n more", opponents by surname, every row opens the sheet. A grey "0 pts" = the two rates print level at whole points.
+- **Tournament record (design change 2026-11-17 §3):** Under each player's record, "x% of n won" is 12.5 / 700 `--h2h-text` (20 Nov §7). a filter box — Tournament search, then Window (Career default ·
   Last 52 weeks = 364 days back · Last 24 months = the same day two years back, exact dates; a row with no date counts
   under Career only), Surface, Court speed. Surface or Court speed set = **group mode**: the record over every event
   either player has on record whose surface (catalog) and speed class fit; the class is the event's ONE rating
@@ -160,6 +174,9 @@ live calculation (Data below).
   (`H2H_CHART_SMOOTH`), against `foundation.md` Charts (no area fill / no vertical gridlines) — this chart only. x = each
   player's own priced matches; its "?" carries the chart note, `RET_SETTLE_NOTE` and the window. **Test:** the chart draws
   the loss rect and the tick lines with the flag on, neither with it off.
+- **A Stennisfy match report shows its stats box when opened** (founder 2026-11-20): the news ticker item's `ms` rows drawn
+  by the News page's own `newsMsBoxHtml` (one stats box on both pages; `.x-newsms` gives it the News tab's edge variables).
+  **Test:** an opened report with `ms` holds the box rows; without `ms`, no box.
 - **Latest news:** pills All · Match reports · Quotes · Injuries · Articles from the site's own fields — an ASAP item is a
   Quote; a feed article takes the News page's `newsClassify` (Match Reports → Match reports, Withdrawals & Injuries →
   Injuries, the rest → Articles); sources print the outlet names (`newsSourceNames`). **Our own match reports and the
