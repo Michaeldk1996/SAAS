@@ -1,71 +1,6 @@
 {
  "runs": [
   {
-   "at": "2026-11-11T19:20:06.931Z",
-   "activeTournaments": [
-    "Stockholm"
-   ],
-   "tournaments": [
-    {
-     "name": "Stockholm",
-     "key": "1681",
-     "sources": [
-      {
-       "name": "ATP Tour daily report (via the official tournament site)",
-       "articles": 15,
-       "candidates": 8,
-       "robotsStatus": 200,
-       "skippedByRobots": 0,
-       "unnamed": 4
-      }
-     ],
-     "outlets": {
-      "read": 61,
-      "withCandidates": 0,
-      "blocked": [
-       "Fox Sports Australia: the site refuses a plain request",
-       "TenisovySvet.cz: the site refuses a plain request",
-       "AS (Diario AS): the site refuses a plain request",
-       "Aftonbladet: unexpected answer",
-       "ESPN: unexpected answer"
-      ],
-      "articlesFetched": 0,
-      "paywalled": 0,
-      "unnamed": 0,
-      "byOutlet": []
-     },
-     "counts": {
-      "candidates": 8,
-      "droppedNotVerbatim": 0,
-      "droppedNoPlayer": 1,
-      "droppedAmbiguous": 0,
-      "notTranslatedNoKey": 0,
-      "notTranslatedApiError": 0,
-      "droppedTranslationCheck": 0,
-      "droppedEnglishExists": 0,
-      "mergedSameQuote": 0,
-      "alreadyHeld": 0,
-      "items": 7,
-      "tokens": {
-       "input": 0,
-       "output": 0
-      },
-      "modelError": null
-     },
-     "added": 1,
-     "held": 9,
-     "finishedMatches": 21,
-     "matchesWithWinnerQuote": 4
-    }
-   ],
-   "newItems": 1,
-   "tokens": {
-    "input": 0,
-    "output": 0
-   },
-   "alerts": []
-  },
-  {
    "at": "2026-11-11T19:50:18.077Z",
    "activeTournaments": [
     "Stockholm"
@@ -66239,6 +66174,249 @@
       "outlet": "BBC Sport",
       "country": "United Kingdom",
       "language": "en",
+      "fetched": 1,
+      "candidates": 0
+     }
+    ]
+   },
+   "rehomed": 0,
+   "alerts": []
+  },
+  {
+   "at": "2026-11-20T15:29:07.568Z",
+   "activeTournaments": [
+    "Finals - Turin"
+   ],
+   "tournaments": [
+    {
+     "name": "Finals - Turin",
+     "key": "2794",
+     "sources": [],
+     "fromOutlets": 59,
+     "counts": {
+      "candidates": 59,
+      "droppedNotVerbatim": 0,
+      "droppedNoPlayer": 0,
+      "droppedAmbiguous": 0,
+      "notTranslatedNoKey": 0,
+      "notTranslatedApiError": 0,
+      "droppedTranslationCheck": 0,
+      "droppedEnglishExists": 0,
+      "mergedSameQuote": 1,
+      "alreadyHeld": 0,
+      "items": 58,
+      "tokens": {
+       "input": 1824,
+       "output": 129
+      },
+      "modelError": null,
+      "retryUrls": 0,
+      "topicsAdded": 2
+     },
+     "digests": {
+      "cards": 42,
+      "kept": 30,
+      "made": 1,
+      "failed": 0,
+      "waiting": 0,
+      "single": 11
+     },
+     "added": 6,
+     "held": 224,
+     "byCategory": {
+      "Quotes": 165,
+      "Injuries": 14,
+      "Interviews": 45
+     },
+     "finishedMatches": 7,
+     "matchesWithWinnerQuote": 7
+    },
+    {
+     "name": "ATP Tour",
+     "key": "tour",
+     "sources": [],
+     "fromOutlets": 0,
+     "counts": {
+      "candidates": 0,
+      "droppedNotVerbatim": 0,
+      "droppedNoPlayer": 0,
+      "droppedAmbiguous": 0,
+      "notTranslatedNoKey": 0,
+      "notTranslatedApiError": 0,
+      "droppedTranslationCheck": 0,
+      "droppedEnglishExists": 0,
+      "mergedSameQuote": 0,
+      "alreadyHeld": 0,
+      "items": 0,
+      "tokens": {
+       "input": 0,
+       "output": 0
+      },
+      "modelError": null,
+      "retryUrls": 0
+     },
+     "digests": {
+      "cards": 50,
+      "kept": 18,
+      "made": 5,
+      "failed": 0,
+      "waiting": 0,
+      "single": 27
+     },
+     "added": 0,
+     "held": 117,
+     "byCategory": {
+      "Interviews": 86,
+      "Injuries": 8,
+      "Quotes": 23
+     },
+     "finishedMatches": 0,
+     "matchesWithWinnerQuote": 0
+    }
+   ],
+   "newItems": 6,
+   "tokens": {
+    "input": 7464,
+    "output": 1782
+   },
+   "press": {
+    "matchesLookedUp": 0,
+    "answers": 0
+   },
+   "ttvInbox": {
+    "held": 95,
+    "routed": 39
+   },
+   "atpInbox": {
+    "held": 32,
+    "routed": 18
+   },
+   "outlets": {
+    "read": 131,
+    "withCandidates": 2,
+    "blocked": [
+     "El Deber: the site refuses a plain request",
+     "Tenniskafe: the site refuses a plain request",
+     "TenisovySvet.cz: the site refuses a plain request",
+     "The Indian Express: the site refuses a plain request",
+     "ESPN México (Tenis): unexpected answer",
+     "Monaco Tribune: the site refuses a plain request",
+     "Aftonbladet: unexpected answer",
+     "ESPN: unexpected answer"
+    ],
+    "articlesFetched": 19,
+    "paywalled": 2,
+    "unnamed": 16,
+    "byOutlet": [
+     {
+      "outlet": "Lance!",
+      "country": "Brazil",
+      "language": "pt",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "La DH Les Sports+",
+      "country": "Belgium",
+      "language": "fr",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Séptimo Game",
+      "country": "Chile",
+      "language": "es",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "We Love Tennis",
+      "country": "France",
+      "language": "fr",
+      "fetched": 2,
+      "candidates": 0
+     },
+     {
+      "outlet": "tennis MAGAZIN",
+      "country": "Germany",
+      "language": "de",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Tennis365",
+      "country": "INT",
+      "language": "en",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Ubitennis",
+      "country": "INT",
+      "language": "en",
+      "fetched": 1,
+      "candidates": 1
+     },
+     {
+      "outlet": "Ubitennis",
+      "country": "Italy",
+      "language": "it",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Gulf Times",
+      "country": "Qatar",
+      "language": "en",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "WP SportoweFakty",
+      "country": "Poland",
+      "language": "pl",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Sport Klub",
+      "country": "Serbia",
+      "language": "sr",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Mundo Deportivo",
+      "country": "Spain",
+      "language": "es",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Sportnet (SME)",
+      "country": "Slovakia",
+      "language": "sk",
+      "fetched": 1,
+      "candidates": 1
+     },
+     {
+      "outlet": "Sport Aktuality",
+      "country": "Slovakia",
+      "language": "sk",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "AS (Diario AS)",
+      "country": "Spain",
+      "language": "es",
+      "fetched": 3,
+      "candidates": 0
+     },
+     {
+      "outlet": "Sport.sk",
+      "country": "Slovakia",
+      "language": "sk",
       "fetched": 1,
       "candidates": 0
      }
