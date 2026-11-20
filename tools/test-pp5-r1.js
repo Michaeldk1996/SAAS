@@ -86,4 +86,23 @@ H.check('sty · hover: CSS turns any dot blue; gridlines, average label and brac
   assert(!/(left|right):0;right:0;top:[^"]*height:1px;background:[^;]*;"/.test(chart), 'a line catches the pointer');
   assert(!/;height:1px;background:var\(--line\);"/.test(chart), 'a gridline catches the pointer');
 });
+// round 4 (v5 §11.1) · the Career history box tiles: units over the listed rows' own closes, a tie in no role, a void
+// retirement (first set unfinished) and a walkover out. CONTROL: counting the void retirement moves the units.
+H.check('drill · history box tiles: Win rate · Units backing him · As favourite · As underdog, Pinnacle-rule retirements', () => {
+  const rows = [
+    { won: true, price: 1.50, oppPrice: 2.60 },                                    // fav W  +0.50
+    { won: false, price: 2.40, oppPrice: 1.60 },                                   // dog L  −1
+    { won: true, price: 1.90, oppPrice: 1.90 },                                    // tie: units +0.90, no role
+    { won: true, price: 3.00, oppPrice: 1.40, retired: true, setGames: [{ p: 3, o: 1 }] },   // void: first set unfinished
+    { won: false, price: 1.30, oppPrice: 3.50, retired: true, setGames: [{ p: 6, o: 4 }, { p: 1, o: 2 }] }, // stands: fav L −1
+    { won: true, wo: true, price: 1.20, oppPrice: 4.00 }                           // walkover: out
+  ];
+  const t = T(I.drillTilesHtml(rows, { won: 4, lost: 2 }, false));
+  assert(/Win rate 66\.7% 4–2 · 6 matches/.test(t), 'win rate tile: ' + t);
+  assert(/Units backing him −0\.6u 4 priced matches/.test(t), 'units tile (0.5 − 1 + 0.9 − 1 = −0.6): ' + t);
+  assert(/As favourite 50\.0% 1–1 · 2 matches/.test(t) && /As underdog 0\.0% 0–1 · 1 match\b(?!e)/.test(t), 'role tiles: ' + t);
+  const ctl = T(I.drillTilesHtml(rows.map(r => Object.assign({}, r, { retired: false })), { won: 4, lost: 2 }, false));
+  assert(!/−0\.6u/.test(ctl), 'CONTROL: settling the void retirement as a match does not move the units');
+  assert(/&nbsp;|\u00a0/.test(I.drillTilesHtml(rows, { won: 4, lost: 2 }, true)), 'loading claims a figure');
+});
 H.done();

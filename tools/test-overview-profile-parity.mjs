@@ -53,7 +53,7 @@ function profileFigures(win, p, tier) {
   // the window / no-surface notes sit in Record by season's (?) cr2 since profile v2 — opened so they print
   Object.assign(I.state, { careerTab: 'record', careerScope: 'career', careerTier: tier, careerDrill: null, info: 'cr2' });
   const h = I.renderCareerModal(p, { archetype: null });
-  const hero = /font-size:31px;font-weight:800;[^>]*>([^<]*)<\/span>(?:<span[^>]*><span style="font-size:14px;font-weight:700;[^>]*>([\d.]+%)|<span style="font-size:14px;font-weight:700;[^>]*>([\d.]+%))?/.exec(h);
+  const hero = /font-size:26px;font-weight:700;[^>]*>([^<]*)<\/span>(?:<span[^>]*><span style="font-size:14px;font-weight:700;[^>]*>([\d.]+%)|<span style="font-size:14px;font-weight:700;[^>]*>([\d.]+%))?/.exec(h);
   const bars = {};
   for (const s of SURFS) {
     const a = h.indexOf(`data-pp2-srow="${s}"`), b = h.indexOf('data-pp2-srow=', a + 10);

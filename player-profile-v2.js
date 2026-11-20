@@ -363,7 +363,7 @@
     // scoped to the one class that carries it. The selected row sets its own
     // inline background, which outranks this.
     '.pp2-trow:hover{background:var(--pp-x-hover)!important;border-radius:10px!important;border-top-color:transparent!important;}' +   // v5 §0.5
-    '.pp2-csrow:hover{background:color-mix(in srgb, var(--text) 6%, transparent);}' +   // v4: Career record surface row hover
+    '.pp2-csrow:hover{background:var(--pp-x-hover);border-radius:10px!important;border-top-color:transparent!important;}' +   // v5 §0.5   // v4: Career record surface row hover
     // v4 §4 · the reference's 9px scrollbar (thumb white 13%) on the tournament head, list and match list, so the
     // stable gutter they reserve is the reference's width and the head's columns line up with the rows.
     '.pp2-tscroll::-webkit-scrollbar{width:9px;height:9px;}' +
@@ -395,7 +395,7 @@
     // so the hover token is the one the same file uses for its other clickable
     // data row (.dc.html:489) rather than a colour invented here.
     '.pp2-crec{transition:background .12s ease,color .12s ease;}' +
-    '.pp2-crec:hover{background:var(--tile-hover);color:var(--text);}' +
+    '.pp2-crec:hover{background:var(--pp-x-hover);color:var(--text);border-radius:8px!important;border-top-color:transparent!important;}' +
     // §5.4 item 14 — the heat cell's hover, verbatim from the design file's own
     // stylesheet (`Player Stat Boxes.dc.html`:24-26). A win cell goes to green
     // 0.42 with an inset ring, a loss cell to red, a level cell to white 0.14.
@@ -3675,7 +3675,7 @@
   // spec = { what, scope, notes: [text], defs: [[label, text]], width, align: 'left'|'right' }
   function infoIcon(id, spec, title) {
     var open = state.info === id;
-    var w = spec.width || 420, right = spec.align === 'right';
+    var w = spec.width || 400, right = spec.align === 'right';
     var icon = '<span data-pp2="info" data-v="' + esc(id) + '" title="' + esc(title || 'About this box') + '" ' +
       'class="pp2-qi" style="cursor:pointer;flex:none;width:16px;height:16px;border-radius:50%;box-sizing:border-box;' +
       'border:1px solid ' + (open ? 'var(--edge-24)' : 'var(--edge-16)') + ';color:' + (open ? 'var(--text)' : 'var(--text-label)') + ';' +
@@ -3684,7 +3684,7 @@
     if (!open) return icon;
     // spec.v4 (additive, handoff 2026-11-14 box popover): 104px label column, 12% ring, the export's popover shadow,
     // padding 14/16/16, gap 8, 8px below the icon, an 8% rule over the definitions.
-    var v4 = !!spec.v4;
+    var v4 = spec.v4 !== false;   // v5 §11.4 (2026-11-20): every "?" popover is the export's (12% ring, 14/16/16, 104 label column)
     var defs = (spec.defs || []).map(function (d) {
       return '<div style="display:grid;grid-template-columns:' + (v4 ? 104 : 112) + 'px minmax(0,1fr);gap:12px;padding:7px 0;' +
         'border-bottom:1px solid var(--line);"><span style="font-size:12px;font-weight:700;color:var(--text);line-height:1.45;">' +
@@ -4779,13 +4779,49 @@
     return drillPanelHtml({
       title: opts.title, record: recordText(opts.won, opts.lost) + ' ' + MIDDOT + ' ' + cellN + ' matches',
       note: note, close: 'career-drill-close', grid: GRID, head: HEAD, body: body, hasRows: shown.length > 0,
-      box: !!opts.box, sub: opts.sub || ''
+      box: !!opts.box, sub: opts.sub || '', tiles: opts.box ? drillTilesHtml(rows, opts, chPend) : ''
     });
   }
   // TEN-384 C6 · the drill is a panel (--card + --edge-6, r11, 15/17), title 14/700, the record mono 12,
   // the note mono 10.5, and a caps CLOSE (Hanken 10.5/700/0.10em — caps labels are never mono).
   // One panel for every drill card: the Career record's (renderDrill) and a Derived line's (renderLineDrill).
   // `controls` (optional) sits between the header and the list.
+  // v5 §11.1 · the Career history box's four tiles: Win rate (the cell's own W–L) · Units backing him · As favourite ·
+  // As underdog, read off the listed rows' own closing prices (the drill's H / A). Founder 2026-11-14: money in units;
+  // founder 2026-11-15: an exact price tie is neither favourite nor underdog; a retirement settles on Pinnacle rules
+  // (void before the first set ends, no units without set scores). Walkovers and rows not counted are out.
+  function drillTilesHtml(rows, opts, pend) {
+    var MEC = window.MarketEdgeCore;
+    var live = rows.filter(function (r) { return !r.notCounted && !r.wo; });
+    var priced = live.filter(function (r) {
+      if (!(r.price >= 1.01 && r.oppPrice >= 1.01)) return false;
+      if (!r.retired) return true;
+      var st = MEC && typeof MEC.retSettlement === 'function' ? MEC.retSettlement({ ret: true, sets: r.setGames }) : 'no-sets';
+      return st !== 'void' && st !== 'no-sets';
+    });
+    var rec = function (l) { var w = l.filter(function (r) { return r.won; }).length; return { w: w, n: l.length }; };
+    var fav = rec(priced.filter(function (r) { return r.price < r.oppPrice; })), dog = rec(priced.filter(function (r) { return r.price > r.oppPrice; }));
+    var units = priced.reduce(function (t, r) { return t + (r.won ? Math.round(r.price * 100) - 100 : -100); }, 0) / 100;
+    var w = opts.won || 0, l = opts.lost || 0, n = w + l;
+    var T = function (label, fig, col, sub) {
+      return '<div style="background:var(--card);border:1px solid var(--pp-x-edge-9);border-radius:11px;padding:13px 12px;display:flex;flex-direction:column;' +
+        'align-items:center;text-align:center;gap:6px;min-width:0;"><span style="font-size:11.5px;font-weight:600;color:var(--text-label);max-width:100%;' +
+        'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + label + '</span><span style="font-family:\'IBM Plex Mono\',monospace;font-size:20px;' +
+        'font-weight:700;line-height:1;color:' + col + ';">' + fig + '</span><span style="font-size:11.5px;line-height:1.35;color:var(--text-label);max-width:100%;' +
+        'text-wrap:balance;">' + sub + '</span></div>';
+    };
+    var role = function (label, x) {
+      return pend ? T(label, '&nbsp;', 'var(--text)', '&nbsp;') : T(label, x.n ? (100 * x.w / x.n).toFixed(1) + '%' : DASH, x.n ? 'var(--text)' : 'var(--text-label)',
+        x.n ? recordText(x.w, x.n - x.w) + ' ' + MIDDOT + ' ' + x.n + ' match' + (x.n === 1 ? '' : 'es') : 'No matches');
+    };
+    return '<div data-pp2-drilltiles="1" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;">' +
+      T('Win rate', n ? (100 * w / n).toFixed(1) + '%' : DASH, n ? 'var(--text)' : 'var(--text-label)', recordText(w, l) + ' ' + MIDDOT + ' ' + n + ' matches') +
+      (pend ? T('Units backing him', '&nbsp;', 'var(--text)', '&nbsp;')
+        : T('Units backing him', priced.length ? signed(units, 1, 'u') : DASH,
+          !priced.length ? 'var(--text-label)' : units > 0 ? 'var(--pos)' : units < 0 ? 'var(--neg)' : 'var(--text-label)',
+          priced.length + ' priced match' + (priced.length === 1 ? '' : 'es'))) +
+      role('As favourite', fav) + role('As underdog', dog) + '</div>';
+  }
   function drillPanelHtml(o) {
     if (o.box) return drillBoxHtml(o);
     var head = o.head.map(function (h) {
@@ -4825,11 +4861,11 @@
         'text-align:' + h[1] + ';padding:0 0 7px;">' + esc(h[0]) + '</div>';
     }).join('');
     return '<div class="pp2-drillbox" data-pp2-drillbox="1" style="position:fixed;inset:0 0 0 var(--sf-side, 0px);z-index:64;' +
-        'background:color-mix(in srgb, var(--page) 72%, transparent);display:flex;align-items:flex-start;justify-content:center;' +
+        'background:var(--pp-x-backdrop);display:flex;align-items:flex-start;justify-content:center;' +
         'padding:40px 24px;overflow-y:auto;clip-path:inset(0);text-align:left;">' +
       '<div data-pp2="' + o.close + '" style="position:absolute;inset:0;"></div>' +
-      '<div data-pp2="card" style="position:relative;width:100%;max-width:820px;background:var(--card);border:1px solid var(--edge-16);' +
-        'border-radius:14px;padding:20px 22px 22px;display:flex;flex-direction:column;gap:16px;box-shadow:var(--shadow-modal);' +
+      '<div data-pp2="card" style="position:relative;width:100%;max-width:900px;background:var(--card);border:1px solid var(--pp-x-edge-9);' +
+        'border-radius:16px;padding:22px 24px 22px;display:flex;flex-direction:column;gap:16px;box-shadow:var(--pp-x-shadow-box);' +
         'box-sizing:border-box;cursor:default;">' +
         '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;">' +
           '<div style="display:flex;flex-direction:column;gap:4px;min-width:0;">' +
@@ -4841,9 +4877,9 @@
             'border-radius:9px;background:var(--wash-5);border:1.25px solid var(--edge-6);color:var(--text-label);cursor:pointer;display:flex;' +
             'align-items:center;justify-content:center;box-sizing:border-box;"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" ' +
             'style="pointer-events:none;"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg></span>' +
-        '</div>' +
+        '</div>' + (o.tiles || '') +
         (o.hasRows
-          ? '<div data-pp2-drill-scroll="1" style="max-height:calc(100vh - 230px);min-height:200px;overflow-y:auto;padding-right:10px;">' +
+          ? '<div data-pp2-drill-scroll="1" style="max-height:calc(100vh - ' + (o.tiles ? 330 : 230) + 'px);min-height:200px;overflow-y:auto;padding-right:10px;">' +
               '<div data-pp2-drill-grid="1" style="' + o.grid + '">' + head + o.body + '</div></div>'
           : (o.empty || '<div style="min-height:120px;"></div>')) +
         '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);' +
@@ -5618,27 +5654,29 @@
       // profile v2 (founder 2026-11-09): no small-sample mark — a 5–9 rate prints like any other
     }
     var scopeCaps = isL52 ? 'Last 52 weeks' : 'Career';
-    var hero = '<div style="display:flex;align-items:baseline;gap:12px;">' +
-      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:31px;font-weight:800;line-height:31px;' +
-        'letter-spacing:-0.62px;white-space:nowrap;color:' + (tn ? 'var(--text)' : DASH_COLOUR) + ';">' +
-        (tn ? recordText(total.won, total.lost) : DASH) + '</span>' + heroRate +
-      recCaps(scopeCaps) +
-      '<span style="margin-left:auto;font-family:\'IBM Plex Mono\',monospace;font-size:12px;' +
-        'color:var(--text-label);white-space:nowrap;">' + (tn ? tn.toLocaleString('en-US') + ' matches' : DASH) +
-      '</span></div>';
+    // v5 §1: title 18/800 ("Last 52 weeks" / "Career") over a 13 grey "tier · n matches" | record 26 mono 700 + win rate 14 grey
+    var hero = '<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px 24px;flex-wrap:wrap;">' +
+      '<div style="display:flex;flex-direction:column;gap:4px;min-width:0;">' +
+        '<span style="font-size:18px;font-weight:800;letter-spacing:-0.005em;color:var(--text);">' + scopeCaps + '</span>' +
+        '<span style="font-size:13px;color:var(--text-label);">' + esc(tierWord.charAt(0).toUpperCase() + tierWord.slice(1)) + ' ' + MIDDOT + ' ' + (tn ? tn.toLocaleString('en-US') + ' matches' : DASH) + '</span></div>' +
+      '<div style="display:flex;align-items:baseline;gap:12px;">' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:26px;font-weight:700;line-height:1;' +
+          'letter-spacing:-0.02em;white-space:nowrap;color:' + (tn ? 'var(--text)' : DASH_COLOUR) + ';">' +
+          (tn ? recordText(total.won, total.lost) : DASH) + '</span>' + heroRate.replace('color:var(--text);', 'font-family:\'IBM Plex Mono\',monospace;color:var(--text-label);') +
+      '</div></div>';
 
     // v4 (handoff 2026-11-14, Player Stat Boxes careerCard): ONE head grid on a 10% rule, then one grid per surface
     // row (padding 11px 6px, bled -6px, radius 6, 5% hairline, 6% white hover — .pp2-csrow). §0.1 / §2: the bar is
     // neutral, blue only for the surface whose match list is open (state.careerDrill).
-    var SCOLS = 'display:grid;grid-template-columns:64px minmax(0,1fr) 64px 60px 68px;gap:0 14px;align-items:center;';
+    var SCOLS = 'display:grid;grid-template-columns:84px minmax(60px,1fr) 70px 62px 72px 8px;gap:0 14px;align-items:center;';
     var SHEAD = 'font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;' +
       'text-transform:uppercase;color:var(--text-label);';
-    var shead = '<div data-pp2-shead="1" style="' + SCOLS + 'margin-top:20px;padding-bottom:8px;border-bottom:1px solid var(--edge-10);">' +
+    var shead = '<div data-pp2-shead="1" style="' + SCOLS + 'margin-top:20px;padding-bottom:10px;">' +
       [['Surface', 'left'], ['Wins ' + MIDDOT + ' losses', 'left'], ['W' + ENDASH + 'L', 'right'],
       ['Win %', 'right'], ['vs all', 'right']].map(function (h) {
         return '<span style="' + SHEAD + 'text-align:' + h[1] + ';">' + h[0] + '</span>';
-      }).join('') + '</div>';
-    var MONO_N = 'font-family:\'IBM Plex Mono\',monospace;font-variant-numeric:tabular-nums;text-align:right;font-size:12.5px;';
+      }).join('') + '<span></span></div>';
+    var MONO_N = 'font-family:\'IBM Plex Mono\',monospace;font-variant-numeric:tabular-nums;text-align:right;font-size:13px;';
     var srows = CAREER_ROWS.map(function (s) {
       var c = cells[s.id];
       var noIndoor = s.id === 'indoors' && !isL52 && c === null;
@@ -5656,17 +5694,18 @@
       var attrs = can ? ' data-pp2="career-surf" data-v="' + s.id + '"' : '';
       var tip = why ? ' title="' + esc(why) + '"' : '';
       return '<div' + attrs + tip + (can ? ' class="pp2-csrow"' : '') + ' style="' + SCOLS +
-          'padding:11px 6px;margin:0 -6px;border-radius:6px;border-bottom:1px solid var(--line);' + (can ? 'cursor:pointer;' : '') + '">' +
-        '<span data-pp2-srow="' + s.id + '" style="font-size:12.5px;color:' + (n || !noIndoor ? 'var(--text)' : 'var(--text-label)') + ';">' + esc(s.label) + '</span>' +
-        '<span data-pp2-sbar="' + (open ? 'open' : 'idle') + '" style="display:block;width:100%;height:6px;border-radius:3px;background:var(--track);overflow:hidden;">' +
-          (fill && pct != null ? '<span style="display:block;height:100%;width:' + pct.toFixed(1) + '%;background:' +
+          'min-height:54px;padding:0 10px;margin:0 -10px;border-radius:0;border-top:1px solid var(--edge-6);' + (can ? 'cursor:pointer;' : '') + '">' +
+        '<span data-pp2-srow="' + s.id + '" style="font-size:14px;font-weight:700;color:' + (n || !noIndoor ? 'var(--text)' : 'var(--text-label)') + ';">' + esc(s.label) + '</span>' +
+        '<span data-pp2-sbar="' + (open ? 'open' : 'idle') + '" style="display:block;width:100%;height:4px;border-radius:2px;background:var(--pp-x-track-7);overflow:hidden;">' +
+          (fill && pct != null ? '<span style="display:block;height:100%;border-radius:2px;width:' + pct.toFixed(1) + '%;background:' +
             (MK_V1 ? fill : pp4Bar(open)) + ';"></span>' : '') + '</span>' +
         '<span style="' + MONO_N + 'white-space:nowrap;color:var(--text-label);">' + (n ? recordText(w, l) : DASH) + '</span>' +
-        '<span style="' + MONO_N + 'font-weight:700;white-space:nowrap;color:' + (rated ? 'var(--text)' : 'var(--text-label)') + ';">' +
+        '<span style="' + MONO_N + 'font-size:14px;font-weight:700;white-space:nowrap;color:' + (rated ? 'var(--text)' : 'var(--text-label)') + ';">' +
           (rated ? pct.toFixed(1) + '%' : DASH) + '</span>' +
         '<span style="' + MONO_N + 'font-weight:700;white-space:nowrap;color:' +
           (vs == null ? 'var(--text-label)' : signColour(Math.round(vs * 10) / 10)) + ';">' +
           (vs == null ? DASH : signed(vs, 1, 'pp')) + '</span>' +
+        '<span style="font-size:15px;font-weight:700;line-height:1;color:var(--pp-x-link);opacity:' + (can ? 1 : 0) + ';">›</span>' +
         '</div>';
     }).join('');
 
@@ -5704,12 +5743,7 @@
         (l52.undated > 0 ? ' ' + MIDDOT + ' ' + l52.undated + (l52.undated === 1 ? ' match carries' : ' matches carry') +
           ' no dated match row, so the window cannot place ' + (l52.undated === 1 ? 'it' : 'them') : ''));
     }
-    var card = recPanel(
-      recCaps(esc(scopeCaps + ' ' + (isL52 ? '' : 'record ') + MIDDOT + ' ' + tierWord).replace(/ {2}/g, ' '),
-        'display:block;margin-bottom:12px;') +
-      hero +
-      shead + srows,
-      'mid', '22px 24px 20px');
+    var card = recPanel(hero + shead + srows, 'mid', '24px 24px 14px');
 
     // ── C7 / C8 · Record by season — a joined panel under the card ─────────────
     var years = spineYears(p).slice().sort(function (a, b) {
@@ -5788,7 +5822,7 @@
           (g.noSplit ? ' title="' + esc(CAREER_NO_SPLIT) + '"' : '') +
           ' style="' + MONO + 'font-size:' + (isTot ? 14 : 13) + 'px;font-weight:' + (isTot ? 700 : 600) + ';' +
           'letter-spacing:' + (isTot ? '-0.14px' : '-0.13px') + ';text-align:right;' +
-          'padding:11px 0;border-top:1px solid var(--line);' +
+          'padding:14px 6px;margin:0 -6px;border-radius:0;border-top:1px solid var(--edge-6);' +
           'color:' + (!r ? DIM_COLOUR : isTot || on ? 'var(--text)' : 'var(--text-soft)') + ';' +
           (can ? 'cursor:pointer;' : '') + '">' + txt + '</div>';
       }).join('');
@@ -5800,7 +5834,7 @@
       // 1a — the YEAR label opens the same drill as its Total cell.
       return '<div' + cellAttrs(yearCan, yearStr + '|') +
         ' style="' + MONO + 'font-size:13px;font-weight:700;' +
-        'letter-spacing:0.26px;padding:11px 0;border-top:1px solid var(--line);' +
+        'letter-spacing:0.26px;padding:14px 6px;margin:0 -6px;border-radius:0;border-top:1px solid var(--edge-6);' +
         'color:' + (yearCan ? 'var(--text)' : DIM_COLOUR) + ';' + (yearCan ? 'cursor:pointer;' : '') + '">' +
         esc(yearStr) + '</div>' + cellsHtml + drill;
     }).join('');
@@ -5815,14 +5849,14 @@
       'letter-spacing:0.10em;text-transform:uppercase;color:' +
       (openCareerCell === '' ? 'var(--text)' : 'var(--text-label)') + ';padding:15px 0 13px;' +
       (careerCan ? 'cursor:pointer;' : '') +
-      'border-top:1px solid var(--line);">Career</div>' +
+      'border-top:1px solid var(--pp-x-edge-12);">Career</div>' +
       HEADS.slice(1).map(function (h) {
         var r = cf[h.id];
         var can = cellCan(r);
         return '<div' + cellAttrs(can, 'career|' + (h.id === 'total' ? '' : h.id)) +
           ' style="' + MONO + 'font-size:14px;font-weight:700;letter-spacing:-0.14px;text-align:right;' +
-          'padding:15px 0 13px;color:' + (r ? 'var(--text)' : DIM_COLOUR) + ';' + (can ? 'cursor:pointer;' : '') +
-          'border-top:1px solid var(--line);">' +
+          'padding:15px 6px 13px;margin:0 -6px;border-radius:0;color:' + (r ? 'var(--text)' : DIM_COLOUR) + ';' + (can ? 'cursor:pointer;' : '') +
+          'border-top:1px solid var(--pp-x-edge-12);">' +
           (r ? (r.won || 0) + '/' + (r.lost || 0) : DASH) + '</div>';
       }).join('') +
       (openCareerCell !== null
@@ -5850,13 +5884,14 @@
     })
       .concat(recordSourceNote(p) ? [recordSourceNote(p)] : []);
     var season = recPanel(
-      '<div style="position:relative;">' + infoCorner('cr2', Object.assign({ notes: cr2Notes }, CR2_INFO)).replace('top:14px;right:14px', 'top:-4px;right:-10px') +
-      '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 6px;padding-right:28px;">' +
-        recCaps('Record by season ' + MIDDOT + ' ' + esc(tierWord)) + recCaps('Wins / losses') + '</div>' +
+      '<div style="position:relative;">' + infoCorner('cr2', Object.assign({ notes: cr2Notes }, CR2_INFO)).replace('top:14px;right:14px', 'top:2px;right:0') +
+      '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 6px;padding-right:36px;">' +
+        '<span style="display:flex;flex-direction:column;gap:4px;"><span style="font-size:18px;font-weight:800;letter-spacing:-0.005em;color:var(--text);">Record by season</span>' +
+        '<span style="font-size:13px;color:var(--text-label);">' + esc(tierWord.charAt(0).toUpperCase() + tierWord.slice(1)) + ' ' + MIDDOT + ' wins and losses ' + MIDDOT + ' click a figure for its matches</span></span></div>' +
       '<div style="height:14px;"></div></div>' +
       '<div style="display:grid;grid-template-columns:auto repeat(' + (HEADS.length - 1) + ',minmax(0,1fr));gap:0 14px;' +
         'align-items:center;">' + head + body + footer + surfDrill + '</div>',
-      'bottom-ruled', '20px 24px 22px');
+      'bottom-ruled', '24px 24px 20px');
 
     return careerTabsHtml() + card + season + drillBox;
   }
@@ -16466,7 +16501,7 @@
   // ── the situation record box (Strongest / Weakest) ──────────────────────────
   function ltBoxShell(inner, scrim) {
     return '<div class="pp2-lt-box" data-pp2="' + scrim + '" style="position:fixed;inset:0 0 0 var(--sf-side, 0px);z-index:70;' +
-      'background:color-mix(in srgb, var(--page) 72%, transparent);display:flex;align-items:flex-start;justify-content:center;padding:40px 24px;' +
+      'background:var(--pp-x-backdrop);display:flex;align-items:flex-start;justify-content:center;padding:40px 24px;' +
       'overflow-y:auto;box-sizing:border-box;font-family:var(--font-words);line-height:normal;color:var(--text);clip-path:inset(0);">' + inner + '</div>';
   }
   var LT_CLOSE = function (hook) {
@@ -17564,7 +17599,7 @@
       drillBodyHtml: drillBodyHtml,
       onDrillScroll: onDrillScroll,
       DRILL_PAGE: DRILL_PAGE,
-      renderDrill: renderDrill,
+      renderDrill: renderDrill, drillTilesHtml: drillTilesHtml,
       CAREER_ROWS: CAREER_ROWS,
       ENDASH: ENDASH,
       renderTournModal: renderTournModal,

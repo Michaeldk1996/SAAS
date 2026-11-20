@@ -548,3 +548,13 @@ Supersedes the v3 values it restates. Reference = `Player Stat Boxes.dc.html` / 
     with a blue ›; Record by situation 18/800, group chevrons blue, rows 13.5/600. **Vs his norm and Vs tour are both 13
     mono 700, green / red by sign on every row, small samples included** (v5 §0.7; was 12/400 grey under 10). Grey only at
     an exact zero.
+- **Round 4 (2026-11-20, v5 CHANGES §1 Record tab, §11.1, §11.3, §11.4):**
+  - **Career record · Record:** head = "Career" / "Last 52 weeks" 18/800 over "tier · n matches" (13 grey), record 26
+    mono + win rate 14 grey; surface rows `84px minmax(60px,1fr) 70px 62px 72px 8px`, 54 high, 4px bar, blue ›;
+    "Record by season" 18/800 over "tier · wins and losses · click a figure for its matches"; cells pad 14, hover only.
+  - **Career history box** (a surface row or season cell): four tiles — Win rate (the cell's W–L) · Units backing him ·
+    As favourite · As underdog — off the listed rows' own closing prices. Units, not the export's yield (founder
+    2026-11-14); a price tie is neither role (2026-11-15); a retirement settles on Pinnacle rules (void before set one
+    ends, no units without set scores); walkovers and rows not counted are out. **Test:** `tools/test-pp5-r1.js` drill.
+  - **Boxes:** backdrop `--pp-x-backdrop` on the history and Live trading boxes; every "?" popover is the v5 one (width
+    400, 12% ring, 14/16/16).

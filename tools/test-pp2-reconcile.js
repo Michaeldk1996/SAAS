@@ -2532,7 +2532,7 @@ check('profile v2 · Career record: the Tier control as the design draws it, ope
       assert.deepStrictEqual(tiers, ['all', 'atp', 'chitf'], `${p.name}: the Tier control is not All · ATP · Challenger & ITF`);
       const txt = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
       assert(txt.indexOf('WINDOW') < 0 || txt.indexOf('Window') < txt.indexOf('Tier'), `${p.name}: Tier is not after Window`);
-      assert(/Record by season · ATP/i.test(txt), `${p.name}: the ATP tier is not applied to the season table`);
+      assert(/Record by season ATP · /i.test(txt), `${p.name}: the ATP tier is not applied to the season table`);
       assert(/>Year<\/div>[\s\S]*?>Total<\/div>[\s\S]*?>Hard<\/div>[\s\S]*?>Clay<\/div>[\s\S]*?>Grass<\/div>[\s\S]*?>Indoors<\/div>/.test(html),
         `${p.name}: the season columns are not in the export's order`);
       // founder 2026-11-14: "Surface not known" only for a player with a match on no surface in this tier
@@ -5304,12 +5304,12 @@ mustFail('[neg] the row=column check would catch the live build\'s uncarved Hard
 // old assertions are gone rather than weakened — a test kept but loosened is how
 // an override silently half-lands.
 // TEN-384 · the bar is the Overview card's Wins · losses bar: a 6px r3 --track with one solid fill.
-check('item 3 · the bar is minimal: 6px track and fill, radius 3, ONE solid colour', () => {
+check('item 3 · the bar is minimal: v5 4px track and fill, radius 2, ONE solid colour', () => {
   const html = renderCareer(CM_PLAYER);
   // TEN-376: --bar-track renamed --track; the fill is --bar (full) / --text-label (small sample).
-  const tracks = (html.match(/height:6px;border-radius:3px;background:var\(--track\);/g) || []);
+  const tracks = (html.match(/height:4px;border-radius:2px;background:var\(--pp-x-track-7\);/g) || []);   // v5 §0.6: 4px r2 on a 7% track
   assert(tracks.length >= 4, `only ${tracks.length} minimal tracks rendered (expected one per surface row)`);
-  const fills = (html.match(/data-pp2-sbar="\w+"[^>]*><span style="display:block;height:100%;width:[\d.]+%;background:([^;]+);/g) || []);
+  const fills = (html.match(/data-pp2-sbar="\w+"[^>]*><span style="display:block;height:100%;border-radius:2px;width:[\d.]+%;background:([^;]+);/g) || []);
   assert(fills.length >= 3, `only ${fills.length} bar fills rendered`);
   fills.forEach((f) => {
     // v4 §0.1 / §2 (handoff 2026-11-14): with no match list open every surface bar is the one neutral colour
@@ -5356,7 +5356,7 @@ check('item 3 · under the gate the track is drawn and the fill is not', () => {
       clay: null, hard: { won: 3, lost: 1 }, grass: null, indoor: null }],
   };
   const html = renderCareer(thin);
-  const tracks = (html.match(/height:6px;border-radius:3px;background:var\(--track\);/g) || []);
+  const tracks = (html.match(/height:4px;border-radius:2px;background:var\(--pp-x-track-7\);/g) || []);   // v5 §0.6: 4px r2 on a 7% track
   assert(tracks.length >= 4, 'the track disappeared along with the fill');
   assert(!/height:6px;width:[\d.]+%/.test(html), 'a 4-match row still painted a fill');
 });
@@ -5370,10 +5370,10 @@ mustFail('[neg] the sub-gate check would catch a fill painted at n=4', () => {
 check('item 8 · the win rate is the Overview card\'s one-decimal Win % plus a signed vs all', () => {
   const html = renderCareer(CM_PLAYER);
   // hard is 9-5 = 64.29%; all is 22-12 = 64.71% -> vs all −0.4pp (n=14, full)
-  assert(/font-size:12\.5px;font-weight:700;white-space:nowrap;color:var\(--text\);">64\.3%</.test(html),
-    'the Hard rate is not 64.3% at 12.5/700 in var(--text)');
+  assert(/font-size:14px;font-weight:700;white-space:nowrap;color:var\(--text\);">64\.3%</.test(html),
+    'the Hard rate is not 64.3% at 14/700 in var(--text) (v5 §1)');
   assert(/color:var\(--neg\);">\u22120\.4pp</.test(html), 'the Hard vs all is not −0.4pp in --neg');
-  assert(/font-size:31px;font-weight:800;[^>]*>22\u201312</.test(html), 'the hero record is not 22–12 at 31/800');
+  assert(/font-size:26px;font-weight:700;[^>]*>22\u201312</.test(html), 'the hero record is not 22–12 at 26/700 (v5 §1)');
 });
 mustFail('[neg] the Win % check would catch the retired whole-number 19px rate', () => {
   const html = '<div style="font-size:19px;font-weight:700;color:var(--text);">64%</div>';
@@ -5406,13 +5406,14 @@ mustFail('[neg] the mark check would catch the retired asterisk', () => {
 // 22/24/24) and its table is the reference's `64px 1fr 64px 60px 68px`, gap 0 14.
 check('item 10 · the career card carries the reference\'s panel and table grid', () => {
   const html = renderCareer(CM_PLAYER);
-  assert(/grid-template-columns:64px minmax\(0,1fr\) 64px 60px 68px;gap:0 14px/.test(html), 'grid tracks drifted');
+  // v5 §1 (2026-11-20): the surface rows are 84px minmax(60px,1fr) 70px 62px 72px 8px (the blue › column last)
+  assert(/grid-template-columns:84px minmax\(60px,1fr\) 70px 62px 72px 8px;gap:0 14px/.test(html), 'grid tracks drifted');
   // v3 C1/C2: the band (--card, r16 top) sits on the card; the card is the middle panel (side edges only, 22/24/20);
   // the season panel joins under it on a 10% rule
   assert(/data-pp2-band="joined-card"[^>]*background:var\(--card\)/.test(html), 'the Window · Tier band does not sit on the card');
-  assert(/background:var\(--card\);border:1\.25px solid var\(--edge-6\);border-top:0;border-bottom:0;border-radius:0;padding:22px 24px 20px/.test(html),
+  assert(/background:var\(--card\);border:1\.25px solid var\(--edge-6\);border-top:0;border-bottom:0;border-radius:0;padding:24px 24px 14px/.test(html),
     'the card is not the joined --card + --edge-6 middle panel');
-  assert(/border-top-color:var\(--edge-10\);border-radius:0 0 16px 16px;padding:20px 24px 22px/.test(html), 'the season panel is not joined under it');
+  assert(/border-top-color:var\(--edge-10\);border-radius:0 0 16px 16px;padding:24px 24px 20px/.test(html), 'the season panel is not joined under it');
   ['Surface', 'Wins · losses', 'W–L', 'Win %', 'vs all'].forEach((h) => {
     assert(html.includes('>' + h + '<'), `the table head is missing ${h}`);
   });
@@ -5426,8 +5427,9 @@ check('items 11-13,15 · the season table head, helper and footer are the file\'
   const html = renderCareer(CM_PLAYER);
   // 11 — the eyebrow the founder found missing
   // TEN-376 Foundation: caps labels are Hanken var(--font-words) 10.5/700/0.10em/--text-label, never mono caps.
-  assert(/font-family:var\(--font-words\);font-size:10\.5px;font-weight:700;letter-spacing:0\.10em;[^>]*color:var\(--text-label\);">Wins \/ losses</.test(html),
-    'the WINS / LOSSES eyebrow is missing from the title line');
+  // v5 §1 (2026-11-20): the eyebrow became the title's grey line — "Record by season" 18/800 over "tier · wins and losses · …"
+  assert(/font-size:18px;font-weight:800;[^>]*>Record by season<\/span><span style="font-size:13px;color:var\(--text-label\);">[^<]* · wins and losses · click a figure for its matches</.test(html),
+    'the "wins and losses" line is missing from under the title');
   // 12 — profile v2 (the export, 2026-11-09): no helper sentence under the title line
   assert(!/Click any record to browse those matches/.test(html), 'the retired helper sentence is back');
   assert(!/every season on record from/.test(html.slice(0, html.indexOf('Record by season'))),
@@ -5814,10 +5816,12 @@ check('item 18-19 · drill rows open the match sheet and reuse the LEDGER\'s pri
   });
   // the drill card itself
   // founder 2026-11-10: the drill is the export's box (drillModal) — an 820px card on --edge-16, r14, over a 72% scrim
-  assert(/max-width:820px;background:var\(--card\);border:1px solid var\(--edge-16\);border-radius:14px;/.test(html), 'the drill box is not the export\'s');
+  // v5 §11 (2026-11-20): max-width about 900, 9% ring, r16, over --pp-x-backdrop, four tiles over the list
+  assert(/max-width:900px;background:var\(--card\);border:1px solid var\(--pp-x-edge-9\);border-radius:16px;/.test(html), 'the drill box is not the export\'s');
+  assert(/data-pp2-drilltiles="1"/.test(html), 'the history box lost its four tiles');
   assert(/grid-template-columns:52px 12px minmax\(0,1\.15fr\) 40px 44px minmax\(0,1\.35fr\) 52px 52px/.test(html),
     'the drill grid tracks are not the file\'s');
-  assert(/max-height:calc\(100vh - 230px\);min-height:200px;overflow-y:auto/.test(html), 'the drill list has no viewport scroll cap');
+  assert(/max-height:calc\(100vh - 330px\);min-height:200px;overflow-y:auto/.test(html), 'the drill list has no viewport scroll cap');
   ['Date', 'Opponent', 'Rd', 'Sets', 'Set scores'].forEach((h) => {
     assert(new RegExp('>' + h + '<').test(html), `the drill head is missing ${h}`);
   });
@@ -6347,7 +6351,7 @@ mustFail('[neg] the §0.1 check would catch the v3 always-blue bar', () => {
 });
 check('v4 §2 · Career record: surface bars neutral, blue for the surface whose match list is open', () => {
   const closed = renderCareer(CM_PLAYER);
-  assert(/data-pp2-sbar="idle"[^>]*><span style="display:block;height:100%;width:[\d.]+%;background:var\(--pp-x-bar-neutral\);/.test(closed),
+  assert(/data-pp2-sbar="idle"[^>]*><span style="display:block;height:100%;border-radius:2px;width:[\d.]+%;background:var\(--pp-x-bar-neutral\);/.test(closed),
     'a closed surface row\'s bar is not the neutral bar');
   assert(!/data-pp2-sbar="open"/.test(closed), 'a surface reads open with no drill');
   const saved = { ...I.state };
@@ -6356,14 +6360,15 @@ check('v4 §2 · Career record: surface bars neutral, blue for the surface whose
     Object.assign(I.state, { key: CM_PLAYER.key, careerScope: 'career', careerTab: 'record', careerDrill: { kind: 'surface', surf: 'hard' }, info: null });
     open = I.renderCareerModal(CM_PLAYER, { archetype: null });
   } finally { Object.assign(I.state, saved); }
-  assert(/data-pp2-sbar="open"[^>]*><span style="display:block;height:100%;width:[\d.]+%;background:var\(--pp-x-link\);/.test(open),
+  assert(/data-pp2-sbar="open"[^>]*><span style="display:block;height:100%;border-radius:2px;width:[\d.]+%;background:var\(--pp-x-link\);/.test(open),
     'the open surface\'s bar is not blue');
   assert((open.match(/data-pp2-sbar="open"/g) || []).length === 1, 'more than one surface bar is blue');
-  // the row is the reference's: one grid per surface, bled 6px, r6, hairline, hover class
-  assert(/class="pp2-csrow" style="display:grid;grid-template-columns:64px minmax\(0,1fr\) 64px 60px 68px;gap:0 14px;align-items:center;padding:11px 6px;margin:0 -6px;border-radius:6px;border-bottom:1px solid var\(--line\);/.test(closed),
+  // v5 §0.5 / §1 (2026-11-20): one grid per surface, 54 high, bled 10px, a straight 6% top hairline at rest, hover #171B28 r10
+  assert(/class="pp2-csrow" style="display:grid;grid-template-columns:84px minmax\(60px,1fr\) 70px 62px 72px 8px;gap:0 14px;align-items:center;min-height:54px;padding:0 10px;margin:0 -10px;border-radius:0;border-top:1px solid var\(--edge-6\);/.test(closed),
     'a surface row is not the reference\'s row grid');
-  assert(/\.pp2-csrow:hover\{background:color-mix\(in srgb, var\(--text\) 6%, transparent\);\}/.test(PP2_SRC), 'the surface row has no 6% hover');
-  assert(/data-pp2-shead="1" style="[^"]*padding-bottom:8px;border-bottom:1px solid var\(--edge-10\);/.test(closed), 'the surface head is not on a 10% rule');
+  assert(/\.pp2-csrow:hover\{background:var\(--pp-x-hover\);border-radius:10px!important;border-top-color:transparent!important;\}/.test(PP2_SRC), 'the surface row has no v5 hover');
+  // v5 §0.5: no heavy line under the caps heads — the first row's own 6% hairline separates them
+  assert(/data-pp2-shead="1" style="[^"]*padding-bottom:10px;">/.test(closed) && !/data-pp2-shead="1" style="[^"]*border-bottom/.test(closed), 'the surface head carries a rule');
 });
 mustFail('[neg] the §2 check would catch the v3 always-blue surface bar', () => {
   const v3 = '<span data-pp2-sbar="idle" style="x"><span style="display:block;height:100%;width:67.6%;background:var(--link);"></span></span>';
