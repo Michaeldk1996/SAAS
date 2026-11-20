@@ -629,7 +629,9 @@ async function loadAtpStandings() {
       const rank = (Number.isFinite(place) && place >= 1) ? place : null;
       map.set(String(r.player_key), rank);
       if (r.player) {
-        standingRows.push({ key: String(r.player_key), name: String(r.player), rank, country: r.country || null });
+        // ranking points (Points to defend: rank if out first round); a blank / non-numeric figure is null, never 0
+        const pts = r.points == null || r.points === '' ? NaN : Number(String(r.points).replace(/[^\d.]/g, ''));
+        standingRows.push({ key: String(r.player_key), name: String(r.player), rank, country: r.country || null, points: Number.isFinite(pts) ? pts : null });
       }
     }
   }
@@ -2781,7 +2783,10 @@ function labelRounds(sortedRoundStrings) {
   if (i >= 0 && roundText(sortedRoundStrings[i]).includes('semi')) { labels[i] = 'SF'; i--; }
   if (i >= 0 && roundText(sortedRoundStrings[i]).includes('quarter')) { labels[i] = 'QF'; i--; }
   let n = 1;
-  for (let j = 0; j <= i; j++) labels[j] = `R${n++}`;
+  for (let j = 0; j <= i; j++) {
+    const rr = /^Round robin (\d+)$/.exec(String(sortedRoundStrings[j]));
+    labels[j] = rr ? 'RR' + rr[1] : `R${n++}`;
+  }
   return labels;
 }
 
@@ -3145,6 +3150,36 @@ function drawResultEvents(draws, activeTourNames, today) {
   return out.sort((a, b) => a.city.localeCompare(b.city));
 }
 
+// The season finals (ATP Finals, Next Gen Finals) send their group matches with NO tournament_round (seen 17–20 Nov
+// 2026: every Turin group match round-less), so the progression dropped the whole event. Each group match is the n-th
+// group match of BOTH its players (a group plays one match per player per matchday), so it is labelled "Round robin n"
+// from the players' own earlier group matches — a real ordinal, never a guessed knockout round. In place, on round-less
+// finished or scheduled fixtures of a "Finals" event only.
+function labelRoundRobin(fixtures, matchNames) {
+  const rr = fixtures.filter(f => f.tournament_name && /finals/i.test(f.tournament_name)
+    && matchNames.some(nm => f.tournament_name.includes(nm))
+    && !(typeof f.tournament_round === 'string' && f.tournament_round.trim()) && f.first_player_key && f.second_player_key)
+    .sort((a, b) => String(a.event_date || '').localeCompare(String(b.event_date || '')));   // a group plays one match per player per day
+  const seen = {};
+  for (const f of rr) {
+    const n = Math.max(seen[f.first_player_key] || 0, seen[f.second_player_key] || 0) + 1;
+    seen[f.first_player_key] = seen[f.second_player_key] = n;
+    f.tournament_round = 'Round robin ' + n;
+  }
+  return rr.length;
+}
+
+const ARCHIVE_RESULT_DAYS = 35;
+
+// The season finals window (Turin to 2030): 8–30 November of the current season, from the 8th until the year ends,
+// unless the event is on the board this run (then `tournaments` carries it). Null otherwise.
+function seasonFinalsEvent(activeTourNames, today) {
+  const y = today.getUTCFullYear(), from = `${y}-11-08`, iso = today.toISOString().slice(0, 10);
+  if (iso < from) return null;
+  if ((activeTourNames || []).some(t => /Finals\s*-\s*Turin/i.test(String(t)))) return null;
+  return { city: 'Turin', tourName: 'ATP Finals - Turin', from, to: iso < `${y}-11-30` ? iso : `${y}-11-30` };
+}
+
 // win (optional): { from, to } ISO days — build from this window only (a draw event that left the board); fetchFrom
 // (optional Date): the start of the ONE shared fetch, so every event of a run reads the same fixtures call.
 async function buildTournamentProgression(tourName, win, fetchFrom) {
@@ -3170,6 +3205,7 @@ async function buildTournamentProgression(tourName, win, fetchFrom) {
   const fixtures = narrow ? fetched.filter(f => !f.event_date || (f.event_date >= from && f.event_date <= to)) : fetched;
   if (narrow && fetched.failedRanges) fixtures.failedRanges = fetched.failedRanges.filter(r => r.to >= from && r.from <= to);
 
+  labelRoundRobin(fixtures, matchNames);
   const played = fixtures.filter(f =>
     f.tournament_name && matchNames.some(nm => f.tournament_name.includes(nm)) &&
     // A round-less fixture cannot sit anywhere on the ladder; keeping it would
@@ -3198,7 +3234,7 @@ async function buildTournamentProgression(tourName, win, fetchFrom) {
     for (const [key, name, won] of [[p1Key, f.event_first_player, p1Won], [p2Key, f.event_second_player, !p1Won]]) {
       if (!byPlayer[key]) byPlayer[key] = { name, matches: [], eliminated: false };
       byPlayer[key].matches.push({ fixture: f, won, opponent: key === p1Key ? f.event_second_player : f.event_first_player });
-      if (!won) byPlayer[key].eliminated = true;
+      if (!won && !/^Round robin /.test(String(f.tournament_round))) byPlayer[key].eliminated = true;
     }
   }
 
@@ -6744,7 +6780,7 @@ function writePlayerShardsAndIndex(allProfiles, tourAverage, wrongSchemaRejectio
 
   const byKey = new Map();
   for (const row of atpStandingRows) {
-    byKey.set(row.key, { key: row.key, name: row.name, rank: row.rank, country: row.country, hasProfile: false });
+    byKey.set(row.key, { key: row.key, name: row.name, rank: row.rank, country: row.country, points: row.points ?? null, hasProfile: false });
   }
   // A retired or unranked player keeps his profile but loses his standings row —
   // union him in (rank null -> dash) so nobody who HAS a profile is unsearchable.
@@ -8116,6 +8152,17 @@ async function runPipeline() {
   let drawEvents = [];
   try { drawEvents = drawResultEvents(JSON.parse(fs.readFileSync('draws.json', 'utf8')), activeTournamentNames, new Date()); }
   catch (e) { console.log(`Draw results: draws.json not read (${e.message}) — finished draws get no results this run`); }
+  // The ATP Finals has no draw sheet (tools/draws skips it), so it never reached drawResults and its Reports vanished the
+  // day it left the board. Its results are kept for the rest of the season like any finished draw (founder 2026-11-20).
+  // Archived draws of the last ARCHIVE_RESULT_DAYS keep their results too (founder 2026-11-20: "where are all the statistics
+  // of Stockholm and Paris and other archived tournaments?" — the Draw tab's Archive and Reports read them).
+  try {
+    const arc = drawResultEvents(JSON.parse(fs.readFileSync('draws-archive.json', 'utf8')), activeTournamentNames, new Date());
+    const cut = new Date(Date.now() - ARCHIVE_RESULT_DAYS * 86400000).toISOString().slice(0, 10);
+    for (const e of arc) if (e.to >= cut && !drawEvents.some(d => d.city === e.city)) drawEvents.push(e);
+  } catch (e) { console.log(`Draw results: draws-archive.json not read (${e.message})`); }
+  const fin = seasonFinalsEvent(activeTournamentNames, new Date());
+  if (fin) drawEvents.push(fin);
   const progFetchFrom = drawEvents.length ? new Date(drawEvents.map(d => d.from).sort()[0] + 'T00:00:00Z') : null;
   for (const tourName of activeTournamentNames) {
     const progression = await buildTournamentProgression(tourName, null, progFetchFrom);
@@ -8609,7 +8656,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = { drawResultEvents, profileRoster, writeProfileShardsAtomic, applyQualifyingRule, venueHintKeyFor, buildDrawMatchesStore, feedSetScores, drawFixtureRow, feedRoundCode, liveCardCheck, isCardableFixture, fixtureLiveState, olympicSurface, fixtureSurface, modelH2hMatches, modelH2hInputs, modelMatchStarted, modelEventKey, modelPreMatchCandidates, buildModelOutput, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, progressionSheetMatches, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
+module.exports = { seasonFinalsEvent, labelRoundRobin, labelRounds, drawResultEvents, profileRoster, writeProfileShardsAtomic, applyQualifyingRule, venueHintKeyFor, buildDrawMatchesStore, feedSetScores, drawFixtureRow, feedRoundCode, liveCardCheck, isCardableFixture, fixtureLiveState, olympicSurface, fixtureSurface, modelH2hMatches, modelH2hInputs, modelMatchStarted, modelEventKey, modelPreMatchCandidates, buildModelOutput, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, progressionSheetMatches, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.

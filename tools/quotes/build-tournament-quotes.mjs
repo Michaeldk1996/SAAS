@@ -152,14 +152,79 @@ if ((profilesStore.error || entrantsStore.error) && !process.argv.includes('--al
     `Dated quotes could not resolve their speakers. Pass --allow-no-entrants only if that is intended.`);
   process.exit(3);
 }
-const stores = { profiles: profilesStore.data, entrants: entrantsStore.data };
+const stores = { profiles: profilesStore.data, entrants: addDrawEntrants(entrantsStore.data) };
+
+// Founder 2026-11-20: this season's events reach the tournament store only after it rebuilds, so a fresh quote (Paris,
+// Vienna, Basel, Stockholm 2026; the ATP Finals) read "no entrants". The official draw sheets (draws.json,
+// draws-archive.json: every main-draw slot with its player key) and the board's season-finals cards (matches.json) are
+// that event's entrants too, added as `main` entrants (used only when the store holds no edition for that season).
+function addDrawEntrants(base) {
+  const out = Object.assign({}, base);
+  const add = (event, season, name, key) => {
+    if (!event || !season || !name) return;
+    const k = event + '|' + season, e = out[k] = Object.assign({}, out[k]);
+    e.main = (e.main || []).slice();
+    if (!e.main.some(x => String(x.key) === String(key) || x.name === name)) e.main.push({ name, key: key == null ? null : String(key) });
+  };
+  const readJ = f => { try { return JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8')); } catch (e) { return null; } };
+  const groupsByCity = new Map(Object.values(map.groups).filter(Boolean).map(g => [g.toLowerCase(), g]));
+  for (const f of ['draws.json', 'draws-archive.json']) {
+    const d = readJ(f);
+    for (const t of Object.values((d && d.tournaments) || {})) {
+      const city = t && (t.feedCity || t.city), season = t && t.startDate ? t.startDate.slice(0, 4) : null;
+      const ev = city && (groupsByCity.get(String(city).toLowerCase()) || (city === 'Lyon' && season >= '2026' ? 'Lyon (France)' : null));
+      for (const sl of ((t && t.main && t.main.slots) || [])) {
+        if (sl.bye || !sl.name) continue;
+        const m = /^([^,]+),\s*(.+)$/.exec(sl.name);   // "ZVEREV, Alexander" -> "Alexander Zverev"
+        const nm = m ? `${m[2]} ${m[1].toLowerCase().replace(/(^|[\s-])\S/g, c => c.toUpperCase())}` : sl.name;
+        add(ev, season, nm, sl.playerKey);
+      }
+    }
+  }
+  const mj = readJ('matches.json');
+  for (const c of (Array.isArray(mj) ? mj : [])) {
+    if (!c || !/finals/i.test(String(c.tour || '')) || !/turin/i.test(String(c.tour || '') + ' ' + String(c.tournamentRound || ''))) continue;
+    const season = String(c.date || '').slice(0, 4);
+    add('Turin', season, c.p1, c.p1Key); add('Turin', season, c.p2, c.p2Key);
+  }
+  return out;
+}
 if (!fs.existsSync(CSV)) {
   console.error(`quote CSV not found at ${CSV}\n` +
     `Export the sheet as CSV to that path, or pass --csv. This step FAILS rather than\n` +
     `emitting an empty artefact: a silently empty quotes file would delete every card.`);
   process.exit(2);
 }
-const rows = parseCsv(fs.readFileSync(CSV, 'utf8'));
+const rowsRaw = parseCsv(fs.readFileSync(CSV, 'utf8'));
+// The 2026-11-20 sheet layout (founder): TOURNAMENT, PLAYER, YEAR, COMMENTARY, BALLS, COMMENTATORS — one row per quote,
+// tournament and year in their own columns. It is rewritten into the original layout this importer parses (column 1 =
+// a tournament or a year header, then [ , player, text ] rows), so every hazard rule below applies unchanged. Only
+// COMMENTARY is a player's words: BALLS (ball-supplier notes) and COMMENTATORS (commentators' remarks) are not quotes
+// by the named player and are counted, never imported under "What players say". EXCEPTION, read off the sheet: on a row
+// with a PLAYER, a BALLS cell that is a quotation (it opens with a quote mark) is that player's own words about the balls
+// (e.g. Medvedev, Beijing 2024: "I don't know who is capable of playing aggressively with these balls…"): it is imported
+// as a separate quote of that player. A BALLS cell that is not a quotation (a supplier note) never is.
+function fromYearLayout(rs) {
+  const h = rs[0].map(x => String(x || '').trim().toUpperCase());
+  const iT = h.indexOf('TOURNAMENT'), iP = h.indexOf('PLAYER'), iY = h.indexOf('YEAR'), iC = h.indexOf('COMMENTARY'), iB = h.indexOf('BALLS');
+  const out = [['TOURNAMENT', 'PLAYER', 'COMMENTARY']];
+  let curT = null, curY;
+  sideColumns = 0;
+  for (const r of rs.slice(1)) {
+    const t = String(r[iT] || '').trim().toUpperCase(), y = String(r[iY] || '').trim(), pl = String(r[iP] || '').trim(), tx = String(r[iC] || '').trim();
+    const bl = iB >= 0 ? String(r[iB] || '').trim() : '';
+    const ballQuote = pl && /^["\u201c]/.test(bl) ? bl : '';
+    if (r.some((v, i) => i !== iT && i !== iP && i !== iY && i !== iC && String(v || '').trim())) sideColumns++;
+    if (!tx && !ballQuote) continue;   // a player with no words of his own is no quote
+    if (t && t !== curT) { out.push([t, '', '']); curT = t; curY = undefined; }
+    if (y !== curY) { if (/^\d{4}$/.test(y)) out.push([y, '', '']); else out.push([curT, '', '']); curY = y; }
+    if (tx) out.push(['', pl, tx]);
+    if (ballQuote) out.push(['', pl, ballQuote]);
+  }
+  return out;
+}
+let sideColumns = 0;
+const rows = rowsRaw.length && rowsRaw[0].some(x => String(x || '').trim().toUpperCase() === 'YEAR') ? fromYearLayout(rowsRaw) : rowsRaw;
 const body = rows.slice(1); // header
 
 const PREFIX_RE = /^\s*([A-Z][A-Z\s.\-’'&,]{2,30}?)\s*:/;
@@ -202,9 +267,22 @@ const R = {                           // the report
   unmappedGroup: new Map(), nullGroup: new Map(),
   unresolvedPrefix: new Map(), conflicts: [],
   unresolvedDated: [], resolved: 0, resolvedNoId: 0, undated: 0, yearAsPlayer: [],
-  altered: [], withYear: 0, withoutYear: 0, carriesOwnQuotes: 0, truncatedDropped: [],
+  altered: [], withYear: 0, withoutYear: 0, carriesOwnQuotes: 0, truncatedDropped: [], offTopic: [],
   years: new Set(),
 };
+// conditions vocabulary, by topic (a topic counts once per quote); speed = 2, every other topic = 1
+const TOPICS = {
+  speed: /\b(fast(er|est)?|slow(er|est)?|quick(er)?|speed|pace|lively|dead|skid\w*|slid(e|es|ing)|shoot(s|ing)? through|zip\w*)\b/i,
+  bounce: /\b(bounc\w*|kick\w*|high ball|low ball|stays low|sits up)\b/i,
+  balls: /\b(balls?|fluff\w*|heavy|light(er)?|fly|flies|flying)\b/i,
+  weather: /\b(humid\w*|heat|hot(ter|test)?|cold(er)?|wind\w*|rain\w*|temperature|degrees|weather|sun|shade|night|dew|damp|dry|wet|air)\b/i,
+  altitude: /\b(altitude|mountains?|thin air|elevation)\b/i,
+  court: /\b(courts?|surface|grass|clay|hard court|indoor|outdoor|roof|lines?|slippery|grip|conditions?)\b/i,
+};
+function conditionsScore(text) {
+  const topics = Object.keys(TOPICS).filter(k => TOPICS[k].test(String(text || '')));
+  return { topics, score: topics.reduce((n, k) => n + (k === 'speed' ? 2 : 1), 0) };
+}
 const bump = (m, k, row) => { if (!m.has(k)) m.set(k, []); m.get(k).push(row); };
 
 let curT = null, curY = null;
@@ -272,8 +350,15 @@ for (let i = 0; i < body.length; i++) {
     continue;
   }
 
+  // Founder 2026-11-20: "take the best ones who talk about speed of court, humidity, the courts, to make our members
+  // understand if it's fast or slow". A quote with no conditions vocabulary at all ("the fans are nice") is reported,
+  // never shipped; the rest carry their topics and a score that orders each year best-first (speed words count double).
+  const cs = conditionsScore(h.text);
+  if (!cs.score) { R.offTopic.push({ row: lineNo, event: group, player, head: h.text.slice(0, 70) }); continue; }
+
   (out[group] ||= []).push({
     player, playerRaw: pCell, playerMatch: sp.status, playerKey: sp.key,
+    topics: cs.topics, conditionsScore: cs.score,
     year: curY ? Number(curY) : null,     // (b) null is null. Never inferred.
     text: h.text,
     selfQuoted: carriesOwnQuotes(h.text), // the card must not double-wrap these
@@ -296,15 +381,15 @@ for (const k of events) {
   // last, source-sheet order preserved inside each bucket. NOT implemented as a
   // display rule until the founder rules — this only fixes the array order so
   // the artefact is deterministic between runs.
-  out[k].sort((a, b) => (b.year ?? -Infinity) - (a.year ?? -Infinity) || a.sourceRow - b.sourceRow);
+  out[k].sort((a, b) => (b.year ?? -Infinity) - (a.year ?? -Infinity) || (b.conditionsScore - a.conditionsScore) || a.sourceRow - b.sourceRow);
 }
 fs.writeFileSync(OUT, JSON.stringify({
   schemaVersion: 1,
   builtAt: new Date().toISOString(),
   source: 'founder quote sheet (CSV export)',
-  ordering: 'year desc, undated last, source order within a bucket (TEN-242 C5 — PROPOSED, awaiting ruling)',
+  ordering: 'year desc, undated last; inside a year the conditions score desc (founder 2026-11-20 "the best ones"), then source order',
   counts: { imported: R.imported, events: events.length, shipped: nowShipped, shippedLastRun: prevShipped,
-            truncatedDropped: R.truncatedDropped.length,
+            truncatedDropped: R.truncatedDropped.length, offTopic: R.offTopic.length,
             speakers: { resolved: R.resolved, resolvedNoId: R.resolvedNoId, unresolvedDated: R.unresolvedDated.length, undated: R.undated } },
   tournaments: out,
 }, null, 2) + '\n');
@@ -418,6 +503,9 @@ if (catalog.length) {
   p(none.map((n) => `\`${n}\``).join(' · '));
 }
 p('');
+p('');
+p(`## Not about conditions (founder 2026-11-20: only quotes that tell a member how the event plays) — ${R.offTopic.length}`);
+for (const o of R.offTopic) p(`- row ${o.row} · ${o.event} · ${o.player}: ${o.head.replace(/\|/g, '/')}…`);
 fs.writeFileSync(REPORT, L.join('\n'));
 
 // (e) UNMAPPED NAMES MUST ACTUALLY FAIL. The map file promises they "FAIL

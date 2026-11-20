@@ -32,7 +32,8 @@ function resolveSpeaker(cell, eventName, year, stores) {
   const ed = prof ? (prof.allEditionMatches || []).find((e) => String(e.season) === String(year)) : null;
   const qe = entrants[eventName + '|' + year] || {};
   if (!ed && !qe.main && !qe.qual) return { status: 'no-entrants', key: null, candidates: [] };
-  const q = parts(cell);
+  // "JM Cerundolo" (the 2026-11-20 sheet's run-together initials) reads as "J. M. Cerundolo"
+  const q = parts(String(cell || '').replace(/^([A-Z])([A-Z])\s+(?=[A-Z][a-z])/, '$1. $2. '));
   if (!q.sur) return { status: 'unmatched', key: null, candidates: [] };
   const cands = [];
   // founder 2026-10-24: the speaker's surname is the entrant's surname or its LAST WHOLE WORD(S) — "Fokina" = Davidovich

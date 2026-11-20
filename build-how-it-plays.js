@@ -101,6 +101,7 @@ const P = {
   surfaces: path.join(ROOT, 'tournament-surfaces.json'),
   progression: path.join(ROOT, 'tournament-progression.json'),
   matches: path.join(ROOT, 'matches.json'),
+  drawMatches: path.join(ROOT, 'draw-matches.json'),
   oddsArchive: path.join(ROOT, 'odds-archive'),
   out: path.join(ROOT, 'how-it-plays.json'),
 };
@@ -376,7 +377,8 @@ function buildHowItPlays(inp) {
 
   // 2 · progression (current season only) → keyed through the match cards' tournamentKey
   const cardKeys = new Map();   // bare tour name -> Set(key)
-  for (const m of inp.matches || []) {
+  const drawCards = Object.values((inp.drawMatches && inp.drawMatches.matches) || {}).map(r => r && r.match).filter(Boolean);
+  for (const m of (inp.matches || []).concat(drawCards)) {
     if (!m || m.tournamentKey == null || !m.tour) continue;
     const bare = String(m.tour).replace(/^ATP\s+/i, '').trim();
     if (!cardKeys.has(bare)) cardKeys.set(bare, new Set());
@@ -386,7 +388,10 @@ function buildHowItPlays(inp) {
   for (const [bare, ks] of cardKeys) if (ks.size === 1) cardName[[...ks][0]] = bare;
   const prog = {};   // key -> { sums, count }
   const unresolved = [];
-  for (const [pname, ev] of Object.entries((inp.progression && inp.progression.tournaments) || {})) {
+  // this week's events AND the finished draws (founder 2026-11-20: Stockholm / Paris showed dashes once off the board)
+  const progEvents = Object.entries((inp.progression && inp.progression.tournaments) || {})
+    .concat(Object.entries((inp.progression && inp.progression.drawResults) || {}).filter(([n]) => !(inp.progression.tournaments || {})[n]));
+  for (const [pname, ev] of progEvents) {
     const ks = cardKeys.get(pname) || (ev && ev.feedName && cardKeys.get(String(ev.feedName).replace(/^ATP\s+/i, '').trim()));
     if (!ks || ks.size !== 1) { unresolved.push({ key: null, name: pname, reason: ks ? 'progression name maps to several tournament keys' : 'no match card carries this progression event\'s tournamentKey' }); continue; }
     const k = [...ks][0];
@@ -490,6 +495,8 @@ function main() {
     surfaces: readJson(process.env.HOWPLAYS_SURFACES || P.surfaces, {}),
     progression: readJson(process.env.HOWPLAYS_PROGRESSION || P.progression, null),
     matches: readJson(process.env.HOWPLAYS_MATCHES || P.matches, []),
+    // finished draws leave the board: draw-matches.json keeps their cards (tour + tournamentKey) for 16 days
+    drawMatches: readJson(process.env.HOWPLAYS_DRAW_MATCHES || P.drawMatches, null),
     tdRows,
   }), { historyInputs: history.inputs || null });
   const tmp = P.out + '.tmp';

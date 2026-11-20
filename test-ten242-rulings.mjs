@@ -163,7 +163,8 @@ test('phase 2 B: the Database page is mountable, and the standalone call site is
   assert.ok(m.length > 200, 'could not isolate the initialTournamentNames branch');
   assert.match(m, /state\.view='tournaments';/);
   assert.match(m, /state\.rounds=null;/);
-  assert.match(m, /state\.yearMin=null; state\.yearMax=null;/);
+  // 2026-11-20 handoff: the year range = the caller's From / To window (the Tournaments backing box), else the full range
+  assert.match(m, /state\.yearMin=opts\.initialYearMin!=null\?opts\.initialYearMin:null; state\.yearMax=opts\.initialYearMax!=null\?opts\.initialYearMax:null;/);
 
   // THE KEY. The overlay must pass OFFICIAL ARCHIVE STRINGS, never the catalog
   // name — measured, only 4 of 73 catalog names exist in the archive, so the
@@ -561,8 +562,9 @@ test('TEN-401 Data 3 / L3: a quote ships only with a traceable source (resolved 
   assert.match(fr, /filter\(q => TOURX_QUOTE_RULE === 'all' \|\| tourxQuoteTraceable\(q, name\)\)/, 'the card, its count and the panel read the filtered list');
   // the shipped artefact: every event that renders a card has >= 1 traceable note, and the count is measured
   const Q = JSON.parse(readFileSync(join(HERE, 'tournament-quotes.json'), 'utf8')).tournaments;
-  const events = Object.keys(Q).filter((k) => Q[k].some((q) => ok(q)));
-  assert.ok(events.length > 0 && events.length < Object.keys(Q).length, `vacuous: ${events.length} of ${Object.keys(Q).length} events pass`);
+  // (2026-11-20 sheet: every event now has a traceable note, so the non-vacuity is measured on records, not events)
+  const all = Object.values(Q).flat(), pass = all.filter((q) => ok(q));
+  assert.ok(pass.length > 0 && pass.length < all.length, `vacuous: ${pass.length} of ${all.length} records pass`);
 });
 
 // ---------------------------------------------------------------------------

@@ -8,8 +8,11 @@
 //   2. a window recomputes the event, the tour baseline and the rank over the SAME years;
 //   3. TT_SPEED_SOURCE 'ta' (default, founder 2026-11-16) = Tennis Abstract, credited on hover; 'own' = every figure a dash;
 //   4. Service hold = event-hold.json held / games; 1st serve = how-it-plays.json num / den; n in the hover title;
-//   5. ROI coloured by its gap to the tour (design wins); reliability rank of N; dashes, never 0;
-//   6. structure: rail groups, quotes card (traceable count / dash), overlays, page-scoped CSS.
+//   5. ROI yields green / red by their OWN sign (2026-11-20 handoff); reliability rank of N; dashes, never 0;
+//   6. structure: rail groups, quotes card (traceable count / dash), overlays, page-scoped CSS;
+//   7. 2026-11-20 handoff data: speed by year = court-speed-history.json ta (only years with a reading); CPI for Masters
+//      1000 only, Canadian Open = Montreal + Toronto; 1st serve = event-hold.json fsWon / fsPlayed first; logo tile;
+//      the backing box mounts the Database on the tiles' window.
 // Every check is re-run against mutants of the module source; each mutant must turn a check red.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -27,6 +30,12 @@ const J = f => JSON.parse(fs.readFileSync(path.join(FX, f), 'utf8'));
 const MKT = J('tournament-market.json'), HOLD = J('event-hold.json'), HIP = J('how-it-plays.json'), QUOTES = J('tournament-quotes.json').tournaments;
 const DB = JSON.parse(zlib.gunzipSync(fs.readFileSync(path.join(FX, 'database-yield.json.gz'))));
 const Settlement = require(path.join(ROOT, 'settlement.js'));
+// committed data files the module reads (not fixtures: court-speed-history.json is committed, built by its tool)
+const CSH = JSON.parse(fs.readFileSync(path.join(ROOT, 'court-speed-history.json'), 'utf8'));
+const LOGOS = { Wimbledon: 'wimbledon-540.webp', 'Monte-Carlo': 'monte-carlo-410.webp' };
+// event-hold.json with the 1st-serve counts the builder now writes (fsWon / fsPlayed / fsMatches): Wimbledon's own figures
+const HOLD_FS = JSON.parse(JSON.stringify(HOLD));
+{ const w = Object.values(HOLD_FS.events).find(x => (x.names || [x.name]).includes('Wimbledon')); Object.assign(w, { fsWon: 41662, fsPlayed: 56357, fsMatches: 378 }); }
 
 function fnSource(name){
   const i = DASH_SRC.indexOf('\nfunction ' + name + '(');
@@ -51,7 +60,7 @@ const SLICE = [constSource('TOURNAMENT_CATALOG'), constSource('COURT_CONDITIONS'
 
 // One sandbox per run: the dashboard slice + the module (optionally mutated / with the 'ta' switch).
 function boot(modSrc, opts = {}){
-  const win = { Settlement, TT_SPEED_SOURCE: opts.speed };
+  const win = { Settlement, TT_SPEED_SOURCE: opts.speed, DatabaseTab: { mount: (h, o) => { win.__mounted = o; } } };
   const ctx = vm.createContext({ window: win, console, Map, Set, WeakMap, Math, JSON, Number, String, Object, Array, Date, RegExp, Intl });
   vm.runInContext(SLICE + `
     const tourxState = { section: 'overview', tsSel: 'Wimbledon', tsQ: '', speedPanel: false, quotesPanel: false, roiPanel: null };
@@ -62,10 +71,10 @@ function boot(modSrc, opts = {}){
     this.__ts = tourxState; this.__cc = COURT_CONDITIONS;
   `, ctx);
   vm.runInContext(modSrc, ctx);
-  ctx.__set('mkt', MKT); ctx.__set('hold', HOLD);
+  ctx.__set('mkt', MKT); ctx.__set('hold', opts.hold || HOLD);
   const T = win.TTOverview, I = T._internals;
-  I.state.hip = HIP; I.state.db = DB;
-  return { T, I, ts: ctx.__ts, cc: ctx.__cc };
+  I.state.hip = HIP; I.state.db = DB; I.state.csh = opts.csh !== undefined ? opts.csh : CSH; I.state.logos = LOGOS;
+  return { T, I, win, ts: ctx.__ts, cc: ctx.__cc };
 }
 const text = h => h.replace(/<style[\s\S]*?<\/style>/g, '').replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
 const between = (h, cls) => { const i = h.indexOf(cls); return i < 0 ? '' : h.slice(i, h.indexOf('</span>', i)); };
@@ -143,7 +152,7 @@ const CHECKS = {
     if (!card.includes(`n = ${e.games.toLocaleString('en-US')}`)) return 'hold n missing from the hover';
     return null;
   },
-  '1st serve won = how-it-plays.json num / den on hard; a dash on grass'(B){
+  '1st serve won = how-it-plays.json num / den when the hold file has no 1st-serve count; a dash on grass'(B){
     const hard = Object.values(HIP.events).find(e => e.past && e.past.metrics && e.past.metrics.firstServeWon && B.I.events().some(t => t.name === e.name));
     if (!hard) return 'no hard fixture event';
     const c = B.I.events().find(t => t.name === hard.name), f = B.I.firstServeOf(c), m = hard.past.metrics.firstServeWon;
@@ -151,12 +160,21 @@ const CHECKS = {
     if (B.I.firstServeOf(B.I.events().find(t => t.name === 'Wimbledon'))) return 'grass Wimbledon has a 1st-serve figure';
     return null;
   },
-  'ROI coloured by its gap to the tour; reliability rank of N'(B){
+  '1st serve won = event-hold.json fsWon / fsPlayed when it carries them (n points + matches on hover)'(_, src){
+    const B = boot(src, { hold: HOLD_FS });
+    const c = B.I.events().find(t => t.name === 'Wimbledon'), f = B.I.firstServeOf(c);
+    if (!f || f.num !== 41662 || f.den !== 56357 || f.n !== 378) return 'not fsWon / fsPlayed: ' + JSON.stringify(f);
+    const card = B.I.speedCardHtml(c);
+    if (!card.includes('>74<')) return '73.9% not printed as 74';
+    return /n = 56,357 points, 378 matches/.test(card) ? null : 'n missing from the 1st-serve hover';
+  },
+  'ROI yields green / red by their own sign; reliability rank of N'(B){
     const c = B.I.events().find(t => t.name === 'Wimbledon'), h = B.I.marketHtml(c);
-    const w = MKT.tournaments.Wimbledon, b = MKT.baseline, d = w.roiFav - b.roiFav;
+    const w = MKT.tournaments.Wimbledon;
     const fav = h.slice(h.indexOf('data-tt-tile="fav"'), h.indexOf('data-tt-tile="dog"'));
-    const want = Math.abs(d) < 1 ? 'var(--text)' : d > 0 ? 'var(--pos)' : 'var(--neg)';
-    if (!fav.includes('color:' + want)) return 'fav yield colour is not its gap to the tour (' + want + ')';
+    const r = Math.round(w.roiFav * 10) / 10, want = r > 0 ? 'var(--tt-green)' : r < 0 ? 'var(--tt-red)' : 'var(--tt-muted)';
+    if (!fav.includes('style="color:' + want + ';"')) return 'fav yield colour is not its own sign (' + want + ')';
+    if (!/vs tour average/.test(fav)) return 'gap line is not "… vs tour average"';
     const of = Object.values(MKT.tournaments).filter(a => a.n >= 30).length, rank = 1 + Object.values(MKT.tournaments).filter(a => a.n >= 30 && a.favRel > w.favRel).length;
     const ordn = n => n + (['th', 'st', 'nd', 'rd'][((n % 100) - 20) % 10] || ['th', 'st', 'nd', 'rd'][n % 100] || 'th');
     if (!text(h).includes(`${ordn(rank)} of ${of} tournaments`)) return `rank line is not "${ordn(rank)} of ${of} tournaments"`;
@@ -196,7 +214,63 @@ const CHECKS = {
     const bad = css.split('\n').filter(l => !/^@media/.test(l)).filter(l => l.split('{')[0].split(',').some(s => !s.trim().startsWith('.tabpage[data-page="tournaments"]')));
     if (bad.length) return 'unscoped: ' + bad[0].slice(0, 90);
     if (/#[0-9a-f]{3,8}\b|rgba?\(/i.test(css)) return 'raw colour in the CSS';
-    return /\.tt-ov-card\{[^}]*1\.25px/.test(css) ? null : 'card border is not 1.25px';
+    if (!/\.tt-ov-card\{[^}]*background:var\(--tt-inset\); border:1px solid [^;]*6%[^;]*; border-radius:16px/.test(css)) return 'big card is not --tt-inset + 1px 6% edge r16';
+    if (/text-transform:uppercase/.test(css.split('\n').filter(l => !/tt-ov-gh|tourx-head/.test(l)).join('\n'))) return 'caps label outside the untouched rail';
+    return null;
+  },
+  'speed by year = court-speed-history.json ta; only years with a reading are plotted'(B, src){
+    const c = B.I.events().find(t => t.name === 'Wimbledon'), h = B.I.speedYearsHtml(c), ta = CSH.ta.Wimbledon;
+    const ys = Object.keys(ta).map(Number).filter(y => y >= 2020 && y <= 2026).sort();
+    if (!h.includes(`Court speed · ${ys[0]}–${ys[ys.length - 1]}`)) return 'title range is not the years with a reading';
+    const pv = [...h.matchAll(/class="tt-ov-pv"[^>]*>([^<]+)</g)].map(m => m[1]);
+    if (pv.join(',') !== ys.map(y => ta[y].toFixed(2)).join(',')) return 'plotted values ' + pv.join(',') + ' != ta ' + ys.map(y => ta[y]).join(',');
+    if (/>2020</.test(h) && ta[2020] == null) return 'a year with no reading is drawn';
+    const F = boot(src, { csh: null });
+    const hf = F.I.speedYearsHtml(c);
+    return /<polyline/.test(hf) || !/tt-ov-none tt-ov-dash/.test(hf) ? 'a failed history load must be a dash, never a line' : null;
+  },
+  'CPI: Masters 1000 only, Canadian Open = Montreal + Toronto by year, courtspeed.com credited'(B){
+    const ev = n => B.I.events().find(t => t.name === n) || { name: n, category: 'ATP 1000' };
+    if (!B.I.cpiOf(ev('Madrid'))) return 'Madrid has no CPI';
+    if (B.I.cpiOf(ev('Wimbledon')) || B.I.cpiOf(ev('Turin')) || B.I.cpiOf({ name: 'Madrid', category: 'ATP 500' })) return 'CPI shown outside the Masters 1000';
+    const mo = B.I.cpiOf(ev('Montreal')), to = B.I.cpiOf(ev('Toronto'));
+    const want = Object.assign({}, CSH.cpi.Montreal, CSH.cpi.Toronto);
+    if (JSON.stringify(mo) !== JSON.stringify(to) || Object.keys(want).some(y => mo[y] !== want[y])) return 'Canadian Open is not Montreal + Toronto merged';
+    const card = B.I.speedCardHtml(ev('Madrid'));
+    if (!/data-tt-cpi="1"/.test(card) || !/courtspeed\.com/.test(card)) return 'no CPI row with the courtspeed.com credit';
+    if (/data-tt-cpi/.test(B.I.speedCardHtml(ev('Wimbledon')))) return 'CPI row on a Slam';
+    B.T.select('Madrid'); B.T.metric('cpi');
+    const h = B.I.speedYearsHtml(ev('Madrid')); B.T.metric('speed');
+    const ys = Object.keys(CSH.cpi.Madrid).map(Number).filter(y => y >= 2020 && y <= 2026).sort();
+    return h.includes(`Court Pace Index · ${ys[0]}–${ys[ys.length - 1]}`) ? null : 'CPI trend is not the 2020–2026 years with a reading';
+  },
+  'Compare all CPI: nine Masters 1000, From / To over every year in the file, a missing reading is an empty cell'(B){
+    B.T.select('Toronto'); B.T.spYear('from', 2012); B.T.spYear('to', 2026);
+    const m = B.I.cpiModel();
+    if (m.rows.length !== 9) return 'rows ' + m.rows.length + ' != 9';
+    if (m.allY[0] > 2016) return 'From / To do not reach back to the file\'s first year';
+    const on = m.rows.filter(r => r.on).map(r => r.name);
+    if (on.join() !== 'Canadian Open') return 'Toronto does not light the Canadian Open row';
+    if (m.rows.some((r, i) => i && r.last > m.rows[i - 1].last)) return 'not ranked by the latest reading';
+    B.ts.speedPanel = true; B.T.spMetric('cpi'); const box = B.I.speedBoxHtml(); B.ts.speedPanel = false;
+    return /Masters 1000 events/.test(box) && /tt-ov-cpr/.test(box) ? null : 'CPI view not drawn';
+  },
+  'head: logo tile = tournament-logos file, else the three-letter code'(B){
+    const h = B.I.headHtml(B.I.events().find(t => t.name === 'Wimbledon'));
+    if (!h.includes('./tournament-logos/wimbledon-540.webp')) return 'no logo image for Wimbledon';
+    const mc = B.I.headHtml(B.I.events().find(t => t.name === 'Monte Carlo'));
+    if (!mc.includes('monte-carlo-410.webp')) return 'Monte Carlo misses its Database-label logo';
+    const no = B.I.headHtml({ name: 'Nowhere', category: 'ATP 250', surface: 'hard' });
+    return /<img/.test(no) || !/>NOW</.test(no) ? 'no file must be the mono code, no image' : null;
+  },
+  'backing box: one box, title + close only, Database body on the tiles\' window'(B){
+    B.T.setYear('from', 2023); B.T.setYear('to', 2025);
+    const t = B.ts; t.roiPanel = 'dog';
+    const h = B.I.roiBoxHtml(); B.T.resetYears(); t.roiPanel = null;
+    if (!/Wimbledon · Backing underdogs/.test(h) || /data-dbview="tour"[^]*Favourites · Underdogs/.test(h)) return 'head is not "Name · Backing underdogs"';
+    if (/[+−]\d+\.\d%/.test(text(h))) return 'a yield in the box head';
+    const css = B.I.CSS;
+    return /\[data-db-root="roi"\] \.db-ctltop\{ display:none; \}/.test(css) ? null : 'the View row is not hidden';
   },
 };
 
@@ -208,20 +282,27 @@ const MUTANTS = [
   ['archiveFilter ignored (Montreal pools Toronto years)', s => s.replace("pool = pool.concat(f ? rs.filter(", 'pool = pool.concat(false ? rs.filter(')],
   ['speed switch defaults to dashes (own)', s => s.replace("(root && root.TT_SPEED_SOURCE) || 'ta'", "(root && root.TT_SPEED_SOURCE) || 'own'")],
   ['hold from the sheet (count-less)', s => s.replace('return { pct: 100 * e.held / e.games,', 'return { pct: 81,')],
-  ['ROI coloured by sign', s => s.replace("const col = !ok ? '' : Math.abs(d) < 1 ? 'color:var(--text);' : d > 0 ? 'color:var(--pos);' : 'color:var(--neg);';", "const col = !ok ? '' : v > 0 ? 'color:var(--pos);' : 'color:var(--neg);';")],
+  ['ROI coloured by its gap to the tour', s => s.replace("${ok ? ` style=\"color:${signCol(v)};\"` : ''}", "${ok ? ` style=\"color:${signCol(d)};\"` : ''}")],
+  ['CPI on every tier', s => s.replace("const isM1000 = c => !!c && /^ATP (Masters )?1000$/.test(String(c.category || ''));", 'const isM1000 = c => !!c;')],
+  ['Canadian Open = Montreal only', s => s.replace("[d.Montreal, d.Toronto]", "[d.Montreal]")],
+  ['trend back on the COURT_CONDITIONS as-year fields', s => s.replace("const v = (st.csh.ta[name] || {})[y];", "const v = (conds()[name] || {})['as' + y];")],
+  ['1st serve ignores the hold file', s => s.replace('if (h && h.fsPlayed > 0)', 'if (false)')],
+  ['CPI table From / To clipped to 2020', s => s.replace('const ys = allY.filter(y => y >= f && y <= t);', 'const ys = allY.filter(y => y >= Math.max(f, 2020) && y <= t);').replace("const allY = [...new Set(", "const allY0 = [...new Set(").replace(".sort((a, b) => a - b);\n  let f = st.spF", ".sort((a, b) => a - b), allY = allY0.filter(y => y >= 2020);\n  let f = st.spF")],
+  ['logo by catalog name only', s => s.replace('return L[name] || L[LOGO_ALIAS[name]] ||', 'return L[name] ||')],
+  ['View row shown in the backing box', s => s.replace("`${P}[data-db-root=\"roi\"] .db-ctltop{ display:none; }`,", '')],
   ['rank over all events (no 30-match floor)', s => s.replace('const ok = Object.values(mk.tours).filter(a => a && a.n >= MIN_MATCHES && a.favRel != null);', 'const ok = Object.values(mk.tours).filter(a => a);')],
   ['tiles show 0 when there is no data', s => s.replace("const fig = ok ? signed(v, 1) + '%' : pend ? '&nbsp;' : DASH;", "const fig = ok ? signed(v, 1) + '%' : '0.0%';")],
   ['loading tiles print the no-data dash', s => s.replace("const fig = ok ? signed(v, 1) + '%' : pend ? '&nbsp;' : DASH;", "const fig = ok ? signed(v, 1) + '%' : DASH;")],
   ['rail sorted by speed', s => s.replace('return list.slice().sort((a, b) => (ix.has(a.name)', 'return list.slice().sort((a, b) => 0 || (ix.has(a.name)').replace('function events(){', 'function events(){ return (typeof tourxOverviewEvents === "function" ? tourxOverviewEvents() : catalog()).slice().sort((a, b) => (b.abstractSpeed || 0) - (a.abstractSpeed || 0));')],
   ['empty search hides the heads', s => s.replace('<div class="tt-ov-list"><div class="tt-ov-gh">This week</div>${wk.map(row).join(\'\')}', '<div class="tt-ov-list">${wk.length ? \'<div class="tt-ov-gh">This week</div>\' : \'\'}${wk.map(row).join(\'\')}')],
   ['quote-less card clickable', s => s.replace('<div class="tt-ov-card tt-ov-qcard" data-tt-quotes="0">', '<div class="tt-ov-card tt-ov-qcard" data-tt-quotes="0" onclick="TTOverview.openQuotes()">')],
-  ['unscoped CSS rule', s => s.replace("`${P}.tt-ov-cap{", "`.tt-ov-cap{")],
+  ['unscoped CSS rule', s => s.replace("`${P}.tt-ov-lab{", "`.tt-ov-lab{")],
 ];
 
 function runAll(src, label){
   const fails = [];
   for (const [name, fn] of Object.entries(CHECKS)) {
-    let r; try { r = fn(boot(src)); } catch (e) { r = 'threw: ' + e.message; }
+    let r; try { r = fn(boot(src), src); } catch (e) { r = 'threw: ' + e.message; }
     if (r) fails.push(name + ' — ' + r);
   }
   return fails;

@@ -254,17 +254,20 @@ function thisWeekFigures(src, clockIso, inPlay, tourns) {
   hdr();
   const cur = el.fmtKey(el.isoMonday(new D())), set = shared() || [];
   return { header: +((/This week<\/span><span class="sfh__v[^"]*">(\d+)</.exec(hostH.innerHTML) || [])[1]),
-    events: set.length, lists: set.filter(e => e.hasList).length, chip: el.weekEventCount(cur), set };
+    events: set.length, lists: set.filter(e => e.hasList).length, chip: el.weekEventCount(cur),
+    rows: data.tournaments.filter(t => (t.tour || 'ATP').toUpperCase() === 'ATP' && t.weekStart === cur).length, set };
 }
 function checkThisWeek(src) {
   if (!/const wk = tourxThisWeekEvents\(\);/.test(top(src, 'tourxHeadStatValues'))) return 'header This week does not read tourxThisWeekEvents()';
-  const ok = f => f.header === f.events && f.events === f.chip && f.lists <= f.events;
+  // 2026-11-20 handoff (Entry list level filter): the week CHIP counts that week's list rows at every level (the sum of the
+  // ATP · Challenger · ITF counts); the header stat and the eyebrow keep the one "This week" set
+  const ok = f => f.header === f.events && f.chip === f.rows && f.lists <= f.events;
   // synthetic: shard rows of this week (one with a list) ∪ in-play registry events, de-duplicated on city
   const syn = thisWeekFigures(src, '2026-09-30T10:00:00Z', ['Shanghai', 'Tokyo', 'Beijing'], [
     { tour: 'ATP', name: 'China Open', city: 'Beijing', weekStart: '2026-09-28', sections: [{ players: [] }] },
     { tour: 'ATP', name: 'Bari (CH 50)', city: 'Bari', weekStart: '2026-09-28', sections: [] },
     { tour: 'ATP', name: 'Vienna', city: 'Vienna', weekStart: '2026-10-26', sections: [{ players: [] }] }]);
-  if (!ok(syn) || syn.events !== 4 || syn.lists !== 1) return 'synthetic week: ' + JSON.stringify({ ...syn, set: undefined }) + ' (want 4 / 4 / 4, lists 1)';
+  if (!ok(syn) || syn.events !== 4 || syn.lists !== 1 || syn.chip !== 2) return 'synthetic week: ' + JSON.stringify({ ...syn, set: undefined }) + ' (want header 4 / events 4 / chip 2 = list rows, lists 1)';
   // real shards, two clocks
   if (SHARDS) {
     for (const [clock, inPlay] of [['2026-10-08T10:00:00Z', ['Shanghai']], ['2026-10-13T10:00:00Z', ['Shanghai', 'Tokyo', 'Beijing']]]) {
@@ -356,7 +359,7 @@ test('CONTROL: each ruling goes red on its mutant', () => {
   assert.ok(red(checkBandNoWrap, m("color:var(--text-soft); white-space:nowrap; }", "color:var(--text-soft); }")), 'r1.2 band cell wraps');
   assert.ok(red(checkBandNoWrap, m("      ? 'minmax(108px,1fr) 45px 45px 52px 58px 62px 62px'", "      ? 'minmax(72px,1fr) 45px 45px 52px 58px 74px 74px'")), 'r1.2 old tracks');
   assert.ok(red(checkThisWeek, m("    set[cur] = 1;\n", "")), 'r1.4 current week dropped when empty');
-  assert.ok(red(checkThisWeek, m("      if(wk) return wk.length;", "")), 'r1.4 chip counts shard rows only');
+  assert.ok(red(checkThisWeek, m("  function weekEventCount(k){\n    return", "  function weekEventCount(k){\n    if (typeof tourxThisWeekEvents === 'function' && tourxThisWeekEvents()) return tourxThisWeekEvents().length;\n    return")), 'r1.4 chip counts the registry set (not list rows)');
   assert.ok(red(checkThisWeek, m("  rows.forEach(t => { const k = key(t.city || t.name); if (seen.has(k)) return; seen.add(k);", "  [].forEach(t => { const k = key(t.city || t.name); if (seen.has(k)) return; seen.add(k);")), 'r1.4 header = registry only');
   assert.ok(red(checkRanksNames, m("    if(byKey && namesAgree(p.name, byKey.name, true)) return byKey;", "    if(byKey) return byKey;")), 'r1.5 key trusted over a disagreeing name');
   assert.ok(red(checkRanksNames, m("    return (Number.isFinite(m) && m > 0) ? { rank: m, src: 'atp' } : null;", "    return null;")), 'r1.5 seeds-only ranks');

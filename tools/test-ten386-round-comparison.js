@@ -66,11 +66,28 @@ const buildBox = {
   TOURX_REACHED_PHRASE: {},
 };
 vm.createContext(buildBox);
-vm.runInContext(grab('tourxGroupFor') + '\n' + grab('tourxBuildTournament') + '\nthis.build = tourxBuildTournament;', buildBox);
+vm.runInContext(grab('tourxGroupFor') + '\n' + grab('tourxReportEntries') + '\n' + grab('tourxReportEntry') + '\n' + grab('tourxBuildTournament') + '\nthis.build = tourxBuildTournament; this.entries = tourxReportEntries;', buildBox);
 const BT = buildBox.build('Fx');
 ok('a player whose rounds carry no box score is left out (no name without data)', BT.players.map(p => p.name).join(',') === 'A. Data,B. Data', BT.players.map(p => p.name));
 ok('nRounds counts ingested rounds only', BT.players[0].nRounds === 2 && BT.players[1].nRounds === 1);
 ok('the feed score rides along per round (for the tooltip / sheet)', BT.players[0].results[1] === '2 - 1' && BT.players[0].opponents[0] === 'C. Ghost');
+
+console.log('=== Reports list every event: this week + the finished draws (founder 2026-11-20) ===');
+const mt = d => ({ round: 'F', date: d });
+buildBox.tournamentProgression = {
+  tournaments: { 'Finals - Turin': { feedName: 'ATP Finals - Turin', rounds: ['RR1', 'RR2', 'RR3', 'SF', 'F'], matches: [mt('2026-11-19')], fieldAverage: { metrics: {} }, players: [
+    { name: 'J. Sinner', eliminated: false, rounds: [{ round: 'RR1', opponent: 'A. Zverev', metrics: { firstServePct: 61 } }, { round: 'RR2', opponent: 'T. Fritz', metrics: { firstServePct: 66 } }] }] } },
+  drawResults: {
+    Stockholm: { feedName: 'ATP Stockholm', rounds: ['R1', 'R2', 'QF', 'SF', 'F'], matches: [mt('2026-10-19')], players: [] },
+    Paris: { feedName: 'ATP Paris', rounds: ['R1', 'R2', 'R3', 'QF', 'SF', 'F'], matches: [mt('2026-11-02')], players: [
+      { name: 'N. Borges', eliminated: true, rounds: [{ round: 'R1', opponent: 'M. Kouame', metrics: { firstServePct: 68 } }] }] },
+    Turin: { feedName: 'ATP Finals - Turin', rounds: ['RR1'], matches: [mt('2026-11-16')], players: [] },
+  } };
+const ev = buildBox.entries();
+ok('every event with a report: tournaments + drawResults, newest first, one entry per event (the board copy wins)',
+   ev.map(e => e.key).join(',') === 'Finals - Turin,Paris,Stockholm', ev.map(e => e.key));
+ok('a finished draw (drawResults) builds its report', (() => { const T = buildBox.build('Paris'); return T && T.players.length === 1 && T.players[0].name === 'N. Borges'; })());
+ok('season finals: group rounds keep their own labels RR1–RR3, SF, F (no knockout ladder)', buildBox.build('Finals - Turin').roundLabels.join(',') === 'RR1,RR2,RR3,SF,F');
 
 console.log('=== TEN-401 Data 4: Reports Elo = the weekly Elo Database → Ratings shows ===');
 const elo = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'elo-ratings.json'), 'utf8'));

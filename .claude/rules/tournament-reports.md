@@ -7,6 +7,19 @@ tab-wide rulings (design wins, colours via `--tt-*`, every figure ours or a dash
 `tournaments.md`. Rationale: `BUILD-NOTES.md` "2026-11-15 — Tournaments tab rebuild". **Test (whole file):**
 `tools/test-tt-reports.mjs` executes the shipped module on a real-data fixture (Stockholm 2026), with mutants.
 
+## 2026-11-20 handoff (supersedes the look below where they disagree; the data rules stand)
+- **Every event with a report is listed** (founder 2026-11-20: "Why are there no reports …?"): `tourxReportEntries()`
+  = `tournament-progression.json` `tournaments` (this week) ∪ `drawResults` (finished draws: every draw in `draws.json`, the
+  archived draws of the last 35 days, the season finals), one entry per event, newest first. **Test:**
+  `tools/test-ten386-round-comparison.js` (listing, de-dupe, order).
+- **ATP Finals:** api-tennis sends the group matches with no round; the pipeline labels them `RR1`–`RR3` per player
+  (`labelRoundRobin`), keeps SF / F, and a group loss is not an exit; after its week the event stays in `drawResults.Turin`
+  (`seasonFinalsEvent`, 8–30 Nov). No Quarter row for an event without quarters. **Test:**
+  `tools/test-season-finals-progression.js`, `tools/test-tt-reports.mjs` (synthetic Finals model).
+- Look: `design_handoff_tournaments_2026-11-20/design/Tournament Reports.dc.html` (`isReports` half): photos by player
+  key, Round comparison bars leader `--tt-blue` / rest `--tt-past`, Player progression leader strip (≥ 2 matches with the
+  measure, said on hover), Head-to-head tally + signed gap chip. **Test:** `tools/test-tt-reports.mjs`.
+
 ## Layout (the design)
 - **One filter card** (rows: Tournament with the "?" help at its right end · Report · Quarter · Reached (Player progression)
   · Round (Round comparison, default QF) / Rounds through (Player progression, default the last round) · Players (chips

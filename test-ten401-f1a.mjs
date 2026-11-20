@@ -21,7 +21,11 @@ import { dirname, join } from 'node:path';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SRC = readFileSync(join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
-const QUOTES = JSON.parse(readFileSync(join(HERE, 'tournament-quotes.json'), 'utf8')).tournaments;
+// The cleaner's rules (dateline / "said X" / lead-in, the hand-reviewed exclusions, the named fixtures) are tested on the
+// PINNED October sheet (tools/fixtures/quotes-sheet-2026-10.json): the 2026-11-20 sheet carries almost no narration, so on
+// it those detectors would pass on an empty set (CLAUDE.md rule 8). The live artefact gets its own safety check below.
+const QUOTES = JSON.parse(readFileSync(join(HERE, 'tools', 'fixtures', 'quotes-sheet-2026-10.json'), 'utf8')).tournaments;
+const LIVE_QUOTES = JSON.parse(readFileSync(join(HERE, 'tournament-quotes.json'), 'utf8')).tournaments;
 
 // Cut `function name(...)` out of a source by plain brace counting (the test-ten401-b slicer: the sliced functions carry
 // regex literals with quote marks, which a string-aware slicer misreads; their braces are balanced).
@@ -70,7 +74,11 @@ function isSubsequence(small, big) { let j = 0; for (let i = 0; i < big.length &
 
 function checkQuotes(src) {
   const api = quoteApi(src);
-  const notes = Object.entries(QUOTES).flatMap(([ev, list]) => list.filter(baseTraceable).map(q => ({ ev, q })));
+  // 2026-11-20: a note the cleaner cannot make safe is NOT traceable (never shown), so the safety rule is checked on
+  // what the page shows, and every unsafe note must be off the page
+  for (const [ev, list] of Object.entries(QUOTES)) for (const q of list.filter(baseTraceable))
+    if (api.tourxQuoteClean(q).unsafe.length && api.tourxQuoteTraceable(q, ev)) return ev + ' / ' + q.player + ': an unsafe note is shown';
+  const notes = Object.entries(QUOTES).flatMap(([ev, list]) => list.filter(q => baseTraceable(q) && !api.tourxQuoteClean(q).unsafe.length).map(q => ({ ev, q })));
   if (notes.length < 150) return 'vacuous: only ' + notes.length + ' traceable notes';
   const before = { dateline: 0, said: 0, leadIn: 0 }, after = { dateline: 0, said: 0, leadIn: 0 };
   for (const { ev, q } of notes) {
@@ -170,6 +178,19 @@ function checkRowLockMonths(src) {
 }
 
 test('f1.1 quotes: the player\'s words only — no dateline / "said X" / lead-in; context in the meta; nothing invented', () => assert.equal(checkQuotes(SRC), null));
+test('2026-11-20 sheet: every note the page shows is the speaker\'s own words — one pair of quotes, no narration, nothing invented', () => {
+  const api = quoteApi(SRC);
+  let shown = 0, hidden = 0;
+  for (const [ev, list] of Object.entries(LIVE_QUOTES)) for (const q of list.filter(baseTraceable)) {
+    if (!api.tourxQuoteTraceable(q, ev)) { hidden++; continue; }
+    shown++;
+    const c = api.tourxQuoteClean(q), html = api.tourxQuoteText(q);
+    assert.ok(html.startsWith('“') && html.endsWith('”'), ev + ' / ' + q.player + ': not one pair of curly quotes');
+    assert.ok(!/["“”]/.test(c.text) && !c.unsafe.length, ev + ' / ' + q.player + ': narration survived');
+    assert.ok(isSubsequence(letters(c.text), letters(q.text)), ev + ' / ' + q.player + ': words not the source words');
+  }
+  assert.ok(shown > 500 && hidden > 0, `vacuous: ${shown} shown, ${hidden} hidden`);
+});
 test('f1.1 review: hand-reviewed exclusions (Fucsovics, Bellucci, De Jong) + a lead-in naming another event is not traceable', () => assert.equal(checkQuoteExclusions(SRC), null));
 
 test('review 3: the Database row lock filters by month (synthetic rows: European Open July vs October)', () => assert.equal(checkRowLockMonths(SRC), null));
@@ -190,7 +211,7 @@ test('CONTROL: each ruling goes red on its mutant', () => {
   assert.ok(red(checkQuotes, m("  if (ctx) bits.push(ctx);\n", "")), '1 context not in the meta');
   assert.ok(red(checkQuotes, m("  return `“${tourxEscHtml(tourxQuoteClean(qt).text)}”`;", "  const t = tourxEscHtml(qt.text);\n  return qt.selfQuoted ? t : `“${t}”`;")), '1 old verbatim render');
   assert.ok(red(checkQuotes, m("      if (kind === 'other') { out.trimmed = true; break; }", "")), '1 other speakers kept');
-  assert.ok(red(checkQuotes, m(" && !tourxQuoteClean(q).conflict\n", "\n")), '1 beaten-opponent notes ship');
+  assert.ok(red(checkQuotes, m("!!c && !c.conflict && !c.unsafe.length", "!!c && !c.unsafe.length")), "1 beaten-opponent notes ship");
   // review fix 2: the hand-reviewed exclusions and the other-event guard
   assert.ok(red(checkQuoteExclusions, m("  'Wimbledon|M. Fucsovics|2026': ", "  'Wimbledon|M. Fucsovics|1999': ")), '1 Fucsovics (women\'s-match answers) ships');
   assert.ok(red(checkQuoteExclusions, m("  'Marrakech|M. Bellucci|2025': ", "  'Marrakech|M. Bellucci|1999': ")), '1 Bellucci (narration) ships');

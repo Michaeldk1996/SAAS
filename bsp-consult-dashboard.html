@@ -4601,11 +4601,10 @@ window.EntryListsTab = (function(){
   // The events a week chip / the empty state count: every ATP-tour row the shards hold for that week. The CURRENT week
   // counts the one "This week" set instead (tourxThisWeekEvents — shard rows of this week ∪ the registry's in-play
   // events, de-duplicated), the same set the header and the eyebrow count (TEN-401 r1 review fix).
+  // 2026-11-20 handoff (Entry list, level filter): a week chip counts that week's events at every level in the lists we
+  // hold, so it equals the sum of the ATP · Challenger · ITF counts. The header's "This week" stat keeps
+  // tourxThisWeekEvents (registry events with no list included).
   function weekEventCount(k){
-    if(k === fmtKey(isoMonday(new Date())) && typeof tourxThisWeekEvents === 'function'){
-      var wk = tourxThisWeekEvents();
-      if(wk) return wk.length;
-    }
     return (data.tournaments||[]).filter(function(t){ return (t.tour||'ATP').toUpperCase() === 'ATP' && t.weekStart === k; }).length;
   }
 
@@ -26718,7 +26717,10 @@ function tourxQuoteOtherEvent(q, ev){
   return tourxQuoteEventNames().find(n => n !== ev && has(n)) || null;
 }
 function tourxQuoteTraceable(q, ev){
-  return !!(q && q.player && q.year && q.playerMatch === 'entrant') && !tourxQuoteClean(q).conflict
+  // a note whose cleaning cannot be made safe (narration left between two quotes) is not shown: never narration
+  // under a player's name (2026-11-20 sheet: e.g. Tokyo / T. Paul "(ahead of his match with Altmaier)")
+  const c = q && q.player && q.year && q.playerMatch === 'entrant' ? tourxQuoteClean(q) : null;
+  return !!c && !c.conflict && !c.unsafe.length
     && !(ev && (TOURX_QUOTE_EXCLUDE[ev + '|' + q.player + '|' + q.year] || tourxQuoteOtherEvent(q, ev)));
 }
 function tourxQuotesFor(name){
@@ -27294,12 +27296,28 @@ function tourxDerivedMetrics(m, oppM){
   }
   return out;
 }
+// Every event with a report (founder 2026-11-20): this week's events (`tournaments`) AND the finished draws the pipeline
+// keeps in `drawResults` (same schema), one entry per event (a `tournaments` copy wins over a `drawResults` one with the
+// same key or feed name), newest first by its latest match date. [{ key, entry, last }].
+function tourxReportEntries(){
+  const p = tournamentProgression || {}, out = [], seen = new Set();
+  [p.tournaments, p.drawResults].forEach(map => Object.keys(map || {}).forEach(key => {
+    const entry = map[key], id = (entry && entry.feedName) || key;
+    if (!entry || seen.has(key) || seen.has(id)) return;
+    seen.add(key); seen.add(id);
+    const last = (Array.isArray(entry.matches) ? entry.matches : []).reduce((a, m) => (m && m.date && m.date > a ? m.date : a), '');
+    out.push({ key, entry, last });
+  }));
+  return out.sort((a, b) => (b.last || '').localeCompare(a.last || ''));
+}
+function tourxReportEntry(name){ const hit = tourxReportEntries().find(e => e.key === name); return hit ? hit.entry : null; }
 function tourxBuildTournament(name){
-  const t = tournamentProgression && tournamentProgression.tournaments && tournamentProgression.tournaments[name];
+  const t = tourxReportEntry(name);
   if (!t) return null;
   const rounds = t.rounds || [];
-  // Draw-sized display ladder (R32→F for an ATP 250, R128→F for a Grand Slam).
-  const roundLabels = tourxRoundLabelsFor(name, rounds, (t.players || []).length);
+  // Draw-sized display ladder (R32→F for an ATP 250, R128→F for a Grand Slam). The season finals keep their own words:
+  // group-stage rounds RR1–RR3, then SF and F (the pipeline's labels), never a knockout ladder.
+  const roundLabels = rounds.some(r => /^RR\d/.test(r)) ? rounds.slice() : tourxRoundLabelsFor(name, rounds, (t.players || []).length);
   // Same draw-arithmetic guard the modal's Progression chart got in bb4e1e6.
   // Absence of an opening-round match reads as a bye, and a round the 7-day feed
   // window has dropped is absent in exactly the same way — which is how a stored
@@ -35630,7 +35648,9 @@ window.DatabaseTab = (function(){
       state.tournLockFor=state.tournament;
       state.tournLabel=opts.initialTournamentLabel||null;
       state.rounds=null;
-      state.yearMin=null; state.yearMax=null;
+      // 2026-11-20 handoff: the Tournaments backing box opens on the Overview's From / To window, so the box and the
+      // tile it came from read the same rows (null = every year, as before)
+      state.yearMin=opts.initialYearMin!=null?opts.initialYearMin:null; state.yearMax=opts.initialYearMax!=null?opts.initialYearMax:null;
     }
 
     // 4: the side is not decoration. "Open underdogs graphics →" must land the

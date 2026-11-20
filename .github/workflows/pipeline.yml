@@ -1318,6 +1318,7 @@ jobs:
           cp how-it-plays.json _site/ 2>/dev/null || true
           # Points to defend (round 2 item 2.3): committed by points-to-defend.yml twice a day; a missing file hides the block.
           cp points-to-defend.json _site/ 2>/dev/null || true
+          cp court-speed-history.json _site/ 2>/dev/null || true
           # TEN-263 match-close shards (built above). Lazily fetched per player by the
           # Match analysis Form/H2H tabs; a missing shard dashes the price cells.
           cp match-closes-index.json _site/ 2>/dev/null || true

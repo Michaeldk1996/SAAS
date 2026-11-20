@@ -1,28 +1,23 @@
-// Tournaments tab rebuild (design_handoff_tournaments_tab, founder 2026-11-15). Owner: the TTDraw builder.
+// Tournaments tab rebuild (handoff 2026-11-20, design_handoff_tournaments_2026-11-20). Owner: the TTDraw builder.
 // =================================================================
-// TOURNAMENTS → DRAW — the handoff's Draw tab (prototype Tournaments.dc.html, markup L48–531, renderVals L930–1200),
-// built to the export's inline values on our own data.
+// TOURNAMENTS → DRAW — the 2026-11-20 Draw tab (design/Tournaments.dc.html, data-draw-root, holes dw.*; changelog
+// "TOURNAMENTS · DRAW TAB LOCKED 2026-11-20 (evening)" + the refines above it), built on our own data.
 // -----------------------------------------------------------------
-// Views: Draw (bracket, From pills, player route card, Compare two routes pick strip, compare card, collapsed bar,
-// opponent report) · Statistics (Speed + Favourites and underdogs tiles, past-editions box, match box) · Outright
-// chances (title leader card + rows, four quarter cards).
+// Card: round "?" (How to read this page) in the top right corner · "Draws" + count · picker row This week · Finished ·
+// Archive (max 3) + "Download W/UE sheet" (WueSheet.download: one file, every round up to the last match played) ·
+// open-draw head (logo tile, name, status chip, tier line | Champion | Matches played | Compare two routes) · toolbar
+// (Draw · Statistics · Outright chances · Points to defend | From + Main draw · Qualifying) · progress row while in play.
+// Views: Draw (bracket rows with the player's photo; a name opens the player box in a fixed layer; route panel, ONE
+// compare table, opponents box) · Statistics · Outright chances · Points to defend.
 //
-// Data (feasibility table, inventory v7-10 §4) — every figure is ours or a dash "—":
-//   draws.json (the official sheet: positions, names, seeds, entries, IOC, player keys; quarters = positions only)
-//   tournament-progression.json (results + set scores; `drawResults` once an event leaves the board — draw-results
-//     branch) · draws-archive.json (finished draws with their final results — draw-results branch; a 404 = none)
-//   matches.json + the card book's price (_mcNowPair) for an unplayed pair that is on Today's Matches
-//   how-it-plays.json (Speed tiles: this edition + tour average) · favourites-by-round.json (Favourites won)
-//   database-yield.json rows + retRows through settlement.js (per-edition favourites won / yields, the match box)
-//   tour-baselines.json (tour yields) · career-history shards + H2HCore (opponent report: head to head, last five)
-//   playing-styles.json + style-meetings (opponent report: record against his archetype)
-// Founder 2026-11-15 ruling 3: every chance, fair-odds range, likely opening price range, "Be careful" / "No warning"
-// and the underdog lists read "—" (no source). The boxes are built; a sentence built only on chances is omitted.
-// Clicking a player in the bracket selects him (the design), a finished match included.
-// Kept from the live tab (they post-date the export, founder 2026-11-15): the W/UE sheet bar (under the progress line)
-// and the draw-results branch's Archive row (a third group beside This week / Finished).
-// No DrawView / WueSheet code is changed: this module calls DrawView.model / shortName / meetRound and the page's
-// tourxWueBarHtml.
+// Data — every figure is ours or a grey dash "—" with its reason in the hover:
+//   draws.json (the official sheet) · tournament-progression.json (results, set scores, players[].rounds[].metrics) ·
+//   draws-archive.json (finished draws) · matches.json + _mcNowPair (price of an unplayed pair on Today's Matches) ·
+//   how-it-plays.json · favourites-by-round.json · database-yield.json through settlement.js · tour-baselines.json ·
+//   points-to-defend.json + player-index.json (`players[].points`, ranking points) · tournament-logos/index.json ·
+//   career-history + H2HCore + style-meetings (opponents box).
+// Standing ruling (founder 2026-11-15 ruling 3): every chance, fair-odds range, opening-price range and warning is a dash.
+// No METZ demo, no DT_OLD, no leftovers (README "Data").
 // =================================================================
 (function () {
 'use strict';
@@ -30,28 +25,26 @@ const DASH = '—', MINUS = '−', NDASH = '–';
 const SCOPE = '.tabpage[data-page="tournaments"] .tt-draw';
 const FLOOR = 15;   // TP_SAMPLE_FLOOR (tournaments.md): below 15 matches a % is a dash, its count in the hover
 
-// ── colours: tokens only (founder ruling 2 — the export's exact values through --tt-*) ─────────────────────────────
+// ── colours: tokens only (BRIEF-COMMON colour map) ─────────────────────────────────────────────────────────────────
 const C = {
-  text: 'var(--tt-text)', white: 'var(--tt-white)', soft: 'var(--tt-soft)', muted: 'var(--tt-muted)', past: 'var(--tt-past)',
-  blue: 'var(--tt-blue)', blueFav: 'var(--tt-blue-fav)', red: 'var(--tt-red)', green: 'var(--tt-green)',
-  card: 'var(--tt-card)', inset: 'var(--tt-inset)', raised: 'var(--tt-raised)',
-  // export values with no token yet, asked of the lead (report-draw.md): the avatar fill, the solid-blue button hover,
-  // the two draw scrims (62% / 66%); each falls back to the nearest existing --tt-* token until it lands
-  avatar: 'var(--tt-avatar, var(--tt-raised))', blueBtnHov: 'var(--tt-blue-btn-2, var(--tt-blue-btn))',
-  scrim62: 'var(--tt-scrim-62, var(--tt-scrim))', scrim66: 'var(--tt-scrim-66, var(--tt-scrim))',
+  text: 'var(--tt-text)', white: 'var(--tt-white)', soft: 'var(--tt-soft)', muted: 'var(--tt-muted)',
+  blue: 'var(--tt-blue)', red: 'var(--tt-red)', green: 'var(--tt-green)',
+  card: 'var(--tt-card)', inset: 'var(--tt-inset)', lifted: 'var(--tt-lifted)', hover: 'var(--tt-hover)', track: 'var(--tt-track)',
+  scrim62: 'var(--tt-scrim-62)', scrim66: 'var(--tt-scrim-66)', shOverlay: 'var(--tt-shadow-overlay)', shMenu: 'var(--tt-shadow-menu)',
 };
 const W = n => `color-mix(in srgb, var(--tt-white) ${n}%, transparent)`;
 const B = n => `color-mix(in srgb, var(--tt-blue) ${n}%, transparent)`;
-const K = n => `color-mix(in srgb, var(--tt-black) ${n}%, transparent)`;
 const MONO = "font-family:'IBM Plex Mono',monospace;";
-const CAPS = `font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${C.muted};`;
-const SH_OVERLAY = `0 30px 80px ${K(60)}`, SH_OPP = `0 24px 80px ${K(60)}`;
+const LBL = `font-size:11.5px; font-weight:600; color:${C.muted};`;            // small label: 11.5/600 grey, never caps
+const LIFT = `background:${C.lifted}; border:1px solid ${W(14)};`;
+const BAR55 = B(55);
 const CLOSE_SVG = `<svg width="11" height="11" viewBox="0 0 10 10" fill="none" style="stroke:${C.soft}" stroke-width="1.6" stroke-linecap="round"><path d="M1.5 1.5 L8.5 8.5 M8.5 1.5 L1.5 8.5"></path></svg>`;
 const SEARCH_SVG = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="stroke:${C.muted}" stroke-width="1.6" stroke-linecap="round"><circle cx="6" cy="6" r="4.4"></circle><path d="M9.4 9.4 L12.6 12.6"></path></svg>`;
 
 const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const f1 = v => Math.abs(v).toFixed(1);
 const sg = d => (d >= 0 ? '+' : MINUS) + f1(d);
+const sgnC = d => (d == null || Math.abs(d) < 0.05 ? C.muted : d > 0 ? C.green : C.red);   // gap lines: green / red by their own sign, grey at 0
 const LONG = { R128: 'Round of 128', R64: 'Round of 64', R32: 'Round of 32', R16: 'Round of 16', QF: 'Quarter-finals', SF: 'Semi-finals', F: 'Final' };
 const longOf = n => LONG[n] || (/^Q(\d+)$/.test(n) ? 'Qualifying round ' + n.slice(1) : n);
 const reachWords = n => (n === 'F' ? 'the final' : n === 'SF' ? 'the semi-finals' : n === 'QF' ? 'the quarter-finals' : 'the ' + longOf(n));
@@ -78,13 +71,19 @@ function drawsData() {
   if (typeof _tourxDraws !== 'undefined' && _tourxDraws) return _tourxDraws;   // the old renderer's copy, when it loaded one
   return file('draws.json', 'bust');
 }
+// this week's ATP standings: the page's own copy (playerIndex), else the file
+function standings() {
+  if (typeof playerIndex !== 'undefined' && Array.isArray(playerIndex) && playerIndex.length) return playerIndex;
+  const f = file('player-index.json');
+  return f === undefined ? undefined : f && Array.isArray(f.players) ? f.players : null;
+}
 
 // ── state ───────────────────────────────────────────────────────────────────────────────────────────────────────────
 const S = { key: null, kind: 'main', view: 'draw', from: null, sel: null, b: null, cmp: false, cmpQ: '', shut: null, opp: null,
-  outCmp: false, outA: null, outB: null, outQ: '', outTab: 't', stat: null, ed: null, el: null };
-const reset = () => Object.assign(S, { sel: null, b: null, cmp: false, cmpQ: '', shut: null, opp: null, stat: null, ed: null, outCmp: false, outA: null, outB: null, outQ: '' });
+  outCmp: false, outA: null, outB: null, outQ: '', outTab: 't', stat: null, ed: null, pop: null, help: null, dl: null, ptSort: 'pts', el: null };
+const reset = () => Object.assign(S, { sel: null, b: null, cmp: false, cmpQ: '', shut: null, opp: null, stat: null, ed: null, outCmp: false, outA: null, outB: null, outQ: '', pop: null, help: null });
 
-// ── events: This week · Finished (the two newest ended draws, the design's cap) · Archive (the rest + draws-archive) ─
+// ── events: This week · Finished (the two newest ended draws) · Archive (the rest + draws-archive, max 3 shown) ─────
 const cityOf = t => t.feedCity || t.city;
 const isoToday = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 function entryFor(city) {
@@ -120,9 +119,13 @@ function events() {
   const now = out.filter(e => !e.arch && !e.ended).sort((x, y) => x.start.localeCompare(y.start) || x.city.localeCompare(y.city));
   const ended = out.filter(e => !e.arch && e.ended).sort((x, y) => y.end.localeCompare(x.end) || x.city.localeCompare(y.city));
   const fin = ended.slice(0, 2);
-  const arch = ended.slice(2).concat(out.filter(e => e.arch)).sort((x, y) => y.end.localeCompare(x.end) || x.city.localeCompare(y.city));
-  return { all: out, now, fin, arch };
+  // the design's Archive track shows the three most recent (founder 2026-11-20: "in archive maximum 3 tournaments")
+  const arch = ended.slice(2).concat(out.filter(e => e.arch)).sort((x, y) => y.end.localeCompare(x.end) || x.city.localeCompare(y.city)).slice(0, 3);
+  const shown = new Set(now.concat(fin, arch).map(e => e.key));
+  return { all: out.filter(e => shown.has(e.key)), now, fin, arch };
 }
+// the event's printed name (tournaments.md "Event names": the site's ONE event name), else the city
+function evName(ev) { try { return typeof tourxEventName === 'function' ? tourxEventName(ev.dname) || ev.city : ev.city; } catch (e) { return ev.city; } }
 
 // ── draw model (DrawView.model — the live tab's one model) + derived facts ─────────────────────────────────────────
 function modelOf(ev, kind) {
@@ -155,11 +158,9 @@ function stageOf(M, F) {
 }
 
 // ── a finished match opens the one Match Analysis (founder 2026-11-16: "clicking a match does nothing") ─────────────
-// The id is `past-<eventKey>`. The board's row (matches.json) or the draw store's copy (draw-matches.json, 16 days) is the
-// full row and always wins (the page's matchById). Past them — an archived draw, a match the store has aged out — the
-// row is built from the draw's own published result (tournament-progression / draws-archive): players, keys, set
-// scores, date, round, surface, event key. Nothing else is filled in: every tab reads its own shards by event key and
-// player key (Match Stats reads setstats/<eventKey>), and what it cannot find is a dash. Main draw only.
+// The id is `past-<eventKey>`. The board's row (matches.json) or the draw store's copy (draw-matches.json) is the full row
+// and always wins (the page's matchById). Past them the row is built from the draw's own published result: players,
+// keys, set scores, date, round, surface, event key. Nothing else is filled in. Main draw only.
 const ROUND_FEED = { R128: '1/64-finals', R64: '1/32-finals', R32: '1/16-finals', R16: '1/8-finals', QF: '1/4-finals', SF: '1/2-finals', F: 'Final' };
 const ROWS = new Map();
 function resultRow(ev, pm) {
@@ -176,7 +177,6 @@ function resultRow(ev, pm) {
     finalScore: { display: sets.map(x => x.p1 + '-' + x.p2).join(', '), sets, p1Sets, p2Sets, winner: pm.winner === 1 ? 'p1' : 'p2' },
     retired: pm.status === 'retired', walkover: pm.status === 'walkover', live: false, interrupted: false, fromDrawResult: true };
 }
-// The id a finished bracket match opens, or null (no event key, qualifying, or no published result for it).
 function analysisId(ev, m) {
   if (!m || m.eventKey == null || S.kind === 'qual') return null;
   const id = 'past-' + m.eventKey;
@@ -220,7 +220,7 @@ function pathOf(M, F, key) {
     if (!cands.length) return Object.assign(base, { state: 'bye', opp: 'No opponent', fig: 'Bye', figColor: C.soft });
     const isNext = !nextSet;
     if (isNext) { nextSet = true; line = 'Next: ' + (o ? 'v ' + nameOf(o) + ' in ' : '') + 'the ' + rd.toLowerCase(); }
-    return Object.assign(base, { state: 'open', next: isNext, known: !!o, cands: cands.slice(0, 3), opp: o ? 'v ' + nameOf(o) + (tagOf(o) ? ' ' + tagOf(o) : '') : DASH,
+    return Object.assign(base, { state: 'open', next: isNext, known: !!o, cands: cands.slice(0, 3), more: Math.max(0, cands.length - 1), opp: o ? 'v ' + nameOf(o) + (tagOf(o) ? ' ' + tagOf(o) : '') : DASH,
       oppKey: keyOf(o), fig: DASH, figColor: C.white, sub: r === n - 1 ? 'to win the title' : 'to reach ' + reachWords(M.rounds[r + 1].name) });
   });
   const qi = M.rounds.findIndex(x => x.name === 'QF');
@@ -233,22 +233,25 @@ let H = [];
 const on = fn => { H.push(fn); return `TTDraw._h(${H.length - 1},event)`; };
 
 // ── shared bits ─────────────────────────────────────────────────────────────────────────────────────────────────────
-const ini = n => String(n || '').replace(/[^A-Za-zÀ-ɏ ]/g, '').split(' ').filter(Boolean).map(w => w[0]).slice(0, 2).join('').toUpperCase();
-function avatar(key, name, size, ring, fs, bw) {
+const ini = n => { const w = String(n || '').replace(/[^A-Za-zÀ-ɏ ]/g, ' ').split(' ').filter(Boolean); return (w.length > 1 ? w[0][0] + w[w.length - 1][0] : (w[0] || '').slice(0, 1)).toUpperCase(); };
+// The player's photo by key through the one resolver (player-photos.md); the initials sit under it as the fallback only.
+function avatar(key, name, size, ring, fs, title) {
   const ph = key && typeof playerPhotoImg === 'function' ? playerPhotoImg(String(key), name) : '';
-  return `<span class="tt-draw-av" style="flex:none; position:relative; overflow:hidden; width:${size}px; height:${size}px; border-radius:50%; background:${C.avatar}; border:${bw || 1.5}px solid ${ring}; display:flex; align-items:center; justify-content:center; font-size:${fs}px; font-weight:700; color:${C.text};">${esc(ini(name))}${ph}</span>`;
+  return `<span class="tt-draw-av"${title ? ` title="${esc(title)}"` : ''} style="flex:none; position:relative; overflow:hidden; box-sizing:border-box; width:${size}px; height:${size}px; border-radius:50%; background:${C.lifted}; border:1px solid ${ring || W(10)}; display:flex; align-items:center; justify-content:center; font-size:${fs}px; font-weight:700; color:${C.soft};">${esc(ini(name))}${ph}</span>`;
 }
 function openProfile(key) { if (key && typeof psOpenProfile === 'function') psOpenProfile(String(key)); }
 const hasProfile = key => !!key && (typeof newsHasProfile !== 'function' || newsHasProfile(String(key)));
-// Head to Head hand-off (brief ruling 7): the live receiver by api-tennis key, plus the export's sessionStorage pair
 function goH2H(ka, kb, ca, cb) {
   if (!ka || !kb) return;
   try { sessionStorage.setItem('stn_h2h_pair', JSON.stringify([String(ka), String(kb), ca || '', cb || ''])); } catch (e) { /* private mode */ }
   if (typeof window.sfGoToH2H === 'function') window.sfGoToH2H(String(ka), String(kb));
 }
-const pill = (label, isOn, onclick, extra) => `<span class="tt-draw-seg" onclick="${onclick || ''}" style="${isOn ? `color:${C.white}; background:${C.raised}; border:1px solid ${W(16)}; font-weight:700;` : `color:${C.muted}; background:transparent; border:1px solid transparent; font-weight:600;`} font-size:12.5px; border-radius:8px; white-space:nowrap; cursor:pointer; ${extra}">${label}</span>`;
-const track = inner => `<div style="display:flex; flex-wrap:wrap; gap:3px; background:${C.inset}; border:1px solid ${W(6)}; border-radius:10px; padding:3px;">${inner}</div>`;
-const closeBtn = onclick => `<span class="tt-draw-hw8" onclick="${onclick}" title="Close" style="flex:none; cursor:pointer; display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:8px;">${CLOSE_SVG}</span>`;
+// a segment of a switch track: picked = lifted + 14% edge, white 700; idle = grey 600 (pillS)
+const seg = (label, isOn, onclick, pad, extra) => `<span class="tt-draw-seg" onclick="${onclick || ''}" style="display:inline-flex; align-items:baseline; gap:9px; font-size:12.5px; border-radius:8px; padding:${pad || '6px 13px'}; white-space:nowrap; cursor:pointer; ${isOn ? `color:${C.white}; background:${C.lifted}; border:1px solid ${W(14)}; font-weight:700;` : `color:${C.muted}; background:transparent; border:1px solid transparent; font-weight:600;`} ${extra || ''}">${label}</span>`;
+const track = inner => `<div style="display:flex; flex-wrap:wrap; gap:3px; background:${C.track}; border:1px solid ${W(10)}; border-radius:10px; padding:3px;">${inner}</div>`;
+const closeBtn = (onclick, s) => `<span class="tt-draw-hov" onclick="${onclick}" title="Close" style="flex:none; cursor:pointer; display:flex; align-items:center; justify-content:center; box-sizing:border-box; width:${s || 34}px; height:${s || 34}px; border-radius:${s === 30 ? 8 : 9}px; ${LIFT}">${CLOSE_SVG}</span>`;
+const liftBtn = (label, onclick, extra) => `<span class="tt-draw-hov" onclick="${onclick}" style="flex:none; cursor:pointer; display:inline-flex; align-items:center; gap:8px; height:34px; box-sizing:border-box; padding:0 14px; border-radius:9px; font-size:13px; font-weight:700; white-space:nowrap; color:${C.white}; ${LIFT} ${extra || ''}">${label}</span>`;
+const chip = (txt, color, title) => `<span${title ? ` title="${esc(title)}"` : ''} style="display:inline-flex; align-items:center; height:22px; padding:0 8px; border-radius:7px; ${LIFT} font-size:11px; font-weight:600; color:${color || C.soft}; white-space:nowrap;">${esc(txt)}</span>`;
 function fmtWhen(iso) {
   if (!iso) return DASH;
   try { return new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: tz() }); }
@@ -258,10 +261,6 @@ function ago(iso) {
   const t = Date.parse(iso); if (!isFinite(t)) return DASH;
   const min = Math.max(0, Math.round((Date.now() - t) / 60000));
   return min < 1 ? 'just now' : min < 60 ? `${min} min ago` : `${Math.floor(min / 60)} h ${min % 60} min ago`;
-}
-function weekRange(a, b) {
-  const x = new Date(a + 'T00:00:00Z'), y = new Date(b + 'T00:00:00Z'); if (!isFinite(x) || !isFinite(y)) return '';
-  return x.getUTCMonth() === y.getUTCMonth() ? `${x.getUTCDate()} ${NDASH} ${y.getUTCDate()} ${MON[y.getUTCMonth()]}` : `${x.getUTCDate()} ${MON[x.getUTCMonth()]} ${NDASH} ${y.getUTCDate()} ${MON[y.getUTCMonth()]}`;
 }
 // the card book's current price for an unplayed pair that is on Today's Matches (odds.md: one book per card); a pair
 // that is not on the board has no price → null (nothing drawn); on the board without a price → a dash
@@ -336,7 +335,7 @@ function bestOf(ev) { return /grand slam/i.test(String(ev.draw.category || '')) 
 function speedFig(ev, cy) {
   const hip = file('how-it-plays.json'), hev = hipEvent(ev), fl = (hip && hip.floor) || FLOOR;
   const cur = hev && hev.current && Array.isArray(hev.current.years) && hev.current.years.includes(cy) && hev.current.n >= fl ? hev.current : null;
-  return cur && cur.metrics.acesPerMatch ? f1(cur.metrics.acesPerMatch.value) : DASH;
+  return cur && cur.metrics.acesPerMatch ? f1(cur.metrics.acesPerMatch.value) : '';
 }
 function statsModel(ev, M) {
   const yr = +String(ev.start).slice(0, 4), live = played(M) > 0, cy = live ? yr : yr - 1;
@@ -352,6 +351,10 @@ function statsModel(ev, M) {
       vTitle: mc ? `${cur.n} matches, ${ev.city} ${cy} main draw (our box scores)` : (hev ? `No ${cy} figure for ${ev.city} (fewer than ${hfloor} matches with box scores)` : `${ev.city}: no How it plays figures (hard courts only)`),
       tourTitle: mb ? `${baseWords}, ${base.n} matches (Sackmann 2016${NDASH}24 under CC BY-NC-SA, our box scores 2025)` : 'No tour average for this court' };
   });
+  // the Speed group's empty state: no figure for this edition (or no How it plays figures for this court at all)
+  const speedEmpty = speed.every(t => t.v == null)
+    ? (hev ? `How it plays holds no ${cy} figures for ${ev.city} yet (fewer than ${hfloor} main-draw matches with box scores).` : `How it plays covers hard-court events only; ${ev.city} has no figures.`)
+    : '';
   // Favourites and underdogs
   const fe = fbr && fbr.events && fbr.events[ev.dname];
   const lastRow = rows => (Array.isArray(rows) && rows.length ? rows[rows.length - 1] : null);
@@ -380,12 +383,15 @@ function statsModel(ev, M) {
   [speed, mkt].forEach(g => g.forEach(t => {
     const held = Object.keys(t.series).map(Number).sort((a, b) => a - b);
     const five = held.slice(-5);
-    t.gapN = t.v != null && t.tour != null ? sg(t.v - t.tour) : DASH;
+    t.dN = t.v != null && t.tour != null ? t.v - t.tour : null;
+    t.gapN = t.dN != null ? sg(t.dN) : DASH;
     t.gapLL = 'vs ' + (cy - 1);
-    t.gapL = t.v != null && t.series[cy - 1] != null ? sg(t.v - t.series[cy - 1]) : DASH;
+    t.dL = t.v != null && t.series[cy - 1] != null ? t.v - t.series[cy - 1] : null;
+    t.gapL = t.dL != null ? sg(t.dL) : DASH;
     // past five = the five editions held before this one (founder 2026-11-15); fewer on file → a dash
     t.avg5 = five.length === 5 ? five.reduce((a, y) => a + t.series[y], 0) / 5 : null;
-    t.gapP = t.v != null && t.avg5 != null ? sg(t.v - t.avg5) : DASH;
+    t.dP = t.v != null && t.avg5 != null ? t.v - t.avg5 : null;
+    t.gapP = t.dP != null ? sg(t.dP) : DASH;
     // six columns: those five editions (padded with the seasons before them when fewer are on file) + this one
     let ys = five.slice(); let y0 = (ys[0] || cy) - 1; while (ys.length < 5) { ys.unshift(y0); y0--; }
     ys = ys.concat([cy]);
@@ -398,18 +404,113 @@ function statsModel(ev, M) {
     t.figColor = t.sign && t.v != null ? (t.v > 0 ? C.green : t.v < 0 ? C.red : C.white) : C.white;
   }));
   const fm = (t, x) => (x == null ? DASH : (t.sign && x > 0 ? '+' : x < 0 ? MINUS : '') + f1(x) + t.unit);
-  // group notes: only what the figures say (the design's "vs last year" clause needs per-edition speed: omitted)
   const up = speed.filter(t => t.v != null && t.tour != null && t.v > t.tour).length, have = speed.filter(t => t.v != null && t.tour != null).length;
   const n1 = have === 5 ? (up >= 4 ? `Playing faster than the tour, ${up} of 5 measures above average` : up <= 1 ? `Playing slower than the tour, ${5 - up} of 5 measures below average` : 'Speed close to the tour average') : '';
   const fd = mkt[0].v != null && mkt[0].tour != null ? mkt[0].v - mkt[0].tour : null;
   const n2 = fd == null ? '' : fd >= 4 ? 'Favourites are holding up better than usual' : fd <= -4 ? 'More upsets than usual' : 'Favourites win about as often as usual';
-  return { live, cy, speed, mkt, n1, n2, fm, dbRows, sets, hev };
+  return { live, cy, speed, mkt, n1, n2, fm, dbRows, sets, hev, speedEmpty };
+}
+
+// ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+// PLAYER BOX — his figures in this draw against the field (design 1b, nine measures in Results · Serve · Return)
+//   Results: sets won, games won — from the draw's own set scores (a retirement's unfinished set is no set).
+//   Serve / Return: tournament-progression players[].rounds[].metrics (our box scores): aces, 1st / 2nd serve points won
+//   (mean of his matches; the feed sends no count for them), service games held, return games won, break points
+//   converted (sums of the won / total counts). Break points saved: not in our data → a dash row.
+//   Field = the mean over every player of this draw with that measure; Rank = 1 + players with a better figure.
+// ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+const setDone = (a, b) => (Math.max(a, b) >= 6 && Math.abs(a - b) >= 2) || (Math.max(a, b) === 7 && Math.min(a, b) >= 5);
+const MEASURES = [
+  ['Results', 'Sets won', '%', 'sets'], ['Results', 'Games won', '%', 'games'],
+  ['Serve', 'Aces per match', '', 'aces'], ['Serve', '1st serve points won', '%', 'firstServeWonPct'], ['Serve', '2nd serve points won', '%', 'secondServeWonPct'],
+  ['Serve', 'Service games held', '%', 'svHold'], ['Serve', 'Break points saved', '%', null],
+  ['Return', 'Return games won', '%', 'retGames'], ['Return', 'Break points converted', '%', 'bpConv'],
+];
+function boxFigures(M, F, entry) {
+  const ST = {};
+  F.slots.forEach(s => { ST[String(s.playerKey)] = { m: 0, sw: 0, sl: 0, gw: 0, gl: 0 }; });
+  if (M) M.rounds.forEach(R => R.cells.forEach(c => {
+    const m = c.match; if (!m || !Array.isArray(m.score) || !m.score.length || m.status === 'walkover') return;
+    const ka = keyOf(c.sides[0]), kb = keyOf(c.sides[1]); if (!ka || !kb || !ST[ka] || !ST[kb]) return;
+    ST[ka].m++; ST[kb].m++;
+    m.score.forEach(([a, b]) => { a = +a; b = +b; ST[ka].gw += a; ST[ka].gl += b; ST[kb].gw += b; ST[kb].gl += a;
+      if (setDone(a, b)) { if (a > b) { ST[ka].sw++; ST[kb].sl++; } else { ST[kb].sw++; ST[ka].sl++; } } });
+  }));
+  const val = {};   // measure key → player key → { v, n } (n = what the figure is over, for the hover)
+  MEASURES.forEach(x => { if (x[3]) val[x[3]] = {}; });
+  Object.keys(ST).forEach(k => { const s = ST[k]; if (!s.m) return;
+    if (s.sw + s.sl) val.sets[k] = { v: 100 * s.sw / (s.sw + s.sl), n: `${s.sw} of ${s.sw + s.sl} sets` };
+    if (s.gw + s.gl) val.games[k] = { v: 100 * s.gw / (s.gw + s.gl), n: `${s.gw} of ${s.gw + s.gl} games` }; });
+  const players = entry && Array.isArray(entry.players) ? entry.players : [];
+  players.forEach(p => {
+    const k = String(p.playerKey); if (!ST[k]) return;   // main-draw players of this sheet only
+    const ms = (p.rounds || []).map(r => r.metrics).filter(Boolean);
+    const sum = f => { let w = 0, t = 0; ms.forEach(m => { const x = m[f]; if (x && x.total > 0) { w += x.won; t += x.total; } }); return t ? { v: 100 * w / t, n: `${w} of ${t}` } : null; };
+    const mean = f => { const xs = ms.map(m => m[f]).filter(x => typeof x === 'number' && isFinite(x)); return xs.length ? { v: xs.reduce((a, x) => a + x, 0) / xs.length, n: `mean of ${xs.length} match${xs.length === 1 ? '' : 'es'}` } : null; };
+    const ac = ms.map(m => m.aces).filter(x => typeof x === 'number' && isFinite(x));
+    if (ac.length) val.aces[k] = { v: ac.reduce((a, x) => a + x, 0) / ac.length, n: `${ac.reduce((a, x) => a + x, 0)} aces in ${ac.length} match${ac.length === 1 ? '' : 'es'}` };
+    ['firstServeWonPct', 'secondServeWonPct'].forEach(f => { const r = mean(f); if (r) val[f][k] = r; });
+    ['svHold', 'retGames', 'bpConv'].forEach(f => { const r = sum(f); if (r) val[f][k] = r; });
+  });
+  return { ST, val };
+}
+const ord = n => n + (n % 10 === 1 && n % 100 !== 11 ? 'st' : n % 10 === 2 && n % 100 !== 12 ? 'nd' : n % 10 === 3 && n % 100 !== 13 ? 'rd' : 'th');
+function boxModel(M, F, entry, key) {
+  const { ST, val } = boxFigures(M, F, entry), me = ST[key] || { m: 0 };
+  const fieldN = Object.keys(ST).filter(k => ST[k].m > 0).length;
+  let above = 0, cmp = 0;
+  const rows = MEASURES.map(([grp, l, unit, k]) => {
+    const pc = unit === '%', rd = x => (pc ? Math.round(x) : Math.round(x * 10) / 10), fmt = x => (pc ? String(x) : x.toFixed(1)) + unit;
+    const all = k ? Object.keys(val[k]).map(p => rd(val[k][p].v)) : [];
+    const avg = all.length ? rd(all.reduce((a, x) => a + x, 0) / all.length) : null;
+    const mine = k && val[k][key] ? val[k][key] : null;
+    const why = k ? (mine ? '' : 'No figure for him in our box scores for this draw') : 'Break points saved: not in our match data yet';
+    if (!mine) return { grp, l, v: DASH, f: avg != null ? fmt(avg) : DASH, g: DASH, gc: C.muted, barL: '50%', barW: '0%', rank: DASH, rankC: C.muted, rankW: 500, of: '', why, fTitle: all.length ? `mean of ${all.length} players` : 'No player of this draw has this figure' };
+    const v = rd(mine.v), d = Math.round((v - avg) * 10) / 10, mx = Math.max.apply(null, all.map(x => Math.abs(x - avg))) || 1;
+    const bw = d ? 18 + Math.abs(d) / mx * 28 : 0, rk = all.filter(x => x > v).length + 1;
+    cmp++; if (d > 0) above++;
+    return { grp, l, v: fmt(v), f: fmt(avg), g: (d > 0 ? '+' : d < 0 ? MINUS : '') + (pc ? Math.abs(d) : Math.abs(d).toFixed(1)), gc: d > 0 ? C.green : d < 0 ? C.red : C.muted,
+      barL: (d >= 0 ? 50 : 50 - bw) + '%', barW: bw + '%', rank: ord(rk), rankC: rk <= 3 ? C.white : C.muted, rankW: rk <= 3 ? 700 : 500, of: 'of ' + all.length, why: mine.n, fTitle: `mean of ${all.length} players` };
+  });
+  return { me, fieldN, rows, above, cmp };
+}
+
+// ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+// POINTS TO DEFEND — points-to-defend.json (rows for the open draw by its ATP id and season) + player-index.json
+// ranking points: "Would be" = his rank once the points he defends here drop, against every other player's points as
+// they stand. His or the needed points missing → a dash, never a guess.
+// ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+const LAST = { Won: 'Champion', F: 'Final', SF: 'Semi-final', QF: 'Quarter-final' };
+const lastWord = r => LAST[r] || (/^Q\d$/.test(r) ? 'Qualifying ' + r : r === 'Q' ? 'Qualified' : longOf(r));
+const lastWords = r => (r ? String(r).split('|').map(x => lastWord(x.trim())).join(' · ') : DASH);   // "R32 | Q" → "Round of 32 · Qualified"
+function ptsModel(ev, F) {
+  const P = file('points-to-defend.json'); if (P === undefined) return undefined;
+  const e = P && P.events ? Object.values(P.events).find(x => x && String(x.atpId) === String(ev.id) && String(x.season) === String(ev.start).slice(0, 4)) : null;
+  if (!e) return null;
+  const idx = standings(), byKey = new Map((idx || []).map(r => [String(r.key), r]));
+  const num = x => (x == null || x === '' ? null : Number.isFinite(+x) ? +x : Number.isFinite(parseInt(x, 10)) ? parseInt(x, 10) : null);
+  const mk = r => {
+    const k = String(r.playerKey), ix = byKey.get(k), pts = num(r.points), mine = ix ? num(ix.points) : null;
+    const today = ix && num(ix.rank) != null ? num(ix.rank) : num(r.rank);
+    let would = null;
+    if (idx && mine != null && pts != null && today != null) {
+      const left = mine - pts;
+      would = Math.max(today, 1 + idx.filter(o => String(o.key) !== k && num(o.points) != null && num(o.points) > left).length);   // never above today's rank
+    }
+    const drop = would != null && today != null ? Math.max(0, would - today) : null;
+    const slot = F.byKey.get(k);
+    return { k, n: r.apiName || r.name, full: r.name, tag: slot ? tagOf(slot) : '', pts, last: lastWords(r.resultBadge) + (r.ll ? ' · LL' : ''), today, would, drop, inDraw: !!slot, status: r.status || '',
+      whyRank: mine == null ? 'No ranking points on file for him' : pts == null ? 'The points he defends here are not known' : '' };
+  };
+  const rows = (e.rows || []).map(mk).concat((e.dashRows || []).map(mk));
+  const frees = (e.zeroRows || []).map(mk);
+  return { e, rows, frees, total: rows.reduce((a, r) => a + (r.pts || 0), 0), idx };
 }
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // RENDER
 // ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-function shell(inner) { return `<div class="tt-draw"><div class="tt-draw-pane">${inner}</div></div>`; }
+function shell(inner) { return `<div class="tt-draw"><div class="tt-draw-pane" data-draw-root="1" style="position:relative;">${inner}</div></div>`; }
 function render(el) {
   if (el) S.el = el;
   const root = S.el; if (!root) return;
@@ -417,9 +518,10 @@ function render(el) {
   H = [];
   const D = DV(), dd = drawsData();
   if (!D || dd === undefined) { paint(root, shell(`<div style="font-size:13px; color:${C.muted};">Loading the official draw…</div>`)); return; }
-  file('draws-archive.json');   // the draw-results branch's archive (a 404 = none); repaints when it lands
+  file('draws-archive.json');   // finished draws with their final results (a 404 = none); repaints when it lands
   const E = events();
   if (!E.all.length) { paint(root, shell(`<div style="font-size:13px; color:${C.muted};">${dd === null ? 'The official draw could not be loaded ' + NDASH + ' try again in a minute.' : 'No official draw is posted for this week yet.'}</div>`)); return; }
+  // the tab opens on the draw in play, else the latest finished one (README "Data")
   if (!S.key || !E.all.some(e => e.key === S.key)) S.key = (E.now[0] || E.fin[0] || E.arch[0]).key;
   const ev = E.all.find(e => e.key === S.key);
   const qualPosted = !!(ev.draw.qualifying && ev.draw.qualifying.status === 'posted');
@@ -428,78 +530,128 @@ function render(el) {
   const Mm = modelOf(ev, 'main'), M = S.kind === 'qual' ? modelOf(ev, 'qual') : Mm, F = facts(Mm, ev);
   if (S.sel && !F.byKey.has(S.sel)) Object.assign(S, { sel: null, b: null, cmp: false });
   if (S.b && !F.byKey.has(S.b)) S.b = null;
-  const view = S.view === 'stats' ? 'stats' : S.view === 'out' ? 'out' : 'draw';
+  if (S.pop && (!F.byKey.has(S.pop.key) || S.kind === 'qual')) S.pop = null;
+  const view = ['stats', 'out', 'pts'].includes(S.view) ? S.view : 'draw';
+  if (view !== 'draw') S.pop = null;
   if (view === 'stats') { file('how-it-plays.json'); file('favourites-by-round.json'); file('tour-baselines.json'); file('database-yield.json'); file('tournament-market.json'); }
   if (view !== 'stats') { S.ed = null; S.stat = null; }
   const st = view === 'stats' ? statsModel(ev, Mm) : null;
+  const pm = ptsModel(ev, F);
+  if (view === 'pts') standings();
   const yr = +String(ev.start).slice(0, 4);
-  const statsFig = speedFig(ev, played(Mm) > 0 ? yr : yr - 1);
+  const pl = played(Mm), tp = total(Mm), finished = !!F.champ || (ev.ended && pl > 0) || ev.arch;
+  const logos = file('tournament-logos/index.json');
 
   let h = '';
-  // ── title row ──
-  const cmpTop = S.outCmp;
-  h += `<div style="display:flex; align-items:center; justify-content:space-between; gap:16px 28px; flex-wrap:wrap;">
-    <div style="display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; min-width:0;"><span style="font-size:24px; font-weight:800; letter-spacing:-0.015em; line-height:1.1;">Draws</span><span style="font-size:13px; color:${C.muted};">${E.now.length} this week · ${E.fin.length} finished</span></div>
-    <span class="tt-draw-hi8" onclick="${on(() => { if (S.outCmp) Object.assign(S, { outCmp: false, outA: null, outB: null, outQ: '' }); else { Object.assign(S, { kind: 'main', outCmp: true, outA: null, outB: null, outQ: '', sel: null, b: null, cmp: false, shut: null }); S._focusNext = true; } repaint(); })}" style="flex:none; cursor:pointer; display:inline-flex; align-items:center; height:34px; box-sizing:border-box; padding:0 14px; border-radius:9px; font-size:13px; font-weight:700; white-space:nowrap; color:${cmpTop ? C.text : C.white}; background:${cmpTop ? 'transparent' : C.blue}; border:1px solid ${cmpTop ? W(16) : C.blue};">${cmpTop ? 'Cancel' : 'Compare two routes'}</span></div>`;
-  if (S.outCmp) h += pickStrip(ev, F);
-  // ── tournament groups ──
-  const tourPill = (e, sub, title) => { const o = e.key === S.key;
-    return `<span class="tt-draw-seg"${title ? ` title="${esc(title)}"` : ''} onclick="${on(() => { S.key = e.key; S.from = null; S.kind = 'main'; reset(); repaint(); })}" style="display:flex; align-items:baseline; gap:9px; font-size:12.5px; font-weight:${o ? 700 : 600}; color:${o ? C.white : C.muted}; background:${o ? C.raised : 'transparent'}; border:1px solid ${o ? W(16) : 'transparent'}; border-radius:8px; padding:7px 14px; white-space:nowrap; cursor:pointer;"><span>${esc(e.label)}</span><span style="${MONO} font-size:10.5px; font-weight:500; color:${C.muted};">${esc(sub)}</span></span>`; };
-  const group = (label, list, fn) => `<div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;"><span style="${CAPS}">${label}</span>${list.length ? track(list.map(fn).join('')) : `<span style="font-size:12.5px; color:${C.muted};">${label === 'This week' ? 'No draw in play this week' : DASH}</span>`}</div>`;
+  // ── round "?" in the top right corner (founder 2026-11-20: ALL explanatory text lives in its box) ──
+  h += `<div style="position:absolute; top:26px; right:24px; z-index:3;"><span class="tt-draw-help" data-tt="help" onclick="${on(e => toggleHelp(e))}" title="How to read this page" style="cursor:pointer; box-sizing:border-box; width:16px; height:16px; border-radius:50%; border:1px solid ${S.help ? W(55) : W(22)}; color:${S.help ? C.white : C.muted}; display:flex; align-items:center; justify-content:center; ${MONO} font-size:10px; font-weight:700; line-height:1; user-select:none;">?</span></div>`;
+  // ── "Draws" + count ──
+  h += `<div style="display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; min-width:0; padding-right:28px;"><span style="font-size:24px; font-weight:800; letter-spacing:-0.015em; line-height:1.1;">Draws</span><span style="font-size:13px; color:${C.muted};">${E.now.length} this week · ${E.fin.length} finished · ${E.arch.length} in the archive</span></div>`;
+  // ── picker row: This week · Finished · Archive + Download W/UE sheet at the right end ──
+  const pickPill = (e, stage) => seg(`<span>${esc(evName(e))}</span>${stage ? `<span style="${MONO} font-size:10.5px; font-weight:500; color:${C.muted};">${esc(stage)}</span>` : ''}`, e.key === S.key,
+    on(() => { S.key = e.key; S.from = null; S.kind = 'main'; reset(); repaint(); }));
   const stageFor = e => { const m = modelOf(e, 'main'); return stageOf(m, facts(m, e)); };
-  const finPill = e => { const s = stageFor(e); return tourPill(e, s, weekRange(e.start, e.end) + (s !== DASH && s !== 'Draw out' ? ' · champion ' + s : '')); };
-  h += `<div style="display:flex; flex-wrap:wrap; align-items:center; gap:12px 24px; margin-top:18px;">`
-    + group('This week', E.now, e => tourPill(e, stageFor(e)))
-    + group('Finished', E.fin, finPill)
-    // kept beside the design's two groups: the draw-results branch's archive (founder 2026-11-15, post-dates the export)
-    + (E.arch.length ? group('Archive', E.arch, finPill) : '')
+  const titled = (e, html) => { const s = stageFor(e); return s !== DASH && s !== 'Draw out' ? html.replace('<span class="tt-draw-seg"', `<span class="tt-draw-seg" title="Champion ${esc(s)}"`) : html; };
+  const group = (label, inner) => `<div style="display:flex; align-items:center; gap:10px; min-width:0;"><span style="flex:none; ${LBL} white-space:nowrap;">${label}</span>${inner}</div>`;
+  const wueName = ev.entryName || (ev.arch ? cityOf(ev.draw) : null);
+  let wueRounds = 0; try { wueRounds = window.WueSheet && ev.entry && Array.isArray(ev.entry.matches) ? window.WueSheet.sheetRounds(ev.entry, ev.draw).length : 0; } catch (e) { wueRounds = 0; }
+  const dlOk = !!(wueName && wueRounds && window.WueSheet && window.WueSheet.download);
+  const dlLabel = S.dl === 'busy' ? 'Downloading…' : S.dl === 'done' ? 'Sheet downloaded' : S.dl === 'fail' ? 'Couldn’t reach the data' : 'Download W/UE sheet';
+  const dlTitle = dlOk ? 'Winners and unforced errors, every round up to the last match played' : 'No match with statistics yet: available after the next data update';
+  h += `<div style="display:flex; flex-wrap:wrap; align-items:center; gap:10px 22px; margin-top:14px;">`
+    + group('This week', E.now.length ? track(E.now.map(e => pickPill(e, stageFor(e))).join('')) : `<span style="font-size:13px; color:${C.soft};">No draw in play</span>`)
+    + (E.fin.length ? group('Finished', track(E.fin.map(e => titled(e, pickPill(e))).join(''))) : '')
+    + (E.arch.length ? group('Archive', track(E.arch.map(e => titled(e, pickPill(e))).join(''))) : '')
+    + `<span class="${dlOk ? 'tt-draw-hov' : ''}" data-tt="dl" onclick="${dlOk ? on(() => downloadSheet(wueName)) : ''}" title="${esc(dlTitle)}" style="flex:none; margin-left:auto; cursor:${dlOk ? 'pointer' : 'default'}; display:inline-flex; align-items:center; height:34px; box-sizing:border-box; padding:0 14px; border-radius:9px; font-size:13px; font-weight:700; white-space:nowrap; color:${dlOk ? (S.dl === 'fail' ? C.red : C.white) : C.muted}; ${LIFT}">${dlLabel}</span>`
     + `</div>`;
   h += `<div style="margin:20px -24px 0; border-top:1px solid ${W(6)};"></div>`;
-  // ── view pills + kind ──
-  const views = [['draw', 'Draw', M ? `${played(M)} of ${total(M)}` : DASH], ['stats', 'Statistics', statsFig], ['out', 'Outright chances', DASH]];
-  h += `<div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:14px 24px; margin-top:20px;">
-    <div style="display:flex; flex-wrap:wrap; align-items:center; gap:8px;">${views.map(([v, l, fig]) => { const o = v === view;
-      return `<span class="tt-draw-vp" onclick="${on(() => { S.view = v; if (v === 'out') S.kind = 'main'; repaint(); })}"${v === 'out' ? ' title="Title chance of the favourite: no source yet"' : ''} style="cursor:pointer; display:inline-flex; align-items:center; gap:8px; height:34px; box-sizing:border-box; padding:0 12px; border-radius:9px; font-size:13px; font-weight:700; white-space:nowrap; color:${o ? C.white : C.soft}; background:${o ? W(8) : 'transparent'}; border:1px solid ${o ? W(55) : W(12)};">${l}<span style="${MONO} font-size:11.5px; font-weight:500; color:${C.muted};">${esc(fig)}</span></span>`; }).join('')}</div>
-    <div style="display:flex; flex-wrap:wrap; align-items:center; gap:12px;"><div style="display:flex; gap:3px; background:${C.inset}; border:1px solid ${W(6)}; border-radius:10px; padding:3px;">${
-      [['main', 'Main draw'], ['qual', 'Qualifying']].map(([k, l]) => (k === 'qual' && !qualPosted)
-        ? `<span title="The qualifying draw is not posted" style="font-size:12.5px; font-weight:600; color:${C.muted}; opacity:0.4; border:1px solid transparent; border-radius:8px; padding:6px 12px; white-space:nowrap; cursor:default;">${l}</span>`
-        : pill(l, S.kind === k, on(() => { S.kind = k; S.from = null; if (k === 'qual' && S.view === 'out') S.view = 'draw'; repaint(); }), 'padding:6px 12px;')).join('')}</div></div></div>`;
-  // ── progress line + From ──
-  const tp = total(M), pl = played(M);
-  const results = ev.arch ? `Final results · archived ${fmtWhen(ev.archivedAt)}` : `Results ${progData() && progData().fetchedAt ? ago(progData().fetchedAt) : DASH}`;
+  // ── open-draw head: logo tile · name + status chip over the tier line | Champion | Matches played | Compare two routes ──
+  const lf = logos && logos.logos ? logos.logos[ev.dname] || logos.logos[ev.city] : null;
+  const code = evName(ev).replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase();
+  const logo = `<span title="${esc(evName(ev))}" style="flex:none; position:relative; overflow:hidden; width:48px; height:48px; border-radius:12px; background:${C.lifted}; box-shadow:inset 0 0 0 1px ${W(14)}; display:flex; align-items:center; justify-content:center; ${MONO} font-size:13px; font-weight:700; color:${C.soft};">${lf ? `<img src="./tournament-logos/${esc(lf)}" alt="${esc(evName(ev))} logo" loading="lazy" onerror="this.remove()" style="position:absolute; left:4px; top:4px; width:40px; height:40px; object-fit:contain;">` : esc(code)}</span>`;
+  const tier = String(ev.draw.category || '').replace(/^ATP Tour /, '');
+  const surf = ev.draw.sheetHeader && ev.draw.sheetHeader.surface ? ev.draw.sheetHeader.surface : '';
+  const stChip = finished ? 'Finished' : pl === 0 ? 'Draw out' : 'In play';
+  const champS = F.champ ? F.byKey.get(F.champ) : null;
+  h += `<div style="display:flex; align-items:center; justify-content:space-between; gap:16px 32px; flex-wrap:wrap; margin-top:22px;">
+    <div style="display:flex; align-items:center; gap:14px; min-width:0;">${logo}<div style="display:flex; flex-direction:column; gap:6px; min-width:0;">
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;"><span style="font-size:22px; font-weight:800; letter-spacing:-0.015em; line-height:1.1;">${esc(evName(ev))}</span>${chip(stChip)}</div>
+      <span style="font-size:13px; color:${C.muted};">${esc([tier, surf].filter(Boolean).join(' · '))} · draw sheet ${esc(fmtWhen(Mm ? Mm.changedAt : ev.draw.contentChangedAt))}</span></div></div>
+    <div style="display:flex; align-items:center; gap:16px 36px; flex-wrap:wrap;">`
+    + (champS && S.kind !== 'qual' ? `<div style="display:flex; flex-direction:column; gap:6px;"><span style="${LBL}">Champion</span><span style="font-size:16px; font-weight:700; color:${C.white}; line-height:1.1;">${esc(nameOf(champS))}</span></div>` : '')
+    + `<div style="display:flex; flex-direction:column; gap:6px;"><span style="${LBL}">Matches played</span><span style="${MONO} font-size:16px; font-weight:700; color:${C.white}; line-height:1.1;">${Mm ? pl + ' of ' + tp : DASH}</span></div>`
+    + liftBtn(`${S.outCmp ? 'Cancel' : 'Compare two routes'}<span style="color:${C.blue};">›</span>`, on(() => {
+        if (S.outCmp) Object.assign(S, { outCmp: false, outA: null, outB: null, outQ: '' });
+        else { Object.assign(S, { kind: 'main', outCmp: true, outA: null, outB: null, outQ: '', sel: null, b: null, cmp: false, shut: null, pop: null }); S._focusNext = true; }
+        repaint(); }))
+    + `</div></div>`;
+  if (S.outCmp) h += pickStrip(ev, F);
+  // ── toolbar: views | From (Draw view only) + Main draw · Qualifying ──
+  const views = [['draw', 'Draw', Mm ? `${pl} of ${tp}` : ''], ['stats', 'Statistics', speedFig(ev, pl > 0 ? yr : yr - 1)], ['out', 'Outright chances', ''], ['pts', 'Points to defend', pm ? String(pm.total) : '']];
   const names = M ? M.rounds.map(r => r.name) : [];
   const fromOpts = names.slice(0, Math.max(1, names.length - 1));
   if (S.kind === 'qual' || !fromOpts.includes(S.from)) S.from = names[0] || null;
   const showFrom = S.kind !== 'qual' && view === 'draw' && !!M;
-  h += `<div style="display:flex; flex-wrap:wrap; align-items:center; gap:10px 16px; margin-top:16px;">
-    <div title="${pl} of ${tp} matches played" style="flex:1 1 80px; height:4px; border-radius:2px; background:${W(5)}; overflow:hidden;"><div style="height:100%; width:${tp ? Math.round(pl / tp * 100) : 0}%; background:${C.past}; border-radius:2px;"></div></div>
-    <span style="flex:none; font-size:12px; color:${C.muted}; white-space:nowrap;">${esc(results)} · draw sheet ${esc(fmtWhen(M ? M.changedAt : ev.draw.contentChangedAt))}</span>
-    ${showFrom ? `<div style="flex:none; display:flex; align-items:center; gap:10px;"><span style="${CAPS}">From</span><div style="display:flex; gap:3px; background:${C.inset}; border:1px solid ${W(6)}; border-radius:10px; padding:3px;">${fromOpts.map(n => pill(n, n === S.from, on(() => { S.from = n; repaint(); }), 'padding:6px 16px;')).join('')}</div></div>` : ''}</div>`;
-  // kept from the live tab (founder 2026-10-21 round 3; post-dates the export): the W/UE sheet bar, Draw view only
-  // An archived draw's sheet reads draws-archive.json (WueSheet.prefetchArchive, loaded once; its arrival repaints).
-  const wueName = ev.entryName || (ev.arch ? cityOf(ev.draw) : null);
-  if (ev.arch && typeof window !== 'undefined' && window.WueSheet && window.WueSheet.prefetchArchive && !S._wueArch) {
-    S._wueArch = true; window.WueSheet.prefetchArchive().then(repaint, () => {});
-  }
-  if (view === 'draw' && wueName && typeof tourxWueBarHtml === 'function') {
-    let wue = ''; try { wue = tourxWueBarHtml(wueName) || ''; } catch (e) { wue = ''; }
-    if (wue) h += `<div class="tt-draw-wue" style="margin-top:12px;">${wue}</div>`;
-  }
-  // ── Statistics ──
+  h += `<div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px 24px; margin-top:20px; padding-top:18px; border-top:1px solid ${W(6)};">
+    ${track(views.map(([v, l, fig]) => seg(`${l}${fig ? `<span style="${MONO} font-size:11.5px; font-weight:500; color:${C.muted};">${esc(fig)}</span>` : ''}`, v === view,
+      on(() => { S.view = v; if (v === 'out') S.kind = 'main'; S.pop = null; repaint(); }), '0 14px', 'height:32px; box-sizing:border-box; align-items:center; gap:8px;')).join(''))}
+    <div style="display:flex; flex-wrap:wrap; align-items:center; gap:12px;">`
+    + (showFrom ? `<div style="flex:none; display:flex; align-items:center; gap:10px;"><span style="${LBL}">From</span>${track(fromOpts.map(n => seg(n, n === S.from, on(() => { S.from = n; S.pop = null; repaint(); }), '6px 16px')).join(''))}</div>` : '')
+    + track([['main', 'Main draw'], ['qual', 'Qualifying']].map(([k, l]) => (k === 'qual' && !qualPosted)
+        ? `<span title="The qualifying draw is not posted" style="font-size:12.5px; font-weight:600; color:${C.muted}; opacity:0.4; border:1px solid transparent; border-radius:8px; padding:6px 12px; white-space:nowrap; cursor:default;">${l}</span>`
+        : seg(l, S.kind === k, on(() => { S.kind = k; S.from = null; S.pop = null; if (k === 'qual' && (S.view === 'out' || S.view === 'pts')) S.view = 'draw'; repaint(); }), '6px 12px')).join(''))
+    + `</div></div>`;
+  // ── progress bar + "Results n min ago": ONLY while a draw is in play ──
+  if (!finished && Mm) h += `<div style="display:flex; flex-wrap:wrap; align-items:center; gap:10px 16px; margin-top:16px;">
+    <div title="${pl} of ${tp} matches played" style="flex:1 1 80px; height:4px; border-radius:2px; background:${W(7)}; overflow:hidden;"><div style="height:100%; width:${tp ? Math.round(pl / tp * 100) : 0}%; background:${BAR55}; border-radius:2px;"></div></div>
+    <span style="flex:none; font-size:12px; color:${C.muted}; white-space:nowrap;">Results ${esc(progData() && progData().fetchedAt ? ago(progData().fetchedAt) : DASH)}</span></div>`;
+  // ── the view ──
   if (view === 'stats') h += statsHtml(ev, Mm, st);
-  // ── selection / outright ──
-  if (S.kind !== 'qual') {
+  if (view === 'pts') h += ptsHtml(ev, Mm, F, pm, finished);
+  if (S.kind !== 'qual' && (view === 'out' || (view === 'draw' && S.sel))) {
     h += `<div style="margin-top:14px;">`;
     if (view === 'out') h += outrightHtml(ev, Mm, F);
-    if (S.sel && view === 'draw') h += selHtml(ev, Mm, F);
+    if (view === 'draw' && S.sel) h += selHtml(ev, Mm, F);
     h += `</div>`;
   }
-  // ── bracket ──
   if (view === 'draw' && M) h += bracketHtml(ev, M, F);
   if (view === 'draw' && !M) h += `<div style="margin-top:24px; font-size:13px; color:${C.muted};">This draw is not posted yet.</div>`;
-  // the design's footnote, without its sentences about title chances, path chances and fair odds (founder ruling 3)
-  h += `<p style="margin:16px 0 0; font-size:12px; color:${C.muted};">Grey figures on unplayed matches are the current match-winner prices. The white tick on a statistic is the tour average.</p>`;
+  if (S.pop && view === 'draw') h += popHtml(ev, Mm, F, finished);
+  if (S.help) h += helpHtml(finished);
   paint(root, shell(h));
+}
+
+// the "?" box: fixed under its button, every explanatory line of the page (founder 2026-11-20)
+function toggleHelp(e) {
+  if (S.help) { S.help = null; return repaint(); }
+  const t = e && e.currentTarget && e.currentTarget.getBoundingClientRect ? e.currentTarget.getBoundingClientRect() : null;
+  const vh = typeof window !== 'undefined' && window.innerHeight ? window.innerHeight : 800, vw = typeof window !== 'undefined' && window.innerWidth ? window.innerWidth : 1280;
+  S.help = t ? { t: Math.max(16, Math.min(t.bottom + 8, vh - 340)), r: Math.max(16, vw - t.right) } : { t: 80, r: 24 };
+  repaint();
+}
+function helpHtml(finished) {
+  const L = [
+    finished ? ['Prices', 'Hover a name on an unplayed match for its current match-winner price, when Today’s Matches carries it.'] : ['Prices', 'Grey figures on unplayed matches are the current match-winner prices from Today’s Matches.'],
+    ['Title chances', 'Not available yet: every chance, fair-odds range and opening-price range shows a dash until a source exists.'],
+    ['Click a name', 'Opens his figures in this draw against the field. His name or photo in that box opens his profile.'],
+    ['Compare two routes', 'The ringed round is where the two could meet. Click a round for his opponent, or the players he might face.'],
+    ['Outright chances', 'The quarter winner is the player who reaches the semi-finals. Click a player to follow his route through the draw.'],
+    ['Points to defend', 'Points he won here last year. "Would be" is his ranking once those points drop, against every other player’s ranking points as they stand.'],
+    ['W/O', 'A walkover: no match was played, so it carries no statistics.'],
+    ['Download W/UE sheet', 'One sheet with the winners and unforced errors of every round, up to the last match played.'],
+  ];
+  const close = on(() => { S.help = null; repaint(); });
+  return `<div onclick="${close}" style="position:fixed; inset:0; z-index:29;"></div>
+    <div class="tt-draw-helpbox" style="position:fixed; z-index:30; right:${S.help.r}px; top:${S.help.t}px; width:360px; max-width:calc(100vw - 32px); max-height:calc(100vh - ${S.help.t + 16}px); overflow-y:auto; box-sizing:border-box; background:${C.inset}; border:1px solid ${W(16)}; border-radius:12px; box-shadow:${C.shMenu}; padding:16px 18px 6px;">
+      <span style="font-size:14px; font-weight:700; color:${C.white};">How to read this page</span>
+      <div style="margin-top:10px;">${L.map(([k, v]) => `<div style="display:flex; flex-direction:column; gap:4px; padding:10px 0; border-top:1px solid ${W(6)};"><span style="font-size:12.5px; font-weight:700; color:${C.white};">${esc(k)}</span><span style="font-size:12.5px; line-height:1.5; color:${C.soft}; text-wrap:pretty;">${esc(v)}</span></div>`).join('')}</div></div>`;
+}
+function downloadSheet(name) {
+  if (!name || !window.WueSheet || S.dl === 'busy') return;
+  S.dl = 'busy'; repaint();
+  const done = st => { S.dl = st; repaint(); setTimeout(() => { if (S.dl === st) { S.dl = null; repaint(); } }, 2400); };
+  let p; try { p = Promise.resolve(window.WueSheet.download(name)); } catch (e) { p = Promise.reject(e); }
+  p.then(() => done('done'), () => done('fail'));
 }
 
 // keep focus + caret in a re-rendered input (every keystroke repaints)
@@ -522,26 +674,27 @@ function bracketHtml(ev, M, F) {
   const row = (c, k) => {
     const s = c.sides[k], o = c.sides[1 - k];
     if (!s) {
-      if (c.bye) return `<div style="display:flex; align-items:center; gap:8px; height:26px; padding:0 6px; margin:0 -6px; border-radius:6px;"><span style="margin-left:38px; font-size:12.5px; color:${C.muted};">Bye</span></div>`;
-      return `<div style="display:flex; align-items:center; gap:8px; height:26px; padding:0 6px; margin:0 -6px; border-radius:6px;"></div>`;
+      if (c.bye) return `<div style="display:flex; align-items:center; height:26px; padding:0 6px; margin:0 -6px;"><span style="margin-left:30px; font-size:12.5px; color:${C.muted};">Bye</span></div>`;
+      return `<div style="height:26px;"></div>`;
     }
-    const key = keyOf(s), m = c.match, dec = !!m, win = dec && m.winnerKey === key;
-    const isSel = !qual && key && key === S.sel, isB = !qual && key && key === S.b;
+    const key = keyOf(s), m = c.match, dec = !!m, win = dec && m.winnerKey === key, wo = dec && m.status === 'walkover';
+    const isSel = !qual && key && key === S.sel, isB = !qual && key && key === S.b, isPop = S.pop && key === S.pop.key;
     const mark = isSel || (S.outCmp && key && key === S.outA), white = isB || (S.outCmp && key && key === S.outB);
-    const w = win ? 700 : dec ? 500 : 600, color = mark ? C.blue : win || white ? C.white : dec ? C.muted : C.text;
-    const bg = mark ? B(13) : white ? W(8) : 'transparent';
+    const w = win ? 700 : dec ? 500 : 600, color = win || mark || white ? C.white : dec ? C.muted : C.text;
+    const bg = isPop || mark ? C.hover : white ? W(8) : 'transparent';
     let sets = '', odds = '', title = '';
-    if (dec && Array.isArray(m.score)) sets = m.score.map(p => { const mine = k ? p[1] : p[0], th = k ? p[0] : p[1], won = mine > th;
+    if (wo) { odds = win ? 'W/O' : ''; title = 'Walkover, no match played'; }
+    else if (dec && Array.isArray(m.score)) sets = m.score.map(p => { const mine = k ? p[1] : p[0], th = k ? p[0] : p[1], won = mine > th;
       return `<span style="width:9px; text-align:center; font-weight:${won ? 700 : 400}; color:${won ? C.text : C.muted};">${esc(mine)}</span>`; }).join('');
     else if (!dec && c.when && c.when.live && c.when.liveScore) { sets = c.when.liveScore.map(p => `<span style="width:9px; text-align:center; font-weight:400; color:${C.text};">${esc(k ? p[1] : p[0])}</span>`).join(''); title = 'Live'; }
     else if (!dec && o && !qual) { const p = boardPrice(ev, c.sides[0], c.sides[1]); if (p) { const v = k ? p.b : p.a; odds = odd(v);
       title = v != null ? `Price ${odd(v)}${p.book ? ' · ' + (typeof mxBookLabel === 'function' ? mxBookLabel(p.book) : p.book) : ''}` : 'No current price on Today’s Matches'; } }
-    const tag = tagOf(s) + (dec && !win && m.status === 'retired' ? ' ret.' : dec && !win && m.status === 'walkover' ? ' w/o' : '');
-    const ioc = s.ioc || (s.neutral ? 'NEU' : DASH);
-    const aid = dec ? analysisId(ev, m) : null;
+    const tag = tagOf(s) + (dec && !win && m.status === 'retired' ? ' ret.' : '');
+    const country = s.ioc || (s.neutral ? 'Neutral athlete' : '');
+    const aid = dec && !wo ? analysisId(ev, m) : null;
     const scoreAttrs = aid ? ` class="tt-draw-score" role="button" tabindex="0" title="Open match analysis" onclick="${on(() => openMatch(aid))}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); event.stopPropagation(); this.click();}"` : '';
-    return `<div class="tt-draw-prow" data-tt-player="${esc(key || '')}" onclick="${on(() => pickPlayer(key, qual))}"${title ? ` title="${esc(title)}"` : ''} style="cursor:pointer; display:flex; align-items:center; gap:8px; height:26px; padding:0 6px; margin:0 -6px; border-radius:6px; background:${bg};">`
-      + `<span style="flex:none; min-width:30px; text-align:center; ${MONO} font-size:9px; font-weight:700; letter-spacing:0.04em; color:${C.muted}; border:1px solid ${W(10)}; border-radius:5px; padding:2px 4px;">${esc(ioc)}</span>`
+    return `<div class="tt-draw-prow" data-tt-player="${esc(key || '')}" onclick="${on(e => pickName(key, qual, e))}"${title ? ` title="${esc(title)}"` : ''} style="cursor:pointer; display:flex; align-items:center; gap:8px; height:26px; padding:0 6px; margin:0 -6px; border-radius:6px; background:${bg};">`
+      + avatar(key, s.name ? nameOf(s) : '', 22, W(10), 8.5, country)
       + `<span style="flex:1; min-width:0; display:flex; align-items:baseline; gap:6px;"><span style="min-width:0; font-size:13px; font-weight:${w}; color:${color}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(nameOf(s))}</span><span style="flex:none; ${MONO} font-size:10px; color:${C.muted};">${esc(tag)}</span></span>`
       + `<span${scoreAttrs} style="flex:none; display:flex; gap:7px; ${MONO} font-size:12.5px; font-variant-numeric:tabular-nums;${aid ? ' cursor:pointer; padding:2px 4px; margin:-2px -4px; border-radius:5px;' : ''}">${sets}${odds ? `<span style="font-size:11.5px; color:${C.muted};">${esc(odds)}</span>` : ''}</span></div>`;
   };
@@ -550,25 +703,76 @@ function bracketHtml(ev, M, F) {
     const slots = R.cells.map((c, j) => {
       const any = c.sides[0] || c.sides[1] || c.match || c.bye;
       const foc = selPos != null, onA = foc && ((selPos - 1) >> (ri + 1)) === j, onB = foc && bPos != null && ((bPos - 1) >> (ri + 1)) === j;
-      const ring = onA ? B(50) : onB ? W(34) : '';
+      const ring = onA ? W(34) : onB ? W(22) : '';
       const op = foc && !cmpMode && !onA ? 0.55 : 1;
       const conn = ci > 0 ? `<span style="position:absolute; left:-28px; width:14px; top:25%; height:50%; border:1px solid ${W(10)}; border-left:0;"></span><span style="position:absolute; left:-14px; width:14px; top:50%; border-top:1px solid ${W(10)};"></span>` : '';
       const body = any
-        ? `<div style="flex:1; min-width:0; background:${C.inset}; border:1px solid ${ring || W(7)}; border-radius:10px; padding:7px 11px; display:flex; flex-direction:column; gap:2px;">${row(c, 0)}${row(c, 1)}</div>`
+        ? `<div style="flex:1; min-width:0; background:${C.inset}; border:1px solid ${ring || W(6)}; border-radius:10px; padding:8px 11px; display:flex; flex-direction:column; gap:2px;">${row(c, 0)}${row(c, 1)}</div>`
         : `<div style="flex:1; height:64px; border:1px dashed ${ring || W(9)}; border-radius:10px;"></div>`;
       return `<div style="flex:1; min-height:0; position:relative; display:flex; align-items:center; opacity:${op}; transition:opacity .16s ease;">${conn}${body}</div>`;
     }).join('');
-    return `<div style="flex:1 0 232px; min-width:232px; max-width:320px;"><div style="display:flex; align-items:baseline; justify-content:space-between; padding:0 2px 12px; border-bottom:1px solid ${W(10)};"><span style="font-size:13px; font-weight:700; color:${R.done === R.total ? C.muted : C.text};">${esc(longOf(R.name))}</span><span style="${MONO} font-size:10.5px; color:${C.muted};">${R.done} of ${R.total}</span></div><div style="display:flex; flex-direction:column; height:${Hpx}px; margin-top:10px;">${slots}</div></div>`;
+    return `<div style="flex:1 0 232px; min-width:232px; max-width:320px;"><div style="display:flex; align-items:baseline; justify-content:space-between; padding:0 2px 12px; border-bottom:1px solid ${W(6)};"><span style="font-size:14px; font-weight:700; color:${R.done === R.total ? C.soft : C.white};">${esc(longOf(R.name))}</span><span style="${MONO} font-size:10.5px; color:${C.muted};">${R.done} of ${R.total}</span></div><div style="display:flex; flex-direction:column; height:${Hpx}px; margin-top:10px;">${slots}</div></div>`;
   }).join('');
   return `<div class="tt-draw-bracket" style="display:flex; gap:28px; margin-top:24px; overflow-x:auto; padding-bottom:6px;">${cols}</div>`;
 }
-function pickPlayer(key, qual) {
+// a click on a bracket name: the player box beside the row (main draw); in compare mode it picks the second player;
+// a qualifying name opens his profile (the design)
+function pickName(key, qual, e) {
   if (!key) return;
-  if (qual) { if (hasProfile(key)) openProfile(key); return; }   // the design: a qualifying row opens his profile
+  if (qual) { if (hasProfile(key)) openProfile(key); return; }
   if (S.outCmp) return pickOut(key);
-  if (S.sel && S.cmp) { if (key !== S.sel) Object.assign(S, { b: key, cmpQ: '', shut: null, opp: null }); }
-  else Object.assign(S, { sel: key, b: null, cmp: false, shut: null, opp: null });
+  if (S.sel && S.cmp) { if (key !== S.sel) Object.assign(S, { b: key, cmpQ: '', shut: null, opp: null }); return repaint(); }
+  if (S.pop && S.pop.key === key) { S.pop = null; return repaint(); }
+  S.pop = popPlace(key, e && e.currentTarget);
   repaint();
+}
+// the box ALWAYS opens to the RIGHT of the row (founder 2026-11-20); only when 500px do not fit inside the card it is
+// pinned to the card's right edge, 12px under the row (above it near the bottom of the screen), no caret. Fixed layer.
+function popPlace(key, el) {
+  const PW = 500, BH = 560;
+  const vh = typeof window !== 'undefined' && window.innerHeight ? window.innerHeight : 800;
+  if (!el || !el.getBoundingClientRect || !S.el || !S.el.getBoundingClientRect) return { key, x: 24, y: 80, bot: null, side: 'n', ct: 31 };
+  const r = el.getBoundingClientRect(), rr = S.el.getBoundingClientRect();
+  let x = r.right + 16, y = r.top - 24, side = 'r', bot = null;
+  if (x + PW > rr.right - 8) { x = Math.max(rr.left + 8, rr.right - PW - 8); y = r.bottom + 12; side = 'n'; }
+  if (side === 'r') y = Math.max(8, Math.min(y, vh - BH - 8));
+  else if (y + BH > vh - 8) { bot = Math.max(8, vh - r.top + 12); if (vh - bot - BH < 8) { bot = null; y = Math.max(8, vh - BH - 8); } }
+  const mid = r.top + r.height / 2;
+  return { key, x, y, bot, side, ct: Math.max(16, Math.min(BH - 60, mid - y - 5)) };
+}
+function popHtml(ev, M, F, finished) {
+  const p = S.pop, s = F.byKey.get(p.key); if (!s) return '';
+  const bx = boxModel(M, F, ev.entry, p.key);
+  const isCh = F.champ === p.key, out = F.out[p.key];
+  const chipT = isCh ? 'Champion' : out != null ? 'Out in the ' + longOf(M.rounds[out].name).toLowerCase() : finished ? 'Finished' : 'Still in';
+  const chipC = isCh ? C.green : out != null ? C.soft : C.white;
+  const nm = nameOf(s), prof = hasProfile(p.key) ? on(() => openProfile(p.key)) : '';
+  const close = on(() => { S.pop = null; repaint(); });
+  const sub = bx.me.m ? `${bx.me.m} ${bx.me.m === 1 ? 'match' : 'matches'} played · against the ${bx.fieldN} players with a match played` : 'No match played in this draw yet';
+  const grps = []; bx.rows.forEach(r => { if (grps.indexOf(r.grp) < 0) grps.push(r.grp); });
+  const GRID = 'grid-template-columns:minmax(0,1.35fr) 46px minmax(96px,1fr) 44px 46px; gap:12px;';
+  const body = bx.me.m ? `<div style="padding:14px 18px 12px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; padding-bottom:12px;">
+        <span style="display:inline-flex; align-items:center; gap:8px; height:28px; padding:0 11px; border-radius:8px; background:${C.lifted}; box-shadow:inset 0 0 0 1px ${W(14)}; font-size:12.5px; font-weight:600; color:${C.soft}; white-space:nowrap;">${bx.cmp ? `<span style="width:6px; height:6px; border-radius:50%; background:${bx.above * 2 >= bx.cmp ? C.green : C.red};"></span>` : ''}<span>Above the field on <span style="${MONO} font-weight:700; color:${C.white};">${bx.cmp ? bx.above + ' of ' + bx.cmp : DASH}</span> measures</span></span>
+        <span style="display:flex; align-items:center; gap:12px; font-size:11.5px; color:${C.muted};"><span style="display:flex; align-items:center; gap:6px;"><span style="width:12px; height:4px; border-radius:2px; background:${C.red};"></span>Below</span><span style="display:flex; align-items:center; gap:6px;"><span style="width:1px; height:10px; background:${W(45)};"></span>Field</span><span style="display:flex; align-items:center; gap:6px;"><span style="width:12px; height:4px; border-radius:2px; background:${C.green};"></span>Above</span></span></div>`
+    + grps.map((g, i) => `<div style="display:grid; ${GRID} align-items:baseline; margin-top:${i ? 8 : 0}px; padding:14px 0 6px; border-top:1px solid ${W(10)}; ${LBL} color:${i ? 'transparent' : C.muted};"><span style="font-size:14px; font-weight:700; color:${C.white};">${esc(g)}</span><span style="text-align:right;">Him</span><span style="text-align:center;">Gap</span><span style="text-align:right;">Field</span><span style="text-align:right;">Rank</span></div>`
+      + bx.rows.filter(r => r.grp === g).map(r => `<div style="display:grid; ${GRID} align-items:center; height:40px; border-top:1px solid ${W(5)};">
+          <span style="font-size:13px; font-weight:600; color:${C.soft}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(r.l)}</span>
+          <span title="${esc(r.why)}" style="text-align:right; ${MONO} font-size:14px; font-weight:700; color:${r.v === DASH ? C.muted : C.white};">${esc(r.v)}</span>
+          <div style="position:relative; height:22px;"><div style="position:absolute; left:0; right:0; top:9px; height:4px; border-radius:2px; background:${W(7)};"></div><div style="position:absolute; left:${r.barL}; width:${r.barW}; top:9px; height:4px; border-radius:2px; background:${r.gc};"></div>${r.g === DASH ? '' : `<span style="position:absolute; left:50%; top:1px; transform:translateX(-50%); display:inline-flex; align-items:center; height:20px; padding:0 6px; border-radius:7px; background:${C.lifted}; box-shadow:inset 0 0 0 1px ${W(14)}; ${MONO} font-size:11px; font-weight:700; color:${r.gc}; white-space:nowrap;">${esc(r.g)}</span>`}</div>
+          <span title="${esc(r.fTitle)}" style="text-align:right; ${MONO} font-size:12.5px; color:${C.muted};">${esc(r.f)}</span>
+          <span${r.of ? ` title="${esc(r.of)}"` : ''} style="text-align:right; ${MONO} font-size:12.5px; font-weight:${r.rankW}; color:${r.rankC};">${esc(r.rank)}</span></div>`).join('')).join('')
+    + `</div>` : '';
+  const caret = p.side === 'r' ? `<span style="position:absolute; left:-6px; top:${p.ct}px; width:10px; height:10px; transform:rotate(45deg); background:${C.card}; border-left:1px solid ${W(12)}; border-bottom:1px solid ${W(12)};"></span>` : '';
+  return `<div onclick="${close}" style="position:fixed; inset:0; z-index:19;"></div>
+    <div class="tt-draw-pop" data-tt="pop" style="position:fixed; z-index:20; left:${p.x}px; ${p.bot != null ? `bottom:${p.bot}px;` : `top:${p.y}px;`} width:500px; max-width:calc(100vw - 16px); max-height:calc(100vh - 16px); overflow-y:auto; box-sizing:border-box; background:${C.card}; border:1px solid ${W(12)}; border-radius:14px; box-shadow:${C.shOverlay};">${caret}
+      <div style="display:flex; align-items:center; gap:12px; padding:16px 16px 14px 18px; border-bottom:1px solid ${W(6)};">
+        <span${prof ? ` onclick="${prof}" title="Open his profile"` : ''} style="cursor:${prof ? 'pointer' : 'default'}; flex:none;">${avatar(p.key, nm, 40, W(14), 12, s.ioc || '')}</span>
+        <div style="display:flex; flex-direction:column; gap:5px; min-width:0; margin-right:auto;">
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;"><span class="${prof ? 'tt-draw-plink' : ''}"${prof ? ` onclick="${prof}" title="Open his profile"` : ''} style="cursor:${prof ? 'pointer' : 'default'}; display:inline-flex; align-items:baseline; gap:6px; font-size:17px; font-weight:800; color:${C.white};">${esc(nm)}${prof ? `<span style="font-size:14px; color:${C.blue};">›</span>` : ''}</span><span style="${MONO} font-size:11px; color:${C.muted};">${esc(tagOf(s))}</span>${chip(chipT, chipC)}</div>
+          <span style="font-size:12px; color:${C.muted};">${esc(sub)}</span></div>
+        <span class="tt-draw-hov" onclick="${on(() => { Object.assign(S, { sel: p.key, b: null, cmp: false, shut: null, opp: null, pop: null }); repaint(); })}" title="Follow his route through the draw" style="cursor:pointer; flex:none; display:inline-flex; align-items:center; gap:7px; height:30px; box-sizing:border-box; padding:0 11px; border-radius:8px; ${LIFT} font-size:12px; font-weight:700; color:${C.white}; white-space:nowrap;">Route<span style="color:${C.blue};">›</span></span>
+        ${closeBtn(close, 30)}</div>${body}</div>`;
 }
 function pickOut(key) {
   if (key === S.outA) return;
@@ -578,139 +782,127 @@ function pickOut(key) {
   repaint();
 }
 
-// ── Compare two routes · pick strip ────────────────────────────────────────────────────────────────────────────────
+// ── Compare two routes · picker panel under the head ───────────────────────────────────────────────────────────────
 const lc = s => String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 function pickStrip(ev, F) {
   const q = lc(S.outQ.trim());
   // suggestions: name matches while typing. With nothing typed the design lists the most likely winners — a list
-  // ordered by chances (founder ruling 3), so no suggestion row is drawn until a name is typed.
+  // ordered by chances (founder ruling 3), so no suggestion is drawn until a name is typed.
   const hits = q ? F.slots.filter(s => lc(nameOf(s)).indexOf(q) >= 0 || lc(s.name).indexOf(q) >= 0).map(s => String(s.playerKey)).filter(k => k !== S.outA && k !== S.outB).slice(0, 5) : [];
   const slot = (k, i) => {
     const f = !!k, act = !f && (i === 0 || !!S.outA), s = f ? F.byKey.get(k) : null;
-    const avBd = f ? (i ? W(40) : B(60)) : act ? B(70) : W(25), avC = act ? C.blueFav : C.muted;
-    const av = f ? avatar(k, nameOf(s), 28, avBd, 10.5, 1.5) : `<span style="flex:none; width:28px; height:28px; box-sizing:border-box; border-radius:50%; background:transparent; border:1.5px dashed ${avBd}; display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700; color:${avC};">${i + 1}</span>`;
+    const av = f ? avatar(k, nameOf(s), 28, i ? W(40) : B(60), 10.5) : `<span style="flex:none; width:28px; height:28px; box-sizing:border-box; border-radius:50%; border:1.5px dashed ${act ? W(40) : W(25)}; display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700; color:${act ? C.text : C.muted};">${i + 1}</span>`;
     const inner = f ? `<span style="flex:1; min-width:0; font-size:14px; font-weight:700; color:${C.white}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(nameOf(s))}</span><span class="tt-draw-chg" onclick="${on(() => { if (i) Object.assign(S, { outB: null, outQ: '' }); else Object.assign(S, { outA: S.outB, outB: null, outQ: '' }); S._focusNext = true; repaint(); })}" style="flex:none; cursor:pointer; font-size:12px; font-weight:700;">Change</span>`
       : act ? `<input data-ttin="outq" value="${esc(S.outQ)}" oninput="${on(e => { S.outQ = e.target.value; repaint(); })}" onkeydown="${on(e => { if (e.key === 'Enter' && hits[0]) pickOut(hits[0]); })}" placeholder="Type a name" style="flex:1; min-width:0; background:transparent; border:0; outline:none; color:${C.text}; font-family:inherit; font-size:14px;">`
       : `<span style="flex:1; font-size:14px; color:${C.muted};">Then the second player</span>`;
-    return `<div style="grid-column:${i ? 3 : 1}; grid-row:1; display:flex; flex-direction:column; gap:7px; min-width:0;"><span style="${CAPS}">${i ? 'Player two' : 'Player one'}</span><div style="display:flex; align-items:center; gap:10px; height:44px; box-sizing:border-box; padding:0 12px; border-radius:10px; background:${C.inset}; border:1px solid ${act ? B(55) : W(10)};">${av}${inner}</div></div>`;
+    return `<div style="grid-column:${i ? 3 : 1}; grid-row:1; display:flex; flex-direction:column; gap:7px; min-width:0;"><span style="${LBL}">${i ? 'Player two' : 'Player one'}</span><div style="display:flex; align-items:center; gap:10px; height:44px; box-sizing:border-box; padding:0 12px; border-radius:10px; background:${C.inset}; border:1px solid ${act ? W(22) : W(10)};">${av}${inner}</div></div>`;
   };
   const step = S.outA ? 'Step 2 of 2 · pick the second player, the comparison opens by itself' : 'Step 1 of 2 · type a name, tap a suggestion or click a player in the draw';
-  const sug = q ? `<div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;"><span style="${CAPS} margin-right:4px;">Matches</span>${hits.map(k => `<span class="tt-draw-sug" onclick="${on(() => pickOut(k))}" style="cursor:pointer; display:inline-flex; align-items:center; height:30px; box-sizing:border-box; padding:0 11px; border-radius:8px; border:1px solid ${W(12)}; font-size:12.5px; font-weight:600; color:${C.text};">${esc(nameOf(F.byKey.get(k)))}</span>`).join('')}<span style="font-size:12.5px; color:${C.muted};">${hits.length ? '' : 'Nobody by that name in this draw'}</span></div>` : '';
-  return `<div style="margin-top:14px; background:${C.card}; border:1px solid ${B(38)}; border-radius:14px; padding:16px 18px 18px; display:flex; flex-direction:column; gap:14px;">
-    <div style="display:flex; align-items:baseline; justify-content:space-between; gap:6px 16px; flex-wrap:wrap;"><span style="font-size:14px; font-weight:800;">Compare two routes</span><span style="font-size:12.5px; color:${C.blueFav}; font-weight:600;">${step}</span></div>
+  const sug = q ? `<div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;"><span style="${LBL} margin-right:4px;">Matches</span>${hits.map(k => `<span class="tt-draw-sug" onclick="${on(() => pickOut(k))}" style="cursor:pointer; display:inline-flex; align-items:center; height:30px; box-sizing:border-box; padding:0 11px; border-radius:8px; border:1px solid ${W(12)}; font-size:12.5px; font-weight:600; color:${C.text};">${esc(nameOf(F.byKey.get(k)))}</span>`).join('')}<span style="font-size:12.5px; color:${C.muted};">${hits.length ? '' : 'Nobody by that name in this draw'}</span></div>` : '';
+  return `<div style="margin-top:14px; background:${C.inset}; border:1px solid ${W(12)}; border-radius:14px; padding:16px 18px 18px; display:flex; flex-direction:column; gap:14px;">
+    <div style="display:flex; align-items:baseline; justify-content:space-between; gap:6px 16px; flex-wrap:wrap;"><span style="font-size:18px; font-weight:800; color:${C.white};">Compare two routes</span><span style="font-size:12.5px; color:${C.blue}; font-weight:700;">${step}</span></div>
     <div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:end; gap:12px;">${slot(S.outA, 0)}${slot(S.outB, 1)}<span style="grid-column:2; grid-row:1; height:44px; display:flex; align-items:center; font-size:13px; color:${C.muted};">v</span></div>${sug}</div>`;
 }
 
-// ── player route card / compare card / collapsed bar / opponent report ───────────────────────────────────────────
+// ── single-player route panel / compare table / collapsed bar / opponents box ────────────────────────────────────────
 function selHtml(ev, M, F) {
   const A = pathOf(M, F, S.sel); if (!A) return '';
   const me = A.me, cmpMode = !!S.cmp, picking = cmpMode && !S.b;
   const Bp = S.b ? pathOf(M, F, S.b) : null;
   if (Bp && S.shut === S.sel + '|' + S.b) {
-    return `<div style="display:flex; align-items:center; justify-content:space-between; gap:12px 20px; flex-wrap:wrap; background:${C.inset}; border:1px solid ${B(35)}; border-radius:12px; padding:14px 18px;">
+    return `<div style="display:flex; align-items:center; justify-content:space-between; gap:12px 20px; flex-wrap:wrap; background:${C.card}; border:1px solid ${W(12)}; border-radius:12px; padding:14px 18px;">
       <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; min-width:0;"><span style="flex:none; width:9px; height:9px; border-radius:50%; background:${C.blue};"></span><span style="font-size:15px; font-weight:800;">${esc(nameOf(me))}</span><span style="font-size:13px; color:${C.muted};">v</span><span style="flex:none; width:9px; height:9px; border-radius:50%; background:${C.text};"></span><span style="font-size:15px; font-weight:800;">${esc(nameOf(Bp.me))}</span><span style="font-size:12.5px; color:${C.muted};">Both players are still selected</span></div>
-      <div style="display:flex; align-items:center; gap:8px;"><span class="tt-draw-bbtn" onclick="${on(() => { S.shut = null; repaint(); })}" style="cursor:pointer; display:inline-flex; align-items:center; height:32px; box-sizing:border-box; padding:0 13px; border-radius:8px; font-size:12.5px; font-weight:700; white-space:nowrap; color:${C.white}; background:${C.blue};">Open the comparison ›</span><span class="tt-draw-hi4" onclick="${on(() => { Object.assign(S, { sel: null, b: null, cmp: false, shut: null, opp: null }); repaint(); })}" style="cursor:pointer; display:inline-flex; align-items:center; height:32px; box-sizing:border-box; padding:0 13px; border-radius:8px; font-size:12.5px; font-weight:700; white-space:nowrap; color:${C.text}; border:1px solid ${W(16)};">Clear both</span></div></div>`;
+      <div style="display:flex; align-items:center; gap:8px;"><span class="tt-draw-hov" onclick="${on(() => { S.shut = null; repaint(); })}" style="cursor:pointer; display:inline-flex; align-items:center; height:32px; box-sizing:border-box; padding:0 13px; border-radius:8px; font-size:12.5px; font-weight:700; white-space:nowrap; color:${C.white}; ${LIFT}">Open the comparison <span style="color:${C.blue}; margin-left:7px;">›</span></span><span class="tt-draw-hov" onclick="${on(() => { Object.assign(S, { sel: null, b: null, cmp: false, shut: null, opp: null }); repaint(); })}" style="cursor:pointer; display:inline-flex; align-items:center; height:32px; box-sizing:border-box; padding:0 13px; border-radius:8px; font-size:12.5px; font-weight:700; white-space:nowrap; color:${C.text}; border:1px solid ${W(16)};">Clear both</span></div></div>`;
   }
-  const nm = p => hasProfile(p.key)
-    ? `<span class="tt-draw-plink" onclick="${on(() => openProfile(p.key))}" title="Open his profile" style="font-size:19px; cursor:pointer; font-weight:800; letter-spacing:-0.01em;">${esc(nameOf(p.me))}</span>`
-    : `<span style="font-size:19px; font-weight:800; letter-spacing:-0.01em; color:${C.text};">${esc(nameOf(p.me))}</span>`;
+  const nm = (p, size) => hasProfile(p.key)
+    ? `<span class="tt-draw-plink" onclick="${on(() => openProfile(p.key))}" title="Open his profile" style="font-size:${size}px; cursor:pointer; font-weight:800; letter-spacing:-0.01em;">${esc(nameOf(p.me))}</span>`
+    : `<span style="font-size:${size}px; font-weight:800; letter-spacing:-0.01em; color:${C.text};">${esc(nameOf(p.me))}</span>`;
   // where the two could meet (positions only: DrawView.meetRound)
   let meet = null;
   if (Bp) {
     const pa = A.me.pos, r = DV().meetRound(pa, Bp.me.pos), cell = M.rounds[r] && M.rounds[r].cells[(pa - 1) >> (r + 1)];
     const inA = !!cell && cell.sides.some(s => keyOf(s) === S.sel), inB = !!cell && cell.sides.some(s => keyOf(s) === S.b);
     const dead = (F.out[S.sel] != null && F.out[S.sel] < r) || (F.out[S.b] != null && F.out[S.b] < r);
-    const both = inA && inB, metDone = !!(both && cell && cell.match), open = !dead && !metDone;
+    const both = inA && inB, metDone = !!(both && cell && cell.match);
     const rdL = longOf(M.rounds[r].name).toLowerCase();
     const line = dead ? 'Cannot meet in this draw any more' : (both ? (metDone ? 'Met in the ' : 'Meet in the ') : 'Could meet in the ') + rdL;
-    meet = { r, dead, both, metDone, open, line, rdL };
+    meet = { r, dead, both, metDone, line, rdL };
   }
   const lineTxt = picking ? 'Search the second player below, or click him in the draw' : meet ? meet.line : A.champion ? 'Champion' : A.outAt >= 0 ? 'Out in the ' + A.cells[A.outAt].rd.toLowerCase() : A.line;
   const qFig = A.qWon ? 'Won' : DASH, tFig = A.champion ? 'Won' : DASH;
-  let h = `<div style="background:${C.inset}; border:1px solid ${B(35)}; border-radius:14px; padding:26px 28px 28px; box-sizing:border-box;">
+  const figBlock = (k, v, t) => `<div style="display:flex; flex-direction:column; gap:7px; align-items:flex-end;"><span style="${LBL}">${k}</span><span style="display:flex; align-items:baseline; gap:10px;"><span title="Fair odds: no source yet" style="font-size:12px; color:${C.muted}; white-space:nowrap;"></span><span${v === DASH ? ` title="${t}"` : ''} style="${MONO} font-size:26px; font-weight:700; line-height:1; color:${C.white};">${v}</span></span></div>`;
+  let h = `<div style="background:${C.card}; border:1px solid ${W(12)}; border-radius:16px; padding:24px; box-sizing:border-box;">
     <div style="display:flex; align-items:center; justify-content:space-between; gap:16px 28px; flex-wrap:wrap;">
-      <div style="display:flex; flex-direction:column; gap:6px; min-width:0;"><div style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;"><span style="flex:none; align-self:center; width:9px; height:9px; border-radius:50%; background:${C.blue};"></span>${nm(A)}`
-    + (Bp ? `<span style="font-size:14px; color:${C.muted};">v</span><span style="flex:none; align-self:center; width:9px; height:9px; border-radius:50%; background:${C.text};"></span>${nm(Bp)}` : '')
-    + `</div><span style="font-size:13px; font-weight:${picking ? 700 : 400}; color:${picking ? C.blue : C.soft};">${esc(lineTxt)}</span></div>
+      <div style="display:flex; align-items:center; gap:14px; min-width:0;">`
+    + (!Bp ? `<span${hasProfile(A.key) ? ` onclick="${on(() => openProfile(A.key))}" title="Open his profile"` : ''} style="cursor:pointer; flex:none;">${avatar(A.key, nameOf(me), 44, W(14), 14, me.ioc || '')}</span>` : '')
+    + `<div style="display:flex; flex-direction:column; gap:6px; min-width:0;"><div style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;">`
+    + (Bp ? `<span style="flex:none; align-self:center; width:9px; height:9px; border-radius:50%; background:${C.blue};"></span>` : '') + nm(A, 18)
+    + (Bp ? `<span style="font-size:14px; color:${C.muted};">v</span><span style="flex:none; align-self:center; width:9px; height:9px; border-radius:50%; background:${C.text};"></span>${nm(Bp, 17)}` : '')
+    + `</div><span style="font-size:13px; font-weight:${picking ? 700 : 400}; color:${picking ? C.blue : C.soft};">${esc(lineTxt)}</span></div></div>
       <div style="display:flex; align-items:center; justify-content:flex-end; gap:14px 28px; flex-wrap:wrap; margin-left:auto;">`
-    + (!cmpMode ? [['Win his quarter', qFig, 'Chance to reach the semi-finals: no source yet'], ['Title chance', tFig, 'Chance to win the title: no source yet']].map(([k, v, t]) => `<div style="display:flex; flex-direction:column; gap:5px; align-items:flex-end;"><span style="${CAPS}">${k}</span><span style="display:flex; align-items:baseline; gap:10px;"><span style="font-size:12px; color:${C.muted};"></span><span${v === DASH ? ` title="${t}"` : ''} style="${MONO} font-size:26px; font-weight:700; line-height:1; color:${C.white};">${v}</span></span></div>`).join('') : '')
+    + (!cmpMode ? figBlock('Win his quarter', qFig, 'Chance to reach the semi-finals: no source yet') + figBlock('Title chance', tFig, 'Chance to win the title: no source yet') : '')
     + `<div style="display:flex; align-items:center; gap:8px;">`
-    + (Bp ? `<span class="tt-draw-bbtn" onclick="${on(() => goH2H(S.sel, S.b, A.me.ioc, Bp.me.ioc))}" style="cursor:pointer; display:inline-flex; align-items:center; height:32px; box-sizing:border-box; padding:0 13px; border-radius:8px; font-size:12.5px; font-weight:700; white-space:nowrap; color:${C.white}; background:${C.blue};">Open head to head ›</span>` : '')
-    + `<span class="tt-draw-hi4" onclick="${on(() => { if (cmpMode) Object.assign(S, { cmp: false, b: null, cmpQ: '', opp: null }); else { Object.assign(S, { cmp: true, b: null, cmpQ: '' }); S._focusNext = true; } repaint(); })}" style="cursor:pointer; display:inline-flex; align-items:center; height:32px; box-sizing:border-box; padding:0 13px; border-radius:8px; font-size:12.5px; font-weight:700; white-space:nowrap; color:${cmpMode ? C.text : C.white}; background:${cmpMode ? 'transparent' : C.blue}; border:1px solid ${cmpMode ? W(16) : C.blue};">${cmpMode ? 'Stop comparing' : 'Compare with another player'}</span>`
+    + (Bp ? `<span class="tt-draw-hov" onclick="${on(() => goH2H(S.sel, S.b, A.me.ioc, Bp.me.ioc))}" style="cursor:pointer; display:inline-flex; align-items:center; height:32px; box-sizing:border-box; padding:0 13px; border-radius:8px; font-size:12.5px; font-weight:700; white-space:nowrap; color:${C.white}; ${LIFT}">Open head to head <span style="color:${C.blue}; margin-left:7px;">›</span></span>` : '')
+    + `<span class="tt-draw-hov" onclick="${on(() => { if (cmpMode) Object.assign(S, { cmp: false, b: null, cmpQ: '', opp: null }); else { Object.assign(S, { cmp: true, b: null, cmpQ: '' }); S._focusNext = true; } repaint(); })}" style="cursor:pointer; display:inline-flex; align-items:center; height:34px; box-sizing:border-box; padding:0 14px; border-radius:9px; font-size:12.5px; font-weight:700; white-space:nowrap; color:${cmpMode ? C.text : C.white}; background:${cmpMode ? 'transparent' : C.lifted}; border:1px solid ${cmpMode ? W(16) : W(14)};">${cmpMode ? 'Stop comparing' : 'Compare with another player'}</span>`
     + closeBtn(on(() => { if (Bp) Object.assign(S, { shut: S.sel + '|' + S.b, opp: null }); else Object.assign(S, { sel: null, b: null, cmp: false }); repaint(); }))
     + `</div></div></div>`;
   if (cmpMode) {
     const q = lc(S.cmpQ.trim());
     const hits = q ? F.slots.filter(s => String(s.playerKey) !== S.sel && (lc(nameOf(s)).indexOf(q) >= 0 || lc(s.name).indexOf(q) >= 0)).slice(0, 6) : [];
     h += `<div style="display:flex; align-items:center; gap:10px 14px; flex-wrap:wrap; margin-top:18px;">
-      <label style="display:flex; align-items:center; gap:10px; box-sizing:border-box; width:320px; max-width:100%; height:40px; padding:0 14px; background:${C.card}; border:1px solid ${B(38)}; border-radius:10px;">${SEARCH_SVG}<input data-ttin="cmpq" value="${esc(S.cmpQ)}" oninput="${on(e => { S.cmpQ = e.target.value; repaint(); })}" placeholder="${Bp ? 'Search another player to compare' : 'Search the second player'}" style="flex:1; min-width:0; background:transparent; border:0; outline:none; color:${C.text}; font-family:inherit; font-size:13.5px;"></label>`
+      <label style="display:flex; align-items:center; gap:10px; box-sizing:border-box; width:320px; max-width:100%; height:40px; padding:0 14px; background:${C.inset}; border:1px solid ${W(14)}; border-radius:10px;">${SEARCH_SVG}<input data-ttin="cmpq" value="${esc(S.cmpQ)}" oninput="${on(e => { S.cmpQ = e.target.value; repaint(); })}" placeholder="${Bp ? 'Search another player to compare' : 'Search the second player'}" style="flex:1; min-width:0; background:transparent; border:0; outline:none; color:${C.text}; font-family:inherit; font-size:13.5px;"></label>`
       + hits.map(s => `<span class="tt-draw-sug" onclick="${on(() => { Object.assign(S, { b: String(s.playerKey), cmpQ: '', shut: null, opp: null }); repaint(); })}" style="cursor:pointer; display:inline-flex; align-items:baseline; gap:7px; height:34px; line-height:34px; box-sizing:border-box; padding:0 13px; border-radius:8px; border:1px solid ${W(12)}; font-size:13px; font-weight:600; color:${C.text}; white-space:nowrap;"><span>${esc(nameOf(s))}</span><span style="${MONO} font-size:10.5px; color:${C.muted};">${esc(tagOf(s) || s.ioc || '')}</span></span>`).join('')
       + `<span style="font-size:12.5px; color:${C.muted};">${q && !hits.length ? 'Nobody by that name in this draw' : ''}</span></div>`;
   }
-  h += Bp ? compareBody(ev, M, F, A, Bp, meet) : singleRail(A);
+  h += Bp ? compareTable(M, A, Bp, meet) : singleRail(A);
+  if (S.opp && Bp) h += oppReport(ev, M, F, S.opp.who === 'b' ? Bp : A, S.opp.r);
   return h + `</div>`;
 }
 function singleRail(A) {
   const n = A.cells.length;
-  return `<div style="display:grid; grid-template-columns:repeat(${n},minmax(0,1fr)); margin-top:20px;">${A.cells.map(c => {
+  return `<div style="display:grid; grid-template-columns:repeat(${n},minmax(0,1fr)); margin-top:22px; padding-top:20px; border-top:1px solid ${W(6)};">${A.cells.map(c => {
     const dot = c.state === 'won' ? C.white : c.state === 'bye' ? C.soft : c.next ? C.blue : C.inset;
     const dotBd = c.state === 'won' ? C.white : c.state === 'bye' ? C.soft : c.state === 'lost' ? C.muted : c.next ? C.blue : W(25);
     const link = c.state !== 'gone' && c.state !== 'bye' && c.oppKey;
-    const opp = link ? `<span class="tt-draw-plink" onclick="${on(() => goH2H(A.key, c.oppKey, A.me.ioc, ''))}" title="Open head to head" style="cursor:pointer; font-size:13.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(c.opp)}</span>`
-      : `<span style="font-size:13.5px; font-weight:600; color:${C.text}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(c.opp)}</span>`;
-    const meta = c.state === 'open' ? `<span title="Likely opponent and opening price: no source yet" style="${MONO} font-size:10.5px; line-height:1.5; color:${C.muted};">${c.known ? '' : DASH + ' likely · '}opens ${DASH}</span>` : '';
-    const bar = c.state === 'open' ? `<div style="height:4px; border-radius:2px; background:${W(5)};"></div>` : '';
-    return `<div style="display:flex; flex-direction:column; gap:7px; min-width:0; padding-right:12px; opacity:${c.op};">
-      <div style="position:relative; height:11px; margin-bottom:5px;"><span style="position:absolute; left:0; right:-12px; top:5px; border-top:1px solid ${W(12)};"></span><span style="position:absolute; left:0; top:0; width:11px; height:11px; box-sizing:border-box; border-radius:50%; background:${dot}; border:1.5px solid ${dotBd}; box-shadow:0 0 0 4px ${C.inset};"></span></div>
-      <span style="${CAPS} color:${c.next ? C.blue : C.muted};">${esc(c.rd)}</span>${opp}${meta}
-      <span${c.state === 'open' ? ' title="Chance: no source yet"' : ''} style="${MONO} font-size:19px; font-weight:700; line-height:1.15; color:${c.figColor};">${esc(c.fig)}</span>${bar}
-      <span style="font-size:11.5px; color:${C.muted};">${esc(c.sub)}</span></div>`;
+    const opp = link ? `<span class="tt-draw-plink" onclick="${on(() => goH2H(A.key, c.oppKey, A.me.ioc, ''))}" title="${esc(c.opp)} · open head to head" style="cursor:pointer; font-size:13.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(c.opp)}</span>`
+      : `<span title="${esc(c.opp)}" style="font-size:13.5px; font-weight:600; color:${C.text}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(c.opp)}</span>`;
+    const meta = c.state === 'open' ? `<span title="Likely opponent and opening price: no source yet" style="${MONO} font-size:11px; line-height:1.5; color:${C.muted};">${c.known ? '' : DASH + ' likely · '}opens ${DASH}</span>` : '';
+    const bar = c.state === 'open' ? `<div title="Chance: no source yet" style="height:4px; border-radius:2px; background:${W(7)};"></div>` : '';
+    return `<div style="display:flex; flex-direction:column; gap:8px; min-width:0; padding-right:14px; opacity:${c.op};">
+      <div style="position:relative; height:11px; margin-bottom:5px;"><span style="position:absolute; left:0; right:-14px; top:5px; border-top:1px solid ${W(10)};"></span><span style="position:absolute; left:0; top:0; width:11px; height:11px; box-sizing:border-box; border-radius:50%; background:${dot}; border:1.5px solid ${dotBd}; box-shadow:0 0 0 4px ${C.card};"></span></div>
+      <span style="${LBL} color:${c.next ? C.white : C.muted};">${esc(c.rd)}</span>${opp}${meta}
+      <span${c.state === 'open' ? ' title="Chance: no source yet"' : ''} style="${MONO} font-size:20px; font-weight:700; line-height:1.15; margin-top:2px; color:${c.figColor};">${esc(c.fig)}</span>${bar}
+      <span style="font-size:12px; color:${C.muted};">${esc(c.sub)}</span></div>`;
   }).join('')}</div>`;
 }
-function compareBody(ev, M, F, A, Bp, meet) {
-  let h = `<div style="margin-top:24px; padding-top:24px; border-top:1px solid ${W(8)};">`;
-  // the design's verdict compares the two hardest steps (chances): omitted; what stands is where they meet
-  h += `<div style="font-size:15px; font-weight:600; color:${C.text}; text-wrap:pretty;">${esc(meet.dead ? 'They cannot meet in this draw any more.' : meet.line + '.')}</div>`;
-  const side = (P, i) => `<div style="grid-column:${i ? 3 : 1}; grid-row:1; display:flex; flex-direction:${i ? 'row-reverse' : 'row'}; align-items:center; gap:14px; min-width:0;">${avatar(P.key, nameOf(P.me), 56, i ? W(30) : B(60), 16, 1.5)}<div style="display:flex; flex-direction:column; align-items:${i ? 'flex-end' : 'flex-start'}; gap:6px; min-width:0;"><div style="display:flex; flex-direction:${i ? 'row-reverse' : 'row'}; align-items:center; flex-wrap:wrap; gap:4px 8px;"><span style="font-size:16px; font-weight:500; color:${C.soft};">${esc(nameOf(P.me))}</span></div><span title="Chance to win this match: no source yet" style="${MONO} font-size:34px; font-weight:700; line-height:1; color:${C.muted};">${DASH}</span></div></div>`;
-  const k = meet.dead ? '' : meet.both ? (meet.metDone ? 'Met in' : 'Meet in') : 'Could meet in';
-  h += `<div style="background:${C.card}; border:1px solid ${W(7)}; border-radius:12px; padding:26px 28px 24px; display:flex; flex-direction:column; gap:22px; min-width:0; margin-top:18px;">
-    <div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:16px;">${side(A, 0)}${side(Bp, 1)}
-      <div style="grid-column:2; grid-row:1; display:flex; flex-direction:column; align-items:center; gap:5px; padding:0 8px; text-align:center;"><span style="${CAPS} white-space:nowrap;">${k}</span><span style="font-size:15px; font-weight:800; white-space:nowrap;">${meet.dead ? 'Cannot meet' : 'The ' + esc(meet.rdL)}</span><span title="Chance both reach this round: no source yet" style="font-size:12px; color:${C.muted}; white-space:nowrap;">${meet.open && !meet.both ? DASH + ' both get there' : ''}</span></div></div>`;
-  if (meet.open) {
-    h += `<div><div style="position:relative; height:18px;"><span style="position:absolute; left:0; right:0; top:8px; height:2px; border-radius:1px; background:${W(10)};"></span><span style="position:absolute; left:50%; top:0; width:2px; height:18px; margin-left:-1px; border-radius:1px; background:${C.white};"></span></div>
-      <div style="display:grid; grid-template-columns:1fr auto 1fr; margin-top:6px; font-size:11.5px; color:${C.muted};"><span>← ${esc(surname(nameOf(A.me)))}</span><span>50% · even</span><span style="text-align:right;">${esc(surname(nameOf(Bp.me)))} →</span></div></div>
-      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px;">${[A, Bp].map(() => `<div style="display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:6px 12px; padding:14px 16px; border-radius:10px; background:${C.inset}; border:1px solid ${W(6)};"><span style="${CAPS}">Likely opening price</span><span title="No source yet" style="${MONO} font-size:15px; font-weight:600; white-space:pre;">${DASH}</span></div>`).join('')}</div>`;
-  } else h += `<span style="font-size:12.5px; color:${C.muted}; text-align:center;">${meet.metDone && !meet.dead ? 'Already played' : 'No match possible'}</span>`;
-  h += `</div></div>`;
-  if (S.opp) h += oppReport(ev, M, F, S.opp.who === 'b' ? Bp : A, S.opp.r);
-  h += `<div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px 16px; flex-wrap:wrap; margin-top:30px; padding-top:26px; border-top:1px solid ${W(8)};"><span style="font-size:15px; font-weight:700;">Route, round by round</span><span style="font-size:12.5px; color:${C.muted};">Chance to win each match. Click a round for the likely opponents</span></div>`;
-  [A, Bp].forEach((P, pi) => {
-    const sub = P.champion ? 'Champion' : P.outAt >= 0 ? 'Out' : 'Title chance ' + DASH;
-    const n = P.cells.length;
-    h += `<div style="margin-top:${pi ? 12 : 16}px; background:${C.card}; border:1px solid ${W(7)}; border-radius:12px; padding:20px 18px 14px;">
-      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">${avatar(P.key, nameOf(P.me), 40, pi ? W(30) : B(60), 13, 1.5)}${hasProfile(P.key) ? `<span class="tt-draw-plink" onclick="${on(() => openProfile(P.key))}" title="Open his profile" style="cursor:pointer; font-size:15px; font-weight:800;">${esc(nameOf(P.me))}</span>` : `<span style="font-size:15px; font-weight:800; color:${C.text};">${esc(nameOf(P.me))}</span>`}<span style="font-size:12.5px; color:${C.muted};">${esc(sub)}</span></div>
-      <div style="overflow-x:auto; margin-top:18px;"><div style="display:grid; grid-template-columns:repeat(${n},minmax(0,1fr)); min-width:${n * 116}px; padding-top:4px;">${P.cells.map((c, ri) => {
-        const isMeet = ri === meet.r && !meet.dead, canOpen = c.state === 'open' && c.cands.length > 0;
-        const dotBg = c.state === 'won' ? C.white : c.state === 'bye' ? C.soft : c.next ? C.blue : C.card;
-        const dotBd = c.state === 'won' ? C.white : c.state === 'bye' ? C.soft : c.state === 'lost' ? C.muted : c.next ? C.blue : W(25);
-        const pre = c.state === 'open' ? (c.known ? 'plays' : 'could play') : '';
-        const opps = c.state === 'open' ? c.cands.map((o, i) => `<span style="font-size:12.5px; font-weight:${i ? 500 : 600}; line-height:16px; color:${i ? C.soft : C.text};">${esc(nameOf(o))}</span>`).join('')
-          : `<span style="font-size:12.5px; font-weight:600; line-height:16px; color:${C.text};">${esc(c.opp)}</span>`;
-        return `<div style="display:flex; flex-direction:column; min-width:0; opacity:${c.op};">
-          <div style="position:relative; height:12px; margin:0 0 6px 4px;"><span style="position:absolute; left:0; right:0; top:5px; height:2px; background:${ri === n - 1 ? 'transparent' : W(12)};"></span><span style="position:absolute; left:0; top:0; width:12px; height:12px; box-sizing:border-box; border-radius:50%; background:${dotBg}; border:2px solid ${dotBd}; box-shadow:0 0 0 4px ${C.card};"></span></div>
-          <div class="${canOpen ? 'tt-draw-step' : ''}"${canOpen ? ` onclick="${on(() => { S.opp = { who: pi ? 'b' : 'a', r: ri }; repaint(); })}" title="Open the opponent report"` : ''} style="cursor:${canOpen ? 'pointer' : 'default'}; flex:1; display:flex; flex-direction:column; gap:7px; min-width:0; margin-right:8px; padding:10px 10px 12px; border-radius:10px; border:1px solid ${canOpen ? W(14) : 'transparent'}; background:${canOpen ? C.inset : 'transparent'};">
-            <span style="display:flex; justify-content:space-between; align-items:flex-start; gap:4px; min-height:14px; font-size:10px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; white-space:nowrap; color:${isMeet ? C.text : C.muted};"><span>${esc(c.rd)}</span><span style="font-size:15px; font-weight:700; line-height:13px; color:${C.blue}; opacity:${canOpen ? 1 : 0};">›</span></span>
-            <span style="font-size:11px; font-weight:700; color:${C.blue}; min-height:14px;">${isMeet ? (meet.metDone ? 'Met here' : meet.both ? 'Meet here' : 'Could meet here') : ''}</span>
-            <span${c.state === 'open' ? ' title="Chance to win this match: no source yet"' : ''} style="${MONO} font-size:22px; font-weight:700; line-height:1.1; color:${c.figColor};">${esc(c.fig || '')}</span>
-            <span style="font-size:11.5px; line-height:14px; min-height:14px; color:${C.muted}; white-space:pre; overflow:hidden; text-overflow:ellipsis;">${esc(c.score || '')}</span>
-            <span style="font-size:11px; color:${C.muted}; min-height:13px; margin-top:4px;">${pre}</span>${opps}</div></div>`;
-      }).join('')}</div></div></div>`;
-  });
-  return h;
+// Compare two routes = ONE table (design 1a): Player · one column per round · Title. Every round with an opponent opens
+// the opponents box; the meeting round is ringed on both rows. Chances are dashes (ruling 3), so no hardest step is red.
+function compareTable(M, A, Bp, meet) {
+  const n = M.rounds.length, GRID = `grid-template-columns:minmax(128px,1.3fr) repeat(${n},minmax(0,1fr)) 52px; gap:6px;`;
+  const heads = M.rounds.map((R, ri) => `<span title="${esc(longOf(R.name))}" style="text-align:center; color:${ri === meet.r && !meet.dead ? C.white : C.muted};">${esc(R.name)}</span>`).join('');
+  const row = (P, who) => {
+    const prof = hasProfile(P.key) ? on(() => openProfile(P.key)) : '';
+    const cells = P.cells.map((c, ri) => {
+      const isMeet = ri === meet.r && !meet.dead, canOpen = c.cands.length > 0 && c.state !== 'gone' && c.state !== 'bye';
+      const short = c.cands.length ? surname(nameOf(c.cands[0])) + (c.state === 'open' && c.more ? ' +' + c.more : '') : '';
+      const fig = c.state === 'gone' ? '' : c.fig, figC = c.state === 'open' ? C.white : c.figColor;
+      const tip = longOf(c.code) + (canOpen ? (c.cands.length > 1 || (c.state === 'open' && !c.known) ? ' · open the players he might face' : ' · open his opponent') : '') + (c.state === 'open' ? ' · chance: no source yet' : '');
+      return `<span class="${canOpen ? 'tt-draw-hov' : ''}"${canOpen ? ` onclick="${on(() => { S.opp = { who, r: ri }; repaint(); })}"` : ''} title="${esc(tip)}" style="cursor:${canOpen ? 'pointer' : 'default'}; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; height:46px; min-width:0; padding:0 4px; border-radius:8px; background:${isMeet ? C.lifted : 'transparent'}; box-shadow:${isMeet ? `inset 0 0 0 1.5px ${C.white}` : canOpen ? `inset 0 0 0 1px ${W(9)}` : 'none'}; opacity:${c.op};">`
+        + `<span style="display:flex; align-items:baseline; gap:5px;"><span style="${MONO} font-size:13.5px; font-weight:700; color:${figC};">${esc(fig)}</span>${canOpen ? `<span style="font-size:12px; font-weight:700; color:${C.blue};">›</span>` : ''}</span>`
+        + `<span style="max-width:100%; font-size:10.5px; color:${C.muted}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(short)}</span></span>`;
+    }).join('');
+    const tFig = P.champion ? 'Won' : P.outAt >= 0 ? 'Out' : DASH;
+    return `<div style="display:grid; ${GRID} align-items:center; height:60px; border-top:1px solid ${W(6)};">
+      <span${prof ? ` onclick="${prof}" title="Open his profile"` : ''} style="cursor:${prof ? 'pointer' : 'default'}; display:flex; align-items:center; gap:9px; min-width:0;">${avatar(P.key, nameOf(P.me), 26, who === 'a' ? B(60) : W(30), 9.5)}<span class="${prof ? 'tt-draw-plink' : ''}" style="min-width:0; font-size:13.5px; font-weight:700; color:${C.white}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(nameOf(P.me))}</span></span>
+      ${cells}<span${tFig === DASH ? ' title="Title chance: no source yet"' : ''} style="text-align:right; ${MONO} font-size:14px; font-weight:700; color:${C.white};">${tFig}</span></div>`;
+  };
+  return `<div style="overflow-x:auto; margin-top:14px;"><div style="min-width:${Math.max(590, 128 + n * 76 + 52)}px; background:${C.inset}; border:1px solid ${W(6)}; border-radius:12px; padding:4px 16px 6px;">
+    <div style="display:grid; ${GRID} align-items:center; height:34px; ${LBL}"><span>Player</span>${heads}<span style="text-align:right;">Title</span></div>${row(A, 'a')}${row(Bp, 'b')}</div></div>`;
 }
 
-// opponent report: the facts we hold (head to head, his record against the opponent's archetype, the opponent's last
-// five); the win chance, the warning flag, "x% likely" and the opening price are dashes (founder ruling 3)
+// opponents box: the facts we hold (head to head, his record against the opponent's archetype, the opponent's last
+// five); the win chance, the warning, "x% likely" and the opening price are dashes (founder ruling 3). A played round
+// opens the opponent he actually faced.
 const OPP = {};   // "me|opp" → { h2h, arch, archK, last5 } (loaded once per pair)
 const newsName = (key, fb) => { try { return typeof newsPlayerName === 'function' ? newsPlayerName(key, fb) : fb; } catch (e) { return fb; } };
 function oppFacts(meKey, meName, o) {
@@ -756,97 +948,145 @@ function oppReport(ev, M, F, P, r) {
     const ar = A ? (A.n === 0 ? DASH : A.n < 5 ? `${A.w}${NDASH}${A.l}` : `wins ${Math.round(100 * A.w / A.n)}%`) : DASH;
     const arT = A ? `${nm} v ${A.oppLab}: ${A.w}${NDASH}${A.l} in ${A.n} meetings (classified players, walkovers out)` : '';
     const l5 = f.last5 && f.last5.length ? f.last5.join(' ') : DASH;
-    const facts = [['Opening price', DASH, 'No source yet'], ['Head to head', h2h, f.h2h ? `${f.h2h.n} meetings (ATP head-to-head population)` : ''], [f.archK, ar, arT], ['On this court', DASH, 'No source yet'], ['Last five', l5, f.last5 && f.last5.length ? `${nameOf(o)}: last ${f.last5.length} played matches, oldest first` : '']];
+    const fa = [['Opening price', DASH, 'No source yet'], ['Head to head', h2h, f.h2h ? `${f.h2h.n} meetings (ATP head-to-head population)` : ''], [f.archK, ar, arT], ['On this court', DASH, 'No source yet'], ['Last five', l5, f.last5 && f.last5.length ? `${nameOf(o)}: last ${f.last5.length} played matches, oldest first` : '']];
     const ok = String(o.playerKey);
-    return `<div style="background:${C.inset}; border:1.25px solid ${W(6)}; border-radius:12px; padding:18px 18px 10px; display:flex; flex-direction:column; min-width:0;">
-      <div style="display:flex; align-items:center; gap:10px;">${avatar(ok, nameOf(o), 36, W(14), 12, 1)}<div style="display:flex; flex-direction:column; gap:2px; min-width:0;"><span class="tt-draw-plink" onclick="${on(() => goH2H(P.key, ok, P.me.ioc, o.ioc))}" title="Open head to head" style="cursor:pointer; font-size:14.5px; font-weight:700;">${esc(nameOf(o))}</span><span style="font-size:12px; color:${C.muted};">${c.known ? 'Confirmed' : DASH + ' likely'}</span></div></div>
-      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-top:20px;"><span title="Chance to win this match: no source yet" style="${MONO} font-size:30px; font-weight:700; line-height:1; color:${C.white};">${DASH}</span><span title="No warning rule of ours yet" style="font-size:12px; font-weight:700; white-space:nowrap; color:${C.muted};">${DASH}</span></div>
+    const likely = c.state === 'won' || c.state === 'lost' ? 'Played' : c.known ? 'Confirmed' : DASH + ' likely';
+    return `<div style="background:${C.inset}; border:1px solid ${W(6)}; border-radius:12px; padding:16px 18px 8px; display:flex; flex-direction:column; min-width:0;">
+      <div style="display:flex; align-items:center; gap:10px;">${avatar(ok, nameOf(o), 36, W(14), 12)}<div style="display:flex; flex-direction:column; gap:2px; min-width:0;"><span class="tt-draw-plink" onclick="${on(() => goH2H(P.key, ok, P.me.ioc, o.ioc))}" title="Open head to head" style="cursor:pointer; font-size:14.5px; font-weight:700;">${esc(nameOf(o))}</span><span style="font-size:12px; color:${C.muted};">${likely}</span></div></div>
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-top:16px;"><span title="Chance to win this match: no source yet" style="${MONO} font-size:26px; font-weight:700; line-height:1; color:${C.white};">${DASH}</span><span title="No warning rule of ours yet" style="font-size:12px; font-weight:700; white-space:nowrap; color:${C.muted};">${DASH}</span></div>
       <div style="font-size:12px; color:${C.muted}; margin-top:6px;">to win this match</div>
-      <div style="position:relative; height:42px; margin-top:14px;"><span style="position:absolute; left:0; right:0; top:30px; height:6px; border-radius:3px; background:${W(8)};"></span><span style="position:absolute; left:50%; top:26px; width:2px; height:14px; margin-left:-1px; border-radius:1px; background:${W(45)};"></span></div>
-      <div style="display:grid; grid-template-columns:1fr auto 1fr; ${MONO} font-size:10.5px; color:${C.muted}; margin-top:6px;"><span>0</span><span>50</span><span style="text-align:right;">100</span></div>
-      <div style="margin-top:12px;">${facts.map(([k, v, t]) => `<div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:11px 0; border-top:1px solid ${W(7)};"><span style="font-size:12.5px; color:${C.muted};">${esc(k)}</span><span${t ? ` title="${esc(t)}"` : ''} style="font-size:13px; font-weight:600; text-align:right; white-space:pre; color:${C.white};">${esc(v)}</span></div>`).join('')}</div></div>`;
+      <div title="The tick is an even match" style="position:relative; height:12px; margin-top:12px;"><span style="position:absolute; left:0; right:0; top:4px; height:4px; border-radius:2px; background:${W(7)};"></span><span style="position:absolute; left:50%; top:0; width:2px; height:12px; margin-left:-1px; border-radius:1px; background:${C.white};"></span></div>
+      <div style="margin-top:12px;">${fa.map(([k, v, t]) => `<div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:10px 0; border-top:1px solid ${W(6)};"><span style="font-size:12.5px; color:${C.muted};">${esc(k)}</span><span${t ? ` title="${esc(t)}"` : ''} style="font-size:13px; font-weight:600; text-align:right; white-space:pre; color:${C.white};">${esc(v)}</span></div>`).join('')}</div></div>`;
   }).join('');
   const close = on(() => { S.opp = null; repaint(); });
   return `<div class="tt-draw-ovl" onclick="${close}" style="position:fixed; inset:0; z-index:70; background:${C.scrim62}; display:flex; align-items:center; justify-content:center; padding:24px;">
-    <div onclick="event.stopPropagation()" style="box-sizing:border-box; width:860px; max-width:100%; max-height:100%; overflow-y:auto; background:${C.card}; border:1px solid ${W(12)}; border-radius:14px; padding:26px 28px 28px; box-shadow:${SH_OPP};">
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:16px;"><div style="display:flex; align-items:center; gap:12px; min-width:0;">${avatar(P.key, nm, 40, B(50), 13, 1)}<div style="display:flex; flex-direction:column; gap:3px; min-width:0;"><span style="font-size:16px; font-weight:800;">${esc(nm)}</span><span style="font-size:12.5px; color:${C.muted};">${esc(c.rd + (c.cands.length > 1 ? ' · who he could play' : ' · his opponent'))}</span></div></div>${closeBtn(close)}</div>
+    <div onclick="event.stopPropagation()" style="box-sizing:border-box; width:860px; max-width:100%; max-height:100%; overflow-y:auto; background:${C.card}; border:1px solid ${W(12)}; border-radius:14px; padding:26px 28px 28px; box-shadow:${C.shOverlay};">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:16px;"><div style="display:flex; align-items:center; gap:12px; min-width:0;">${avatar(P.key, nm, 40, W(14), 13)}<div style="display:flex; flex-direction:column; gap:3px; min-width:0;"><span style="font-size:18px; font-weight:800; color:${C.white};">${esc(nm)}</span><span style="font-size:12.5px; color:${C.muted};">${esc(c.rd + (c.cands.length > 1 ? ' · who he could play' : ' · his opponent'))}</span></div></div>${closeBtn(close)}</div>
       <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px; margin-top:22px;">${cards}</div></div></div>`;
 }
 
-// ── Outright chances ────────────────────────────────────────────────────────────────────────────────────────────────
+// ── Outright chances (one card; every chance and fair-odds range is a dash: ruling 3) ───────────────────────────────
 function outrightHtml(ev, M, F) {
   const tab = S.outTab === 'q' ? 'q' : 't';
-  const hint = S.outCmp ? 'Click a player in these lists to add him to the comparison' : (tab === 'q' ? 'The quarter winner is the player who reaches the semi-finals. ' : '') + 'Click a player to follow his route through the draw';
-  let h = `<div style="border:1px solid ${W(8)}; border-radius:12px;"><div style="padding:12px 18px 18px;">
-    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px 16px; flex-wrap:wrap; margin-top:6px;"><div style="display:flex; gap:4px; padding:4px; border-radius:10px; background:${C.inset}; border:1px solid ${W(7)};">${[['t', 'To win the title'], ['q', 'To win his quarter']].map(([k, l]) => `<span onclick="${on(() => { S.outTab = k; repaint(); })}" style="cursor:pointer; display:inline-flex; align-items:center; height:30px; box-sizing:border-box; padding:0 14px; border-radius:7px; font-size:12.5px; font-weight:700; white-space:nowrap; color:${tab === k ? C.white : C.muted}; background:${tab === k ? W(9) : 'transparent'};">${l}</span>`).join('')}</div></div>
-    <div style="font-size:12.5px; margin-top:14px; font-weight:${S.outCmp ? 700 : 400}; color:${S.outCmp ? C.blue : C.muted};">${esc(hint)}</div>`;
-  const hl = k => (k && k === S.outA ? B(16) : k && k === S.outB ? W(9) : 'transparent');
+  let h = `<div style="background:${C.inset}; border:1px solid ${W(6)}; border-radius:16px; padding:24px 24px 20px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px 16px; flex-wrap:wrap;">${track([['t', 'To win the title'], ['q', 'To win his quarter']].map(([k, l]) => seg(l, tab === k, on(() => { S.outTab = k; repaint(); }), '0 13px', 'height:30px; box-sizing:border-box; align-items:center;')).join(''))}</div>`
+    + (S.outCmp ? `<div style="font-size:12.5px; margin-top:14px; font-weight:700; color:${C.blue};">Click a player in these lists to add him to the comparison</div>` : '');
+  const hl = k => (k && (k === S.outA || k === S.outB) ? C.hover : 'transparent');
   const pick = k => (k ? on(() => { if (S.outCmp) pickOut(k); else { Object.assign(S, { sel: k, b: null, cmp: false, view: 'draw', shut: null, opp: null }); repaint(); } }) : '');
+  const fair3 = (cols, fs) => `<span title="Fair odds: no source yet" style="display:grid; grid-template-columns:${cols}; align-items:baseline; ${MONO} font-size:${fs}px; font-weight:600; color:${C.text}; white-space:nowrap;"><span></span><span style="text-align:center; color:${C.muted};">${DASH}</span><span></span></span>`;
   if (tab === 't') {
     // the leader is the most likely winner (a chance: dash) — or, once the final is played, the champion (a result)
     const ck = F.champ, cs = ck ? F.byKey.get(ck) : null;
-    const lead = `<div class="${ck ? 'tt-draw-lead' : ''}" onclick="${pick(ck)}" style="cursor:${ck ? 'pointer' : 'default'}; flex:1 1 260px; max-width:340px; box-sizing:border-box; background:${C.inset}; border:1px solid ${ck && ck === S.outA ? C.blue : ck && ck === S.outB ? W(40) : W(7)}; border-radius:12px; padding:20px 22px; display:flex; flex-direction:column; gap:14px; min-width:0;">
-      <span style="${CAPS}">${ck ? 'Champion' : 'Most likely winner'}</span>
-      <div style="display:flex; align-items:center; gap:14px; min-width:0;">${cs ? avatar(ck, nameOf(cs), 56, W(40), 17, 1.5) : `<span style="flex:none; width:56px; height:56px; box-sizing:border-box; border-radius:50%; background:${C.avatar}; border:1.5px solid ${W(40)};"></span>`}<div style="display:flex; flex-direction:column; gap:5px; min-width:0;"><span style="font-size:18px; font-weight:800; color:${C.white}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${cs ? esc(nameOf(cs)) : DASH}</span></div></div>
-      <span${ck ? '' : ' title="Title chance: no source yet"'} style="${MONO} font-size:44px; font-weight:700; line-height:1; color:${C.white};">${ck ? '100%' : DASH}</span>
-      <div style="display:flex; flex-direction:column; gap:8px; padding-top:14px; border-top:1px solid ${W(10)}; font-size:13px;"><div style="display:flex; justify-content:space-between; gap:12px;"><span style="color:${C.muted};">Fair odds</span><span title="No source yet" style="${MONO} color:${C.text}; white-space:pre;">${DASH}</span></div><div style="display:flex; justify-content:space-between; gap:12px;"><span style="color:${C.muted};">Ahead of the next</span><span title="No source yet" style="${MONO} color:${C.text};">${DASH}</span></div></div></div>`;
-    const rowD = () => `<div style="border-top:1px solid ${W(6)};"><div style="display:flex; align-items:center; gap:12px; padding:9px 8px; margin:2px -8px; border-radius:8px;"><span style="flex:none; width:28px; height:28px; box-sizing:border-box; border-radius:50%; background:${C.avatar}; border:1px solid ${W(18)};"></span><span style="flex:1; min-width:0; display:flex; align-items:baseline; gap:7px;"><span style="min-width:0; font-size:13.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${DASH}</span></span><span style="width:48px; text-align:right; ${MONO} font-size:13px; font-weight:700; color:${C.white};">${DASH}</span><span style="width:104px; text-align:right; ${MONO} font-size:12px; color:${C.soft}; white-space:pre;">${DASH}</span></div></div>`;
-    const grp = (name, n) => `<div style="display:flex; align-items:baseline; gap:12px; padding:8px 0; ${CAPS}"><span style="flex:1; color:${C.text};">${name}</span><span style="width:48px; text-align:right;">Chance</span><span style="width:104px; text-align:right; white-space:nowrap;">Fair odds</span></div>${Array.from({ length: n }, rowD).join('')}`;
-    h += `<div style="display:flex; flex-wrap:wrap; gap:12px; margin-top:14px;">${lead}<div title="Title chances: no source yet" style="flex:2 1 360px; background:${C.inset}; border:1px solid ${W(7)}; border-radius:12px; padding:14px 18px 8px; min-width:0;">${grp('Also favoured', 2)}${grp('Three underdogs', 3)}</div></div>`;
+    const lead = `<div class="${ck ? 'tt-draw-edge' : ''}" onclick="${pick(ck)}" style="cursor:${ck ? 'pointer' : 'default'}; flex:1 1 260px; box-sizing:border-box; background:${C.card}; border:1px solid ${W(6)}; border-radius:11px; padding:18px 20px; display:flex; flex-wrap:wrap; align-items:center; align-content:flex-start; gap:16px 32px; min-width:0;">
+      <span style="flex:0 0 100%; display:flex; justify-content:space-between; gap:8px; ${LBL}"><span>${ck ? 'Champion' : 'Most likely winner'}</span><span style="color:${C.blue}; font-weight:700;">${ck ? '›' : ''}</span></span>
+      <div style="flex:1 1 200px; display:flex; align-items:center; gap:14px; min-width:0;">${cs ? avatar(ck, nameOf(cs), 44, W(14), 14) : `<span style="flex:none; width:44px; height:44px; box-sizing:border-box; border-radius:50%; background:${C.lifted}; border:1px solid ${W(14)};"></span>`}<div style="display:flex; flex-direction:column; gap:6px; align-items:flex-start; min-width:0;"><span style="max-width:100%; font-size:18px; font-weight:800; color:${C.white}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${cs ? esc(nameOf(cs)) : DASH}</span></div></div>
+      <span${ck ? '' : ' title="Title chance: no source yet"'} style="${MONO} flex:none; font-size:40px; font-weight:700; line-height:1; color:${C.white};">${ck ? '100%' : DASH}</span>
+      <div style="flex:1 1 200px; display:flex; flex-direction:column; gap:10px; font-size:13px;"><div style="display:flex; justify-content:space-between; gap:12px;"><span style="color:${C.muted};">Fair odds</span><span title="No source yet" style="${MONO} font-weight:700; color:${C.white};">${DASH}</span></div><div style="display:flex; justify-content:space-between; gap:12px;"><span style="color:${C.muted};">Ahead of the next</span><span title="No source yet" style="${MONO} font-weight:700; color:${C.white};">${DASH}</span></div></div></div>`;
+    const G = 'grid-template-columns:minmax(130px,210px) minmax(40px,1fr) 48px 112px; gap:0 12px;';
+    const rowD = () => `<div style="border-top:1px solid ${W(6)};"><div style="display:grid; ${G} align-items:center; height:40px; box-sizing:border-box; padding:0 8px; margin:2px -8px; border-radius:8px;"><span style="min-width:0; display:flex; align-items:center; gap:10px;"><span style="flex:none; width:26px; height:26px; box-sizing:border-box; border-radius:50%; background:${C.lifted}; border:1px solid ${W(10)};"></span><span style="font-size:13.5px; font-weight:600; color:${C.muted};">${DASH}</span></span><span style="min-width:0; height:4px; border-radius:2px; background:${W(7)};"></span><span title="Chance: no source yet" style="text-align:right; ${MONO} font-size:13.5px; font-weight:700; color:${C.white};">${DASH}</span>${fair3('50px 12px 50px', 13)}</div></div>`;
+    const grp = (name, n) => `<div style="display:grid; ${G} align-items:baseline; padding:10px 0 9px; ${LBL}"><span style="min-width:0; font-size:14px; font-weight:700; color:${C.white}; white-space:nowrap;">${name}</span><span></span><span style="text-align:right;">Chance</span><span style="text-align:center; white-space:nowrap;">Fair odds</span></div>${Array.from({ length: n }, rowD).join('')}`;
+    h += `<div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:18px;">${lead}<div title="Title chances: no source yet" style="flex:2 1 480px; background:${C.card}; border:1px solid ${W(6)}; border-radius:11px; padding:10px 20px 8px; min-width:0;">${grp('Also favoured', 2)}${grp('Three underdogs', 3)}</div></div>`;
   } else {
     // quarters from the draw's own positions (founder 2026-11-15): pos → ceil(pos / (size / 4)); the quarter winner
     // (won his quarter-final) first, then the players still in it by seed and position — never a chance order
     const size = (ev.draw.main && ev.draw.main.size) || 32, per = size / 4;
     const qi = M ? M.rounds.findIndex(r => r.name === 'QF') : -1;
     const qWin = q => { if (qi < 0) return null; const c = M.rounds[qi].cells[q]; return c && c.match ? c.match.winnerKey : null; };
+    const G = 'grid-template-columns:minmax(0,1fr) 34px 76px; gap:8px;';
     const cards = [0, 1, 2, 3].map(q => {
       const w = qWin(q);
       const inQ = F.slots.filter(s => Math.ceil(s.pos / per) === q + 1);
       const list = (w && F.byKey.get(w) ? [F.byKey.get(w)] : []).concat(w ? [] : inQ.filter(s => F.out[String(s.playerKey)] == null)
         .sort((x, y) => (x.seed == null ? 99 : x.seed) - (y.seed == null ? 99 : y.seed) || x.pos - y.pos)).slice(0, 4);
       const rows = list.map((s, j) => { const k = String(s.playerKey);
-        return `<div class="tt-draw-orow" onclick="${pick(k)}" title="${esc(nameOf(s))}" style="cursor:pointer; display:grid; grid-template-columns:minmax(0,1fr) 38px 80px; gap:8px; align-items:center; padding:9px 6px; margin:2px -6px; border-radius:8px; background:${hl(k)};"><div style="display:flex; align-items:center; gap:8px; min-width:0;">${avatar(k, nameOf(s), 26, j ? W(18) : W(40), 9.5, 1.5)}<span style="min-width:0; font-size:13px; font-weight:${j ? 600 : 800}; color:${j ? C.text : C.white}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(nameOf(s))}</span></div><span${k === w ? '' : ' title="Chance: no source yet"'} style="text-align:right; ${MONO} font-size:12.5px; font-weight:700; color:${C.white};">${k === w ? 'Won' : DASH}</span><span title="No source yet" style="text-align:right; ${MONO} font-size:11.5px; color:${C.soft}; white-space:pre;">${DASH}</span></div>`; }).join('');
-      return `<div style="background:${C.inset}; border:1px solid ${W(7)}; border-radius:12px; padding:16px 12px 8px; min-width:0;"><div style="display:grid; grid-template-columns:minmax(0,1fr) 38px 80px; gap:8px; align-items:baseline; padding-bottom:10px; border-bottom:1px solid ${W(10)}; font-size:10.5px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:${C.muted}; white-space:nowrap;"><span style="color:${C.text};">Quarter ${q + 1}</span><span style="display:flex; justify-content:flex-end;">Chance</span><span style="text-align:right;">Fair odds</span></div>${rows}</div>`;
+        return `<div class="tt-draw-hov" onclick="${pick(k)}" title="${esc(nameOf(s))}" style="cursor:pointer; display:grid; ${G} align-items:center; height:40px; box-sizing:border-box; padding:0 6px; margin:2px -6px; border-radius:8px; background:${hl(k)};"><div style="display:flex; align-items:center; gap:8px; min-width:0;">${avatar(k, nameOf(s), 26, j ? W(18) : W(40), 9.5)}<span style="min-width:70px; font-size:13px; font-weight:${j ? 600 : 800}; color:${j ? C.text : C.white}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(nameOf(s))}</span></div><span${k === w ? '' : ' title="Chance: no source yet"'} style="text-align:right; ${MONO} font-size:13px; font-weight:700; color:${C.white};">${k === w ? 'Won' : DASH}</span>${fair3('32px 12px 32px', 12)}</div>`; }).join('');
+      return `<div style="background:${C.card}; border:1px solid ${W(6)}; border-radius:11px; padding:14px 12px 8px; min-width:0;"><div style="display:grid; ${G} align-items:baseline; padding-bottom:10px; border-bottom:1px solid ${W(6)}; ${LBL} white-space:nowrap;"><span style="font-size:14px; font-weight:700; color:${C.white};">Quarter ${q + 1}</span><span style="display:flex; justify-content:flex-end;">Chance</span><span style="text-align:center;">Fair odds</span></div>${rows}</div>`;
     }).join('');
-    h += `<div style="display:grid; grid-template-columns:repeat(4,minmax(256px,1fr)); gap:10px; margin-top:14px; overflow-x:auto;">${cards}</div>`;
+    h += `<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(max(240px, calc(25% - 6px)),1fr)); gap:8px; margin-top:18px;">${cards}</div>`;
   }
-  return h + `</div></div>`;
+  return h + `</div>`;
 }
 
-// ── Statistics view + its two boxes ─────────────────────────────────────────────────────────────────────────────────
+// ── Points to defend (design 3c + refines): two sorting tiles, the table, "Nothing to defend" chips ─────────────────
+function ptsHtml(ev, M, F, pm, finished) {
+  const card = inner => `<div style="margin-top:22px; background:${C.inset}; border:1px solid ${W(6)}; border-radius:16px; padding:24px 24px 20px;">${inner}</div>`;
+  if (pm === undefined) return card(`<span style="font-size:13px; color:${C.muted};">Loading the points to defend…</span>`);
+  const head = (sub, n, tot) => `<div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap;"><div style="display:flex; flex-direction:column; gap:6px;"><span style="font-size:18px; font-weight:800; color:${C.white};">Points to defend</span><span style="font-size:13px; color:${C.muted};">${esc(sub)}</span></div><div style="display:flex; flex-direction:column; align-items:flex-end; gap:7px;"><span style="${LBL}">Points across ${n} players</span><span style="${MONO} font-size:26px; font-weight:700; line-height:1; color:${C.white};">${tot}</span></div></div>`;
+  if (!pm) return card(head('No points-to-defend list for this event on file', DASH, DASH));
+  const prior = pm.e.prior && pm.e.prior.season ? pm.e.prior.season : (+String(ev.start).slice(0, 4) - 1);
+  const dd = pm.e.dropDate ? new Date(pm.e.dropDate + 'T00:00:00Z') : null;
+  const dropW = dd && isFinite(dd) ? `${dd.getUTCDate()} ${MON[dd.getUTCMonth()]}` : DASH;
+  const sub = finished ? `Points won here in ${prior}, dropped when this edition ended` : `Points won here in ${prior} drop off on ${dropW}`;
+  const byD = S.ptSort === 'drop';
+  const L = pm.rows.slice().sort((x, y) => byD ? (y.drop == null ? -1 : y.drop) - (x.drop == null ? -1 : x.drop) || (y.pts || 0) - (x.pts || 0) : (y.pts || 0) - (x.pts || 0) || (y.drop == null ? -1 : y.drop) - (x.drop == null ? -1 : x.drop));
+  const tp = pm.rows.slice().sort((x, y) => (y.pts || 0) - (x.pts || 0) || (y.drop == null ? -1 : y.drop) - (x.drop == null ? -1 : x.drop))[0];
+  const td = pm.rows.filter(r => r.drop != null).sort((x, y) => y.drop - x.drop || (y.pts || 0) - (x.pts || 0))[0];
+  const mxP = Math.max.apply(null, L.map(r => r.pts || 0).concat([1])), mxD = Math.max.apply(null, L.map(r => r.drop || 0).concat([1]));
+  const rk = v => (v == null ? DASH : 'No. ' + v);
+  const tile = (title, r, isOn, k, right, rightC, under) => `<div class="tt-draw-edge" data-tt="pt-${k}" onclick="${on(() => { S.ptSort = k; repaint(); })}" title="Sort the list" style="cursor:pointer; background:${C.card}; border:1px solid ${isOn ? W(22) : W(6)}; border-radius:11px; padding:16px 18px; display:flex; align-items:center; justify-content:space-between; gap:14px; min-width:0;">
+      <div style="display:flex; align-items:center; gap:12px; min-width:0;">${r ? avatar(r.k, r.n, 36, W(14), 12) : ''}<div style="display:flex; flex-direction:column; gap:5px; min-width:0;"><span style="display:flex; gap:6px; ${LBL} white-space:nowrap;"><span>${title}</span><span style="color:${C.blue}; font-weight:700;">${isOn ? '↓' : '›'}</span></span><span title="${esc(r ? r.full : '')}" style="font-size:15px; font-weight:700; color:${C.white}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(r ? r.n : DASH)}</span><span style="font-size:12px; color:${C.muted}; white-space:nowrap;${under && under.mono ? ' ' + MONO : ''}">${esc(under ? under.t : '')}</span></div></div>
+      <span style="flex:none; ${MONO} font-size:26px; font-weight:700; line-height:1; color:${rightC};">${esc(right)}</span></div>`;
+  const tiles = `<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:8px; margin-top:18px;">`
+    + tile('Most points to defend', tp, !byD, 'pts', tp && tp.pts != null ? String(tp.pts) : DASH, C.white, tp ? { t: `${tp.last} in ${prior}` } : null)
+    + tile('Biggest drop if out first round', td, byD, 'drop', td ? (td.drop ? MINUS + td.drop : '0') : DASH, td && td.drop ? C.red : C.muted, td ? { t: `${rk(td.today)} → ${rk(td.would)}`, mono: true } : { t: 'Needs ranking points on file' })
+    + `</div>`;
+  const G = 'grid-template-columns:minmax(130px,190px) 96px minmax(40px,1fr) 52px 130px 44px; gap:0 12px;';
+  const thead = `<div style="display:grid; ${G} align-items:end; margin-top:20px; padding:0 8px 10px; ${LBL} white-space:nowrap;"><span>Player</span><span>${prior} here</span><span></span><span style="text-align:right; color:${byD ? C.muted : C.white};">Points</span><span style="display:flex; flex-direction:column; gap:5px;"><span style="text-align:center; padding-bottom:5px; border-bottom:1px solid ${W(10)};">If out first round</span><span style="display:grid; grid-template-columns:56px 18px 56px;"><span style="text-align:right;">Today</span><span></span><span style="text-align:right;">Would be</span></span></span><span style="text-align:right; color:${byD ? C.white : C.muted};">Places</span></div>`;
+  const rows = L.map(r => {
+    const bar = byD ? (r.drop || 0) / mxD * 100 : (r.pts || 0) / mxP * 100;
+    const full = byD ? r === td : /^(Champion|Final|Semi-final)/.test(r.last);
+    const click = r.inDraw ? on(() => { Object.assign(S, { view: 'draw', kind: 'main', sel: r.k, b: null, cmp: false, shut: null, opp: null, pop: null }); repaint(); }) : '';
+    const tTitle = r.inDraw ? 'Follow his route through the draw' : `${r.full}${r.status ? ' · ' + r.status : ''} · not in this draw`;
+    return `<div style="border-top:1px solid ${W(6)};"><div class="${r.inDraw ? 'tt-draw-hov' : ''}" onclick="${click}" title="${esc(tTitle)}" style="cursor:${r.inDraw ? 'pointer' : 'default'}; display:grid; ${G} align-items:center; height:44px; margin:2px 0; padding:0 8px; border-radius:8px;">
+      <span title="${esc(r.full)}" style="display:flex; align-items:center; gap:10px; min-width:0;">${avatar(r.k, r.n, 26, W(10), 9.5)}<span style="min-width:0; font-size:13.5px; font-weight:600; color:${C.white}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(r.n)}</span><span style="flex:none; ${MONO} font-size:10px; color:${C.muted};">${esc(r.tag)}</span></span>
+      <span style="display:flex;">${chip(r.last)}</span>
+      <div style="height:4px; border-radius:2px; background:${W(7)};"><div style="height:100%; width:${bar}%; border-radius:2px; background:${full ? C.blue : BAR55};"></div></div>
+      <span style="text-align:right; ${MONO} font-size:13.5px; font-weight:700; color:${r.pts == null ? C.muted : C.white};">${r.pts == null ? DASH : r.pts}</span>
+      <span${r.whyRank ? ` title="${esc(r.whyRank)}"` : ''} style="display:grid; grid-template-columns:56px 18px 56px; align-items:baseline; ${MONO} font-size:12.5px; font-weight:600; white-space:nowrap;"><span style="text-align:right; color:${C.soft};">${rk(r.today)}</span><span style="text-align:center; font-size:11px; color:${C.muted};">→</span><span style="text-align:right; color:${r.would == null ? C.muted : C.white};">${rk(r.would)}</span></span>
+      <span style="text-align:right; ${MONO} font-size:13.5px; font-weight:700; color:${r.drop ? C.red : C.muted};">${r.drop == null ? DASH : r.drop ? MINUS + r.drop : '0'}</span></div></div>`;
+  }).join('');
+  const frees = pm.frees.length ? `<div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; border-top:1px solid ${W(6)}; padding-top:16px;"><span style="${LBL} margin-right:6px;">Nothing to defend</span>${pm.frees.map(f => `<span class="${f.inDraw ? 'tt-draw-hov' : ''}" onclick="${f.inDraw ? on(() => { Object.assign(S, { view: 'draw', kind: 'main', sel: f.k, b: null, cmp: false, shut: null, opp: null }); repaint(); }) : ''}" title="${esc(f.full + (f.status ? ' · ' + f.status : ''))}" style="cursor:${f.inDraw ? 'pointer' : 'default'}; display:inline-flex; align-items:center; height:24px; padding:0 9px; border-radius:7px; background:${C.lifted}; box-shadow:inset 0 0 0 1px ${W(14)}; font-size:11.5px; font-weight:600; color:${C.soft};">${esc(f.n)}</span>`).join('')}</div>` : '';
+  return card(head(sub, pm.rows.length, String(pm.total)) + tiles + `<div style="overflow-x:auto;"><div style="min-width:570px;">${thead}${rows}</div></div>` + frees);
+}
+
+// ── Statistics view (ONE card) + its two boxes ──────────────────────────────────────────────────────────────────────
 function statsHtml(ev, M, st) {
   const tile = (t, gi, i) => {
     const isOpen = gi === 0 ? S.ed === i : S.stat === t.key;
-    const click = gi === 0 ? !!st.hev : st.live && !!t.key;
+    const click = gi === 0 ? !!st.hev && t.v != null : st.live && !!t.key;
     const onc = click ? on(() => { if (gi === 0) S.ed = S.ed === i ? null : i; else S.stat = S.stat === t.key ? null : t.key; repaint(); }) : '';
-    const cols = t.cols.map(c => `<div title="${esc(c.y + (c.now && st.live ? ' so far' : '') + ' · ' + st.fm(t, c.v))}" style="height:${c.h}; border-radius:3px 3px 0 0; background:${c.v == null ? 'transparent' : c.now ? (isOpen ? C.blue : C.text) : C.past};"></div>`).join('');
+    const cols = t.cols.map(c => `<div title="${esc(c.y + (c.now && st.live ? ' so far' : '') + ' · ' + st.fm(t, c.v))}" style="height:${c.h}; border-radius:3px 3px 0 0; background:${c.v == null ? 'transparent' : c.now ? C.blue : BAR55};"></div>`).join('');
     const yrs = t.cols.map(c => `<span style="display:flex; justify-content:center; white-space:nowrap; color:${c.now ? C.text : C.muted}; font-weight:${c.now ? 700 : 400};">${String(c.y).slice(2)}</span>`).join('');
-    return `<div class="tt-draw-tile" onclick="${onc}" style="position:relative; cursor:${click ? 'pointer' : 'default'}; background:${C.inset}; border:1px solid ${isOpen ? B(60) : W(6)}; border-radius:12px; padding:14px 14px 12px; display:flex; flex-direction:column; gap:10px; min-width:0;">
-      ${click ? `<span class="tt-draw-tilehov" style="position:absolute; inset:0; border-radius:12px;"></span>` : ''}
+    const gl = (lab, title, v, d) => `<span title="${esc(title)}" style="display:flex; align-items:baseline; justify-content:space-between; gap:6px; white-space:nowrap;"><span>${lab}</span><span style="${MONO} font-size:12.5px; font-weight:700; color:${sgnC(d)};">${v}</span></span>`;
+    return `<div class="${click ? 'tt-draw-tile' : ''}" onclick="${onc}" style="position:relative; cursor:${click ? 'pointer' : 'default'}; background:${C.card}; border:1px solid ${isOpen ? W(22) : W(6)}; border-radius:11px; padding:16px 16px 14px; display:flex; flex-direction:column; gap:10px; min-width:0;">
       <span style="display:flex; justify-content:space-between; gap:8px; font-size:12.5px; font-weight:600; line-height:16px; min-height:32px; color:${C.soft};"><span style="text-wrap:balance;">${esc(t.label)}</span><span style="flex:none; color:${C.blue}; font-weight:700;">${click ? '›' : ''}</span></span>
-      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:5px 10px; flex-wrap:wrap;"><span title="${esc(t.vTitle)}" style="${MONO} font-size:21px; font-weight:700; line-height:1; color:${t.figColor};">${esc(t.fig)}</span>
-        <span style="flex:0 0 100%; display:flex; flex-direction:column; gap:5px; margin-top:5px; font-size:11.5px; color:${C.muted};"><span title="Against the tour average${t.tourTitle ? ' · ' + esc(t.tourTitle) : ''}" style="display:flex; align-items:baseline; justify-content:space-between; gap:6px; white-space:nowrap;"><span>vs tour</span><span style="${MONO} color:${C.text};">${t.gapN}</span></span><span title="Against the past edition" style="display:flex; align-items:baseline; justify-content:space-between; gap:6px; white-space:nowrap;"><span>${t.gapLL}</span><span style="${MONO} color:${C.text};">${t.gapL}</span></span><span title="Against the average of the five editions before" style="display:flex; align-items:baseline; justify-content:space-between; gap:6px; white-space:nowrap;"><span>vs past five</span><span style="${MONO} color:${C.text};">${t.gapP}</span></span></span></div>
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:5px 10px; flex-wrap:wrap;"><span title="${esc(t.vTitle)}" style="${MONO} font-size:26px; font-weight:700; line-height:1; color:${t.figColor};">${esc(t.fig)}</span>
+        <span style="flex:0 0 100%; display:flex; flex-direction:column; gap:5px; margin-top:8px; font-size:12px; color:${C.muted};">${gl('vs tour', 'Against the tour average' + (t.tourTitle ? ' · ' + t.tourTitle : ''), t.gapN, t.dN)}${gl(t.gapLL, 'Against the past edition', t.gapL, t.dL)}${gl('vs past five', 'Against the average of the five editions before', t.gapP, t.dP)}</span></div>
       <div style="position:relative; height:56px; margin-top:4px;"><div style="position:absolute; inset:0; display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:5px; align-items:end;">${cols}</div>${t.tourB ? `<div title="${esc(t.tourTitle)}" style="position:absolute; left:-4px; right:-4px; bottom:${t.tourB}; border-top:1.5px dashed ${W(75)};"></div>` : ''}</div>
       <div style="display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:5px; ${MONO} font-size:10px;">${yrs}</div></div>`;
   };
-  const g = (name, note, mt, tiles, gi) => `<div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-top:${mt};"><span style="font-size:15px; font-weight:700; color:${C.text};">${name}</span><span style="font-size:12.5px; color:${C.muted};">${esc(note)}</span></div>
-    <div style="display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; margin-top:12px;">${tiles.map((t, i) => tile(t, gi, i)).join('')}</div>`;
-  const n1 = [st.n1, st.hev ? 'click a box for its past editions' : ''].filter(Boolean).join(' · ');
+  const head = (name, note, mt) => `<div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-top:${mt};"><span style="font-size:18px; font-weight:800; color:${C.white};">${name}</span><span style="font-size:13px; color:${C.muted};">${esc(note)}</span></div>`;
+  const grid = (tiles, gi) => `<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:8px; margin-top:14px;">${tiles.map((t, i) => tile(t, gi, i)).join('')}</div>`;
+  const chip5 = n => `<span style="display:inline-flex; align-items:center; height:26px; padding:0 10px; border-radius:7px; background:${C.lifted}; box-shadow:inset 0 0 0 1px ${W(14)}; font-size:11.5px; font-weight:600; color:${C.soft};">${n}</span>`;
+  const noSpeed = `<div style="display:flex; align-items:center; gap:14px 28px; flex-wrap:wrap; margin-top:12px; padding:16px 18px; border-radius:12px; background:${C.card}; border:1px dashed ${W(14)};"><div style="display:flex; flex-direction:column; gap:5px; flex:1 1 320px; min-width:0;"><span style="font-size:14px; font-weight:700; color:${C.white};">No serve statistics for this edition yet</span><span style="font-size:13px; line-height:1.55; color:${C.soft}; text-wrap:pretty;">${esc(st.speedEmpty)}</span></div><div style="display:flex; flex-wrap:wrap; gap:6px;">${SPEED.map(x => chip5(x[0])).join('')}</div></div>`;
+  const n1 = st.speedEmpty ? 'Not loaded for this edition' : [st.n1, st.hev ? 'click a box for its past editions' : ''].filter(Boolean).join(' · ');
   const n2 = [st.n2, st.live ? 'click a box for the matches behind it' : ''].filter(Boolean).join(' · ');
-  let h = `<div style="display:block; margin-top:22px; border:1px solid ${W(8)}; border-radius:12px;"><div style="padding:14px 18px 18px;">`
-    + g('Speed', n1, '4px', st.speed, 0)
-    + g('Favourites and underdogs', n2, '22px', st.mkt, 1)
-    + `<div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px 18px; padding-top:14px; font-size:11.5px; color:${C.muted};"><span style="display:flex; align-items:center; gap:7px;"><span style="width:10px; height:10px; border-radius:2px; background:${C.text};"></span>This edition</span><span style="display:flex; align-items:center; gap:7px;"><span style="width:10px; height:10px; border-radius:2px; background:${C.past};"></span>Past editions</span><span style="display:flex; align-items:center; gap:7px;"><span style="width:18px; border-top:1.5px dashed ${W(75)};"></span>Tour average</span></div>`;
-  // "All statistics ›" is dropped (founder 2026-11-15: it pointed at the removed Stats tab)
-  h += `</div></div>`;
-  if (S.ed != null && st.speed[S.ed]) h += edBox(st, st.speed[S.ed]);
+  let h = `<div style="margin-top:22px; background:${C.inset}; border:1px solid ${W(6)}; border-radius:16px;"><div style="padding:24px 24px 20px;">`
+    + head('Speed', n1, '4px') + (st.speedEmpty ? noSpeed : grid(st.speed, 0))
+    + head('Favourites and underdogs', n2, '22px') + grid(st.mkt, 1)
+    + `<div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px 18px; padding-top:14px; font-size:11.5px; color:${C.muted};"><span style="display:flex; align-items:center; gap:7px;"><span style="width:10px; height:10px; border-radius:2px; background:${C.blue};"></span>This edition</span><span style="display:flex; align-items:center; gap:7px;"><span style="width:10px; height:10px; border-radius:2px; background:${BAR55};"></span>Past editions</span><span style="display:flex; align-items:center; gap:7px;"><span style="width:18px; border-top:1.5px dashed ${W(75)};"></span>Tour average</span></div>`
+    // "All statistics ›" opens the Reports tab (founder 2026-11-20: "should bring to the reports of the players")
+    + `<div style="display:flex; justify-content:flex-end; margin-top:14px;"><span data-tt="allstats" onclick="${on(() => { if (typeof tourxSetSection === 'function') tourxSetSection('reports'); })}" style="cursor:pointer; font-size:12.5px; font-weight:700; color:${C.text};">All statistics <span style="color:${C.blue};">›</span></span></div>`
+    + `</div></div>`;
+  if (S.ed != null && st.speed[S.ed] && !st.speedEmpty) h += edBox(st, st.speed[S.ed]);
   if (S.stat && st.live) h += matchBox(ev, M, st);
   return h;
 }
 const sheet = (title, sub, onClose, body) => `<div class="tt-draw-ovl" onclick="${onClose}" style="position:fixed; inset:0; z-index:70; background:${C.scrim66}; display:flex; align-items:center; justify-content:center; padding:24px;">
-  <div onclick="event.stopPropagation()" style="width:860px; max-width:100%; max-height:86vh; overflow:auto; box-sizing:border-box; background:${C.card}; border:1px solid ${W(12)}; border-radius:14px; box-shadow:${SH_OVERLAY}; padding:20px 22px 22px;">
-    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;"><div style="display:flex; flex-direction:column; gap:5px; min-width:0;"><span style="font-size:16px; font-weight:800;">${esc(title)}</span><span style="font-size:12.5px; color:${C.muted};">${esc(sub)}</span></div>${closeBtn(onClose)}</div>${body}</div></div>`;
-const tiles4 = list => `<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-top:16px;">${list.map(t => `<div style="background:${C.inset}; border:1.25px solid ${W(6)}; border-radius:12px; padding:14px 12px; display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center; min-width:0;"><span style="${CAPS}">${esc(t.label)}</span><span${t.title ? ` title="${esc(t.title)}"` : ''} style="${MONO} font-size:21px; font-weight:700; line-height:1; color:${t.color || C.white};">${esc(t.fig)}</span><span style="font-size:12px; color:${C.soft}; text-wrap:balance;">${esc(t.sub)}</span></div>`).join('')}</div>`;
+  <div onclick="event.stopPropagation()" style="width:860px; max-width:100%; max-height:86vh; overflow:auto; box-sizing:border-box; background:${C.card}; border:1px solid ${W(12)}; border-radius:16px; box-shadow:${C.shOverlay}; padding:24px;">
+    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;"><div style="display:flex; flex-direction:column; gap:5px; min-width:0;"><span style="font-size:18px; font-weight:800; color:${C.white};">${esc(title)}</span><span style="font-size:13px; color:${C.muted};">${esc(sub)}</span></div>${closeBtn(onClose)}</div>${body}</div></div>`;
+const tiles4 = list => `<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:8px; margin-top:20px;">${list.map(t => `<div style="background:${C.inset}; border:1px solid ${W(6)}; border-radius:11px; padding:16px 18px 14px; display:flex; flex-direction:column; align-items:flex-start; gap:9px; text-align:left; min-width:0;"><span style="${LBL}">${esc(t.label)}</span><span${t.title ? ` title="${esc(t.title)}"` : ''} style="${MONO} font-size:22px; font-weight:700; line-height:1; color:${t.color || C.white};">${esc(t.fig)}</span><span style="font-size:12px; color:${C.soft}; text-wrap:balance;">${esc(t.sub)}</span></div>`).join('')}</div>`;
+const tHead = (GRID, cells) => `<div style="display:grid; ${GRID} padding-bottom:10px; border-bottom:1px solid ${W(6)}; ${LBL}">${cells}</div>`;
 function edBox(st, t) {
   const fm = x => st.fm(t, x);
   const nowL = st.cy + (st.live ? ' so far' : '');
@@ -854,20 +1094,20 @@ function edBox(st, t) {
   const known = past.filter(p => p.v != null).concat(t.v != null ? [{ y: nowL, v: t.v }] : []);
   const hi = known.slice().sort((a, b) => b.v - a.v)[0], lo = known.slice().sort((a, b) => a.v - b.v)[0];
   const tiles = [{ label: 'This edition', fig: fm(t.v), sub: nowL, title: t.vTitle },
-    { label: 'Tour average', fig: fm(t.tour), sub: 'this edition ' + (t.v != null && t.tour != null ? sg(t.v - t.tour) : DASH), title: t.tourTitle },
-    { label: 'Past five editions', fig: fm(t.avg5), sub: 'average · this edition ' + (t.v != null && t.avg5 != null ? sg(t.v - t.avg5) : DASH), title: t.avg5 == null ? 'Needs five past editions on file' : '' },
+    { label: 'Tour average', fig: fm(t.tour), sub: 'this edition ' + (t.dN != null ? sg(t.dN) : DASH), title: t.tourTitle },
+    { label: 'Past five editions', fig: fm(t.avg5), sub: 'average · this edition ' + (t.dP != null ? sg(t.dP) : DASH), title: t.avg5 == null ? 'Needs five past editions on file' : '' },
     { label: 'Highest', fig: known.length >= 2 ? fm(hi.v) : DASH, sub: known.length >= 2 ? `in ${hi.y} · lowest ${fm(lo.v)} in ${lo.y}` : 'needs past editions on file' }];
   const rowsAll = [{ y: nowL, v: t.v, now: true }].concat(past);
   const sp = (Math.max.apply(null, rowsAll.filter(r => r.v != null && t.v != null).map(r => Math.abs(r.v - t.v)).concat([0])) * 1.1) || 1;
   const GRID = 'grid-template-columns:120px 84px 84px 120px minmax(120px,1fr); gap:0 20px;';
-  const rows = rowsAll.map(r => { const d = r.v != null && t.v != null ? r.v - t.v : null, bw = d == null ? 0 : Math.abs(d) / sp * 50;
-    return `<div style="display:grid; ${GRID} align-items:center; padding:11px 0; border-bottom:1px solid ${W(5)};">
+  const rows = rowsAll.map(r => { const d = r.v != null && t.v != null ? r.v - t.v : null, bw = d == null ? 0 : Math.abs(d) / sp * 50, dt = r.v != null && t.tour != null ? r.v - t.tour : null;
+    return `<div style="display:grid; ${GRID} align-items:center; padding:13px 0; border-bottom:1px solid ${W(6)};">
       <span style="font-size:13.5px; font-weight:${r.now ? 700 : 500}; color:${r.now ? C.white : C.soft}; white-space:nowrap;">${esc(r.y)}</span>
       <span style="text-align:right; ${MONO} font-size:14.5px; font-weight:700; color:${r.now ? C.white : C.soft};">${fm(r.v)}</span>
-      <span style="text-align:right; ${MONO} font-size:13px; color:${C.soft};">${r.v != null && t.tour != null ? sg(r.v - t.tour) : DASH}</span>
-      <span style="text-align:right; ${MONO} font-size:13px; color:${C.muted};">${r.now || d == null ? DASH : sg(d)}</span>
-      <div style="position:relative; height:12px;"><div style="position:absolute; left:0; right:0; top:4px; height:4px; border-radius:2px; background:${W(5)};"></div>${d != null && !r.now ? `<div style="position:absolute; left:${d >= 0 ? 50 : 50 - bw}%; top:3px; height:6px; border-radius:3px; width:${bw}%; background:${C.past};"></div>` : ''}<div title="This edition" style="position:absolute; top:0; left:50%; width:2px; height:12px; margin-left:-1px; border-radius:1px; background:${C.white};"></div></div></div>`; }).join('');
-  const body = tiles4(tiles) + `<div style="overflow-x:auto; margin-top:18px;"><div style="min-width:560px;"><div style="display:grid; ${GRID} padding-bottom:10px; border-bottom:1px solid ${W(12)}; ${CAPS}"><span>Edition</span><span style="text-align:right;">Figure</span><span style="text-align:right;">Vs tour</span><span style="text-align:right;">Vs this edition</span><span style="display:flex; justify-content:space-between;"><span>Lower</span><span>Higher</span></span></div>${rows}</div></div>`;
+      <span style="text-align:right; ${MONO} font-size:13px; font-weight:700; color:${sgnC(dt)};">${dt != null ? sg(dt) : DASH}</span>
+      <span style="text-align:right; ${MONO} font-size:13px; font-weight:700; color:${r.now ? C.muted : sgnC(d)};">${r.now || d == null ? DASH : sg(d)}</span>
+      <div style="position:relative; height:12px;"><div style="position:absolute; left:0; right:0; top:4px; height:4px; border-radius:2px; background:${W(7)};"></div>${d != null && !r.now ? `<div style="position:absolute; left:${d >= 0 ? 50 : 50 - bw}%; top:4px; height:4px; border-radius:2px; width:${bw}%; background:${BAR55};"></div>` : ''}<div title="This edition" style="position:absolute; top:0; left:50%; width:2px; height:12px; margin-left:-1px; border-radius:1px; background:${C.white};"></div></div></div>`; }).join('');
+  const body = tiles4(tiles) + `<div style="overflow-x:auto; margin-top:18px;"><div style="min-width:560px;">${tHead(GRID, `<span>Edition</span><span style="text-align:right;">Figure</span><span style="text-align:right;">Vs tour</span><span style="text-align:right;">Vs this edition</span><span style="display:flex; justify-content:space-between;"><span>Lower</span><span>Higher</span></span>`)}${rows}</div></div>`;
   return sheet(t.label, 'This edition and the five before', on(() => { S.ed = null; repaint(); }), body);
 }
 // the matches behind a Favourites and underdogs tile: this edition's priced Database rows (names from
@@ -899,7 +1139,7 @@ function matchBox(ev, M, st) {
   const fy = bets.reduce((a, x) => a + (x.favWon ? x.fr : -1), 0), dy = bets.reduce((a, x) => a + (x.favWon ? -1 : x.dr), 0);
   const u = v => (v >= 0 ? '+' : MINUS) + Math.abs(v).toFixed(2), sc2 = v => (v >= 0 ? C.green : C.red), of = (a, b) => a + ' of ' + b;
   const decs = wins.filter(x => x.three === true), downs = wins.filter(x => x.down === true), nf = a => a.filter(x => x.favWon).length;
-  const gapT = tt => ({ label: 'Against the tour', fig: tt.gapN === DASH ? DASH : tt.gapN + ' pts', sub: tt.tour != null ? 'tour ' + st.fm(tt, tt.tour) : 'no tour figure on file', title: tt.tourTitle });
+  const gapT = tt => ({ label: 'Against the tour', fig: tt.gapN === DASH ? DASH : tt.gapN + ' pts', sub: tt.tour != null ? 'tour ' + st.fm(tt, tt.tour) : 'no tour figure on file', title: tt.tourTitle, color: tt.dN == null ? C.white : sgnC(tt.dN) });
   const none = lab => ({ label: lab, fig: DASH, sub: 'no upset yet' });
   const TL = {
     fav: [{ label: 'Favourites won', fig: of(N - ups.length, N), sub: t.fig + ' of matches' }, { label: 'Upsets', fig: String(ups.length), sub: 'underdog winners' }, big ? { label: 'Biggest upset', fig: big.dogP.toFixed(2), sub: big.dog + ' beat ' + big.fav } : none('Biggest upset'), gapT(st.mkt[0])],
@@ -912,9 +1152,9 @@ function matchBox(ev, M, st) {
   const rowsL = S.stat === 'dec' ? decs : S.stat === 'cb' ? downs : yl ? bets : wins;
   const sub = S.stat === 'fav' ? `${N - ups.length} of ${N} matches` : S.stat === 'favY' ? `1 unit on every favourite · ${u(fy)} units over ${bets.length} matches` : S.stat === 'dogY' ? `1 unit on every underdog · ${u(dy)} units over ${bets.length} matches` : `${rowsL.length} of ${N} matches`;
   const GRID = 'grid-template-columns:44px minmax(0,1fr) minmax(0,1fr) 96px 108px; gap:0 14px;';
-  const head = `<div style="display:grid; ${GRID} padding:0 0 8px; border-bottom:1px solid ${W(12)};">${['Round', 'Favourite', 'Underdog', 'Score'].map(x => `<span style="${CAPS}">${x}</span>`).join('')}<span style="${CAPS} text-align:right;">${yl ? '1 unit staked' : 'Result'}</span></div>`;
+  const head = `<div style="display:grid; ${GRID} padding:0 0 8px; border-bottom:1px solid ${W(6)}; ${LBL}"><span>Round</span><span>Favourite</span><span>Underdog</span><span>Score</span><span style="text-align:right;">${yl ? '1 unit staked' : 'Result'}</span></div>`;
   const rows = rowsL.map(x => { const r = S.stat === 'favY' ? (x.favWon ? x.fr : -1) : (x.favWon ? -1 : x.dr);
-    return `<div style="display:grid; ${GRID} align-items:baseline; padding:8px 0; border-bottom:1px solid ${W(5)}; font-size:13px;">
+    return `<div style="display:grid; ${GRID} align-items:baseline; padding:11px 0; border-bottom:1px solid ${W(6)}; font-size:13.5px;">
       <span style="${MONO} font-size:11px; color:${C.muted};">${esc(x.rd)}</span>
       <span style="display:flex; align-items:baseline; gap:8px; min-width:0;"><span style="min-width:0; font-weight:${x.favWon ? 700 : 500}; color:${x.favWon ? C.white : C.muted}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(x.fav)}</span><span style="flex:none; ${MONO} font-size:11.5px; color:${C.muted};">${x.favP.toFixed(2)}</span></span>
       <span style="display:flex; align-items:baseline; gap:8px; min-width:0;"><span style="min-width:0; font-weight:${x.favWon ? 500 : 700}; color:${x.favWon ? C.muted : C.white}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(x.dog)}</span><span style="flex:none; ${MONO} font-size:11.5px; color:${C.muted};">${x.dogP.toFixed(2)}</span></span>
@@ -929,32 +1169,32 @@ function injectCss() {
   if (typeof document === 'undefined' || document.getElementById('tt-draw-css')) return;
   const s = document.createElement('style'); s.id = 'tt-draw-css';
   s.textContent = `
-/* the shared .tourx-shell is the design's card (the card tone, a 1.25px white-6% edge, r12 — tournaments-overview.js); the old
-   renderer's #tourxDraw padding is cancelled while this module renders, so the pane is the design's 22/24/28 box */
+/* the shared .tourx-shell is the design's tab card; the old renderer's #tourxDraw padding is cancelled while this module
+   renders, so the pane is the design's 22/24/28 box (data-draw-root) */
 .tabpage[data-page="tournaments"] #tourxDraw{ padding:0; }
 ${SCOPE}{ font-family:'Hanken Grotesk',sans-serif; font-size:16px; line-height:normal; color:${C.text}; -webkit-font-smoothing:antialiased; }
 ${SCOPE} *{ box-sizing:border-box; }
 ${SCOPE} .tt-draw-pane{ padding:22px 24px 28px; }
 ${SCOPE} .tt-draw-seg{ transition:background .14s ease, color .14s ease, border-color .14s ease; }
-${SCOPE} .tt-draw-hi8:hover{ box-shadow:inset 0 0 0 999px ${W(8)}; }
-${SCOPE} .tt-draw-hi4:hover{ box-shadow:inset 0 0 0 999px ${W(4)}; }
-${SCOPE} .tt-draw-hw8:hover{ background:${W(8)}; }
-${SCOPE} .tt-draw-bbtn:hover{ background:${C.blueBtnHov} !important; }
-${SCOPE} .tt-draw-vp:hover{ border-color:${W(40)} !important; }
-${SCOPE} .tt-draw-prow:hover{ box-shadow:inset 0 0 0 999px ${W(4.5)}; }
+${SCOPE} .tt-draw-hov:hover{ background:${C.hover} !important; }
+${SCOPE} .tt-draw-edge:hover{ border-color:${W(22)} !important; }
+${SCOPE} .tt-draw-tile:hover{ box-shadow:inset 0 0 0 1px ${W(22)}; }
+${SCOPE} .tt-draw-prow:hover{ background:${C.hover} !important; }
 ${SCOPE} .tt-draw-score:hover, ${SCOPE} .tt-draw-score:focus-visible{ background:${W(10)}; outline:none; }
-${SCOPE} .tt-draw-sug:hover{ border-color:${C.blue} !important; color:${C.blueFav} !important; }
+${SCOPE} .tt-draw-sug:hover{ background:${C.hover}; border-color:${W(22)} !important; }
 ${SCOPE} .tt-draw-chg{ color:${C.muted}; } ${SCOPE} .tt-draw-chg:hover{ color:${C.text}; }
-${SCOPE} .tt-draw-plink{ color:${C.text}; } ${SCOPE} .tt-draw-plink:hover{ color:${C.blueFav}; text-decoration:underline; text-underline-offset:3px; }
-${SCOPE} .tt-draw-step:hover{ border-color:${C.blue} !important; box-shadow:inset 0 0 0 999px ${B(7)}; }
-${SCOPE} .tt-draw-tilehov:hover{ background:${W(3.5)}; }
-${SCOPE} .tt-draw-lead:hover{ border-color:${W(22)} !important; }
-${SCOPE} .tt-draw-orow:hover{ background:${W(5)} !important; }
+${SCOPE} .tt-draw-plink{ color:${C.text}; } ${SCOPE} .tt-draw-plink:hover{ text-decoration:underline; text-underline-offset:3px; }
 ${SCOPE} input::placeholder{ color:${C.muted}; }
 ${SCOPE} ::-webkit-scrollbar{ width:10px; height:10px; } ${SCOPE} ::-webkit-scrollbar-thumb{ background:${W(8)}; border-radius:6px; }
-${SCOPE} .tt-draw-av .sf-ph.sf-on{ background:${C.avatar}; }
+${SCOPE} .tt-draw-av .sf-ph.sf-on{ background:${C.lifted}; }
 `;
   document.head.appendChild(s);
+  // the fixed layers (player box, "?" box) belong to the row / button that opened them: a scroll closes them
+  if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('scroll', e => {
+    if (!(S.pop || S.help)) return;
+    const t = e && e.target; if (t && t.closest && t.closest('.tt-draw-pop, .tt-draw-helpbox')) return;
+    S.pop = null; S.help = null; repaint();
+  }, { passive: true, capture: true });
 }
 
 const TTDraw = {
@@ -963,7 +1203,8 @@ const TTDraw = {
   rowById(id) { return ROWS.get(String(id)) || null; },
   _h(i, ev) { const f = H[i]; if (typeof f !== 'function') return; if (ev && ev.type === 'click' && ev.stopPropagation) ev.stopPropagation(); f(ev); },
   // test hooks (Node): the pure parts and the state
-  _test: { S, events, modelOf, facts, pathOf, statsModel, seasonFigs, dbRowsOf, setFacts, stageOf, render, FILES, reset, boardPrice, resultRow, analysisId, ROWS },
+  _test: { S, events, modelOf, facts, pathOf, statsModel, seasonFigs, dbRowsOf, setFacts, stageOf, render, FILES, reset, boardPrice, resultRow, analysisId, ROWS,
+    boxModel, ptsModel, pickName, get H() { return H; } },
 };
 if (typeof module !== 'undefined' && module.exports) module.exports = TTDraw;
 if (typeof window !== 'undefined') window.TTDraw = TTDraw;

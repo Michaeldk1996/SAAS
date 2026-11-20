@@ -55,7 +55,7 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'quote-speaker-'));
 const W = (f, s) => { fs.writeFileSync(path.join(tmp, f), typeof s === 'string' ? s : JSON.stringify(s)); return path.join(tmp, f); };
 // a group header opens an UNDATED run; a year in column 1 dates its row and the rows under it (the sheet's layout)
 const csv = W('q.csv', 'TOURNAMENT,PLAYER,COMMENTARY\nMUTUA MADRID OPEN,Tsitsipas,"an undated note about the clay."\n' +
-  '2023,Tsitsipas,"on the conditions in Madrid: altitude is a different scenario."\n2023,Rincon,"about the qualifying here: it was tough."\n');
+  '2023,Tsitsipas,"on the conditions in Madrid: altitude is a different scenario."\n2023,Rincon,"about the qualifying here: the court was slow."\n');
 // the roster now holds BOTH Tsitsipas brothers; only Stefanos is in Madrid 2023's draw
 const roster = W('roster.json', { players: { 1906: { name: 'S. Tsitsipas' }, 1872: { name: 'Pe. Tsitsipas' }, 657: { name: 'D. Rincon' } } });
 const profiles = W('profiles.json', { profiles: { Madrid: { allEditionMatches: [{ season: '2023', matches: [{ p1: 'S. Tsitsipas', p1Key: 1906, p2: 'A. Rublev', p2Key: 2847 }] }] } } });

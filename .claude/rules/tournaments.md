@@ -7,7 +7,13 @@ also styles the shell), `tournaments-entry.js` (`TTEntry`), `tournaments-draw.js
 Rationale: `BUILD-NOTES.md` "2026-11-15 — Tournaments tab rebuild".
 
 ## The design is the specification
-- **The handoff `design_handoff_tournaments_tab/` is canonical** (prototype `*.dc.html` + `README.md` + `DECISIONS.md`;
+- **2026-11-20: `design_handoff_tournaments_2026-11-20/` replaces `design_handoff_tournaments_tab/`** (founder; untracked,
+  never published). `design/` is the build target, `reference_options/` is not built; README + `CHANGELOG_2026-11-20.md`
+  (newest entry wins). Where this file and that handoff disagree on LOOK, the handoff wins; every data rule below stands.
+  Its colours map to `--tt-*` (`--tt-lifted` #121521, `--tt-hover` #171B28, `--tt-track` #0A0C13 added); small labels
+  11.5/600 grey, never caps; avatars = player photos by key (initials only as the fallback); tournament logos =
+  `tournament-logos/index.json`. **Test:** the four `tools/test-tt-*.mjs`.
+- (pre-2026-11-20) **The handoff `design_handoff_tournaments_tab/` was canonical** (prototype `*.dc.html` + `README.md` + `DECISIONS.md`;
   when they disagree: prototype source > newest DECISIONS entry > README). **Design wins** over every standing site rule it
   contradicts (founder 2026-11-15). Named exceptions this tab carries, each by that ruling:
   ROI coloured by its gap to the tour (not its sign) · no visible n on a figure (the n and its population live in the
@@ -22,7 +28,7 @@ Rationale: `BUILD-NOTES.md` "2026-11-15 — Tournaments tab rebuild".
 - **Stats tab is gone**, and with it How it plays, Favourites vs underdogs by round and Points to defend on this page.
   `tourxSetSection('stats')` falls back to Overview. The builders and their files stay (`how-it-plays.json` and
   `favourites-by-round.json` feed the Overview and Draw figures below; `points-to-defend.json` is shown nowhere on this
-  page). **Test:** `tools/test-tournament-page.js` (no Stats tab), the builders' own `tools/test-how-it-plays.js`,
+  page; 2026-11-20: it is the Draw tab's Points to defend view, see Draw). **Test:** `tools/test-tournament-page.js` (no Stats tab), the builders' own `tools/test-how-it-plays.js`,
   `tools/test-favourites-by-round.js`, `tools/test-points-to-defend.js`.
 
 ## Colour, scope, theme
@@ -41,9 +47,17 @@ Rationale: `BUILD-NOTES.md` "2026-11-15 — Tournaments tab rebuild".
   leader / rows / quarter cards, the Outright pill, any verdict built on chances), fair-odds ranges, likely opening price
   ranges, "Be careful" / "No warning", the underdog lists. The boxes are built; the figures read "—"; a sentence built only
   on chances is omitted. **Test:** `tools/test-tt-draw.mjs` "chances are dashes everywhere" (mutant: a chance figure).
+- **Speed by year = `court-speed-history.json`** (founder 2026-11-20: "use all of this in our database … until 2020"),
+  committed, built by hand with `tools/build-court-speed-history.mjs`: `ta[event][year]` = Tennis Abstract surface speed —
+  its season archive for 2020–2023, 2024–2025 from `COURT_CONDITIONS` `as2024`/`as2025` (TA no longer serves those pages;
+  the 2023 values agree with TA's archive), the current season from TA's last-52-week page (rows dated in that season);
+  `cpi[event][year]` = courtspeed.com Court Pace Index (2012–), Slams, Masters 1000, ATP Finals. Canadian rows follow the
+  host-year rule (to 2019 Toronto even; from 2021 Toronto odd); Lyon 2026 = "Lyon (France)". A source that fails to load
+  writes nothing. **CPI shows for Masters 1000 only** (speed card first row, trend Speed index · CPI switch, Compare all CPI
+  table; the Canadian Open = Montreal + Toronto by year), credited to courtspeed.com on hover.
 - **Court speed = the Tennis Abstract readings we hold** (founder 2026-11-16, "we have court speed data"; replaces the
-  2026-11-15 dashes). The figure, its band word, the rank line, the speed-by-year series (2023–2025 readings; a year with
-  none is a dash) and the Court speed box read `COURT_CONDITIONS` (`abstractSpeed`, `as2023`–`as2025`) — the same figures
+  2026-11-15 dashes). The figure, its band word, the rank line and the Court speed box read `COURT_CONDITIONS`
+  (`abstractSpeed`) — the same figures
   Match analysis, Key factors and the profile print — credited on hover, with the 4-band label (≥ 1.10 Fast · ≥ 0.95 Medium
   · ≥ 0.82 Medium-slow · Slow). ONE switch `TT_SPEED_SOURCE` (`tournaments-overview.js`; `'ta'` default, `'own'` = every
   figure a dash). **Test:** `tools/test-tt-overview.mjs` "court speed defaults to the Tennis Abstract figure" + "court
@@ -92,8 +106,8 @@ Rationale: `BUILD-NOTES.md` "2026-11-15 — Tournaments tab rebuild".
 ## Shell — header and tabs
 - Header card = the shared 35b `.sfh tourx-head` ("Tournaments", one sentence; stats Events · This week · Updated only when
   all three compute from live data). **"This week" is one set** (`tourxThisWeekEvents()`: every Entry-list shard row in the
-  current ISO week ∪ the registry's in-play events, de-duplicated on city); the header stat and the current week's chip
-  count it. **Test:** `test-ten401-b.mjs` header + r1.4, `test-ten403-header.mjs`.
+  current ISO week ∪ the registry's in-play events, de-duplicated on city); the header stat counts it. **A week chip counts
+  that week's list rows at every level** (= the sum of its ATP · Challenger · ITF counts; 2026-11-20 handoff). **Test:** `test-ten401-b.mjs` header + r1.4, `test-ten403-header.mjs`.
 - Tabs: Overview · Entry list · Draw · Reports. The markup is `sfSegHtml` (class `tt-tabs`); the look is the design's tab
   track (`tournaments-overview.js` CSS: `--inner` track, 6% ring; selected `--selected` + 16% ring, white 700). **Test:**
   `test-ten401-b.mjs` "the page tabs use it" (markup).
@@ -106,13 +120,24 @@ Rationale: `BUILD-NOTES.md` "2026-11-15 — Tournaments tab rebuild".
   1st serve points won · Service hold) · speed by year · Conditions read beside What players say · Betting market with
   From / To native year selects (2020–2026) · three tiles Backing favourites · Backing underdogs · Favourite reliability.
   No Upsets tile.
-- **Altitude** = `COURT_CONDITIONS.altitude`. **1st serve points won** = `how-it-plays.json` `past.metrics.firstServeWon`
-  num / den over every past edition on file — hard courts only; elsewhere "—". **Service hold** = `event-hold.json` held /
+- **Altitude** = `COURT_CONDITIONS.altitude`. **1st serve points won** = `event-hold.json` `fsWon` / `fsPlayed` (our box
+  scores, main draw, every edition, EVERY surface, both players only where both carry the count; founder 2026-11-20 "every
+  tournament"), else `how-it-plays.json` `past.metrics.firstServeWon`; neither → "—". **Service hold** = `event-hold.json` held /
   games (our box scores, main draw, every edition on file); no box score → "—". **Test:** `tools/test-tt-overview.mjs`
   "service hold" + "1st serve won".
 - **ROI tiles coloured by their gap to the tour:** within 1 pp `--text`, above `--pos`, below `--neg`. **Favourite
   reliability** prints "Nth of N tournaments" over events with n ≥ 30, judged on the printed whole percent (ties share a
   rank). **Test:** `tools/test-tt-overview.mjs` "ROI coloured by its gap to the tour; reliability rank of N".
+- **Quotes source (founder 2026-11-20 sheet):** `data/tournament-quotes.csv` = the founder's export with columns TOURNAMENT ·
+  PLAYER · YEAR · COMMENTARY · BALLS · COMMENTATORS; the importer rewrites it into its original layout. COMMENTARY is the
+  player's words; a BALLS cell that is a quotation on a row with a PLAYER is that player's words too (a separate note);
+  COMMENTATORS and supplier notes never import. **Only notes about conditions ship** (speed, bounce, balls, weather /
+  humidity, altitude, the court; `conditionsScore` > 0), ordered inside each year by that score (speed counts double); the
+  rest are listed in the report. Speakers also resolve against the official draw sheets (`draws.json`,
+  `draws-archive.json`) and the board's ATP Finals cards for a season the tournament store does not hold yet. The page
+  offers a year switch (`quoteYear`; a year with no note is not offered). A note whose cleaning stays unsafe (narration
+  between quotes) is not shown. **Test:** `tools/test-quote-speaker.js`, `test-ten401-f1a.mjs` (cleaner rules on the pinned
+  October sheet `tools/fixtures/quotes-sheet-2026-10.json`; the live sheet's safety check).
 - **What players say = real, traceable notes only:** the speaker resolves to exactly one entrant of that tournament-season
   (importer `playerMatch` `entrant`, `tools/quotes/quote-speaker.cjs`) and a year. A note whose lead-in names its speaker as
   the opponent, names another registry event and not its own (`tourxQuoteOtherEvent`), or is on `TOURX_QUOTE_EXCLUDE` (hand-

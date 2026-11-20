@@ -40,11 +40,12 @@ const ARCHIVE_DIR = path.join(__dirname, 'boxscore-archive');
 const OUT_PATH = path.join(__dirname, 'event-hold.json');
 const Q_PATH = path.join(__dirname, 'boxscore-qualifying.json');
 const SG = 'Games:Service games won';
+const FS = 'Service:1st serve points won';   // founder 2026-11-20: every tournament shows its 1st serve points won
 
 function cleanName(tn) { return String(tn || '').replace(/^ATP\s+/i, '').trim(); }
 
-function sgOf(side) {
-  const r = side && side.raw && side.raw[SG];
+function sgOf(side, key = SG) {
+  const r = side && side.raw && side.raw[key];
   if (!r || !Number.isFinite(r.won) || !Number.isFinite(r.total) || r.total <= 0 || r.won < 0 || r.won > r.total) return null;
   return r;
 }
@@ -72,7 +73,10 @@ function buildEventHold(weeks, qFlags) {
       const a = sgOf(ms.p1), b = sgOf(ms.p2);
       if (!a || !b) continue;
       const k = String(e.tk);
-      const x = ev[k] || (ev[k] = { name: cleanName(e.tn), names: [], held: 0, games: 0, matches: 0, years: [], from: null, to: null });
+      const x = ev[k] || (ev[k] = { name: cleanName(e.tn), names: [], held: 0, games: 0, matches: 0, fsWon: 0, fsPlayed: 0, fsMatches: 0, years: [], from: null, to: null });
+      // 1st-serve points won, both players, only matches where both sides carry the count (same population rule as hold)
+      const fa = sgOf(ms.p1, FS), fb = sgOf(ms.p2, FS);
+      if (fa && fb) { x.fsWon += fa.won + fb.won; x.fsPlayed += fa.total + fb.total; x.fsMatches++; }
       const nm = cleanName(e.tn);
       if (!x.names.includes(nm)) x.names.push(nm);
       x.held += a.won + b.won;
