@@ -1,19 +1,19 @@
 {
- "generatedAt": "2026-11-20T20:50:12.635Z",
+ "generatedAt": "2026-11-20T21:30:29.553Z",
  "tournaments": [
   {
    "key": "2794",
    "season": "2026",
-   "name": "Finals - Turin",
+   "name": "Finals",
    "file": "news-ticker/2794-2026.json",
-   "items": 256,
+   "items": 257,
    "byType": {
+    "report": 12,
     "digest": 33,
-    "quote": 212,
-    "report": 11
+    "quote": 212
    },
-   "latestTimestamp": "2026-11-20T20:30:00.000Z",
-   "updatedAt": "2026-11-20T20:50:12.635Z"
+   "latestTimestamp": "2026-11-20T21:04:35.316Z",
+   "updatedAt": "2026-11-20T21:30:29.553Z"
   },
   {
    "key": "tour",
@@ -26,7 +26,7 @@
     "quote": 97
    },
    "latestTimestamp": "2026-11-20T17:30:00.000Z",
-   "updatedAt": "2026-11-20T20:50:12.635Z"
+   "updatedAt": "2026-11-20T21:30:29.553Z"
   },
   {
    "key": "1681",
@@ -56,6 +56,153 @@
   }
  ],
  "latest": [
+  {
+   "id": "report-12179702",
+   "type": "report",
+   "playerId": "1093",
+   "opponentId": "2846",
+   "player": "D. Medvedev",
+   "opponent": "F. Tiafoe",
+   "tournament": "Finals",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "stage": "main draw",
+   "round": "group stage",
+   "eventKey": "12179702",
+   "timestamp": "2026-11-20T21:04:35.316Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-20T21:04:35.316Z",
+    "startedAt": "2026-11-20T19:43:25.281Z",
+    "minutes": 81
+   },
+   "category": "Statistics",
+   "text": "Medvedev beat Tiafoe for the 7th time in 9 meetings, 6-3, 6-4 in the group stage.\n\nMedvedev: W: 28 / UE: 13 | DR: 1.38\n\nTiafoe: W: 22 / UE: 15 | DR: 0.73",
+   "ms": {
+    "a": "D. Medvedev",
+    "b": "F. Tiafoe",
+    "sets": [
+     [
+      6,
+      3
+     ],
+     [
+      6,
+      4
+     ]
+    ],
+    "rows": [
+     [
+      "Dominance ratio",
+      1.38,
+      0.73,
+      "dr"
+     ],
+     [
+      "1st serve in",
+      76,
+      71,
+      "%"
+     ],
+     [
+      "1st serve points won",
+      77,
+      68,
+      "%"
+     ],
+     [
+      "2nd serve points won",
+      57,
+      53,
+      "%"
+     ],
+     [
+      "Ratio W/UE",
+      2.15,
+      1.47,
+      "2"
+     ],
+     [
+      "Winners / point",
+      0.24,
+      0.19,
+      "2"
+     ],
+     [
+      "Unforced / point",
+      0.11,
+      0.13,
+      "2",
+      1
+     ]
+    ]
+   },
+   "baseText": "Medvedev beat Tiafoe for the 7th time in 9 meetings, 6-3, 6-4 in the group stage.",
+   "rating": [
+    "Medvedev: W: 28 / UE: 13 | DR: 1.38",
+    "Tiafoe: W: 22 / UE: 15 | DR: 0.73"
+   ],
+   "fields": {
+    "score": "6-3, 6-4",
+    "round": "group stage",
+    "retired": false,
+    "h2h": {
+     "a": 7,
+     "b": 2,
+     "n": 9
+    },
+    "durationMinutes": 81,
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "aces",
+      "value": 15
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "firstIn",
+      "value": 76,
+      "baseline": 65,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 55
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "firstWon",
+      "value": 77,
+      "won": 34,
+      "total": 44
+     }
+    ],
+    "winner": {
+     "aces": 15,
+     "winners": 28,
+     "unforcedErrors": 13,
+     "breakPointsSaved": 2,
+     "breakPointsFaced": 2,
+     "breakPointsSource": "box score"
+    },
+    "loser": {
+     "aces": 6,
+     "winners": 22,
+     "unforcedErrors": 15,
+     "breakPointsSaved": 4,
+     "breakPointsFaced": 6,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12179702.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "6ef55be873c88ef0",
+   "publishedAt": "2026-11-20T21:30:29.553Z",
+   "file": "news-ticker/2794-2026.json"
+  },
   {
    "id": "digest-4abff17ff9d239",
    "type": "digest",
@@ -953,7 +1100,7 @@
    "opponentId": "372",
    "player": "C. Alcaraz",
    "opponent": "F. Cobolli",
-   "tournament": "Finals - Turin",
+   "tournament": "Finals",
    "tournamentKey": "2794",
    "season": "2026",
    "stage": "main draw",
@@ -1140,10 +1287,10 @@
    "sourceUrl": "pbp/12179697.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "f208b63d6e434f26",
+   "sourceHash": "678e3e8040a8d27b",
    "publishedAt": "2026-11-20T14:37:46.495Z",
-   "revisedAt": "2026-11-20T15:46:01.892Z",
-   "revision": 2,
+   "revisedAt": "2026-11-20T21:30:29.553Z",
+   "revision": 3,
    "file": "news-ticker/2794-2026.json"
   },
   {
@@ -1665,37 +1812,6 @@
    "topic": "On giving children an unforgettable experience",
    "sourceHash": "b3a02424957c0f2c",
    "publishedAt": "2026-11-20T13:23:46.864Z",
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-61b36f14b59acb",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": "372",
-   "player": "C. Alcaraz",
-   "opponent": "F. Cobolli",
-   "tournament": "Finals - Turin",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-20T00:00:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Quotes",
-   "context": "after beating F. Cobolli",
-   "eventKey": "12179697",
-   "won": true,
-   "text": "I try not to go too hard with myself physically, which I just tried to play really hard, really strong, and aggressive, and I think I could do it. So I'm just happy about it. I'm looking forward to tomorrow.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "ATP Tour",
-   "sourceUrl": "https://www.atptour.com/en/news/alcaraz-nitto-atp-finals-2026-reaction-friday",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "topic": "On playing aggressively without overexerting physically",
-   "sourceHash": "432f1c1f6e515c4b",
-   "publishedAt": "2026-11-20T16:34:14.512Z",
    "file": "news-ticker/2794-2026.json"
   }
  ]
