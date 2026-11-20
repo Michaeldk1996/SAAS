@@ -2,7 +2,7 @@
  "tournament": "Finals - Turin",
  "tournamentKey": "2794",
  "season": "2026",
- "updatedAt": "2026-11-19T23:27:05.831Z",
+ "updatedAt": "2026-11-20T00:11:12.005Z",
  "items": [
   {
    "id": "quote-f6f8b392c9ba3c",
@@ -439,7 +439,7 @@
     "minutes": 98
    },
    "category": "Statistics",
-   "text": "Zverev beat Fils 6–4, 7–6 in the group stage to finish his group with six sets won out of six, still without losing his serve all week. It was the first appearance of Fils at this event and Zverev had already won the McEnroe group before the match.\n\nThe first set turned on a single break. Zverev broke for 4–3 and held on from there to take it 6–4. The second set had no break of serve and Fils came closest when Zverev served at 5–6. He had two set points and Zverev saved both. That was the moment of the match. The tiebreak ran long, with five points in a row saved, before Zverev took it 8–6. Zverev knows his level dropped a little: \"Today I thought I played a little bit worse from the baseline, but I'm very happy to have won all three matches, against three very difficult opponents, …\"\n\nEven on a lesser day, he found answers. He hit several well-struck passing shots, a fine backhand among them and finished points well around the net. Zverev was at his best when it mattered most. He saved every break point he faced, while Fils could not and he won 83% of the points behind his first serve.\n\nA very good group stage from Zverev, clean from start to finish in these fast indoor conditions. He was happy to be through in straight sets and with no break conceded all week he had every reason to be. Medvedev or Tiafoe waits in the semi-finals.\n\nZverev: W: 23 / UE: 22 | DR: 1.02\n\nFils: W: 24 / UE: 14 | DR: 0.98",
+   "text": "Zverev beat Fils 6–4, 7–6 in the group stage to finish his group with six sets won out of six, still without losing his serve all week. It was the first appearance of Fils at this event and Zverev had already won the McEnroe group before the match.\n\nThe first set turned on a single break. Zverev broke for 4–3 and held on from there to take it 6–4. The second set had no break of serve and Fils came closest when Zverev served at 5–6. He had two set points and Zverev saved both. That was the moment of the match. The tiebreak ran long, with five points in a row saved, before Zverev took it 8–6. Zverev knows his level dropped a little: \"Today I thought I played a little bit worse from the baseline, but I'm very happy to have won all three matches, against three very difficult opponents, …\"\n\nEven on a lesser day, he found answers. He hit several well-struck passing shots, a fine backhand among them and finished points well around the net. Zverev was at his best when it mattered most. He saved every break point he faced, while Fils could not and he won 83% of the points behind his first serve.\n\nA very good group stage from Zverev, clean from start to finish in these fast indoor conditions. He was happy to be through in straight sets and with no break conceded all week he had every reason to be. Medvedev or Tiafoe waits in the semi-finals.\n\nZverev: performance rating 8.6 | W: 23 / UE: 22 | DR: 1.02\n\nFils: performance rating 8.8 | W: 24 / UE: 14 | DR: 0.98",
    "ms": {
     "a": "A. Zverev",
     "b": "A. Fils",
@@ -461,9 +461,27 @@
       "dr"
      ],
      [
+      "Serve quality",
+      9.4,
+      8.2,
+      "1"
+     ],
+     [
+      "Return quality",
+      8.2,
+      7.8,
+      "1"
+     ],
+     [
       "1st serve in",
       73,
       66,
+      "%"
+     ],
+     [
+      "Unreturned serves",
+      40,
+      30,
       "%"
      ],
      [
@@ -477,6 +495,12 @@
       53,
       71,
       "%"
+     ],
+     [
+      "Baseline points won",
+      22,
+      34,
+      "0"
      ],
      [
       "Winners / unforced",
@@ -514,9 +538,72 @@
    },
    "baseText": "Zverev beat Fils 6–4, 7–6 in the group stage to finish his group with six sets won out of six, still without losing his serve all week. It was the first appearance of Fils at this event and Zverev had already won the McEnroe group before the match.\n\nThe first set turned on a single break. Zverev broke for 4–3 and held on from there to take it 6–4. The second set had no break of serve and Fils came closest when Zverev served at 5–6. He had two set points and Zverev saved both. That was the moment of the match. The tiebreak ran long, with five points in a row saved, before Zverev took it 8–6. Zverev knows his level dropped a little: \"Today I thought I played a little bit worse from the baseline, but I'm very happy to have won all three matches, against three very difficult opponents, …\"\n\nEven on a lesser day, he found answers. He hit several well-struck passing shots, a fine backhand among them and finished points well around the net. Zverev was at his best when it mattered most. He saved every break point he faced, while Fils could not and he won 83% of the points behind his first serve.\n\nA very good group stage from Zverev, clean from start to finish in these fast indoor conditions. He was happy to be through in straight sets and with no break conceded all week he had every reason to be. Medvedev or Tiafoe waits in the semi-finals.",
    "rating": [
-    "Zverev: W: 23 / UE: 22 | DR: 1.02",
-    "Fils: W: 24 / UE: 14 | DR: 0.98"
+    "Zverev: performance rating 8.6 | W: 23 / UE: 22 | DR: 1.02",
+    "Fils: performance rating 8.8 | W: 24 / UE: 14 | DR: 0.98"
    ],
+   "shotStats": {
+    "p1": {
+     "performance": 8.6,
+     "serveQuality": 9.4,
+     "unreturnedPct": 40,
+     "firstInPct": 73,
+     "firstWonPct": 83,
+     "secondWonPct": 53,
+     "secondSpeed": 181,
+     "returnQuality": 8.2,
+     "fhWinners": 5,
+     "bhWinners": 6,
+     "fhUnforced": 17,
+     "bhUnforced": 5,
+     "forcedErrors": 18,
+     "baselineWon": 22,
+     "under9Won": 61,
+     "over9Won": 8,
+     "bpWon": [
+      1,
+      3
+     ],
+     "netWon": [
+      14,
+      21
+     ]
+    },
+    "p2": {
+     "performance": 8.8,
+     "serveQuality": 8.2,
+     "unreturnedPct": 30,
+     "firstInPct": 66,
+     "firstWonPct": 76,
+     "secondWonPct": 71,
+     "secondSpeed": 154,
+     "returnQuality": 7.8,
+     "fhWinners": 11,
+     "bhWinners": 5,
+     "fhUnforced": 6,
+     "bhUnforced": 7,
+     "forcedErrors": 32,
+     "baselineWon": 34,
+     "under9Won": 59,
+     "over9Won": 5,
+     "bpWon": [
+      0,
+      2
+     ],
+     "netWon": [
+      6,
+      10
+     ]
+    },
+    "postedAt": "2026-11-19T21:25:51.000Z",
+    "readAt": "2026-11-19T23:36:30.914Z",
+    "sourceName": "ATP broadcast match statistics (via @ATP_Entry)",
+    "sourceUrl": "https://x.com/ATP_Entry/status/2123528204421890354",
+    "agreed": "6 of 6 serve figures within 3 points of ours; set scores and break points equal",
+    "wue": {
+     "compared": 4,
+     "maxDiff": 2
+    }
+   },
    "commentary": {
     "text": "Zverev won in straight sets in fast indoor conditions, finishing his group with three wins from three, six sets won out of six and still without losing his serve all week. He had already won the McEnroe group before the match. The match ended in a long tiebreak in which five points in a row were saved before Zverev closed it out. Zverev hit several well-struck passing shots, including a fine backhand and finished points well around the net. Zverev will play either Medvedev or Tiafoe in Saturday's semi-finals and Shelton went through in second place from the group.",
     "sourceName": "Tennis TV highlights commentary",
@@ -603,10 +690,10 @@
    "sourceUrl": "pbp/12179706.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "8ebbcc65bd205a00",
+   "sourceHash": "02ca514fcc221aaa",
    "publishedAt": "2026-11-19T21:41:50.197Z",
-   "revisedAt": "2026-11-19T22:42:19.394Z",
-   "revision": 2
+   "revisedAt": "2026-11-20T00:11:12.005Z",
+   "revision": 3
   },
   {
    "id": "digest-2fe98118ffca6f",
