@@ -2,7 +2,7 @@
  "tournament": "Finals - Turin",
  "tournamentKey": "2794",
  "season": "2026",
- "updatedAt": "2026-11-20T12:28:39.544Z",
+ "updatedAt": "2026-11-20T12:58:12.783Z",
  "items": [
   {
    "id": "quote-c4990284beea40",
@@ -93,6 +93,66 @@
    "topic": "On his ankle problems at the ATP Finals",
    "sourceHash": "91e64fac9146d91e",
    "publishedAt": "2026-11-20T09:26:43.564Z"
+  },
+  {
+   "id": "quote-4b714930325012",
+   "type": "quote",
+   "playerId": "2846",
+   "opponentId": null,
+   "player": "F. Tiafoe",
+   "opponent": null,
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-20T00:00:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "First of all, I just love kids. I think it's a cool thing that we do… It's awesome to have them have that experience, something they're never going to forget, … And them going through what they're going through, a shoutout to them.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "ATP Tour",
+   "sourceUrl": "https://www.atptour.com/en/news/tiafoe-mascot-nitto-atp-finals-2026",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
+   "topic": "On giving children an unforgettable experience",
+   "sourceHash": "b3a02424957c0f2c",
+   "publishedAt": "2026-11-20T12:58:12.783Z"
+  },
+  {
+   "id": "quote-6968f682f0debf",
+   "type": "quote",
+   "playerId": "2846",
+   "opponentId": null,
+   "player": "F. Tiafoe",
+   "opponent": null,
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-20T00:00:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "Shoutout to all the kids, man, … They're the next generation, so hopefully they get some type of inspiration from being out here.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "ATP Tour",
+   "sourceUrl": "https://www.atptour.com/en/news/tiafoe-mascot-nitto-atp-finals-2026",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
+   "topic": "On inspiring the next generation of kids",
+   "sourceHash": "ef86a96454f3194e",
+   "publishedAt": "2026-11-20T12:58:12.783Z"
   },
   {
    "id": "quote-b773f5774eca9a",
@@ -5726,6 +5786,39 @@
      "text": "Arthur for me personally is a very difficult opponent as well because of how much power he has.",
      "from": [
       "quote-457f5fc72870b1"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5"
+  },
+  {
+   "id": "digest-6acaf2c0e68a20",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2846",
+   "player": "F. Tiafoe",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-20T00:00:00.000Z",
+   "members": [
+    "quote-4b714930325012",
+    "quote-6968f682f0debf"
+   ],
+   "memberHash": "9002d11003435750",
+   "digestedAt": "2026-11-20T12:58:12.783Z",
+   "blocks": [
+    {
+     "label": "on inspiring kids with an unforgettable experience",
+     "text": "First of all, I just love kids. I think it's a cool thing that we do. It's awesome to have them have that experience, something they're never going to forget. And them going through what they're going through, a shoutout to them. Shoutout to all the kids. They're the next generation, so hopefully they get some type of inspiration from being out here.",
+     "from": [
+      "quote-4b714930325012",
+      "quote-6968f682f0debf"
      ]
     }
    ],
