@@ -2,7 +2,7 @@
  "tournament": "ATP Tour",
  "tournamentKey": "tour",
  "season": "2026",
- "updatedAt": "2026-11-21T16:37:32.313Z",
+ "updatedAt": "2026-11-21T17:07:33.781Z",
  "items": [
   {
    "id": "quote-858a4016c87dee",
@@ -63,6 +63,68 @@
    "topic": "On staying mentally strong to beat Shelton",
    "sourceHash": "94d0dd975d914440",
    "publishedAt": "2026-11-21T16:37:32.313Z"
+  },
+  {
+   "id": "quote-4f03942fa8c6c2",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": null,
+   "player": "C. Alcaraz",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-21T16:03:00.000Z",
+   "timestampKind": "observed (Tennis TV published the clip then)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "the break early it was tough for me to deal with but you know just happy that I came back in the second set",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "On-court interview",
+   "sourceUrl": "https://www.tennistv.com/videos/4612435/turin-2026-sf-alcaraz-interview",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
+   "interview": "on-court",
+   "topic": "On the early break",
+   "sourceHash": "99cf630e3a6323c3",
+   "publishedAt": "2026-11-21T17:07:33.781Z"
+  },
+  {
+   "id": "quote-72a8ea19637d72",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": null,
+   "player": "C. Alcaraz",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-21T16:03:00.000Z",
+   "timestampKind": "observed (Tennis TV published the clip then)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "I was a little bit frustrated at the beginning because I didn't start the match the way that I wanted to to be honest",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "On-court interview",
+   "sourceUrl": "https://www.tennistv.com/videos/4612435/turin-2026-sf-alcaraz-interview",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
+   "interview": "on-court",
+   "topic": "On his slow start",
+   "sourceHash": "892d47ad457a1aea",
+   "publishedAt": "2026-11-21T17:07:33.781Z"
   },
   {
    "id": "quote-157eadd9ed66ff",
@@ -3118,17 +3180,33 @@
    "category": "Quotes",
    "timestamp": "2026-11-21T16:26:06.000Z",
    "members": [
+    "quote-4f03942fa8c6c2",
+    "quote-72a8ea19637d72",
     "quote-858a4016c87dee",
     "quote-d64229e60fdae3"
    ],
-   "memberHash": "4f601c05d7bb848f",
-   "digestedAt": "2026-11-21T16:37:32.313Z",
+   "memberHash": "b455f3f2a7e99ff2",
+   "digestedAt": "2026-11-21T17:07:33.781Z",
    "blocks": [
     {
-     "label": "after his win over Shelton",
-     "text": "It's been a complicated match. I started a little bit nervous, more than I should have, with some errors that prevented me from getting into a good rhythm, from gaining confidence. He started the match very aggressive, very focused. I've been mentally strong to withstand what was coming at me, to withstand the bad feelings. Little by little I've taken steps forward, and by the end I played tremendous tennis.",
+     "label": "after his win over Ben Shelton",
+     "text": "It's been a complicated match. I started a little bit nervous, more than I should have, with some errors that prevented me from getting into a good rhythm, from gaining confidence. He started the match very aggressive, very focused.",
      "from": [
-      "quote-858a4016c87dee",
+      "quote-858a4016c87dee"
+     ]
+    },
+    {
+     "label": "on his frustrating slow start against Shelton",
+     "text": "I was a little bit frustrated at the beginning because I didn't start the match the way that I wanted to, to be honest. The break early, it was tough for me to deal with, but just happy that I came back in the second set.",
+     "from": [
+      "quote-72a8ea19637d72",
+      "quote-4f03942fa8c6c2"
+     ]
+    },
+    {
+     "label": "on staying mentally strong to beat Shelton",
+     "text": "I've been mentally strong to withstand what was coming at me, to withstand the bad feelings. Little by little I've taken steps forward, and by the end I played tremendous tennis.",
+     "from": [
       "quote-d64229e60fdae3"
      ]
     }
@@ -3426,10 +3504,10 @@
     "quote-a20ad7c6e979e3"
    ],
    "memberHash": "2a5d041b1162e6f2",
-   "digestedAt": "2026-11-21T16:37:32.313Z",
+   "digestedAt": "2026-11-21T17:07:33.781Z",
    "blocks": [
     {
-     "label": "on Alcaraz's Superman level at the ATP Finals",
+     "label": "on Carlos Alcaraz's level of play",
      "text": "He has moments where he's definitely Superman and he's playing pretty insane. But again, it's one of those things, you've got to appreciate greatness.",
      "from": [
       "quote-a20ad7c6e979e3",
@@ -3542,7 +3620,7 @@
     "quote-758fd4e2661882"
    ],
    "memberHash": "1602bcb2f6f16728",
-   "digestedAt": "2026-11-21T16:37:32.313Z",
+   "digestedAt": "2026-11-21T17:07:33.781Z",
    "blocks": [
     {
      "label": "after his opening win over Frances Tiafoe",
@@ -3653,17 +3731,17 @@
     "quote-f2b49767a36019"
    ],
    "memberHash": "c0a714cecf99b5f9",
-   "digestedAt": "2026-11-21T16:37:32.313Z",
+   "digestedAt": "2026-11-21T17:07:33.781Z",
    "blocks": [
     {
-     "label": "on the physical rallies in his win over Fils",
+     "label": "after his win over Fils",
      "text": "That was really intense, especially in the first set. I don't know that I've played that many rallies out there on tour on a court this fast. So it was physical, really physical. A tough contest.",
      "from": [
       "quote-f2b49767a36019"
      ]
     },
     {
-     "label": "on constant questions about coach Juan Carlos Ferrero",
+     "label": "on the constant questions about coach Ferrero",
      "text": "I think that the questions are going to come, it's not something that surprises me and I'm used to it. But yes, there have been many, many questions.",
      "from": [
       "quote-cb6747ca9b29e9"
@@ -3692,7 +3770,7 @@
     "quote-c97b20550b80b5"
    ],
    "memberHash": "31dca0b43f47f574",
-   "digestedAt": "2026-11-21T16:37:32.313Z",
+   "digestedAt": "2026-11-21T17:07:33.781Z",
    "blocks": [
     {
      "label": "after his opening ATP Finals win over Jodar",
@@ -3770,11 +3848,11 @@
     "quote-91909bb6648e25"
    ],
    "memberHash": "631d2375c215fb2f",
-   "digestedAt": "2026-11-21T16:37:32.313Z",
+   "digestedAt": "2026-11-21T17:07:33.781Z",
    "blocks": [
     {
-     "label": "on practicing with a stringless racket in Turin",
-     "text": "They are exercises to hit, or try to hit, the ball in the sweet spot of the racket, bringing the hand forward. Here the ball travels very fast and you have very little time. If you try to play like on clay, trying to get the ball high over the net, in the end they put you under pressure.",
+     "label": "on practising with a stringless racket in Turin",
+     "text": "They are exercises to hit, or try to hit, the ball in the sweet spot of the racket, bringing the hand forward … Here the ball travels very fast and you have very little time. If you try to play like on clay, trying to get the ball high over the net, in the end they put you under pressure.",
      "from": [
       "quote-74899a9a78880b"
      ]
