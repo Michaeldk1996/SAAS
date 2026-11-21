@@ -2,7 +2,7 @@
  "tournament": "Finals",
  "tournamentKey": "2794",
  "season": "2026",
- "updatedAt": "2026-11-21T17:44:39.077Z",
+ "updatedAt": "2026-11-21T18:10:57.526Z",
  "items": [
   {
    "id": "digest-579fd62388beb8",
@@ -18,28 +18,51 @@
    "eventKey": "12181584",
    "context": "after beating B. Shelton",
    "category": "Quotes",
-   "timestamp": "2026-11-21T16:40:52.000Z",
+   "timestamp": "2026-11-21T17:36:32.947Z",
    "members": [
+    "quote-11923e3a5da240",
+    "quote-271944dd635276",
     "quote-272a78c30d5b89",
     "quote-426fe6ee85a183",
+    "quote-969dacab544ae6",
+    "quote-a05d59e45e9970",
     "quote-a57cf37356f551",
+    "quote-bf0808a2bbfbd2",
     "quote-c95cf7d44b544c",
     "quote-cc7214a08ad200",
     "quote-cf767984f79800",
     "quote-f50636433fa5e7"
    ],
-   "memberHash": "546d5a62e674950a",
-   "digestedAt": "2026-11-21T17:07:33.781Z",
+   "memberHash": "7fa9a9ee03594968",
+   "digestedAt": "2026-11-21T17:37:44.821Z",
    "blocks": [
     {
-     "label": "after his win over Shelton",
-     "text": "At the beginning I was a bit frustrated because I didn't start the match the way I wanted to, to be honest. He broke me quickly and then it was already a difficult situation. The break early in the first set was tough for me to deal with. But I'm happy that I came back in the second set playing such great tennis, step by step, focused on all my things and ended up playing good tennis. The third set was even closer. I think he raised the level a little bit from the second set. Myself as well. Great points, great games and just happy to play great tennis in the tie-break. I think this win matters. So, excited for tomorrow, and happy with everything today.",
+     "label": "after his win over Shelton in the Turin semi-final",
+     "text": "The break early in the first set was tough for me to deal with. But I'm happy that I came back in the second set playing such great tennis, step by step, focused on all my things and ended up playing good tennis. The third set was even closer. I think he raised the level a little bit from the second set. Myself as well. Great points, great games and just happy to play great tennis in the tie-break. I think this win matters. So, excited for tomorrow, and happy with everything today.",
      "from": [
-      "quote-c95cf7d44b544c",
-      "quote-f50636433fa5e7",
       "quote-a57cf37356f551",
-      "quote-272a78c30d5b89",
-      "quote-cf767984f79800"
+      "quote-272a78c30d5b89"
+     ]
+    },
+    {
+     "label": "on his frustrating start against Shelton",
+     "text": "At the beginning I was a bit frustrated because I didn't start the match the way I wanted to. Ben, however, is a player who pushes you to your limits. He broke me quickly and then it was already a difficult situation.",
+     "from": [
+      "quote-f50636433fa5e7"
+     ]
+    },
+    {
+     "label": "on facing Shelton's big serve and baseline game",
+     "text": "Someone like Ben, a big serve, big play from the baseline, I think he just pushes you to the limit every time.",
+     "from": [
+      "quote-426fe6ee85a183"
+     ]
+    },
+    {
+     "label": "on his outburst helping him relax",
+     "text": "Complaining, shouting, helped me. I had started tense, and I think that also helped me relax.",
+     "from": [
+      "quote-969dacab544ae6"
      ]
     },
     {
@@ -50,18 +73,269 @@
      ]
     },
     {
-     "label": "on facing Shelton's big serve and baseline game",
-     "text": "Someone like Ben, a big serve, big play from the baseline, I think he just pushes you to the limit every time.",
+     "label": "on recovering before the ATP Finals final",
+     "text": "My recovery time is really important for me to recover my body, to recover mentally, to be prepared for tomorrow.",
      "from": [
-      "quote-426fe6ee85a183"
+      "quote-bf0808a2bbfbd2"
      ]
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "e2cc74d985979057",
+   "sourceHash": "1601395775ae9481",
    "publishedAt": "2026-11-21T16:58:12.190Z",
-   "revisedAt": "2026-11-21T17:44:39.077Z",
-   "revision": 1
+   "revisedAt": "2026-11-21T18:10:57.526Z",
+   "revision": 2
+  },
+  {
+   "id": "quote-11923e3a5da240",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": "2973",
+   "player": "C. Alcaraz",
+   "opponent": "B. Shelton",
+   "tournament": "Finals",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-21T17:36:32.947Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating B. Shelton",
+   "eventKey": "12181584",
+   "won": true,
+   "text": "The early break in the first set was hard for me to take, but I'm happy that I came back in the second set and played good tennis. The third set was even more uncertain, we both raised our level of play, and I'm glad that I played at a high level in the tie-break",
+   "originalText": "Rani brejk u prvom setu bio mi je težak za podnijeti, ali sretan sam što sam se vratio u drugom setu i odigrao dobar tenis. Treći set bio je još neizvjesniji, obojica smo podigli nivo igre, a drago mi je što sam u tie-breaku odigrao na visokom nivou",
+   "language": "bs",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "Sport1.ba (Oslobodjenje)",
+   "sourceUrl": "https://www.oslobodjenje.ba/sport/ostali-sportovi/tenis/alcaraz-nakon-preokreta-savladao-sheltona-i-izborio-finale-atp-finalsa-u-torinu/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his ATP Finals semi-final win over Shelton",
+   "sourceHash": "62b87780c3109d87",
+   "publishedAt": "2026-11-21T18:10:57.526Z"
+  },
+  {
+   "id": "digest-e83dc8d1af0113",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2973",
+   "player": "B. Shelton",
+   "opponentId": "2382",
+   "opponent": "C. Alcaraz",
+   "tournament": "Finals",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "eventKey": "12181584",
+   "context": "after losing to C. Alcaraz",
+   "category": "Quotes",
+   "timestamp": "2026-11-21T17:35:17.000Z",
+   "members": [
+    "quote-034854c29c460f",
+    "quote-c442e91631c816"
+   ],
+   "memberHash": "19f098dc6eddd9a0",
+   "digestedAt": "2026-11-21T17:37:44.821Z",
+   "blocks": [
+    {
+     "label": "on being called the third man behind Sinner, Alcaraz",
+     "text": "The media always want a story, or a third man, or who will be the next protagonist. I'm just focused on my level. I have big goals, dreams and aspirations. I'm doing everything in my power, together with my team, to keep moving in the right direction and be the best version of myself. All my focus is there.",
+     "from": [
+      "quote-c442e91631c816"
+     ]
+    },
+    {
+     "label": "on grading his season",
+     "text": "It's hard to give my season a grade.",
+     "from": [
+      "quote-034854c29c460f"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "7e8d57d8c9cc507d",
+   "publishedAt": "2026-11-21T18:10:57.526Z"
+  },
+  {
+   "id": "quote-034854c29c460f",
+   "type": "quote",
+   "playerId": "2973",
+   "opponentId": "2382",
+   "player": "B. Shelton",
+   "opponent": "C. Alcaraz",
+   "tournament": "Finals",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-21T17:35:17.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after losing to C. Alcaraz",
+   "eventKey": "12181584",
+   "won": false,
+   "text": "It's hard to give my season a grade … Sinner and Alcaraz? The media want a story, I focus on my own level",
+   "originalText": "È difficile dare un voto alla mia stagione … Sinner e Alcaraz? I media vogliono una storia, io mi concentro sul mio livello",
+   "language": "it",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "Ubitennis",
+   "sourceUrl": "https://www.ubitennis.com/blog/2026/11/21/atp-finals-shelton-a-scanagatta-se-sono-io-il-terzo-incomodo-credevo-ti-fossi-dimenticato/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his season and the Sinner-Alcaraz narrative",
+   "sourceHash": "648d5e7ac4fd41e9",
+   "publishedAt": "2026-11-21T18:10:57.526Z"
+  },
+  {
+   "id": "quote-c442e91631c816",
+   "type": "quote",
+   "playerId": "2973",
+   "opponentId": "2382",
+   "player": "B. Shelton",
+   "opponent": "C. Alcaraz",
+   "tournament": "Finals",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-21T17:35:17.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after losing to C. Alcaraz",
+   "eventKey": "12181584",
+   "won": false,
+   "text": "The media always want a story, or a 'third man', or who will be the next protagonist. I'm just focused on my level. I have big goals, dreams and aspirations. I'm doing everything in my power, together with my team, to keep moving in the right direction and be the best version of myself. All my focus is there",
+   "originalText": "I media vogliono sempre una storia, o un ‘terzo uomo’ , o chi sarà il prossimo protagonista. Io sono solo concentrato sul mio livello. Ho grandi obiettivi, sogni e aspirazioni. Sto facendo tutto ciò che è in mio potere, insieme al mio team, per andare avanti nella giusta direzione ed essere la migliore versione di me stesso. Tutta la mia attenzione è lì",
+   "language": "it",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "Ubitennis",
+   "sourceUrl": "https://www.ubitennis.com/blog/2026/11/21/atp-finals-shelton-a-scanagatta-se-sono-io-il-terzo-incomodo-credevo-ti-fossi-dimenticato/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On being called the third man behind Alcaraz, Sinner",
+   "sourceHash": "395dafeb012b2ff5",
+   "publishedAt": "2026-11-21T18:10:57.526Z"
+  },
+  {
+   "id": "quote-a05d59e45e9970",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": "2973",
+   "player": "C. Alcaraz",
+   "opponent": "B. Shelton",
+   "tournament": "Finals",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-21T17:16:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating B. Shelton",
+   "eventKey": "12181584",
+   "won": true,
+   "text": "It was a great level from both of us the third set. Top games, top points, great highlights.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "The Times of India",
+   "sourceUrl": "https://timesofindia.indiatimes.com/sports/tennis/top-stories/thigh-wrapped-and-knee-taped-injury-hit-carlos-alcaraz-digs-deep-to-outlast-ben-shelton-and-reach-atp-finals/articleshow/136059888.cms",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On the third set against Ben Shelton",
+   "sourceHash": "9f321ce0ea1263fb",
+   "publishedAt": "2026-11-21T18:10:57.526Z"
+  },
+  {
+   "id": "quote-bf0808a2bbfbd2",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": "2973",
+   "player": "C. Alcaraz",
+   "opponent": "B. Shelton",
+   "tournament": "Finals",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-21T17:16:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating B. Shelton",
+   "eventKey": "12181584",
+   "won": true,
+   "text": "My recovery time is really important for me to recover my body, to recover mentally, to be prepared for tomorrow,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "The Times of India",
+   "sourceUrl": "https://timesofindia.indiatimes.com/sports/tennis/top-stories/thigh-wrapped-and-knee-taped-injury-hit-carlos-alcaraz-digs-deep-to-outlast-ben-shelton-and-reach-atp-finals/articleshow/136059888.cms",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On recovering before the ATP Finals final",
+   "sourceHash": "6a18265f42de9e8f",
+   "publishedAt": "2026-11-21T18:10:57.526Z"
+  },
+  {
+   "id": "quote-271944dd635276",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": "2973",
+   "player": "C. Alcaraz",
+   "opponent": "B. Shelton",
+   "tournament": "Finals",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-21T17:13:41.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating B. Shelton",
+   "eventKey": "12181584",
+   "won": true,
+   "text": "I'm really happy. I didn't start that well, I was a bit frustrated then. I'm glad that I came back in the second set",
+   "originalText": "Ich bin wirklich glücklich. Ich habe nicht so gut begonnen, da war ich etwas frustriert. Ich bin froh, dass ich im zweiten Satz zurückgekommen bin",
+   "language": "de",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "LAOLA1",
+   "sourceUrl": "https://www.laola1.at/de/red/sport-mix/tennis/atp/shelton-besiegt--alcaraz-im-endspiel-der-atp-finals/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his comeback against Shelton in Turin",
+   "sourceHash": "b3981afe08eac16c",
+   "publishedAt": "2026-11-21T18:10:57.526Z"
+  },
+  {
+   "id": "quote-969dacab544ae6",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": "2973",
+   "player": "C. Alcaraz",
+   "opponent": "B. Shelton",
+   "tournament": "Finals",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-21T17:12:30.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating B. Shelton",
+   "eventKey": "12181584",
+   "won": true,
+   "text": "Complaining, shouting, helped me. I had started tense, and I think that also helped me relax,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Tennis Majors",
+   "sourceUrl": "https://www.tennismajors.com/atp/nitto-atp-finals-atp/be-brave-how-sheltons-plan-worked-for-a-set-until-alcaraz-turned-up-the-heat-867582.html",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his frustrated outburst helping him relax",
+   "sourceHash": "196ac5922aadef21",
+   "publishedAt": "2026-11-21T18:10:57.526Z"
   },
   {
    "id": "quote-cc7214a08ad200",
@@ -372,7 +646,7 @@
     "minutes": 119
    },
    "category": "Statistics",
-   "text": "Alcaraz beat Shelton in three sets in the SF in Turin to reach the final and he had to come from a set down to do it.\n\nIt was Shelton who made the better start. He broke for 2–0 and later came back from 15–40 on his own serve to keep that lead. He took the first set 6–3 and was one set away from the final. That early break stayed with Alcaraz. Alcaraz afterwards: \"The break early (in the first set) was tough for me to deal with. But I’m happy that I came back in the second set playing such great tennis,\" He did not see another break point for the rest of the match.\n\nThe second set turned slowly his way. He got the break at 5–3 and took the set 6–3 for one set all. The deciding set was the closest part of the match. Neither player was broken, so it went to a tiebreak. There Alcaraz was clearly the better player and won it 7–1.\n\nThat steady serving carried him through a final set with no break and his serve was the base of it all. He held to love 6 times and won 73% of the points behind his second serve, far above his 56% average on hard.\n\nSo Alcaraz is through to the final, after a start that was tough for him to deal with and a comeback that he was happy with. He played great tennis when the match was closest and gave Shelton almost nothing on his serve. That made the difference in the end.\n\nAlcaraz: W: 33 / UE: 21 | DR: 1.32\n\nShelton: W: 30 / UE: 30 | DR: 0.76",
+   "text": "Alcaraz beat Shelton in three sets in the SF in Turin to reach the final and he had to come from a set down to do it.\n\nIt was Shelton who made the better start. He broke for 2–0 and later came back from 15–40 on his own serve to keep that lead. He took the first set 6–3 and was one set away from the final. That early break stayed with Alcaraz. Alcaraz afterwards: \"The break early (in the first set) was tough for me to deal with. But I’m happy that I came back in the second set playing such great tennis,\" He did not see another break point for the rest of the match.\n\nThe second set turned slowly his way. He got the break at 5–3 and took the set 6–3 for one set all. The deciding set was the closest part of the match. Neither player was broken, so it went to a tiebreak. There Alcaraz was clearly the better player and won it 7–1.\n\nThat steady serving carried him through a final set with no break and his serve was the base of it all. He held to love 6 times and won 73% of the points behind his second serve, far above his 56% average on hard.\n\nSo Alcaraz is through to the final, after a start that was tough for him to deal with and a comeback that he was happy with. He played great tennis when the match was closest and gave Shelton almost nothing on his serve. That made the difference in the end.\n\nAlcaraz: performance rating 9.1 | W: 33 / UE: 21 | DR: 1.32\n\nShelton: performance rating 8.1 | W: 30 / UE: 30 | DR: 0.76",
    "ms": {
     "a": "C. Alcaraz",
     "b": "B. Shelton",
@@ -398,6 +672,18 @@
       "dr"
      ],
      [
+      "Serve quality",
+      8.7,
+      9.3,
+      "1"
+     ],
+     [
+      "Unreturned serves",
+      41,
+      40,
+      "%"
+     ],
+     [
       "1st serve in",
       73,
       77,
@@ -414,6 +700,18 @@
       73,
       58,
       "%"
+     ],
+     [
+      "Return quality",
+      8,
+      7.3,
+      "1"
+     ],
+     [
+      "Baseline points won",
+      31,
+      20,
+      "0"
      ],
      [
       "Ratio W/UE",
@@ -438,9 +736,72 @@
    },
    "baseText": "Alcaraz beat Shelton in three sets in the SF in Turin to reach the final and he had to come from a set down to do it.\n\nIt was Shelton who made the better start. He broke for 2–0 and later came back from 15–40 on his own serve to keep that lead. He took the first set 6–3 and was one set away from the final. That early break stayed with Alcaraz. Alcaraz afterwards: \"The break early (in the first set) was tough for me to deal with. But I’m happy that I came back in the second set playing such great tennis,\" He did not see another break point for the rest of the match.\n\nThe second set turned slowly his way. He got the break at 5–3 and took the set 6–3 for one set all. The deciding set was the closest part of the match. Neither player was broken, so it went to a tiebreak. There Alcaraz was clearly the better player and won it 7–1.\n\nThat steady serving carried him through a final set with no break and his serve was the base of it all. He held to love 6 times and won 73% of the points behind his second serve, far above his 56% average on hard.\n\nSo Alcaraz is through to the final, after a start that was tough for him to deal with and a comeback that he was happy with. He played great tennis when the match was closest and gave Shelton almost nothing on his serve. That made the difference in the end.",
    "rating": [
-    "Alcaraz: W: 33 / UE: 21 | DR: 1.32",
-    "Shelton: W: 30 / UE: 30 | DR: 0.76"
+    "Alcaraz: performance rating 9.1 | W: 33 / UE: 21 | DR: 1.32",
+    "Shelton: performance rating 8.1 | W: 30 / UE: 30 | DR: 0.76"
    ],
+   "shotStats": {
+    "p1": {
+     "performance": 9.1,
+     "serveQuality": 8.7,
+     "unreturnedPct": 41,
+     "firstInPct": 73,
+     "firstWonPct": 80,
+     "secondWonPct": 73,
+     "secondSpeed": 169,
+     "returnQuality": 8,
+     "fhWinners": 14,
+     "bhWinners": 7,
+     "fhUnforced": 10,
+     "bhUnforced": 9,
+     "forcedErrors": 27,
+     "baselineWon": 31,
+     "under9Won": 81,
+     "over9Won": 7,
+     "bpWon": [
+      1,
+      3
+     ],
+     "netWon": [
+      14,
+      21
+     ]
+    },
+    "p2": {
+     "performance": 8.1,
+     "serveQuality": 9.3,
+     "unreturnedPct": 40,
+     "firstInPct": 75,
+     "firstWonPct": 73,
+     "secondWonPct": 62,
+     "secondSpeed": 185,
+     "returnQuality": 7.3,
+     "fhWinners": 14,
+     "bhWinners": 1,
+     "fhUnforced": 20,
+     "bhUnforced": 6,
+     "forcedErrors": 25,
+     "baselineWon": 20,
+     "under9Won": 75,
+     "over9Won": 3,
+     "bpWon": [
+      1,
+      1
+     ],
+     "netWon": [
+      17,
+      26
+     ]
+    },
+    "postedAt": "2026-11-21T15:48:55.000Z",
+    "readAt": "2026-11-21T17:36:52.532Z",
+    "sourceName": "ATP broadcast match statistics (via @ATP_Entry)",
+    "sourceUrl": "https://x.com/ATP_Entry/status/2124168185955938562",
+    "agreed": "5 of 6 serve figures within 3 points of ours; set scores and break points equal",
+    "wue": {
+     "compared": 4,
+     "maxDiff": 1
+    }
+   },
    "composed": {
     "version": 3,
     "sheetHash": "be81cb7d1faeae60",
@@ -554,10 +915,10 @@
    "sourceUrl": "pbp/12181584.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "7fe2dbf525d3addc",
+   "sourceHash": "f50e98bf0277afef",
    "publishedAt": "2026-11-21T16:00:56.216Z",
-   "revisedAt": "2026-11-21T16:58:12.190Z",
-   "revision": 3
+   "revisedAt": "2026-11-21T18:10:57.526Z",
+   "revision": 4
   },
   {
    "id": "quote-c4db0a22d72894",
