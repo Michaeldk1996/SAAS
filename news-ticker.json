@@ -1,19 +1,19 @@
 {
- "generatedAt": "2026-11-21T21:42:37.691Z",
+ "generatedAt": "2026-11-21T22:07:27.975Z",
  "tournaments": [
   {
    "key": "2794",
    "season": "2026",
    "name": "Finals - Turin",
    "file": "news-ticker/2794-2026.json",
-   "items": 292,
+   "items": 296,
    "byType": {
-    "report": 14,
-    "digest": 38,
-    "quote": 240
+    "digest": 39,
+    "quote": 243,
+    "report": 14
    },
-   "latestTimestamp": "2026-11-21T21:12:12.807Z",
-   "updatedAt": "2026-11-21T21:42:37.691Z"
+   "latestTimestamp": "2026-11-21T21:31:58.382Z",
+   "updatedAt": "2026-11-21T22:07:27.975Z"
   },
   {
    "key": "tour",
@@ -26,7 +26,7 @@
     "digest": 26
    },
    "latestTimestamp": "2026-11-21T17:12:00.000Z",
-   "updatedAt": "2026-11-21T21:42:37.691Z"
+   "updatedAt": "2026-11-21T22:07:27.975Z"
   },
   {
    "key": "1681",
@@ -56,6 +56,222 @@
   }
  ],
  "latest": [
+  {
+   "id": "digest-a69eadabb7a69d",
+   "type": "digest",
+   "version": 1,
+   "playerId": "1980",
+   "player": "A. Zverev",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "Finals",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-21T21:31:58.382Z",
+   "members": [
+    "quote-9fe5750861bcdd",
+    "quote-e3b93c56a74210"
+   ],
+   "memberHash": "32b6471819043730",
+   "digestedAt": "2026-11-21T21:39:32.213Z",
+   "blocks": [
+    {
+     "label": "after his semifinal win over Medvedev",
+     "text": "It was a match in which both of us served incredibly well. And then I took my one chance.",
+     "from": [
+      "quote-e3b93c56a74210"
+     ]
+    },
+    {
+     "label": "on his Masters final against Alcaraz",
+     "text": "It could be a very high-level match. We played a practice set before the start of the tournament and it lasted an hour 30. I hope we'll both be at our best level.",
+     "from": [
+      "quote-9fe5750861bcdd"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "d411c62272f35501",
+   "publishedAt": "2026-11-21T22:07:27.975Z",
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "quote-e3b93c56a74210",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "Finals",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-21T21:31:58.382Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "It was a match in which both of us served incredibly well. And then I took my one chance.",
+   "originalText": "Es war ein Match, in dem beide unglaublich gut aufgeschlagen haben. Und ich habe meine eine Chance dann genutzt",
+   "language": "de",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "Sportschau (ARD)",
+   "sourceUrl": "https://www.sportschau.de/tennis/atp/zverev-folgt-alcaraz-ins-traumfinale,spielbericht-atp-finals-zverev-medvedev-100.html",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his semifinal win over Medvedev",
+   "sourceHash": "1b104cc508f53693",
+   "publishedAt": "2026-11-21T22:07:27.975Z",
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "digest-579fd62388beb8",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2382",
+   "player": "C. Alcaraz",
+   "opponentId": "2973",
+   "opponent": "B. Shelton",
+   "tournament": "Finals",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "eventKey": "12181584",
+   "context": "after beating B. Shelton",
+   "category": "Quotes",
+   "timestamp": "2026-11-21T21:22:43.497Z",
+   "members": [
+    "quote-11923e3a5da240",
+    "quote-271944dd635276",
+    "quote-272a78c30d5b89",
+    "quote-426fe6ee85a183",
+    "quote-969dacab544ae6",
+    "quote-a05d59e45e9970",
+    "quote-a57cf37356f551",
+    "quote-ba8235310e1efd",
+    "quote-bf0808a2bbfbd2",
+    "quote-c95cf7d44b544c",
+    "quote-cc7214a08ad200",
+    "quote-cf767984f79800",
+    "quote-d52c4d7ec5387d",
+    "quote-f50636433fa5e7"
+   ],
+   "memberHash": "e466629496039032",
+   "digestedAt": "2026-11-21T21:39:32.213Z",
+   "blocks": [
+    {
+     "label": "after his win over Shelton",
+     "text": "I was a little bit frustrated at the beginning because I didn't start the match the way I wanted to, to be honest. He broke me quickly and then it was already a difficult situation. The break early in the first set was tough for me to deal with. But I'm happy that I came back in the second set playing such great tennis, step by step, focused on all my things and ended up playing good tennis. The third set was even closer. I think he raised the level a little bit from the second set. Myself as well. Great points, great games and just happy to play great tennis in the tie-break. I think this win matters. So, excited for tomorrow, and happy with everything today.",
+     "from": [
+      "quote-c95cf7d44b544c",
+      "quote-f50636433fa5e7",
+      "quote-a57cf37356f551",
+      "quote-272a78c30d5b89"
+     ]
+    },
+    {
+     "label": "on facing Shelton's big serve and baseline game",
+     "text": "Someone like Ben, a big serve, big play from the baseline, I think he just pushes you to the limit every time.",
+     "from": [
+      "quote-426fe6ee85a183"
+     ]
+    },
+    {
+     "label": "on playing freely despite his hamstring problem",
+     "text": "Today I just went for it, to be honest. I didn't think about physically. I just felt well, and if I lose, it was totally fair.",
+     "from": [
+      "quote-cc7214a08ad200"
+     ]
+    },
+    {
+     "label": "on his frustrated outburst helping him relax",
+     "text": "Complaining, shouting, helped me. I had started tense, and I think that also helped me relax.",
+     "from": [
+      "quote-969dacab544ae6"
+     ]
+    },
+    {
+     "label": "on recovering before the final",
+     "text": "Sunday is going to be a very important day for me and for my team. But until then, I'll have to focus on recovery. My recovery time is really important for me to recover my body, to recover mentally, to be prepared for tomorrow.",
+     "from": [
+      "quote-ba8235310e1efd",
+      "quote-bf0808a2bbfbd2"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "a7c1de40342722a4",
+   "publishedAt": "2026-11-21T16:58:12.190Z",
+   "revisedAt": "2026-11-21T22:07:27.975Z",
+   "revision": 4,
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "quote-9fe5750861bcdd",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "Finals",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-21T21:22:43.497Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "It could be a very high-level match. We played a practice set before the start of the tournament and it lasted an hour 30. I hope we'll both be at our best level",
+   "originalText": "Cela risque d'être un match de très haut niveau. On a joué un set d'entraînement avant le début du tournoi et cela avait duré une heure 30. J'espère qu'on sera tous les deux à notre meilleur niveau",
+   "language": "fr",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "La DH Les Sports+",
+   "sourceUrl": "https://www.dhnet.be/sports/tennis/2026/11/21/le-n1-mondial-alexander-zverev-rejoint-carlos-alcaraz-en-finale-du-masters-atp-2HGLU45NANFSPIICEQX354I6XI/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his Masters final against Carlos Alcaraz",
+   "sourceHash": "693022f675cb4669",
+   "publishedAt": "2026-11-21T22:07:27.975Z",
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "quote-ba8235310e1efd",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": "2973",
+   "player": "C. Alcaraz",
+   "opponent": "B. Shelton",
+   "tournament": "Finals",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-21T21:22:43.497Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating B. Shelton",
+   "eventKey": "12181584",
+   "won": true,
+   "text": "Sunday is going to be a very important day for me and for my team. But until then, I'll have to focus on recovery",
+   "originalText": "Dimanche, ça va être une journée très importante pour moi et pour mon équipe. Mais d'ici là, il va falloir que je me concentre sur la récupération",
+   "language": "fr",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "La DH Les Sports+",
+   "sourceUrl": "https://www.dhnet.be/sports/tennis/2026/11/21/le-n1-mondial-alexander-zverev-rejoint-carlos-alcaraz-en-finale-du-masters-atp-2HGLU45NANFSPIICEQX354I6XI/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On recovering before Sunday's big match",
+   "sourceHash": "08808e07beecc8ac",
+   "publishedAt": "2026-11-21T22:07:27.975Z",
+   "file": "news-ticker/2794-2026.json"
+  },
   {
    "id": "report-12181753",
    "type": "report",
@@ -340,84 +556,6 @@
    "topic": "On his record against top-three players",
    "sourceHash": "513e7cdc98f97a9f",
    "publishedAt": "2026-11-21T18:56:56.860Z",
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "digest-579fd62388beb8",
-   "type": "digest",
-   "version": 1,
-   "playerId": "2382",
-   "player": "C. Alcaraz",
-   "opponentId": "2973",
-   "opponent": "B. Shelton",
-   "tournament": "Finals",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "eventKey": "12181584",
-   "context": "after beating B. Shelton",
-   "category": "Quotes",
-   "timestamp": "2026-11-21T17:46:06.000Z",
-   "members": [
-    "quote-11923e3a5da240",
-    "quote-271944dd635276",
-    "quote-272a78c30d5b89",
-    "quote-426fe6ee85a183",
-    "quote-969dacab544ae6",
-    "quote-a05d59e45e9970",
-    "quote-a57cf37356f551",
-    "quote-bf0808a2bbfbd2",
-    "quote-c95cf7d44b544c",
-    "quote-cc7214a08ad200",
-    "quote-cf767984f79800",
-    "quote-d52c4d7ec5387d",
-    "quote-f50636433fa5e7"
-   ],
-   "memberHash": "39f39c6c9f289c42",
-   "digestedAt": "2026-11-21T18:07:53.405Z",
-   "blocks": [
-    {
-     "label": "after his win over Shelton",
-     "text": "At the beginning I was a bit frustrated because I didn't start the match the way I wanted to. Ben is a player who pushes you to your limits. He broke me quickly and then it was already a difficult situation. The break early in the first set was tough for me to deal with. But I'm happy that I came back in the second set playing such great tennis, step by step, focused on all my things and ended up playing good tennis. The third set was even closer. I think he raised the level a little bit from the second set. Myself as well. Great points, great games and just happy to play great tennis in the tie-break. I think this win matters. So, excited for tomorrow, and happy with everything today.",
-     "from": [
-      "quote-f50636433fa5e7",
-      "quote-a57cf37356f551",
-      "quote-272a78c30d5b89"
-     ]
-    },
-    {
-     "label": "on facing Shelton's big serve and baseline game",
-     "text": "Someone like Ben, a big serve, big play from the baseline, I think he just pushes you to the limit every time.",
-     "from": [
-      "quote-426fe6ee85a183"
-     ]
-    },
-    {
-     "label": "on his frustrated outburst helping him relax",
-     "text": "Complaining, shouting, helped me. I had started tense, and I think that also helped me relax.",
-     "from": [
-      "quote-969dacab544ae6"
-     ]
-    },
-    {
-     "label": "on playing freely despite his hamstring problem",
-     "text": "Today I just went for it, to be honest. I didn't think about physically. I just felt well, and if I lose, it was totally fair.",
-     "from": [
-      "quote-cc7214a08ad200"
-     ]
-    },
-    {
-     "label": "on recovering before the final",
-     "text": "My recovery time is really important for me to recover my body, to recover mentally, to be prepared for tomorrow.",
-     "from": [
-      "quote-bf0808a2bbfbd2"
-     ]
-    }
-   ],
-   "model": "claude-opus-5-5",
-   "sourceHash": "6d89d5bc0eaf0b87",
-   "publishedAt": "2026-11-21T16:58:12.190Z",
-   "revisedAt": "2026-11-21T18:35:46.953Z",
-   "revision": 3,
    "file": "news-ticker/2794-2026.json"
   },
   {
@@ -1776,150 +1914,6 @@
    "topic": "On his overachieving 2026 season",
    "sourceHash": "980010aa45782598",
    "publishedAt": "2026-11-20T23:54:40.976Z",
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-e977e3de54b335",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": "372",
-   "player": "C. Alcaraz",
-   "opponent": "F. Cobolli",
-   "tournament": "Finals",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-20T22:15:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Quotes",
-   "context": "after beating F. Cobolli",
-   "eventKey": "12179697",
-   "won": true,
-   "text": "It was a difficult match for me, because I had to see how I was going to feel on the court,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "SuperSport",
-   "sourceUrl": "https://supersport.com/tennis/news/842494e5-2cd9-4810-a0d7-95a824f14093/alcaraz-brushes-off-injury-to-down-cobolli-at-atp-finals-medvedev-advances",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On his win over Cobolli",
-   "alsoReportedBy": [
-    {
-     "sourceName": "SuperSport",
-     "sourceUrl": "https://supersport.com/tennis/news/1e3050b9-7a9c-478b-9e72-8c00c2d5843c/alcaraz-brushes-off-injury-to-down-cobolli-at-atp-finals-medvedev-advances",
-     "language": "en"
-    }
-   ],
-   "sourceHash": "02f214b45d1ff7db",
-   "publishedAt": "2026-11-20T23:10:15.068Z",
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "digest-2a11ad1f4d62db",
-   "type": "digest",
-   "version": 1,
-   "playerId": "1093",
-   "player": "D. Medvedev",
-   "opponentId": "2846",
-   "opponent": "F. Tiafoe",
-   "tournament": "Finals",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "eventKey": "12179702",
-   "context": "after beating F. Tiafoe",
-   "category": "Quotes",
-   "timestamp": "2026-11-20T22:07:41.000Z",
-   "members": [
-    "quote-4b185195df14d5",
-    "quote-92d5e72a81012d",
-    "quote-aa96a73ab584f8"
-   ],
-   "memberHash": "348b90ae26ea5314",
-   "digestedAt": "2026-11-20T22:32:34.156Z",
-   "blocks": [
-    {
-     "label": "after his win over Tiafoe",
-     "text": "The Finals is a great tournament because whenever you finish, it is great because you have some rest at the end of the season. But if you continue playing, that is great because I love to win. Only positives here. When I am on court, I am always fighting to win, and I managed to fight well today.",
-     "from": [
-      "quote-92d5e72a81012d",
-      "quote-aa96a73ab584f8"
-     ]
-    },
-    {
-     "label": "on returning to Dubai and Doha",
-     "text": "I would be happy to come back. I didn't follow too much, but from what I know, it's great there. Actually, my sister is living in Dubai now, so we'll be happy to come back there.",
-     "from": [
-      "quote-4b185195df14d5"
-     ]
-    }
-   ],
-   "model": "claude-opus-5-5",
-   "sourceHash": "9789a3cca7279f01",
-   "publishedAt": "2026-11-20T23:10:15.068Z",
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-aa96a73ab584f8",
-   "type": "quote",
-   "playerId": "1093",
-   "opponentId": "2846",
-   "player": "D. Medvedev",
-   "opponent": "F. Tiafoe",
-   "tournament": "Finals",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-20T22:07:41.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Quotes",
-   "context": "after beating F. Tiafoe",
-   "eventKey": "12179702",
-   "won": true,
-   "text": "Only positives here. When I am on court, always fighting to win, and I managed to fight well today.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "Ubitennis",
-   "sourceUrl": "https://www.ubitennis.net/2026/11/daniil-medvedev-cruises-into-nitto-atp-finals-semi-finals-with-win-over-tiafoe/",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On reaching the ATP Finals semi-finals",
-   "sourceHash": "2f9f046943f75487",
-   "publishedAt": "2026-11-20T23:10:15.068Z",
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-4b185195df14d5",
-   "type": "quote",
-   "playerId": "1093",
-   "opponentId": "2846",
-   "player": "D. Medvedev",
-   "opponent": "F. Tiafoe",
-   "tournament": "Finals",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-20T22:04:07.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Quotes",
-   "context": "after beating F. Tiafoe",
-   "eventKey": "12179702",
-   "won": true,
-   "text": "I would be happy to come back. I didn’t follow too much, but from what I know, it’s great there. Actually, my sister is living in Dubai now, so we’ll be happy to come back there.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "Tennis Majors",
-   "sourceUrl": "https://www.tennismajors.com/atp/nitto-atp-finals-atp/not-that-hungry-just-because-im-super-tired-medvedev-drained-but-still-fighting-in-turin-867513.html",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On returning to the Dubai and Doha tournaments",
-   "sourceHash": "c8e2c1e17936a932",
-   "publishedAt": "2026-11-20T23:10:15.068Z",
    "file": "news-ticker/2794-2026.json"
   }
  ]
