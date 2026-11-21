@@ -27,9 +27,10 @@ function cal(view) {
 }
 // the season grid's Career row: one W–L per swing column, in head order (team last, left out of the picks)
 function careerRow(t) {
-  const m = /Career ((?:(?:\d+–\d+|—) ){12})/.exec(t);
+  const n = I.CAL_SW.length;
+  const m = new RegExp('Career ((?:(?:\\d+–\\d+|—) ){' + n + '})').exec(t);
   assert(m, 'no Career row in the season grid');
-  return m[1].trim().split(' ').slice(0, 11).map(x => { const r = /(\d+)–(\d+)/.exec(x); return r ? { w: +r[1], l: +r[2], wl: x } : null; });
+  return m[1].trim().split(' ').slice(0, n - 1).map(x => { const r = /(\d+)–(\d+)/.exec(x); return r ? { w: +r[1], l: +r[2], wl: x } : null; });
 }
 const tileWL = (t, cap) => { const m = new RegExp(cap + ' [^|]*?(\\d+)% Win rate (\\d+–\\d+)').exec(t); return m ? m[2] : null; };
 
