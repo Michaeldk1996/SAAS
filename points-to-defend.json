@@ -1,11 +1,11 @@
 {
  "schemaVersion": 1,
- "generatedAt": "2026-11-20T23:18:36.137Z",
- "asOf": "2026-11-20",
+ "generatedAt": "2026-11-21T13:41:11.192Z",
+ "asOf": "2026-11-21",
  "sources": {
   "fixtures": "api-tennis get_fixtures (event_type_key 265), per prior edition",
   "playerIndex": {
-   "fetchedAt": "2026-11-20T22:54:53.194Z",
+   "fetchedAt": "2026-11-21T13:11:32.687Z",
    "source": "api-tennis get_standings (ATP)"
   },
   "draws": {
@@ -13,7 +13,7 @@
   },
   "entryLists": {
    "snapshots": 1,
-   "latestGeneratedAt": "2026-11-18T03:59:04Z"
+   "latestGeneratedAt": "2026-11-21T03:41:50Z"
   },
   "pointsTable": "2026 ATP Official Rulebook §9.03 G.5 (Singles Point table), p.272-273"
  },
