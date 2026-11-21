@@ -42,11 +42,19 @@ Rationale: `BUILD-NOTES.md` "2026-11-15 — Tournaments tab rebuild".
 
 ## Data — every figure ours, or a dash
 - **Every figure comes from our data or prints "—"**: never 0 for absent, never a plausible default, never a prototype
-  number or formula; a genuine zero prints 0. **Dashes by ruling (no source, founder 2026-11-15):** every Draw chance figure
-  (title, quarter, per round, face-off, lead-bar position, "both get there", "x% likely", opponent win chance, the outright
-  leader / rows / quarter cards, the Outright pill, any verdict built on chances), fair-odds ranges, likely opening price
-  ranges, "Be careful" / "No warning", the underdog lists. The boxes are built; the figures read "—"; a sentence built only
-  on chances is omitted. **Test:** `tools/test-tt-draw.mjs` "chances are dashes everywhere" (mutant: a chance figure).
+  number or formula; a genuine zero prints 0.
+- **Draw chances are Stennisfy probabilities** (founder 2026-11-20, replacing the 2026-11-15 "chances are dashes" ruling):
+  Outright chances (title, quarter), the route panel (Win his quarter, Title chance, per round, "x% likely"), Compare two
+  routes (each open round = his chance against the most likely opponent; Title) and the opponents box (chance, bar on the
+  50% tick). P(A beats B) = the Stennisfy Model's adjusted fair probability (`model-output.json` `stage3.fair`) for an
+  unfinished Today's Matches card of that pair, else the model's Stage-1 Elo base (`h2h-model/elo.js` `baseProbability`,
+  `config.js` weights, `elo-ratings.json` by the model's key rule), ported as `eloBaseP` in `tournaments-draw.js`. Chances
+  follow the bracket exactly (`chanceDP`: played matches and walkovers fixed, byes advance). Fair odds = 1 / chance, two
+  decimals, one price (no range). A player with no Elo → every chance that depends on him is a dash, never 50%. Round
+  robin (ATP Finals) is not modelled: dash. Every figure's hover names its basis. Opening-price ranges, "Be careful" /
+  "No warning" and a Bookmakers column (hook `TTDraw.bookOutright`, null) stay out until a source exists. **Test:**
+  `tools/test-tt-draw.mjs` (DP sums, played match, missing Elo, formula parity with `h2h-model/elo.js`, model price; mutants:
+  50% fallback, results ignored, quarter over the wrong half, weights drift, model price ignored).
 - **Speed by year = `court-speed-history.json`** (founder 2026-11-20: "use all of this in our database … until 2020"),
   committed, built by hand with `tools/build-court-speed-history.mjs`: `ta[event][year]` = Tennis Abstract surface speed —
   its season archive for 2020–2023, 2024–2025 from `COURT_CONDITIONS` `as2024`/`as2025` (TA no longer serves those pages;
@@ -221,5 +229,5 @@ Rationale: `BUILD-NOTES.md` "2026-11-15 — Tournaments tab rebuild".
   and Bet365 matches per scope (`approx`, `b365`; the tile's hover names the split). Only a match the master does not price
   is `noClose`. **Test:** `tools/test-favourites-by-round.js` "every master price counts" (the closes-only builder fails it).
 - **Opponent report:** head to head and last five from `H2HCore` over career-history shards; record against his archetype
-  from `playing-styles.json` + style-meetings; every chance / warning a dash.
+  from `playing-styles.json` + style-meetings; the win chance is the Stennisfy chance (above); every warning a dash.
 - *Open (not ruled):* played bracket matches carry no closing-price hover.

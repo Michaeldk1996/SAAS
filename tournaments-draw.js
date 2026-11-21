@@ -16,7 +16,9 @@
 //   how-it-plays.json · favourites-by-round.json · database-yield.json through settlement.js · tour-baselines.json ·
 //   points-to-defend.json + player-index.json (`players[].points`, ranking points) · tournament-logos/index.json ·
 //   career-history + H2HCore + style-meetings (opponents box).
-// Standing ruling (founder 2026-11-15 ruling 3): every chance, fair-odds range, opening-price range and warning is a dash.
+// Chances (founder 2026-11-20, replacing ruling 3): real Stennisfy probabilities — the model's price for a match on
+// Today's Matches, its Stage-1 Elo base for every other pairing — followed exactly through the bracket; fair odds = 1 /
+// chance. Opening-price ranges and warnings stay dashes (no source).
 // No METZ demo, no DT_OLD, no leftovers (README "Data").
 // =================================================================
 (function () {
@@ -216,16 +218,22 @@ function pathOf(M, F, key) {
       const g = 1 << (r + 1), half = g >> 1, gs = ((pos - 1) >> (r + 1)) << (r + 1), oFrom = (pos - 1 - gs) < half ? gs + half : gs;
       cands = F.slots.filter(s => s.pos - 1 >= oFrom && s.pos - 1 < oFrom + half && !(F.out[String(s.playerKey)] != null && F.out[String(s.playerKey)] < r))
         .sort((x, y) => (x.seed == null ? 99 : x.seed) - (y.seed == null ? 99 : y.seed) || x.pos - y.pos);
+      // the most likely opponent first, when every candidate's chance of being there is known (else the draw's order)
+      const rv = s => (CH ? CH.reach(r, String(s.playerKey)) : null);
+      if (cands.length && cands.every(s => rv(s) != null)) cands = cands.slice().sort((x, y) => rv(y) - rv(x));
     }
     if (!cands.length) return Object.assign(base, { state: 'bye', opp: 'No opponent', fig: 'Bye', figColor: C.soft });
     const isNext = !nextSet;
     if (isNext) { nextSet = true; line = 'Next: ' + (o ? 'v ' + nameOf(o) + ' in ' : '') + 'the ' + rd.toLowerCase(); }
-    return Object.assign(base, { state: 'open', next: isNext, known: !!o, cands: cands.slice(0, 3), more: Math.max(0, cands.length - 1), opp: o ? 'v ' + nameOf(o) + (tagOf(o) ? ' ' + tagOf(o) : '') : DASH,
-      oppKey: keyOf(o), fig: DASH, figColor: C.white, sub: r === n - 1 ? 'to win the title' : 'to reach ' + reachWords(M.rounds[r + 1].name) });
+    const ch = CH ? CH.at(r, key) : null, ok0 = String(cands[0].playerKey);
+    const likely = o ? 1 : CH ? CH.reach(r, ok0) : null;
+    const mp = CH && likely != null ? CH.pw(key, ok0) : null;
+    return Object.assign(base, { state: 'open', ch, likely, mp, next: isNext, known: !!o, cands: cands.slice(0, 3), more: Math.max(0, cands.length - 1), opp: o ? 'v ' + nameOf(o) + (tagOf(o) ? ' ' + tagOf(o) : '') : DASH,
+      oppKey: keyOf(o), fig: pctS(ch), figColor: C.white, sub: r === n - 1 ? 'to win the title' : 'to reach ' + reachWords(M.rounds[r + 1].name) });
   });
   const qi = M.rounds.findIndex(x => x.name === 'QF');
   const qWon = qi >= 0 && cells[qi] && cells[qi].state === 'won';
-  return { me, key, cells, outAt, line, champion: F.champ === key, qWon };
+  return { me, key, cells, outAt, line, champion: F.champ === key, qWon, title: CH ? CH.title(key) : null, q: CH ? CH.quarter(key) : null };
 }
 
 // ── handlers: one registry per render (no string escaping in inline handlers) ──────────────────────────────────────
@@ -274,6 +282,134 @@ function boardPrice(ev, A, Bs) {
   return { a: flip ? p.p2 : p.p1, b: flip ? p.p1 : p.p2, book: p.book || '' };
 }
 const odd = v => (typeof v === 'number' && isFinite(v) && v >= 1.01 ? v.toFixed(2) : DASH);
+
+// ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+// CHANCES (founder 2026-11-20, replacing ruling 3): Stennisfy probabilities followed exactly through the bracket.
+// P(A beats B) = the Stennisfy Model's adjusted fair probability (model-output.json stage3.fair) when the pair is an
+// unfinished card on Today's Matches the model priced; every other pairing = the model's own Stage-1 Elo base
+// (h2h-model/elo.js baseProbability, weights h2h-model/config.js), ported below. No Elo → no probability → every chance
+// that depends on it is a dash, never 0.5. Played matches and walkovers fix their winner; byes advance.
+// ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+const ELO_BLEND = { raw: 0.30, surface: 0.40, blend: 0.30 }, ELO_DIVISOR = 400;   // = h2h-model/config.js eloBlend / eloDivisor
+const ELO_ALIAS_BY_KEY = { 796: 'yunchaokete|b', 1062: 'wu|t' };                  // = h2h-model/data.js ELO_ALIASES.byKey
+const eloP = (a, b) => 1 / (1 + Math.pow(10, (b - a) / ELO_DIVISOR));
+const eloSurfaceKey = s => { s = String(s || '').toLowerCase(); return s.includes('clay') ? 'clay' : s.includes('grass') ? 'grass' : s.includes('hard') ? 'hard' : null; };
+// port of h2h-model/elo.js baseProbability(p1, p2, surface).baseP1 on two elo-ratings.json records; null without an overall rating
+function eloBaseP(e1, e2, surface) {
+  if (!e1 || !e1.all || !e2 || !e2.all) return null;
+  const rawA = e1.all.rating, rawB = e2.all.rating, sk = eloSurfaceKey(surface);
+  const surfA = (sk && e1[sk] && e1[sk].rating) || rawA, surfB = (sk && e2[sk] && e2[sk].rating) || rawB;
+  return ELO_BLEND.raw * eloP(rawA, rawB) + ELO_BLEND.surface * eloP(surfA, surfB) + ELO_BLEND.blend * eloP((rawA + surfA) / 2, (rawB + surfB) / 2);
+}
+function eloStore() {
+  if (typeof eloRatings !== 'undefined' && eloRatings && eloRatings.elo) return eloRatings;   // the page's copy, when loaded
+  return file('elo-ratings.json');
+}
+// the model's key rule (h2h-model/data.js eloKeyFromFullName): surname's last word | first initial; the alias table first;
+// a key two report players share is nobody's. Names tried: his standings name, his profile name, the sheet's own.
+const eloKeyOf = n => { const p = String(n || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/'/g, '').replace(/[.\-]/g, ' ').split(/\s+/).filter(Boolean); return p.length < 2 ? null : p[p.length - 1] + '|' + p[0][0]; };
+function eloRecOf(store, key, sheetName) {
+  if (!store || !store.elo || key == null) return null;
+  const amb = new Set(store.ambiguous || []);
+  if (ELO_ALIAS_BY_KEY[key]) return store.elo[ELO_ALIAS_BY_KEY[key]] || null;
+  const st = standings(), row = Array.isArray(st) ? st.find(r => String(r.key) === String(key)) : null;
+  const [sur, giv] = String(sheetName || '').split(/,\s*/);
+  const names = [row && row.name, newsName(key, ''), /…/.test(sheetName || '') || giv === undefined ? null : giv + ' ' + sur];
+  for (const n of names) { const k = eloKeyOf(n); if (k && !amb.has(k) && store.elo[k]) return store.elo[k]; }
+  return null;
+}
+// the model's adjusted fair probability for an unfinished board card of this pair (oriented to a), else null
+function modelPairP(ev, ka, kb) {
+  const mo = typeof modelOutput !== 'undefined' && modelOutput && modelOutput.matches ? modelOutput.matches : null; if (!mo) return null;
+  const m = ev.board.find(x => !x.finalScore && [String(x.p1Key), String(x.p2Key)].sort().join('|') === [ka, kb].sort().join('|'));
+  const e = m && mo[m.id]; if (!e || !e.ok || !e.stage3 || !e.stage3.fair) return null;
+  const pl = e.players || {}, k1 = pl.p1 && pl.p1.key != null ? String(pl.p1.key) : String(m.p1Key);
+  const f = e.stage3.fair[k1 === ka ? 'p1' : 'p2'], p = f && Number(f.prob);
+  return p > 0 && p < 1 ? p : null;
+}
+// Exact bracket DP over the draw's positions. slots[i] = player key (string) or null (bye / empty); decided(r, j) = the
+// winner key of round r cell j when played (walkovers too), else null; pw(ka, kb) = P(a beats b) or null.
+// Returns probs[r][i] = P(player at slot i wins round r), null where unknown.
+function chanceDP(slots, nRounds, decided, pw) {
+  let prev = slots.map(k => (k ? 1 : 0));
+  const probs = [];
+  for (let r = 0; r < nRounds; r++) {
+    const span = 2 << r, half = span >> 1, cur = new Array(slots.length).fill(0);
+    for (let lo = 0; lo < slots.length; lo += span) {
+      const w = decided(r, lo / span);
+      if (w != null) {
+        const hit = slots.slice(lo, lo + span).some(k => k === w);
+        for (let i = lo; i < lo + span; i++) cur[i] = hit ? (slots[i] === w ? 1 : 0) : null;
+        continue;
+      }
+      for (let i = lo; i < lo + span; i++) {
+        if (prev[i] === 0) continue;
+        const oFrom = i - lo < half ? lo + half : lo;
+        let any = false, sum = 0, unk = prev[i] == null;
+        for (let k = oFrom; k < oFrom + half; k++) {
+          if (prev[k] === 0) continue;
+          any = true;
+          const p = prev[k] == null ? null : pw(slots[i], slots[k]);
+          if (p == null) { unk = true; continue; }
+          sum += prev[k] * p;
+        }
+        cur[i] = !any ? prev[i] : unk ? null : prev[i] * sum;   // nobody left on the other side: he walks through
+      }
+    }
+    probs.push(cur); prev = cur;
+  }
+  return probs;
+}
+// The Stennisfy chances of the open main draw (null when not modelled: qualifying, round robin, no model).
+// Bookmakers' outright prices: the lead adds the source later. No column is drawn (the design has no room for one).
+function bookOutright(eventKey, playerKey) { return null; }   // eslint-disable-line no-unused-vars
+let CH = null;
+function chancesFor(ev, M, F) {
+  if (!M || !ev || /Finals/i.test(String(ev.draw.category || '') + ' ' + ev.city)) return null;
+  const store = eloStore(), slots = new Array(M.size).fill(null);
+  F.slots.forEach(s => { if (s.pos >= 1 && s.pos <= M.size) slots[s.pos - 1] = String(s.playerKey); });
+  const sheet = new Map(F.slots.map(s => [String(s.playerKey), s.name]));
+  const surface = ev.draw.sheetHeader && ev.draw.sheetHeader.surface;
+  const recs = new Map(), rec = k => { if (!recs.has(k)) recs.set(k, eloRecOf(store, k, sheet.get(k))); return recs.get(k); };
+  const src = new Map();   // "a|b" → 'model' | 'elo'
+  const pw = (a, b) => {
+    const id = a < b ? a + '|' + b : b + '|' + a;
+    const m = modelPairP(ev, a, b);
+    if (m != null) { src.set(id, 'model'); return m; }
+    const p = eloBaseP(rec(a), rec(b), surface);
+    if (p != null) src.set(id, 'elo');
+    return p;
+  };
+  const decided = (r, j) => { const c = M.rounds[r] && M.rounds[r].cells[j]; return c && c.match ? String(c.match.winnerKey) : null; };
+  const probs = chanceDP(slots, M.rounds.length, decided, pw);
+  const idx = new Map(slots.map((k, i) => [k, i]));
+  const qi = M.rounds.findIndex(r => r.name === 'QF');
+  const at = (r, k) => { const i = idx.get(k); return r < 0 || i == null || !probs[r] ? null : probs[r][i]; };
+  return { probs, slots, idx, at, pw, src, qi, n: M.rounds.length, names: M.rounds.map(r => r.name), eloLoading: store === undefined, eloFailed: store === null, hasModel: () => [...src.values()].includes('model'),
+    title: k => at(M.rounds.length - 1, k), quarter: k => at(qi, k), reach: (r, k) => (r === 0 ? (idx.has(k) ? 1 : null) : at(r - 1, k)) };
+}
+// the design's percentage (pctS): under 10% one decimal, else whole; 0 and 100 exact
+const pctS = v => (v == null || !isFinite(v) ? DASH : v >= 1 ? '100%' : v <= 0 ? '0%' : (v * 100).toFixed(v < 0.1 ? 1 : 0) + '%');
+// fair odds = 1 / chance, two decimals; no fair price at 0 or 100%
+const fairS = v => (v != null && v > 0 && v < 1 ? (1 / v).toFixed(2) : DASH);
+const pairBasis = (a, b) => (CH && CH.src.get(a < b ? a + '|' + b : b + '|' + a) === 'model' ? 'Stennisfy Model price for this match (Today’s Matches)' : 'Stennisfy: the model’s Elo base (overall + surface)');
+const NO_CH = 'No chance: a player in this part of the draw has no Elo rating in the Tennis Abstract report';
+function chanceTip(key, what) {
+  if (!CH) return 'Not modelled for this draw';
+  if (CH.eloLoading) return 'Loading the Elo ratings';
+  if (CH.eloFailed) return 'The Elo ratings could not be loaded';
+  const v = what === 'q' ? CH.quarter(key) : what === 't' ? CH.title(key) : what;
+  if (v == null) return NO_CH;
+  if (v === 1 && what === 't') return 'Champion';
+  // which of his rounds rest on a model price: his next undecided match only can be on Today's Matches
+  const i = CH.idx.get(key); let mr = null;
+  if (i != null) for (let r = 0; r < CH.n && mr == null; r++) {
+    const span = 2 << r, lo = Math.floor(i / span) * span, half = span >> 1, oFrom = i - lo < half ? lo + half : lo;
+    for (let k = oFrom; k < oFrom + half; k++) { const o = CH.slots[k]; if (o && CH.src.get(key < o ? key + '|' + o : o + '|' + key) === 'model') { mr = r; break; } }
+  }
+  return mr != null ? `Stennisfy: model price for the ${longOf(CH.names[mr]).toLowerCase()} match, Elo base for later rounds`
+    : 'Stennisfy: the model’s Elo base (overall + surface) for every round still to play';
+}
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 // STATISTICS — Speed (how-it-plays.json) + Favourites and underdogs (favourites-by-round.json, database-yield.json
@@ -538,6 +674,7 @@ function render(el) {
   if (view !== 'stats') { S.ed = null; S.stat = null; }
   const st = view === 'stats' ? statsModel(ev, Mm) : null;
   const pm = ptsModel(ev, F);
+  CH = S.kind !== 'qual' && (view === 'out' || S.sel || S.outCmp) ? chancesFor(ev, Mm, F) : null;
   if (view === 'pts') standings();
   const yr = +String(ev.start).slice(0, 4);
   const pl = played(Mm), tp = total(Mm), finished = !!F.champ || (ev.ended && pl > 0) || ev.arch;
@@ -633,7 +770,7 @@ function toggleHelp(e) {
 function helpHtml(finished) {
   const L = [
     finished ? ['Prices', 'Hover a name on an unplayed match for its current match-winner price, when Today’s Matches carries it.'] : ['Prices', 'Grey figures on unplayed matches are the current match-winner prices from Today’s Matches.'],
-    ['Title chances', 'Not available yet: every chance, fair-odds range and opening-price range shows a dash until a source exists.'],
+    ['Chances', 'Stennisfy probabilities: the model’s price for a match on Today’s Matches, its Elo base (overall + surface) for every other pairing, followed through every possible path of the draw. Played matches are fixed. Fair odds = 1 / chance, no margin. A player with no Elo rating leaves every chance that depends on him as a dash.'],
     ['Click a name', 'Opens his figures in this draw against the field. His name or photo in that box opens his profile.'],
     ['Compare two routes', 'The ringed round is where the two could meet. Click a round for his opponent, or the players he might face.'],
     ['Outright chances', 'The quarter winner is the player who reaches the semi-finals. Click a player to follow his route through the draw.'],
@@ -830,8 +967,8 @@ function selHtml(ev, M, F) {
     meet = { r, dead, both, metDone, line, rdL };
   }
   const lineTxt = picking ? 'Search the second player below, or click him in the draw' : meet ? meet.line : A.champion ? 'Champion' : A.outAt >= 0 ? 'Out in the ' + A.cells[A.outAt].rd.toLowerCase() : A.line;
-  const qFig = A.qWon ? 'Won' : DASH, tFig = A.champion ? 'Won' : DASH;
-  const figBlock = (k, v, t) => `<div style="display:flex; flex-direction:column; gap:7px; align-items:flex-end;"><span style="${LBL}">${k}</span><span style="display:flex; align-items:baseline; gap:10px;"><span title="Fair odds: no source yet" style="font-size:12px; color:${C.muted}; white-space:nowrap;"></span><span${v === DASH ? ` title="${t}"` : ''} style="${MONO} font-size:26px; font-weight:700; line-height:1; color:${C.white};">${v}</span></span></div>`;
+  const qFig = A.qWon ? 'Won' : A.q > 0 ? pctS(A.q) : DASH, tFig = A.champion ? 'Won' : A.outAt >= 0 ? DASH : pctS(A.title);
+  const figBlock = (k, v, p, t) => `<div style="display:flex; flex-direction:column; gap:7px; align-items:flex-end;"><span style="${LBL}">${k}</span><span style="display:flex; align-items:baseline; gap:10px;"><span title="Fair odds = 1 / chance, no margin" style="font-size:12px; color:${C.muted}; white-space:nowrap;">${p > 0 && p < 1 ? 'fair odds ' + fairS(p) : ''}</span><span title="${esc(t)}" style="${MONO} font-size:26px; font-weight:700; line-height:1; color:${C.white};">${v}</span></span></div>`;
   let h = `<div style="background:${C.card}; border:1px solid ${W(12)}; border-radius:16px; padding:24px; box-sizing:border-box;">
     <div style="display:flex; align-items:center; justify-content:space-between; gap:16px 28px; flex-wrap:wrap;">
       <div style="display:flex; align-items:center; gap:14px; min-width:0;">`
@@ -841,7 +978,7 @@ function selHtml(ev, M, F) {
     + (Bp ? `<span style="font-size:14px; color:${C.muted};">v</span><span style="flex:none; align-self:center; width:9px; height:9px; border-radius:50%; background:${C.text};"></span>${nm(Bp, 17)}` : '')
     + `</div><span style="font-size:13px; font-weight:${picking ? 700 : 400}; color:${picking ? C.blue : C.soft};">${esc(lineTxt)}</span></div></div>
       <div style="display:flex; align-items:center; justify-content:flex-end; gap:14px 28px; flex-wrap:wrap; margin-left:auto;">`
-    + (!cmpMode ? figBlock('Win his quarter', qFig, 'Chance to reach the semi-finals: no source yet') + figBlock('Title chance', tFig, 'Chance to win the title: no source yet') : '')
+    + (!cmpMode ? figBlock('Win his quarter', qFig, A.q, A.qWon ? 'Won his quarter' : A.q === 0 ? 'Out of his quarter' : 'Chance to reach the semi-finals · ' + chanceTip(A.key, 'q')) + figBlock('Title chance', tFig, A.title, A.champion ? 'Champion' : A.outAt >= 0 ? 'Out of the draw' : 'Chance to win the title · ' + chanceTip(A.key, 't')) : '')
     + `<div style="display:flex; align-items:center; gap:8px;">`
     + (Bp ? `<span class="tt-draw-hov" onclick="${on(() => goH2H(S.sel, S.b, A.me.ioc, Bp.me.ioc))}" style="cursor:pointer; display:inline-flex; align-items:center; height:32px; box-sizing:border-box; padding:0 13px; border-radius:8px; font-size:12.5px; font-weight:700; white-space:nowrap; color:${C.white}; ${LIFT}">Open head to head <span style="color:${C.blue}; margin-left:7px;">›</span></span>` : '')
     + `<span class="tt-draw-hov" onclick="${on(() => { if (cmpMode) Object.assign(S, { cmp: false, b: null, cmpQ: '', opp: null }); else { Object.assign(S, { cmp: true, b: null, cmpQ: '' }); S._focusNext = true; } repaint(); })}" style="cursor:pointer; display:inline-flex; align-items:center; height:34px; box-sizing:border-box; padding:0 14px; border-radius:9px; font-size:12.5px; font-weight:700; white-space:nowrap; color:${cmpMode ? C.text : C.white}; background:${cmpMode ? 'transparent' : C.lifted}; border:1px solid ${cmpMode ? W(16) : W(14)};">${cmpMode ? 'Stop comparing' : 'Compare with another player'}</span>`
@@ -867,12 +1004,13 @@ function singleRail(A) {
     const link = c.state !== 'gone' && c.state !== 'bye' && c.oppKey;
     const opp = link ? `<span class="tt-draw-plink" onclick="${on(() => goH2H(A.key, c.oppKey, A.me.ioc, ''))}" title="${esc(c.opp)} · open head to head" style="cursor:pointer; font-size:13.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(c.opp)}</span>`
       : `<span title="${esc(c.opp)}" style="font-size:13.5px; font-weight:600; color:${C.text}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(c.opp)}</span>`;
-    const meta = c.state === 'open' ? `<span title="Likely opponent and opening price: no source yet" style="${MONO} font-size:11px; line-height:1.5; color:${C.muted};">${c.known ? '' : DASH + ' likely · '}opens ${DASH}</span>` : '';
-    const bar = c.state === 'open' ? `<div title="Chance: no source yet" style="height:4px; border-radius:2px; background:${W(7)};"></div>` : '';
+    const tip = c.state === 'open' ? `Chance ${c.sub} · ${chanceTip(A.key, c.ch)}` : '';
+    const meta = c.state === 'open' ? `<span title="${esc((c.known ? '' : 'Chance that ' + nameOf(c.cands[0]) + ' is the opponent · ') + 'opening price: no source yet')}" style="${MONO} font-size:11px; line-height:1.5; color:${C.muted};">${c.known ? '' : pctS(c.likely) + ' likely · '}opens ${DASH}</span>` : '';
+    const bar = c.state === 'open' ? `<div title="${esc(tip)}" style="height:4px; border-radius:2px; background:${W(7)}; overflow:hidden;">${c.ch != null ? `<div style="height:4px; border-radius:2px; width:${Math.max(2, Math.round(c.ch * 100))}%; background:${BAR55};"></div>` : ''}</div>` : '';
     return `<div style="display:flex; flex-direction:column; gap:8px; min-width:0; padding-right:14px; opacity:${c.op};">
       <div style="position:relative; height:11px; margin-bottom:5px;"><span style="position:absolute; left:0; right:-14px; top:5px; border-top:1px solid ${W(10)};"></span><span style="position:absolute; left:0; top:0; width:11px; height:11px; box-sizing:border-box; border-radius:50%; background:${dot}; border:1.5px solid ${dotBd}; box-shadow:0 0 0 4px ${C.card};"></span></div>
       <span style="${LBL} color:${c.next ? C.white : C.muted};">${esc(c.rd)}</span>${opp}${meta}
-      <span${c.state === 'open' ? ' title="Chance: no source yet"' : ''} style="${MONO} font-size:20px; font-weight:700; line-height:1.15; margin-top:2px; color:${c.figColor};">${esc(c.fig)}</span>${bar}
+      <span${tip ? ` title="${esc(tip)}"` : ''} style="${MONO} font-size:20px; font-weight:700; line-height:1.15; margin-top:2px; color:${c.figColor};">${esc(c.fig)}</span>${bar}
       <span style="font-size:12px; color:${C.muted};">${esc(c.sub)}</span></div>`;
   }).join('')}</div>`;
 }
@@ -886,16 +1024,18 @@ function compareTable(M, A, Bp, meet) {
     const cells = P.cells.map((c, ri) => {
       const isMeet = ri === meet.r && !meet.dead, canOpen = c.cands.length > 0 && c.state !== 'gone' && c.state !== 'bye';
       const short = c.cands.length ? surname(nameOf(c.cands[0])) + (c.state === 'open' && c.more ? ' +' + c.more : '') : '';
-      const fig = c.state === 'gone' ? '' : c.fig, figC = c.state === 'open' ? C.white : c.figColor;
-      const tip = longOf(c.code) + (canOpen ? (c.cands.length > 1 || (c.state === 'open' && !c.known) ? ' · open the players he might face' : ' · open his opponent') : '') + (c.state === 'open' ? ' · chance: no source yet' : '');
+      // an open round = his chance to beat the most likely opponent (design 1a "chance over the likely opponent")
+      const fig = c.state === 'gone' ? '' : c.state === 'open' ? pctS(c.mp) : c.fig, figC = c.state === 'open' ? C.white : c.figColor;
+      const tip = longOf(c.code) + (canOpen ? (c.cands.length > 1 || (c.state === 'open' && !c.known) ? ' · open the players he might face' : ' · open his opponent') : '')
+        + (c.state === 'open' ? ` · chance to beat ${c.cands.length ? nameOf(c.cands[0]) : 'his opponent'}${c.known ? '' : ', the most likely opponent'} · ${c.mp == null ? (CH ? NO_CH : 'not modelled') : pairBasis(P.key, String(c.cands[0].playerKey))}` : '');
       return `<span class="${canOpen ? 'tt-draw-hov' : ''}"${canOpen ? ` onclick="${on(() => { S.opp = { who, r: ri }; repaint(); })}"` : ''} title="${esc(tip)}" style="cursor:${canOpen ? 'pointer' : 'default'}; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; height:46px; min-width:0; padding:0 4px; border-radius:8px; background:${isMeet ? C.lifted : 'transparent'}; box-shadow:${isMeet ? `inset 0 0 0 1.5px ${C.white}` : canOpen ? `inset 0 0 0 1px ${W(9)}` : 'none'}; opacity:${c.op};">`
         + `<span style="display:flex; align-items:baseline; gap:5px;"><span style="${MONO} font-size:13.5px; font-weight:700; color:${figC};">${esc(fig)}</span>${canOpen ? `<span style="font-size:12px; font-weight:700; color:${C.blue};">›</span>` : ''}</span>`
         + `<span style="max-width:100%; font-size:10.5px; color:${C.muted}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(short)}</span></span>`;
     }).join('');
-    const tFig = P.champion ? 'Won' : P.outAt >= 0 ? 'Out' : DASH;
+    const tFig = P.champion ? 'Won' : P.outAt >= 0 ? 'Out' : pctS(P.title);
     return `<div style="display:grid; ${GRID} align-items:center; height:60px; border-top:1px solid ${W(6)};">
       <span${prof ? ` onclick="${prof}" title="Open his profile"` : ''} style="cursor:${prof ? 'pointer' : 'default'}; display:flex; align-items:center; gap:9px; min-width:0;">${avatar(P.key, nameOf(P.me), 26, who === 'a' ? B(60) : W(30), 9.5)}<span class="${prof ? 'tt-draw-plink' : ''}" style="min-width:0; font-size:13.5px; font-weight:700; color:${C.white}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(nameOf(P.me))}</span></span>
-      ${cells}<span${tFig === DASH ? ' title="Title chance: no source yet"' : ''} style="text-align:right; ${MONO} font-size:14px; font-weight:700; color:${C.white};">${tFig}</span></div>`;
+      ${cells}<span title="${esc(P.champion ? 'Champion' : P.outAt >= 0 ? 'Out of the draw' : 'Title chance · ' + chanceTip(P.key, 't') + (P.title > 0 && P.title < 1 ? ' · fair odds ' + fairS(P.title) : ''))}" style="text-align:right; ${MONO} font-size:14px; font-weight:700; color:${C.white};">${tFig}</span></div>`;
   };
   return `<div style="overflow-x:auto; margin-top:14px;"><div style="min-width:${Math.max(590, 128 + n * 76 + 52)}px; background:${C.inset}; border:1px solid ${W(6)}; border-radius:12px; padding:4px 16px 6px;">
     <div style="display:grid; ${GRID} align-items:center; height:34px; ${LBL}"><span>Player</span>${heads}<span style="text-align:right;">Title</span></div>${row(A, 'a')}${row(Bp, 'b')}</div></div>`;
@@ -951,12 +1091,15 @@ function oppReport(ev, M, F, P, r) {
     const l5 = f.last5 && f.last5.length ? f.last5.join(' ') : DASH;
     const fa = [['Opening price', DASH, 'No source yet'], ['Head to head', h2h, f.h2h ? `${f.h2h.n} meetings (ATP head-to-head population)` : ''], [f.archK, ar, arT], ['On this court', DASH, 'No source yet'], ['Last five', l5, f.last5 && f.last5.length ? `${nameOf(o)}: last ${f.last5.length} played matches, oldest first` : '']];
     const ok = String(o.playerKey);
-    const likely = c.state === 'won' || c.state === 'lost' ? 'Played' : c.known ? 'Confirmed' : DASH + ' likely';
+    const done = c.state === 'won' || c.state === 'lost';
+    const likely = done ? 'Played' : c.known ? 'Confirmed' : pctS(CH ? CH.reach(r, ok) : null) + ' likely';
+    const wp = done || !CH ? null : CH.pw(P.key, ok);
+    const wTip = done ? 'Played: see the result in the draw' : wp == null ? (CH ? NO_CH : 'Not modelled for this draw') : `Chance ${nm} beats ${nameOf(o)} · ${pairBasis(P.key, ok)}`;
     return `<div style="background:${C.inset}; border:1px solid ${W(6)}; border-radius:12px; padding:16px 18px 8px; display:flex; flex-direction:column; min-width:0;">
       <div style="display:flex; align-items:center; gap:10px;">${avatar(ok, nameOf(o), 36, W(14), 12)}<div style="display:flex; flex-direction:column; gap:2px; min-width:0;"><span class="tt-draw-plink" onclick="${on(() => goH2H(P.key, ok, P.me.ioc, o.ioc))}" title="Open head to head" style="cursor:pointer; font-size:14.5px; font-weight:700;">${esc(nameOf(o))}</span><span style="font-size:12px; color:${C.muted};">${likely}</span></div></div>
-      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-top:16px;"><span title="Chance to win this match: no source yet" style="${MONO} font-size:26px; font-weight:700; line-height:1; color:${C.white};">${DASH}</span><span title="No warning rule of ours yet" style="font-size:12px; font-weight:700; white-space:nowrap; color:${C.muted};">${DASH}</span></div>
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-top:16px;"><span title="${esc(wTip)}" style="${MONO} font-size:26px; font-weight:700; line-height:1; color:${C.white};">${pctS(wp)}</span><span title="No warning rule of ours yet" style="font-size:12px; font-weight:700; white-space:nowrap; color:${C.muted};">${DASH}</span></div>
       <div style="font-size:12px; color:${C.muted}; margin-top:6px;">to win this match</div>
-      <div title="The tick is an even match" style="position:relative; height:12px; margin-top:12px;"><span style="position:absolute; left:0; right:0; top:4px; height:4px; border-radius:2px; background:${W(7)};"></span><span style="position:absolute; left:50%; top:0; width:2px; height:12px; margin-left:-1px; border-radius:1px; background:${C.white};"></span></div>
+      <div title="The tick is an even match" style="position:relative; height:12px; margin-top:12px;"><span style="position:absolute; left:0; right:0; top:4px; height:4px; border-radius:2px; background:${W(7)}; overflow:hidden;">${wp != null ? `<span style="display:block; height:4px; border-radius:2px; width:${Math.round(wp * 100)}%; background:${BAR55};"></span>` : ''}</span><span style="position:absolute; left:50%; top:0; width:2px; height:12px; margin-left:-1px; border-radius:1px; background:${C.white};"></span></div>
       <div style="margin-top:12px;">${fa.map(([k, v, t]) => `<div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:10px 0; border-top:1px solid ${W(6)};"><span style="font-size:12.5px; color:${C.muted};">${esc(k)}</span><span${t ? ` title="${esc(t)}"` : ''} style="font-size:13px; font-weight:600; text-align:right; white-space:pre; color:${C.white};">${esc(v)}</span></div>`).join('')}</div></div>`;
   }).join('');
   const close = on(() => { S.opp = null; repaint(); });
@@ -966,7 +1109,7 @@ function oppReport(ev, M, F, P, r) {
       <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px; margin-top:22px;">${cards}</div></div></div>`;
 }
 
-// ── Outright chances (one card; every chance and fair-odds range is a dash: ruling 3) ───────────────────────────────
+// ── Outright chances (one card): the Stennisfy title and quarter chances (founder 2026-11-20), fair odds = 1 / chance ──
 function outrightHtml(ev, M, F) {
   const tab = S.outTab === 'q' ? 'q' : 't';
   let h = `<div style="background:${C.inset}; border:1px solid ${W(6)}; border-radius:16px; padding:24px 24px 20px;">
@@ -974,22 +1117,35 @@ function outrightHtml(ev, M, F) {
     + (S.outCmp ? `<div style="font-size:12.5px; margin-top:14px; font-weight:700; color:${C.blue};">Click a player in these lists to add him to the comparison</div>` : '');
   const hl = k => (k && (k === S.outA || k === S.outB) ? C.hover : 'transparent');
   const pick = k => (k ? on(() => { if (S.outCmp) pickOut(k); else { Object.assign(S, { sel: k, b: null, cmp: false, view: 'draw', shut: null, opp: null }); repaint(); } }) : '');
-  const fair3 = (cols, fs) => `<span title="Fair odds: no source yet" style="display:grid; grid-template-columns:${cols}; align-items:baseline; ${MONO} font-size:${fs}px; font-weight:600; color:${C.text}; white-space:nowrap;"><span></span><span style="text-align:center; color:${C.muted};">${DASH}</span><span></span></span>`;
+  // one fair price per row (the design's two-cell range becomes the single price, centred in the same cell)
+  const fairCell = (v, fs, tip) => `<span title="${esc(tip || 'Fair odds = 1 / chance, no margin')}" style="text-align:center; ${MONO} font-size:${fs}px; font-weight:600; color:${v > 0 && v < 1 ? C.text : C.muted}; white-space:nowrap;">${fairS(v)}</span>`;
+  const why = CH ? (CH.eloLoading ? 'Loading the Elo ratings' : CH.eloFailed ? 'The Elo ratings could not be loaded' : NO_CH) : 'Not modelled for this draw (the group stage is not modelled)';
+  const alive = F.slots.filter(s => F.out[String(s.playerKey)] == null).map(s => String(s.playerKey));
   if (tab === 't') {
-    // the leader is the most likely winner (a chance: dash) — or, once the final is played, the champion (a result)
-    const ck = F.champ, cs = ck ? F.byKey.get(ck) : null;
-    const lead = `<div class="${ck ? 'tt-draw-edge' : ''}" onclick="${pick(ck)}" style="cursor:${ck ? 'pointer' : 'default'}; flex:1 1 260px; box-sizing:border-box; background:${C.card}; border:1px solid ${W(6)}; border-radius:11px; padding:18px 20px; display:flex; flex-wrap:wrap; align-items:center; align-content:flex-start; gap:16px 32px; min-width:0;">
-      <span style="flex:0 0 100%; display:flex; justify-content:space-between; gap:8px; ${LBL}"><span>${ck ? 'Champion' : 'Most likely winner'}</span><span style="color:${C.blue}; font-weight:700;">${ck ? '›' : ''}</span></span>
-      <div style="flex:1 1 200px; display:flex; align-items:center; gap:14px; min-width:0;">${cs ? avatar(ck, nameOf(cs), 44, W(14), 14) : `<span style="flex:none; width:44px; height:44px; box-sizing:border-box; border-radius:50%; background:${C.lifted}; border:1px solid ${W(14)};"></span>`}<div style="display:flex; flex-direction:column; gap:6px; align-items:flex-start; min-width:0;"><span style="max-width:100%; font-size:18px; font-weight:800; color:${C.white}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${cs ? esc(nameOf(cs)) : DASH}</span></div></div>
-      <span${ck ? '' : ' title="Title chance: no source yet"'} style="${MONO} flex:none; font-size:40px; font-weight:700; line-height:1; color:${C.white};">${ck ? '100%' : DASH}</span>
-      <div style="flex:1 1 200px; display:flex; flex-direction:column; gap:10px; font-size:13px;"><div style="display:flex; justify-content:space-between; gap:12px;"><span style="color:${C.muted};">Fair odds</span><span title="No source yet" style="${MONO} font-weight:700; color:${C.white};">${DASH}</span></div><div style="display:flex; justify-content:space-between; gap:12px;"><span style="color:${C.muted};">Ahead of the next</span><span title="No source yet" style="${MONO} font-weight:700; color:${C.white};">${DASH}</span></div></div></div>`;
+    const vals = CH ? alive.map(k => ({ k, v: CH.title(k) })) : [];
+    const known = CH && vals.length && vals.every(x => x.v != null);
+    const ranked = known ? vals.filter(x => x.v > 0).sort((a, b) => b.v - a.v).slice(0, 10) : [];
+    const L = ranked[0] || null, lk = L ? L.k : F.champ, ls = lk ? F.byKey.get(lk) : null, champ = !!(L && L.v >= 1) || (!L && !!F.champ);
+    const lv = L ? L.v : F.champ ? 1 : null;
+    const lead = `<div class="${lk ? 'tt-draw-edge' : ''}" onclick="${pick(lk)}" style="cursor:${lk ? 'pointer' : 'default'}; flex:1 1 260px; box-sizing:border-box; background:${C.card}; border:1px solid ${W(6)}; border-radius:11px; padding:18px 20px; display:flex; flex-wrap:wrap; align-items:center; align-content:flex-start; gap:16px 32px; min-width:0;">
+      <span style="flex:0 0 100%; display:flex; justify-content:space-between; gap:8px; ${LBL}"><span>${champ ? 'Champion' : 'Most likely winner'}</span><span style="color:${C.blue}; font-weight:700;">${lk ? '›' : ''}</span></span>
+      <div style="flex:1 1 200px; display:flex; align-items:center; gap:14px; min-width:0;">${ls ? avatar(lk, nameOf(ls), 44, W(14), 14) : `<span style="flex:none; width:44px; height:44px; box-sizing:border-box; border-radius:50%; background:${C.lifted}; border:1px solid ${W(14)};"></span>`}<div style="display:flex; flex-direction:column; gap:6px; align-items:flex-start; min-width:0;"><span style="max-width:100%; font-size:18px; font-weight:800; color:${C.white}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${ls ? esc(nameOf(ls)) : DASH}</span>${L && !champ ? chip('Favourite', C.soft, 'The highest title chance in this draw') : ''}</div></div>
+      <span title="${esc(champ ? 'Champion' : L ? 'Title chance · ' + chanceTip(lk, 't') : why)}" style="${MONO} flex:none; font-size:40px; font-weight:700; line-height:1; color:${C.white};">${champ ? '100%' : pctS(lv)}</span>
+      <div style="flex:1 1 200px; display:flex; flex-direction:column; gap:10px; font-size:13px;"><div style="display:flex; justify-content:space-between; gap:12px;"><span style="color:${C.muted};">Fair odds</span><span title="Fair odds = 1 / chance, no margin" style="${MONO} font-weight:700; color:${C.white};">${fairS(lv)}</span></div><div style="display:flex; justify-content:space-between; gap:12px;"><span style="color:${C.muted};">Ahead of the next</span><span title="${esc(ranked[1] ? 'Title chance points ahead of ' + nameOf(F.byKey.get(ranked[1].k)) : 'Nobody else left with a chance')}" style="${MONO} font-weight:700; color:${C.white};">${ranked[1] ? Math.round((ranked[0].v - ranked[1].v) * 100) + ' points' : DASH}</span></div></div></div>`;
     const G = 'grid-template-columns:minmax(130px,210px) minmax(40px,1fr) 48px 112px; gap:0 12px;';
-    const rowD = () => `<div style="border-top:1px solid ${W(6)};"><div style="display:grid; ${G} align-items:center; height:40px; box-sizing:border-box; padding:0 8px; margin:2px -8px; border-radius:8px;"><span style="min-width:0; display:flex; align-items:center; gap:10px;"><span style="flex:none; width:26px; height:26px; box-sizing:border-box; border-radius:50%; background:${C.lifted}; border:1px solid ${W(10)};"></span><span style="font-size:13.5px; font-weight:600; color:${C.muted};">${DASH}</span></span><span style="min-width:0; height:4px; border-radius:2px; background:${W(7)};"></span><span title="Chance: no source yet" style="text-align:right; ${MONO} font-size:13.5px; font-weight:700; color:${C.white};">${DASH}</span>${fair3('50px 12px 50px', 13)}</div></div>`;
-    const grp = (name, n) => `<div style="display:grid; ${G} align-items:baseline; padding:10px 0 9px; ${LBL}"><span style="min-width:0; font-size:14px; font-weight:700; color:${C.white}; white-space:nowrap;">${name}</span><span></span><span style="text-align:right;">Chance</span><span style="text-align:center; white-space:nowrap;">Fair odds</span></div>${Array.from({ length: n }, rowD).join('')}`;
-    h += `<div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:18px;">${lead}<div title="Title chances: no source yet" style="flex:2 1 480px; background:${C.card}; border:1px solid ${W(6)}; border-radius:11px; padding:10px 20px 8px; min-width:0;">${grp('Also favoured', 2)}${grp('Three underdogs', 3)}</div></div>`;
+    const top = ranked[0] ? ranked[0].v : 1;
+    const rowR = x => { const s = F.byKey.get(x.k);
+      return `<div style="border-top:1px solid ${W(6)};"><div class="tt-draw-hov" onclick="${pick(x.k)}" style="cursor:pointer; display:grid; ${G} align-items:center; height:40px; box-sizing:border-box; padding:0 8px; margin:2px -8px; border-radius:8px; background:${hl(x.k)};"><span style="min-width:0; display:flex; align-items:center; gap:10px;">${avatar(x.k, nameOf(s), 26, W(10), 10)}<span title="${esc(nameOf(s))}" style="flex:1; min-width:0; display:flex; align-items:baseline; gap:7px;"><span style="min-width:0; font-size:13.5px; font-weight:600; color:${C.white}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(nameOf(s))}</span><span style="flex:none; ${MONO} font-size:10px; color:${C.muted};">${esc(tagOf(s))}</span></span></span><span style="min-width:0; height:4px; border-radius:2px; background:${W(7)}; overflow:hidden;"><span style="display:block; height:4px; border-radius:2px; width:${Math.max(2, Math.min(100, x.v / top * 100))}%; background:${BAR55};"></span></span><span title="${esc('Title chance · ' + chanceTip(x.k, 't'))}" style="text-align:right; ${MONO} font-size:13.5px; font-weight:700; color:${C.white};">${pctS(x.v)}</span>${fairCell(x.v, 13)}</div></div>`; };
+    const rowD = () => `<div style="border-top:1px solid ${W(6)};"><div style="display:grid; ${G} align-items:center; height:40px; box-sizing:border-box; padding:0 8px; margin:2px -8px; border-radius:8px;"><span style="min-width:0; display:flex; align-items:center; gap:10px;"><span style="flex:none; width:26px; height:26px; box-sizing:border-box; border-radius:50%; background:${C.lifted}; border:1px solid ${W(10)};"></span><span style="font-size:13.5px; font-weight:600; color:${C.muted};">${DASH}</span></span><span style="min-width:0; height:4px; border-radius:2px; background:${W(7)};"></span><span title="${esc(why)}" style="text-align:right; ${MONO} font-size:13.5px; font-weight:700; color:${C.white};">${DASH}</span>${fairCell(null, 13, why)}</div></div>`;
+    const head = name => `<div style="display:grid; ${G} align-items:baseline; padding:10px 0 9px; ${LBL}"><span style="min-width:0; font-size:14px; font-weight:700; color:${C.white}; white-space:nowrap;">${name}</span><span></span><span style="text-align:right;">Chance</span><span style="text-align:center; white-space:nowrap;">Fair odds</span></div>`;
+    // the design's groups: Also favoured = 2nd–3rd, Three underdogs = 5th, 7th and 9th by title chance
+    const groups = known ? [['Also favoured', [1, 2]], ['Three underdogs', [4, 6, 8]]].map(([n, ix]) => [n, ix.map(i => ranked[i]).filter(Boolean)]).filter(g => g[1].length)
+      .map(([n, rows]) => head(n) + rows.map(rowR).join('')).join('')
+      : head('Also favoured') + rowD() + rowD() + head('Three underdogs') + rowD() + rowD() + rowD();
+    h += `<div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:18px;">${lead}${groups ? `<div style="flex:2 1 480px; background:${C.card}; border:1px solid ${W(6)}; border-radius:11px; padding:10px 20px 8px; min-width:0;">${groups}</div>` : ''}</div>`;
   } else {
-    // quarters from the draw's own positions (founder 2026-11-15): pos → ceil(pos / (size / 4)); the quarter winner
-    // (won his quarter-final) first, then the players still in it by seed and position — never a chance order
+    // quarters from the draw's own positions (founder 2026-11-15): pos → ceil(pos / (size / 4)); rows by his chance to
+    // win the quarter (the quarter winner reads "Won"); with any chance unknown, the winner then seed / position order
     const size = (ev.draw.main && ev.draw.main.size) || 32, per = size / 4;
     const qi = M ? M.rounds.findIndex(r => r.name === 'QF') : -1;
     const qWin = q => { if (qi < 0) return null; const c = M.rounds[qi].cells[q]; return c && c.match ? c.match.winnerKey : null; };
@@ -997,10 +1153,14 @@ function outrightHtml(ev, M, F) {
     const cards = [0, 1, 2, 3].map(q => {
       const w = qWin(q);
       const inQ = F.slots.filter(s => Math.ceil(s.pos / per) === q + 1);
-      const list = (w && F.byKey.get(w) ? [F.byKey.get(w)] : []).concat(w ? [] : inQ.filter(s => F.out[String(s.playerKey)] == null)
-        .sort((x, y) => (x.seed == null ? 99 : x.seed) - (y.seed == null ? 99 : y.seed) || x.pos - y.pos)).slice(0, 4);
-      const rows = list.map((s, j) => { const k = String(s.playerKey);
-        return `<div class="tt-draw-hov" onclick="${pick(k)}" title="${esc(nameOf(s))}" style="cursor:pointer; display:grid; ${G} align-items:center; height:40px; box-sizing:border-box; padding:0 6px; margin:2px -6px; border-radius:8px; background:${hl(k)};"><div style="display:flex; align-items:center; gap:8px; min-width:0;">${avatar(k, nameOf(s), 26, j ? W(18) : W(40), 9.5)}<span style="min-width:70px; font-size:13px; font-weight:${j ? 600 : 800}; color:${j ? C.text : C.white}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(nameOf(s))}</span></div><span${k === w ? '' : ' title="Chance: no source yet"'} style="text-align:right; ${MONO} font-size:13px; font-weight:700; color:${C.white};">${k === w ? 'Won' : DASH}</span>${fair3('32px 12px 32px', 12)}</div>`; }).join('');
+      const qv = s => (CH ? CH.quarter(String(s.playerKey)) : null);
+      const live = inQ.filter(s => F.out[String(s.playerKey)] == null);
+      const known = !!CH && live.length > 0 && live.every(s => qv(s) != null);
+      const list = known ? live.filter(s => qv(s) > 0).sort((x, y) => qv(y) - qv(x) || x.pos - y.pos).slice(0, 4)
+        : (w && F.byKey.get(w) ? [F.byKey.get(w)] : []).concat(w ? [] : live.sort((x, y) => (x.seed == null ? 99 : x.seed) - (y.seed == null ? 99 : y.seed) || x.pos - y.pos)).slice(0, 4);
+      const rows = list.map((s, j) => { const k = String(s.playerKey), v = k === w ? 1 : known ? qv(s) : null;
+        const tip = k === w ? 'Won his quarter' : v == null ? why : 'Chance to win his quarter · ' + chanceTip(k, 'q');
+        return `<div class="tt-draw-hov" onclick="${pick(k)}" title="${esc(nameOf(s))}" style="cursor:pointer; display:grid; ${G} align-items:center; height:40px; box-sizing:border-box; padding:0 6px; margin:2px -6px; border-radius:8px; background:${hl(k)};"><div style="display:flex; align-items:center; gap:8px; min-width:0;">${avatar(k, nameOf(s), 26, j ? W(18) : W(40), 9.5)}<span style="min-width:70px; font-size:13px; font-weight:${j ? 600 : 800}; color:${j ? C.text : C.white}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(nameOf(s))}</span></div><span title="${esc(tip)}" style="text-align:right; ${MONO} font-size:13px; font-weight:700; color:${C.white};">${v === 1 ? 'Won' : pctS(v)}</span>${fairCell(v, 12, v == null ? why : null)}</div>`; }).join('');
       return `<div style="background:${C.card}; border:1px solid ${W(6)}; border-radius:11px; padding:14px 12px 8px; min-width:0;"><div style="display:grid; ${G} align-items:baseline; padding-bottom:10px; border-bottom:1px solid ${W(6)}; ${LBL} white-space:nowrap;"><span style="font-size:14px; font-weight:700; color:${C.white};">Quarter ${q + 1}</span><span style="display:flex; justify-content:flex-end;">Chance</span><span style="text-align:center;">Fair odds</span></div>${rows}</div>`;
     }).join('');
     h += `<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(max(240px, calc(25% - 6px)),1fr)); gap:8px; margin-top:18px;">${cards}</div>`;
@@ -1202,10 +1362,12 @@ const TTDraw = {
   render(el) { render(el); },
   // Match Analysis rows for finished draw matches the board and the draw store no longer hold (the page's matchById)
   rowById(id) { return ROWS.get(String(id)) || null; },
+  // the Bookmakers' outright column hook (the lead wires a source later; null today, nothing drawn)
+  bookOutright,
   _h(i, ev) { const f = H[i]; if (typeof f !== 'function') return; if (ev && ev.type === 'click' && ev.stopPropagation) ev.stopPropagation(); f(ev); },
   // test hooks (Node): the pure parts and the state
   _test: { S, events, modelOf, facts, pathOf, statsModel, seasonFigs, dbRowsOf, setFacts, stageOf, render, FILES, reset, boardPrice, resultRow, analysisId, ROWS,
-    boxModel, ptsModel, pickName, get H() { return H; } },
+    boxModel, ptsModel, pickName, chancesFor, chanceDP, eloBaseP, eloKeyOf, eloRecOf, pctS, fairS, bookOutright, get CH() { return CH; }, get H() { return H; } },
 };
 if (typeof module !== 'undefined' && module.exports) module.exports = TTDraw;
 if (typeof window !== 'undefined') window.TTDraw = TTDraw;

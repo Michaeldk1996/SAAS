@@ -285,7 +285,9 @@ const MUTANTS = [
   ['ROI coloured by its gap to the tour', s => s.replace("${ok ? ` style=\"color:${signCol(v)};\"` : ''}", "${ok ? ` style=\"color:${signCol(d)};\"` : ''}")],
   ['CPI on every tier', s => s.replace("const isM1000 = c => !!c && /^ATP (Masters )?1000$/.test(String(c.category || ''));", 'const isM1000 = c => !!c;')],
   ['Canadian Open = Montreal only', s => s.replace("[d.Montreal, d.Toronto]", "[d.Montreal]")],
-  ['trend back on the COURT_CONDITIONS as-year fields', s => s.replace("const v = (st.csh.ta[name] || {})[y];", "const v = (conds()[name] || {})['as' + y];")],
+  // (2026-11-20: COURT_CONDITIONS now carries every season too, so "read the table" is no longer a wrong answer; the old
+  // fault was the 2023–2025 window, which is what this mutant brings back)
+  ['trend back on the 2023–2025 window', s => s.replace("const v = (st.csh.ta[name] || {})[y];", "const v = y < 2023 || y > 2025 ? null : (st.csh.ta[name] || {})[y];")],
   ['1st serve ignores the hold file', s => s.replace('if (h && h.fsPlayed > 0)', 'if (false)')],
   ['CPI table From / To clipped to 2020', s => s.replace('const ys = allY.filter(y => y >= f && y <= t);', 'const ys = allY.filter(y => y >= Math.max(f, 2020) && y <= t);').replace("const allY = [...new Set(", "const allY0 = [...new Set(").replace(".sort((a, b) => a - b);\n  let f = st.spF", ".sort((a, b) => a - b), allY = allY0.filter(y => y >= 2020);\n  let f = st.spF")],
   ['logo by catalog name only', s => s.replace('return L[name] || L[LOGO_ALIAS[name]] ||', 'return L[name] ||')],

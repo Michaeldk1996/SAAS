@@ -46,6 +46,14 @@ for (const f of FILES) {
     const re = new RegExp(`(^  '${k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}': \\{ speed: )(-?[\\d.]+|null)(, altitude: [^,]+, abstractSpeed: )([\\d.]+|null)(, abstractSpeedYear: )(\\d+|null)`, 'm');
     if (!re.test(s)) throw new Error(`${f}: row ${k} not matched — nothing written`);
     s = s.replace(re, `$1${x.speed}$3${x.as}$5${x.yr}`);
+    // founder 2026-11-20: every season is graded by ITS OWN reading (Paris 2025 = 0.97, Paris 2026 = 1.44), so the row
+    // carries asYYYY for every season with a reading — the profile's spdEditionSpeed reads as<year> before the current
+    // reading. The run of as<year> fields after abstractSpeedYear is replaced whole.
+    const seasons = Object.keys(H[k] || {}).filter(y => H[k][y] != null).sort();
+    const asList = seasons.length ? seasons.map(y => `as${y}: ${H[k][y]}`).join(', ') : 'as2023: null, as2024: null, as2025: null';
+    const re2 = new RegExp(`(^  '${k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}': \\{[^\\n]*?abstractSpeedYear: (?:\\d+|null), )((?:as\\d{4}: (?:[\\d.]+|null), )+)`, 'm');
+    if (!re2.test(s)) throw new Error(`${f}: row ${k} has no as<year> run — nothing written`);
+    s = s.replace(re2, `$1${asList}, `);
   }
   out[f] = s;
 }

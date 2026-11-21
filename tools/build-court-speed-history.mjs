@@ -13,7 +13,7 @@ import path from 'node:path';
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const OUT = path.join(ROOT, 'court-speed-history.json');
-const FIRST_TA = 2020, LAST_TA_ARCHIVE = 2023;
+const FIRST_TA = 2000, LAST_TA_ARCHIVE = 2023;   // founder 2026-11-20: every season graded by its own reading
 const UA = { 'user-agent': 'Mozilla/5.0 (Stennisfy court-speed history)' };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 

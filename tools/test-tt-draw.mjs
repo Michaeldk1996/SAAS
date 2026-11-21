@@ -3,13 +3,14 @@
 // (tools/fixtures/tt-draw/: the posted Paris + Lyon sheets of draws.json, Paris's published results, How it plays,
 // favourites-by-round, the Database rows of those events, tour-baselines, points-to-defend.json's Paris event — copies of
 // deployed / committed files) through the shipped draw-view.js and settlement.js, and checks structure, the dash rules
-// (founder ruling 3: no chance / fair-odds / opening-range / warning figure) and every data source. The player-index
+// (chances: founder 2026-11-20, Stennisfy probabilities; opening ranges and warnings stay dashes) and every data source. The player-index
 // standings with ranking points and the per-match serve metrics are SYNTHETIC test inputs (built here, never shipped).
 // Each check names the mutant that must turn it red; the mutants run at the end.
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FIX = path.join(ROOT, 'tools/fixtures/tt-draw');
@@ -87,16 +88,142 @@ check('bracket rows start with the player photo, no country box, Bye inset 30 (m
   const h = text(raw);
   ok(h.includes('A. Zverev') && h.includes('C. Alcaraz'), 'players from draws.json');
 });
-check('chances are dashes everywhere (mutant: a chance figure in the route panel / outright)', ({ html }) => {
+check('no Elo file → every chance is a dash with its reason (mutant: a chance figure without a source)', ({ html }) => {
   const sel = text(html({ key: PARIS, sel: '1980' }));
   ok(/Win his quarter — Title chance —/.test(sel), 'route panel head figures are dashes');
   ok(/Next: the round of 32/.test(sel), 'Zverev: a bye in R64, next = R32 with an undecided opponent');
-  ok(!/\d+(\.\d+)?% likely/.test(sel) && !/likely [A-Z]\./.test(sel), 'no "x% likely" / "likely X"');
-  const out = text(html({ key: PARIS, view: 'out' }));
-  ok(/Most likely winner — —/.test(out), 'leader card: name and chance are dashes');
-  ok(!/\d%/.test(out), 'no percentage on the outright view: ' + (out.match(/[^ ]*\d%[^ ]*/) || [])[0]);
+  ok(!/\d+(\.\d+)?% likely/.test(sel), 'no "x% likely" without chances');
+  const out = html({ key: PARIS, view: 'out' }), o = text(out);
+  ok(/Most likely winner — —/.test(o), 'leader card: name and chance are dashes');
+  ok(!/\d%/.test(o), 'no percentage on the outright view: ' + (o.match(/[^ ]*\d%[^ ]*/) || [])[0]);
+  ok(/title="Loading the Elo ratings"/.test(out), 'the dash says why');
   const q = text(html({ key: PARIS, view: 'out', outTab: 'q' }));
   ok((q.match(/Quarter \d/g) || []).length === 4, 'four quarter cards');
+});
+
+// ── chances (founder 2026-11-20): exact bracket DP over Stennisfy pairwise probabilities ──
+const require = createRequire(import.meta.url);
+const ELO = require(path.join(ROOT, 'h2h-model/elo.js'));
+// a synthetic 8-player draw run through the shipped DrawView model and chancesFor
+const SYN = [['ALPHA, Ann', 2100], ['BETA, Bob', 1900], ['GAMMA, Gus', 2000], ['DELTA, Dan', 1700], ['EPSILON, Eve', 1950], ['ZETA, Zed', 1850], ['ETA, Ed', 2050], ['THETA, Tom', 1600]];
+function synEnv(T, win, opts) {
+  const o = opts || {};
+  const slots = SYN.map(([name], i) => ({ pos: i + 1, name, playerKey: 'x' + (i + 1) }));
+  const elo = {};
+  SYN.forEach(([name, r], i) => { if (!(o.noElo || []).includes('x' + (i + 1))) { const [sur, giv] = name.split(', '); elo[T.eloKeyOf(giv + ' ' + sur)] = { all: { rating: r }, hard: { rating: r - 40 * (i % 3) } }; } });
+  T.FILES['elo-ratings.json'] = { elo, ambiguous: [] };
+  const draw = { main: { status: 'posted', size: 8, slots }, sheetHeader: { surface: 'Hard' }, category: 'ATP 250' };
+  const res = (o.played || []).map(([a, b, w]) => ({ p1: { playerKey: a, name: a }, p2: { playerKey: b, name: b }, winner: w, score: [[6, 3], [6, 4]], status: 'finished' }));
+  const ev = { draw, board: [], city: 'Synthetic', entry: { matches: res } };
+  const M = win.DrawView.model({ draw, entry: ev.entry, upcoming: [], kind: 'main' }), F = T.facts(M, ev);
+  return T.chancesFor(ev, M, F);
+}
+const near = (a, b) => Math.abs(a - b) < 1e-9;
+check('chance DP on a synthetic 8-player draw: titles sum to 100%, each quarter to 100% (mutants: quarter over the wrong half / 50% fallback)', ({ T, win }) => {
+  const CH = synEnv(T, win), keys = SYN.map((_, i) => 'x' + (i + 1));
+  const t = keys.map(k => CH.title(k)), q = keys.map(k => CH.quarter(k));
+  ok(t.every(v => v > 0 && v < 1), 'every title chance a figure: ' + t.join());
+  ok(near(t.reduce((a, b) => a + b, 0), 1), 'title chances sum to 1: ' + t.reduce((a, b) => a + b, 0));
+  for (let g = 0; g < 4; g++) ok(near(q[2 * g] + q[2 * g + 1], 1), `quarter ${g + 1} sums to 1: ${q[2 * g] + q[2 * g + 1]}`);
+  // by hand: x1 v x2 on hard is the model's Stage-1 base
+  const e = n => ({ elo: T.FILES['elo-ratings.json'].elo[T.eloKeyOf(n.split(', ')[1] + ' ' + n.split(', ')[0])] });
+  ok(near(q[0], ELO.baseProbability(e(SYN[0][0]), e(SYN[1][0]), 'Hard').baseP1), 'R1 chance = baseProbability');
+  ok(t.indexOf(Math.max(...t)) === 0, 'the highest rated player has the highest title chance');
+});
+check('a played match fixes its winner; a walkover too (mutant: played results ignored)', ({ T, win }) => {
+  const CH = synEnv(T, win, { played: [['x1', 'x2', 2]] });
+  ok(CH.quarter('x2') === 1 && CH.quarter('x1') === 0 && CH.title('x1') === 0, 'x2 beat x1: quarter 100%, x1 out');
+  const t = SYN.map((_, i) => CH.title('x' + (i + 1)));
+  ok(near(t.reduce((a, b) => a + b, 0), 1), 'still sums to 1');
+});
+check('a missing Elo dashes exactly the chances that depend on him, never 50% (mutant: equal 50% fallback)', ({ T, win }) => {
+  const CH = synEnv(T, win, { noElo: ['x8'] });
+  ok(CH.quarter('x7') == null && CH.quarter('x8') == null, 'his quarter is unknown');
+  ok(CH.quarter('x1') != null && near(CH.quarter('x1') + CH.quarter('x2'), 1), 'other quarters stand');
+  ok(SYN.every((_, i) => CH.title('x' + (i + 1)) == null), 'every title chance depends on him → dash');
+  const CH2 = synEnv(T, win, { noElo: ['x8'], played: [['x7', 'x8', 1]] });
+  ok(CH2.title('x8') === 0 && near(SYN.reduce((a, _, i) => a + CH2.title('x' + (i + 1)), 0), 1), 'once he is out, every title chance is back');
+});
+check('formula parity: the page Elo base = h2h-model/elo.js baseProbability (mutant: weights drift)', ({ T }) => {
+  const recs = [{ all: { rating: 2100 }, hard: { rating: 2050 }, clay: { rating: 1900 }, grass: { rating: 1980 } }, { all: { rating: 1830 }, clay: { rating: 1950 } },
+    { all: { rating: 1990 }, hard: { rating: 2010 }, grass: { rating: 1700 } }, { all: { rating: 1500 } }];
+  let n = 0;
+  for (const a of recs) for (const b of recs) for (const sf of ['Hard', 'Clay', 'Grass', 'Carpet', null, 'Hard (Indoor)']) {
+    const want = ELO.baseProbability({ elo: a }, { elo: b }, sf).baseP1, got = T.eloBaseP(a, b, sf); n++;
+    ok(Math.abs(want - got) < 1e-9, `${JSON.stringify(a)} v ${JSON.stringify(b)} on ${sf}: ${got} v ${want}`);
+  }
+  ok(T.eloBaseP({ all: { rating: 2000 } }, null, 'Hard') === null && ELO.baseProbability({ elo: { all: { rating: 2000 } } }, { elo: null }, 'Hard').baseP1 === null, 'no Elo → null on both');
+  ok(n === 96, 'pairs run: ' + n);
+});
+// Paris with a synthetic Elo store: every player rated by his seed, the unseeded at 1700 − position
+function parisElo(T, skip) {
+  const elo = {};
+  fx('draws.json').tournaments['352'].main.slots.filter(s => !s.bye).forEach(s => { if (String(s.playerKey) === skip) return;
+    const [sur, giv] = s.name.split(/,\s*/); const k = T.eloKeyOf(giv + ' ' + sur); if (k && !/…/.test(s.name)) elo[k] = { all: { rating: s.seed ? 2300 - 30 * s.seed : 1700 - s.pos }, hard: { rating: s.seed ? 2280 - 30 * s.seed : 1690 - s.pos } }; });
+  return { elo, ambiguous: [] };
+}
+check('Paris: real chances on every view — route panel, outright, quarters, compare, opponents box; fair odds = 1 / chance', ({ T, html, root, win, ctx }) => {
+  T.FILES['elo-ratings.json'] = parisElo(T);
+  const ev = T.events().all.find(e => e.key === PARIS), M = T.modelOf(ev, 'main'), F = T.facts(M, ev);
+  const trunc = F.slots.filter(s => /…/.test(s.name)).map(s => String(s.playerKey));
+  ok(trunc.length >= 1, 'the fixture holds a sheet name cut short (no Elo by the sheet name)');
+  const qOf = k => Math.ceil(F.byKey.get(k).pos / 16);
+  let CH = T.chancesFor(ev, M, F);
+  ok(F.slots.every(s => CH.title(String(s.playerKey)) == null), 'an unrated player leaves every title chance a dash');
+  const clean = [1, 2, 3, 4].find(q => !trunc.some(k => qOf(k) === q)), dirty = qOf(trunc[0]);
+  ok(clean, 'a quarter with every player rated');
+  const inQ = q => F.slots.filter(s => Math.ceil(s.pos / 16) === q).map(s => String(s.playerKey));
+  ok(near(inQ(clean).reduce((a, k) => a + CH.quarter(k), 0), 1) && inQ(dirty).every(k => CH.quarter(k) == null), 'quarters: the rated one sums to 1, the unrated one dashes');
+  // the profile name resolves the cut sheet names (the model's own key rule on the profile spelling)
+  const st = T.FILES['elo-ratings.json'];
+  trunc.forEach((k, i) => { st.elo[T.eloKeyOf('Test Player' + 'abcdefgh'[i])] = { all: { rating: 1650 + i } }; });
+  ctx.newsPlayerName = (k, fb) => (trunc.includes(String(k)) ? 'Test Player' + 'abcdefgh'[trunc.indexOf(String(k))] : fb);
+  try {
+    CH = T.chancesFor(ev, M, F);
+    const t = F.slots.map(s => CH.title(String(s.playerKey)));
+    ok(t.every(v => v != null) && near(t.reduce((a, b) => a + b, 0), 1), 'Paris title chances sum to 1');
+    const qz = CH.quarter('1980'), tz = CH.title('1980');
+    const sel = text(html({ key: PARIS, sel: '1980' }));
+    ok(sel.includes(`Win his quarter fair odds ${(1 / qz).toFixed(2)} ${T.pctS(qz)}`) && sel.includes(`Title chance fair odds ${(1 / tz).toFixed(2)} ${T.pctS(tz)}`), 'route panel: chance + fair odds: ' + (sel.match(/Win his quarter.{0,80}/) || [])[0]);
+    ok(sel.includes(`${T.pctS(CH.at(1, "1980"))} to reach the Round of 16`), "per-round chance in the rail: " + (sel.match(/Round of 32.{0,120}/) || [])[0]);
+    const sorted = F.slots.map(s => [String(s.playerKey), CH.title(String(s.playerKey))]).sort((a, b) => b[1] - a[1]), nm = k => win.DrawView.shortName(F.byKey.get(k).name);
+    const o = text(html({ key: PARIS, view: 'out' }));
+    ok(/Most likely winner ›/.test(o) && o.includes(`${nm(sorted[0][0])} Favourite ${T.pctS(sorted[0][1])} Fair odds ${(1 / sorted[0][1]).toFixed(2)} Ahead of the next ${Math.round((sorted[0][1] - sorted[1][1]) * 100)} points`), 'leader card: ' + (o.match(/Most likely winner.{0,120}/) || [])[0]);
+    ok(new RegExp(`Also favoured Chance Fair odds [A-Z]{2} ${nm(sorted[1][0]).replace('.', '\\.')}`).test(o) && new RegExp(`Three underdogs Chance Fair odds [A-Z]{2} ${nm(sorted[4][0]).replace('.', '\\.')}`).test(o), 'groups: 2nd–3rd, then 5th / 7th / 9th: ' + (o.match(/Also favoured.{0,80}/) || [])[0]);
+    const q = html({ key: PARIS, view: 'out', outTab: 'q' }), cards = q.split('>Quarter ').slice(1);
+    const q1 = inQ(1).map(k => [k, CH.quarter(k)]).sort((a, b) => b[1] - a[1]);
+    ok(near(q1.reduce((a, x) => a + x[1], 0), 1), 'quarter 1 sums to 1');
+    ok(text(cards[0]).includes(`${nm(q1[0][0])} ${T.pctS(q1[0][1])} ${(1 / q1[0][1]).toFixed(2)} `) && text(cards[0]).indexOf(nm(q1[0][0])) < text(cards[0]).indexOf(nm(q1[1][0])), 'quarter rows by chance, single fair price: ' + text(cards[0]).slice(0, 120));
+    html({ key: PARIS, sel: '1980', cmp: true, b: '2382' });
+    ok(text(root.innerHTML).includes(`${T.pctS(CH.title('2382'))}`) && /title="Title chance · Stennisfy: the model’s Elo base/.test(root.innerHTML), 'compare: title chance with its basis');
+    T.S.opp = { who: 'a', r: 1 }; win.TTDraw.render(root);
+    const ob = text(root.innerHTML), c1 = T.pathOf(M, F, '1980').cells[1], o1 = String(c1.cands[0].playerKey);
+    ok(ob.includes(`${T.pctS(CH.pw('1980', o1))} — to win this match`), 'opponents box: chance v his most likely opponent: ' + (ob.match(/who he could play.{0,140}/) || [])[0]);
+    ok(ob.includes(`${T.pctS(CH.reach(1, o1))} likely`), '"x% likely" from the DP');
+    ok(c1.cands.every((x, i, a) => !i || CH.reach(1, String(a[i - 1].playerKey)) >= CH.reach(1, String(x.playerKey))), 'candidates by chance of being there');
+  } finally { delete ctx.newsPlayerName; T.FILES['elo-ratings.json'] = undefined; }
+});
+check('a board match the Stennisfy Model priced uses the model price; every other pairing the Elo base (mutant: model price ignored)', ({ T, ctx }) => {
+  T.FILES['elo-ratings.json'] = parisElo(T);
+  const ev0 = T.events().all.find(e => e.key === PARIS), M = T.modelOf(ev0, 'main'), F = T.facts(M, ev0);
+  const c = M.rounds[0].cells.find(x => x.sides[0] && x.sides[1] && x.sides[0].playerKey && x.sides[1].playerKey && !/…/.test(x.sides[0].name + x.sides[1].name));
+  const a = String(c.sides[0].playerKey), b = String(c.sides[1].playerKey);
+  const ev = Object.assign({}, ev0, { board: [{ id: 'upcoming-1', p1Key: +b, p2Key: +a }] });
+  ctx.modelOutput = { matches: { 'upcoming-1': { ok: true, players: { p1: { key: +b }, p2: { key: +a } }, stage3: { fair: { p1: { prob: 0.37 }, p2: { prob: 0.63 } } } } } };
+  try {
+    const CH = T.chancesFor(ev, M, F);
+    ok(near(CH.pw(a, b), 0.63) && near(CH.pw(b, a), 0.37), 'model price, oriented to the player: ' + CH.pw(a, b));
+    const ea = T.eloRecOf(T.FILES['elo-ratings.json'], a, c.sides[0].name), eb = T.eloRecOf(T.FILES['elo-ratings.json'], b, c.sides[1].name);
+    ok(near(CH.at(0, a), 0.63), "R1 chance = the model price");
+    const c2 = M.rounds[0].cells.find(x => x !== c && x.sides[0] && x.sides[1] && !/…/.test(x.sides[0].name + x.sides[1].name));
+    ok(near(CH.pw(String(c2.sides[0].playerKey), String(c2.sides[1].playerKey)), T.eloBaseP(T.eloRecOf(T.FILES['elo-ratings.json'], String(c2.sides[0].playerKey), c2.sides[0].name), T.eloRecOf(T.FILES['elo-ratings.json'], String(c2.sides[1].playerKey), c2.sides[1].name), 'Hard')), 'other pairs: the Elo base');
+    ok(ea && eb, 'both rated');
+  } finally { delete ctx.modelOutput; T.FILES['elo-ratings.json'] = undefined; }
+});
+check('round robin (ATP Finals) is not modelled; the Bookmakers hook returns null', ({ T }) => {
+  const ev = T.events().all.find(e => e.key === PARIS), M = T.modelOf(ev, 'main'), F = T.facts(M, ev);
+  ok(T.chancesFor(Object.assign({}, ev, { city: 'ATP Finals - Turin' }), M, F) === null, 'Finals → null (dash, hover: the group stage is not modelled)');
+  ok(T.bookOutright('352', '1980') === null, 'bookOutright hook');
 });
 check('quarters come from draw positions (mutant: quarter by list index)', ({ html }) => {
   const q = html({ key: PARIS, view: 'out', outTab: 'q' });
@@ -247,8 +374,12 @@ for (const r of res) { console.log((r.err ? 'FAIL ' : 'ok   ') + r.name + (r.err
 // mutants: each must turn at least one check red
 const MUT = [
   ['From offers the final', "names.slice(0, Math.max(1, names.length - 1))", 'names.slice(0)'],
-  ['a chance in the route panel', "const qFig = A.qWon ? 'Won' : DASH", "const qFig = A.qWon ? 'Won' : '42%'"],
-  ['a chance in the outright leader', "${ck ? '100%' : DASH}</span>", "${ck ? '100%' : '27%'}</span>"],
+  ['a chance figure without a source', "const qFig = A.qWon ? 'Won' : A.q > 0 ? pctS(A.q) : DASH", "const qFig = A.qWon ? 'Won' : '42%'"],
+  ['quarter over the wrong half', "const qi = M.rounds.findIndex(r => r.name === 'QF');\n  const at =", "const qi = M.rounds.findIndex(r => r.name === 'SF');\n  const at ="],
+  ['equal 50% fallback', "    if (p != null) src.set(id, 'elo');\n    return p;", "    if (p != null) src.set(id, 'elo');\n    return p == null ? 0.5 : p;"],
+  ['played results ignored', "const w = decided(r, lo / span);", "const w = null;"],
+  ['weights drift', "const ELO_BLEND = { raw: 0.30, surface: 0.40, blend: 0.30 }", "const ELO_BLEND = { raw: 0.40, surface: 0.30, blend: 0.30 }"],
+  ['model price ignored', "    const m = modelPairP(ev, a, b);\n", "    const m = null;\n"],
   ['quarter by list index', 'Math.ceil(s.pos / per) === q + 1);', 'Math.floor(F.slots.indexOf(s) / 8) === q);'],
   ['meet round off', 'r = DV().meetRound(pa, Bp.me.pos)', 'r = Math.max(0, DV().meetRound(pa, Bp.me.pos) - 1)'],
   ['retirements not settled', "bet: !!(Sm && Sm.betCounts({ comment: cm, fs }))", 'bet: true'],

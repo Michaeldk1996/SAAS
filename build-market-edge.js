@@ -87,7 +87,7 @@ function loadSpeedMap() {
   const cache = new Map();
   return {
     /** { venue, speed, ratingYear } or null when this row must not be banded. */
-    forRow(event, surface, court) {
+    forRow(event, surface, court, season) {
       if (!cache.has(event)) cache.set(event, venueOf(event) || (m.events[event] && m.events[event].venue) || null);
       const venue = cache.get(event);
       if (!venue || !CC[venue]) return null;
@@ -99,6 +99,9 @@ function loadSpeedMap() {
         const sk = (surface || '?').trim() + '/' + ((court || '?').trim() || '?');
         if (sk !== guard.keep) return null;
       }
+      // founder 2026-11-20: a row is graded by ITS season's reading (as<year>), else the current one
+      const ys = season != null ? CC[venue]['as' + season] : null;
+      if (ys != null) return { venue, speed: ys, ratingYear: Number(season) };
       return { venue, speed: CC[venue].abstractSpeed, ratingYear: CC[venue].abstractSpeedYear || null };
     },
   };
@@ -549,7 +552,7 @@ function main() {
         // matches): what the Calendar modal's Indoors segment reads. Scope: ATP tour MAIN DRAW only.
         court: (row.court || '').trim() || null,
         round: row.round, season, ret: retired, ...(retired ? { fs: fsv } : {}),
-        speed: speedMap ? speedMap.forRow(row.tournament, row.surface, row.court) : null,
+        speed: speedMap ? speedMap.forRow(row.tournament, row.surface, row.court, season) : null,
         oppArchetype: archetypeOf(b.opp, row.date),
         opp: b.opp, won: b.won, p, price, oppPrice,
         book: bk[0], bookLabel: bk[1],
