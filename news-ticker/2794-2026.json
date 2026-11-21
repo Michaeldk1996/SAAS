@@ -2,7 +2,7 @@
  "tournament": "Finals",
  "tournamentKey": "2794",
  "season": "2026",
- "updatedAt": "2026-11-21T01:03:23.729Z",
+ "updatedAt": "2026-11-21T03:01:35.583Z",
  "items": [
   {
    "id": "digest-cb962a3332592b",
@@ -416,7 +416,7 @@
     "minutes": 81
    },
    "category": "Statistics",
-   "text": "Medvedev beat Tiafoe 6–3, 6–4 in the group stage to pick up a win in his second group match in Turin. It was the first appearance of Tiafoe at this event.\n\nThe start was not easy for Medvedev. He was the first to come under pressure and had to save two break points. He held, broke soon after and took the first set 6–3. Tiafoe came out aggressive in the second set and showed fine touch near the net. Medvedev stayed calm, broke late in the set and served out the match. Whatever happens next, he enjoys being here: \"The Finals is a great tournament because whenever you finish it is great because you have some rest at the end of the season. But if you continue playing that is great because I love to win, …\" Today he got that win.\n\nMedvedev was at his best when it mattered most. He saved every break point he faced and his defence kept Tiafoe chasing. His serve was the base of it, with 76% of first serves in against his 65% average on hard. The score stayed close only because Tiafoe saved most of the break points against him.\n\nA win that says a lot about Medvedev's experience on this stage, against a player new to it. He won this event in London in 2020 and played like a man who knows it well. Up next: his last group match.\n\nMedvedev: W: 28 / UE: 13 | DR: 1.38\n\nTiafoe: W: 22 / UE: 15 | DR: 0.73",
+   "text": "Medvedev beat Tiafoe 6–3, 6–4 in the group stage to pick up a win in his second group match in Turin. It was the first appearance of Tiafoe at this event.\n\nThe start was not easy for Medvedev. He was the first to come under pressure and had to save two break points. He held, broke soon after and took the first set 6–3. Tiafoe came out aggressive in the second set and showed fine touch near the net. Medvedev stayed calm, broke late in the set and served out the match. Whatever happens next, he enjoys being here: \"The Finals is a great tournament because whenever you finish it is great because you have some rest at the end of the season. But if you continue playing that is great because I love to win, …\" Today he got that win.\n\nMedvedev was at his best when it mattered most. He saved every break point he faced and his defence kept Tiafoe chasing. His serve was the base of it, with 76% of first serves in against his 65% average on hard. The score stayed close only because Tiafoe saved most of the break points against him.\n\nA win that says a lot about Medvedev's experience on this stage, against a player new to it. He won this event in London in 2020 and played like a man who knows it well. Up next: his last group match.\n\nMedvedev: performance rating 9.1 | W: 28 / UE: 13 | DR: 1.38\n\nTiafoe: performance rating 8.3 | W: 22 / UE: 15 | DR: 0.73",
    "ms": {
     "a": "D. Medvedev",
     "b": "F. Tiafoe",
@@ -438,6 +438,18 @@
       "dr"
      ],
      [
+      "Serve quality",
+      9.4,
+      8.6,
+      "1"
+     ],
+     [
+      "Unreturned serves",
+      47,
+      28,
+      "%"
+     ],
+     [
       "1st serve in",
       76,
       71,
@@ -454,6 +466,18 @@
       57,
       53,
       "%"
+     ],
+     [
+      "Return quality",
+      8.1,
+      9,
+      "1"
+     ],
+     [
+      "Baseline points won",
+      25,
+      21,
+      "0"
      ],
      [
       "Ratio W/UE",
@@ -478,9 +502,72 @@
    },
    "baseText": "Medvedev beat Tiafoe 6–3, 6–4 in the group stage to pick up a win in his second group match in Turin. It was the first appearance of Tiafoe at this event.\n\nThe start was not easy for Medvedev. He was the first to come under pressure and had to save two break points. He held, broke soon after and took the first set 6–3. Tiafoe came out aggressive in the second set and showed fine touch near the net. Medvedev stayed calm, broke late in the set and served out the match. Whatever happens next, he enjoys being here: \"The Finals is a great tournament because whenever you finish it is great because you have some rest at the end of the season. But if you continue playing that is great because I love to win, …\" Today he got that win.\n\nMedvedev was at his best when it mattered most. He saved every break point he faced and his defence kept Tiafoe chasing. His serve was the base of it, with 76% of first serves in against his 65% average on hard. The score stayed close only because Tiafoe saved most of the break points against him.\n\nA win that says a lot about Medvedev's experience on this stage, against a player new to it. He won this event in London in 2020 and played like a man who knows it well. Up next: his last group match.",
    "rating": [
-    "Medvedev: W: 28 / UE: 13 | DR: 1.38",
-    "Tiafoe: W: 22 / UE: 15 | DR: 0.73"
+    "Medvedev: performance rating 9.1 | W: 28 / UE: 13 | DR: 1.38",
+    "Tiafoe: performance rating 8.3 | W: 22 / UE: 15 | DR: 0.73"
    ],
+   "shotStats": {
+    "p1": {
+     "performance": 9.1,
+     "serveQuality": 9.4,
+     "unreturnedPct": 47,
+     "firstInPct": 76,
+     "firstWonPct": 77,
+     "secondWonPct": 57,
+     "secondSpeed": 175,
+     "returnQuality": 8.1,
+     "fhWinners": 4,
+     "bhWinners": 9,
+     "fhUnforced": 9,
+     "bhUnforced": 1,
+     "forcedErrors": 18,
+     "baselineWon": 25,
+     "under9Won": 57,
+     "over9Won": 6,
+     "bpWon": [
+      2,
+      6
+     ],
+     "netWon": [
+      2,
+      4
+     ]
+    },
+    "p2": {
+     "performance": 8.3,
+     "serveQuality": 8.6,
+     "unreturnedPct": 28,
+     "firstInPct": 71,
+     "firstWonPct": 68,
+     "secondWonPct": 53,
+     "secondSpeed": 150,
+     "returnQuality": 9,
+     "fhWinners": 12,
+     "bhWinners": 4,
+     "fhUnforced": 7,
+     "bhUnforced": 8,
+     "forcedErrors": 20,
+     "baselineWon": 21,
+     "under9Won": 44,
+     "over9Won": 9,
+     "bpWon": [
+      0,
+      2
+     ],
+     "netWon": [
+      9,
+      19
+     ]
+    },
+    "postedAt": "2026-11-20T21:09:05.000Z",
+    "readAt": "2026-11-21T02:43:14.809Z",
+    "sourceName": "ATP broadcast match statistics (via @ATP_Entry)",
+    "sourceUrl": "https://x.com/ATP_Entry/status/2123886371794305248",
+    "agreed": "6 of 6 serve figures within 3 points of ours; set scores and break points equal",
+    "wue": {
+     "compared": 4,
+     "maxDiff": 0
+    }
+   },
    "commentary": {
     "text": "Medvedev started poorly and was the first to come under pressure but he saved a couple of break points and then won the first set 6-3. His defence was the strongest part of his game and he chased down ball after ball. Tiafoe made a perfect start to the second set with aggressive play and a crucial hold and he showed fine touch with his hands near the net. Medvedev stayed too solid and used his experience to win. He reached another semifinal at the season-ending championships in Turin, which he won in London in 2020 and his semifinal is on Saturday night.",
     "sourceName": "Tennis TV highlights commentary",
@@ -557,10 +644,10 @@
    "sourceUrl": "pbp/12179702.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "38d985e14f982ced",
+   "sourceHash": "b043e64811d99890",
    "publishedAt": "2026-11-20T21:30:29.553Z",
-   "revisedAt": "2026-11-20T22:43:49.714Z",
-   "revision": 2
+   "revisedAt": "2026-11-21T03:01:35.583Z",
+   "revision": 3
   },
   {
    "id": "quote-016570c8f685fe",
