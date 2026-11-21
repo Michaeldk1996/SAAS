@@ -11,11 +11,11 @@ Newer rulings that also bind the profile: `modal-analysis.md` "Walkovers and ret
 The 2026-11-09 handoff (`Player Profile.dc.html`, `Player Stat Boxes LOCKED 2026-11-09.dc.html`) is the spec for the profile.
 Where a ruling below reverses an older one in this file, the older one is superseded (named in brackets).
 - **Hand / backhand** ("R / 2HBH") in the identity line, from api-tennis or Tennis Explorer; none on record = a dash.
-- **Calendar swings / event country:** 13 swing codes (founder 2026-11-20 added **NA WINTER**, North American winter: the US /
+- **Calendar swings / event country:** 14 swing codes (founder 2026-11-20 added **NA WINTER**, North American winter: the US /
   Mexico hard courts of January–March — Dallas, Delray Beach, Acapulco, Memphis, New York, San Jose, Los Cabos — indoors or out;
   never Middle East, Euro indoor or Sunshine). Sunshine = Indian Wells + Miami in any month; Middle East = Doha / Dubai
   January–March; a late-December opener counts as January; an indoor event in Asia is the Asian swing. **Test:**
-  `test-pp2-reconcile.js` "North American winter swing". *Open:* Johannesburg and Pune in February still read Middle East.
+  `test-pp2-reconcile.js` "North American winter swing". **South Africa & India** (`zain`, founder 2026-11-21): Johannesburg and Pune in February are a swing of their own, never Middle East.
 - **Court speed (profile):** ATP only for now. Band per EDITION on Tennis Abstract's abstract speed, gap = speed − 1.00
   (the tour average): Fast > +0.08 · Medium −0.08…+0.08 · Slow < −0.08; order Fast · Medium · Slow
   [supersedes Q5's Slow ≤ 43 / Medium ≤ 68 on the profile; N4 still binds every other surface].

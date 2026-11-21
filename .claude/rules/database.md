@@ -134,7 +134,7 @@ inside every mount (`[data-db-root]`). Ratings and Lines rules: `ratings.md`, `l
   (1–4 chips) · Level · Surface · Round · Years; Player = player search (1–2 chips) · Surface · **Years + Last 52 weeks · Career** · **Level · Round**
   (founder 2026-11-19: tournament type and round, on his rows and the tour beside them) · Tournament · Side;
   Lines and Ratings in their files.
-- **Swing** = the 12 swings of the Player Profile's swing calendar ("Team / other" left out), ONE rule with the profile:
+- **Swing** = the 13 swings of the Player Profile's swing calendar ("Team / other" left out), ONE rule with the profile:
   `PlayerProfileV2._internals.calSwingOf` over the match month, its surface, Tennis-Data's own court and the event's
   country (`db3SwingOf`). **Country** = the site's tournament catalog (`TOURNAMENT_CATALOG`, through `sfEventKey`) for the
   Tennis-Data name or its city, else the host city's country (`DB3_CITY_CC`, geography); **indoor** = `meta.indoor`

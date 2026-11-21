@@ -1803,6 +1803,8 @@ check('founder 2026-11-20 · North American winter swing', () => {
   assert.strictEqual(R('BNP Paribas Open', '2021-10-08', 'hard', 'Outdoor', 'US'), 'sun', 'Indian Wells (October) is the Sunshine double');
   assert.strictEqual(R('Thailand Open', '2012-10-01', 'hard', 'Indoor', 'TH'), 'asia', 'Bangkok indoors is the Asian swing');
   assert.strictEqual(R('Brisbane International', '2018-12-31', 'hard', 'Outdoor', 'AU'), 'aus', 'a late-December opener is the Australian swing');
+  assert.strictEqual(R('Tata Open', '2018-02-01', 'hard', 'Outdoor', 'IN'), 'zain', 'Pune in February is its own swing');
+  assert.strictEqual(R('SA Tennis Open', '2011-02-07', 'hard', 'Outdoor', 'ZA'), 'zain', 'Johannesburg in February is its own swing');
   assert.ok(I.CAL_SW ? I.CAL_SW.some(s => s.k === 'naw') : true);
 });
 // Profile v2 (founder 2026-11-09): Opponent level = the opponent's Elo RANK in the weekly snapshot strictly before the

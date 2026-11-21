@@ -10937,6 +10937,7 @@
     { k: 'aus', name: 'Australian', code: 'AUS', surf: 'Hard' },
     { k: 'me', name: 'Middle East', code: 'M·EAST', surf: 'Hard' },
     { k: 'naw', name: 'North American winter', code: 'NA WINTER', hover: 'Dallas, Delray Beach, Acapulco, Memphis … · February', surf: 'Hard' },
+    { k: 'zain', name: 'South Africa & India', code: 'ZA · IN', hover: 'Johannesburg, Pune · February', surf: 'Hard' },
     { k: 'gold', name: 'Golden swing', code: 'GOLDEN', surf: 'Clay' },
     { k: 'eei', name: 'Early Euro indoor', code: 'EU INDOOR', hover: 'Euro indoor \u00b7 February', surf: 'Indoors' },
     { k: 'sun', name: 'Sunshine double', code: 'SUNSHINE', surf: 'Hard' },
@@ -10989,6 +10990,8 @@
     if (am && m <= 2) return 'naw';
     if (indoor) return cc && CAL_ASIA[cc] ? 'asia' : m <= 5 ? 'eei' : 'ein';
     if (m <= 2 && cc && CAL_MIDEAST[cc]) return 'me';
+    // founder 2026-11-21: Johannesburg and Pune in February are a swing of their own, never the Middle East.
+    if (m === 1 && (cc === 'ZA' || cc === 'IN')) return 'zain';
     if (m === 0) return 'aus';
     if (m === 1) return cc === 'AU' || cc === 'NZ' ? 'aus' : am ? 'sun' : 'me';
     if (m <= 4) return cc && !CAL_AMERICAS[cc] && !CAL_MIDEAST[cc] ? 'asia' : 'sun';
