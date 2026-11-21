@@ -15,12 +15,17 @@ console.log('Single extraction — Reports view unchanged, export rows from the 
 const now = JSON.parse(execFileSync(process.execPath, [path.join(__dirname, 'progression-snapshot.js'), ROOT, path.join(FX, 'fixtures.json')],
   { env: { ...process.env, DOTENV_CONFIG_QUIET: 'true' }, encoding: 'utf8' }).split('\n').filter(l => l.startsWith('{')).pop());
 const before = JSON.parse(fs.readFileSync(path.join(FX, 'expected-before.json'), 'utf8'));
-const view = e => e && JSON.stringify({ feedName: e.feedName, rounds: e.rounds, players: e.players, fieldAverage: e.fieldAverage });
+// 2026-11-20: metrics gained bpSaved (additive, the Draw player box) — every field that existed before is compared as is.
+// The Almaty / Brussels / Lyon fixtures are real api-tennis sheets (they carry it); the Estoril one is built without it.
+const noAdded = ps => ps && ps.map(p => ({ ...p, rounds: p.rounds.map(r => { const { bpSaved, ...m } = r.metrics || {}; return { ...r, metrics: m }; }) }));
+const view = e => e && JSON.stringify({ feedName: e.feedName, rounds: e.rounds, players: noAdded(e.players), fieldAverage: e.fieldAverage });
 let pr = 0, ocr = 0;
 for (const t of Object.keys(before)) {
   pr += before[t] ? before[t].players.reduce((n, p) => n + p.rounds.length, 0) : 0;
   ocr += before[t] ? before[t].players.flatMap(p => p.rounds).filter(r => r.metrics.wueSource === 'ATP_Entry_OCR').length : 0;
   check(`${t}: Reports view (players · rounds · metrics · field average) byte-identical to before`, view(now[t]) === view(before[t]));
+  if (now[t] && !/Estoril/.test(t)) check(`${t}: break points saved carried as won / total on the rounds with a stat sheet (founder 2026-11-20)`,
+    now[t].players.some(p => p.rounds.some(r => r.metrics.bpSaved && Number.isInteger(r.metrics.bpSaved.total) && r.metrics.bpSaved.won <= r.metrics.bpSaved.total)));
   // ruling 6 adds two fields to each export row (roundCode, hasStats); everything else is unchanged
   // + the draw view's set score (item 2) and its per-side box score (ruling 2026-10-21 item 10) — additive fields only
   const side = ({ box, ...s }) => s;
