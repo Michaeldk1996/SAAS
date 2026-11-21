@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-21T16:00:56.216Z",
+ "generatedAt": "2026-11-21T16:20:04.691Z",
  "tournaments": [
   {
    "key": "2794",
@@ -13,7 +13,7 @@
     "quote": 222
    },
    "latestTimestamp": "2026-11-21T15:43:11.605Z",
-   "updatedAt": "2026-11-21T16:00:56.216Z"
+   "updatedAt": "2026-11-21T16:20:04.691Z"
   },
   {
    "key": "tour",
@@ -77,7 +77,7 @@
     "minutes": 119
    },
    "category": "Statistics",
-   "text": "Alcaraz beat Shelton for the 5th time in 6 meetings, 3-6, 6-3, 7-6 in the semi-finals.\n\nAlcaraz: W: 31 / UE: 21 | DR: 1.32\n\nShelton: W: 30 / UE: 30 | DR: 0.76",
+   "text": "Alcaraz beat Shelton for the 5th time in 6 meetings, 3-6, 6-3, 7-6 in the semi-finals.\n\nAlcaraz: W: 33 / UE: 21 | DR: 1.32\n\nShelton: W: 30 / UE: 30 | DR: 0.76",
    "ms": {
     "a": "C. Alcaraz",
     "b": "B. Shelton",
@@ -122,13 +122,13 @@
      ],
      [
       "Ratio W/UE",
-      1.48,
+      1.57,
       1,
       "2"
      ],
      [
       "Winners / point",
-      0.19,
+      0.2,
       0.18,
       "2"
      ],
@@ -143,7 +143,7 @@
    },
    "baseText": "Alcaraz beat Shelton for the 5th time in 6 meetings, 3-6, 6-3, 7-6 in the semi-finals.",
    "rating": [
-    "Alcaraz: W: 31 / UE: 21 | DR: 1.32",
+    "Alcaraz: W: 33 / UE: 21 | DR: 1.32",
     "Shelton: W: 30 / UE: 30 | DR: 0.76"
    ],
    "fields": {
@@ -208,13 +208,13 @@
       "player": "winner",
       "tone": "good",
       "metric": "winnersErrors",
-      "winners": 31,
+      "winners": 33,
       "unforcedErrors": 21
      }
     ],
     "winner": {
      "aces": 12,
-     "winners": 31,
+     "winners": 33,
      "unforcedErrors": 21,
      "breakPointsSaved": 0,
      "breakPointsFaced": 1,
@@ -233,8 +233,10 @@
    "sourceUrl": "pbp/12181584.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "2cfc19b7cccf893b",
+   "sourceHash": "b35dcd11dc6f04f6",
    "publishedAt": "2026-11-21T16:00:56.216Z",
+   "revisedAt": "2026-11-21T16:20:04.691Z",
+   "revision": 1,
    "file": "news-ticker/2794-2026.json"
   },
   {
