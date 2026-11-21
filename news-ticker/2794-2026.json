@@ -1,9 +1,184 @@
 {
- "tournament": "Finals",
+ "tournament": "Finals - Turin",
  "tournamentKey": "2794",
  "season": "2026",
- "updatedAt": "2026-11-21T21:15:55.051Z",
+ "updatedAt": "2026-11-21T21:42:37.691Z",
  "items": [
+  {
+   "id": "report-12181753",
+   "type": "report",
+   "playerId": "1980",
+   "opponentId": "1093",
+   "player": "A. Zverev",
+   "opponent": "D. Medvedev",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "stage": "main draw",
+   "round": "semi-finals",
+   "eventKey": "12181753",
+   "timestamp": "2026-11-21T21:12:12.807Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-21T21:12:12.807Z",
+    "startedAt": "2026-11-21T19:46:52.071Z",
+    "minutes": 85
+   },
+   "category": "Statistics",
+   "text": "Zverev beat Medvedev for the 9th time in 23 meetings, 7-6, 6-4 in the semi-finals.\n\nZverev: W: 26 / UE: 19 | DR: 1.07\n\nMedvedev: W: 23 / UE: 15 | DR: 0.94",
+   "ms": {
+    "a": "A. Zverev",
+    "b": "D. Medvedev",
+    "sets": [
+     [
+      7,
+      6
+     ],
+     [
+      6,
+      4
+     ]
+    ],
+    "rows": [
+     [
+      "Dominance ratio",
+      1.07,
+      0.94,
+      "dr"
+     ],
+     [
+      "1st serve in",
+      75,
+      63,
+      "%"
+     ],
+     [
+      "1st serve points won",
+      81,
+      69,
+      "%"
+     ],
+     [
+      "2nd serve points won",
+      63,
+      86,
+      "%"
+     ],
+     [
+      "Ratio W/UE",
+      1.37,
+      1.53,
+      "2"
+     ],
+     [
+      "Winners / point",
+      0.22,
+      0.19,
+      "2"
+     ],
+     [
+      "Unforced / point",
+      0.16,
+      0.13,
+      "2",
+      1
+     ]
+    ]
+   },
+   "baseText": "Zverev beat Medvedev for the 9th time in 23 meetings, 7-6, 6-4 in the semi-finals.",
+   "rating": [
+    "Zverev: W: 26 / UE: 19 | DR: 1.07",
+    "Medvedev: W: 23 / UE: 15 | DR: 0.94"
+   ],
+   "fields": {
+    "score": "7-6, 6-4",
+    "round": "semi-finals",
+    "retired": false,
+    "h2h": {
+     "a": 9,
+     "b": 14,
+     "n": 23
+    },
+    "durationMinutes": 85,
+    "facts": {
+     "tiebreakSets": [
+      {
+       "set": 1,
+       "winner": "p1"
+      }
+     ]
+    },
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "aces",
+      "value": 16
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "firstWon",
+      "value": 81,
+      "won": 39,
+      "total": 48
+     },
+     {
+      "player": "winner",
+      "tone": "bad",
+      "metric": "ret2Won",
+      "value": 14,
+      "won": 3,
+      "total": 21,
+      "baseline": 51,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 51
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "breakPoints",
+      "saved": 0,
+      "faced": 0
+     },
+     {
+      "player": "loser",
+      "tone": "bad",
+      "metric": "firstWon",
+      "value": 69,
+      "won": 24,
+      "total": 35,
+      "baseline": 77,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 56
+     }
+    ],
+    "winner": {
+     "aces": 16,
+     "winners": 26,
+     "unforcedErrors": 19,
+     "breakPointsSaved": 0,
+     "breakPointsFaced": 0,
+     "breakPointsSource": "point-by-point"
+    },
+    "loser": {
+     "aces": 12,
+     "winners": 23,
+     "unforcedErrors": 15,
+     "breakPointsSaved": 1,
+     "breakPointsFaced": 2,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12181753.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "ac3c657cb2353da9",
+   "publishedAt": "2026-11-21T21:42:37.691Z"
+  },
   {
    "id": "digest-e83dc8d1af0113",
    "type": "digest",
@@ -723,7 +898,7 @@
    "opponentId": "2973",
    "player": "C. Alcaraz",
    "opponent": "B. Shelton",
-   "tournament": "Finals",
+   "tournament": "Finals - Turin",
    "tournamentKey": "2794",
    "season": "2026",
    "stage": "main draw",
@@ -1006,10 +1181,10 @@
    "sourceUrl": "pbp/12181584.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "f50e98bf0277afef",
+   "sourceHash": "f8eb055d216f0beb",
    "publishedAt": "2026-11-21T16:00:56.216Z",
-   "revisedAt": "2026-11-21T18:10:57.526Z",
-   "revision": 4
+   "revisedAt": "2026-11-21T21:42:37.691Z",
+   "revision": 5
   },
   {
    "id": "quote-c4db0a22d72894",
@@ -1100,17 +1275,10 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
    "topic": "On a frustrating start to the match",
-   "alsoReportedBy": [
-    {
-     "sourceName": "TennisUpToDate",
-     "sourceUrl": "https://tennisuptodate.com/atp/obviously-the-world-no-1-carlos-alcaraz-caught-in-awkward-atp-finals-mix-up",
-     "language": "en"
-    }
-   ],
-   "sourceHash": "109612d37e1cb586",
+   "sourceHash": "3d34ebff0e5dcac2",
    "publishedAt": "2026-11-21T16:39:39.986Z",
-   "revisedAt": "2026-11-21T21:15:55.051Z",
-   "revision": 3
+   "revisedAt": "2026-11-21T21:42:37.691Z",
+   "revision": 4
   },
   {
    "id": "digest-cb962a3332592b",
@@ -1404,7 +1572,7 @@
    "opponentId": "2846",
    "player": "D. Medvedev",
    "opponent": "F. Tiafoe",
-   "tournament": "Finals",
+   "tournament": "Finals - Turin",
    "tournamentKey": "2794",
    "season": "2026",
    "stage": "main draw",
@@ -1646,10 +1814,10 @@
    "sourceUrl": "pbp/12179702.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "337422c2fd81243e",
+   "sourceHash": "62f94d074ebdb1c5",
    "publishedAt": "2026-11-20T21:30:29.553Z",
-   "revisedAt": "2026-11-21T14:25:19.505Z",
-   "revision": 4
+   "revisedAt": "2026-11-21T21:42:37.691Z",
+   "revision": 5
   },
   {
    "id": "quote-016570c8f685fe",
@@ -2470,7 +2638,7 @@
    "opponentId": "372",
    "player": "C. Alcaraz",
    "opponent": "F. Cobolli",
-   "tournament": "Finals",
+   "tournament": "Finals - Turin",
    "tournamentKey": "2794",
    "season": "2026",
    "stage": "main draw",
@@ -2744,10 +2912,10 @@
    "sourceUrl": "pbp/12179697.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "756165649842ae3a",
+   "sourceHash": "f0ec0eef9e2bc5a3",
    "publishedAt": "2026-11-20T14:37:46.495Z",
-   "revisedAt": "2026-11-20T21:53:52.018Z",
-   "revision": 4
+   "revisedAt": "2026-11-21T21:42:37.691Z",
+   "revision": 5
   },
   {
    "id": "quote-4040a81267496e",
@@ -3707,7 +3875,7 @@
    "opponentId": "1759",
    "player": "A. Zverev",
    "opponent": "A. Fils",
-   "tournament": "Finals",
+   "tournament": "Finals - Turin",
    "tournamentKey": "2794",
    "season": "2026",
    "stage": "main draw",
@@ -3959,10 +4127,10 @@
    "sourceUrl": "pbp/12179706.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "486e1fdc0cd7e7e7",
+   "sourceHash": "ed54f62959ee38e9",
    "publishedAt": "2026-11-19T21:41:50.197Z",
-   "revisedAt": "2026-11-20T21:30:29.553Z",
-   "revision": 6
+   "revisedAt": "2026-11-21T21:42:37.691Z",
+   "revision": 7
   },
   {
    "id": "digest-2fe98118ffca6f",
@@ -4762,7 +4930,7 @@
    "opponentId": "50323",
    "player": "B. Shelton",
    "opponent": "R. Jodar",
-   "tournament": "Finals",
+   "tournament": "Finals - Turin",
    "tournamentKey": "2794",
    "season": "2026",
    "stage": "main draw",
@@ -5050,10 +5218,10 @@
    "sourceUrl": "pbp/12179704.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "d23cce93accda8cc",
+   "sourceHash": "f51446ba27b4cc9e",
    "publishedAt": "2026-11-19T15:48:11.688Z",
-   "revisedAt": "2026-11-20T21:30:29.553Z",
-   "revision": 6
+   "revisedAt": "2026-11-21T21:42:37.691Z",
+   "revision": 7
   },
   {
    "id": "quote-349ff28bbfe846",
@@ -5924,7 +6092,7 @@
    "opponentId": "372",
    "player": "F. Tiafoe",
    "opponent": "F. Cobolli",
-   "tournament": "Finals",
+   "tournament": "Finals - Turin",
    "tournamentKey": "2794",
    "season": "2026",
    "stage": "main draw",
@@ -6200,10 +6368,10 @@
    "sourceUrl": "pbp/12179699.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "5102065be3efbf8b",
+   "sourceHash": "f2f57fdf3778632e",
    "publishedAt": "2026-11-18T21:42:20.669Z",
-   "revisedAt": "2026-11-21T14:25:19.505Z",
-   "revision": 9
+   "revisedAt": "2026-11-21T21:42:37.691Z",
+   "revision": 10
   },
   {
    "id": "quote-08f755d91dd4c8",
@@ -7037,7 +7205,7 @@
    "opponentId": "1093",
    "player": "C. Alcaraz",
    "opponent": "D. Medvedev",
-   "tournament": "Finals",
+   "tournament": "Finals - Turin",
    "tournamentKey": "2794",
    "season": "2026",
    "stage": "main draw",
@@ -7351,10 +7519,10 @@
    "sourceUrl": "pbp/12179696.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "822dc7a814e31fe6",
+   "sourceHash": "8a0efa60e4a3e758",
    "publishedAt": "2026-11-18T14:45:43.925Z",
-   "revisedAt": "2026-11-21T14:25:19.505Z",
-   "revision": 10
+   "revisedAt": "2026-11-21T21:42:37.691Z",
+   "revision": 11
   },
   {
    "id": "quote-13b7891235b7f6",
@@ -7806,7 +7974,7 @@
    "opponentId": "2973",
    "player": "A. Zverev",
    "opponent": "B. Shelton",
-   "tournament": "Finals",
+   "tournament": "Finals - Turin",
    "tournamentKey": "2794",
    "season": "2026",
    "stage": "main draw",
@@ -8072,10 +8240,10 @@
    "sourceUrl": "pbp/12179705.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "51d3d5cabf5a4efd",
+   "sourceHash": "b2dbb890bdae1854",
    "publishedAt": "2026-11-17T21:48:12.504Z",
-   "revisedAt": "2026-11-20T21:30:29.553Z",
-   "revision": 8
+   "revisedAt": "2026-11-21T21:42:37.691Z",
+   "revision": 9
   },
   {
    "id": "digest-db7c2d7a8dd60d",
@@ -8733,7 +8901,7 @@
    "opponentId": "50323",
    "player": "A. Fils",
    "opponent": "R. Jodar",
-   "tournament": "Finals",
+   "tournament": "Finals - Turin",
    "tournamentKey": "2794",
    "season": "2026",
    "stage": "main draw",
@@ -9030,10 +9198,10 @@
    "sourceUrl": "pbp/12179700.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "8d4f69fb0974e763",
+   "sourceHash": "22fa403f7353cec9",
    "publishedAt": "2026-11-17T15:20:40.094Z",
-   "revisedAt": "2026-11-20T21:30:29.553Z",
-   "revision": 9
+   "revisedAt": "2026-11-21T21:42:37.691Z",
+   "revision": 10
   },
   {
    "id": "quote-999083727b02a3",

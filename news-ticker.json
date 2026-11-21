@@ -1,19 +1,19 @@
 {
- "generatedAt": "2026-11-21T21:15:55.051Z",
+ "generatedAt": "2026-11-21T21:42:37.691Z",
  "tournaments": [
   {
    "key": "2794",
    "season": "2026",
-   "name": "Finals",
+   "name": "Finals - Turin",
    "file": "news-ticker/2794-2026.json",
-   "items": 291,
+   "items": 292,
    "byType": {
+    "report": 14,
     "digest": 38,
-    "quote": 240,
-    "report": 13
+    "quote": 240
    },
-   "latestTimestamp": "2026-11-21T18:14:05.000Z",
-   "updatedAt": "2026-11-21T21:15:55.051Z"
+   "latestTimestamp": "2026-11-21T21:12:12.807Z",
+   "updatedAt": "2026-11-21T21:42:37.691Z"
   },
   {
    "key": "tour",
@@ -26,7 +26,7 @@
     "digest": 26
    },
    "latestTimestamp": "2026-11-21T17:12:00.000Z",
-   "updatedAt": "2026-11-21T21:15:55.051Z"
+   "updatedAt": "2026-11-21T21:42:37.691Z"
   },
   {
    "key": "1681",
@@ -56,6 +56,182 @@
   }
  ],
  "latest": [
+  {
+   "id": "report-12181753",
+   "type": "report",
+   "playerId": "1980",
+   "opponentId": "1093",
+   "player": "A. Zverev",
+   "opponent": "D. Medvedev",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "stage": "main draw",
+   "round": "semi-finals",
+   "eventKey": "12181753",
+   "timestamp": "2026-11-21T21:12:12.807Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-21T21:12:12.807Z",
+    "startedAt": "2026-11-21T19:46:52.071Z",
+    "minutes": 85
+   },
+   "category": "Statistics",
+   "text": "Zverev beat Medvedev for the 9th time in 23 meetings, 7-6, 6-4 in the semi-finals.\n\nZverev: W: 26 / UE: 19 | DR: 1.07\n\nMedvedev: W: 23 / UE: 15 | DR: 0.94",
+   "ms": {
+    "a": "A. Zverev",
+    "b": "D. Medvedev",
+    "sets": [
+     [
+      7,
+      6
+     ],
+     [
+      6,
+      4
+     ]
+    ],
+    "rows": [
+     [
+      "Dominance ratio",
+      1.07,
+      0.94,
+      "dr"
+     ],
+     [
+      "1st serve in",
+      75,
+      63,
+      "%"
+     ],
+     [
+      "1st serve points won",
+      81,
+      69,
+      "%"
+     ],
+     [
+      "2nd serve points won",
+      63,
+      86,
+      "%"
+     ],
+     [
+      "Ratio W/UE",
+      1.37,
+      1.53,
+      "2"
+     ],
+     [
+      "Winners / point",
+      0.22,
+      0.19,
+      "2"
+     ],
+     [
+      "Unforced / point",
+      0.16,
+      0.13,
+      "2",
+      1
+     ]
+    ]
+   },
+   "baseText": "Zverev beat Medvedev for the 9th time in 23 meetings, 7-6, 6-4 in the semi-finals.",
+   "rating": [
+    "Zverev: W: 26 / UE: 19 | DR: 1.07",
+    "Medvedev: W: 23 / UE: 15 | DR: 0.94"
+   ],
+   "fields": {
+    "score": "7-6, 6-4",
+    "round": "semi-finals",
+    "retired": false,
+    "h2h": {
+     "a": 9,
+     "b": 14,
+     "n": 23
+    },
+    "durationMinutes": 85,
+    "facts": {
+     "tiebreakSets": [
+      {
+       "set": 1,
+       "winner": "p1"
+      }
+     ]
+    },
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "aces",
+      "value": 16
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "firstWon",
+      "value": 81,
+      "won": 39,
+      "total": 48
+     },
+     {
+      "player": "winner",
+      "tone": "bad",
+      "metric": "ret2Won",
+      "value": 14,
+      "won": 3,
+      "total": 21,
+      "baseline": 51,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 51
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "breakPoints",
+      "saved": 0,
+      "faced": 0
+     },
+     {
+      "player": "loser",
+      "tone": "bad",
+      "metric": "firstWon",
+      "value": 69,
+      "won": 24,
+      "total": 35,
+      "baseline": 77,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 56
+     }
+    ],
+    "winner": {
+     "aces": 16,
+     "winners": 26,
+     "unforcedErrors": 19,
+     "breakPointsSaved": 0,
+     "breakPointsFaced": 0,
+     "breakPointsSource": "point-by-point"
+    },
+    "loser": {
+     "aces": 12,
+     "winners": 23,
+     "unforcedErrors": 15,
+     "breakPointsSaved": 1,
+     "breakPointsFaced": 2,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12181753.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "ac3c657cb2353da9",
+   "publishedAt": "2026-11-21T21:42:37.691Z",
+   "file": "news-ticker/2794-2026.json"
+  },
   {
    "id": "digest-e83dc8d1af0113",
    "type": "digest",
@@ -1005,7 +1181,7 @@
    "opponentId": "2973",
    "player": "C. Alcaraz",
    "opponent": "B. Shelton",
-   "tournament": "Finals",
+   "tournament": "Finals - Turin",
    "tournamentKey": "2794",
    "season": "2026",
    "stage": "main draw",
@@ -1288,10 +1464,10 @@
    "sourceUrl": "pbp/12181584.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "f50e98bf0277afef",
+   "sourceHash": "f8eb055d216f0beb",
    "publishedAt": "2026-11-21T16:00:56.216Z",
-   "revisedAt": "2026-11-21T18:10:57.526Z",
-   "revision": 4,
+   "revisedAt": "2026-11-21T21:42:37.691Z",
+   "revision": 5,
    "file": "news-ticker/2794-2026.json"
   },
   {
@@ -1416,17 +1592,10 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
    "topic": "On a frustrating start to the match",
-   "alsoReportedBy": [
-    {
-     "sourceName": "TennisUpToDate",
-     "sourceUrl": "https://tennisuptodate.com/atp/obviously-the-world-no-1-carlos-alcaraz-caught-in-awkward-atp-finals-mix-up",
-     "language": "en"
-    }
-   ],
-   "sourceHash": "109612d37e1cb586",
+   "sourceHash": "3d34ebff0e5dcac2",
    "publishedAt": "2026-11-21T16:39:39.986Z",
-   "revisedAt": "2026-11-21T21:15:55.051Z",
-   "revision": 3,
+   "revisedAt": "2026-11-21T21:42:37.691Z",
+   "revision": 4,
    "file": "news-ticker/2794-2026.json"
   },
   {
@@ -1752,48 +1921,6 @@
    "sourceHash": "c8e2c1e17936a932",
    "publishedAt": "2026-11-20T23:10:15.068Z",
    "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "digest-7d1c7fc96f2ddf",
-   "type": "digest",
-   "version": 1,
-   "playerId": "1093",
-   "player": "D. Medvedev",
-   "opponentId": null,
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "eventKey": null,
-   "context": null,
-   "category": "Quotes",
-   "timestamp": "2026-11-20T21:18:00.000Z",
-   "members": [
-    "quote-ee76d95cb28ab2",
-    "quote-fd5f6cae3df5ce"
-   ],
-   "memberHash": "d4c4c9081a416779",
-   "digestedAt": "2026-11-20T22:01:36.716Z",
-   "blocks": [
-    {
-     "label": "on the finals and his approach to winning",
-     "text": "I said before the tournament that actually a lot of times for me the Finals is a great tournament because whenever you finish, great. Some rest after a tough end of the season, etc. Well, if you continue playing, it's great as well because that's my job and I love to win. But of course, when I'm on court, I'm always fighting to win and happy that I managed to fight well today.",
-     "from": [
-      "quote-fd5f6cae3df5ce"
-     ]
-    },
-    {
-     "label": "on facing Zverev in the semi-final",
-     "text": "A lot of tie breaks, match point saves. The last match we played, he saved the match point to beat me. I'm really looking forward to it because it's our first meeting this year. So, it's going to be fun.",
-     "from": [
-      "quote-ee76d95cb28ab2"
-     ]
-    }
-   ],
-   "model": "claude-opus-5-5",
-   "sourceHash": "384e3ed0fe393546",
-   "publishedAt": "2026-11-20T22:43:49.714Z",
-   "file": "news-ticker/tour-2026.json"
   }
  ]
 }
