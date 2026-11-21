@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-21T20:26:10.903Z",
+ "generatedAt": "2026-11-21T21:15:55.051Z",
  "tournaments": [
   {
    "key": "2794",
@@ -13,7 +13,7 @@
     "report": 13
    },
    "latestTimestamp": "2026-11-21T18:14:05.000Z",
-   "updatedAt": "2026-11-21T18:56:56.860Z"
+   "updatedAt": "2026-11-21T21:15:55.051Z"
   },
   {
    "key": "tour",
@@ -26,7 +26,7 @@
     "digest": 26
    },
    "latestTimestamp": "2026-11-21T17:12:00.000Z",
-   "updatedAt": "2026-11-21T20:26:10.903Z"
+   "updatedAt": "2026-11-21T21:15:55.051Z"
   },
   {
    "key": "1681",
@@ -1416,10 +1416,17 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
    "topic": "On a frustrating start to the match",
-   "sourceHash": "3d34ebff0e5dcac2",
+   "alsoReportedBy": [
+    {
+     "sourceName": "TennisUpToDate",
+     "sourceUrl": "https://tennisuptodate.com/atp/obviously-the-world-no-1-carlos-alcaraz-caught-in-awkward-atp-finals-mix-up",
+     "language": "en"
+    }
+   ],
+   "sourceHash": "109612d37e1cb586",
    "publishedAt": "2026-11-21T16:39:39.986Z",
-   "revisedAt": "2026-11-21T17:44:39.077Z",
-   "revision": 2,
+   "revisedAt": "2026-11-21T21:15:55.051Z",
+   "revision": 3,
    "file": "news-ticker/2794-2026.json"
   },
   {
