@@ -1,32 +1,32 @@
 {
- "generatedAt": "2026-11-21T22:07:27.975Z",
+ "generatedAt": "2026-11-21T22:28:59.883Z",
  "tournaments": [
   {
    "key": "2794",
    "season": "2026",
    "name": "Finals - Turin",
    "file": "news-ticker/2794-2026.json",
-   "items": 296,
+   "items": 302,
    "byType": {
     "digest": 39,
-    "quote": 243,
+    "quote": 249,
     "report": 14
    },
-   "latestTimestamp": "2026-11-21T21:31:58.382Z",
-   "updatedAt": "2026-11-21T22:07:27.975Z"
+   "latestTimestamp": "2026-11-21T21:59:43.000Z",
+   "updatedAt": "2026-11-21T22:28:59.883Z"
   },
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 131,
+   "items": 134,
    "byType": {
-    "quote": 105,
-    "digest": 26
+    "digest": 27,
+    "quote": 107
    },
-   "latestTimestamp": "2026-11-21T17:12:00.000Z",
-   "updatedAt": "2026-11-21T22:07:27.975Z"
+   "latestTimestamp": "2026-11-21T21:32:00.000Z",
+   "updatedAt": "2026-11-21T22:28:59.883Z"
   },
   {
    "key": "1681",
@@ -57,6 +57,91 @@
  ],
  "latest": [
   {
+   "id": "digest-2a11ad1f4d62db",
+   "type": "digest",
+   "version": 1,
+   "playerId": "1093",
+   "player": "D. Medvedev",
+   "opponentId": "2846",
+   "opponent": "F. Tiafoe",
+   "tournament": "Finals",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "eventKey": "12179702",
+   "context": "after beating F. Tiafoe",
+   "category": "Quotes",
+   "timestamp": "2026-11-21T21:59:43.000Z",
+   "members": [
+    "quote-4b185195df14d5",
+    "quote-92d5e72a81012d",
+    "quote-9f19d1424bdf25",
+    "quote-aa96a73ab584f8"
+   ],
+   "memberHash": "78e22d836dcdb3c1",
+   "digestedAt": "2026-11-21T22:10:14.841Z",
+   "blocks": [
+    {
+     "label": "after his win over Tiafoe",
+     "text": "The Finals is a great tournament because whenever you finish, it is great because you have some rest at the end of the season. But if you continue playing, that is great because I love to win. Only positives here. When I am on court, always fighting to win, and I managed to fight well today.",
+     "from": [
+      "quote-92d5e72a81012d",
+      "quote-aa96a73ab584f8"
+     ]
+    },
+    {
+     "label": "on his long rivalry with Zverev",
+     "text": "That was a crazy match actually, and it kind of brings back all the matches that we have now with him. Every time, big fight, and sometimes I win, sometimes he wins.",
+     "from": [
+      "quote-9f19d1424bdf25"
+     ]
+    },
+    {
+     "label": "on returning to the Dubai and Doha tournaments",
+     "text": "I would be happy to come back. I didn't follow too much, but from what I know, it's great there. Actually, my sister is living in Dubai now, so we'll be happy to come back there.",
+     "from": [
+      "quote-4b185195df14d5"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "0fd7e837cb424dd4",
+   "publishedAt": "2026-11-20T23:10:15.068Z",
+   "revisedAt": "2026-11-21T22:28:59.883Z",
+   "revision": 1,
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "quote-9f19d1424bdf25",
+   "type": "quote",
+   "playerId": "1093",
+   "opponentId": "2846",
+   "player": "D. Medvedev",
+   "opponent": "F. Tiafoe",
+   "tournament": "Finals",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-21T21:59:43.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating F. Tiafoe",
+   "eventKey": "12179702",
+   "won": true,
+   "text": "That was a crazy match actually, and it kind of brings back all the matches that we have now with him. Every time, big fight, and sometimes I win, sometimes he wins.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Tennis Majors",
+   "sourceUrl": "https://www.tennismajors.com/atp/nitto-atp-finals-atp/he-just-became-more-consistent-medvedev-on-what-has-changed-in-zverev-867627.html",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his long rivalry with Zverev",
+   "sourceHash": "2f5dc4bb4c8c0b72",
+   "publishedAt": "2026-11-21T22:28:59.883Z",
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
    "id": "digest-a69eadabb7a69d",
    "type": "digest",
    "version": 1,
@@ -70,33 +155,253 @@
    "eventKey": null,
    "context": null,
    "category": "Quotes",
-   "timestamp": "2026-11-21T21:31:58.382Z",
+   "timestamp": "2026-11-21T21:59:40.000Z",
    "members": [
+    "quote-7eb9b74ec9ceb9",
     "quote-9fe5750861bcdd",
+    "quote-a9716a341574d2",
+    "quote-b23bd0522e4316",
     "quote-e3b93c56a74210"
    ],
-   "memberHash": "32b6471819043730",
-   "digestedAt": "2026-11-21T21:39:32.213Z",
+   "memberHash": "88f096161c6b3a34",
+   "digestedAt": "2026-11-21T22:10:14.841Z",
    "blocks": [
     {
      "label": "after his semifinal win over Medvedev",
-     "text": "It was a match in which both of us served incredibly well. And then I took my one chance.",
+     "text": "It was a match in which both of us served incredibly well. And then I took my one chance. I was finding ways even when I was not playing my best from the baseline.",
      "from": [
-      "quote-e3b93c56a74210"
+      "quote-e3b93c56a74210",
+      "quote-7eb9b74ec9ceb9"
      ]
     },
     {
-     "label": "on his Masters final against Alcaraz",
-     "text": "It could be a very high-level match. We played a practice set before the start of the tournament and it lasted an hour 30. I hope we'll both be at our best level.",
+     "label": "on his serving in the win over Medvedev",
+     "text": "I am very happy with the way I served today. I felt like there were not a lot of break points because both of us were serving unbelievably.",
      "from": [
+      "quote-b23bd0522e4316"
+     ]
+    },
+    {
+     "label": "on Medvedev's tournament and season",
+     "text": "Credit to him. He played a fantastic tournament and a fantastic season.",
+     "from": [
+      "quote-b23bd0522e4316"
+     ]
+    },
+    {
+     "label": "on the ATP Finals final against Alcaraz",
+     "text": "I hope it will be a high-level match. We had a practice session before the tournament, it was incredible. We played one set for an hour and a half. I hope we'll both be at our best level.",
+     "from": [
+      "quote-a9716a341574d2",
       "quote-9fe5750861bcdd"
      ]
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "d411c62272f35501",
+   "sourceHash": "1e893457c3b4b8f2",
    "publishedAt": "2026-11-21T22:07:27.975Z",
+   "revisedAt": "2026-11-21T22:28:59.883Z",
+   "revision": 1,
    "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "quote-a9716a341574d2",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "Finals",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-21T21:59:40.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "I hope it will be a high-level match … We had a practice session before the tournament, it was incredible. We played one set for an hour and a half.",
+   "originalText": "Ich hoffe, es wird ein High-Level-Match … Wir hatten ein Training vor dem Turnier, das war unglaublich. Wir haben einen Satz über anderthalb Stunden gespielt.",
+   "language": "de",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "LAOLA1",
+   "sourceUrl": "https://www.laola1.at/de/red/sport-mix/tennis/atp/traumfinale--zverev-im-turin-endspiel-gegen-alcaraz/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On the ATP Finals final against Alcaraz",
+   "sourceHash": "c8d080f91929c225",
+   "publishedAt": "2026-11-21T22:28:59.883Z",
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "quote-7eb9b74ec9ceb9",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "Finals",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-21T21:50:48.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "I was finding ways even when I was not playing my best from the baseline,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Ubitennis",
+   "sourceUrl": "https://www.ubitennis.net/2026/11/alexander-zverev-sails-past-medvedev-to-set-alcaraz-showdown-at-nitto-atp-finals/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On winning against Medvedev despite baseline struggles",
+   "sourceHash": "d652c5a113f24813",
+   "publishedAt": "2026-11-21T22:28:59.883Z",
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "quote-b23bd0522e4316",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "Finals",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-21T21:50:48.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "I was still finding ways. I am very happy with the way I served today. I felt like there were not a lot of [break points] because both of us were serving unbelievably. Credit to him [Medvedev]. He played a fantastic tournament and a fantastic season.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Ubitennis",
+   "sourceUrl": "https://www.ubitennis.net/2026/11/alexander-zverev-sails-past-medvedev-to-set-alcaraz-showdown-at-nitto-atp-finals/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his serving in the win over Medvedev",
+   "sourceHash": "66b6e599c86902a4",
+   "publishedAt": "2026-11-21T22:28:59.883Z",
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "digest-a69eadabb7a69d",
+   "type": "digest",
+   "version": 1,
+   "playerId": "1980",
+   "player": "A. Zverev",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-21T21:32:00.000Z",
+   "members": [
+    "quote-90fe87d1bb92e6",
+    "quote-b45a6915b0e12e"
+   ],
+   "memberHash": "f7e185db9fc7c769",
+   "digestedAt": "2026-11-21T22:10:14.841Z",
+   "blocks": [
+    {
+     "label": "on the serve-dominated semi-final",
+     "text": "I felt like today there was not a lot of tennis because both of us are serving unbelievably, so credit to him.",
+     "from": [
+      "quote-90fe87d1bb92e6"
+     ]
+    },
+    {
+     "label": "on finding ways to win this week",
+     "text": "I was finding ways. Even when I was not playing my best from the baseline, I was still finding ways, and I'm very happy with how I served today.",
+     "from": [
+      "quote-b45a6915b0e12e"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "5ff586bff3bf252f",
+   "publishedAt": "2026-11-21T22:28:59.883Z",
+   "file": "news-ticker/tour-2026.json"
+  },
+  {
+   "id": "quote-90fe87d1bb92e6",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-21T21:32:00.000Z",
+   "timestampKind": "observed (Tennis TV published the clip then)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "I felt like today there was not a lot of tennis because both of us are serving unbelievable so credit to him",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "On-court interview",
+   "sourceUrl": "https://www.tennistv.com/videos/4612519/turin-2026-sf-zverev-interview",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
+   "interview": "on-court",
+   "topic": "On the serve-dominated semi-final",
+   "sourceHash": "c1ab2c229da5639b",
+   "publishedAt": "2026-11-21T22:28:59.883Z",
+   "file": "news-ticker/tour-2026.json"
+  },
+  {
+   "id": "quote-b45a6915b0e12e",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-21T21:32:00.000Z",
+   "timestampKind": "observed (Tennis TV published the clip then)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "I was finding ways you know when even when I was not playing my best from the baseline I was still finding ways and I'm very happy with with how I served today",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "On-court interview",
+   "sourceUrl": "https://www.tennistv.com/videos/4612519/turin-2026-sf-zverev-interview",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
+   "interview": "on-court",
+   "topic": "On finding ways to win this week",
+   "sourceHash": "c8ddfe65769ca478",
+   "publishedAt": "2026-11-21T22:28:59.883Z",
+   "file": "news-ticker/tour-2026.json"
   },
   {
    "id": "quote-e3b93c56a74210",
@@ -146,8 +451,10 @@
    "timestamp": "2026-11-21T21:22:43.497Z",
    "members": [
     "quote-11923e3a5da240",
+    "quote-24d08ab084209e",
     "quote-271944dd635276",
     "quote-272a78c30d5b89",
+    "quote-2b6812aaf4fddc",
     "quote-426fe6ee85a183",
     "quote-969dacab544ae6",
     "quote-a05d59e45e9970",
@@ -160,12 +467,12 @@
     "quote-d52c4d7ec5387d",
     "quote-f50636433fa5e7"
    ],
-   "memberHash": "e466629496039032",
-   "digestedAt": "2026-11-21T21:39:32.213Z",
+   "memberHash": "d3a447c2f65193e9",
+   "digestedAt": "2026-11-21T22:10:14.841Z",
    "blocks": [
     {
      "label": "after his win over Shelton",
-     "text": "I was a little bit frustrated at the beginning because I didn't start the match the way I wanted to, to be honest. He broke me quickly and then it was already a difficult situation. The break early in the first set was tough for me to deal with. But I'm happy that I came back in the second set playing such great tennis, step by step, focused on all my things and ended up playing good tennis. The third set was even closer. I think he raised the level a little bit from the second set. Myself as well. Great points, great games and just happy to play great tennis in the tie-break. I think this win matters. So, excited for tomorrow, and happy with everything today.",
+     "text": "I was a little bit frustrated at the beginning because I didn't start the match the way I wanted to, to be honest. He broke me quickly and then it was already a difficult situation. The break early in the first set was tough for me to deal with. But I'm just happy that I came back in the second set playing such great tennis, step by step, focused on all my things and ended up playing good tennis. The third set was even closer. I think he raised the level a little bit from the second set. Myself as well. Great points, great games, and just happy to play great tennis in the tie-break. I think this win matters. So, excited for tomorrow, and happy with everything today.",
      "from": [
       "quote-c95cf7d44b544c",
       "quote-f50636433fa5e7",
@@ -181,13 +488,6 @@
      ]
     },
     {
-     "label": "on playing freely despite his hamstring problem",
-     "text": "Today I just went for it, to be honest. I didn't think about physically. I just felt well, and if I lose, it was totally fair.",
-     "from": [
-      "quote-cc7214a08ad200"
-     ]
-    },
-    {
      "label": "on his frustrated outburst helping him relax",
      "text": "Complaining, shouting, helped me. I had started tense, and I think that also helped me relax.",
      "from": [
@@ -195,7 +495,14 @@
      ]
     },
     {
-     "label": "on recovering before the final",
+     "label": "on playing freely despite his hamstring problem",
+     "text": "Today I just went for it, to be honest. I didn't think about physically. I just felt well, and if I lose, it was totally fair.",
+     "from": [
+      "quote-cc7214a08ad200"
+     ]
+    },
+    {
+     "label": "on recovering before the ATP Finals final",
      "text": "Sunday is going to be a very important day for me and for my team. But until then, I'll have to focus on recovery. My recovery time is really important for me to recover my body, to recover mentally, to be prepared for tomorrow.",
      "from": [
       "quote-ba8235310e1efd",
@@ -204,10 +511,10 @@
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "a7c1de40342722a4",
+   "sourceHash": "56b97a45755b4344",
    "publishedAt": "2026-11-21T16:58:12.190Z",
-   "revisedAt": "2026-11-21T22:07:27.975Z",
-   "revision": 4,
+   "revisedAt": "2026-11-21T22:28:59.883Z",
+   "revision": 5,
    "file": "news-ticker/2794-2026.json"
   },
   {
@@ -270,6 +577,68 @@
    "topic": "On recovering before Sunday's big match",
    "sourceHash": "08808e07beecc8ac",
    "publishedAt": "2026-11-21T22:07:27.975Z",
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "quote-24d08ab084209e",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": "2973",
+   "player": "C. Alcaraz",
+   "opponent": "B. Shelton",
+   "tournament": "Finals",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-21T21:17:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating B. Shelton",
+   "eventKey": "12181584",
+   "won": true,
+   "text": "Great points, great games, and just happy to play great tennis in the tie-breaker... I'm excited for tomorrow.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "SuperSport",
+   "sourceUrl": "https://supersport.com/tennis/news/89fa4aec-36de-443d-8177-535708dfa459/alcaraz-to-face-zverev-for-atp-finals-title",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On winning the deciding tie-break against Shelton",
+   "sourceHash": "1d391e133fc08255",
+   "publishedAt": "2026-11-21T22:28:59.883Z",
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "quote-2b6812aaf4fddc",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": "2973",
+   "player": "C. Alcaraz",
+   "opponent": "B. Shelton",
+   "tournament": "Finals",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-21T21:17:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating B. Shelton",
+   "eventKey": "12181584",
+   "won": true,
+   "text": "I think the third set was even closer. I think he raised the level a little bit from the second set, myself as well,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "SuperSport",
+   "sourceUrl": "https://supersport.com/tennis/news/89fa4aec-36de-443d-8177-535708dfa459/alcaraz-to-face-zverev-for-atp-finals-title",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On the tight deciding set against Shelton",
+   "sourceHash": "5ab231f05617022b",
+   "publishedAt": "2026-11-21T22:28:59.883Z",
    "file": "news-ticker/2794-2026.json"
   },
   {
@@ -1310,610 +1679,6 @@
    "topic": "On the tight third set against Shelton",
    "sourceHash": "0d7c74289aed7114",
    "publishedAt": "2026-11-21T16:39:39.986Z",
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "report-12181584",
-   "type": "report",
-   "playerId": "2382",
-   "opponentId": "2973",
-   "player": "C. Alcaraz",
-   "opponent": "B. Shelton",
-   "tournament": "Finals - Turin",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "stage": "main draw",
-   "round": "semi-finals",
-   "eventKey": "12181584",
-   "timestamp": "2026-11-21T15:43:11.605Z",
-   "timestampKind": "observed",
-   "observed": {
-    "endedAt": "2026-11-21T15:43:11.605Z",
-    "startedAt": "2026-11-21T13:44:06.897Z",
-    "minutes": 119
-   },
-   "category": "Statistics",
-   "text": "Alcaraz beat Shelton in three sets in the SF in Turin to reach the final and he had to come from a set down to do it.\n\nIt was Shelton who made the better start. He broke for 2–0 and later came back from 15–40 on his own serve to keep that lead. He took the first set 6–3 and was one set away from the final. That early break stayed with Alcaraz. Alcaraz afterwards: \"The break early (in the first set) was tough for me to deal with. But I’m happy that I came back in the second set playing such great tennis,\" He did not see another break point for the rest of the match.\n\nThe second set turned slowly his way. He got the break at 5–3 and took the set 6–3 for one set all. The deciding set was the closest part of the match. Neither player was broken, so it went to a tiebreak. There Alcaraz was clearly the better player and won it 7–1.\n\nThat steady serving carried him through a final set with no break and his serve was the base of it all. He held to love 6 times and won 73% of the points behind his second serve, far above his 56% average on hard.\n\nSo Alcaraz is through to the final, after a start that was tough for him to deal with and a comeback that he was happy with. He played great tennis when the match was closest and gave Shelton almost nothing on his serve. That made the difference in the end.\n\nAlcaraz: performance rating 9.1 | W: 33 / UE: 21 | DR: 1.32\n\nShelton: performance rating 8.1 | W: 30 / UE: 30 | DR: 0.76",
-   "ms": {
-    "a": "C. Alcaraz",
-    "b": "B. Shelton",
-    "sets": [
-     [
-      3,
-      6
-     ],
-     [
-      6,
-      3
-     ],
-     [
-      7,
-      6
-     ]
-    ],
-    "rows": [
-     [
-      "Dominance ratio",
-      1.32,
-      0.76,
-      "dr"
-     ],
-     [
-      "Serve quality",
-      8.7,
-      9.3,
-      "1"
-     ],
-     [
-      "Unreturned serves",
-      41,
-      40,
-      "%"
-     ],
-     [
-      "1st serve in",
-      73,
-      77,
-      "%"
-     ],
-     [
-      "1st serve points won",
-      80,
-      74,
-      "%"
-     ],
-     [
-      "2nd serve points won",
-      73,
-      58,
-      "%"
-     ],
-     [
-      "Return quality",
-      8,
-      7.3,
-      "1"
-     ],
-     [
-      "Baseline points won",
-      31,
-      20,
-      "0"
-     ],
-     [
-      "Ratio W/UE",
-      1.57,
-      1,
-      "2"
-     ],
-     [
-      "Winners / point",
-      0.2,
-      0.18,
-      "2"
-     ],
-     [
-      "Unforced / point",
-      0.13,
-      0.18,
-      "2",
-      1
-     ]
-    ]
-   },
-   "baseText": "Alcaraz beat Shelton in three sets in the SF in Turin to reach the final and he had to come from a set down to do it.\n\nIt was Shelton who made the better start. He broke for 2–0 and later came back from 15–40 on his own serve to keep that lead. He took the first set 6–3 and was one set away from the final. That early break stayed with Alcaraz. Alcaraz afterwards: \"The break early (in the first set) was tough for me to deal with. But I’m happy that I came back in the second set playing such great tennis,\" He did not see another break point for the rest of the match.\n\nThe second set turned slowly his way. He got the break at 5–3 and took the set 6–3 for one set all. The deciding set was the closest part of the match. Neither player was broken, so it went to a tiebreak. There Alcaraz was clearly the better player and won it 7–1.\n\nThat steady serving carried him through a final set with no break and his serve was the base of it all. He held to love 6 times and won 73% of the points behind his second serve, far above his 56% average on hard.\n\nSo Alcaraz is through to the final, after a start that was tough for him to deal with and a comeback that he was happy with. He played great tennis when the match was closest and gave Shelton almost nothing on his serve. That made the difference in the end.",
-   "rating": [
-    "Alcaraz: performance rating 9.1 | W: 33 / UE: 21 | DR: 1.32",
-    "Shelton: performance rating 8.1 | W: 30 / UE: 30 | DR: 0.76"
-   ],
-   "shotStats": {
-    "p1": {
-     "performance": 9.1,
-     "serveQuality": 8.7,
-     "unreturnedPct": 41,
-     "firstInPct": 73,
-     "firstWonPct": 80,
-     "secondWonPct": 73,
-     "secondSpeed": 169,
-     "returnQuality": 8,
-     "fhWinners": 14,
-     "bhWinners": 7,
-     "fhUnforced": 10,
-     "bhUnforced": 9,
-     "forcedErrors": 27,
-     "baselineWon": 31,
-     "under9Won": 81,
-     "over9Won": 7,
-     "bpWon": [
-      1,
-      3
-     ],
-     "netWon": [
-      14,
-      21
-     ]
-    },
-    "p2": {
-     "performance": 8.1,
-     "serveQuality": 9.3,
-     "unreturnedPct": 40,
-     "firstInPct": 75,
-     "firstWonPct": 73,
-     "secondWonPct": 62,
-     "secondSpeed": 185,
-     "returnQuality": 7.3,
-     "fhWinners": 14,
-     "bhWinners": 1,
-     "fhUnforced": 20,
-     "bhUnforced": 6,
-     "forcedErrors": 25,
-     "baselineWon": 20,
-     "under9Won": 75,
-     "over9Won": 3,
-     "bpWon": [
-      1,
-      1
-     ],
-     "netWon": [
-      17,
-      26
-     ]
-    },
-    "postedAt": "2026-11-21T15:48:55.000Z",
-    "readAt": "2026-11-21T17:36:52.532Z",
-    "sourceName": "ATP broadcast match statistics (via @ATP_Entry)",
-    "sourceUrl": "https://x.com/ATP_Entry/status/2124168185955938562",
-    "agreed": "5 of 6 serve figures within 3 points of ours; set scores and break points equal",
-    "wue": {
-     "compared": 4,
-     "maxDiff": 1
-    }
-   },
-   "composed": {
-    "version": 3,
-    "sheetHash": "be81cb7d1faeae60",
-    "status": "ok",
-    "model": "claude-opus-5-5",
-    "tries": 1,
-    "runs": 1,
-    "usage": {
-     "input": 7897,
-     "output": 2243,
-     "calls": 1
-    },
-    "body": "Alcaraz beat Shelton in three sets in the SF in Turin to reach the final and he had to come from a set down to do it.\n\nIt was Shelton who made the better start. He broke for 2–0 and later came back from 15–40 on his own serve to keep that lead. He took the first set 6–3 and was one set away from the final. That early break stayed with Alcaraz. Alcaraz afterwards: \"The break early (in the first set) was tough for me to deal with. But I’m happy that I came back in the second set playing such great tennis,\" He did not see another break point for the rest of the match.\n\nThe second set turned slowly his way. He got the break at 5–3 and took the set 6–3 for one set all. The deciding set was the closest part of the match. Neither player was broken, so it went to a tiebreak. There Alcaraz was clearly the better player and won it 7–1.\n\nThat steady serving carried him through a final set with no break and his serve was the base of it all. He held to love 6 times and won 73% of the points behind his second serve, far above his 56% average on hard.\n\nSo Alcaraz is through to the final, after a start that was tough for him to deal with and a comeback that he was happy with. He played great tennis when the match was closest and gave Shelton almost nothing on his serve. That made the difference in the end."
-   },
-   "fields": {
-    "score": "3-6, 6-3, 7-6",
-    "round": "semi-finals",
-    "retired": false,
-    "h2h": {
-     "a": 5,
-     "b": 1,
-     "n": 6
-    },
-    "durationMinutes": 119,
-    "facts": {
-     "fromSetDown": true,
-     "tiebreakSets": [
-      {
-       "set": 3,
-       "winner": "p1"
-      }
-     ]
-    },
-    "standouts": [
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "aces",
-      "value": 12
-     },
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "firstWon",
-      "value": 80,
-      "won": 47,
-      "total": 59
-     },
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "secondWon",
-      "value": 73,
-      "won": 16,
-      "total": 22,
-      "baseline": 56,
-      "scope": "last52",
-      "surface": "Hard",
-      "n": 44
-     },
-     {
-      "player": "winner",
-      "tone": "bad",
-      "metric": "ret1Won",
-      "value": 26,
-      "won": 17,
-      "total": 65,
-      "baseline": 34,
-      "scope": "last52",
-      "surface": "Hard",
-      "n": 44
-     },
-     {
-      "player": "winner",
-      "tone": "bad",
-      "metric": "ret2Won",
-      "value": 42,
-      "won": 8,
-      "total": 19,
-      "baseline": 55,
-      "scope": "last52",
-      "surface": "Hard",
-      "n": 44
-     },
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "winnersErrors",
-      "winners": 33,
-      "unforcedErrors": 21
-     }
-    ],
-    "winner": {
-     "aces": 12,
-     "winners": 33,
-     "unforcedErrors": 21,
-     "breakPointsSaved": 0,
-     "breakPointsFaced": 1,
-     "breakPointsSource": "box score"
-    },
-    "loser": {
-     "aces": 14,
-     "winners": 30,
-     "unforcedErrors": 30,
-     "breakPointsSaved": 2,
-     "breakPointsFaced": 3,
-     "breakPointsSource": "box score"
-    }
-   },
-   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
-   "sourceUrl": "pbp/12181584.json",
-   "language": "en",
-   "translated": false,
-   "sourceHash": "f8eb055d216f0beb",
-   "publishedAt": "2026-11-21T16:00:56.216Z",
-   "revisedAt": "2026-11-21T21:42:37.691Z",
-   "revision": 5,
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-c4db0a22d72894",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": "372",
-   "player": "C. Alcaraz",
-   "opponent": "F. Cobolli",
-   "tournament": "Finals",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-21T09:01:19.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Quotes",
-   "context": "after beating F. Cobolli",
-   "eventKey": "12179697",
-   "won": true,
-   "text": "Plans can be changed",
-   "originalText": "I piani si possono cambiare",
-   "language": "it",
-   "translated": true,
-   "translationModel": "claude-opus-5-5",
-   "sourceName": "Corriere dello Sport",
-   "sourceUrl": "https://www.corrieredellosport.it/news/tennis/alcaraz/2026/11/21-152712534/alcaraz_cambia_strategia_la_mossa_studiata_prima_del_match_con_cobolli_ha_convinto_tutti",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On changing his pre-match warm-up routine",
-   "sourceHash": "078d8571d058cb0d",
-   "publishedAt": "2026-11-21T09:50:33.463Z",
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-157eadd9ed66ff",
-   "type": "quote",
-   "playerId": "68751",
-   "opponentId": null,
-   "player": "M. Kouame",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-21T00:00:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "It's a tournament I really want to play, … There's no tramlines on the court. It's really fun and there's always a good energy there. With only eight players, you can be friends as well with them.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "ATP Tour",
-   "sourceUrl": "https://www.atptour.com/en/news/landaluce-kouame-next-gen-atp-finals-2026-qualification",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "topic": "On the eight-player tournament he wants to play",
-   "sourceHash": "8f090f09125cd226",
-   "publishedAt": "2026-11-21T13:21:47.220Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-272a78c30d5b89",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": "2973",
-   "player": "C. Alcaraz",
-   "opponent": "B. Shelton",
-   "tournament": "Finals",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-21T00:00:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Quotes",
-   "context": "after beating B. Shelton",
-   "eventKey": "12181584",
-   "won": true,
-   "text": "But just happy that I came back in the second set playing such great tennis, step by step, focused on all my things and ended up playing good tennis. The third set was even closer. I think he raised the level a little bit from the second set. Myself as well. Great, great points, great games and just happy to play a great tennis in the tie-break. I think this win matters. So, excited for tomorrow, and happy with everything today.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "ATP Tour",
-   "sourceUrl": "https://www.atptour.com/en/news/alcaraz-shelton-nitto-atp-finals-2026-saturday",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "topic": "On his comeback win in three sets",
-   "sourceHash": "166d88fdd10c220b",
-   "publishedAt": "2026-11-21T16:39:39.986Z",
-   "revisedAt": "2026-11-21T16:58:12.190Z",
-   "revision": 1,
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-c95cf7d44b544c",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": "2973",
-   "player": "C. Alcaraz",
-   "opponent": "B. Shelton",
-   "tournament": "Finals",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-21T00:00:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Quotes",
-   "context": "after beating B. Shelton",
-   "eventKey": "12181584",
-   "won": true,
-   "text": "I was a little bit frustrated at the beginning because I didn't start the match the way I wanted to, to be honest,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "ATP Tour",
-   "sourceUrl": "https://www.atptour.com/en/news/alcaraz-shelton-nitto-atp-finals-2026-saturday",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "topic": "On a frustrating start to the match",
-   "sourceHash": "3d34ebff0e5dcac2",
-   "publishedAt": "2026-11-21T16:39:39.986Z",
-   "revisedAt": "2026-11-21T21:42:37.691Z",
-   "revision": 4,
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-fec7c6de9de72e",
-   "type": "quote",
-   "playerId": "39864",
-   "opponentId": null,
-   "player": "M. Landaluce",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-21T00:00:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "It didn't go well last year and that's why when I had the opportunity to talk with Rafa, it helped me a lot, … But I'm playing this year from a very different position. I'm a bigger match player now and I want to do great at the Next Gen ATP Finals .",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "ATP Tour",
-   "sourceUrl": "https://www.atptour.com/en/news/landaluce-kouame-next-gen-atp-finals-2026-qualification",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "topic": "On his return to the Next Gen ATP Finals",
-   "sourceHash": "a476fa09fee9325a",
-   "publishedAt": "2026-11-21T13:21:47.220Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "digest-cb962a3332592b",
-   "type": "digest",
-   "version": 1,
-   "playerId": "2846",
-   "player": "F. Tiafoe",
-   "opponentId": "1093",
-   "opponent": "D. Medvedev",
-   "tournament": "Finals",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "eventKey": "12179702",
-   "context": "after losing to D. Medvedev",
-   "category": "Quotes",
-   "timestamp": "2026-11-20T23:06:51.000Z",
-   "members": [
-    "quote-4b714930325012",
-    "quote-65284cbf6c42e7",
-    "quote-6968f682f0debf",
-    "quote-7c9c2929e3fc4d",
-    "quote-ab5bc2803dfdf1"
-   ],
-   "memberHash": "de6471bca4a962a0",
-   "digestedAt": "2026-11-20T23:32:55.855Z",
-   "blocks": [
-    {
-     "label": "on what it takes to reach the ATP Finals",
-     "text": "A lot of consistency, a lot of sacrifice. It's not easy to make it here. Even with how good a year I had, it came down to the end for me to make it. That's why it's only eight guys. You've got to be consistent, show up every week and get better. You can't do the same things you did this year and try to be here next year. You've got to add to the repertoire.",
-     "from": [
-      "quote-7c9c2929e3fc4d",
-      "quote-65284cbf6c42e7"
-     ]
-    },
-    {
-     "label": "on his overachieving 2026 season",
-     "text": "I won a lot of matches I maybe shouldn't have.",
-     "from": [
-      "quote-ab5bc2803dfdf1"
-     ]
-    },
-    {
-     "label": "on the kids at the ATP Finals",
-     "text": "First of all, I just love kids. I think it's a cool thing that we do. It's awesome to have them have that experience, something they're never going to forget. And them going through what they're going through, a shoutout to them. Shoutout to all the kids, man. They're the next generation, so hopefully they get some type of inspiration from being out here.",
-     "from": [
-      "quote-4b714930325012",
-      "quote-6968f682f0debf"
-     ]
-    }
-   ],
-   "model": "claude-opus-5-5",
-   "sourceHash": "0365ba43796ed7f2",
-   "publishedAt": "2026-11-20T22:43:49.714Z",
-   "revisedAt": "2026-11-20T23:54:40.976Z",
-   "revision": 1,
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-65284cbf6c42e7",
-   "type": "quote",
-   "playerId": "2846",
-   "opponentId": "1093",
-   "player": "F. Tiafoe",
-   "opponent": "D. Medvedev",
-   "tournament": "Finals",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-20T23:06:51.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Quotes",
-   "context": "after losing to D. Medvedev",
-   "eventKey": "12179702",
-   "won": false,
-   "text": "It’s not easy to make it here. Even with how good a year I had, it came down to the end for me to make it. That’s why it’s only eight guys. You’ve got to be consistent, show up every week and get better. You can’t do the same things you did this year and try to be here next year. You’ve got to add to the repertoire.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "Tennis Majors",
-   "sourceUrl": "https://www.tennismajors.com/atp/nitto-atp-finals-atp/skys-the-limit-tiafoe-sets-his-sights-on-2027-after-his-atp-finals-exit-867530.html",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On what it takes to requalify for ATP Finals",
-   "sourceHash": "64c426f0fd209d35",
-   "publishedAt": "2026-11-20T23:54:40.976Z",
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-7c9c2929e3fc4d",
-   "type": "quote",
-   "playerId": "2846",
-   "opponentId": "1093",
-   "player": "F. Tiafoe",
-   "opponent": "D. Medvedev",
-   "tournament": "Finals",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-20T23:06:51.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Quotes",
-   "context": "after losing to D. Medvedev",
-   "eventKey": "12179702",
-   "won": false,
-   "text": "A lot of consistency, a lot of sacrifice",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "Tennis Majors",
-   "sourceUrl": "https://www.tennismajors.com/atp/nitto-atp-finals-atp/skys-the-limit-tiafoe-sets-his-sights-on-2027-after-his-atp-finals-exit-867530.html",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On what it takes to reach the ATP Finals",
-   "sourceHash": "b7e357c1e0f9334b",
-   "publishedAt": "2026-11-20T23:54:40.976Z",
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-ab5bc2803dfdf1",
-   "type": "quote",
-   "playerId": "2846",
-   "opponentId": "1093",
-   "player": "F. Tiafoe",
-   "opponent": "D. Medvedev",
-   "tournament": "Finals",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-20T23:06:51.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Quotes",
-   "context": "after losing to D. Medvedev",
-   "eventKey": "12179702",
-   "won": false,
-   "text": "won a lot of matches I maybe shouldn’t have",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "Tennis Majors",
-   "sourceUrl": "https://www.tennismajors.com/atp/nitto-atp-finals-atp/skys-the-limit-tiafoe-sets-his-sights-on-2027-after-his-atp-finals-exit-867530.html",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On his overachieving 2026 season",
-   "sourceHash": "980010aa45782598",
-   "publishedAt": "2026-11-20T23:54:40.976Z",
    "file": "news-ticker/2794-2026.json"
   }
  ]

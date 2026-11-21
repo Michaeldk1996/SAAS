@@ -2,8 +2,111 @@
  "tournament": "ATP Tour",
  "tournamentKey": "tour",
  "season": "2026",
- "updatedAt": "2026-11-21T22:07:27.975Z",
+ "updatedAt": "2026-11-21T22:28:59.883Z",
  "items": [
+  {
+   "id": "digest-a69eadabb7a69d",
+   "type": "digest",
+   "version": 1,
+   "playerId": "1980",
+   "player": "A. Zverev",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-21T21:32:00.000Z",
+   "members": [
+    "quote-90fe87d1bb92e6",
+    "quote-b45a6915b0e12e"
+   ],
+   "memberHash": "f7e185db9fc7c769",
+   "digestedAt": "2026-11-21T22:10:14.841Z",
+   "blocks": [
+    {
+     "label": "on the serve-dominated semi-final",
+     "text": "I felt like today there was not a lot of tennis because both of us are serving unbelievably, so credit to him.",
+     "from": [
+      "quote-90fe87d1bb92e6"
+     ]
+    },
+    {
+     "label": "on finding ways to win this week",
+     "text": "I was finding ways. Even when I was not playing my best from the baseline, I was still finding ways, and I'm very happy with how I served today.",
+     "from": [
+      "quote-b45a6915b0e12e"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "5ff586bff3bf252f",
+   "publishedAt": "2026-11-21T22:28:59.883Z"
+  },
+  {
+   "id": "quote-90fe87d1bb92e6",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-21T21:32:00.000Z",
+   "timestampKind": "observed (Tennis TV published the clip then)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "I felt like today there was not a lot of tennis because both of us are serving unbelievable so credit to him",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "On-court interview",
+   "sourceUrl": "https://www.tennistv.com/videos/4612519/turin-2026-sf-zverev-interview",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
+   "interview": "on-court",
+   "topic": "On the serve-dominated semi-final",
+   "sourceHash": "c1ab2c229da5639b",
+   "publishedAt": "2026-11-21T22:28:59.883Z"
+  },
+  {
+   "id": "quote-b45a6915b0e12e",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-21T21:32:00.000Z",
+   "timestampKind": "observed (Tennis TV published the clip then)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "I was finding ways you know when even when I was not playing my best from the baseline I was still finding ways and I'm very happy with with how I served today",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "On-court interview",
+   "sourceUrl": "https://www.tennistv.com/videos/4612519/turin-2026-sf-zverev-interview",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
+   "interview": "on-court",
+   "topic": "On finding ways to win this week",
+   "sourceHash": "c8ddfe65769ca478",
+   "publishedAt": "2026-11-21T22:28:59.883Z"
+  },
   {
    "id": "quote-380cfb119eed8a",
    "type": "quote",
@@ -1193,10 +1296,10 @@
     "quote-a20ad7c6e979e3"
    ],
    "memberHash": "2a5d041b1162e6f2",
-   "digestedAt": "2026-11-21T21:39:32.213Z",
+   "digestedAt": "2026-11-21T22:10:14.841Z",
    "blocks": [
     {
-     "label": "on Carlos Alcaraz's level of play",
+     "label": "on Carlos Alcaraz's current level of play",
      "text": "He has moments where he's definitely Superman and he's playing pretty insane. But again, it's one of those things, you've got to appreciate greatness.",
      "from": [
       "quote-a20ad7c6e979e3",
@@ -1205,10 +1308,10 @@
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "72866b3a57bc44f9",
+   "sourceHash": "b5fa200696461cd7",
    "publishedAt": "2026-11-19T03:47:45.956Z",
-   "revisedAt": "2026-11-21T22:07:27.975Z",
-   "revision": 88
+   "revisedAt": "2026-11-21T22:28:59.883Z",
+   "revision": 89
   },
   {
    "id": "quote-611789d4998d31",
@@ -1559,7 +1662,7 @@
     "quote-758fd4e2661882"
    ],
    "memberHash": "1602bcb2f6f16728",
-   "digestedAt": "2026-11-21T21:39:32.213Z",
+   "digestedAt": "2026-11-21T22:10:14.841Z",
    "blocks": [
     {
      "label": "after his opening win over Frances Tiafoe",
@@ -1577,10 +1680,10 @@
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "9b24912138b6e1a8",
+   "sourceHash": "338ccf45843918c9",
    "publishedAt": "2026-11-19T03:47:45.956Z",
-   "revisedAt": "2026-11-21T22:07:27.975Z",
-   "revision": 87
+   "revisedAt": "2026-11-21T22:28:59.883Z",
+   "revision": 88
   },
   {
    "id": "quote-1484fc62d72637",
@@ -1952,7 +2055,7 @@
     "quote-f2b49767a36019"
    ],
    "memberHash": "c0a714cecf99b5f9",
-   "digestedAt": "2026-11-21T21:39:32.213Z",
+   "digestedAt": "2026-11-21T22:10:14.841Z",
    "blocks": [
     {
      "label": "on the physical rallies in his win over Fils",
@@ -1962,18 +2065,19 @@
      ]
     },
     {
-     "label": "on constant questions about coach Juan Carlos Ferrero",
-     "text": "I think that the questions are going to come. It's not something that surprises me and I'm used to it. But yes, there have been many, many questions.",
+     "label": "on the constant questions about coach Ferrero",
+     "text": "Obviously I get a lot of questions, but I think it comes with the territory. It's not something that surprises me and I'm used to it.",
      "from": [
+      "quote-b2f1172a530332",
       "quote-cb6747ca9b29e9"
      ]
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "263f168a23f5dcad",
+   "sourceHash": "7a0d1181e28f1a3a",
    "publishedAt": "2026-11-19T03:47:45.956Z",
-   "revisedAt": "2026-11-21T22:07:27.975Z",
-   "revision": 129
+   "revisedAt": "2026-11-21T22:28:59.883Z",
+   "revision": 130
   },
   {
    "id": "quote-b2f1172a530332",
@@ -2147,7 +2251,7 @@
     "quote-c97b20550b80b5"
    ],
    "memberHash": "31dca0b43f47f574",
-   "digestedAt": "2026-11-21T21:39:32.213Z",
+   "digestedAt": "2026-11-21T22:10:14.841Z",
    "blocks": [
     {
      "label": "after his opening ATP Finals win over Jodar",
@@ -2165,10 +2269,10 @@
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "0e2e2a381bdf2750",
+   "sourceHash": "9e38883179d3931b",
    "publishedAt": "2026-11-19T03:47:45.956Z",
-   "revisedAt": "2026-11-21T22:07:27.975Z",
-   "revision": 129
+   "revisedAt": "2026-11-21T22:28:59.883Z",
+   "revision": 130
   },
   {
    "id": "quote-5c8fc89fea1cd6",
@@ -2505,11 +2609,11 @@
     "quote-91909bb6648e25"
    ],
    "memberHash": "631d2375c215fb2f",
-   "digestedAt": "2026-11-21T21:39:32.213Z",
+   "digestedAt": "2026-11-21T22:10:14.841Z",
    "blocks": [
     {
      "label": "on practicing with a stringless racket in Turin",
-     "text": "They are exercises to hit, or try to hit, the ball in the sweet spot of the racket, bringing the hand forward… Here the ball travels very fast and you have very little time. If you try to play like on clay, trying to get the ball high over the net, in the end they put you under pressure.",
+     "text": "They are exercises to hit, or try to hit, the ball in the sweet spot of the racket, bringing the hand forward. Here the ball travels very fast and you have very little time. If you try to play like on clay, trying to get the ball high over the net, in the end they put you under pressure.",
      "from": [
       "quote-74899a9a78880b"
      ]
@@ -2523,10 +2627,10 @@
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "8944790308d757f1",
+   "sourceHash": "e7bc2753df7ca77c",
    "publishedAt": "2026-11-19T03:47:45.956Z",
-   "revisedAt": "2026-11-21T22:07:27.975Z",
-   "revision": 129
+   "revisedAt": "2026-11-21T22:28:59.883Z",
+   "revision": 130
   },
   {
    "id": "quote-74899a9a78880b",
