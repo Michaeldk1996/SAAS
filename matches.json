@@ -3472,7 +3472,31 @@
       "edgeVsPinnacleP1": -0.0145,
       "edgeVsPinnacleP2": 0.0145,
       "ts": "2026-11-21T01:32:54.199Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "3-6, 6-3, 7-6(1)",
+      "sets": [
+        {
+          "p1": 3,
+          "p2": 6
+        },
+        {
+          "p1": 6,
+          "p2": 3
+        },
+        {
+          "p1": 7,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 1,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12181753",
@@ -20393,7 +20417,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(8), 7-5",
+      "display": "7-6, 7-5",
       "sets": [
         {
           "p1": 7,
@@ -25757,7 +25781,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 7-6(6)",
+      "display": "6-4, 7-6",
       "sets": [
         {
           "p1": 6,
