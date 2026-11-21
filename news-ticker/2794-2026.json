@@ -2,8 +2,188 @@
  "tournament": "Finals",
  "tournamentKey": "2794",
  "season": "2026",
- "updatedAt": "2026-11-21T14:25:19.505Z",
+ "updatedAt": "2026-11-21T16:00:56.216Z",
  "items": [
+  {
+   "id": "report-12181584",
+   "type": "report",
+   "playerId": "2382",
+   "opponentId": "2973",
+   "player": "C. Alcaraz",
+   "opponent": "B. Shelton",
+   "tournament": "Finals",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "stage": "main draw",
+   "round": "semi-finals",
+   "eventKey": "12181584",
+   "timestamp": "2026-11-21T15:43:11.605Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-21T15:43:11.605Z",
+    "startedAt": "2026-11-21T13:44:06.897Z",
+    "minutes": 119
+   },
+   "category": "Statistics",
+   "text": "Alcaraz beat Shelton for the 5th time in 6 meetings, 3-6, 6-3, 7-6 in the semi-finals.\n\nAlcaraz: W: 31 / UE: 21 | DR: 1.32\n\nShelton: W: 30 / UE: 30 | DR: 0.76",
+   "ms": {
+    "a": "C. Alcaraz",
+    "b": "B. Shelton",
+    "sets": [
+     [
+      3,
+      6
+     ],
+     [
+      6,
+      3
+     ],
+     [
+      7,
+      6
+     ]
+    ],
+    "rows": [
+     [
+      "Dominance ratio",
+      1.32,
+      0.76,
+      "dr"
+     ],
+     [
+      "1st serve in",
+      73,
+      75,
+      "%"
+     ],
+     [
+      "1st serve points won",
+      80,
+      73,
+      "%"
+     ],
+     [
+      "2nd serve points won",
+      73,
+      62,
+      "%"
+     ],
+     [
+      "Ratio W/UE",
+      1.48,
+      1,
+      "2"
+     ],
+     [
+      "Winners / point",
+      0.19,
+      0.18,
+      "2"
+     ],
+     [
+      "Unforced / point",
+      0.13,
+      0.18,
+      "2",
+      1
+     ]
+    ]
+   },
+   "baseText": "Alcaraz beat Shelton for the 5th time in 6 meetings, 3-6, 6-3, 7-6 in the semi-finals.",
+   "rating": [
+    "Alcaraz: W: 31 / UE: 21 | DR: 1.32",
+    "Shelton: W: 30 / UE: 30 | DR: 0.76"
+   ],
+   "fields": {
+    "score": "3-6, 6-3, 7-6",
+    "round": "semi-finals",
+    "retired": false,
+    "h2h": {
+     "a": 5,
+     "b": 1,
+     "n": 6
+    },
+    "durationMinutes": 119,
+    "facts": {
+     "fromSetDown": true,
+     "tiebreakSets": [
+      {
+       "set": 3,
+       "winner": "p1"
+      }
+     ]
+    },
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "aces",
+      "value": 12
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "firstWon",
+      "value": 80,
+      "won": 47,
+      "total": 59
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "secondWon",
+      "value": 73,
+      "won": 16,
+      "total": 22,
+      "baseline": 56,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 44
+     },
+     {
+      "player": "winner",
+      "tone": "bad",
+      "metric": "ret2Won",
+      "value": 38,
+      "won": 8,
+      "total": 21,
+      "baseline": 55,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 44
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "winnersErrors",
+      "winners": 31,
+      "unforcedErrors": 21
+     }
+    ],
+    "winner": {
+     "aces": 12,
+     "winners": 31,
+     "unforcedErrors": 21,
+     "breakPointsSaved": 0,
+     "breakPointsFaced": 1,
+     "breakPointsSource": "box score"
+    },
+    "loser": {
+     "aces": 14,
+     "winners": 30,
+     "unforcedErrors": 30,
+     "breakPointsSaved": 2,
+     "breakPointsFaced": 3,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12181584.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "2cfc19b7cccf893b",
+   "publishedAt": "2026-11-21T16:00:56.216Z"
+  },
   {
    "id": "digest-4abff17ff9d239",
    "type": "digest",
