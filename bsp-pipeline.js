@@ -2922,6 +2922,7 @@ function extractProgressionMetrics(matchStats, playerKey, fallbackCtx) {
     ret2: rawWonTotal('Return', '2nd return points won'),      // Return / 2nd return points won
     retGames: rawWonTotal('Games', 'Return games won'),        // Games  / Return games won (break%)
     bpConv: rawWonTotal('Return', 'Break Points Converted'),   // Return / Break Points Converted (BP conv%)
+    bpSaved: rawWonTotal('Service', 'Break Points Saved'),     // Service / Break Points Saved (founder 2026-11-20: the Draw player box)
     // Provenance of the winners/UE-derived metrics: 'api-tennis', 'ATP_Entry_OCR',
     // or null (neither source had W/UE — those three metrics stay null).
     wueSource,

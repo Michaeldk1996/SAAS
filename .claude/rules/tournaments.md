@@ -54,7 +54,8 @@ Rationale: `BUILD-NOTES.md` "2026-11-15 — Tournaments tab rebuild".
   `cpi[event][year]` = courtspeed.com Court Pace Index (2012–), Slams, Masters 1000, ATP Finals. Canadian rows follow the
   host-year rule (to 2019 Toronto even; from 2021 Toronto odd); Lyon 2026 = "Lyon (France)". A source that fails to load
   writes nothing. A finished draw's statistics are keyed by the progression's own `tournamentKey` once its board cards
-  expire (`draw-matches.json` keeps 16 days). **CPI shows for Masters 1000 only** (speed card first row, trend Speed index · CPI switch, Compare all CPI
+  expire (`draw-matches.json` keeps 16 days). The Draw player box's Break points saved = the progression's `bpSaved`
+  (api-tennis Service / Break Points Saved, won / total, summed over his matches; founder 2026-11-20). **CPI shows for Masters 1000 only** (speed card first row, trend Speed index · CPI switch, Compare all CPI
   table; the Canadian Open = Montreal + Toronto by year), credited to courtspeed.com on hover.
 - **One speed figure on every page** (founder 2026-11-20, "fix both"): `COURT_CONDITIONS` `abstractSpeed` /
   `abstractSpeedYear` (both copies: bsp-pipeline.js and the dashboard) = the LATEST season reading in

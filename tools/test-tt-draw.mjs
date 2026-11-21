@@ -195,9 +195,10 @@ check('Download W/UE sheet calls the one sheet export for the open draw, archive
 });
 check('player box: nine measures v the field from real scores + box-score metrics, a dash for what we lack (mutant: field not the mean / BP saved invented)', ({ html, ctx, root }) => withResults(ctx, () => {
   const R = ctx.tournamentProgression.drawResults.Paris;
-  const met = (aces, f1, s2, hw, ht, rw, rt) => ({ aces, firstServeWonPct: f1, secondServeWonPct: s2, svHold: { won: hw, total: ht }, retGames: { won: rw, total: rt }, bpConv: null });
-  R.players = [{ playerKey: '2382', rounds: [{ metrics: met(6, 80, 60, 10, 10, 4, 10) }, { metrics: met(8, 70, 50, 9, 10, 2, 10) }] },
-    { playerKey: '2973', rounds: [{ metrics: met(10, 75, 55, 8, 10, 1, 10) }] },
+  const met = (aces, f1, s2, hw, ht, rw, rt, bw, bt) => ({ aces, firstServeWonPct: f1, secondServeWonPct: s2, svHold: { won: hw, total: ht }, retGames: { won: rw, total: rt }, bpConv: null,
+    bpSaved: bt == null ? null : { won: bw, total: bt } });
+  R.players = [{ playerKey: '2382', rounds: [{ metrics: met(6, 80, 60, 10, 10, 4, 10, 3, 4) }, { metrics: met(8, 70, 50, 9, 10, 2, 10, 2, 2) }] },
+    { playerKey: '2973', rounds: [{ metrics: met(10, 75, 55, 8, 10, 1, 10, 1, 2) }] },
     { playerKey: '430', rounds: [{ metrics: met(2, 65, 45, 6, 10, 3, 10) }] }];
   try {
     html({ key: PARIS, pop: { key: '2382', x: 10, y: 10, bot: null, side: 'r', ct: 30 } });
@@ -209,7 +210,7 @@ check('player box: nine measures v the field from real scores + box-score metric
     ok(h.includes(`Games won ${Math.round(100 * gw / (gw + gl))}%`), 'games won');
     ok(/Aces per match 7\.0 \+0\.7 6\.3 2nd/.test(h), 'aces: 7.0 v the field mean of 7.0 / 10.0 / 2.0: ' + (h.match(/Aces per match [^A-Z]+/) || [])[0]);
     ok(/Service games held 95% \+17 78% 1st/.test(h), 'hold: 19/20 v the field mean of 95 / 80 / 60: ' + (h.match(/Service games held [^A-Z]+/) || [])[0]);
-    ok(/Break points saved — — —/.test(h), 'BP saved: not in our data → a dash row');
+    ok(/Break points saved 83% \+16 67% 1st/.test(h), 'BP saved: 5/6 v the field mean of 83 / 50 (founder 2026-11-20: the feed carries it): ' + (h.match(/Break points saved [^A-Z]+/) || [])[0]);
     ok(/Break points converted — — —/.test(h), 'BP converted: no counts → a dash row');
     ok(/Champion/.test(h) && /Route ›/.test(h), 'status chip + Route');
     ok(/position:fixed; z-index:20/.test(root.innerHTML), 'fixed layer');
@@ -262,7 +263,7 @@ const MUT = [
   ['link dropped', "if (typeof tourxSetSection === 'function') tourxSetSection('reports');", ''],
   ['download not wired', "p = Promise.resolve(window.WueSheet.download(name));", "p = Promise.resolve();"],
   ['field not the mean', "const avg = all.length ? rd(all.reduce((a, x) => a + x, 0) / all.length) : null;", "const avg = all.length ? rd(Math.max.apply(null, all)) : null;"],
-  ['BP saved invented', "['Serve', 'Break points saved', '%', null]", "['Serve', 'Break points saved', '%', 'svHold']"],
+  ['BP saved dropped', "['Serve', 'Break points saved', '%', 'bpSaved']", "['Serve', 'Break points saved', '%', null]"],
   ['would-be off by the defended points', 'const left = mine - pts;', 'const left = mine;'],
   ['sort ignored', "const byD = S.ptSort === 'drop';", 'const byD = false;'],
 ];

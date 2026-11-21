@@ -416,14 +416,15 @@ function statsModel(ev, M) {
 //   Results: sets won, games won — from the draw's own set scores (a retirement's unfinished set is no set).
 //   Serve / Return: tournament-progression players[].rounds[].metrics (our box scores): aces, 1st / 2nd serve points won
 //   (mean of his matches; the feed sends no count for them), service games held, return games won, break points
-//   converted (sums of the won / total counts). Break points saved: not in our data → a dash row.
+//   converted, break points saved (sums of the won / total counts; bpSaved from the progression since 2026-11-20 —
+//   a draw built before that has no figure, a dash row).
 //   Field = the mean over every player of this draw with that measure; Rank = 1 + players with a better figure.
 // ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 const setDone = (a, b) => (Math.max(a, b) >= 6 && Math.abs(a - b) >= 2) || (Math.max(a, b) === 7 && Math.min(a, b) >= 5);
 const MEASURES = [
   ['Results', 'Sets won', '%', 'sets'], ['Results', 'Games won', '%', 'games'],
   ['Serve', 'Aces per match', '', 'aces'], ['Serve', '1st serve points won', '%', 'firstServeWonPct'], ['Serve', '2nd serve points won', '%', 'secondServeWonPct'],
-  ['Serve', 'Service games held', '%', 'svHold'], ['Serve', 'Break points saved', '%', null],
+  ['Serve', 'Service games held', '%', 'svHold'], ['Serve', 'Break points saved', '%', 'bpSaved'],
   ['Return', 'Return games won', '%', 'retGames'], ['Return', 'Break points converted', '%', 'bpConv'],
 ];
 function boxFigures(M, F, entry) {
@@ -450,7 +451,7 @@ function boxFigures(M, F, entry) {
     const ac = ms.map(m => m.aces).filter(x => typeof x === 'number' && isFinite(x));
     if (ac.length) val.aces[k] = { v: ac.reduce((a, x) => a + x, 0) / ac.length, n: `${ac.reduce((a, x) => a + x, 0)} aces in ${ac.length} match${ac.length === 1 ? '' : 'es'}` };
     ['firstServeWonPct', 'secondServeWonPct'].forEach(f => { const r = mean(f); if (r) val[f][k] = r; });
-    ['svHold', 'retGames', 'bpConv'].forEach(f => { const r = sum(f); if (r) val[f][k] = r; });
+    ['svHold', 'retGames', 'bpConv', 'bpSaved'].forEach(f => { const r = sum(f); if (r) val[f][k] = r; });
   });
   return { ST, val };
 }
@@ -464,7 +465,7 @@ function boxModel(M, F, entry, key) {
     const all = k ? Object.keys(val[k]).map(p => rd(val[k][p].v)) : [];
     const avg = all.length ? rd(all.reduce((a, x) => a + x, 0) / all.length) : null;
     const mine = k && val[k][key] ? val[k][key] : null;
-    const why = k ? (mine ? '' : 'No figure for him in our box scores for this draw') : 'Break points saved: not in our match data yet';
+    const why = mine ? '' : 'No figure for him in our box scores for this draw';
     if (!mine) return { grp, l, v: DASH, f: avg != null ? fmt(avg) : DASH, g: DASH, gc: C.muted, barL: '50%', barW: '0%', rank: DASH, rankC: C.muted, rankW: 500, of: '', why, fTitle: all.length ? `mean of ${all.length} players` : 'No player of this draw has this figure' };
     const v = rd(mine.v), d = Math.round((v - avg) * 10) / 10, mx = Math.max.apply(null, all.map(x => Math.abs(x - avg))) || 1;
     const bw = d ? 18 + Math.abs(d) / mx * 28 : 0, rk = all.filter(x => x > v).length + 1;
