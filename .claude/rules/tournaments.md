@@ -51,10 +51,18 @@ Rationale: `BUILD-NOTES.md` "2026-11-15 — Tournaments tab rebuild".
   `config.js` weights, `elo-ratings.json` by the model's key rule), ported as `eloBaseP` in `tournaments-draw.js`. Chances
   follow the bracket exactly (`chanceDP`: played matches and walkovers fixed, byes advance). Fair odds = 1 / chance, two
   decimals, one price (no range). A player with no Elo → every chance that depends on him is a dash, never 50%. Round
-  robin (ATP Finals) is not modelled: dash. Every figure's hover names its basis. Opening-price ranges, "Be careful" /
-  "No warning" and a Bookmakers column (hook `TTDraw.bookOutright`, null) stay out until a source exists. **Test:**
+  robin (ATP Finals) is not modelled: dash. Every figure's hover names its basis. Opening-price ranges and "Be careful" /
+  "No warning" stay out until a source exists. **Test:**
   `tools/test-tt-draw.mjs` (DP sums, played match, missing Elo, formula parity with `h2h-model/elo.js`, model price; mutants:
   50% fallback, results ignored, quarter over the wrong half, weights drift, model price ignored).
+- **Bookmakers chance beside the Stennisfy one** (founder 2026-11-21, "match prices + Elo", to compare the two; no feed
+  sells ATP outright prices): the same bracket DP (`chancesFor(ev, M, F, bookPairP)`), where a pair that is an unfinished
+  Today's Matches card takes the no-vig price of the card's ONE book (`_mcNowPair`; both legs ≥ 1.01, overround ≤ 20%,
+  else no price) and every other pairing the same Elo base. Shown in the outright view: the leader card, the title rows
+  ("Bookmakers") and the quarter cards ("Books"); hover "Bookmakers: no-vig <book> price for matches on Today's Matches,
+  Elo base for later rounds". No pair in the draw priced → a dash with the hover "No match in this draw has a bookmaker
+  price on Today's Matches yet". **Test:** is the R1 Bookmakers chance of a priced card its no-vig price, a suspended pair
+  the Elo base, and the column a dash with no priced card? `tools/test-tt-draw.mjs` (mutant: book price ignored).
 - **Speed by year = `court-speed-history.json`** (founder 2026-11-20: "use all of this in our database … until 2020"),
   committed, built by hand with `tools/build-court-speed-history.mjs`: `ta[event][year]` = Tennis Abstract surface speed —
   its season archive for 2020–2023, 2024–2025 from `COURT_CONDITIONS` `as2024`/`as2025` (TA no longer serves those pages;

@@ -361,21 +361,33 @@ function chanceDP(slots, nRounds, decided, pw) {
   return probs;
 }
 // The Stennisfy chances of the open main draw (null when not modelled: qualifying, round robin, no model).
-// Bookmakers' outright prices: the lead adds the source later. No column is drawn (the design has no room for one).
-function bookOutright(eventKey, playerKey) { return null; }   // eslint-disable-line no-unused-vars
-let CH = null;
-function chancesFor(ev, M, F) {
+// Bookmakers (founder 2026-11-21: "match prices + Elo", to compare with Stennisfy): the same bracket DP, P(A beats B) =
+// the no-vig price of the card's ONE book (_mcNowPair, odds.md) for an unfinished Today's Matches card of the pair, both
+// legs >= 1.01 and overround <= 20% (a suspended market is no price); every other pairing the same Elo base.
+function bookPairP(ev, ka, kb) {
+  const m = ev.board.find(x => !x.finalScore && [String(x.p1Key), String(x.p2Key)].sort().join('|') === [ka, kb].sort().join('|'));
+  if (!m) return null;
+  let p = null; try { p = typeof _mcNowPair === 'function' ? _mcNowPair(m) : null; } catch (e) { p = null; }
+  const a = p && Number(p.p1), b = p && Number(p.p2);
+  if (!(a >= 1.01 && b >= 1.01) || 1 / a + 1 / b - 1 > 0.20) return null;
+  const p1 = (1 / a) / (1 / a + 1 / b);
+  const bk = p.book ? String(p.book) : '', book = p.bookName || (typeof MC_BOOK_NAMES !== 'undefined' && MC_BOOK_NAMES[bk.toLowerCase()]) || (typeof mxBookLabel === 'function' ? mxBookLabel(bk) : bk);
+  return { p: String(m.p1Key) === ka ? p1 : 1 - p1, book: book || '' };
+}
+let CH = null, CHB = null;
+function chancesFor(ev, M, F, pairP) {
+  pairP = pairP || modelPairP;
   if (!M || !ev || /Finals/i.test(String(ev.draw.category || '') + ' ' + ev.city)) return null;
   const store = eloStore(), slots = new Array(M.size).fill(null);
   F.slots.forEach(s => { if (s.pos >= 1 && s.pos <= M.size) slots[s.pos - 1] = String(s.playerKey); });
   const sheet = new Map(F.slots.map(s => [String(s.playerKey), s.name]));
   const surface = ev.draw.sheetHeader && ev.draw.sheetHeader.surface;
   const recs = new Map(), rec = k => { if (!recs.has(k)) recs.set(k, eloRecOf(store, k, sheet.get(k))); return recs.get(k); };
-  const src = new Map();   // "a|b" → 'model' | 'elo'
+  const src = new Map(), books = new Set();   // "a|b" → 'model' (the pair price: model or book) | 'elo'
   const pw = (a, b) => {
     const id = a < b ? a + '|' + b : b + '|' + a;
-    const m = modelPairP(ev, a, b);
-    if (m != null) { src.set(id, 'model'); return m; }
+    const r = pairP(ev, a, b), m = r != null && typeof r === 'object' ? r.p : r;
+    if (m != null) { src.set(id, 'model'); if (r.book) books.add(r.book); return m; }
     const p = eloBaseP(rec(a), rec(b), surface);
     if (p != null) src.set(id, 'elo');
     return p;
@@ -385,7 +397,7 @@ function chancesFor(ev, M, F) {
   const idx = new Map(slots.map((k, i) => [k, i]));
   const qi = M.rounds.findIndex(r => r.name === 'QF');
   const at = (r, k) => { const i = idx.get(k); return r < 0 || i == null || !probs[r] ? null : probs[r][i]; };
-  return { probs, slots, idx, at, pw, src, qi, n: M.rounds.length, names: M.rounds.map(r => r.name), eloLoading: store === undefined, eloFailed: store === null, hasModel: () => [...src.values()].includes('model'),
+  return { probs, slots, idx, at, pw, src, qi, n: M.rounds.length, names: M.rounds.map(r => r.name), eloLoading: store === undefined, eloFailed: store === null, hasModel: () => [...src.values()].includes('model'), books,
     title: k => at(M.rounds.length - 1, k), quarter: k => at(qi, k), reach: (r, k) => (r === 0 ? (idx.has(k) ? 1 : null) : at(r - 1, k)) };
 }
 // the design's percentage (pctS): under 10% one decimal, else whole; 0 and 100 exact
@@ -394,6 +406,16 @@ const pctS = v => (v == null || !isFinite(v) ? DASH : v >= 1 ? '100%' : v <= 0 ?
 const fairS = v => (v != null && v > 0 && v < 1 ? (1 / v).toFixed(2) : DASH);
 const pairBasis = (a, b) => (CH && CH.src.get(a < b ? a + '|' + b : b + '|' + a) === 'model' ? 'Stennisfy Model price for this match (Today’s Matches)' : 'Stennisfy: the model’s Elo base (overall + surface)');
 const NO_CH = 'No chance: a player in this part of the draw has no Elo rating in the Tennis Abstract report';
+// the Bookmakers figure: shown only when at least one pairing used a bookmaker price, else a dash
+const NO_BK = 'No match in this draw has a bookmaker price on Today’s Matches yet';
+const bkOn = () => !!(CHB && CHB.hasModel());
+const bkVal = (key, what) => (!bkOn() ? null : what === 'q' ? CHB.quarter(key) : CHB.title(key));
+function bkTip(key, what) {
+  if (!CHB) return 'Not modelled for this draw';
+  if (!bkOn()) return NO_BK;
+  if (bkVal(key, what) == null) return NO_CH;
+  return `Bookmakers: no-vig ${[...CHB.books].join(' / ') || 'card'} price for matches on Today’s Matches, Elo base for later rounds`;
+}
 function chanceTip(key, what) {
   if (!CH) return 'Not modelled for this draw';
   if (CH.eloLoading) return 'Loading the Elo ratings';
@@ -675,6 +697,7 @@ function render(el) {
   const st = view === 'stats' ? statsModel(ev, Mm) : null;
   const pm = ptsModel(ev, F);
   CH = S.kind !== 'qual' && (view === 'out' || S.sel || S.outCmp) ? chancesFor(ev, Mm, F) : null;
+  CHB = CH ? chancesFor(ev, Mm, F, bookPairP) : null;
   if (view === 'pts') standings();
   const yr = +String(ev.start).slice(0, 4);
   const pl = played(Mm), tp = total(Mm), finished = !!F.champ || (ev.ended && pl > 0) || ev.arch;
@@ -1119,6 +1142,7 @@ function outrightHtml(ev, M, F) {
   const pick = k => (k ? on(() => { if (S.outCmp) pickOut(k); else { Object.assign(S, { sel: k, b: null, cmp: false, view: 'draw', shut: null, opp: null }); repaint(); } }) : '');
   // one fair price per row (the design's two-cell range becomes the single price, centred in the same cell)
   const fairCell = (v, fs, tip) => `<span title="${esc(tip || 'Fair odds = 1 / chance, no margin')}" style="text-align:center; ${MONO} font-size:${fs}px; font-weight:600; color:${v > 0 && v < 1 ? C.text : C.muted}; white-space:nowrap;">${fairS(v)}</span>`;
+  const bkCell = (k, what, fs) => { const v = k == null ? null : bkVal(k, what); return `<span title="${esc(k == null ? (CHB ? NO_BK : why) : bkTip(k, what))}" style="text-align:right; ${MONO} font-size:${fs}px; font-weight:600; color:${v != null ? C.text : C.muted};">${pctS(v)}</span>`; };
   const why = CH ? (CH.eloLoading ? 'Loading the Elo ratings' : CH.eloFailed ? 'The Elo ratings could not be loaded' : NO_CH) : 'Not modelled for this draw (the group stage is not modelled)';
   const alive = F.slots.filter(s => F.out[String(s.playerKey)] == null).map(s => String(s.playerKey));
   if (tab === 't') {
@@ -1131,13 +1155,13 @@ function outrightHtml(ev, M, F) {
       <span style="flex:0 0 100%; display:flex; justify-content:space-between; gap:8px; ${LBL}"><span>${champ ? 'Champion' : 'Most likely winner'}</span><span style="color:${C.blue}; font-weight:700;">${lk ? '›' : ''}</span></span>
       <div style="flex:1 1 200px; display:flex; align-items:center; gap:14px; min-width:0;">${ls ? avatar(lk, nameOf(ls), 44, W(14), 14) : `<span style="flex:none; width:44px; height:44px; box-sizing:border-box; border-radius:50%; background:${C.lifted}; border:1px solid ${W(14)};"></span>`}<div style="display:flex; flex-direction:column; gap:6px; align-items:flex-start; min-width:0;"><span style="max-width:100%; font-size:18px; font-weight:800; color:${C.white}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${ls ? esc(nameOf(ls)) : DASH}</span>${L && !champ ? chip('Favourite', C.soft, 'The highest title chance in this draw') : ''}</div></div>
       <span title="${esc(champ ? 'Champion' : L ? 'Title chance · ' + chanceTip(lk, 't') : why)}" style="${MONO} flex:none; font-size:40px; font-weight:700; line-height:1; color:${C.white};">${champ ? '100%' : pctS(lv)}</span>
-      <div style="flex:1 1 200px; display:flex; flex-direction:column; gap:10px; font-size:13px;"><div style="display:flex; justify-content:space-between; gap:12px;"><span style="color:${C.muted};">Fair odds</span><span title="Fair odds = 1 / chance, no margin" style="${MONO} font-weight:700; color:${C.white};">${fairS(lv)}</span></div><div style="display:flex; justify-content:space-between; gap:12px;"><span style="color:${C.muted};">Ahead of the next</span><span title="${esc(ranked[1] ? 'Title chance points ahead of ' + nameOf(F.byKey.get(ranked[1].k)) : 'Nobody else left with a chance')}" style="${MONO} font-weight:700; color:${C.white};">${ranked[1] ? Math.round((ranked[0].v - ranked[1].v) * 100) + ' points' : DASH}</span></div></div></div>`;
-    const G = 'grid-template-columns:minmax(130px,210px) minmax(40px,1fr) 48px 112px; gap:0 12px;';
+      <div style="flex:1 1 200px; display:flex; flex-direction:column; gap:10px; font-size:13px;"><div style="display:flex; justify-content:space-between; gap:12px;"><span style="color:${C.muted};">Fair odds</span><span title="Fair odds = 1 / chance, no margin" style="${MONO} font-weight:700; color:${C.white};">${fairS(lv)}</span></div><div style="display:flex; justify-content:space-between; gap:12px;"><span style="color:${C.muted};">Bookmakers</span>${champ || !lk ? `<span style="${MONO} font-weight:700; color:${C.muted};">${DASH}</span>` : bkCell(lk, 't', 13)}</div><div style="display:flex; justify-content:space-between; gap:12px;"><span style="color:${C.muted};">Ahead of the next</span><span title="${esc(ranked[1] ? 'Title chance points ahead of ' + nameOf(F.byKey.get(ranked[1].k)) : 'Nobody else left with a chance')}" style="${MONO} font-weight:700; color:${C.white};">${ranked[1] ? Math.round((ranked[0].v - ranked[1].v) * 100) + ' points' : DASH}</span></div></div></div>`;
+    const G = 'grid-template-columns:minmax(130px,210px) minmax(40px,1fr) 48px 84px 80px; gap:0 12px;';
     const top = ranked[0] ? ranked[0].v : 1;
     const rowR = x => { const s = F.byKey.get(x.k);
-      return `<div style="border-top:1px solid ${W(6)};"><div class="tt-draw-hov" onclick="${pick(x.k)}" style="cursor:pointer; display:grid; ${G} align-items:center; height:40px; box-sizing:border-box; padding:0 8px; margin:2px -8px; border-radius:8px; background:${hl(x.k)};"><span style="min-width:0; display:flex; align-items:center; gap:10px;">${avatar(x.k, nameOf(s), 26, W(10), 10)}<span title="${esc(nameOf(s))}" style="flex:1; min-width:0; display:flex; align-items:baseline; gap:7px;"><span style="min-width:0; font-size:13.5px; font-weight:600; color:${C.white}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(nameOf(s))}</span><span style="flex:none; ${MONO} font-size:10px; color:${C.muted};">${esc(tagOf(s))}</span></span></span><span style="min-width:0; height:4px; border-radius:2px; background:${W(7)}; overflow:hidden;"><span style="display:block; height:4px; border-radius:2px; width:${Math.max(2, Math.min(100, x.v / top * 100))}%; background:${BAR55};"></span></span><span title="${esc('Title chance · ' + chanceTip(x.k, 't'))}" style="text-align:right; ${MONO} font-size:13.5px; font-weight:700; color:${C.white};">${pctS(x.v)}</span>${fairCell(x.v, 13)}</div></div>`; };
-    const rowD = () => `<div style="border-top:1px solid ${W(6)};"><div style="display:grid; ${G} align-items:center; height:40px; box-sizing:border-box; padding:0 8px; margin:2px -8px; border-radius:8px;"><span style="min-width:0; display:flex; align-items:center; gap:10px;"><span style="flex:none; width:26px; height:26px; box-sizing:border-box; border-radius:50%; background:${C.lifted}; border:1px solid ${W(10)};"></span><span style="font-size:13.5px; font-weight:600; color:${C.muted};">${DASH}</span></span><span style="min-width:0; height:4px; border-radius:2px; background:${W(7)};"></span><span title="${esc(why)}" style="text-align:right; ${MONO} font-size:13.5px; font-weight:700; color:${C.white};">${DASH}</span>${fairCell(null, 13, why)}</div></div>`;
-    const head = name => `<div style="display:grid; ${G} align-items:baseline; padding:10px 0 9px; ${LBL}"><span style="min-width:0; font-size:14px; font-weight:700; color:${C.white}; white-space:nowrap;">${name}</span><span></span><span style="text-align:right;">Chance</span><span style="text-align:center; white-space:nowrap;">Fair odds</span></div>`;
+      return `<div style="border-top:1px solid ${W(6)};"><div class="tt-draw-hov" onclick="${pick(x.k)}" style="cursor:pointer; display:grid; ${G} align-items:center; height:40px; box-sizing:border-box; padding:0 8px; margin:2px -8px; border-radius:8px; background:${hl(x.k)};"><span style="min-width:0; display:flex; align-items:center; gap:10px;">${avatar(x.k, nameOf(s), 26, W(10), 10)}<span title="${esc(nameOf(s))}" style="flex:1; min-width:0; display:flex; align-items:baseline; gap:7px;"><span style="min-width:0; font-size:13.5px; font-weight:600; color:${C.white}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(nameOf(s))}</span><span style="flex:none; ${MONO} font-size:10px; color:${C.muted};">${esc(tagOf(s))}</span></span></span><span style="min-width:0; height:4px; border-radius:2px; background:${W(7)}; overflow:hidden;"><span style="display:block; height:4px; border-radius:2px; width:${Math.max(2, Math.min(100, x.v / top * 100))}%; background:${BAR55};"></span></span><span title="${esc('Title chance · ' + chanceTip(x.k, 't'))}" style="text-align:right; ${MONO} font-size:13.5px; font-weight:700; color:${C.white};">${pctS(x.v)}</span>${fairCell(x.v, 13)}${bkCell(x.k, 't', 13)}</div></div>`; };
+    const rowD = () => `<div style="border-top:1px solid ${W(6)};"><div style="display:grid; ${G} align-items:center; height:40px; box-sizing:border-box; padding:0 8px; margin:2px -8px; border-radius:8px;"><span style="min-width:0; display:flex; align-items:center; gap:10px;"><span style="flex:none; width:26px; height:26px; box-sizing:border-box; border-radius:50%; background:${C.lifted}; border:1px solid ${W(10)};"></span><span style="font-size:13.5px; font-weight:600; color:${C.muted};">${DASH}</span></span><span style="min-width:0; height:4px; border-radius:2px; background:${W(7)};"></span><span title="${esc(why)}" style="text-align:right; ${MONO} font-size:13.5px; font-weight:700; color:${C.white};">${DASH}</span>${fairCell(null, 13, why)}${bkCell(null, 't', 13)}</div></div>`;
+    const head = name => `<div style="display:grid; ${G} align-items:baseline; padding:10px 0 9px; ${LBL}"><span style="min-width:0; font-size:14px; font-weight:700; color:${C.white}; white-space:nowrap;">${name}</span><span></span><span style="text-align:right;">Chance</span><span style="text-align:center; white-space:nowrap;">Fair odds</span><span title="Bookmakers: the same bracket on the no-vig match prices, Elo base for later rounds" style="text-align:right; white-space:nowrap;">Bookmakers</span></div>`;
     // the design's groups: Also favoured = 2nd–3rd, Three underdogs = 5th, 7th and 9th by title chance
     const groups = known ? [['Also favoured', [1, 2]], ['Three underdogs', [4, 6, 8]]].map(([n, ix]) => [n, ix.map(i => ranked[i]).filter(Boolean)]).filter(g => g[1].length)
       .map(([n, rows]) => head(n) + rows.map(rowR).join('')).join('')
@@ -1149,7 +1173,7 @@ function outrightHtml(ev, M, F) {
     const size = (ev.draw.main && ev.draw.main.size) || 32, per = size / 4;
     const qi = M ? M.rounds.findIndex(r => r.name === 'QF') : -1;
     const qWin = q => { if (qi < 0) return null; const c = M.rounds[qi].cells[q]; return c && c.match ? c.match.winnerKey : null; };
-    const G = 'grid-template-columns:minmax(0,1fr) 34px 76px; gap:8px;';
+    const G = 'grid-template-columns:minmax(0,1fr) 34px 52px 40px; gap:8px;';
     const cards = [0, 1, 2, 3].map(q => {
       const w = qWin(q);
       const inQ = F.slots.filter(s => Math.ceil(s.pos / per) === q + 1);
@@ -1160,8 +1184,8 @@ function outrightHtml(ev, M, F) {
         : (w && F.byKey.get(w) ? [F.byKey.get(w)] : []).concat(w ? [] : live.sort((x, y) => (x.seed == null ? 99 : x.seed) - (y.seed == null ? 99 : y.seed) || x.pos - y.pos)).slice(0, 4);
       const rows = list.map((s, j) => { const k = String(s.playerKey), v = k === w ? 1 : known ? qv(s) : null;
         const tip = k === w ? 'Won his quarter' : v == null ? why : 'Chance to win his quarter · ' + chanceTip(k, 'q');
-        return `<div class="tt-draw-hov" onclick="${pick(k)}" title="${esc(nameOf(s))}" style="cursor:pointer; display:grid; ${G} align-items:center; height:40px; box-sizing:border-box; padding:0 6px; margin:2px -6px; border-radius:8px; background:${hl(k)};"><div style="display:flex; align-items:center; gap:8px; min-width:0;">${avatar(k, nameOf(s), 26, j ? W(18) : W(40), 9.5)}<span style="min-width:70px; font-size:13px; font-weight:${j ? 600 : 800}; color:${j ? C.text : C.white}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(nameOf(s))}</span></div><span title="${esc(tip)}" style="text-align:right; ${MONO} font-size:13px; font-weight:700; color:${C.white};">${v === 1 ? 'Won' : pctS(v)}</span>${fairCell(v, 12, v == null ? why : null)}</div>`; }).join('');
-      return `<div style="background:${C.card}; border:1px solid ${W(6)}; border-radius:11px; padding:14px 12px 8px; min-width:0;"><div style="display:grid; ${G} align-items:baseline; padding-bottom:10px; border-bottom:1px solid ${W(6)}; ${LBL} white-space:nowrap;"><span style="font-size:14px; font-weight:700; color:${C.white};">Quarter ${q + 1}</span><span style="display:flex; justify-content:flex-end;">Chance</span><span style="text-align:center;">Fair odds</span></div>${rows}</div>`;
+        return `<div class="tt-draw-hov" onclick="${pick(k)}" title="${esc(nameOf(s))}" style="cursor:pointer; display:grid; ${G} align-items:center; height:40px; box-sizing:border-box; padding:0 6px; margin:2px -6px; border-radius:8px; background:${hl(k)};"><div style="display:flex; align-items:center; gap:8px; min-width:0;">${avatar(k, nameOf(s), 26, j ? W(18) : W(40), 9.5)}<span style="min-width:70px; font-size:13px; font-weight:${j ? 600 : 800}; color:${j ? C.text : C.white}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(nameOf(s))}</span></div><span title="${esc(tip)}" style="text-align:right; ${MONO} font-size:13px; font-weight:700; color:${C.white};">${v === 1 ? 'Won' : pctS(v)}</span>${fairCell(v, 12, v == null ? why : null)}${k === w ? `<span style="text-align:right; ${MONO} font-size:12px; color:${C.muted};">${DASH}</span>` : bkCell(k, 'q', 12)}</div>`; }).join('');
+      return `<div style="background:${C.card}; border:1px solid ${W(6)}; border-radius:11px; padding:14px 12px 8px; min-width:0;"><div style="display:grid; ${G} align-items:baseline; padding-bottom:10px; border-bottom:1px solid ${W(6)}; ${LBL} white-space:nowrap;"><span style="font-size:14px; font-weight:700; color:${C.white};">Quarter ${q + 1}</span><span style="display:flex; justify-content:flex-end;">Chance</span><span style="text-align:center;">Fair odds</span><span title="Bookmakers: the same bracket on the no-vig match prices, Elo base for later rounds" style="text-align:right;">Books</span></div>${rows}</div>`;
     }).join('');
     h += `<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(max(240px, calc(25% - 6px)),1fr)); gap:8px; margin-top:18px;">${cards}</div>`;
   }
@@ -1362,12 +1386,10 @@ const TTDraw = {
   render(el) { render(el); },
   // Match Analysis rows for finished draw matches the board and the draw store no longer hold (the page's matchById)
   rowById(id) { return ROWS.get(String(id)) || null; },
-  // the Bookmakers' outright column hook (the lead wires a source later; null today, nothing drawn)
-  bookOutright,
   _h(i, ev) { const f = H[i]; if (typeof f !== 'function') return; if (ev && ev.type === 'click' && ev.stopPropagation) ev.stopPropagation(); f(ev); },
   // test hooks (Node): the pure parts and the state
   _test: { S, events, modelOf, facts, pathOf, statsModel, seasonFigs, dbRowsOf, setFacts, stageOf, render, FILES, reset, boardPrice, resultRow, analysisId, ROWS,
-    boxModel, ptsModel, pickName, chancesFor, chanceDP, eloBaseP, eloKeyOf, eloRecOf, pctS, fairS, bookOutright, get CH() { return CH; }, get H() { return H; } },
+    boxModel, ptsModel, pickName, chancesFor, chanceDP, eloBaseP, eloKeyOf, eloRecOf, pctS, fairS, bookPairP, get CH() { return CH; }, get CHB() { return CHB; }, get H() { return H; } },
 };
 if (typeof module !== 'undefined' && module.exports) module.exports = TTDraw;
 if (typeof window !== 'undefined') window.TTDraw = TTDraw;

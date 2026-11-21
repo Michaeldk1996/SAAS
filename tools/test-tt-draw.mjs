@@ -188,8 +188,8 @@ check('Paris: real chances on every view — route panel, outright, quarters, co
     ok(sel.includes(`${T.pctS(CH.at(1, "1980"))} to reach the Round of 16`), "per-round chance in the rail: " + (sel.match(/Round of 32.{0,120}/) || [])[0]);
     const sorted = F.slots.map(s => [String(s.playerKey), CH.title(String(s.playerKey))]).sort((a, b) => b[1] - a[1]), nm = k => win.DrawView.shortName(F.byKey.get(k).name);
     const o = text(html({ key: PARIS, view: 'out' }));
-    ok(/Most likely winner ›/.test(o) && o.includes(`${nm(sorted[0][0])} Favourite ${T.pctS(sorted[0][1])} Fair odds ${(1 / sorted[0][1]).toFixed(2)} Ahead of the next ${Math.round((sorted[0][1] - sorted[1][1]) * 100)} points`), 'leader card: ' + (o.match(/Most likely winner.{0,120}/) || [])[0]);
-    ok(new RegExp(`Also favoured Chance Fair odds [A-Z]{2} ${nm(sorted[1][0]).replace('.', '\\.')}`).test(o) && new RegExp(`Three underdogs Chance Fair odds [A-Z]{2} ${nm(sorted[4][0]).replace('.', '\\.')}`).test(o), 'groups: 2nd–3rd, then 5th / 7th / 9th: ' + (o.match(/Also favoured.{0,80}/) || [])[0]);
+    ok(/Most likely winner ›/.test(o) && o.includes(`${nm(sorted[0][0])} Favourite ${T.pctS(sorted[0][1])} Fair odds ${(1 / sorted[0][1]).toFixed(2)} Bookmakers — Ahead of the next ${Math.round((sorted[0][1] - sorted[1][1]) * 100)} points`), 'leader card: ' + (o.match(/Most likely winner.{0,120}/) || [])[0]);
+    ok(new RegExp(`Also favoured Chance Fair odds Bookmakers [A-Z]{2} ${nm(sorted[1][0]).replace('.', '\\.')}`).test(o) && new RegExp(`Three underdogs Chance Fair odds Bookmakers [A-Z]{2} ${nm(sorted[4][0]).replace('.', '\\.')}`).test(o), 'groups: 2nd–3rd, then 5th / 7th / 9th: ' + (o.match(/Also favoured.{0,80}/) || [])[0]);
     const q = html({ key: PARIS, view: 'out', outTab: 'q' }), cards = q.split('>Quarter ').slice(1);
     const q1 = inQ(1).map(k => [k, CH.quarter(k)]).sort((a, b) => b[1] - a[1]);
     ok(near(q1.reduce((a, x) => a + x[1], 0), 1), 'quarter 1 sums to 1');
@@ -220,10 +220,40 @@ check('a board match the Stennisfy Model priced uses the model price; every othe
     ok(ea && eb, 'both rated');
   } finally { delete ctx.modelOutput; T.FILES['elo-ratings.json'] = undefined; }
 });
-check('round robin (ATP Finals) is not modelled; the Bookmakers hook returns null', ({ T }) => {
+check('round robin (ATP Finals) is not modelled', ({ T }) => {
   const ev = T.events().all.find(e => e.key === PARIS), M = T.modelOf(ev, 'main'), F = T.facts(M, ev);
   ok(T.chancesFor(Object.assign({}, ev, { city: 'ATP Finals - Turin' }), M, F) === null, 'Finals → null (dash, hover: the group stage is not modelled)');
-  ok(T.bookOutright('352', '1980') === null, 'bookOutright hook');
+});
+// Bookmakers (founder 2026-11-21): the same DP on the card book's no-vig price; a suspended pair or no card = the Elo base
+check('Bookmakers chance: a priced card = its no-vig price, a suspended pair or no card = the Elo base, none priced = dash (mutant: book price ignored)', ({ T, ctx, html }) => {
+  T.FILES['elo-ratings.json'] = parisElo(T);
+  const ev0 = T.events().all.find(e => e.key === PARIS), M = T.modelOf(ev0, 'main'), F = T.facts(M, ev0);
+  const cs = M.rounds[0].cells.filter(x => x.sides[0] && x.sides[1] && x.sides[0].playerKey && x.sides[1].playerKey && !x.match && !/…/.test(x.sides[0].name + x.sides[1].name));
+  const [c, d] = cs, a = String(c.sides[0].playerKey), b = String(c.sides[1].playerKey), da = String(d.sides[0].playerKey), db = String(d.sides[1].playerKey);
+  const prices = { 'upcoming-1': { p1: 2.6, p2: 1.55, book: 'bet105' }, 'upcoming-2': { p1: 1.2, p2: 1.5, book: 'bet105' } };
+  const ev = Object.assign({}, ev0, { board: [{ id: 'upcoming-1', p1Key: +b, p2Key: +a }, { id: 'upcoming-2', p1Key: +da, p2Key: +db }] });
+  ctx._mcNowPair = m => prices[m.id] || null; ctx.MC_BOOK_NAMES = { bet105: 'Bet105' };
+  // the sheet names cut short get an Elo through their profile name (as in the Paris check), so every chance is a figure
+  const trunc = F.slots.filter(s => /…/.test(s.name)).map(s => String(s.playerKey));
+  trunc.forEach((k, i) => { T.FILES['elo-ratings.json'].elo[T.eloKeyOf('Test Player' + 'abcdefgh'[i])] = { all: { rating: 1650 + i } }; });
+  ctx.newsPlayerName = (k, fb) => (trunc.includes(String(k)) ? 'Test Player' + 'abcdefgh'[trunc.indexOf(String(k))] : fb);
+  try {
+    const B = T.chancesFor(ev, M, F, T.bookPairP), want = (1 / 1.55) / (1 / 2.6 + 1 / 1.55);
+    ok(near(B.pw(a, b), want) && near(B.pw(b, a), 1 - want) && near(B.at(0, a), want), 'R1 = the no-vig price, oriented: ' + B.pw(a, b));
+    ok(B.hasModel() && [...B.books].join() === 'Bet105', 'the book is named: ' + [...B.books]);
+    const el = (k, s) => T.eloRecOf(T.FILES['elo-ratings.json'], k, s.name);
+    ok(near(B.pw(da, db), T.eloBaseP(el(da, d.sides[0]), el(db, d.sides[1]), 'Hard')), 'overround over 20% (1.20 / 1.50) = suspended → the Elo base');
+    const N = T.chancesFor(Object.assign({}, ev0, { board: [] }), M, F, T.bookPairP);
+    ok(N && !N.hasModel(), 'no priced card → no pair used a price');
+    const o = text(html({ key: PARIS, view: 'out' }));
+    ok(/Bookmakers —/.test(o) && /No match in this draw has a bookmaker price on Today’s Matches yet/.test(html({ key: PARIS, view: 'out' })), 'outright view: Bookmakers dash with the reason');
+    ctx.matches = [{ id: 'upcoming-1', tour: 'ATP Paris', p1Key: +b, p2Key: +a }];
+    const ph = html({ key: PARIS, view: 'out', outTab: 'q' }), qp = Math.ceil(F.byKey.get(a).pos / 16);
+    const top = F.slots.filter(s => Math.ceil(s.pos / 16) === qp).map(s => String(s.playerKey)).sort((x, y) => T.CH.quarter(y) - T.CH.quarter(x))[0], qa = T.CHB.quarter(top);
+    ok(qa != null && /Bookmakers: no-vig Bet105 price for matches on Today’s Matches, Elo base for later rounds/.test(ph) && ph.includes('>' + T.pctS(qa) + '<'), 'a priced board card → quarter Bookmakers figures with the book named: ' + T.pctS(qa));
+    const pt = text(html({ key: PARIS, view: 'out' })), lead = T.CHB.title([...F.slots].map(s => String(s.playerKey)).sort((x, y) => T.CH.title(y) - T.CH.title(x))[0]);
+    ok(pt.includes('Bookmakers ' + T.pctS(lead) + ' Ahead of the next'), 'leader card: the Bookmakers title chance beside the Stennisfy one: ' + (pt.match(/Fair odds.{0,40}Ahead/) || [])[0]);
+  } finally { ctx.matches = []; delete ctx.newsPlayerName; delete ctx._mcNowPair; delete ctx.MC_BOOK_NAMES; T.FILES['elo-ratings.json'] = undefined; }
 });
 check('quarters come from draw positions (mutant: quarter by list index)', ({ html }) => {
   const q = html({ key: PARIS, view: 'out', outTab: 'q' });
@@ -379,7 +409,8 @@ const MUT = [
   ['equal 50% fallback', "    if (p != null) src.set(id, 'elo');\n    return p;", "    if (p != null) src.set(id, 'elo');\n    return p == null ? 0.5 : p;"],
   ['played results ignored', "const w = decided(r, lo / span);", "const w = null;"],
   ['weights drift', "const ELO_BLEND = { raw: 0.30, surface: 0.40, blend: 0.30 }", "const ELO_BLEND = { raw: 0.40, surface: 0.30, blend: 0.30 }"],
-  ['model price ignored', "    const m = modelPairP(ev, a, b);\n", "    const m = null;\n"],
+  ['model price ignored', "  pairP = pairP || modelPairP;", "  pairP = pairP || (() => null);"],
+  ['book price ignored', "  if (!(a >= 1.01 && b >= 1.01) || 1 / a + 1 / b - 1 > 0.20) return null;", "  return null;"],
   ['quarter by list index', 'Math.ceil(s.pos / per) === q + 1);', 'Math.floor(F.slots.indexOf(s) / 8) === q);'],
   ['meet round off', 'r = DV().meetRound(pa, Bp.me.pos)', 'r = Math.max(0, DV().meetRound(pa, Bp.me.pos) - 1)'],
   ['retirements not settled', "bet: !!(Sm && Sm.betCounts({ comment: cm, fs }))", 'bet: true'],
