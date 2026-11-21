@@ -2,8 +2,68 @@
  "tournament": "ATP Tour",
  "tournamentKey": "tour",
  "season": "2026",
- "updatedAt": "2026-11-21T16:07:25.262Z",
+ "updatedAt": "2026-11-21T16:37:32.313Z",
  "items": [
+  {
+   "id": "quote-858a4016c87dee",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": null,
+   "player": "C. Alcaraz",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-21T16:26:06.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "It's been a complicated match. I started a little bit nervous, more than I should have, with some errors that prevented me from getting into a good rhythm, from gaining confidence. He started the match very aggressive, very focused",
+   "originalText": "Ha sido un partido complicado. He empezó un poquito nervioso, más de la cuenta, con algunos errores que me han impedido coger una buena dinámica, coger confianza. Él ha empezado muy agresivo, muy concentrado el partido",
+   "language": "es",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "Hoy",
+   "sourceUrl": "https://www.vssports.com.py/hoy/2026/11/21/alcaraz-remonta-a-shelton-y-espera-rival-en-la-final-del-masters-atp/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his nervous start against Ben Shelton",
+   "sourceHash": "65ab676c37616d67",
+   "publishedAt": "2026-11-21T16:37:32.313Z"
+  },
+  {
+   "id": "quote-d64229e60fdae3",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": null,
+   "player": "C. Alcaraz",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-21T16:26:06.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "I've been mentally strong to withstand what was coming at me, to withstand the bad feelings. Little by little I've taken steps forward, and by the end I played tremendous tennis",
+   "originalText": "He estado fuerte mentalmente para aguantar lo que me estaba viniendo, para aguantar las malas sensaciones. Poco a poco he dado pasos hacia adelante, al acabar he jugado un grandísimo tenis",
+   "language": "es",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "Hoy",
+   "sourceUrl": "https://www.vssports.com.py/hoy/2026/11/21/alcaraz-remonta-a-shelton-y-espera-rival-en-la-final-del-masters-atp/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On staying mentally strong to beat Shelton",
+   "sourceHash": "94d0dd975d914440",
+   "publishedAt": "2026-11-21T16:37:32.313Z"
+  },
   {
    "id": "quote-157eadd9ed66ff",
    "type": "quote",
@@ -3043,6 +3103,39 @@
    "topic": "On arriving in Turin after his Paris week"
   },
   {
+   "id": "digest-943cf7d0badd57",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2382",
+   "player": "C. Alcaraz",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-21T16:26:06.000Z",
+   "members": [
+    "quote-858a4016c87dee",
+    "quote-d64229e60fdae3"
+   ],
+   "memberHash": "4f601c05d7bb848f",
+   "digestedAt": "2026-11-21T16:37:32.313Z",
+   "blocks": [
+    {
+     "label": "after his win over Shelton",
+     "text": "It's been a complicated match. I started a little bit nervous, more than I should have, with some errors that prevented me from getting into a good rhythm, from gaining confidence. He started the match very aggressive, very focused. I've been mentally strong to withstand what was coming at me, to withstand the bad feelings. Little by little I've taken steps forward, and by the end I played tremendous tennis.",
+     "from": [
+      "quote-858a4016c87dee",
+      "quote-d64229e60fdae3"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5"
+  },
+  {
    "id": "digest-7d1c7fc96f2ddf",
    "type": "digest",
    "version": 1,
@@ -3333,10 +3426,10 @@
     "quote-a20ad7c6e979e3"
    ],
    "memberHash": "2a5d041b1162e6f2",
-   "digestedAt": "2026-11-21T16:07:25.262Z",
+   "digestedAt": "2026-11-21T16:37:32.313Z",
    "blocks": [
     {
-     "label": "on Carlos Alcaraz's Superman level",
+     "label": "on Alcaraz's Superman level at the ATP Finals",
      "text": "He has moments where he's definitely Superman and he's playing pretty insane. But again, it's one of those things, you've got to appreciate greatness.",
      "from": [
       "quote-a20ad7c6e979e3",
@@ -3449,7 +3542,7 @@
     "quote-758fd4e2661882"
    ],
    "memberHash": "1602bcb2f6f16728",
-   "digestedAt": "2026-11-21T16:07:25.262Z",
+   "digestedAt": "2026-11-21T16:37:32.313Z",
    "blocks": [
     {
      "label": "after his opening win over Frances Tiafoe",
@@ -3459,7 +3552,7 @@
      ]
     },
     {
-     "label": "on past trouble against Frances Tiafoe",
+     "label": "on past difficulties facing Frances Tiafoe",
      "text": "The trouble that I got every time I have played against Frances made me really focused.",
      "from": [
       "quote-758fd4e2661882"
@@ -3560,17 +3653,17 @@
     "quote-f2b49767a36019"
    ],
    "memberHash": "c0a714cecf99b5f9",
-   "digestedAt": "2026-11-21T16:07:25.262Z",
+   "digestedAt": "2026-11-21T16:37:32.313Z",
    "blocks": [
     {
-     "label": "after his win over Fils",
+     "label": "on the physical rallies in his win over Fils",
      "text": "That was really intense, especially in the first set. I don't know that I've played that many rallies out there on tour on a court this fast. So it was physical, really physical. A tough contest.",
      "from": [
       "quote-f2b49767a36019"
      ]
     },
     {
-     "label": "on constant questions about coach Ferrero",
+     "label": "on constant questions about coach Juan Carlos Ferrero",
      "text": "I think that the questions are going to come, it's not something that surprises me and I'm used to it. But yes, there have been many, many questions.",
      "from": [
       "quote-cb6747ca9b29e9"
@@ -3599,7 +3692,7 @@
     "quote-c97b20550b80b5"
    ],
    "memberHash": "31dca0b43f47f574",
-   "digestedAt": "2026-11-21T16:07:25.262Z",
+   "digestedAt": "2026-11-21T16:37:32.313Z",
    "blocks": [
     {
      "label": "after his opening ATP Finals win over Jodar",
@@ -3677,11 +3770,11 @@
     "quote-91909bb6648e25"
    ],
    "memberHash": "631d2375c215fb2f",
-   "digestedAt": "2026-11-21T16:07:25.262Z",
+   "digestedAt": "2026-11-21T16:37:32.313Z",
    "blocks": [
     {
      "label": "on practicing with a stringless racket in Turin",
-     "text": "They are exercises to hit, or try to hit, the ball in the sweet spot of the racket, bringing the hand forward … Here the ball travels very fast and you have very little time. If you try to play like on clay, trying to get the ball high over the net, in the end they put you under pressure.",
+     "text": "They are exercises to hit, or try to hit, the ball in the sweet spot of the racket, bringing the hand forward. Here the ball travels very fast and you have very little time. If you try to play like on clay, trying to get the ball high over the net, in the end they put you under pressure.",
      "from": [
       "quote-74899a9a78880b"
      ]
