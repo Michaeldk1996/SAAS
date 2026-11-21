@@ -1,19 +1,19 @@
 {
- "generatedAt": "2026-11-21T18:35:46.953Z",
+ "generatedAt": "2026-11-21T18:56:56.860Z",
  "tournaments": [
   {
    "key": "2794",
    "season": "2026",
    "name": "Finals",
    "file": "news-ticker/2794-2026.json",
-   "items": 289,
+   "items": 291,
    "byType": {
     "digest": 38,
-    "quote": 238,
+    "quote": 240,
     "report": 13
    },
-   "latestTimestamp": "2026-11-21T17:46:06.000Z",
-   "updatedAt": "2026-11-21T18:35:46.953Z"
+   "latestTimestamp": "2026-11-21T18:14:05.000Z",
+   "updatedAt": "2026-11-21T18:56:56.860Z"
   },
   {
    "key": "tour",
@@ -26,7 +26,7 @@
     "digest": 26
    },
    "latestTimestamp": "2026-11-21T17:12:00.000Z",
-   "updatedAt": "2026-11-21T18:35:46.953Z"
+   "updatedAt": "2026-11-21T18:56:56.860Z"
   },
   {
    "key": "1681",
@@ -56,6 +56,116 @@
   }
  ],
  "latest": [
+  {
+   "id": "digest-e83dc8d1af0113",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2973",
+   "player": "B. Shelton",
+   "opponentId": "2382",
+   "opponent": "C. Alcaraz",
+   "tournament": "Finals",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "eventKey": "12181584",
+   "context": "after losing to C. Alcaraz",
+   "category": "Quotes",
+   "timestamp": "2026-11-21T18:14:05.000Z",
+   "members": [
+    "quote-034854c29c460f",
+    "quote-915c78b1cb82fe",
+    "quote-9ad6146ada4394",
+    "quote-c442e91631c816"
+   ],
+   "memberHash": "2469654ee1421268",
+   "digestedAt": "2026-11-21T18:38:04.866Z",
+   "blocks": [
+    {
+     "label": "on his improvement against top players like Alcaraz",
+     "text": "I think I've made big improvements. I think that every matchup is different. Obviously I played Carlos three times this year, and I beat him once. In my opinion, my level has improved dramatically this year, and that's what I continue to focus on.",
+     "from": [
+      "quote-9ad6146ada4394",
+      "quote-915c78b1cb82fe"
+     ]
+    },
+    {
+     "label": "on his season and the third man narrative",
+     "text": "It's hard to give my season a grade. The media always want a story, or a third man, or who will be the next protagonist. I'm just focused on my level. I have big goals, dreams and aspirations. I'm doing everything in my power, together with my team, to keep moving in the right direction and be the best version of myself. All my focus is there.",
+     "from": [
+      "quote-034854c29c460f",
+      "quote-c442e91631c816"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "4fa430883294f1d8",
+   "publishedAt": "2026-11-21T18:10:57.526Z",
+   "revisedAt": "2026-11-21T18:56:56.860Z",
+   "revision": 1,
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "quote-915c78b1cb82fe",
+   "type": "quote",
+   "playerId": "2973",
+   "opponentId": "2382",
+   "player": "B. Shelton",
+   "opponent": "C. Alcaraz",
+   "tournament": "Finals",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-21T18:14:05.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after losing to C. Alcaraz",
+   "eventKey": "12181584",
+   "won": false,
+   "text": "In my opinion, my level has improved dramatically this year, and that’s what I continue to focus on.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Ubitennis",
+   "sourceUrl": "https://www.ubitennis.net/2026/11/ben-shelton-shuts-down-2026-season-with-mixed-feelings/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his improved level against top players",
+   "sourceHash": "bc4ebb0aa7c51e95",
+   "publishedAt": "2026-11-21T18:56:56.860Z",
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "quote-9ad6146ada4394",
+   "type": "quote",
+   "playerId": "2973",
+   "opponentId": "2382",
+   "player": "B. Shelton",
+   "opponent": "C. Alcaraz",
+   "tournament": "Finals",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-21T18:14:05.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after losing to C. Alcaraz",
+   "eventKey": "12181584",
+   "won": false,
+   "text": "I think I’ve made big improvements. I think that every matchup is different. Obviously I played Carlos (Alcaraz) three times this year, and I beat him once,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Ubitennis",
+   "sourceUrl": "https://www.ubitennis.net/2026/11/ben-shelton-shuts-down-2026-season-with-mixed-feelings/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his record against top-three players",
+   "sourceHash": "513e7cdc98f97a9f",
+   "publishedAt": "2026-11-21T18:56:56.860Z",
+   "file": "news-ticker/2794-2026.json"
+  },
   {
    "id": "digest-579fd62388beb8",
    "type": "digest",
@@ -193,48 +303,6 @@
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "topic": "On his ATP Finals semi-final win over Shelton",
    "sourceHash": "62b87780c3109d87",
-   "publishedAt": "2026-11-21T18:10:57.526Z",
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "digest-e83dc8d1af0113",
-   "type": "digest",
-   "version": 1,
-   "playerId": "2973",
-   "player": "B. Shelton",
-   "opponentId": "2382",
-   "opponent": "C. Alcaraz",
-   "tournament": "Finals",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "eventKey": "12181584",
-   "context": "after losing to C. Alcaraz",
-   "category": "Quotes",
-   "timestamp": "2026-11-21T17:35:17.000Z",
-   "members": [
-    "quote-034854c29c460f",
-    "quote-c442e91631c816"
-   ],
-   "memberHash": "19f098dc6eddd9a0",
-   "digestedAt": "2026-11-21T17:37:44.821Z",
-   "blocks": [
-    {
-     "label": "on being called the third man behind Sinner, Alcaraz",
-     "text": "The media always want a story, or a third man, or who will be the next protagonist. I'm just focused on my level. I have big goals, dreams and aspirations. I'm doing everything in my power, together with my team, to keep moving in the right direction and be the best version of myself. All my focus is there.",
-     "from": [
-      "quote-c442e91631c816"
-     ]
-    },
-    {
-     "label": "on grading his season",
-     "text": "It's hard to give my season a grade.",
-     "from": [
-      "quote-034854c29c460f"
-     ]
-    }
-   ],
-   "model": "claude-opus-5-5",
-   "sourceHash": "7e8d57d8c9cc507d",
    "publishedAt": "2026-11-21T18:10:57.526Z",
    "file": "news-ticker/2794-2026.json"
   },
@@ -1717,70 +1785,6 @@
    ],
    "model": "claude-opus-5-5",
    "sourceHash": "384e3ed0fe393546",
-   "publishedAt": "2026-11-20T22:43:49.714Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-ee76d95cb28ab2",
-   "type": "quote",
-   "playerId": "1093",
-   "opponentId": null,
-   "player": "D. Medvedev",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-20T21:18:00.000Z",
-   "timestampKind": "observed (Tennis TV published the clip then)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "A lot of tie breaks, match point saves, I mean, the last match we played, he saved the match point to beat me … really looking forward to it because it's our first meeting this year. So, it's going to be fun.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "On-court interview",
-   "sourceUrl": "https://www.tennistv.com/videos/4612172/turin-2026-rr-medvedev-interview",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
-   "interview": "on-court",
-   "topic": "On facing Zverev in the semi-final",
-   "sourceHash": "ef729fdb030396f7",
-   "publishedAt": "2026-11-20T22:43:49.714Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-fd5f6cae3df5ce",
-   "type": "quote",
-   "playerId": "1093",
-   "opponentId": null,
-   "player": "D. Medvedev",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-20T21:18:00.000Z",
-   "timestampKind": "observed (Tennis TV published the clip then)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "Look, I said before the tournament that actually a lot of times for me the finals is a great tournament because whenever you finish, great. I mean, some rest after a tough end of the season, etc. Well, if you continue playing, it's great as well because that's my job and I love to win. … But of course, when I'm on court, always fighting to win and happy that I managed to fight well today.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "On-court interview",
-   "sourceUrl": "https://www.tennistv.com/videos/4612172/turin-2026-rr-medvedev-interview",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the clip's audio, transcribed by the interviews worker",
-   "interview": "on-court",
-   "topic": "On the Finals and his approach to winning",
-   "sourceHash": "ff7058b02708d64e",
    "publishedAt": "2026-11-20T22:43:49.714Z",
    "file": "news-ticker/tour-2026.json"
   }
