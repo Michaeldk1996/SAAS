@@ -107,7 +107,7 @@ module.exports = {
     //    used when the match has no manual-inputs.json row. mode 'off' | 'shadow' (read and shown, never moves the
     //    price) | 'on'. scale caps an automatic read at scale × maxMagnitude (0.3 × 10pp = 3pp). Go-live switch = mode.
     subjective:     { id: 2,  maxMagnitude: 0.10, gated: false,
-                      context: { mode: 'shadow', scale: 0.3, model: 'claude-sonnet-5-5', windowDays: 45, perPlayer: 8,
+                      context: { mode: 'on', scale: 0.3, model: 'claude-sonnet-5-5', windowDays: 45, perPlayer: 8,
                                  briefMaxChars: 24000 } },
     // 3. H2H record — dominance-weighted head-to-head (v2.0 redesign 2026-07).
     //    Per-meeting surface & recency filters MULTIPLY, set-score dominance

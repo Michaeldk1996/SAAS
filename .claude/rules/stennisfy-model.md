@@ -31,8 +31,8 @@ Founder rulings: TEN-418 card 7a80b6fe, R1 review and R2 review 73f754f9 (2026-1
   Favours "Gated", Why "Best of 3: this layer applies to best-of-five only". No placeholder rows for layers the engine
   lacks (Round performance, H2H trend, Tournament surface speed). The engine's "Subjective input" is named "Match context"
   (founder 2026-11-19): the model's own read of our match reports and quotes (`h2h-model/context.js`), a
-  `manual-inputs.json` note winning over it; `subjective.context.mode` = 'shadow' (shown, never priced) until the founder
-  rules on the measuring period. **Test:** `tools/test-model-layers-1119.js`. No Round pill when the feed sends no round.
+  `manual-inputs.json` note winning over it; `subjective.context.mode` = 'on' (founder 2026-11-21, "Switch on for now": the
+  read moves the price, capped at scale × 10pp = 3pp; 'shadow' = shown, never priced). **Test:** `tools/test-model-layers-1119.js`. No Round pill when the feed sends no round.
 - **The model sections are never hidden (founder 2026-11-18, replacing the 0–30 h state-2 display gate of 2026-07-25,
   the 120-min stale-Pinnacle dash of 2026-11-01 and the in-play line).** Every match with a model run shows Market
   context, Value layers, Fair price & value and Biggest movers from that run. Market context's scope line adds a plain
@@ -155,9 +155,12 @@ Founder rulings: TEN-418 card 7a80b6fe, R1 review and R2 review 73f754f9 (2026-1
   `bestPrices`, behind the Soft Book Value flag) takes the best current price per side across every book on `bookNow`
   except Pinnacle (`config.value.sharpBooks`) and exchanges, as the page's Best soft does. **Test:** `h2h-model/test-h2h.js`
   "Stage 3 soft reference".
-- **Verdict pills = the model's own flags** (`stage3.flags`, never recomputed): Sharp value / Soft book value (green) on
-  the flagged side, Market side (grey) on the other; no flag = No value, red on the side with the larger engine edge,
-  grey on the other. A typed odd moves only its own gap.
+- **Verdict pills = the model's own flags** (`stage3.flags`, never recomputed) **plus the prediction market** (founder
+  2026-11-21, "Also prediction markets!"): Prediction market value = adjusted fair probability − the prediction market's
+  no-vig probability (`edgePredOf`, Polymarket else Kalshi, live) ≥ 3pp (`EDGE_PRED_EDGE` = `value.sharpEdge`); order
+  Sharp value → Prediction market value → Soft book value (green) on the flagged side, Market side (grey) on the other; no flag = No value, red on the side with the larger engine edge,
+  grey on the other (the prediction edge counts in that comparison). A typed odd moves only its own gap. **Test:**
+  `tools/test-model-layers-1119.js` "value verdict".
 - **Biggest movers share** = the three largest shifts over the summed shifts of every layer that moved (absolute values).
 - **Base, net adjustment and adjusted fair are shown as computed, with no step line between them** (founder 2026-11-16:
   "follow the design export"). They do not add up because the model applies the rank-tier ceiling and the stage-3

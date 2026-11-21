@@ -16,7 +16,9 @@ Applies to the Match analysis modal's **Key Factors** tab in `bsp-consult-dashbo
 
 - **Key Factors — best-soft-book gap (founder ruling 2026-08-02; founder TEN-380 Q11 keeps it through TEN-380).** In the Stennisfy
   Model box, the **Pinnacle** panel prints its real `edgeVsPinnacle` pp gap (the same edge that drives the SHARP VALUE / NO
-  VALUE flag; no edge → no flag). The **Best soft** panel shows **only the real price + bookmaker name; its gap is a dash**,
+  VALUE flag; no edge → no flag). **Prediction market (founder 2026-11-21):** a side with no Pinnacle value whose
+  adjusted fair probability beats the live prediction market's no-vig probability by more than the same 0.5pp reads
+  PREDICTION VALUE (green); no Pinnacle edge and no prediction price → no flag. The **Best soft** panel shows **only the real price + bookmaker name; its gap is a dash**,
   never a computed pp. Rationale: best odds **can't be de-vigged** — the best price per side can come from different books,
   and even a single book's price still carries its overround — so `fairP − 1/softPx` would fold the book margin into the
   "edge", a biased number next to Pinnacle's clean edge (the "never show a false-precision number" rule).

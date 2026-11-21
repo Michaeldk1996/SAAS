@@ -12149,14 +12149,23 @@ function edgeLayersHtml(e, names, keys){
 // ── Fair price & value ─────────────────────────────────────────────────────
 // Verdicts are the model's own flags (stage3.flags, the live thresholds: Sharp Value ≥ 3% vs Pinnacle no-vig, Soft
 // Book Value ≥ 5% vs the best soft price), never recomputed here; a typed odd moves only its own gap.
-function edgeVerdicts(e){
-  const st3 = e.stage3 || {}, flags = st3.flags || [];
-  const by = s => { const f = flags.filter(x => x.side === s); return f.find(x => /sharp/i.test(x.type)) ? 'Sharp value' : (f.find(x => /soft/i.test(x.type)) ? 'Soft book value' : null); };
+// Prediction market value (founder 2026-11-21, "Also prediction markets!"): the adjusted fair probability minus the
+// prediction market's no-vig probability (edgePredOf: Polymarket, else Kalshi, read live), flagged at the Sharp Value
+// threshold (EDGE_PRED_EDGE = h2h-model config value.sharpEdge, 3%). Order: Sharp value, then this, then Soft book value.
+const EDGE_PRED_EDGE = 0.03;
+function edgePredEdge(m, prob, s){
+  const pr = m ? edgePredOf(m) : null, nv = pr ? edgeNoVig(pr.now, s) : null;
+  return prob != null && nv != null ? prob - nv : null;
+}
+function edgeVerdicts(e, m){
+  const st3 = e.stage3 || {}, flags = st3.flags || [], fair = st3.fair || {};
+  const pred = s => { const g = edgePredEdge(m, fair[s] && fair[s].prob, s); return g != null && g >= EDGE_PRED_EDGE; };
+  const by = s => { const f = flags.filter(x => x.side === s); return f.find(x => /sharp/i.test(x.type)) ? 'Sharp value' : pred(s) ? 'Prediction market value' : (f.find(x => /soft/i.test(x.type)) ? 'Soft book value' : null); };
   const v = { p1: by('p1'), p2: by('p2') };
   if (v.p1 || v.p2){
     return { p1: v.p1 ? { t: v.p1, c: 'pos' } : { t: 'Market side', c: '' }, p2: v.p2 ? { t: v.p2, c: 'pos' } : { t: 'Market side', c: '' } };
   }
-  const best = s => Math.max(...[st3.sharp && st3.sharp.edge && st3.sharp.edge[s], st3.soft && st3.soft.edge && st3.soft.edge[s]].filter(x => x != null && isFinite(x)), -Infinity);
+  const best = s => Math.max(...[st3.sharp && st3.sharp.edge && st3.sharp.edge[s], st3.soft && st3.soft.edge && st3.soft.edge[s], edgePredEdge(m, fair[s] && fair[s].prob, s)].filter(x => x != null && isFinite(x)), -Infinity);
   const dec = best('p1') >= best('p2') ? 'p1' : 'p2';
   return { p1: { t: 'No value', c: dec === 'p1' ? 'neg' : '' }, p2: { t: 'No value', c: dec === 'p2' ? 'neg' : '' } };
 }
@@ -12180,7 +12189,7 @@ function edgeFairHtml(m, e, names, keys){
   const b105 = edgeB105Line(m);
   const prob = s => fair[s] && fair[s].prob != null ? fair[s].prob : null;
   edgeB105Ctx = { id: m && m.id, fair: { p1: prob('p1'), p2: prob('p2') } };
-  const vd = edgeVerdicts(e);
+  const vd = edgeVerdicts(e, m);
   const head = s => `<div class="sm-ich-s ${s === 'p1' ? 'a' : 'b'}"><div class="sm-ich-w">${smAv(names[s], keys[s], 38, s === 'p1')}<span class="sm-fp-who">${smName(names[s], keys[s])}<span class="sm-vd ${vd[s].c}">${edgeEsc(vd[s].t)}</span></span></div>`
     + `<span class="sm-ich-big" title="Adjusted fair odd: the model base price after the value layers. No margin.">${fair[s] && fair[s].odds != null ? Number(fair[s].odds).toFixed(2) : '—'}</span></div>`;
   const field = (kind, s, def) => {
@@ -20465,8 +20474,11 @@ function kfModelCard(m){
   const pinRow = (m.oddsMovement || m._oddsLoaded) ? aOddsRowsOf(m, {}).rows.find(r => /^pinnacle/i.test(r.name) && !r.noData && !r.stale) || null : null;
   const pinNow = side => { const v = pinRow ? pinRow[side === 1 ? 'aNow' : 'bNow'] : null; return v != null && v >= 1.01 ? Number(v) : null; };
   const col = (side, name, fairP, edge, divider) => {
-    const fair = has && fairP > 0 ? (1 / fairP).toFixed(2) : FH_DASHC, sharp = edge != null && edge > 0.005;
-    const flag = has && edge != null ? `<span class="kf-flag" style="align-self:flex-start; ${KF_CAP} color:${sharp ? C.up : C.dn}; background:${C.inner}; border:1px solid transparent; border-radius:6px; padding:4px 8px; white-space:nowrap;">${sharp ? 'SHARP VALUE' : 'NO VALUE'}</span>` : '';
+    // prediction market (founder 2026-11-21): no Pinnacle value → the live prediction market's no-vig gap, same 0.5pp line
+    const pe = has && typeof edgePredEdge === 'function' ? edgePredEdge(m, fairP, side === 1 ? 'p1' : 'p2') : null;
+    const predV = !(edge != null && edge > 0.005) && pe != null && pe > 0.005;
+    const fair = has && fairP > 0 ? (1 / fairP).toFixed(2) : FH_DASHC, sharp = (edge != null && edge > 0.005) || predV;
+    const flag = has && (edge != null || pe != null) ? `<span class="kf-flag" style="align-self:flex-start; ${KF_CAP} color:${sharp ? C.up : C.dn}; background:${C.inner}; border:1px solid transparent; border-radius:6px; padding:4px 8px; white-space:nowrap;">${predV ? 'PREDICTION VALUE' : sharp ? 'SHARP VALUE' : 'NO VALUE'}</span>` : '';
     const po = pin ? (side === 1 ? pin.p1 : pin.p2) : null, pn = pinNow(side);
     const px = !has ? FH_DASHC : pn != null ? pn.toFixed(2) : po != null ? Number(po).toFixed(2) : FH_DASHC;
     // compared as printed (2 dp): 1.8137 against an opener of 1.81 reads "1.81 → 1.81", so no move is claimed

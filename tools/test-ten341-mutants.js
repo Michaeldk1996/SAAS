@@ -66,8 +66,8 @@ const MUTANTS = [
   ['news: not newest first', 'return [...by.values()].sort((x, y) => y.ts - x.ts);', 'return [...by.values()];'],
   // Stennisfy Model
   ['Q11: the Best soft gap computed', "${kfModelBox('Best soft', FH_DASHC, C.t3, soft,", "${kfModelBox('Best soft', has && bo && fairP > 0 ? '+' + ((fairP - 1 / bo.price) * 100).toFixed(1) + 'pp' : FH_DASHC, C.t3, soft,"],
-  ['model: the flag off another threshold', 'sharp = edge != null && edge > 0.005;', 'sharp = edge != null && edge > 0.05;'],
-  ['model: a verdict printed with no Pinnacle edge', 'const flag = has && edge != null ?', 'const flag = has ?'],
+  ['model: the flag off another threshold', 'sharp = (edge != null && edge > 0.005) || predV;', 'sharp = (edge != null && edge > 0.05) || predV;'],
+  ['model: a verdict printed with no Pinnacle edge', 'const flag = has && (edge != null || pe != null) ?', 'const flag = has ?'],
   ['model: the box stops linking to the Model page', "go: `openEdgeModelFromMatch('${idAttr}')`", "go: `aGoTab('odds')`"],
   ['model: the Model page\'s net adjustment ignored', 'const net = mo && mo.ok && mo.stage2 && mo.stage2.totalDeltaP1 != null ? Number(mo.stage2.totalDeltaP1) * 100 : null;', 'const net = null;'],
   ['model: "Now" from the legacy books only (chart-shape Pinnacle loses its Now)', "const pinRow = (m.oddsMovement || m._oddsLoaded) ? aOddsRowsOf(m, {}).rows.find(", "const pinRow = (m.oddsMovement && m.oddsMovement.books && Object.keys(m.oddsMovement.books).some(k => /pinnacle/i.test(k))) ? aOddsRowsOf(m, {}).rows.find("],

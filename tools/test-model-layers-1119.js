@@ -21,7 +21,7 @@ const baseCtx = (a, b, match) => ({ p1: P(a), p2: P(b), match: match || {}, matc
 assert.strictEqual(config.adjustments.styleMatchup.readLabels, true, 'style matchup live (founder 2026-11-19)');
 assert.strictEqual(config.adjustments.oddsMovement.lead, 'Bet105', 'odds movement on Bet105 (founder 2026-11-20)');
 assert.strictEqual(config.adjustments.courtSpeedRecord.gated, true);
-assert.strictEqual(config.adjustments.subjective.context.mode, 'shadow', 'reads are made and shown, never priced');
+assert.strictEqual(config.adjustments.subjective.context.mode, 'on', 'founder 2026-11-21: "Switch on for now" — the read moves the price (capped)');
 ok('style matchup live; Bet105 lead, court speed record and the context read still staged');
 
 // --- style matchup ---
@@ -144,5 +144,26 @@ ok('style matchup: 5pp cap, 3pp once the favoured player is at 80%+ on the base'
   assert.strictEqual(mk({})(m), null);
 }
 ok('prediction market: Polymarket else Kalshi, ask as decimal odds, open = first recorded read');
+
+// --- the value verdict reads the prediction market too (founder 2026-11-21, "Also prediction markets!") ---
+{
+  const html = require('fs').readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
+  const grab = re => re.exec(html)[0];
+  const src = grab(/\nconst EDGE_PRED_EDGE = [\s\S]*?\nfunction edgeVerdicts\(e, m\)\{[\s\S]*?\n\}\n/) + grab(/\nfunction edgeNoVig\(q, side\)\{.*\n/);
+  const mk = pred => new Function('edgePredOf', src + ' return edgeVerdicts;')(() => pred);
+  const e = (flags) => ({ stage3: { fair: { p1: { prob: 0.60 }, p2: { prob: 0.40 } }, flags, sharp: { edge: { p1: 0.01, p2: -0.01 } } } });
+  const pm = (a, b) => ({ name: 'Polymarket', now: { p1: a, p2: b } });   // 2.00 / 2.00 → 50% no-vig
+  let v = mk(pm(2, 2))(e([]), {});
+  assert.strictEqual(v.p1.t, 'Prediction market value', '60% fair vs 50% no-vig = +10pp ≥ 3pp');
+  assert.strictEqual(v.p2.t, 'Market side');
+  v = mk(pm(1.70, 2.40))(e([]), {});                                       // 1/1.7=.588 1/2.4=.417 → p1 58.5%: +1.5pp
+  assert.strictEqual(v.p1.t, 'No value', 'under the 3pp line');
+  v = mk(pm(2, 2))(e([{ side: 'p1', type: 'Sharp Value' }]), {});
+  assert.strictEqual(v.p1.t, 'Sharp value', 'a Pinnacle flag reads first');
+  v = mk(null)(e([]), {});
+  assert.strictEqual(v.p1.t, 'No value', 'no prediction market = the bookmaker verdict alone');
+  assert.ok(/predV \? 'PREDICTION VALUE'/.test(html), 'Key factors names a prediction-market value flag');
+}
+ok('value verdict: prediction market at the 3pp line, after Sharp value, before Soft book value');
 
 console.log(`model layers 2026-11-19: ${n} checks passed`);
