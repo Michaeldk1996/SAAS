@@ -1,192 +1,6 @@
 {
  "runs": [
   {
-   "at": "2026-11-13T18:48:59.263Z",
-   "activeTournaments": [
-    "Stockholm"
-   ],
-   "tournaments": [
-    {
-     "name": "Stockholm",
-     "key": "1681",
-     "sources": [
-      {
-       "name": "ATP Tour daily report (via the official tournament site)",
-       "articles": 22,
-       "candidates": 12,
-       "robotsStatus": 200,
-       "skippedByRobots": 0,
-       "unnamed": 4
-      }
-     ],
-     "fromOutlets": 52,
-     "counts": {
-      "candidates": 64,
-      "droppedNotVerbatim": 0,
-      "droppedNoPlayer": 0,
-      "droppedAmbiguous": 0,
-      "notTranslatedNoKey": 0,
-      "notTranslatedApiError": 0,
-      "droppedTranslationCheck": 0,
-      "droppedEnglishExists": 0,
-      "mergedSameQuote": 2,
-      "alreadyHeld": 0,
-      "items": 62,
-      "tokens": {
-       "input": 0,
-       "output": 0
-      },
-      "modelError": null,
-      "retryUrls": 0
-     },
-     "added": 0,
-     "held": 85,
-     "byCategory": {
-      "Quotes": 55,
-      "Interviews": 24,
-      "Injuries": 6
-     },
-     "finishedMatches": 16,
-     "matchesWithWinnerQuote": 13
-    },
-    {
-     "name": "ATP Tour",
-     "key": "tour",
-     "sources": [],
-     "fromOutlets": 1,
-     "counts": {
-      "candidates": 1,
-      "droppedNotVerbatim": 0,
-      "droppedNoPlayer": 0,
-      "droppedAmbiguous": 0,
-      "notTranslatedNoKey": 0,
-      "notTranslatedApiError": 0,
-      "droppedTranslationCheck": 0,
-      "droppedEnglishExists": 0,
-      "mergedSameQuote": 0,
-      "alreadyHeld": 0,
-      "items": 1,
-      "tokens": {
-       "input": 978,
-       "output": 101
-      },
-      "modelError": null,
-      "retryUrls": 0,
-      "topicsAdded": 1
-     },
-     "added": 1,
-     "held": 43,
-     "byCategory": {
-      "Interviews": 37,
-      "Injuries": 6
-     },
-     "finishedMatches": 0,
-     "matchesWithWinnerQuote": 0
-    }
-   ],
-   "newItems": 1,
-   "tokens": {
-    "input": 978,
-    "output": 101
-   },
-   "ttvInbox": {
-    "held": 51,
-    "routed": 51
-   },
-   "atpInbox": {
-    "held": 5,
-    "routed": 1
-   },
-   "outlets": {
-    "read": 131,
-    "withCandidates": 1,
-    "blocked": [
-     "El Deber: the site refuses a plain request",
-     "Sport1.ba (Oslobodjenje): the site refuses a plain request",
-     "Tenniskafe: the site refuses a plain request",
-     "TenisovySvet.cz: the site refuses a plain request",
-     "AS (Diario AS): the site refuses a plain request",
-     "Aftonbladet: unexpected answer"
-    ],
-    "articlesFetched": 28,
-    "paywalled": 6,
-    "unnamed": 32,
-    "byOutlet": [
-     {
-      "outlet": "RedGol",
-      "country": "Chile",
-      "language": "es",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "We Love Tennis",
-      "country": "France",
-      "language": "fr",
-      "fetched": 2,
-      "candidates": 0
-     },
-     {
-      "outlet": "Fox Sports Australia",
-      "country": "Australia",
-      "language": "en",
-      "fetched": 6,
-      "candidates": 0
-     },
-     {
-      "outlet": "Tennis Majors",
-      "country": "INT",
-      "language": "en",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "Corriere dello Sport",
-      "country": "Italy",
-      "language": "it",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "La Gazzetta dello Sport",
-      "country": "Italy",
-      "language": "it",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "The Indian Express",
-      "country": "India",
-      "language": "en",
-      "fetched": 6,
-      "candidates": 0
-     },
-     {
-      "outlet": "Ubitennis",
-      "country": "Italy",
-      "language": "it",
-      "fetched": 1,
-      "candidates": 1
-     },
-     {
-      "outlet": "ESPN México (Tenis)",
-      "country": "Mexico",
-      "language": "es",
-      "fetched": 6,
-      "candidates": 0
-     },
-     {
-      "outlet": "ESPN",
-      "country": "USA",
-      "language": "en",
-      "fetched": 3,
-      "candidates": 0
-     }
-    ]
-   },
-   "alerts": []
-  },
-  {
    "at": "2026-11-13T19:19:00.620Z",
    "activeTournaments": [
     "Stockholm"
@@ -67669,6 +67483,132 @@
       "candidates": 0
      }
     ]
+   },
+   "rehomed": 0,
+   "alerts": []
+  },
+  {
+   "at": "2026-11-22T05:42:37.859Z",
+   "activeTournaments": [
+    "Finals"
+   ],
+   "tournaments": [
+    {
+     "name": "Finals",
+     "key": "2794",
+     "sources": [],
+     "fromOutlets": 29,
+     "counts": {
+      "candidates": 29,
+      "droppedNotVerbatim": 0,
+      "droppedNoPlayer": 0,
+      "droppedAmbiguous": 0,
+      "notTranslatedNoKey": 0,
+      "notTranslatedApiError": 0,
+      "droppedTranslationCheck": 0,
+      "droppedEnglishExists": 0,
+      "mergedSameQuote": 0,
+      "alreadyHeld": 0,
+      "items": 29,
+      "tokens": {
+       "input": 0,
+       "output": 0
+      },
+      "modelError": null,
+      "retryUrls": 0
+     },
+     "digests": {
+      "cards": 51,
+      "kept": 35,
+      "made": 0,
+      "failed": 0,
+      "waiting": 4,
+      "single": 12
+     },
+     "added": 0,
+     "held": 304,
+     "byCategory": {
+      "Quotes": 223,
+      "Interviews": 63,
+      "Injuries": 18
+     },
+     "finishedMatches": 7,
+     "matchesWithWinnerQuote": 7
+    },
+    {
+     "name": "ATP Tour",
+     "key": "tour",
+     "sources": [],
+     "fromOutlets": 25,
+     "counts": {
+      "candidates": 25,
+      "droppedNotVerbatim": 0,
+      "droppedNoPlayer": 0,
+      "droppedAmbiguous": 0,
+      "notTranslatedNoKey": 0,
+      "notTranslatedApiError": 0,
+      "droppedTranslationCheck": 0,
+      "droppedEnglishExists": 0,
+      "mergedSameQuote": 0,
+      "alreadyHeld": 0,
+      "items": 25,
+      "tokens": {
+       "input": 0,
+       "output": 0
+      },
+      "modelError": null,
+      "retryUrls": 0
+     },
+     "digests": {
+      "cards": 57,
+      "kept": 21,
+      "made": 0,
+      "failed": 0,
+      "waiting": 6,
+      "single": 30
+     },
+     "added": 0,
+     "held": 128,
+     "byCategory": {
+      "Interviews": 99,
+      "Injuries": 8,
+      "Quotes": 21
+     },
+     "finishedMatches": 0,
+     "matchesWithWinnerQuote": 0
+    }
+   ],
+   "newItems": 0,
+   "tokens": {
+    "input": 0,
+    "output": 0
+   },
+   "press": {
+    "matchesLookedUp": 0,
+    "answers": 0
+   },
+   "ttvInbox": {
+    "held": 106,
+    "routed": 23
+   },
+   "atpInbox": {
+    "held": 48,
+    "routed": 31
+   },
+   "outlets": {
+    "read": 131,
+    "withCandidates": 0,
+    "blocked": [
+     "El Deber: the site refuses a plain request",
+     "Sport1.ba (Oslobodjenje): the site refuses a plain request",
+     "Tenniskafe: the site refuses a plain request",
+     "TenisovySvet.cz: the site refuses a plain request",
+     "Aftonbladet: unexpected answer"
+    ],
+    "articlesFetched": 0,
+    "paywalled": 0,
+    "unnamed": 0,
+    "byOutlet": []
    },
    "rehomed": 0,
    "alerts": []
