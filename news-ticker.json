@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-22T20:05:02.925Z",
+ "generatedAt": "2026-11-22T20:24:37.991Z",
  "tournaments": [
   {
    "key": "2794",
@@ -13,7 +13,7 @@
     "digest": 39
    },
    "latestTimestamp": "2026-11-22T19:45:26.000Z",
-   "updatedAt": "2026-11-22T20:05:02.925Z"
+   "updatedAt": "2026-11-22T20:24:37.991Z"
   },
   {
    "key": "tour",
@@ -287,7 +287,7 @@
     "minutes": 121
    },
    "category": "Statistics",
-   "text": "Alcaraz beat Zverev for the 8th time in 14 meetings, 6-2, 7-6 in the final.\n\nAlcaraz: W: 28 / UE: 29 | DR: 1.27\n\nZverev: W: 12 / UE: 31 | DR: 0.78",
+   "text": "Alcaraz beat Zverev for the 8th time in 14 meetings, 6-2, 7-6 in the final.\n\nAlcaraz: W: 28 / UE: 25 | DR: 1.27\n\nZverev: W: 12 / UE: 31 | DR: 0.78",
    "ms": {
     "a": "C. Alcaraz",
     "b": "A. Zverev",
@@ -317,7 +317,7 @@
      [
       "1st serve points won",
       71,
-      56,
+      54,
       "%"
      ],
      [
@@ -328,7 +328,7 @@
      ],
      [
       "Ratio W/UE",
-      0.97,
+      1.12,
       0.39,
       "2"
      ],
@@ -340,7 +340,7 @@
      ],
      [
       "Unforced / point",
-      0.2,
+      0.17,
       0.22,
       "2",
       1
@@ -349,7 +349,7 @@
    },
    "baseText": "Alcaraz beat Zverev for the 8th time in 14 meetings, 6-2, 7-6 in the final.",
    "rating": [
-    "Alcaraz: W: 28 / UE: 29 | DR: 1.27",
+    "Alcaraz: W: 28 / UE: 25 | DR: 1.27",
     "Zverev: W: 12 / UE: 31 | DR: 0.78"
    ],
    "fields": {
@@ -439,7 +439,7 @@
     "winner": {
      "aces": 7,
      "winners": 28,
-     "unforcedErrors": 29,
+     "unforcedErrors": 25,
      "breakPointsSaved": 3,
      "breakPointsFaced": 5,
      "breakPointsSource": "box score"
@@ -457,8 +457,10 @@
    "sourceUrl": "pbp/12181958.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "fe355e9c1ecd7527",
+   "sourceHash": "f44ce8cc654eeb05",
    "publishedAt": "2026-11-22T19:42:27.176Z",
+   "revisedAt": "2026-11-22T20:24:37.991Z",
+   "revision": 1,
    "file": "news-ticker/2794-2026.json"
   },
   {
