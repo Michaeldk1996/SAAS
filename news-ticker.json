@@ -1,6 +1,20 @@
 {
- "generatedAt": "2026-11-22T16:33:29.860Z",
+ "generatedAt": "2026-11-22T17:13:00.210Z",
  "tournaments": [
+  {
+   "key": "2794",
+   "season": "2026",
+   "name": "Finals",
+   "file": "news-ticker/2794-2026.json",
+   "items": 321,
+   "byType": {
+    "quote": 268,
+    "digest": 39,
+    "report": 14
+   },
+   "latestTimestamp": "2026-11-22T16:15:38.000Z",
+   "updatedAt": "2026-11-22T17:13:00.210Z"
+  },
   {
    "key": "tour",
    "season": "2026",
@@ -13,20 +27,6 @@
    },
    "latestTimestamp": "2026-11-22T13:41:10.000Z",
    "updatedAt": "2026-11-22T16:33:29.860Z"
-  },
-  {
-   "key": "2794",
-   "season": "2026",
-   "name": "Finals",
-   "file": "news-ticker/2794-2026.json",
-   "items": 321,
-   "byType": {
-    "quote": 268,
-    "digest": 39,
-    "report": 14
-   },
-   "latestTimestamp": "2026-11-22T09:20:56.000Z",
-   "updatedAt": "2026-11-22T14:42:24.896Z"
   },
   {
    "key": "1681",
@@ -56,6 +56,39 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-a0e1f96b137713",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "Finals",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-22T16:15:38.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "innocence has been proven",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Tennis365",
+   "sourceUrl": "https://www.tennis365.com/tennis-news/daniil-medvedev-downplays-alexander-zverev-improvement-atp-finals",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On the domestic abuse allegations against him",
+   "sourceHash": "86deabb0e6bf1f94",
+   "publishedAt": "2026-11-20T23:10:15.068Z",
+   "revisedAt": "2026-11-22T17:13:00.210Z",
+   "revision": 1,
+   "file": "news-ticker/2794-2026.json"
+  },
   {
    "id": "quote-8a23b6bf6431bb",
    "type": "quote",
@@ -1534,60 +1567,6 @@
    "sourceHash": "5e2b7a5e9039d5f8",
    "publishedAt": "2026-11-21T16:58:12.190Z",
    "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "digest-943cf7d0badd57",
-   "type": "digest",
-   "version": 1,
-   "playerId": "2382",
-   "player": "C. Alcaraz",
-   "opponentId": null,
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "eventKey": null,
-   "context": null,
-   "category": "Quotes",
-   "timestamp": "2026-11-21T16:26:06.000Z",
-   "members": [
-    "quote-4f03942fa8c6c2",
-    "quote-72a8ea19637d72",
-    "quote-858a4016c87dee",
-    "quote-d64229e60fdae3"
-   ],
-   "memberHash": "b455f3f2a7e99ff2",
-   "digestedAt": "2026-11-21T17:07:33.781Z",
-   "blocks": [
-    {
-     "label": "after his win over Ben Shelton",
-     "text": "It's been a complicated match. I started a little bit nervous, more than I should have, with some errors that prevented me from getting into a good rhythm, from gaining confidence. He started the match very aggressive, very focused.",
-     "from": [
-      "quote-858a4016c87dee"
-     ]
-    },
-    {
-     "label": "on his frustrating slow start against Shelton",
-     "text": "I was a little bit frustrated at the beginning because I didn't start the match the way that I wanted to, to be honest. The break early, it was tough for me to deal with, but just happy that I came back in the second set.",
-     "from": [
-      "quote-72a8ea19637d72",
-      "quote-4f03942fa8c6c2"
-     ]
-    },
-    {
-     "label": "on staying mentally strong to beat Shelton",
-     "text": "I've been mentally strong to withstand what was coming at me, to withstand the bad feelings. Little by little I've taken steps forward, and by the end I played tremendous tennis.",
-     "from": [
-      "quote-d64229e60fdae3"
-     ]
-    }
-   ],
-   "model": "claude-opus-5-5",
-   "sourceHash": "bcb759339fa47bb3",
-   "publishedAt": "2026-11-21T16:58:12.190Z",
-   "revisedAt": "2026-11-21T17:44:39.077Z",
-   "revision": 1,
-   "file": "news-ticker/tour-2026.json"
   }
  ]
 }
