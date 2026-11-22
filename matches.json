@@ -4156,11 +4156,17 @@
       "category": "Fast"
     },
     "weather": null,
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 7.7,
+        "p2": 6
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1980_a-zverev.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1093_d-medvedev.jpg",
     "tournamentKey": "2794",
@@ -5462,27 +5468,7 @@
       "edgeVsPinnacleP1": -0.0275,
       "edgeVsPinnacleP2": 0.0275,
       "ts": "2026-11-21T01:32:54.199Z"
-    },
-    "retired": false,
-    "walkover": false,
-    "finalScore": {
-      "display": "7-6(0), 6-4",
-      "sets": [
-        {
-          "p1": 7,
-          "p2": 6
-        },
-        {
-          "p1": 6,
-          "p2": 4
-        }
-      ],
-      "p1Sets": 2,
-      "p2Sets": 0,
-      "winner": "p1"
-    },
-    "interrupted": false,
-    "partialScore": null
+    }
   },
   {
     "id": "past-12179696",
@@ -13587,7 +13573,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(6), 0-6",
+      "display": "6-7, 0-6",
       "sets": [
         {
           "p1": 6,
@@ -17133,7 +17119,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(8), 7-5",
+      "display": "7-6, 7-5",
       "sets": [
         {
           "p1": 7,
@@ -22497,7 +22483,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 7-6(6)",
+      "display": "6-4, 7-6",
       "sets": [
         {
           "p1": 6,
