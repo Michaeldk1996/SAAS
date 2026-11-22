@@ -1,19 +1,19 @@
 {
- "generatedAt": "2026-11-22T22:15:00.651Z",
+ "generatedAt": "2026-11-22T23:18:47.132Z",
  "tournaments": [
   {
    "key": "2794",
    "season": "2026",
    "name": "Finals - Turin",
    "file": "news-ticker/2794-2026.json",
-   "items": 344,
+   "items": 347,
    "byType": {
-    "quote": 290,
+    "quote": 293,
     "report": 15,
     "digest": 39
    },
-   "latestTimestamp": "2026-11-22T21:22:36.000Z",
-   "updatedAt": "2026-11-22T22:15:00.651Z"
+   "latestTimestamp": "2026-11-22T22:41:22.000Z",
+   "updatedAt": "2026-11-22T23:18:47.132Z"
   },
   {
    "key": "tour",
@@ -56,6 +56,96 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-ee4d1e34c80ab4",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "Finals",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-22T22:41:22.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "It’s a thing I have to deal with all the time, but it’s not a thing that is bothering me all the time, … It comes once every two months, once every two and a half months, and then it’s a problem for myself.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Tennis Majors",
+   "sourceUrl": "https://www.tennismajors.com/atp/nitto-atp-finals-atp/it-comes-once-every-two-months-zverev-explains-his-ankle-says-the-davis-cup-is-not-in-danger-867755.html",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "sourceHash": "207cf63ad06fcf1c",
+   "publishedAt": "2026-11-22T23:18:47.132Z",
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "quote-8f8d95d01a981f",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "Finals",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-22T22:31:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "I think luck is always on the side of the best players in the world. Sometimes you have to earn your luck, … I think he was braver maybe today, and he earned his luck a bit more than I did.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Tennis Majors",
+   "sourceUrl": "https://www.tennismajors.com/atp/nitto-atp-finals-atp/he-earned-his-luck-a-bit-more-than-i-did-zverev-on-alcarazs-return-and-a-final-without-his-biggest-weapon-867754.html",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "sourceHash": "3118039e8e66de98",
+   "publishedAt": "2026-11-22T23:18:47.132Z",
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "quote-d3e684008acfcb",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "Finals",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-22T22:31:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "the best returners in the world",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Tennis Majors",
+   "sourceUrl": "https://www.tennismajors.com/atp/nitto-atp-finals-atp/he-earned-his-luck-a-bit-more-than-i-did-zverev-on-alcarazs-return-and-a-final-without-his-biggest-weapon-867754.html",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "sourceHash": "2e461d0a67cfa6c2",
+   "publishedAt": "2026-11-22T23:18:47.132Z",
+   "file": "news-ticker/2794-2026.json"
+  },
   {
    "id": "quote-cdace2c1356f70",
    "type": "quote",
@@ -1107,10 +1197,17 @@
      "sourceName": "ATP Tour",
      "sourceUrl": "https://www.atptour.com/en/news/alcaraz-zverev-nitto-atp-finals-2026-sunday",
      "language": "en"
+    },
+    {
+     "sourceName": "The Times of India",
+     "sourceUrl": "https://timesofindia.indiatimes.com/sports/tennis/top-stories/carlos-alcaraz-scripts-history-becomes-just-fourth-tennis-player-ever-to-achieve-rare-feat-with-atp-finals-win-over-zverev/articleshow/136083784.cms",
+     "language": "en"
     }
    ],
-   "sourceHash": "6893c1d400ab9d76",
+   "sourceHash": "4f456f4f800212cb",
    "publishedAt": "2026-11-22T22:15:00.651Z",
+   "revisedAt": "2026-11-22T23:18:47.132Z",
+   "revision": 1,
    "file": "news-ticker/2794-2026.json"
   },
   {
@@ -1351,154 +1448,6 @@
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "4e8239c0b597fb50",
    "publishedAt": "2026-11-21T23:18:06.000Z",
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "digest-2a11ad1f4d62db",
-   "type": "digest",
-   "version": 1,
-   "playerId": "1093",
-   "player": "D. Medvedev",
-   "opponentId": "2846",
-   "opponent": "F. Tiafoe",
-   "tournament": "Finals",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "eventKey": "12179702",
-   "context": "after beating F. Tiafoe",
-   "category": "Quotes",
-   "timestamp": "2026-11-21T21:59:43.000Z",
-   "members": [
-    "quote-4b185195df14d5",
-    "quote-92d5e72a81012d",
-    "quote-9f19d1424bdf25",
-    "quote-aa96a73ab584f8"
-   ],
-   "memberHash": "78e22d836dcdb3c1",
-   "digestedAt": "2026-11-21T22:10:14.841Z",
-   "blocks": [
-    {
-     "label": "after his win over Tiafoe",
-     "text": "The Finals is a great tournament because whenever you finish, it is great because you have some rest at the end of the season. But if you continue playing, that is great because I love to win. Only positives here. When I am on court, always fighting to win, and I managed to fight well today.",
-     "from": [
-      "quote-92d5e72a81012d",
-      "quote-aa96a73ab584f8"
-     ]
-    },
-    {
-     "label": "on his long rivalry with Zverev",
-     "text": "That was a crazy match actually, and it kind of brings back all the matches that we have now with him. Every time, big fight, and sometimes I win, sometimes he wins.",
-     "from": [
-      "quote-9f19d1424bdf25"
-     ]
-    },
-    {
-     "label": "on returning to the Dubai and Doha tournaments",
-     "text": "I would be happy to come back. I didn't follow too much, but from what I know, it's great there. Actually, my sister is living in Dubai now, so we'll be happy to come back there.",
-     "from": [
-      "quote-4b185195df14d5"
-     ]
-    }
-   ],
-   "model": "claude-opus-5-5",
-   "sourceHash": "0fd7e837cb424dd4",
-   "publishedAt": "2026-11-20T23:10:15.068Z",
-   "revisedAt": "2026-11-21T22:28:59.883Z",
-   "revision": 1,
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-9f19d1424bdf25",
-   "type": "quote",
-   "playerId": "1093",
-   "opponentId": "2846",
-   "player": "D. Medvedev",
-   "opponent": "F. Tiafoe",
-   "tournament": "Finals",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-21T21:59:43.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Quotes",
-   "context": "after beating F. Tiafoe",
-   "eventKey": "12179702",
-   "won": true,
-   "text": "That was a crazy match actually, and it kind of brings back all the matches that we have now with him. Every time, big fight, and sometimes I win, sometimes he wins.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "Tennis Majors",
-   "sourceUrl": "https://www.tennismajors.com/atp/nitto-atp-finals-atp/he-just-became-more-consistent-medvedev-on-what-has-changed-in-zverev-867627.html",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On his long rivalry with Zverev",
-   "sourceHash": "2f5dc4bb4c8c0b72",
-   "publishedAt": "2026-11-21T22:28:59.883Z",
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "digest-a69eadabb7a69d",
-   "type": "digest",
-   "version": 1,
-   "playerId": "1980",
-   "player": "A. Zverev",
-   "opponentId": null,
-   "opponent": null,
-   "tournament": "Finals",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "eventKey": null,
-   "context": null,
-   "category": "Quotes",
-   "timestamp": "2026-11-21T21:59:40.000Z",
-   "members": [
-    "quote-7eb9b74ec9ceb9",
-    "quote-9fe5750861bcdd",
-    "quote-a9716a341574d2",
-    "quote-b23bd0522e4316",
-    "quote-e3b93c56a74210"
-   ],
-   "memberHash": "88f096161c6b3a34",
-   "digestedAt": "2026-11-21T22:10:14.841Z",
-   "blocks": [
-    {
-     "label": "after his semifinal win over Medvedev",
-     "text": "It was a match in which both of us served incredibly well. And then I took my one chance. I was finding ways even when I was not playing my best from the baseline.",
-     "from": [
-      "quote-e3b93c56a74210",
-      "quote-7eb9b74ec9ceb9"
-     ]
-    },
-    {
-     "label": "on his serving in the win over Medvedev",
-     "text": "I am very happy with the way I served today. I felt like there were not a lot of break points because both of us were serving unbelievably.",
-     "from": [
-      "quote-b23bd0522e4316"
-     ]
-    },
-    {
-     "label": "on Medvedev's tournament and season",
-     "text": "Credit to him. He played a fantastic tournament and a fantastic season.",
-     "from": [
-      "quote-b23bd0522e4316"
-     ]
-    },
-    {
-     "label": "on the ATP Finals final against Alcaraz",
-     "text": "I hope it will be a high-level match. We had a practice session before the tournament, it was incredible. We played one set for an hour and a half. I hope we'll both be at our best level.",
-     "from": [
-      "quote-a9716a341574d2",
-      "quote-9fe5750861bcdd"
-     ]
-    }
-   ],
-   "model": "claude-opus-5-5",
-   "sourceHash": "1e893457c3b4b8f2",
-   "publishedAt": "2026-11-21T22:07:27.975Z",
-   "revisedAt": "2026-11-21T22:28:59.883Z",
-   "revision": 1,
    "file": "news-ticker/2794-2026.json"
   }
  ]
