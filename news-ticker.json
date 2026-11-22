@@ -1,19 +1,19 @@
 {
- "generatedAt": "2026-11-22T20:49:33.486Z",
+ "generatedAt": "2026-11-22T21:11:54.767Z",
  "tournaments": [
   {
    "key": "2794",
    "season": "2026",
    "name": "Finals - Turin",
    "file": "news-ticker/2794-2026.json",
-   "items": 332,
+   "items": 334,
    "byType": {
-    "quote": 278,
+    "quote": 280,
     "report": 15,
     "digest": 39
    },
-   "latestTimestamp": "2026-11-22T20:04:59.000Z",
-   "updatedAt": "2026-11-22T20:49:33.486Z"
+   "latestTimestamp": "2026-11-22T20:15:00.000Z",
+   "updatedAt": "2026-11-22T21:11:54.767Z"
   },
   {
    "key": "tour",
@@ -57,6 +57,36 @@
  ],
  "latest": [
   {
+   "id": "quote-1fb8a5f28efef7",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "Finals",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-22T20:15:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "When you’re not at your best, I guess there’s no chance – Jannik is like a wall, … If everyone is healthy, I think Jannik is still ahead. It’s as simple as that.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Tennis Majors",
+   "sourceUrl": "https://www.tennismajors.com/atp/us-open-olympics-german-atp-finals-everything-you-always-wanted-to-know-about-alexander-zverev-but-never-had-time-to-find-out-updated-after-chengdu-open-win-711982.html",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "sourceHash": "82e33f9e540f85a0",
+   "publishedAt": "2026-11-22T21:11:54.767Z",
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
    "id": "quote-640ca92f13725c",
    "type": "quote",
    "playerId": "2382",
@@ -84,6 +114,36 @@
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "ceb584f8b57b0840",
    "publishedAt": "2026-11-22T20:49:33.486Z",
+   "file": "news-ticker/2794-2026.json"
+  },
+  {
+   "id": "quote-723848b95f952e",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": "2973",
+   "player": "C. Alcaraz",
+   "opponent": "B. Shelton",
+   "tournament": "Finals",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-22T20:00:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating B. Shelton",
+   "eventKey": "12181584",
+   "won": true,
+   "text": "I’m truly proud and I’m really happy with everything,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Tennis Majors",
+   "sourceUrl": "https://www.tennismajors.com/atp/real-madrid-golf-juan-carlos-ferrero-10-questions-you-might-have-about-carlos-alcaraz-299821.html",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "sourceHash": "dea21eb4363dea0d",
+   "publishedAt": "2026-11-22T21:11:54.767Z",
    "file": "news-ticker/2794-2026.json"
   },
   {
@@ -1643,85 +1703,6 @@
    "publishedAt": "2026-11-21T21:42:37.691Z",
    "revisedAt": "2026-11-22T19:42:27.176Z",
    "revision": 4,
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "digest-e83dc8d1af0113",
-   "type": "digest",
-   "version": 1,
-   "playerId": "2973",
-   "player": "B. Shelton",
-   "opponentId": "2382",
-   "opponent": "C. Alcaraz",
-   "tournament": "Finals",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "eventKey": "12181584",
-   "context": "after losing to C. Alcaraz",
-   "category": "Quotes",
-   "timestamp": "2026-11-21T18:14:05.000Z",
-   "members": [
-    "quote-034854c29c460f",
-    "quote-915c78b1cb82fe",
-    "quote-9ad6146ada4394",
-    "quote-c442e91631c816"
-   ],
-   "memberHash": "2469654ee1421268",
-   "digestedAt": "2026-11-21T18:38:04.866Z",
-   "blocks": [
-    {
-     "label": "on his improvement against top players like Alcaraz",
-     "text": "I think I've made big improvements. I think that every matchup is different. Obviously I played Carlos three times this year, and I beat him once. In my opinion, my level has improved dramatically this year, and that's what I continue to focus on.",
-     "from": [
-      "quote-9ad6146ada4394",
-      "quote-915c78b1cb82fe"
-     ]
-    },
-    {
-     "label": "on his season and the third man narrative",
-     "text": "It's hard to give my season a grade. The media always want a story, or a third man, or who will be the next protagonist. I'm just focused on my level. I have big goals, dreams and aspirations. I'm doing everything in my power, together with my team, to keep moving in the right direction and be the best version of myself. All my focus is there.",
-     "from": [
-      "quote-034854c29c460f",
-      "quote-c442e91631c816"
-     ]
-    }
-   ],
-   "model": "claude-opus-5-5",
-   "sourceHash": "4fa430883294f1d8",
-   "publishedAt": "2026-11-21T18:10:57.526Z",
-   "revisedAt": "2026-11-21T18:56:56.860Z",
-   "revision": 1,
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-915c78b1cb82fe",
-   "type": "quote",
-   "playerId": "2973",
-   "opponentId": "2382",
-   "player": "B. Shelton",
-   "opponent": "C. Alcaraz",
-   "tournament": "Finals",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-21T18:14:05.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Quotes",
-   "context": "after losing to C. Alcaraz",
-   "eventKey": "12181584",
-   "won": false,
-   "text": "In my opinion, my level has improved dramatically this year, and that’s what I continue to focus on.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "Ubitennis",
-   "sourceUrl": "https://www.ubitennis.net/2026/11/ben-shelton-shuts-down-2026-season-with-mixed-feelings/",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On his improved level against top players",
-   "sourceHash": "bc4ebb0aa7c51e95",
-   "publishedAt": "2026-11-21T18:56:56.860Z",
    "file": "news-ticker/2794-2026.json"
   }
  ]
