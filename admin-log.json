@@ -1,16 +1,7 @@
 {
  "schema": 1,
- "updated": "2026-11-22T01:59:39.592Z",
+ "updated": "2026-11-22T02:21:44.948Z",
  "runs": [
-  {
-   "ts": "2026-10-16T23:30:06.465Z",
-   "run": "38980854885",
-   "priced": 21,
-   "logged": 1286,
-   "flagged": 12,
-   "newlyLogged": 0,
-   "newlyFrozen": 0
-  },
   {
    "ts": "2026-10-16T23:39:52.478Z",
    "run": "38981750977",
@@ -18001,6 +17992,15 @@
    "flagged": 6,
    "newlyLogged": 0,
    "newlyFrozen": 0
+  },
+  {
+   "ts": "2026-11-22T02:21:44.948Z",
+   "run": "44974002254",
+   "priced": 7,
+   "logged": 1575,
+   "flagged": 7,
+   "newlyLogged": 0,
+   "newlyFrozen": 1
   }
  ],
  "flags": {
@@ -40646,7 +40646,7 @@
    "status": "finished",
    "finalScore": "6-4, 6-1",
    "modelFairLast": 0.7916,
-   "lastSeen": "2026-11-22T01:59:39.592Z"
+   "lastSeen": "2026-11-22T02:21:44.948Z"
   },
   "12179698": {
    "key": "12179698",
@@ -40751,7 +40751,7 @@
    "status": "finished",
    "finalScore": "6-3, 6-4",
    "modelFairLast": 0.6535,
-   "lastSeen": "2026-11-22T01:59:39.592Z"
+   "lastSeen": "2026-11-22T02:21:44.948Z"
   },
   "12179703": {
    "key": "12179703",
@@ -40793,7 +40793,7 @@
    "status": "finished",
    "finalScore": "7-6(8), 7-5",
    "modelFairLast": 0.6286,
-   "lastSeen": "2026-11-22T01:59:39.592Z"
+   "lastSeen": "2026-11-22T02:21:44.948Z"
   },
   "12179705": {
    "key": "12179705",
@@ -40835,7 +40835,7 @@
    "status": "finished",
    "finalScore": "6-4, 7-6(6)",
    "modelFairLast": 0.6828,
-   "lastSeen": "2026-11-22T01:59:39.592Z"
+   "lastSeen": "2026-11-22T02:21:44.948Z"
   },
   "12179707": {
    "key": "12179707",
@@ -40940,7 +40940,7 @@
    "status": "finished",
    "finalScore": "3-6, 6-3, 7-6(1)",
    "modelFairLast": 0.7569,
-   "lastSeen": "2026-11-22T01:59:39.592Z"
+   "lastSeen": "2026-11-22T02:21:44.948Z"
   },
   "12181753": {
    "key": "12181753",
@@ -40961,7 +40961,7 @@
    "status": "finished",
    "finalScore": "7-6(0), 6-4",
    "modelFairLast": 0.5996,
-   "lastSeen": "2026-11-22T01:59:39.592Z"
+   "lastSeen": "2026-11-22T02:21:44.948Z"
   },
   "12181958": {
    "key": "12181958",
@@ -40971,12 +40971,18 @@
    "surface": "hard",
    "tour": "ATP Finals - Turin",
    "modelFairEntry": 0.3478,
-   "valueSnapshot": null,
+   "valueSnapshot": {
+    "fairP1": 0.3596,
+    "fairP2": 0.6404,
+    "edgeVsPinnacleP1": 0.0154,
+    "edgeVsPinnacleP2": -0.0154,
+    "ts": "2026-11-22T02:01:38.519Z"
+   },
    "firstSeen": "2026-11-21T21:50:25.759Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.354,
-   "lastSeen": "2026-11-22T01:59:39.592Z"
+   "modelFairLast": 0.3596,
+   "lastSeen": "2026-11-22T02:21:44.948Z"
   },
   "e81136d8af2867898952ce896f71662f": {
    "key": "e81136d8af2867898952ce896f71662f",
