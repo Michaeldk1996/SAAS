@@ -1,19 +1,19 @@
 {
- "generatedAt": "2026-11-22T18:36:23.353Z",
+ "generatedAt": "2026-11-22T19:42:27.176Z",
  "tournaments": [
   {
    "key": "2794",
    "season": "2026",
-   "name": "Finals",
+   "name": "Finals - Turin",
    "file": "news-ticker/2794-2026.json",
-   "items": 323,
+   "items": 324,
    "byType": {
+    "report": 15,
     "quote": 270,
-    "digest": 39,
-    "report": 14
+    "digest": 39
    },
-   "latestTimestamp": "2026-11-22T18:00:00.000Z",
-   "updatedAt": "2026-11-22T18:36:23.353Z"
+   "latestTimestamp": "2026-11-22T19:17:08.448Z",
+   "updatedAt": "2026-11-22T19:42:27.176Z"
   },
   {
    "key": "tour",
@@ -56,6 +56,201 @@
   }
  ],
  "latest": [
+  {
+   "id": "report-12181958",
+   "type": "report",
+   "playerId": "2382",
+   "opponentId": "1980",
+   "player": "C. Alcaraz",
+   "opponent": "A. Zverev",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "stage": "main draw",
+   "round": "final",
+   "eventKey": "12181958",
+   "timestamp": "2026-11-22T19:17:08.448Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-22T19:17:08.448Z",
+    "startedAt": "2026-11-22T17:16:13.842Z",
+    "minutes": 121
+   },
+   "category": "Statistics",
+   "text": "Alcaraz beat Zverev for the 8th time in 14 meetings, 6-2, 7-6 in the final.\n\nAlcaraz: W: 28 / UE: 29 | DR: 1.27\n\nZverev: W: 12 / UE: 31 | DR: 0.78",
+   "ms": {
+    "a": "C. Alcaraz",
+    "b": "A. Zverev",
+    "sets": [
+     [
+      6,
+      2
+     ],
+     [
+      7,
+      6
+     ]
+    ],
+    "rows": [
+     [
+      "Dominance ratio",
+      1.27,
+      0.78,
+      "dr"
+     ],
+     [
+      "1st serve in",
+      59,
+      72,
+      "%"
+     ],
+     [
+      "1st serve points won",
+      71,
+      56,
+      "%"
+     ],
+     [
+      "2nd serve points won",
+      48,
+      42,
+      "%"
+     ],
+     [
+      "Ratio W/UE",
+      0.97,
+      0.39,
+      "2"
+     ],
+     [
+      "Winners / point",
+      0.19,
+      0.08,
+      "2"
+     ],
+     [
+      "Unforced / point",
+      0.2,
+      0.22,
+      "2",
+      1
+     ]
+    ]
+   },
+   "baseText": "Alcaraz beat Zverev for the 8th time in 14 meetings, 6-2, 7-6 in the final.",
+   "rating": [
+    "Alcaraz: W: 28 / UE: 29 | DR: 1.27",
+    "Zverev: W: 12 / UE: 31 | DR: 0.78"
+   ],
+   "fields": {
+    "score": "6-2, 7-6",
+    "round": "final",
+    "retired": false,
+    "h2h": {
+     "a": 8,
+     "b": 6,
+     "n": 14
+    },
+    "durationMinutes": 121,
+    "facts": {
+     "tiebreakSets": [
+      {
+       "set": 2,
+       "winner": "p2"
+      }
+     ],
+     "openingGame": {
+      "side": "p1",
+      "saved": 3
+     },
+     "longestRun": {
+      "side": "p2",
+      "n": 4,
+      "set": 1,
+      "from": {
+       "me": 0,
+       "opp": 1
+      },
+      "afterBeingBroken": false,
+      "toTheEnd": false
+     }
+    },
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": "bad",
+      "metric": "firstIn",
+      "value": 59,
+      "baseline": 69,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 45
+     },
+     {
+      "player": "winner",
+      "tone": "bad",
+      "metric": "firstWon",
+      "value": 71,
+      "won": 31,
+      "total": 44
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "ret1Won",
+      "value": 46,
+      "won": 23,
+      "total": 50,
+      "baseline": 34,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 45
+     },
+     {
+      "player": "loser",
+      "tone": "bad",
+      "metric": "secondWon",
+      "value": 42,
+      "won": 8,
+      "total": 19,
+      "baseline": 56,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 51
+     },
+     {
+      "player": "loser",
+      "tone": "bad",
+      "metric": "winnersErrors",
+      "winners": 12,
+      "unforcedErrors": 31
+     }
+    ],
+    "winner": {
+     "aces": 7,
+     "winners": 28,
+     "unforcedErrors": 29,
+     "breakPointsSaved": 3,
+     "breakPointsFaced": 5,
+     "breakPointsSource": "box score"
+    },
+    "loser": {
+     "aces": 4,
+     "winners": 12,
+     "unforcedErrors": 31,
+     "breakPointsSaved": 3,
+     "breakPointsFaced": 7,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12181958.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "fe355e9c1ecd7527",
+   "publishedAt": "2026-11-22T19:42:27.176Z",
+   "file": "news-ticker/2794-2026.json"
+  },
   {
    "id": "quote-21ae00387db33a",
    "type": "quote",
@@ -1037,7 +1232,7 @@
    "opponentId": "1093",
    "player": "A. Zverev",
    "opponent": "D. Medvedev",
-   "tournament": "Finals",
+   "tournament": "Finals - Turin",
    "tournamentKey": "2794",
    "season": "2026",
    "stage": "main draw",
@@ -1202,10 +1397,10 @@
    "sourceUrl": "pbp/12181753.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "bc5b390a9f876e5f",
+   "sourceHash": "28cf0281657a4cf3",
    "publishedAt": "2026-11-21T21:42:37.691Z",
-   "revisedAt": "2026-11-22T14:02:38.321Z",
-   "revision": 3,
+   "revisedAt": "2026-11-22T19:42:27.176Z",
+   "revision": 4,
    "file": "news-ticker/2794-2026.json"
   },
   {
@@ -1534,37 +1729,6 @@
    "sourceHash": "196ac5922aadef21",
    "publishedAt": "2026-11-21T18:10:57.526Z",
    "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-380cfb119eed8a",
-   "type": "quote",
-   "playerId": "6011",
-   "opponentId": null,
-   "player": "K. Smith",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-21T17:12:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "It has been a great honour for me to lead the team for so many years. I believe that the right time has now come – both for me personally and for the future of the team … I have had the incredible fortune to work with so many fantastic players along this journey. I have enjoyed every minute of being part of it.",
-   "originalText": "Es war mir eine große Ehre, das Team so viele Jahre lang zu führen. Ich glaube, dass jetzt der richtige Zeitpunkt gekommen ist – sowohl für mich persönlich als auch für die Zukunft des Teams … Ich hatte das unglaubliche Glück, auf diesem Weg mit so vielen fantastischen Spielern zusammenzuarbeite. Ich habe jede Minute genossen, Teil davon zu sein.",
-   "language": "de",
-   "translated": true,
-   "translationModel": "claude-opus-5-5",
-   "sourceName": "tennisnet.com",
-   "sourceUrl": "https://www.tennisnet.com/news/davis-cup-leon-smith-dankt-als-britischer-kapitaen-ab",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On stepping down as Britain's Davis Cup captain",
-   "sourceHash": "6c98a6358eb2eb68",
-   "publishedAt": "2026-11-21T18:10:57.526Z",
-   "file": "news-ticker/tour-2026.json"
   }
  ]
 }
