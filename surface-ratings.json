@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-21T13:55:39.752Z",
+  "generatedAt": "2026-11-22T13:48:23.934Z",
   "source": "Self-derived — tour-level from Jeff Sackmann tennis_atp schema (Tennismylife/TML-Database) to 2026-01-17 and from api-tennis ATP singles box scores (event_type 265, main draw, Finished/Retired) after that date, one source per match, with a Challenger fallback sourced LIVE from api-tennis event_type_key=281 (Challenger Men Singles, dense 2024+, refreshed weekly) folded into serve, return AND under-pressure for players thin at tour level, Challenger success discounted x0.9 — no ATP/Infosys data",
   "scopes": {
     "career": "2010-2026 all qualifying matches",
@@ -22,7 +22,7 @@
   "tourLevel": {
     "tmlThrough": "2026-01-17",
     "apiTennisFrom": "2026-01-18",
-    "apiTennisPlayerMatches": 5156,
+    "apiTennisPlayerMatches": 5160,
     "rule": "one source per match: TML on or before tmlThrough, api-tennis ATP singles (265, main draw, Finished/Retired) after it"
   },
   "inclusion": "rated if career-All matches >= 11 (i.e. more than 10 ATP-level matches)",
@@ -56,44 +56,44 @@
             "serve": {
               "firstInPct": 67.8,
               "firstWonPct": 75.6,
-              "secondWonPct": 51.2,
-              "holdPct": 85.6,
+              "secondWonPct": 51.3,
+              "holdPct": 85.7,
               "acePct": 11.8,
               "dfPct": 4.3,
-              "acesPerMatch": 9.3,
+              "acesPerMatch": 9.4,
               "dfPerMatch": 3.4,
-              "svMatches": 480,
-              "rating": 286.2,
+              "svMatches": 481,
+              "rating": 286.3,
               "inclChallenger": false,
               "index": 96.1
             },
             "return": {
               "ret1stWonPct": 28.8,
-              "ret2ndWonPct": 50.8,
+              "ret2ndWonPct": 50.7,
               "rptWonPct": 37.1,
               "breakPct": 22.1,
               "bpConvPct": 39.3,
-              "rating": 141,
+              "rating": 140.9,
               "inclChallenger": false,
               "index": 80.3
             },
             "underPressure": {
               "bpSavedPct": 63.8,
               "bpConvPct": 39.3,
-              "tbWinPct": 60.8,
+              "tbWinPct": 60.9,
               "decWinPct": 58.3,
-              "rating": 222.3,
+              "rating": 222.4,
               "components": 4,
               "inclChallenger": false,
               "index": 79.4
             },
             "mental": {
-              "pw": 2914,
-              "pl": 2979,
+              "pw": 2915,
+              "pl": 2980,
               "rating": 0.978
             },
             "dominance": {
-              "spwPct": 67.7,
+              "spwPct": 67.8,
               "rpwPct": 37.1,
               "rating": 1.15,
               "index": 96.8
@@ -101,14 +101,14 @@
             "reliable": true,
             "confidence": "high",
             "sample": {
-              "matches": 496,
-              "svpt": 38097,
+              "matches": 497,
+              "svpt": 38161,
               "bpFaced": 2435,
-              "bpChances": 3458,
-              "tbPlayed": 273,
+              "bpChances": 3460,
+              "tbPlayed": 274,
               "decPlayed": 168,
               "bpSaved": 1554,
-              "bpConverted": 1360,
+              "bpConverted": 1361,
               "challMatches": 0,
               "challSvpt": 0,
               "challBpFaced": 0,
@@ -119,47 +119,47 @@
           },
           "last52": {
             "serve": {
-              "firstInPct": 71.5,
-              "firstWonPct": 78.6,
-              "secondWonPct": 55.9,
+              "firstInPct": 71.6,
+              "firstWonPct": 78.5,
+              "secondWonPct": 55.8,
               "holdPct": 92.8,
-              "acePct": 14.2,
-              "dfPct": 2.7,
-              "acesPerMatch": 11.5,
-              "dfPerMatch": 2.2,
+              "acePct": 14.4,
+              "dfPct": 2.8,
+              "acesPerMatch": 11.7,
+              "dfPerMatch": 2.3,
               "svMatches": 51,
-              "rating": 308.1,
+              "rating": 308.2,
               "inclChallenger": false,
               "index": 99.6
             },
             "return": {
               "ret1stWonPct": 27,
-              "ret2ndWonPct": 50.6,
-              "rptWonPct": 35.4,
+              "ret2ndWonPct": 50.2,
+              "rptWonPct": 35.3,
               "breakPct": 16.7,
-              "bpConvPct": 38.9,
-              "rating": 133.2,
+              "bpConvPct": 38.8,
+              "rating": 132.8,
               "inclChallenger": false,
-              "index": 68.2
+              "index": 67.9
             },
             "underPressure": {
               "bpSavedPct": 68.4,
-              "bpConvPct": 38.9,
+              "bpConvPct": 38.8,
               "tbWinPct": 69.2,
               "decWinPct": 61.9,
-              "rating": 238.4,
+              "rating": 238.3,
               "components": 4,
               "inclChallenger": false,
-              "index": 83
+              "index": 82.7
             },
             "mental": {
               "pw": 224,
-              "pl": 232,
-              "rating": 0.966
+              "pl": 233,
+              "rating": 0.961
             },
             "dominance": {
               "spwPct": 72.1,
-              "rpwPct": 35.4,
+              "rpwPct": 35.3,
               "rating": 1.27,
               "index": 97.6
             },
@@ -167,9 +167,9 @@
             "confidence": "high",
             "sample": {
               "matches": 51,
-              "svpt": 4153,
+              "svpt": 4155,
               "bpFaced": 158,
-              "bpChances": 298,
+              "bpChances": 299,
               "tbPlayed": 39,
               "decPlayed": 21,
               "bpSaved": 108,
@@ -452,14 +452,14 @@
             "serve": {
               "firstInPct": 67.7,
               "firstWonPct": 74.8,
-              "secondWonPct": 51.1,
+              "secondWonPct": 51.2,
               "holdPct": 84.6,
               "acePct": 10.8,
               "dfPct": 4.3,
               "acesPerMatch": 8.6,
               "dfPerMatch": 3.4,
-              "svMatches": 813,
-              "rating": 283.4,
+              "svMatches": 814,
+              "rating": 283.5,
               "inclChallenger": false,
               "index": 94.4
             },
@@ -478,14 +478,14 @@
               "bpConvPct": 40.6,
               "tbWinPct": 61.2,
               "decWinPct": 62.1,
-              "rating": 225.8,
+              "rating": 225.9,
               "components": 4,
               "inclChallenger": false,
               "index": 83.8
             },
             "mental": {
-              "pw": 5058,
-              "pl": 5208,
+              "pw": 5059,
+              "pl": 5209,
               "rating": 0.971
             },
             "dominance": {
@@ -497,14 +497,14 @@
             "reliable": true,
             "confidence": "high",
             "sample": {
-              "matches": 832,
-              "svpt": 64519,
+              "matches": 833,
+              "svpt": 64583,
               "bpFaced": 4165,
-              "bpChances": 6101,
-              "tbPlayed": 417,
+              "bpChances": 6103,
+              "tbPlayed": 418,
               "decPlayed": 280,
               "bpSaved": 2579,
-              "bpConverted": 2479,
+              "bpConverted": 2480,
               "challMatches": 0,
               "challSvpt": 0,
               "challBpFaced": 0,
@@ -519,53 +519,53 @@
               "firstWonPct": 77.4,
               "secondWonPct": 57.1,
               "holdPct": 92.8,
-              "acePct": 12.7,
-              "dfPct": 2.7,
-              "acesPerMatch": 10.3,
+              "acePct": 12.8,
+              "dfPct": 2.8,
+              "acesPerMatch": 10.4,
               "dfPerMatch": 2.2,
               "svMatches": 88,
-              "rating": 307.2,
+              "rating": 307.3,
               "inclChallenger": false,
               "index": 99.6
             },
             "return": {
               "ret1stWonPct": 28.5,
-              "ret2ndWonPct": 51.3,
+              "ret2ndWonPct": 51.1,
               "rptWonPct": 36.7,
               "breakPct": 17,
               "bpConvPct": 39.8,
-              "rating": 136.7,
+              "rating": 136.5,
               "inclChallenger": false,
-              "index": 71.4
+              "index": 70.7
             },
             "underPressure": {
               "bpSavedPct": 65.2,
               "bpConvPct": 39.8,
               "tbWinPct": 70.5,
               "decWinPct": 74.4,
-              "rating": 249.9,
+              "rating": 249.8,
               "components": 4,
               "inclChallenger": false,
               "index": 86.8
             },
             "mental": {
               "pw": 365,
-              "pl": 394,
-              "rating": 0.926
+              "pl": 395,
+              "rating": 0.924
             },
             "dominance": {
               "spwPct": 71.7,
               "rpwPct": 36.7,
-              "rating": 1.3,
-              "index": 98.6
+              "rating": 1.29,
+              "index": 98.2
             },
             "reliable": true,
             "confidence": "high",
             "sample": {
               "matches": 88,
-              "svpt": 7097,
+              "svpt": 7099,
               "bpFaced": 247,
-              "bpChances": 512,
+              "bpChances": 513,
               "tbPlayed": 61,
               "decPlayed": 39,
               "bpSaved": 161,
@@ -621,7 +621,7 @@
               "rating": 253.8,
               "components": 4,
               "inclChallenger": false,
-              "index": 96.9
+              "index": 96.8
             },
             "mental": {
               "pw": 1903,
@@ -686,7 +686,7 @@
               "rating": 285.2,
               "components": 4,
               "inclChallenger": false,
-              "index": 94.7
+              "index": 94.8
             },
             "mental": {
               "pw": 283,
@@ -1129,40 +1129,40 @@
               "firstInPct": 65.5,
               "firstWonPct": 73.3,
               "secondWonPct": 56.7,
-              "holdPct": 86.5,
+              "holdPct": 86.6,
               "acePct": 6.3,
               "dfPct": 2.9,
               "acesPerMatch": 4.7,
               "dfPerMatch": 2.2,
-              "svMatches": 226,
-              "rating": 284.5,
+              "svMatches": 227,
+              "rating": 284.7,
               "inclChallenger": false,
               "index": 94.4
             },
             "return": {
-              "ret1stWonPct": 33.4,
+              "ret1stWonPct": 33.3,
               "ret2ndWonPct": 53.9,
               "rptWonPct": 41,
-              "breakPct": 28.8,
+              "breakPct": 28.6,
               "bpConvPct": 41.3,
-              "rating": 157.4,
+              "rating": 157.2,
               "inclChallenger": false,
               "index": 97.5
             },
             "underPressure": {
               "bpSavedPct": 65,
               "bpConvPct": 41.3,
-              "tbWinPct": 62.5,
-              "decWinPct": 69.7,
-              "rating": 238.5,
+              "tbWinPct": 62.9,
+              "decWinPct": 70.1,
+              "rating": 239.2,
               "components": 4,
               "inclChallenger": false,
-              "index": 91.1
+              "index": 91.4
             },
             "mental": {
-              "pw": 1470,
-              "pl": 1484,
-              "rating": 0.991
+              "pw": 1471,
+              "pl": 1487,
+              "rating": 0.989
             },
             "dominance": {
               "spwPct": 67.6,
@@ -1173,14 +1173,14 @@
             "reliable": true,
             "confidence": "high",
             "sample": {
-              "matches": 228,
-              "svpt": 16748,
-              "bpFaced": 1055,
-              "bpChances": 1899,
-              "tbPlayed": 104,
-              "decPlayed": 66,
+              "matches": 229,
+              "svpt": 16829,
+              "bpFaced": 1056,
+              "bpChances": 1902,
+              "tbPlayed": 105,
+              "decPlayed": 67,
               "bpSaved": 686,
-              "bpConverted": 784,
+              "bpConverted": 785,
               "challMatches": 0,
               "challSvpt": 0,
               "challBpFaced": 0,
@@ -1191,61 +1191,61 @@
           },
           "last52": {
             "serve": {
-              "firstInPct": 68.4,
-              "firstWonPct": 73.8,
-              "secondWonPct": 55.8,
-              "holdPct": 90.2,
-              "acePct": 6.2,
+              "firstInPct": 68.5,
+              "firstWonPct": 73.9,
+              "secondWonPct": 56.1,
+              "holdPct": 90.3,
+              "acePct": 6.4,
               "dfPct": 2.6,
-              "acesPerMatch": 4.9,
+              "acesPerMatch": 5,
               "dfPerMatch": 2.1,
-              "svMatches": 44,
-              "rating": 291,
+              "svMatches": 45,
+              "rating": 291.8,
               "inclChallenger": false,
-              "index": 95.6
+              "index": 96.4
             },
             "return": {
-              "ret1stWonPct": 33.8,
-              "ret2ndWonPct": 54.9,
-              "rptWonPct": 41.4,
-              "breakPct": 26.4,
-              "bpConvPct": 44.3,
-              "rating": 159.4,
+              "ret1stWonPct": 33.6,
+              "ret2ndWonPct": 54.7,
+              "rptWonPct": 41.1,
+              "breakPct": 25.9,
+              "bpConvPct": 44.2,
+              "rating": 158.4,
               "inclChallenger": false,
               "index": 98.5
             },
             "underPressure": {
-              "bpSavedPct": 68.6,
-              "bpConvPct": 44.3,
-              "tbWinPct": 69.2,
-              "decWinPct": 88.2,
-              "rating": 270.4,
+              "bpSavedPct": 68.2,
+              "bpConvPct": 44.2,
+              "tbWinPct": 70.4,
+              "decWinPct": 88.9,
+              "rating": 271.7,
               "components": 4,
               "inclChallenger": false,
-              "index": 95
+              "index": 94.8
             },
             "mental": {
-              "pw": 262,
-              "pl": 235,
-              "rating": 1.115
+              "pw": 263,
+              "pl": 238,
+              "rating": 1.105
             },
             "dominance": {
-              "spwPct": 68.1,
-              "rpwPct": 41.4,
+              "spwPct": 68.3,
+              "rpwPct": 41.1,
               "rating": 1.3,
               "index": 98
             },
             "reliable": true,
             "confidence": "high",
             "sample": {
-              "matches": 44,
-              "svpt": 3453,
-              "bpFaced": 172,
-              "bpChances": 325,
-              "tbPlayed": 26,
-              "decPlayed": 17,
+              "matches": 45,
+              "svpt": 3534,
+              "bpFaced": 173,
+              "bpChances": 328,
+              "tbPlayed": 27,
+              "decPlayed": 18,
               "bpSaved": 118,
-              "bpConverted": 144,
+              "bpConverted": 145,
               "challMatches": 0,
               "challSvpt": 0,
               "challBpFaced": 0,
@@ -1485,15 +1485,15 @@
           "career": {
             "serve": {
               "firstInPct": 65.5,
-              "firstWonPct": 72.3,
+              "firstWonPct": 72.4,
               "secondWonPct": 55.9,
               "holdPct": 85.4,
               "acePct": 5.7,
               "dfPct": 3,
               "acesPerMatch": 4.4,
               "dfPerMatch": 2.3,
-              "svMatches": 393,
-              "rating": 281.2,
+              "svMatches": 394,
+              "rating": 281.3,
               "inclChallenger": false,
               "index": 93
             },
@@ -1501,25 +1501,25 @@
               "ret1stWonPct": 34.5,
               "ret2ndWonPct": 53.8,
               "rptWonPct": 41.7,
-              "breakPct": 30.1,
+              "breakPct": 30,
               "bpConvPct": 42,
-              "rating": 160.4,
+              "rating": 160.3,
               "inclChallenger": false,
               "index": 97.9
             },
             "underPressure": {
-              "bpSavedPct": 64.7,
+              "bpSavedPct": 64.6,
               "bpConvPct": 42,
-              "tbWinPct": 62.9,
-              "decWinPct": 74.8,
-              "rating": 244.3,
+              "tbWinPct": 63.1,
+              "decWinPct": 75,
+              "rating": 244.7,
               "components": 4,
               "inclChallenger": false,
               "index": 94.1
             },
             "mental": {
-              "pw": 2786,
-              "pl": 2755,
+              "pw": 2787,
+              "pl": 2758,
               "rating": 1.011
             },
             "dominance": {
@@ -1531,14 +1531,14 @@
             "reliable": true,
             "confidence": "high",
             "sample": {
-              "matches": 395,
-              "svpt": 30500,
-              "bpFaced": 2027,
-              "bpChances": 3514,
-              "tbPlayed": 178,
-              "decPlayed": 111,
+              "matches": 396,
+              "svpt": 30581,
+              "bpFaced": 2028,
+              "bpChances": 3517,
+              "tbPlayed": 179,
+              "decPlayed": 112,
               "bpSaved": 1311,
-              "bpConverted": 1475,
+              "bpConverted": 1476,
               "challMatches": 0,
               "challSvpt": 0,
               "challBpFaced": 0,
@@ -1549,61 +1549,61 @@
           },
           "last52": {
             "serve": {
-              "firstInPct": 67.8,
-              "firstWonPct": 73.3,
-              "secondWonPct": 55.6,
-              "holdPct": 91.1,
-              "acePct": 6.1,
+              "firstInPct": 67.9,
+              "firstWonPct": 73.4,
+              "secondWonPct": 55.9,
+              "holdPct": 91.2,
+              "acePct": 6.3,
               "dfPct": 2.9,
-              "acesPerMatch": 4.7,
+              "acesPerMatch": 4.8,
               "dfPerMatch": 2.2,
-              "svMatches": 50,
-              "rating": 290.3,
+              "svMatches": 51,
+              "rating": 291.1,
               "inclChallenger": false,
               "index": 95.1
             },
             "return": {
-              "ret1stWonPct": 34.4,
-              "ret2ndWonPct": 54.8,
-              "rptWonPct": 41.8,
-              "breakPct": 23.8,
-              "bpConvPct": 44.3,
-              "rating": 157.4,
+              "ret1stWonPct": 34.2,
+              "ret2ndWonPct": 54.7,
+              "rptWonPct": 41.6,
+              "breakPct": 23.4,
+              "bpConvPct": 44.2,
+              "rating": 156.6,
               "inclChallenger": false,
               "index": 98.2
             },
             "underPressure": {
-              "bpSavedPct": 68.6,
-              "bpConvPct": 44.3,
-              "tbWinPct": 66.7,
-              "decWinPct": 88.9,
-              "rating": 268.5,
+              "bpSavedPct": 68.2,
+              "bpConvPct": 44.2,
+              "tbWinPct": 67.9,
+              "decWinPct": 89.5,
+              "rating": 269.7,
               "components": 4,
               "inclChallenger": false,
-              "index": 95.9
+              "index": 96.3
             },
             "mental": {
-              "pw": 262,
-              "pl": 235,
-              "rating": 1.115
+              "pw": 263,
+              "pl": 238,
+              "rating": 1.105
             },
             "dominance": {
-              "spwPct": 67.6,
-              "rpwPct": 41.8,
+              "spwPct": 67.8,
+              "rpwPct": 41.6,
               "rating": 1.29,
               "index": 98.2
             },
             "reliable": true,
             "confidence": "high",
             "sample": {
-              "matches": 50,
-              "svpt": 3843,
-              "bpFaced": 172,
-              "bpChances": 325,
-              "tbPlayed": 27,
-              "decPlayed": 18,
+              "matches": 51,
+              "svpt": 3924,
+              "bpFaced": 173,
+              "bpChances": 328,
+              "tbPlayed": 28,
+              "decPlayed": 19,
               "bpSaved": 118,
-              "bpConverted": 144,
+              "bpConverted": 145,
               "challMatches": 0,
               "challSvpt": 0,
               "challBpFaced": 0,
@@ -1624,61 +1624,61 @@
         "Hard": {
           "career": {
             "serve": {
-              "firstInPct": 66.9,
+              "firstInPct": 67,
               "firstWonPct": 76.3,
               "secondWonPct": 55.2,
               "holdPct": 88.6,
-              "acePct": 12.2,
+              "acePct": 12.3,
               "dfPct": 3.6,
               "acesPerMatch": 10.4,
               "dfPerMatch": 3.1,
-              "svMatches": 175,
-              "rating": 294.3,
+              "svMatches": 176,
+              "rating": 294.4,
               "inclChallenger": false,
               "index": 98.6
             },
             "return": {
-              "ret1stWonPct": 25.4,
-              "ret2ndWonPct": 46.4,
+              "ret1stWonPct": 25.3,
+              "ret2ndWonPct": 46.3,
               "rptWonPct": 33,
               "breakPct": 16.3,
-              "bpConvPct": 39,
-              "rating": 127.1,
+              "bpConvPct": 39.1,
+              "rating": 127,
               "inclChallenger": false,
-              "index": 30.6
+              "index": 30.3
             },
             "underPressure": {
-              "bpSavedPct": 69.7,
-              "bpConvPct": 39,
-              "tbWinPct": 54.4,
-              "decWinPct": 63.1,
-              "rating": 226.1,
+              "bpSavedPct": 69.6,
+              "bpConvPct": 39.1,
+              "tbWinPct": 54,
+              "decWinPct": 62.1,
+              "rating": 224.8,
               "components": 4,
               "inclChallenger": false,
-              "index": 82.2
+              "index": 81.5
             },
             "mental": {
-              "pw": 1015,
-              "pl": 878,
-              "rating": 1.156
+              "pw": 1018,
+              "pl": 879,
+              "rating": 1.158
             },
             "dominance": {
               "spwPct": 69.3,
               "rpwPct": 33,
-              "rating": 1.08,
-              "index": 87.9
+              "rating": 1.07,
+              "index": 86.1
             },
             "reliable": true,
             "confidence": "high",
             "sample": {
-              "matches": 176,
-              "svpt": 14825,
-              "bpFaced": 903,
-              "bpChances": 990,
-              "tbPlayed": 136,
-              "decPlayed": 65,
-              "bpSaved": 629,
-              "bpConverted": 386,
+              "matches": 177,
+              "svpt": 14910,
+              "bpFaced": 906,
+              "bpChances": 991,
+              "tbPlayed": 137,
+              "decPlayed": 66,
+              "bpSaved": 631,
+              "bpConverted": 387,
               "challMatches": 0,
               "challSvpt": 0,
               "challBpFaced": 0,
@@ -1689,61 +1689,61 @@
           },
           "last52": {
             "serve": {
-              "firstInPct": 68.6,
-              "firstWonPct": 76.6,
-              "secondWonPct": 57.2,
+              "firstInPct": 68.8,
+              "firstWonPct": 76.5,
+              "secondWonPct": 57.1,
               "holdPct": 89.4,
-              "acePct": 13.5,
+              "acePct": 13.6,
               "dfPct": 2.9,
-              "acesPerMatch": 11.8,
+              "acesPerMatch": 11.9,
               "dfPerMatch": 2.5,
-              "svMatches": 44,
-              "rating": 301.1,
+              "svMatches": 45,
+              "rating": 301.3,
               "inclChallenger": false,
               "index": 98.5
             },
             "return": {
-              "ret1stWonPct": 25.7,
-              "ret2ndWonPct": 48.7,
-              "rptWonPct": 33.9,
-              "breakPct": 17.4,
-              "bpConvPct": 39.1,
-              "rating": 130.9,
+              "ret1stWonPct": 25.6,
+              "ret2ndWonPct": 48.4,
+              "rptWonPct": 33.7,
+              "breakPct": 17.2,
+              "bpConvPct": 39.3,
+              "rating": 130.4,
               "inclChallenger": false,
-              "index": 60.2
+              "index": 58.4
             },
             "underPressure": {
               "bpSavedPct": 68.9,
-              "bpConvPct": 39.1,
-              "tbWinPct": 57.6,
-              "decWinPct": 77.3,
-              "rating": 242.9,
+              "bpConvPct": 39.3,
+              "tbWinPct": 55.9,
+              "decWinPct": 73.9,
+              "rating": 238,
               "components": 4,
               "inclChallenger": false,
-              "index": 83.8
+              "index": 82.7
             },
             "mental": {
-              "pw": 260,
-              "pl": 238,
-              "rating": 1.092
+              "pw": 263,
+              "pl": 239,
+              "rating": 1.1
             },
             "dominance": {
               "spwPct": 70.5,
-              "rpwPct": 33.9,
-              "rating": 1.15,
-              "index": 94
+              "rpwPct": 33.7,
+              "rating": 1.14,
+              "index": 93.7
             },
             "reliable": true,
             "confidence": "high",
             "sample": {
-              "matches": 44,
-              "svpt": 3847,
-              "bpFaced": 219,
-              "bpChances": 279,
-              "tbPlayed": 33,
-              "decPlayed": 22,
-              "bpSaved": 151,
-              "bpConverted": 109,
+              "matches": 45,
+              "svpt": 3932,
+              "bpFaced": 222,
+              "bpChances": 280,
+              "tbPlayed": 34,
+              "decPlayed": 23,
+              "bpSaved": 153,
+              "bpConverted": 110,
               "challMatches": 0,
               "challSvpt": 0,
               "challBpFaced": 0,
@@ -2020,7 +2020,7 @@
         "All": {
           "career": {
             "serve": {
-              "firstInPct": 66.4,
+              "firstInPct": 66.5,
               "firstWonPct": 75.9,
               "secondWonPct": 54.8,
               "holdPct": 88.1,
@@ -2028,14 +2028,14 @@
               "dfPct": 3.9,
               "acesPerMatch": 10.2,
               "dfPerMatch": 3.4,
-              "svMatches": 254,
-              "rating": 292,
+              "svMatches": 255,
+              "rating": 292.1,
               "inclChallenger": false,
               "index": 98.6
             },
             "return": {
               "ret1stWonPct": 25.2,
-              "ret2ndWonPct": 45.9,
+              "ret2ndWonPct": 45.8,
               "rptWonPct": 32.7,
               "breakPct": 15.2,
               "bpConvPct": 38.4,
@@ -2044,19 +2044,19 @@
               "index": 18.7
             },
             "underPressure": {
-              "bpSavedPct": 69.2,
+              "bpSavedPct": 69.1,
               "bpConvPct": 38.4,
-              "tbWinPct": 54.1,
-              "decWinPct": 59,
-              "rating": 220.7,
+              "tbWinPct": 53.8,
+              "decWinPct": 58.5,
+              "rating": 219.9,
               "components": 4,
               "inclChallenger": false,
-              "index": 78.3
+              "index": 77.8
             },
             "mental": {
-              "pw": 1478,
-              "pl": 1276,
-              "rating": 1.158
+              "pw": 1481,
+              "pl": 1277,
+              "rating": 1.16
             },
             "dominance": {
               "spwPct": 68.8,
@@ -2067,14 +2067,14 @@
             "reliable": true,
             "confidence": "high",
             "sample": {
-              "matches": 256,
-              "svpt": 22059,
-              "bpFaced": 1368,
-              "bpChances": 1386,
-              "tbPlayed": 194,
-              "decPlayed": 105,
-              "bpSaved": 946,
-              "bpConverted": 532,
+              "matches": 257,
+              "svpt": 22144,
+              "bpFaced": 1371,
+              "bpChances": 1387,
+              "tbPlayed": 195,
+              "decPlayed": 106,
+              "bpSaved": 948,
+              "bpConverted": 533,
               "challMatches": 0,
               "challSvpt": 0,
               "challBpFaced": 0,
@@ -2085,61 +2085,61 @@
           },
           "last52": {
             "serve": {
-              "firstInPct": 68.4,
+              "firstInPct": 68.5,
               "firstWonPct": 76.5,
-              "secondWonPct": 58.2,
+              "secondWonPct": 58.1,
               "holdPct": 90.5,
               "acePct": 12.6,
               "dfPct": 3.1,
               "acesPerMatch": 11.2,
               "dfPerMatch": 2.7,
-              "svMatches": 67,
-              "rating": 302.1,
+              "svMatches": 68,
+              "rating": 302.2,
               "inclChallenger": false,
               "index": 98.6
             },
             "return": {
-              "ret1stWonPct": 24.4,
-              "ret2ndWonPct": 46.5,
-              "rptWonPct": 32.5,
-              "breakPct": 13.7,
-              "bpConvPct": 37.3,
-              "rating": 121.9,
+              "ret1stWonPct": 24.3,
+              "ret2ndWonPct": 46.3,
+              "rptWonPct": 32.3,
+              "breakPct": 13.6,
+              "bpConvPct": 37.5,
+              "rating": 121.7,
               "inclChallenger": false,
-              "index": 25.8
+              "index": 25.1
             },
             "underPressure": {
               "bpSavedPct": 69.7,
-              "bpConvPct": 37.3,
-              "tbWinPct": 60.4,
-              "decWinPct": 66.7,
-              "rating": 234,
+              "bpConvPct": 37.5,
+              "tbWinPct": 59.3,
+              "decWinPct": 65,
+              "rating": 231.4,
               "components": 4,
               "inclChallenger": false,
-              "index": 79.9
+              "index": 79
             },
             "mental": {
-              "pw": 346,
-              "pl": 315,
-              "rating": 1.098
+              "pw": 349,
+              "pl": 316,
+              "rating": 1.104
             },
             "dominance": {
               "spwPct": 70.7,
-              "rpwPct": 32.5,
-              "rating": 1.11,
-              "index": 90.3
+              "rpwPct": 32.3,
+              "rating": 1.1,
+              "index": 89.2
             },
             "reliable": true,
             "confidence": "high",
             "sample": {
-              "matches": 67,
-              "svpt": 5956,
-              "bpFaced": 307,
-              "bpChances": 354,
-              "tbPlayed": 53,
-              "decPlayed": 39,
-              "bpSaved": 214,
-              "bpConverted": 132,
+              "matches": 68,
+              "svpt": 6041,
+              "bpFaced": 310,
+              "bpChances": 355,
+              "tbPlayed": 54,
+              "decPlayed": 40,
+              "bpSaved": 216,
+              "bpConverted": 133,
               "challMatches": 0,
               "challSvpt": 0,
               "challBpFaced": 0,
@@ -2168,35 +2168,35 @@
               "dfPct": 5,
               "acesPerMatch": 8.5,
               "dfPerMatch": 3.7,
-              "svMatches": 490,
-              "rating": 278.9,
+              "svMatches": 491,
+              "rating": 279,
               "inclChallenger": false,
-              "index": 88
+              "index": 88.4
             },
             "return": {
               "ret1stWonPct": 31.9,
-              "ret2ndWonPct": 54.3,
+              "ret2ndWonPct": 54.2,
               "rptWonPct": 40.1,
               "breakPct": 27.9,
               "bpConvPct": 42.7,
-              "rating": 156.8,
+              "rating": 156.7,
               "inclChallenger": false,
-              "index": 97.2
+              "index": 96.8
             },
             "underPressure": {
               "bpSavedPct": 64.9,
               "bpConvPct": 42.7,
-              "tbWinPct": 57.7,
+              "tbWinPct": 57.4,
               "decWinPct": 60.1,
-              "rating": 225.5,
+              "rating": 225.2,
               "components": 4,
               "inclChallenger": false,
-              "index": 88.8
+              "index": 88.6
             },
             "mental": {
-              "pw": 3267,
-              "pl": 3069,
-              "rating": 1.065
+              "pw": 3268,
+              "pl": 3070,
+              "rating": 1.064
             },
             "dominance": {
               "spwPct": 66.7,
@@ -2207,13 +2207,13 @@
             "reliable": true,
             "confidence": "high",
             "sample": {
-              "matches": 504,
-              "svpt": 36513,
-              "bpFaced": 2525,
+              "matches": 505,
+              "svpt": 36569,
+              "bpFaced": 2527,
               "bpChances": 3811,
-              "tbPlayed": 201,
+              "tbPlayed": 202,
               "decPlayed": 143,
-              "bpSaved": 1639,
+              "bpSaved": 1640,
               "bpConverted": 1628,
               "challMatches": 0,
               "challSvpt": 0,
@@ -2225,60 +2225,60 @@
           },
           "last52": {
             "serve": {
-              "firstInPct": 65.6,
-              "firstWonPct": 76.6,
-              "secondWonPct": 49.5,
-              "holdPct": 88.2,
-              "acePct": 13.5,
+              "firstInPct": 65.5,
+              "firstWonPct": 76.5,
+              "secondWonPct": 50.1,
+              "holdPct": 88.3,
+              "acePct": 13.6,
               "dfPct": 5.1,
-              "acesPerMatch": 9.5,
+              "acesPerMatch": 9.6,
               "dfPerMatch": 3.6,
-              "svMatches": 56,
-              "rating": 285.8,
+              "svMatches": 57,
+              "rating": 286.4,
               "inclChallenger": false,
-              "index": 88
+              "index": 89.1
             },
             "return": {
-              "ret1stWonPct": 32.9,
-              "ret2ndWonPct": 53.8,
-              "rptWonPct": 40.4,
-              "breakPct": 25,
+              "ret1stWonPct": 32.6,
+              "ret2ndWonPct": 53.6,
+              "rptWonPct": 40.1,
+              "breakPct": 24.5,
               "bpConvPct": 42.9,
-              "rating": 154.6,
+              "rating": 153.7,
               "inclChallenger": false,
               "index": 97.4
             },
             "underPressure": {
-              "bpSavedPct": 65.6,
+              "bpSavedPct": 65.5,
               "bpConvPct": 42.9,
-              "tbWinPct": 39.1,
+              "tbWinPct": 37.5,
               "decWinPct": 70.6,
-              "rating": 218.2,
+              "rating": 216.5,
               "components": 4,
               "inclChallenger": false,
-              "index": 73.9
+              "index": 72.5
             },
             "mental": {
-              "pw": 301,
-              "pl": 285,
+              "pw": 302,
+              "pl": 286,
               "rating": 1.056
             },
             "dominance": {
-              "spwPct": 67.3,
-              "rpwPct": 40.4,
+              "spwPct": 67.4,
+              "rpwPct": 40.1,
               "rating": 1.23,
               "index": 97.2
             },
             "reliable": true,
             "confidence": "high",
             "sample": {
-              "matches": 56,
-              "svpt": 3954,
-              "bpFaced": 218,
+              "matches": 57,
+              "svpt": 4010,
+              "bpFaced": 220,
               "bpChances": 368,
-              "tbPlayed": 23,
+              "tbPlayed": 24,
               "decPlayed": 17,
-              "bpSaved": 143,
+              "bpSaved": 144,
               "bpConverted": 158,
               "challMatches": 0,
               "challSvpt": 0,
@@ -2564,52 +2564,52 @@
               "dfPct": 4.9,
               "acesPerMatch": 8.1,
               "dfPerMatch": 3.8,
-              "svMatches": 663,
-              "rating": 275.9,
+              "svMatches": 664,
+              "rating": 276,
               "inclChallenger": false,
               "index": 85.9
             },
             "return": {
               "ret1stWonPct": 31.7,
               "ret2ndWonPct": 53.5,
-              "rptWonPct": 39.8,
-              "breakPct": 27.3,
+              "rptWonPct": 39.7,
+              "breakPct": 27.2,
               "bpConvPct": 42.5,
-              "rating": 155,
+              "rating": 154.9,
               "inclChallenger": false,
               "index": 96.8
             },
             "underPressure": {
-              "bpSavedPct": 63.3,
+              "bpSavedPct": 63.2,
               "bpConvPct": 42.5,
-              "tbWinPct": 55.4,
+              "tbWinPct": 55.2,
               "decWinPct": 59.7,
-              "rating": 220.8,
+              "rating": 220.6,
               "components": 4,
               "inclChallenger": false,
-              "index": 85.2
+              "index": 84.8
             },
             "mental": {
-              "pw": 4442,
-              "pl": 4269,
+              "pw": 4443,
+              "pl": 4270,
               "rating": 1.041
             },
             "dominance": {
               "spwPct": 66,
-              "rpwPct": 39.8,
+              "rpwPct": 39.7,
               "rating": 1.17,
               "index": 98.2
             },
             "reliable": true,
             "confidence": "high",
             "sample": {
-              "matches": 678,
-              "svpt": 50718,
-              "bpFaced": 3565,
+              "matches": 679,
+              "svpt": 50774,
+              "bpFaced": 3567,
               "bpChances": 5146,
-              "tbPlayed": 269,
+              "tbPlayed": 270,
               "decPlayed": 201,
-              "bpSaved": 2255,
+              "bpSaved": 2256,
               "bpConverted": 2187,
               "challMatches": 0,
               "challSvpt": 0,
@@ -2622,59 +2622,59 @@
           "last52": {
             "serve": {
               "firstInPct": 64.8,
-              "firstWonPct": 75.8,
-              "secondWonPct": 48.9,
-              "holdPct": 86.7,
-              "acePct": 12.2,
+              "firstWonPct": 75.7,
+              "secondWonPct": 49.3,
+              "holdPct": 86.8,
+              "acePct": 12.3,
               "dfPct": 5.2,
-              "acesPerMatch": 8.9,
+              "acesPerMatch": 9,
               "dfPerMatch": 3.8,
-              "svMatches": 73,
-              "rating": 281.3,
+              "svMatches": 74,
+              "rating": 281.8,
               "inclChallenger": false,
-              "index": 84.8
+              "index": 85.2
             },
             "return": {
-              "ret1stWonPct": 33.1,
-              "ret2ndWonPct": 53.3,
-              "rptWonPct": 40.4,
-              "breakPct": 24.6,
+              "ret1stWonPct": 33,
+              "ret2ndWonPct": 53.2,
+              "rptWonPct": 40.2,
+              "breakPct": 24.3,
               "bpConvPct": 42.2,
-              "rating": 153.2,
+              "rating": 152.6,
               "inclChallenger": false,
-              "index": 96.1
+              "index": 95.8
             },
             "underPressure": {
-              "bpSavedPct": 63.6,
+              "bpSavedPct": 63.5,
               "bpConvPct": 42.2,
-              "tbWinPct": 37.9,
+              "tbWinPct": 36.7,
               "decWinPct": 64.3,
-              "rating": 208.1,
+              "rating": 206.7,
               "components": 4,
               "inclChallenger": false,
-              "index": 68.6
+              "index": 68.1
             },
             "mental": {
-              "pw": 413,
-              "pl": 405,
+              "pw": 414,
+              "pl": 406,
               "rating": 1.02
             },
             "dominance": {
-              "spwPct": 66.3,
-              "rpwPct": 40.4,
+              "spwPct": 66.4,
+              "rpwPct": 40.2,
               "rating": 1.2,
               "index": 97.1
             },
             "reliable": true,
             "confidence": "high",
             "sample": {
-              "matches": 73,
-              "svpt": 5356,
-              "bpFaced": 316,
+              "matches": 74,
+              "svpt": 5412,
+              "bpFaced": 318,
               "bpChances": 502,
-              "tbPlayed": 29,
+              "tbPlayed": 30,
               "decPlayed": 28,
-              "bpSaved": 201,
+              "bpSaved": 202,
               "bpConverted": 212,
               "challMatches": 0,
               "challSvpt": 0,
@@ -2924,7 +2924,7 @@
               "rating": 260.1,
               "components": 4,
               "inclChallenger": false,
-              "index": 84.7
+              "index": 84.8
             },
             "mental": {
               "pw": 88,
@@ -3308,7 +3308,7 @@
               "svMatches": 45,
               "rating": 286.4,
               "inclChallenger": false,
-              "index": 89.5
+              "index": 89.1
             },
             "return": {
               "ret1stWonPct": 27.1,
@@ -3328,7 +3328,7 @@
               "rating": 232.9,
               "components": 4,
               "inclChallenger": false,
-              "index": 75.6
+              "index": 75.7
             },
             "mental": {
               "pw": 205,
@@ -3657,7 +3657,7 @@
               "rating": 222.2,
               "components": 4,
               "inclChallenger": false,
-              "index": 79.3
+              "index": 79.4
             },
             "mental": {
               "pw": 1112,
@@ -3722,7 +3722,7 @@
               "rating": 244.4,
               "components": 4,
               "inclChallenger": false,
-              "index": 79.7
+              "index": 79.8
             },
             "mental": {
               "pw": 244,
@@ -3797,7 +3797,7 @@
               "rating": 205.8,
               "components": 4,
               "inclChallenger": false,
-              "index": 66
+              "index": 66.1
             },
             "mental": {
               "pw": 2296,
@@ -4313,7 +4313,7 @@
               "svMatches": 423,
               "rating": 284.7,
               "inclChallenger": false,
-              "index": 94.7
+              "index": 94.4
             },
             "return": {
               "ret1stWonPct": 26.8,
@@ -4333,7 +4333,7 @@
               "rating": 215.1,
               "components": 4,
               "inclChallenger": false,
-              "index": 72.3
+              "index": 72.4
             },
             "mental": {
               "pw": 2489,
@@ -4933,7 +4933,7 @@
               "rating": 207.5,
               "components": 4,
               "inclChallenger": false,
-              "index": 64.3
+              "index": 64.4
             },
             "mental": {
               "pw": 269,
@@ -5327,7 +5327,7 @@
               "rating": 211.6,
               "components": 4,
               "inclChallenger": false,
-              "index": 68.5
+              "index": 68.6
             },
             "mental": {
               "pw": 439,
@@ -5874,7 +5874,7 @@
               "spwPct": 64.2,
               "rpwPct": 39.7,
               "rating": 1.11,
-              "index": 90.3
+              "index": 90.7
             },
             "reliable": true,
             "confidence": "high",
@@ -5983,7 +5983,7 @@
               "svMatches": 20,
               "rating": 286.3,
               "inclChallenger": false,
-              "index": 89.1
+              "index": 88.7
             },
             "return": {
               "ret1stWonPct": 27.2,
@@ -6518,7 +6518,7 @@
               "svMatches": 47,
               "rating": 286.1,
               "inclChallenger": false,
-              "index": 88.4
+              "index": 88
             },
             "return": {
               "ret1stWonPct": 29.8,
@@ -7481,7 +7481,7 @@
               "spwPct": 68,
               "rpwPct": 35.4,
               "rating": 1.11,
-              "index": 90.3
+              "index": 90.7
             },
             "reliable": true,
             "confidence": "high",
@@ -8146,7 +8146,7 @@
               "rating": 250.5,
               "components": 4,
               "inclChallenger": false,
-              "index": 89.1
+              "index": 89
             },
             "mental": {
               "pw": 193,
@@ -8617,7 +8617,7 @@
               "rating": 226.9,
               "components": 4,
               "inclChallenger": false,
-              "index": 74.7
+              "index": 74.5
             },
             "mental": {
               "pw": 1766,
@@ -8682,7 +8682,7 @@
               "rating": 265,
               "components": 4,
               "inclChallenger": false,
-              "index": 84.4
+              "index": 84.5
             },
             "mental": {
               "pw": 190,
@@ -9078,7 +9078,7 @@
               "rating": 252.4,
               "components": 4,
               "inclChallenger": false,
-              "index": 87.5
+              "index": 87.4
             },
             "mental": {
               "pw": 322,
@@ -9548,7 +9548,7 @@
               "rating": 221.6,
               "components": 4,
               "inclChallenger": false,
-              "index": 82.9
+              "index": 82.8
             },
             "mental": {
               "pw": 3060,
@@ -9613,7 +9613,7 @@
               "rating": 221,
               "components": 4,
               "inclChallenger": false,
-              "index": 75.5
+              "index": 75.6
             },
             "mental": {
               "pw": 291,
@@ -9624,7 +9624,7 @@
               "spwPct": 67.1,
               "rpwPct": 36.6,
               "rating": 1.11,
-              "index": 90.3
+              "index": 90.7
             },
             "reliable": true,
             "confidence": "high",
@@ -9688,7 +9688,7 @@
               "rating": 207.9,
               "components": 4,
               "inclChallenger": false,
-              "index": 62.9
+              "index": 63
             },
             "mental": {
               "pw": 1058,
@@ -9699,7 +9699,7 @@
               "spwPct": 68.1,
               "rpwPct": 34.3,
               "rating": 1.08,
-              "index": 87.9
+              "index": 88.3
             },
             "reliable": true,
             "confidence": "high",
@@ -10160,7 +10160,7 @@
               "spwPct": 69,
               "rpwPct": 34.4,
               "rating": 1.11,
-              "index": 90.3
+              "index": 90.7
             },
             "reliable": true,
             "confidence": "high",
@@ -10289,7 +10289,7 @@
               "rating": 214.7,
               "components": 4,
               "inclChallenger": false,
-              "index": 62.7
+              "index": 62.9
             },
             "mental": {
               "pw": 171,
@@ -10825,7 +10825,7 @@
               "rating": 199.2,
               "components": 4,
               "inclChallenger": false,
-              "index": 57.1
+              "index": 57.2
             },
             "mental": {
               "pw": 196,
@@ -11210,7 +11210,7 @@
               "bpConvPct": 39.1,
               "rating": 138.4,
               "inclChallenger": false,
-              "index": 77.4
+              "index": 77.7
             },
             "underPressure": {
               "bpSavedPct": 62.6,
@@ -11285,7 +11285,7 @@
               "bpConvPct": 41.8,
               "rating": 146.4,
               "inclChallenger": false,
-              "index": 90.1
+              "index": 89.8
             },
             "underPressure": {
               "bpSavedPct": 61.7,
@@ -11360,7 +11360,7 @@
               "rating": 234.3,
               "components": 4,
               "inclChallenger": false,
-              "index": 79.2
+              "index": 79.1
             },
             "mental": {
               "pw": 274,
@@ -11896,7 +11896,7 @@
               "rating": 196.4,
               "components": 4,
               "inclChallenger": false,
-              "index": 55.2
+              "index": 55.1
             },
             "mental": {
               "pw": 188,
@@ -12366,7 +12366,7 @@
               "rating": 199.2,
               "components": 4,
               "inclChallenger": false,
-              "index": 62.4
+              "index": 62.3
             },
             "mental": {
               "pw": 2366,
@@ -12752,7 +12752,7 @@
               "bpConvPct": 40.4,
               "rating": 141,
               "inclChallenger": false,
-              "index": 73.6
+              "index": 73.2
             },
             "underPressure": {
               "bpSavedPct": 63.8,
@@ -12902,7 +12902,7 @@
               "rating": 212,
               "components": 4,
               "inclChallenger": false,
-              "index": 67.5
+              "index": 67.6
             },
             "mental": {
               "pw": 1536,
@@ -12947,7 +12947,7 @@
               "svMatches": 32,
               "rating": 291.5,
               "inclChallenger": false,
-              "index": 96.4
+              "index": 96
             },
             "return": {
               "ret1stWonPct": 25.2,
@@ -12967,7 +12967,7 @@
               "rating": 235.1,
               "components": 4,
               "inclChallenger": false,
-              "index": 79.2
+              "index": 79.3
             },
             "mental": {
               "pw": 158,
@@ -13343,7 +13343,7 @@
               "svMatches": 56,
               "rating": 291.1,
               "inclChallenger": false,
-              "index": 95.4
+              "index": 95.1
             },
             "return": {
               "ret1stWonPct": 24.8,
@@ -13363,7 +13363,7 @@
               "rating": 227.9,
               "components": 4,
               "inclChallenger": false,
-              "index": 77.4
+              "index": 77.5
             },
             "mental": {
               "pw": 254,
@@ -13975,7 +13975,7 @@
               "rating": 228.6,
               "components": 4,
               "inclChallenger": false,
-              "index": 76.1
+              "index": 76
             },
             "mental": {
               "pw": 232,
@@ -14349,7 +14349,7 @@
               "spwPct": 65.6,
               "rpwPct": 38.2,
               "rating": 1.11,
-              "index": 90.3
+              "index": 90.7
             },
             "reliable": true,
             "confidence": "high",
@@ -14478,7 +14478,7 @@
               "rating": 183.3,
               "components": 4,
               "inclChallenger": false,
-              "index": 47.3
+              "index": 47.4
             },
             "mental": {
               "pw": 121,
@@ -14862,7 +14862,7 @@
               "bpConvPct": 37.2,
               "rating": 128.8,
               "inclChallenger": false,
-              "index": 47.3
+              "index": 47
             },
             "underPressure": {
               "bpSavedPct": 67,
@@ -15002,7 +15002,7 @@
               "bpConvPct": 33.1,
               "rating": 119.7,
               "inclChallenger": false,
-              "index": 26.3
+              "index": 25.9
             },
             "underPressure": {
               "bpSavedPct": 67.1,
@@ -15012,7 +15012,7 @@
               "rating": 187.3,
               "components": 4,
               "inclChallenger": false,
-              "index": 51.6
+              "index": 51.5
             },
             "mental": {
               "pw": 149,
@@ -15342,7 +15342,7 @@
               "rating": 192.4,
               "components": 4,
               "inclChallenger": false,
-              "index": 45
+              "index": 45.1
             },
             "mental": {
               "pw": 1588,
@@ -15943,7 +15943,7 @@
               "rating": 206.2,
               "components": 4,
               "inclChallenger": false,
-              "index": 61.4
+              "index": 61.2
             },
             "mental": {
               "pw": 265,
@@ -15954,7 +15954,7 @@
               "spwPct": 69.7,
               "rpwPct": 33.7,
               "rating": 1.11,
-              "index": 90.3
+              "index": 90.7
             },
             "reliable": true,
             "confidence": "high",
@@ -16083,7 +16083,7 @@
               "rating": 182.2,
               "components": 4,
               "inclChallenger": false,
-              "index": 50.4
+              "index": 50.5
             },
             "mental": {
               "pw": 127,
@@ -16468,7 +16468,7 @@
               "bpConvPct": 37.5,
               "rating": 128.8,
               "inclChallenger": false,
-              "index": 47.3
+              "index": 47
             },
             "underPressure": {
               "bpSavedPct": 58.8,
@@ -17669,7 +17669,7 @@
               "rating": 171.5,
               "components": 4,
               "inclChallenger": false,
-              "index": 43.4
+              "index": 43.5
             },
             "mental": {
               "pw": 101,
@@ -18203,7 +18203,7 @@
               "rating": 212.6,
               "components": 4,
               "inclChallenger": false,
-              "index": 66
+              "index": 65.9
             },
             "mental": {
               "pw": 244,
@@ -19253,7 +19253,7 @@
               "svMatches": 15,
               "rating": 246.2,
               "inclChallenger": false,
-              "index": 27.6
+              "index": 27.3
             },
             "return": {
               "ret1stWonPct": 26.7,
@@ -19667,7 +19667,7 @@
               "rating": 192.3,
               "components": 4,
               "inclChallenger": false,
-              "index": 47.5
+              "index": 47.4
             },
             "mental": {
               "pw": 195,
@@ -19797,7 +19797,7 @@
               "bpConvPct": 36.8,
               "rating": 127.7,
               "inclChallenger": false,
-              "index": 50.7
+              "index": 51.1
             },
             "underPressure": {
               "bpSavedPct": 67.6,
@@ -19807,7 +19807,7 @@
               "rating": 179.4,
               "components": 4,
               "inclChallenger": false,
-              "index": 55.4
+              "index": 55.3
             },
             "mental": {
               "pw": 190,
@@ -20739,7 +20739,7 @@
               "rating": 199.7,
               "components": 4,
               "inclChallenger": false,
-              "index": 58.6
+              "index": 58.4
             },
             "mental": {
               "pw": 311,
@@ -21275,7 +21275,7 @@
               "rating": 209.9,
               "components": 4,
               "inclChallenger": false,
-              "index": 70.6
+              "index": 70.5
             },
             "mental": {
               "pw": 341,
@@ -21350,7 +21350,7 @@
               "rating": 212.4,
               "components": 4,
               "inclChallenger": false,
-              "index": 62.9
+              "index": 63
             },
             "mental": {
               "pw": 706,
@@ -21415,7 +21415,7 @@
               "rating": 189.4,
               "components": 4,
               "inclChallenger": false,
-              "index": 60.7
+              "index": 60.6
             },
             "mental": {
               "pw": 173,
@@ -22345,7 +22345,7 @@
               "rating": 198.3,
               "components": 4,
               "inclChallenger": false,
-              "index": 55.3
+              "index": 55.4
             },
             "mental": {
               "pw": 192,
@@ -22431,7 +22431,7 @@
               "spwPct": 68.7,
               "rpwPct": 33.7,
               "rating": 1.08,
-              "index": 87.9
+              "index": 88.3
             },
             "reliable": true,
             "confidence": "high",
@@ -22485,7 +22485,7 @@
               "rating": 224.6,
               "components": 4,
               "inclChallenger": false,
-              "index": 65.1
+              "index": 65
             },
             "mental": {
               "pw": 94,
@@ -22880,7 +22880,7 @@
               "rating": 228,
               "components": 4,
               "inclChallenger": false,
-              "index": 70.8
+              "index": 70.9
             },
             "mental": {
               "pw": 199,
@@ -23951,7 +23951,7 @@
               "rating": 213.8,
               "components": 4,
               "inclChallenger": false,
-              "index": 71.4
+              "index": 71.3
             },
             "mental": {
               "pw": 268,
@@ -24037,7 +24037,7 @@
               "spwPct": 67.1,
               "rpwPct": 35.5,
               "rating": 1.08,
-              "index": 87.9
+              "index": 88.3
             },
             "reliable": true,
             "confidence": "high",
@@ -24223,7 +24223,7 @@
               "rating": 208.3,
               "components": 4,
               "inclChallenger": false,
-              "index": 66.4
+              "index": 66.3
             },
             "mental": {
               "pw": 87,
@@ -24562,7 +24562,7 @@
               "rating": 207.9,
               "components": 4,
               "inclChallenger": false,
-              "index": 54
+              "index": 53.9
             },
             "mental": {
               "pw": 143,
@@ -24617,7 +24617,7 @@
               "bpConvPct": 30.6,
               "rating": 113.4,
               "inclChallenger": false,
-              "index": 15.3
+              "index": 15
             },
             "underPressure": {
               "bpSavedPct": 62.8,
@@ -24936,7 +24936,7 @@
               "svMatches": 73,
               "rating": 276,
               "inclChallenger": false,
-              "index": 86.3
+              "index": 85.9
             },
             "return": {
               "ret1stWonPct": 28.6,
@@ -24956,7 +24956,7 @@
               "rating": 208.3,
               "components": 4,
               "inclChallenger": false,
-              "index": 58.2
+              "index": 58.1
             },
             "mental": {
               "pw": 383,
@@ -25668,7 +25668,7 @@
               "bpConvPct": 30.3,
               "rating": 117.8,
               "inclChallenger": false,
-              "index": 22.3
+              "index": 21.9
             },
             "underPressure": {
               "bpSavedPct": 64.5,
@@ -25678,7 +25678,7 @@
               "rating": 192.2,
               "components": 4,
               "inclChallenger": false,
-              "index": 51.9
+              "index": 51.8
             },
             "mental": {
               "pw": 147,
@@ -26062,7 +26062,7 @@
               "bpConvPct": 35.3,
               "rating": 139.3,
               "inclChallenger": false,
-              "index": 80.2
+              "index": 80.6
             },
             "underPressure": {
               "bpSavedPct": 59.9,
@@ -26072,7 +26072,7 @@
               "rating": 192.3,
               "components": 4,
               "inclChallenger": false,
-              "index": 48.7
+              "index": 48.5
             },
             "mental": {
               "pw": 309,
@@ -26747,7 +26747,7 @@
               "rating": 238.1,
               "components": 4,
               "inclChallenger": false,
-              "index": 82.9
+              "index": 82.8
             },
             "mental": {
               "pw": 223,
@@ -27271,7 +27271,7 @@
               "bpConvPct": 40.6,
               "rating": 139,
               "inclChallenger": false,
-              "index": 80.3
+              "index": 80.7
             },
             "underPressure": {
               "bpSavedPct": 61.6,
@@ -27611,7 +27611,7 @@
               "rating": 208.1,
               "components": 4,
               "inclChallenger": false,
-              "index": 70.9
+              "index": 71
             },
             "mental": {
               "pw": 3363,
@@ -27816,7 +27816,7 @@
               "rating": 196.8,
               "components": 4,
               "inclChallenger": false,
-              "index": 66.1
+              "index": 66
             },
             "mental": {
               "pw": 205,
@@ -28210,7 +28210,7 @@
               "rating": 224.7,
               "components": 4,
               "inclChallenger": false,
-              "index": 80.6
+              "index": 80.5
             },
             "mental": {
               "pw": 342,
@@ -28350,7 +28350,7 @@
               "rating": 195.8,
               "components": 4,
               "inclChallenger": false,
-              "index": 55.9
+              "index": 55.8
             },
             "mental": {
               "pw": 114,
@@ -28874,7 +28874,7 @@
               "bpConvPct": 30.5,
               "rating": 119.3,
               "inclChallenger": false,
-              "index": 24.8
+              "index": 24.5
             },
             "underPressure": {
               "bpSavedPct": 65.4,
@@ -28884,7 +28884,7 @@
               "rating": 175.9,
               "components": 4,
               "inclChallenger": false,
-              "index": 41.8
+              "index": 41.7
             },
             "mental": {
               "pw": 99,
@@ -30476,7 +30476,7 @@
               "bpConvPct": 37.4,
               "rating": 119.6,
               "inclChallenger": false,
-              "index": 25.5
+              "index": 25.2
             },
             "underPressure": {
               "bpSavedPct": 65.2,
@@ -30486,7 +30486,7 @@
               "rating": 172.8,
               "components": 4,
               "inclChallenger": false,
-              "index": 48.8
+              "index": 48.7
             },
             "mental": {
               "pw": 119,
@@ -30957,7 +30957,7 @@
               "rating": 231.2,
               "components": 4,
               "inclChallenger": false,
-              "index": 74.7
+              "index": 74.6
             },
             "mental": {
               "pw": 639,
@@ -31022,7 +31022,7 @@
               "rating": 224.3,
               "components": 4,
               "inclChallenger": false,
-              "index": 71.1
+              "index": 71.2
             },
             "mental": {
               "pw": 180,
@@ -31558,7 +31558,7 @@
               "rating": 199.8,
               "components": 4,
               "inclChallenger": false,
-              "index": 62.9
+              "index": 62.7
             },
             "mental": {
               "pw": 164,
@@ -31857,7 +31857,7 @@
               "rating": 213.9,
               "components": 4,
               "inclChallenger": false,
-              "index": 78.8
+              "index": 78.9
             },
             "mental": {
               "pw": 1068,
@@ -31922,7 +31922,7 @@
               "rating": 211.8,
               "components": 4,
               "inclChallenger": false,
-              "index": 66.2
+              "index": 65.9
             },
             "mental": {
               "pw": 189,
@@ -32062,7 +32062,7 @@
               "rating": 201.6,
               "components": 4,
               "inclChallenger": false,
-              "index": 53.9
+              "index": 54
             },
             "mental": {
               "pw": 173,
@@ -33133,7 +33133,7 @@
               "rating": 169.1,
               "components": 4,
               "inclChallenger": false,
-              "index": 34.6
+              "index": 34.5
             },
             "mental": {
               "pw": 139,
@@ -34055,7 +34055,7 @@
               "bpConvPct": 38.1,
               "rating": 129,
               "inclChallenger": false,
-              "index": 48.4
+              "index": 48.1
             },
             "underPressure": {
               "bpSavedPct": 63.2,
@@ -34140,7 +34140,7 @@
               "rating": 188.6,
               "components": 4,
               "inclChallenger": false,
-              "index": 46.9
+              "index": 46.8
             },
             "mental": {
               "pw": 232,
@@ -34195,7 +34195,7 @@
               "bpConvPct": 37.1,
               "rating": 119.7,
               "inclChallenger": false,
-              "index": 26.3
+              "index": 25.9
             },
             "underPressure": {
               "bpSavedPct": 58.8,
@@ -34589,7 +34589,7 @@
               "bpConvPct": 36.3,
               "rating": 127.7,
               "inclChallenger": false,
-              "index": 44.5
+              "index": 44.2
             },
             "underPressure": {
               "bpSavedPct": 60.1,
@@ -35232,7 +35232,7 @@
               "bpConvPct": 33.8,
               "rating": 118.5,
               "inclChallenger": false,
-              "index": 24.1
+              "index": 23.7
             },
             "underPressure": {
               "bpSavedPct": 54.3,
@@ -36294,7 +36294,7 @@
               "svMatches": 13,
               "rating": 247.5,
               "inclChallenger": false,
-              "index": 29.1
+              "index": 28.7
             },
             "return": {
               "ret1stWonPct": 27.6,
@@ -36774,7 +36774,7 @@
               "bpConvPct": 38.7,
               "rating": 141,
               "inclChallenger": false,
-              "index": 80.3
+              "index": 80.6
             },
             "underPressure": {
               "bpSavedPct": 58.6,
@@ -37234,7 +37234,7 @@
               "bpConvPct": 39.4,
               "rating": 138.5,
               "inclChallenger": false,
-              "index": 77.7
+              "index": 78.1
             },
             "underPressure": {
               "bpSavedPct": 61.6,
@@ -37384,7 +37384,7 @@
               "rating": 169.5,
               "components": 4,
               "inclChallenger": false,
-              "index": 40.3
+              "index": 40.2
             },
             "mental": {
               "pw": 102,
@@ -37910,7 +37910,7 @@
               "bpConvPct": 35.2,
               "rating": 117.6,
               "inclChallenger": false,
-              "index": 21.5
+              "index": 21.2
             },
             "underPressure": {
               "bpSavedPct": 61.2,
@@ -38316,7 +38316,7 @@
               "rating": 207.6,
               "components": 4,
               "inclChallenger": false,
-              "index": 54.4
+              "index": 54.5
             },
             "mental": {
               "pw": 257,
@@ -40061,7 +40061,7 @@
               "rating": 180,
               "components": 4,
               "inclChallenger": false,
-              "index": 43.3
+              "index": 43.4
             },
             "mental": {
               "pw": 117,
@@ -40586,7 +40586,7 @@
               "bpConvPct": 32.9,
               "rating": 119.8,
               "inclChallenger": false,
-              "index": 27
+              "index": 26.6
             },
             "underPressure": {
               "bpSavedPct": 65.4,
@@ -40596,7 +40596,7 @@
               "rating": 187.3,
               "components": 4,
               "inclChallenger": false,
-              "index": 50.6
+              "index": 50.5
             },
             "mental": {
               "pw": 167,
@@ -41131,7 +41131,7 @@
               "rating": 127.3,
               "components": 4,
               "inclChallenger": false,
-              "index": 26.3
+              "index": 26.2
             },
             "mental": {
               "pw": 81,
@@ -41516,7 +41516,7 @@
               "bpConvPct": 38.3,
               "rating": 128.3,
               "inclChallenger": false,
-              "index": 46.3
+              "index": 45.9
             },
             "underPressure": {
               "bpSavedPct": 57.4,
@@ -41526,7 +41526,7 @@
               "rating": 192.9,
               "components": 4,
               "inclChallenger": false,
-              "index": 49.7
+              "index": 49.6
             },
             "mental": {
               "pw": 161,
@@ -41666,7 +41666,7 @@
               "rating": 172.7,
               "components": 4,
               "inclChallenger": false,
-              "index": 43.4
+              "index": 43.2
             },
             "mental": {
               "pw": 81,
@@ -42181,7 +42181,7 @@
               "svMatches": 5,
               "rating": 240.5,
               "inclChallenger": true,
-              "index": 17.8
+              "index": 17.5
             },
             "return": {
               "ret1stWonPct": 23.5,
@@ -42724,7 +42724,7 @@
               "bpConvPct": 28.8,
               "rating": 114.7,
               "inclChallenger": false,
-              "index": 17.5
+              "index": 17.2
             },
             "underPressure": {
               "bpSavedPct": 63.2,
@@ -43269,7 +43269,7 @@
               "rating": 180,
               "components": 4,
               "inclChallenger": false,
-              "index": 45.7
+              "index": 45.6
             },
             "mental": {
               "pw": 146,
@@ -43664,7 +43664,7 @@
               "rating": 194.3,
               "components": 4,
               "inclChallenger": false,
-              "index": 52
+              "index": 51.9
             },
             "mental": {
               "pw": 219,
@@ -44133,7 +44133,7 @@
               "rating": 174.7,
               "components": 4,
               "inclChallenger": false,
-              "index": 30.1
+              "index": 30.2
             },
             "mental": {
               "pw": 664,
@@ -44198,7 +44198,7 @@
               "rating": 174,
               "components": 4,
               "inclChallenger": false,
-              "index": 39.8
+              "index": 39.7
             },
             "mental": {
               "pw": 164,
@@ -44721,7 +44721,7 @@
               "rating": 218.9,
               "components": 4,
               "inclChallenger": false,
-              "index": 64
+              "index": 63.8
             },
             "mental": {
               "pw": 114,
@@ -44851,7 +44851,7 @@
               "bpConvPct": 35.6,
               "rating": 130.8,
               "inclChallenger": false,
-              "index": 59.9
+              "index": 60.2
             },
             "underPressure": {
               "bpSavedPct": 62.7,
@@ -44861,7 +44861,7 @@
               "rating": 188.8,
               "components": 4,
               "inclChallenger": false,
-              "index": 51.5
+              "index": 51.6
             },
             "mental": {
               "pw": 58,
@@ -45246,7 +45246,7 @@
               "bpConvPct": 33.3,
               "rating": 129.1,
               "inclChallenger": false,
-              "index": 49.5
+              "index": 49.1
             },
             "underPressure": {
               "bpSavedPct": 58.5,
@@ -45386,7 +45386,7 @@
               "bpConvPct": 32.5,
               "rating": 118,
               "inclChallenger": false,
-              "index": 23
+              "index": 22.6
             },
             "underPressure": {
               "bpSavedPct": 67.1,
@@ -45782,7 +45782,7 @@
               "bpConvPct": 33.6,
               "rating": 124,
               "inclChallenger": false,
-              "index": 32.5
+              "index": 32.2
             },
             "underPressure": {
               "bpSavedPct": 61.2,
@@ -46318,7 +46318,7 @@
               "bpConvPct": 37.6,
               "rating": 139,
               "inclChallenger": false,
-              "index": 79.2
+              "index": 79.5
             },
             "underPressure": {
               "bpSavedPct": 55.4,
@@ -46448,7 +46448,7 @@
               "svMatches": 5,
               "rating": 246.4,
               "inclChallenger": false,
-              "index": 28
+              "index": 27.6
             },
             "return": {
               "ret1stWonPct": 22.7,
@@ -46852,7 +46852,7 @@
               "bpConvPct": 42.9,
               "rating": 139.1,
               "inclChallenger": false,
-              "index": 79.5
+              "index": 79.9
             },
             "underPressure": {
               "bpSavedPct": 61.1,
@@ -47002,7 +47002,7 @@
               "rating": 182,
               "components": 4,
               "inclChallenger": false,
-              "index": 48.5
+              "index": 48.4
             },
             "mental": {
               "pw": 89,
@@ -47516,7 +47516,7 @@
               "svMatches": 14,
               "rating": 241.5,
               "inclChallenger": false,
-              "index": 18.9
+              "index": 18.5
             },
             "return": {
               "ret1stWonPct": 28.3,
@@ -48510,38 +48510,38 @@
         "Hard": {
           "career": {
             "serve": {
-              "firstInPct": 59,
-              "firstWonPct": 64.1,
-              "secondWonPct": 48.6,
-              "holdPct": 75.7,
+              "firstInPct": 58.9,
+              "firstWonPct": 64.2,
+              "secondWonPct": 48.8,
+              "holdPct": 75.8,
               "acePct": 6.2,
               "dfPct": 3,
               "acesPerMatch": 4.1,
               "dfPerMatch": 2.2,
-              "svMatches": 64,
-              "rating": 249.3,
+              "svMatches": 65,
+              "rating": 249.6,
               "inclChallenger": true,
               "index": 28.9
             },
             "return": {
-              "ret1stWonPct": 32.8,
-              "ret2ndWonPct": 47.4,
-              "rptWonPct": 38.2,
+              "ret1stWonPct": 32.6,
+              "ret2ndWonPct": 47.5,
+              "rptWonPct": 38.1,
               "breakPct": 26.2,
-              "bpConvPct": 39.7,
-              "rating": 146.1,
+              "bpConvPct": 40,
+              "rating": 146.4,
               "inclChallenger": true,
-              "index": 89.4
+              "index": 89.8
             },
             "underPressure": {
-              "bpSavedPct": 59.6,
-              "bpConvPct": 39.7,
-              "tbWinPct": 61.6,
+              "bpSavedPct": 59.4,
+              "bpConvPct": 40,
+              "tbWinPct": 63,
               "decWinPct": 45.7,
-              "rating": 206.5,
+              "rating": 208.1,
               "components": 4,
               "inclChallenger": true,
-              "index": 63
+              "index": 64.3
             },
             "mental": {
               "pw": 28,
@@ -48565,48 +48565,48 @@
               "decPlayed": 2,
               "bpSaved": 16,
               "bpConverted": 12,
-              "challMatches": 59,
-              "challSvpt": 3932,
-              "challBpFaced": 295,
-              "challBpChances": 397,
+              "challMatches": 60,
+              "challSvpt": 3986,
+              "challBpFaced": 296,
+              "challBpChances": 400,
               "challBpSaved": 196,
-              "challBpConverted": 174
+              "challBpConverted": 177
             }
           },
           "last52": {
             "serve": {
-              "firstInPct": 59.5,
-              "firstWonPct": 65,
-              "secondWonPct": 48.3,
-              "holdPct": 76.3,
-              "acePct": 6.4,
+              "firstInPct": 59.3,
+              "firstWonPct": 65.1,
+              "secondWonPct": 48.4,
+              "holdPct": 76.2,
+              "acePct": 6.3,
               "dfPct": 3.1,
               "acesPerMatch": 4.1,
               "dfPerMatch": 2.2,
               "svMatches": 48,
-              "rating": 251,
+              "rating": 250.9,
               "inclChallenger": true,
-              "index": 35.6
+              "index": 35.3
             },
             "return": {
-              "ret1stWonPct": 34.3,
-              "ret2ndWonPct": 47.3,
-              "rptWonPct": 39.1,
-              "breakPct": 27.5,
-              "bpConvPct": 41,
-              "rating": 150,
+              "ret1stWonPct": 33.8,
+              "ret2ndWonPct": 47.2,
+              "rptWonPct": 38.8,
+              "breakPct": 26.9,
+              "bpConvPct": 41.2,
+              "rating": 149.1,
               "inclChallenger": true,
-              "index": 95.6
+              "index": 95.3
             },
             "underPressure": {
-              "bpSavedPct": 60,
-              "bpConvPct": 41,
-              "tbWinPct": 62.3,
+              "bpSavedPct": 59.5,
+              "bpConvPct": 41.2,
+              "tbWinPct": 64.3,
               "decWinPct": 61.1,
-              "rating": 224.4,
+              "rating": 226.1,
               "components": 4,
               "inclChallenger": true,
-              "index": 73.2
+              "index": 73.3
             },
             "mental": {
               "pw": 28,
@@ -48631,11 +48631,11 @@
               "bpSaved": 16,
               "bpConverted": 12,
               "challMatches": 43,
-              "challSvpt": 2750,
-              "challBpFaced": 204,
-              "challBpChances": 287,
-              "challBpSaved": 137,
-              "challBpConverted": 130
+              "challSvpt": 2761,
+              "challBpFaced": 203,
+              "challBpChances": 281,
+              "challBpSaved": 135,
+              "challBpConverted": 128
             }
           }
         },
@@ -48904,38 +48904,38 @@
         "All": {
           "career": {
             "serve": {
-              "firstInPct": 59.3,
-              "firstWonPct": 63.7,
-              "secondWonPct": 48.7,
+              "firstInPct": 59.2,
+              "firstWonPct": 63.8,
+              "secondWonPct": 48.9,
               "holdPct": 76.1,
               "acePct": 5.7,
               "dfPct": 3,
-              "acesPerMatch": 4.1,
+              "acesPerMatch": 4,
               "dfPerMatch": 2.3,
-              "svMatches": 83,
-              "rating": 249.6,
+              "svMatches": 84,
+              "rating": 249.8,
               "inclChallenger": true,
               "index": 26.1
             },
             "return": {
-              "ret1stWonPct": 31.3,
-              "ret2ndWonPct": 47.1,
+              "ret1stWonPct": 31.1,
+              "ret2ndWonPct": 47.2,
               "rptWonPct": 37.2,
-              "breakPct": 22.7,
-              "bpConvPct": 39.7,
-              "rating": 140.8,
+              "breakPct": 22.8,
+              "bpConvPct": 40,
+              "rating": 141.1,
               "inclChallenger": true,
-              "index": 72.9
+              "index": 73.6
             },
             "underPressure": {
-              "bpSavedPct": 59.1,
-              "bpConvPct": 39.7,
-              "tbWinPct": 59.3,
+              "bpSavedPct": 58.9,
+              "bpConvPct": 40,
+              "tbWinPct": 60.3,
               "decWinPct": 40.4,
-              "rating": 198.5,
+              "rating": 199.7,
               "components": 4,
               "inclChallenger": true,
-              "index": 56.9
+              "index": 57.6
             },
             "mental": {
               "pw": 87,
@@ -48959,12 +48959,12 @@
               "decPlayed": 6,
               "bpSaved": 56,
               "bpConverted": 31,
-              "challMatches": 71,
-              "challSvpt": 4906,
-              "challBpFaced": 338,
-              "challBpChances": 439,
+              "challMatches": 72,
+              "challSvpt": 4960,
+              "challBpFaced": 339,
+              "challBpChances": 442,
               "challBpSaved": 220,
-              "challBpConverted": 189
+              "challBpConverted": 192
             }
           },
           "last52": {
@@ -49025,11 +49025,11 @@
               "bpSaved": 56,
               "bpConverted": 31,
               "challMatches": 55,
-              "challSvpt": 3724,
-              "challBpFaced": 247,
-              "challBpChances": 329,
-              "challBpSaved": 161,
-              "challBpConverted": 145
+              "challSvpt": 3735,
+              "challBpFaced": 246,
+              "challBpChances": 323,
+              "challBpSaved": 159,
+              "challBpConverted": 143
             }
           }
         }
@@ -50170,7 +50170,7 @@
               "rating": 152.5,
               "components": 4,
               "inclChallenger": false,
-              "index": 46.2
+              "index": 46.1
             },
             "mental": {
               "pw": 175,
@@ -50696,7 +50696,7 @@
               "bpConvPct": 31.2,
               "rating": 114.4,
               "inclChallenger": true,
-              "index": 16.4
+              "index": 16.1
             },
             "underPressure": {
               "bpSavedPct": 61.7,
@@ -51683,7 +51683,7 @@
               "svMatches": 15,
               "rating": 252.5,
               "inclChallenger": false,
-              "index": 40
+              "index": 40.4
             },
             "return": {
               "ret1stWonPct": 28,
@@ -52086,7 +52086,7 @@
               "bpConvPct": 41.6,
               "rating": 139.2,
               "inclChallenger": false,
-              "index": 79.9
+              "index": 80.2
             },
             "underPressure": {
               "bpSavedPct": 61.6,
@@ -52621,7 +52621,7 @@
               "bpConvPct": 36.8,
               "rating": 124,
               "inclChallenger": false,
-              "index": 32.5
+              "index": 32.2
             },
             "underPressure": {
               "bpSavedPct": 54.6,
@@ -53284,7 +53284,7 @@
               "svMatches": 6,
               "rating": 240.7,
               "inclChallenger": true,
-              "index": 18.2
+              "index": 17.8
             },
             "return": {
               "ret1stWonPct": 26.2,
@@ -53394,12 +53394,12 @@
               "decPlayed": 24,
               "bpSaved": 263,
               "bpConverted": 155,
-              "challMatches": 83,
-              "challSvpt": 5626,
-              "challBpFaced": 382,
-              "challBpChances": 509,
-              "challBpSaved": 235,
-              "challBpConverted": 223
+              "challMatches": 84,
+              "challSvpt": 5670,
+              "challBpFaced": 384,
+              "challBpChances": 519,
+              "challBpSaved": 236,
+              "challBpConverted": 228
             }
           },
           "last52": {
@@ -53410,32 +53410,32 @@
               "holdPct": 78.8,
               "acePct": 7.7,
               "dfPct": 2.8,
-              "acesPerMatch": 5.2,
+              "acesPerMatch": 5.1,
               "dfPerMatch": 2.1,
-              "svMatches": 65,
+              "svMatches": 66,
               "rating": 256.9,
               "inclChallenger": true,
               "index": 60.5
             },
             "return": {
-              "ret1stWonPct": 30.6,
-              "ret2ndWonPct": 47.7,
-              "rptWonPct": 37,
-              "breakPct": 24.4,
-              "bpConvPct": 40.2,
-              "rating": 142.8,
+              "ret1stWonPct": 30.7,
+              "ret2ndWonPct": 47.8,
+              "rptWonPct": 37.1,
+              "breakPct": 24.7,
+              "bpConvPct": 40.3,
+              "rating": 143.5,
               "inclChallenger": true,
-              "index": 77.6
+              "index": 78.8
             },
             "underPressure": {
-              "bpSavedPct": 58.1,
-              "bpConvPct": 40.2,
+              "bpSavedPct": 58,
+              "bpConvPct": 40.3,
               "tbWinPct": 65,
               "decWinPct": 40.6,
-              "rating": 203.8,
+              "rating": 203.9,
               "components": 4,
               "inclChallenger": true,
-              "index": 58.2
+              "index": 58.5
             },
             "mental": {
               "pw": 45,
@@ -53459,12 +53459,12 @@
               "decPlayed": 3,
               "bpSaved": 23,
               "bpConverted": 22,
-              "challMatches": 58,
-              "challSvpt": 3836,
-              "challBpFaced": 218,
-              "challBpChances": 354,
-              "challBpSaved": 143,
-              "challBpConverted": 159
+              "challMatches": 59,
+              "challSvpt": 3880,
+              "challBpFaced": 220,
+              "challBpChances": 364,
+              "challBpSaved": 144,
+              "challBpConverted": 164
             }
           }
         },
@@ -53625,12 +53625,12 @@
               "decPlayed": 35,
               "bpSaved": 426,
               "bpConverted": 212,
-              "challMatches": 87,
-              "challSvpt": 5956,
-              "challBpFaced": 420,
-              "challBpChances": 536,
-              "challBpSaved": 258,
-              "challBpConverted": 230
+              "challMatches": 88,
+              "challSvpt": 6000,
+              "challBpFaced": 422,
+              "challBpChances": 546,
+              "challBpSaved": 259,
+              "challBpConverted": 235
             }
           },
           "last52": {
@@ -53666,7 +53666,7 @@
               "rating": 206.3,
               "components": 4,
               "inclChallenger": true,
-              "index": 48.5
+              "index": 48.4
             },
             "mental": {
               "pw": 76,
@@ -53690,12 +53690,12 @@
               "decPlayed": 4,
               "bpSaved": 49,
               "bpConverted": 27,
-              "challMatches": 59,
-              "challSvpt": 3907,
-              "challBpFaced": 224,
-              "challBpChances": 358,
-              "challBpSaved": 146,
-              "challBpConverted": 160
+              "challMatches": 60,
+              "challSvpt": 3951,
+              "challBpFaced": 226,
+              "challBpChances": 368,
+              "challBpSaved": 147,
+              "challBpConverted": 165
             }
           }
         }
@@ -53786,7 +53786,7 @@
               "svMatches": 37,
               "rating": 286.1,
               "inclChallenger": false,
-              "index": 88.4
+              "index": 88
             },
             "return": {
               "ret1stWonPct": 29.9,
@@ -54170,7 +54170,7 @@
               "rating": 204.2,
               "components": 4,
               "inclChallenger": false,
-              "index": 63.1
+              "index": 63
             },
             "mental": {
               "pw": 251,
@@ -54300,7 +54300,7 @@
               "bpConvPct": 33.7,
               "rating": 118.5,
               "inclChallenger": false,
-              "index": 24.1
+              "index": 23.7
             },
             "underPressure": {
               "bpSavedPct": 52.7,
@@ -54310,7 +54310,7 @@
               "rating": 146.4,
               "components": 4,
               "inclChallenger": false,
-              "index": 30.9
+              "index": 31
             },
             "mental": {
               "pw": 58,
@@ -54760,7 +54760,7 @@
               "svMatches": 115,
               "rating": 279,
               "inclChallenger": false,
-              "index": 88.7
+              "index": 88.4
             },
             "return": {
               "ret1stWonPct": 26.8,
@@ -54845,7 +54845,7 @@
               "rating": 210.2,
               "components": 4,
               "inclChallenger": true,
-              "index": 65.2
+              "index": 65.3
             },
             "mental": {
               "pw": 28,
@@ -56289,7 +56289,7 @@
               "rating": 193.4,
               "components": 4,
               "inclChallenger": false,
-              "index": 51
+              "index": 51.1
             },
             "mental": {
               "pw": 116,
@@ -56388,48 +56388,48 @@
               "decPlayed": 9,
               "bpSaved": 111,
               "bpConverted": 42,
-              "challMatches": 62,
-              "challSvpt": 4125,
-              "challBpFaced": 318,
-              "challBpChances": 385,
+              "challMatches": 63,
+              "challSvpt": 4179,
+              "challBpFaced": 321,
+              "challBpChances": 386,
               "challBpSaved": 192,
-              "challBpConverted": 162
+              "challBpConverted": 163
             }
           },
           "last52": {
             "serve": {
               "firstInPct": 56.1,
-              "firstWonPct": 69.1,
-              "secondWonPct": 46.2,
-              "holdPct": 74.8,
-              "acePct": 12.7,
+              "firstWonPct": 69.2,
+              "secondWonPct": 46,
+              "holdPct": 74.5,
+              "acePct": 12.6,
               "dfPct": 3.9,
-              "acesPerMatch": 9.7,
-              "dfPerMatch": 3.3,
-              "svMatches": 28,
-              "rating": 252.6,
+              "acesPerMatch": 9.5,
+              "dfPerMatch": 3.2,
+              "svMatches": 29,
+              "rating": 252,
               "inclChallenger": true,
-              "index": 40.7
+              "index": 38.5
             },
             "return": {
-              "ret1stWonPct": 27.3,
-              "ret2ndWonPct": 44.2,
-              "rptWonPct": 34,
-              "breakPct": 20,
-              "bpConvPct": 36.4,
-              "rating": 127.9,
+              "ret1stWonPct": 27.1,
+              "ret2ndWonPct": 43.8,
+              "rptWonPct": 33.8,
+              "breakPct": 19.7,
+              "bpConvPct": 36.7,
+              "rating": 127.2,
               "inclChallenger": true,
-              "index": 51.8
+              "index": 50.4
             },
             "underPressure": {
-              "bpSavedPct": 58.3,
-              "bpConvPct": 36.4,
-              "tbWinPct": 61.3,
+              "bpSavedPct": 57.3,
+              "bpConvPct": 36.7,
+              "tbWinPct": 57.5,
               "decWinPct": 52.5,
-              "rating": 208.6,
+              "rating": 204,
               "components": 4,
               "inclChallenger": true,
-              "index": 59.3
+              "index": 56.7
             },
             "mental": {
               "pw": 19,
@@ -56453,12 +56453,12 @@
               "decPlayed": 1,
               "bpSaved": 17,
               "bpConverted": 2,
-              "challMatches": 26,
-              "challSvpt": 1898,
-              "challBpFaced": 142,
-              "challBpChances": 183,
+              "challMatches": 27,
+              "challSvpt": 1952,
+              "challBpFaced": 145,
+              "challBpChances": 184,
               "challBpSaved": 90,
-              "challBpConverted": 75
+              "challBpConverted": 76
             }
           }
         },
@@ -56780,12 +56780,12 @@
               "decPlayed": 17,
               "bpSaved": 203,
               "bpConverted": 92,
-              "challMatches": 92,
-              "challSvpt": 6427,
-              "challBpFaced": 474,
-              "challBpChances": 603,
+              "challMatches": 93,
+              "challSvpt": 6481,
+              "challBpFaced": 477,
+              "challBpChances": 604,
               "challBpSaved": 303,
-              "challBpConverted": 244
+              "challBpConverted": 245
             }
           },
           "last52": {
@@ -56821,7 +56821,7 @@
               "rating": 167.4,
               "components": 4,
               "inclChallenger": false,
-              "index": 43.1
+              "index": 43
             },
             "mental": {
               "pw": 63,
@@ -56845,12 +56845,12 @@
               "decPlayed": 5,
               "bpSaved": 48,
               "bpConverted": 15,
-              "challMatches": 42,
-              "challSvpt": 3127,
-              "challBpFaced": 219,
-              "challBpChances": 291,
+              "challMatches": 43,
+              "challSvpt": 3181,
+              "challBpFaced": 222,
+              "challBpChances": 292,
               "challBpSaved": 147,
-              "challBpConverted": 113
+              "challBpConverted": 114
             }
           }
         }
@@ -57428,7 +57428,7 @@
               "rating": 210.6,
               "components": 4,
               "inclChallenger": false,
-              "index": 71.1
+              "index": 71.2
             },
             "mental": {
               "pw": 947,
@@ -57493,7 +57493,7 @@
               "rating": 180.9,
               "components": 4,
               "inclChallenger": false,
-              "index": 56.3
+              "index": 56.2
             },
             "mental": {
               "pw": 144,
@@ -57625,7 +57625,7 @@
               "rating": 116.9,
               "components": 3,
               "inclChallenger": false,
-              "index": 20.8
+              "index": 20.9
             },
             "mental": {
               "pw": 38,
@@ -58544,7 +58544,7 @@
               "svMatches": 9,
               "rating": 251,
               "inclChallenger": false,
-              "index": 35.6
+              "index": 36
             },
             "return": {
               "ret1stWonPct": 22,
@@ -58554,7 +58554,7 @@
               "bpConvPct": 34.3,
               "rating": 118.1,
               "inclChallenger": false,
-              "index": 23.4
+              "index": 23
             },
             "underPressure": {
               "bpSavedPct": 62.1,
@@ -58884,7 +58884,7 @@
               "bpConvPct": 39.8,
               "rating": 141.1,
               "inclChallenger": false,
-              "index": 73.9
+              "index": 73.6
             },
             "underPressure": {
               "bpSavedPct": 61.7,
@@ -59034,7 +59034,7 @@
               "rating": 153.8,
               "components": 4,
               "inclChallenger": true,
-              "index": 28.2
+              "index": 28.1
             },
             "mental": {
               "pw": 56,
@@ -59099,7 +59099,7 @@
               "rating": 147.5,
               "components": 4,
               "inclChallenger": true,
-              "index": 30.4
+              "index": 30.5
             },
             "mental": {
               "pw": 41,
@@ -59635,7 +59635,7 @@
               "rating": 241.9,
               "components": 4,
               "inclChallenger": false,
-              "index": 77.9
+              "index": 78
             },
             "mental": {
               "pw": 148,
@@ -60149,7 +60149,7 @@
               "svMatches": 23,
               "rating": 247.2,
               "inclChallenger": true,
-              "index": 28.7
+              "index": 28.4
             },
             "return": {
               "ret1stWonPct": 25.6,
@@ -61554,7 +61554,7 @@
               "bpConvPct": 35.7,
               "rating": 123.9,
               "inclChallenger": false,
-              "index": 32.2
+              "index": 31.8
             },
             "underPressure": {
               "bpSavedPct": 62.5,
@@ -61564,7 +61564,7 @@
               "rating": 181.1,
               "components": 4,
               "inclChallenger": false,
-              "index": 44.9
+              "index": 44.8
             },
             "mental": {
               "pw": 75,
@@ -61704,7 +61704,7 @@
               "rating": 199.6,
               "components": 4,
               "inclChallenger": false,
-              "index": 63.7
+              "index": 63.8
             },
             "mental": {
               "pw": 96,
@@ -62086,7 +62086,7 @@
               "rating": 192.4,
               "components": 4,
               "inclChallenger": false,
-              "index": 58.3
+              "index": 58.4
             },
             "mental": {
               "pw": 96,
@@ -62215,7 +62215,7 @@
               "bpConvPct": 45,
               "rating": 119.6,
               "inclChallenger": true,
-              "index": 25.5
+              "index": 25.2
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -62482,7 +62482,7 @@
               "rating": 199.5,
               "components": 4,
               "inclChallenger": true,
-              "index": 45.8
+              "index": 45.7
             },
             "mental": {
               "pw": 102,
@@ -62677,7 +62677,7 @@
               "bpConvPct": 35.7,
               "rating": 112.8,
               "inclChallenger": false,
-              "index": 14.6
+              "index": 14.2
             },
             "underPressure": {
               "bpSavedPct": 60,
@@ -62687,7 +62687,7 @@
               "rating": 172.1,
               "components": 4,
               "inclChallenger": true,
-              "index": 41.7
+              "index": 41.8
             },
             "mental": {
               "pw": 72,
@@ -62809,7 +62809,7 @@
               "bpConvPct": 44.1,
               "rating": 143.4,
               "inclChallenger": false,
-              "index": 78.8
+              "index": 78.4
             },
             "underPressure": {
               "bpSavedPct": 49,
@@ -63180,7 +63180,7 @@
               "bpConvPct": 36.1,
               "rating": 130.9,
               "inclChallenger": true,
-              "index": 60.2
+              "index": 60.6
             },
             "underPressure": {
               "bpSavedPct": 60.8,
@@ -63576,7 +63576,7 @@
               "rating": 203.4,
               "components": 4,
               "inclChallenger": false,
-              "index": 68.4
+              "index": 68.5
             },
             "mental": {
               "pw": 102,
@@ -64517,7 +64517,7 @@
               "rating": 174.8,
               "components": 4,
               "inclChallenger": false,
-              "index": 41.4
+              "index": 41.3
             },
             "mental": {
               "pw": 306,
@@ -64572,7 +64572,7 @@
               "bpConvPct": 40.4,
               "rating": 128.3,
               "inclChallenger": false,
-              "index": 46.3
+              "index": 45.9
             },
             "underPressure": {
               "bpSavedPct": 59.3,
@@ -65247,7 +65247,7 @@
               "bpConvPct": 38.6,
               "rating": 115.7,
               "inclChallenger": false,
-              "index": 19
+              "index": 18.6
             },
             "underPressure": {
               "bpSavedPct": 56.3,
@@ -65257,7 +65257,7 @@
               "rating": 156.8,
               "components": 4,
               "inclChallenger": false,
-              "index": 31.7
+              "index": 31.8
             },
             "mental": {
               "pw": 44,
@@ -65646,7 +65646,7 @@
               "rating": 183.8,
               "components": 4,
               "inclChallenger": false,
-              "index": 34.6
+              "index": 34.8
             },
             "mental": {
               "pw": 180,
@@ -66181,7 +66181,7 @@
               "rating": 213.8,
               "components": 4,
               "inclChallenger": false,
-              "index": 63.7
+              "index": 63.6
             },
             "mental": {
               "pw": 213,
@@ -66739,7 +66739,7 @@
               "rating": 143.2,
               "components": 4,
               "inclChallenger": false,
-              "index": 16.4
+              "index": 16.3
             },
             "mental": {
               "pw": 71,
@@ -68250,7 +68250,7 @@
               "rating": 180.4,
               "components": 4,
               "inclChallenger": true,
-              "index": 37.2
+              "index": 37.1
             },
             "mental": {
               "pw": 44,
@@ -68295,7 +68295,7 @@
               "svMatches": 30,
               "rating": 243.1,
               "inclChallenger": true,
-              "index": 20.4
+              "index": 20
             },
             "return": {
               "ret1stWonPct": 30.2,
@@ -68758,7 +68758,7 @@
               "rating": 186.5,
               "components": 4,
               "inclChallenger": true,
-              "index": 36.6
+              "index": 36.7
             },
             "mental": {
               "pw": 31,
@@ -69294,7 +69294,7 @@
               "rating": 98.6,
               "components": 4,
               "inclChallenger": true,
-              "index": 9.2
+              "index": 9.1
             },
             "mental": {
               "pw": 50,
@@ -69624,7 +69624,7 @@
               "rating": 213.8,
               "components": 4,
               "inclChallenger": false,
-              "index": 72.8
+              "index": 72.9
             },
             "mental": {
               "pw": 5027,
@@ -70182,7 +70182,7 @@
               "bpConvPct": 38.6,
               "rating": 124.1,
               "inclChallenger": false,
-              "index": 33.2
+              "index": 32.9
             },
             "underPressure": {
               "bpSavedPct": 55,
@@ -70696,7 +70696,7 @@
               "rating": 122,
               "components": 4,
               "inclChallenger": false,
-              "index": 23.8
+              "index": 23.9
             },
             "mental": {
               "pw": 53,
@@ -70836,7 +70836,7 @@
               "rating": 184.6,
               "components": 4,
               "inclChallenger": false,
-              "index": 53.1
+              "index": 53.2
             },
             "mental": {
               "pw": 98,
@@ -71231,7 +71231,7 @@
               "rating": 174.8,
               "components": 4,
               "inclChallenger": false,
-              "index": 45.5
+              "index": 45.3
             },
             "mental": {
               "pw": 127,
@@ -71823,7 +71823,7 @@
               "svMatches": 19,
               "rating": 291.3,
               "inclChallenger": false,
-              "index": 96
+              "index": 95.6
             },
             "return": {
               "ret1stWonPct": 22.3,
@@ -72809,7 +72809,7 @@
               "svMatches": 13,
               "rating": 242.9,
               "inclChallenger": true,
-              "index": 20
+              "index": 19.6
             },
             "return": {
               "ret1stWonPct": 30.9,
@@ -73361,7 +73361,7 @@
               "rating": 220.6,
               "components": 4,
               "inclChallenger": true,
-              "index": 61.9
+              "index": 61.8
             },
             "mental": {
               "pw": 14,
@@ -73737,7 +73737,7 @@
               "rating": 210,
               "components": 4,
               "inclChallenger": true,
-              "index": 55.4
+              "index": 55.5
             },
             "mental": {
               "pw": 24,
@@ -73877,7 +73877,7 @@
               "rating": 117.9,
               "components": 4,
               "inclChallenger": false,
-              "index": 12.1
+              "index": 11.9
             },
             "mental": {
               "pw": 33,
@@ -74327,7 +74327,7 @@
               "rating": 190.1,
               "components": 4,
               "inclChallenger": false,
-              "index": 50.2
+              "index": 50.1
             },
             "mental": {
               "pw": 1531,
@@ -74392,7 +74392,7 @@
               "rating": 158.7,
               "components": 4,
               "inclChallenger": false,
-              "index": 34.6
+              "index": 34.7
             },
             "mental": {
               "pw": 128,
@@ -74722,7 +74722,7 @@
               "rating": 190.7,
               "components": 4,
               "inclChallenger": false,
-              "index": 48.9
+              "index": 48.8
             },
             "mental": {
               "pw": 2681,
@@ -74777,7 +74777,7 @@
               "bpConvPct": 37.9,
               "rating": 127.7,
               "inclChallenger": false,
-              "index": 44.5
+              "index": 44.2
             },
             "underPressure": {
               "bpSavedPct": 61.1,
@@ -75419,7 +75419,7 @@
               "bpConvPct": 32.1,
               "rating": 114.6,
               "inclChallenger": true,
-              "index": 17.2
+              "index": 16.8
             },
             "underPressure": {
               "bpSavedPct": 38.1,
@@ -75457,24 +75457,24 @@
             "serve": {
               "firstInPct": 58,
               "firstWonPct": 57.7,
-              "secondWonPct": 42,
-              "holdPct": 62,
+              "secondWonPct": 41.9,
+              "holdPct": 61.8,
               "acePct": 2.6,
               "dfPct": 5.3,
               "acesPerMatch": 1.9,
               "dfPerMatch": 4.2,
-              "svMatches": 132,
-              "rating": 217.3,
+              "svMatches": 133,
+              "rating": 217,
               "inclChallenger": true,
-              "index": 4.6
+              "index": 4.3
             },
             "return": {
-              "ret1stWonPct": 35.1,
-              "ret2ndWonPct": 51.3,
-              "rptWonPct": 41.5,
-              "breakPct": 35.4,
+              "ret1stWonPct": 35,
+              "ret2ndWonPct": 51.2,
+              "rptWonPct": 41.4,
+              "breakPct": 35.3,
               "bpConvPct": 43.4,
-              "rating": 165.2,
+              "rating": 165,
               "inclChallenger": true,
               "index": 97.1
             },
@@ -75483,7 +75483,7 @@
               "bpConvPct": 43.4,
               "tbWinPct": 58.5,
               "decWinPct": 50.7,
-              "rating": 206.7,
+              "rating": 206.6,
               "components": 4,
               "inclChallenger": true,
               "index": 61.1
@@ -75510,19 +75510,19 @@
               "decPlayed": 4,
               "bpSaved": 77,
               "bpConverted": 38,
-              "challMatches": 118,
-              "challSvpt": 8547,
-              "challBpFaced": 978,
-              "challBpChances": 1075,
-              "challBpSaved": 584,
-              "challBpConverted": 517
+              "challMatches": 119,
+              "challSvpt": 8603,
+              "challBpFaced": 988,
+              "challBpChances": 1077,
+              "challBpSaved": 589,
+              "challBpConverted": 518
             }
           },
           "last52": {
             "serve": {
               "firstInPct": 58.3,
-              "firstWonPct": 56.3,
-              "secondWonPct": 42.7,
+              "firstWonPct": 56.5,
+              "secondWonPct": 42.5,
               "holdPct": 62.1,
               "acePct": 2.2,
               "dfPct": 5.9,
@@ -75534,24 +75534,24 @@
               "index": 4.5
             },
             "return": {
-              "ret1stWonPct": 35.3,
-              "ret2ndWonPct": 51.5,
+              "ret1stWonPct": 35.2,
+              "ret2ndWonPct": 51.6,
               "rptWonPct": 41.4,
               "breakPct": 32.8,
-              "bpConvPct": 45.1,
-              "rating": 164.8,
+              "bpConvPct": 45,
+              "rating": 164.7,
               "inclChallenger": true,
               "index": 97.7
             },
             "underPressure": {
               "bpSavedPct": 52.4,
-              "bpConvPct": 45.1,
+              "bpConvPct": 45,
               "tbWinPct": 75.5,
               "decWinPct": 51.2,
-              "rating": 224.2,
+              "rating": 224.1,
               "components": 4,
               "inclChallenger": true,
-              "index": 63.5
+              "index": 63.2
             },
             "mental": {
               "pw": 38,
@@ -75576,9 +75576,9 @@
               "bpSaved": 24,
               "bpConverted": 14,
               "challMatches": 40,
-              "challSvpt": 2922,
+              "challSvpt": 2914,
               "challBpFaced": 334,
-              "challBpChances": 333,
+              "challBpChances": 334,
               "challBpSaved": 194,
               "challBpConverted": 168
             }
@@ -75717,7 +75717,7 @@
               "rating": 218.1,
               "components": 4,
               "inclChallenger": false,
-              "index": 71.4
+              "index": 71.5
             },
             "mental": {
               "pw": 156,
@@ -75741,12 +75741,12 @@
               "decPlayed": 8,
               "bpSaved": 108,
               "bpConverted": 48,
-              "challMatches": 134,
-              "challSvpt": 9579,
-              "challBpFaced": 1106,
-              "challBpChances": 1155,
-              "challBpSaved": 658,
-              "challBpConverted": 554
+              "challMatches": 135,
+              "challSvpt": 9635,
+              "challBpFaced": 1116,
+              "challBpChances": 1157,
+              "challBpSaved": 663,
+              "challBpConverted": 555
             }
           },
           "last52": {
@@ -75807,9 +75807,9 @@
               "bpSaved": 44,
               "bpConverted": 23,
               "challMatches": 46,
-              "challSvpt": 3261,
+              "challSvpt": 3253,
               "challBpFaced": 376,
-              "challBpChances": 361,
+              "challBpChances": 362,
               "challBpSaved": 212,
               "challBpConverted": 179
             }
@@ -75922,7 +75922,7 @@
               "rating": 232.8,
               "components": 4,
               "inclChallenger": true,
-              "index": 75.5
+              "index": 75.7
             },
             "mental": {
               "pw": 49,
@@ -76426,7 +76426,7 @@
               "svMatches": 13,
               "rating": 240.9,
               "inclChallenger": true,
-              "index": 18.5
+              "index": 18.2
             },
             "return": {
               "ret1stWonPct": 24.2,
@@ -76446,7 +76446,7 @@
               "rating": 178.9,
               "components": 4,
               "inclChallenger": true,
-              "index": 44.7
+              "index": 44.6
             },
             "mental": {
               "pw": 4,
@@ -76713,7 +76713,7 @@
               "rating": 199.4,
               "components": 4,
               "inclChallenger": true,
-              "index": 55.7
+              "index": 55.6
             },
             "mental": {
               "pw": 69,
@@ -76918,7 +76918,7 @@
               "rating": 236.3,
               "components": 4,
               "inclChallenger": false,
-              "index": 76.4
+              "index": 76.7
             },
             "mental": {
               "pw": 101,
@@ -77246,7 +77246,7 @@
               "rating": 203.1,
               "components": 4,
               "inclChallenger": false,
-              "index": 58.9
+              "index": 58.8
             },
             "mental": {
               "pw": 945,
@@ -77311,7 +77311,7 @@
               "rating": 204.8,
               "components": 4,
               "inclChallenger": false,
-              "index": 56.5
+              "index": 56.3
             },
             "mental": {
               "pw": 146,
@@ -77451,7 +77451,7 @@
               "rating": 200.8,
               "components": 4,
               "inclChallenger": false,
-              "index": 58.9
+              "index": 58.8
             },
             "mental": {
               "pw": 38,
@@ -77851,7 +77851,7 @@
               "spwPct": 67.8,
               "rpwPct": 35.7,
               "rating": 1.11,
-              "index": 90.3
+              "index": 90.7
             },
             "reliable": true,
             "confidence": "high",
@@ -77960,7 +77960,7 @@
               "svMatches": 27,
               "rating": 247.8,
               "inclChallenger": true,
-              "index": 30.2
+              "index": 29.8
             },
             "return": {
               "ret1stWonPct": 32.4,
@@ -77980,7 +77980,7 @@
               "rating": 209.7,
               "components": 4,
               "inclChallenger": true,
-              "index": 51.2
+              "index": 51.1
             },
             "mental": {
               "pw": 9,
@@ -78302,48 +78302,48 @@
               "decPlayed": 56,
               "bpSaved": 572,
               "bpConverted": 365,
-              "challMatches": 41,
-              "challSvpt": 2777,
-              "challBpFaced": 185,
-              "challBpChances": 298,
-              "challBpSaved": 125,
-              "challBpConverted": 116
+              "challMatches": 42,
+              "challSvpt": 2886,
+              "challBpFaced": 190,
+              "challBpChances": 301,
+              "challBpSaved": 129,
+              "challBpConverted": 117
             }
           },
           "last52": {
             "serve": {
-              "firstInPct": 49.6,
-              "firstWonPct": 71.6,
-              "secondWonPct": 48.5,
-              "holdPct": 80,
-              "acePct": 10.1,
+              "firstInPct": 49.7,
+              "firstWonPct": 71.4,
+              "secondWonPct": 48.4,
+              "holdPct": 80.1,
+              "acePct": 10,
               "dfPct": 5.4,
               "acesPerMatch": 7,
-              "dfPerMatch": 4,
-              "svMatches": 41,
-              "rating": 252.5,
+              "dfPerMatch": 4.1,
+              "svMatches": 42,
+              "rating": 252.4,
               "inclChallenger": true,
-              "index": 37.5
+              "index": 37.1
             },
             "return": {
-              "ret1stWonPct": 31.1,
-              "ret2ndWonPct": 48.5,
-              "rptWonPct": 38,
-              "breakPct": 24.7,
+              "ret1stWonPct": 30.7,
+              "ret2ndWonPct": 48.3,
+              "rptWonPct": 37.7,
+              "breakPct": 24.1,
               "bpConvPct": 35.3,
-              "rating": 139.6,
+              "rating": 138.3,
               "inclChallenger": true,
-              "index": 80.6
+              "index": 77
             },
             "underPressure": {
-              "bpSavedPct": 62.5,
+              "bpSavedPct": 62.7,
               "bpConvPct": 35.3,
-              "tbWinPct": 74.4,
-              "decWinPct": 62.5,
-              "rating": 234.7,
+              "tbWinPct": 75.3,
+              "decWinPct": 64.6,
+              "rating": 237.9,
               "components": 4,
               "inclChallenger": true,
-              "index": 71.1
+              "index": 72.3
             },
             "mental": {
               "pw": 50,
@@ -78367,12 +78367,12 @@
               "decPlayed": 5,
               "bpSaved": 26,
               "bpConverted": 24,
-              "challMatches": 34,
-              "challSvpt": 2268,
-              "challBpFaced": 135,
-              "challBpChances": 246,
-              "challBpSaved": 94,
-              "challBpConverted": 93
+              "challMatches": 35,
+              "challSvpt": 2377,
+              "challBpFaced": 140,
+              "challBpChances": 249,
+              "challBpSaved": 98,
+              "challBpConverted": 94
             }
           }
         }
@@ -78483,7 +78483,7 @@
               "rating": 145.4,
               "components": 4,
               "inclChallenger": false,
-              "index": 24.2
+              "index": 24.3
             },
             "mental": {
               "pw": 46,
@@ -78954,7 +78954,7 @@
               "rating": 219.3,
               "components": 4,
               "inclChallenger": true,
-              "index": 66.2
+              "index": 66.1
             },
             "mental": {
               "pw": 84,
@@ -78988,37 +78988,37 @@
           },
           "last52": {
             "serve": {
-              "firstInPct": 57.9,
-              "firstWonPct": 67.5,
-              "secondWonPct": 44,
-              "holdPct": 70.2,
-              "acePct": 6.4,
-              "dfPct": 5.7,
-              "acesPerMatch": 6.5,
+              "firstInPct": 58.9,
+              "firstWonPct": 68.3,
+              "secondWonPct": 45.5,
+              "holdPct": 74.3,
+              "acePct": 5.7,
+              "dfPct": 4.9,
+              "acesPerMatch": 7,
               "dfPerMatch": 6,
-              "svMatches": 3,
-              "rating": 240.1,
-              "inclChallenger": true,
-              "index": 17.5
+              "svMatches": 2,
+              "rating": 248,
+              "inclChallenger": false,
+              "index": 30.5
             },
             "return": {
-              "ret1stWonPct": 19.5,
-              "ret2ndWonPct": 52,
-              "rptWonPct": 34.1,
-              "breakPct": 15,
-              "bpConvPct": 25.6,
-              "rating": 112.1,
-              "inclChallenger": true,
-              "index": 13.5
+              "ret1stWonPct": 19.8,
+              "ret2ndWonPct": 54.7,
+              "rptWonPct": 35.8,
+              "breakPct": 16.7,
+              "bpConvPct": 28.6,
+              "rating": 119.8,
+              "inclChallenger": false,
+              "index": 26.6
             },
             "underPressure": {
-              "bpSavedPct": 63.5,
-              "bpConvPct": 25.6,
+              "bpSavedPct": 67.9,
+              "bpConvPct": 28.6,
               "tbWinPct": null,
               "decWinPct": null,
               "rating": null,
               "components": 2,
-              "inclChallenger": true
+              "inclChallenger": false
             },
             "mental": {
               "pw": 25,
@@ -79042,12 +79042,12 @@
               "decPlayed": 2,
               "bpSaved": 19,
               "bpConverted": 6,
-              "challMatches": 1,
-              "challSvpt": 59,
-              "challBpFaced": 9,
-              "challBpChances": 6,
-              "challBpSaved": 5,
-              "challBpConverted": 1
+              "challMatches": 0,
+              "challSvpt": 0,
+              "challBpFaced": 0,
+              "challBpChances": 0,
+              "challBpSaved": 0,
+              "challBpConverted": 0
             }
           }
         },
@@ -79309,48 +79309,48 @@
               "decPlayed": 15,
               "bpSaved": 145,
               "bpConverted": 79,
-              "challMatches": 117,
-              "challSvpt": 8563,
-              "challBpFaced": 698,
-              "challBpChances": 762,
+              "challMatches": 118,
+              "challSvpt": 8619,
+              "challBpFaced": 699,
+              "challBpChances": 766,
               "challBpSaved": 443,
-              "challBpConverted": 308
+              "challBpConverted": 311
             }
           },
           "last52": {
             "serve": {
               "firstInPct": 57.3,
-              "firstWonPct": 66,
-              "secondWonPct": 50.7,
-              "holdPct": 74,
+              "firstWonPct": 66.1,
+              "secondWonPct": 51.2,
+              "holdPct": 74.6,
               "acePct": 5,
-              "dfPct": 3.2,
-              "acesPerMatch": 3.6,
-              "dfPerMatch": 2.6,
+              "dfPct": 3.1,
+              "acesPerMatch": 3.7,
+              "dfPerMatch": 2.4,
               "svMatches": 39,
-              "rating": 249,
+              "rating": 250.5,
               "inclChallenger": true,
-              "index": 30.7
+              "index": 32.5
             },
             "return": {
-              "ret1stWonPct": 26.3,
-              "ret2ndWonPct": 46.4,
-              "rptWonPct": 33.7,
-              "breakPct": 19.4,
-              "bpConvPct": 35.1,
-              "rating": 127.1,
+              "ret1stWonPct": 26.7,
+              "ret2ndWonPct": 46.5,
+              "rptWonPct": 34,
+              "breakPct": 19.8,
+              "bpConvPct": 36.1,
+              "rating": 129.1,
               "inclChallenger": true,
-              "index": 43.5
+              "index": 49.1
             },
             "underPressure": {
-              "bpSavedPct": 57.9,
-              "bpConvPct": 35.1,
-              "tbWinPct": 61.9,
+              "bpSavedPct": 58,
+              "bpConvPct": 36.1,
+              "tbWinPct": 63.5,
               "decWinPct": 47.6,
-              "rating": 202.6,
+              "rating": 205.3,
               "components": 4,
               "inclChallenger": true,
-              "index": 52.2
+              "index": 54.5
             },
             "mental": {
               "pw": 55,
@@ -79375,11 +79375,11 @@
               "bpSaved": 38,
               "bpConverted": 17,
               "challMatches": 33,
-              "challSvpt": 2306,
-              "challBpFaced": 179,
-              "challBpChances": 200,
-              "challBpSaved": 111,
-              "challBpConverted": 79
+              "challSvpt": 2303,
+              "challBpFaced": 171,
+              "challBpChances": 198,
+              "challBpSaved": 106,
+              "challBpConverted": 81
             }
           }
         }
@@ -79490,7 +79490,7 @@
               "rating": 219.4,
               "components": 4,
               "inclChallenger": true,
-              "index": 66
+              "index": 66.1
             },
             "mental": null,
             "dominance": null,
@@ -79876,7 +79876,7 @@
               "rating": 120.1,
               "components": 4,
               "inclChallenger": true,
-              "index": 11.2
+              "index": 11.3
             },
             "mental": {
               "pw": 45,
@@ -79951,7 +79951,7 @@
               "rating": 214.4,
               "components": 4,
               "inclChallenger": false,
-              "index": 72.4
+              "index": 72.5
             },
             "mental": {
               "pw": 2895,
@@ -80016,7 +80016,7 @@
               "rating": 186.8,
               "components": 4,
               "inclChallenger": false,
-              "index": 50.4
+              "index": 50.3
             },
             "mental": {
               "pw": 109,
@@ -80531,7 +80531,7 @@
               "svMatches": 52,
               "rating": 247.6,
               "inclChallenger": true,
-              "index": 29.5
+              "index": 29.1
             },
             "return": {
               "ret1stWonPct": 28.6,
@@ -80541,7 +80541,7 @@
               "bpConvPct": 36.5,
               "rating": 130.6,
               "inclChallenger": true,
-              "index": 59.5
+              "index": 59.9
             },
             "underPressure": {
               "bpSavedPct": 61.1,
@@ -80551,7 +80551,7 @@
               "rating": 196.9,
               "components": 4,
               "inclChallenger": true,
-              "index": 54.3
+              "index": 54.2
             },
             "mental": {
               "pw": 12,
@@ -81444,7 +81444,7 @@
               "bpConvPct": 42.8,
               "rating": 129,
               "inclChallenger": false,
-              "index": 48.4
+              "index": 48.1
             },
             "underPressure": {
               "bpSavedPct": 55.3,
@@ -81584,7 +81584,7 @@
               "bpConvPct": 29.2,
               "rating": 112.3,
               "inclChallenger": true,
-              "index": 13.9
+              "index": 13.5
             },
             "underPressure": {
               "bpSavedPct": 59.4,
@@ -82087,7 +82087,7 @@
               "rating": 179.4,
               "components": 4,
               "inclChallenger": true,
-              "index": 46.2
+              "index": 46.4
             },
             "mental": {
               "pw": 16,
@@ -82570,7 +82570,7 @@
               "svMatches": 36,
               "rating": 245.9,
               "inclChallenger": true,
-              "index": 26.9
+              "index": 26.5
             },
             "return": {
               "ret1stWonPct": 25.9,
@@ -82590,7 +82590,7 @@
               "rating": 180.7,
               "components": 4,
               "inclChallenger": true,
-              "index": 41.5
+              "index": 41.6
             },
             "mental": {
               "pw": 26,
@@ -83587,7 +83587,7 @@
               "rating": 187,
               "components": 4,
               "inclChallenger": true,
-              "index": 43.5
+              "index": 43.7
             },
             "mental": {
               "pw": 30,
@@ -84083,7 +84083,7 @@
               "svMatches": 24,
               "rating": 244.6,
               "inclChallenger": true,
-              "index": 24
+              "index": 23.6
             },
             "return": {
               "ret1stWonPct": 27.7,
@@ -84103,7 +84103,7 @@
               "rating": 189.1,
               "components": 4,
               "inclChallenger": true,
-              "index": 44.1
+              "index": 44.2
             },
             "mental": null,
             "dominance": null,
@@ -84532,7 +84532,7 @@
               "rating": 201.1,
               "components": 4,
               "inclChallenger": true,
-              "index": 53.8
+              "index": 53.7
             },
             "mental": {
               "pw": 52,
@@ -85112,7 +85112,7 @@
               "rating": 243.2,
               "components": 4,
               "inclChallenger": true,
-              "index": 77.7
+              "index": 77.8
             },
             "mental": {
               "pw": 12,
@@ -87142,7 +87142,7 @@
               "rating": 176.8,
               "components": 4,
               "inclChallenger": true,
-              "index": 37.4
+              "index": 37.3
             },
             "mental": {
               "pw": 3,
@@ -87649,7 +87649,7 @@
               "svMatches": 15,
               "rating": 245.6,
               "inclChallenger": true,
-              "index": 26.2
+              "index": 25.8
             },
             "return": {
               "ret1stWonPct": 28.2,
@@ -88129,7 +88129,7 @@
               "rating": 203.2,
               "components": 4,
               "inclChallenger": false,
-              "index": 56.9
+              "index": 56.8
             },
             "mental": {
               "pw": 511,
@@ -89518,7 +89518,7 @@
               "rating": 185.6,
               "components": 4,
               "inclChallenger": false,
-              "index": 38.3
+              "index": 38.4
             },
             "mental": {
               "pw": 168,
@@ -89542,12 +89542,12 @@
               "decPlayed": 6,
               "bpSaved": 119,
               "bpConverted": 49,
-              "challMatches": 138,
-              "challSvpt": 9565,
-              "challBpFaced": 801,
-              "challBpChances": 994,
-              "challBpSaved": 476,
-              "challBpConverted": 401
+              "challMatches": 139,
+              "challSvpt": 9622,
+              "challBpFaced": 805,
+              "challBpChances": 995,
+              "challBpSaved": 477,
+              "challBpConverted": 402
             }
           },
           "last52": {
@@ -89583,7 +89583,7 @@
               "rating": 105.1,
               "components": 4,
               "inclChallenger": false,
-              "index": 19.1
+              "index": 19
             },
             "mental": {
               "pw": 62,
@@ -89607,12 +89607,12 @@
               "decPlayed": 3,
               "bpSaved": 47,
               "bpConverted": 15,
-              "challMatches": 47,
-              "challSvpt": 3319,
-              "challBpFaced": 257,
-              "challBpChances": 371,
-              "challBpSaved": 140,
-              "challBpConverted": 139
+              "challMatches": 48,
+              "challSvpt": 3376,
+              "challBpFaced": 261,
+              "challBpChances": 372,
+              "challBpSaved": 141,
+              "challBpConverted": 140
             }
           }
         }
@@ -89723,7 +89723,7 @@
               "rating": 189.5,
               "components": 4,
               "inclChallenger": true,
-              "index": 46.4
+              "index": 46.5
             },
             "mental": {
               "pw": 3,
@@ -90585,7 +90585,7 @@
               "bpConvPct": 40.9,
               "rating": 138.8,
               "inclChallenger": true,
-              "index": 78.4
+              "index": 78.8
             },
             "underPressure": {
               "bpSavedPct": 50.8,
@@ -90595,7 +90595,7 @@
               "rating": 212.2,
               "components": 4,
               "inclChallenger": true,
-              "index": 62.8
+              "index": 62.9
             },
             "mental": {
               "pw": 13,
@@ -91229,7 +91229,7 @@
               "rating": 198,
               "components": 4,
               "inclChallenger": false,
-              "index": 63.1
+              "index": 63.2
             },
             "mental": {
               "pw": 241,
@@ -92266,7 +92266,7 @@
               "rating": 168.5,
               "components": 4,
               "inclChallenger": false,
-              "index": 49.8
+              "index": 49.6
             },
             "mental": {
               "pw": 109,
@@ -92597,7 +92597,7 @@
               "rating": 168.5,
               "components": 4,
               "inclChallenger": false,
-              "index": 49
+              "index": 49.2
             },
             "mental": {
               "pw": 109,
@@ -93262,7 +93262,7 @@
               "bpConvPct": 42,
               "rating": 133.2,
               "inclChallenger": true,
-              "index": 68.2
+              "index": 68.6
             },
             "underPressure": {
               "bpSavedPct": 58.9,
@@ -93806,7 +93806,7 @@
               "rating": 177.7,
               "components": 4,
               "inclChallenger": true,
-              "index": 35.2
+              "index": 35.3
             },
             "mental": null,
             "dominance": null,
@@ -94808,7 +94808,7 @@
               "rating": 190.4,
               "components": 4,
               "inclChallenger": true,
-              "index": 43.8
+              "index": 43.7
             },
             "mental": {
               "pw": 40,
@@ -95268,7 +95268,7 @@
               "rating": 174.8,
               "components": 4,
               "inclChallenger": true,
-              "index": 38.6
+              "index": 38.5
             },
             "mental": {
               "pw": 41,
@@ -95795,7 +95795,7 @@
               "bpConvPct": 50,
               "rating": 117.3,
               "inclChallenger": true,
-              "index": 20.8
+              "index": 20.4
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -96243,7 +96243,7 @@
               "rating": 203.3,
               "components": 4,
               "inclChallenger": true,
-              "index": 48.6
+              "index": 48.7
             },
             "mental": {
               "pw": 115,
@@ -96298,7 +96298,7 @@
               "bpConvPct": 43,
               "rating": 150.2,
               "inclChallenger": false,
-              "index": 96
+              "index": 95.6
             },
             "underPressure": {
               "bpSavedPct": 58,
@@ -96832,7 +96832,7 @@
               "rating": 182.8,
               "components": 4,
               "inclChallenger": true,
-              "index": 50
+              "index": 49.8
             },
             "mental": {
               "pw": 21,
@@ -97295,7 +97295,7 @@
               "rating": 166.2,
               "components": 4,
               "inclChallenger": true,
-              "index": 38.6
+              "index": 38.8
             },
             "mental": null,
             "dominance": null,
@@ -97785,7 +97785,7 @@
               "rating": 174.6,
               "components": 4,
               "inclChallenger": false,
-              "index": 47.5
+              "index": 47.4
             },
             "mental": {
               "pw": 93,
@@ -98288,7 +98288,7 @@
               "rating": 135.7,
               "components": 4,
               "inclChallenger": true,
-              "index": 20.8
+              "index": 20.7
             },
             "mental": {
               "pw": 24,
@@ -98813,7 +98813,7 @@
               "bpConvPct": 41.3,
               "rating": 138.3,
               "inclChallenger": true,
-              "index": 79.2
+              "index": 79.6
             },
             "underPressure": {
               "bpSavedPct": 53.4,
@@ -98823,7 +98823,7 @@
               "rating": 208.7,
               "components": 4,
               "inclChallenger": true,
-              "index": 59.8
+              "index": 59.9
             },
             "mental": {
               "pw": 7,
@@ -99348,7 +99348,7 @@
               "rating": 182.2,
               "components": 4,
               "inclChallenger": false,
-              "index": 45.6
+              "index": 45.5
             },
             "mental": {
               "pw": 85,
@@ -99842,48 +99842,48 @@
               "decPlayed": 11,
               "bpSaved": 87,
               "bpConverted": 59,
-              "challMatches": 66,
-              "challSvpt": 4570,
-              "challBpFaced": 320,
-              "challBpChances": 369,
-              "challBpSaved": 191,
-              "challBpConverted": 152
+              "challMatches": 67,
+              "challSvpt": 4634,
+              "challBpFaced": 327,
+              "challBpChances": 379,
+              "challBpSaved": 194,
+              "challBpConverted": 154
             }
           },
           "last52": {
             "serve": {
-              "firstInPct": 58,
-              "firstWonPct": 63.3,
-              "secondWonPct": 47.2,
-              "holdPct": 74.9,
+              "firstInPct": 58.2,
+              "firstWonPct": 63,
+              "secondWonPct": 47.1,
+              "holdPct": 74.5,
               "acePct": 4,
               "dfPct": 3.1,
-              "acesPerMatch": 2.8,
+              "acesPerMatch": 2.7,
               "dfPerMatch": 2.3,
-              "svMatches": 49,
-              "rating": 243.8,
+              "svMatches": 50,
+              "rating": 243.1,
               "inclChallenger": true,
-              "index": 22.2
+              "index": 20
             },
             "return": {
-              "ret1stWonPct": 31.1,
-              "ret2ndWonPct": 49.7,
+              "ret1stWonPct": 30.9,
+              "ret2ndWonPct": 49.9,
               "rptWonPct": 38.1,
-              "breakPct": 19.6,
-              "bpConvPct": 38.6,
-              "rating": 139,
+              "breakPct": 19.5,
+              "bpConvPct": 37.8,
+              "rating": 138.2,
               "inclChallenger": true,
-              "index": 80.3
+              "index": 78.8
             },
             "underPressure": {
-              "bpSavedPct": 57.1,
-              "bpConvPct": 38.6,
+              "bpSavedPct": 56.6,
+              "bpConvPct": 37.8,
               "tbWinPct": 42.7,
               "decWinPct": 45,
-              "rating": 183.3,
+              "rating": 182.1,
               "components": 4,
               "inclChallenger": true,
-              "index": 46
+              "index": 44
             },
             "mental": {
               "pw": 45,
@@ -99907,12 +99907,12 @@
               "decPlayed": 1,
               "bpSaved": 31,
               "bpConverted": 14,
-              "challMatches": 44,
-              "challSvpt": 3015,
-              "challBpFaced": 199,
-              "challBpChances": 235,
-              "challBpSaved": 121,
-              "challBpConverted": 98
+              "challMatches": 45,
+              "challSvpt": 3079,
+              "challBpFaced": 206,
+              "challBpChances": 245,
+              "challBpSaved": 124,
+              "challBpConverted": 100
             }
           }
         },
@@ -100226,12 +100226,12 @@
               "decPlayed": 19,
               "bpSaved": 268,
               "bpConverted": 143,
-              "challMatches": 77,
-              "challSvpt": 5320,
-              "challBpFaced": 389,
-              "challBpChances": 448,
-              "challBpSaved": 231,
-              "challBpConverted": 181
+              "challMatches": 78,
+              "challSvpt": 5384,
+              "challBpFaced": 396,
+              "challBpChances": 458,
+              "challBpSaved": 234,
+              "challBpConverted": 183
             }
           },
           "last52": {
@@ -100257,7 +100257,7 @@
               "bpConvPct": 44.1,
               "rating": 153.1,
               "inclChallenger": false,
-              "index": 95.8
+              "index": 96.1
             },
             "underPressure": {
               "bpSavedPct": 62.5,
@@ -100291,12 +100291,12 @@
               "decPlayed": 2,
               "bpSaved": 75,
               "bpConverted": 41,
-              "challMatches": 53,
-              "challSvpt": 3626,
-              "challBpFaced": 257,
-              "challBpChances": 305,
-              "challBpSaved": 154,
-              "challBpConverted": 124
+              "challMatches": 54,
+              "challSvpt": 3690,
+              "challBpFaced": 264,
+              "challBpChances": 315,
+              "challBpSaved": 157,
+              "challBpConverted": 126
             }
           }
         }
@@ -100397,7 +100397,7 @@
               "bpConvPct": 33.3,
               "rating": 114.5,
               "inclChallenger": true,
-              "index": 16.8
+              "index": 16.4
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -100750,7 +100750,7 @@
               "svMatches": 39,
               "rating": 249.8,
               "inclChallenger": true,
-              "index": 31.8
+              "index": 31.4
             },
             "return": {
               "ret1stWonPct": 27.9,
@@ -100900,7 +100900,7 @@
               "bpConvPct": 32.9,
               "rating": 117.4,
               "inclChallenger": false,
-              "index": 21.2
+              "index": 20.8
             },
             "underPressure": {
               "bpSavedPct": 52.8,
@@ -101225,7 +101225,7 @@
               "bpConvPct": 40.4,
               "rating": 140.9,
               "inclChallenger": false,
-              "index": 73.2
+              "index": 72.9
             },
             "underPressure": {
               "bpSavedPct": 59,
@@ -101300,7 +101300,7 @@
               "rating": 160.2,
               "components": 4,
               "inclChallenger": false,
-              "index": 22.5
+              "index": 22.6
             },
             "mental": {
               "pw": 85,
@@ -101562,7 +101562,7 @@
               "bpConvPct": 37.7,
               "rating": 143.3,
               "inclChallenger": false,
-              "index": 78.4
+              "index": 78
             },
             "underPressure": {
               "bpSavedPct": 66.7,
@@ -101825,7 +101825,7 @@
               "bpConvPct": 37.5,
               "rating": 136.7,
               "inclChallenger": false,
-              "index": 71.4
+              "index": 71.7
             },
             "underPressure": {
               "bpSavedPct": 62.9,
@@ -101835,7 +101835,7 @@
               "rating": 203.2,
               "components": 4,
               "inclChallenger": false,
-              "index": 60.2
+              "index": 60.1
             },
             "mental": {
               "pw": 155,
@@ -102205,32 +102205,32 @@
               "firstInPct": 56.8,
               "firstWonPct": 65,
               "secondWonPct": 44.7,
-              "holdPct": 72.4,
-              "acePct": 8.5,
+              "holdPct": 72.5,
+              "acePct": 8.6,
               "dfPct": 4.3,
               "acesPerMatch": 5.9,
-              "dfPerMatch": 3.2,
-              "svMatches": 180,
-              "rating": 241.6,
+              "dfPerMatch": 3.3,
+              "svMatches": 181,
+              "rating": 241.7,
               "inclChallenger": true,
-              "index": 13.7
+              "index": 14.1
             },
             "return": {
-              "ret1stWonPct": 26.5,
+              "ret1stWonPct": 26.6,
               "ret2ndWonPct": 44.1,
-              "rptWonPct": 33.1,
-              "breakPct": 18,
+              "rptWonPct": 33.2,
+              "breakPct": 18.1,
               "bpConvPct": 35.2,
-              "rating": 123.8,
+              "rating": 124.1,
               "inclChallenger": true,
-              "index": 16.5
+              "index": 17.6
             },
             "underPressure": {
               "bpSavedPct": 56.7,
               "bpConvPct": 35.2,
               "tbWinPct": 49.2,
               "decWinPct": 51.1,
-              "rating": 192.2,
+              "rating": 192.3,
               "components": 4,
               "inclChallenger": true,
               "index": 37.6
@@ -102257,48 +102257,48 @@
               "decPlayed": 4,
               "bpSaved": 42,
               "bpConverted": 17,
-              "challMatches": 168,
-              "challSvpt": 11638,
-              "challBpFaced": 948,
-              "challBpChances": 938,
-              "challBpSaved": 604,
-              "challBpConverted": 366
+              "challMatches": 169,
+              "challSvpt": 11687,
+              "challBpFaced": 949,
+              "challBpChances": 947,
+              "challBpSaved": 605,
+              "challBpConverted": 370
             }
           },
           "last52": {
             "serve": {
               "firstInPct": 57.7,
-              "firstWonPct": 65.1,
+              "firstWonPct": 65.2,
               "secondWonPct": 44.5,
-              "holdPct": 74.6,
+              "holdPct": 74.8,
               "acePct": 7.6,
-              "dfPct": 4.3,
+              "dfPct": 4.4,
               "acesPerMatch": 5.5,
               "dfPerMatch": 3.5,
-              "svMatches": 61,
-              "rating": 244,
+              "svMatches": 62,
+              "rating": 244.2,
               "inclChallenger": true,
               "index": 21.2
             },
             "return": {
-              "ret1stWonPct": 26.4,
-              "ret2ndWonPct": 44.4,
-              "rptWonPct": 33.1,
-              "breakPct": 17,
-              "bpConvPct": 35.8,
-              "rating": 123.6,
+              "ret1stWonPct": 26.5,
+              "ret2ndWonPct": 44.5,
+              "rptWonPct": 33.3,
+              "breakPct": 17.4,
+              "bpConvPct": 36,
+              "rating": 124.4,
               "inclChallenger": true,
-              "index": 31.4
+              "index": 33.2
             },
             "underPressure": {
-              "bpSavedPct": 57.3,
-              "bpConvPct": 35.8,
+              "bpSavedPct": 57.4,
+              "bpConvPct": 36,
               "tbWinPct": 54,
               "decWinPct": 46.7,
-              "rating": 193.8,
+              "rating": 194,
               "components": 4,
               "inclChallenger": true,
-              "index": 48.1
+              "index": 48.4
             },
             "mental": {
               "pw": 8,
@@ -102322,12 +102322,12 @@
               "decPlayed": 1,
               "bpSaved": 6,
               "bpConverted": 2,
-              "challMatches": 60,
-              "challSvpt": 4367,
-              "challBpFaced": 319,
-              "challBpChances": 325,
-              "challBpSaved": 202,
-              "challBpConverted": 128
+              "challMatches": 61,
+              "challSvpt": 4416,
+              "challBpFaced": 320,
+              "challBpChances": 334,
+              "challBpSaved": 203,
+              "challBpConverted": 132
             }
           }
         }
@@ -102418,7 +102418,7 @@
               "svMatches": 10,
               "rating": 246.8,
               "inclChallenger": false,
-              "index": 28.4
+              "index": 28
             },
             "return": {
               "ret1stWonPct": 27.6,
@@ -102438,7 +102438,7 @@
               "rating": 188.9,
               "components": 4,
               "inclChallenger": true,
-              "index": 48.7
+              "index": 48.8
             },
             "mental": {
               "pw": 91,
@@ -102945,7 +102945,7 @@
               "svMatches": 40,
               "rating": 252.2,
               "inclChallenger": true,
-              "index": 38.9
+              "index": 39.3
             },
             "return": {
               "ret1stWonPct": 25.4,
@@ -102955,7 +102955,7 @@
               "bpConvPct": 31.8,
               "rating": 115.5,
               "inclChallenger": true,
-              "index": 18.2
+              "index": 17.9
             },
             "underPressure": {
               "bpSavedPct": 59.7,
@@ -102965,7 +102965,7 @@
               "rating": 189.8,
               "components": 4,
               "inclChallenger": true,
-              "index": 44
+              "index": 44.1
             },
             "mental": {
               "pw": 24,
@@ -103978,7 +103978,7 @@
               "svMatches": 13,
               "rating": 241.8,
               "inclChallenger": true,
-              "index": 19.6
+              "index": 19.3
             },
             "return": {
               "ret1stWonPct": 28.9,
@@ -104427,7 +104427,7 @@
               "rating": 181.8,
               "components": 4,
               "inclChallenger": false,
-              "index": 37.5
+              "index": 37.4
             },
             "mental": {
               "pw": 425,
@@ -104492,7 +104492,7 @@
               "rating": 115.5,
               "components": 4,
               "inclChallenger": true,
-              "index": 8.5
+              "index": 8.4
             },
             "mental": {
               "pw": 13,
@@ -105851,7 +105851,7 @@
               "svMatches": 10,
               "rating": 281.7,
               "inclChallenger": false,
-              "index": 85.2
+              "index": 84.8
             },
             "return": {
               "ret1stWonPct": 24.1,
@@ -105871,7 +105871,7 @@
               "rating": 207.7,
               "components": 4,
               "inclChallenger": false,
-              "index": 49.5
+              "index": 49.6
             },
             "mental": {
               "pw": 35,
@@ -106486,48 +106486,48 @@
               "decPlayed": 12,
               "bpSaved": 121,
               "bpConverted": 75,
-              "challMatches": 62,
-              "challSvpt": 4344,
-              "challBpFaced": 331,
-              "challBpChances": 405,
-              "challBpSaved": 206,
-              "challBpConverted": 191
+              "challMatches": 63,
+              "challSvpt": 4432,
+              "challBpFaced": 341,
+              "challBpChances": 412,
+              "challBpSaved": 214,
+              "challBpConverted": 195
             }
           },
           "last52": {
             "serve": {
               "firstInPct": 48.8,
               "firstWonPct": 69.5,
-              "secondWonPct": 47.4,
-              "holdPct": 74.1,
-              "acePct": 11.8,
-              "dfPct": 3.5,
+              "secondWonPct": 47,
+              "holdPct": 74,
+              "acePct": 11.7,
+              "dfPct": 3.4,
               "acesPerMatch": 8,
-              "dfPerMatch": 2.6,
-              "svMatches": 39,
-              "rating": 245.4,
+              "dfPerMatch": 2.5,
+              "svMatches": 40,
+              "rating": 244.8,
               "inclChallenger": true,
-              "index": 25.5
+              "index": 24.4
             },
             "return": {
-              "ret1stWonPct": 30.2,
+              "ret1stWonPct": 30.5,
               "ret2ndWonPct": 48.8,
-              "rptWonPct": 37.1,
-              "breakPct": 27.7,
-              "bpConvPct": 42.8,
-              "rating": 149.5,
+              "rptWonPct": 37.3,
+              "breakPct": 28,
+              "bpConvPct": 43,
+              "rating": 150.3,
               "inclChallenger": true,
-              "index": 95.3
+              "index": 96
             },
             "underPressure": {
-              "bpSavedPct": 56.9,
-              "bpConvPct": 42.8,
+              "bpSavedPct": 57.5,
+              "bpConvPct": 43,
               "tbWinPct": 60.7,
               "decWinPct": 40,
-              "rating": 200.3,
+              "rating": 201.2,
               "components": 4,
               "inclChallenger": true,
-              "index": 61
+              "index": 62.8
             },
             "mental": {
               "pw": 38,
@@ -106551,12 +106551,12 @@
               "decPlayed": 4,
               "bpSaved": 22,
               "bpConverted": 16,
-              "challMatches": 32,
-              "challSvpt": 2167,
-              "challBpFaced": 180,
-              "challBpChances": 224,
-              "challBpSaved": 112,
-              "challBpConverted": 112
+              "challMatches": 33,
+              "challSvpt": 2255,
+              "challBpFaced": 190,
+              "challBpChances": 231,
+              "challBpSaved": 120,
+              "challBpConverted": 116
             }
           }
         },
@@ -106839,12 +106839,12 @@
               "decPlayed": 16,
               "bpSaved": 173,
               "bpConverted": 103,
-              "challMatches": 73,
-              "challSvpt": 5141,
-              "challBpFaced": 398,
-              "challBpChances": 479,
-              "challBpSaved": 245,
-              "challBpConverted": 219
+              "challMatches": 74,
+              "challSvpt": 5229,
+              "challBpFaced": 408,
+              "challBpChances": 486,
+              "challBpSaved": 253,
+              "challBpConverted": 223
             }
           },
           "last52": {
@@ -106904,12 +106904,12 @@
               "decPlayed": 4,
               "bpSaved": 22,
               "bpConverted": 19,
-              "challMatches": 34,
-              "challSvpt": 2316,
-              "challBpFaced": 193,
-              "challBpChances": 236,
-              "challBpSaved": 117,
-              "challBpConverted": 118
+              "challMatches": 35,
+              "challSvpt": 2404,
+              "challBpFaced": 203,
+              "challBpChances": 243,
+              "challBpSaved": 125,
+              "challBpConverted": 122
             }
           }
         }
@@ -108252,7 +108252,7 @@
               "rating": 193.9,
               "components": 4,
               "inclChallenger": false,
-              "index": 53.6
+              "index": 53.5
             },
             "mental": {
               "pw": 953,
@@ -108899,7 +108899,7 @@
               "bpConvPct": 31,
               "rating": 116,
               "inclChallenger": true,
-              "index": 19.7
+              "index": 19.3
             },
             "underPressure": {
               "bpSavedPct": 67,
@@ -108909,7 +108909,7 @@
               "rating": 190.7,
               "components": 3,
               "inclChallenger": true,
-              "index": 49.9
+              "index": 49.8
             },
             "mental": {
               "pw": 9,
@@ -109433,7 +109433,7 @@
               "bpConvPct": 33.3,
               "rating": 115.8,
               "inclChallenger": false,
-              "index": 19.3
+              "index": 19
             },
             "underPressure": {
               "bpSavedPct": 52.4,
@@ -109945,7 +109945,7 @@
               "rating": 169.8,
               "components": 4,
               "inclChallenger": true,
-              "index": 33.9
+              "index": 33.8
             },
             "mental": {
               "pw": 35,
@@ -110310,7 +110310,7 @@
               "rating": 164.7,
               "components": 4,
               "inclChallenger": true,
-              "index": 30.6
+              "index": 30.4
             },
             "mental": {
               "pw": 35,
@@ -110430,7 +110430,7 @@
               "svMatches": 18,
               "rating": 252.5,
               "inclChallenger": true,
-              "index": 40
+              "index": 40.4
             },
             "return": {
               "ret1stWonPct": 26.1,
@@ -110450,7 +110450,7 @@
               "rating": 147.7,
               "components": 4,
               "inclChallenger": true,
-              "index": 38.1
+              "index": 38.2
             },
             "mental": {
               "pw": 22,
@@ -111383,7 +111383,7 @@
               "bpConvPct": 40.2,
               "rating": 127.7,
               "inclChallenger": true,
-              "index": 50.7
+              "index": 51.1
             },
             "underPressure": {
               "bpSavedPct": 51.7,
@@ -111889,7 +111889,7 @@
               "svMatches": 32,
               "rating": 247.8,
               "inclChallenger": true,
-              "index": 30.2
+              "index": 29.8
             },
             "return": {
               "ret1stWonPct": 25.4,
@@ -112394,7 +112394,7 @@
               "bpConvPct": 27.7,
               "rating": 116.7,
               "inclChallenger": true,
-              "index": 20.4
+              "index": 20.1
             },
             "underPressure": {
               "bpSavedPct": 45,
@@ -112404,7 +112404,7 @@
               "rating": 185.2,
               "components": 4,
               "inclChallenger": true,
-              "index": 37.4
+              "index": 37.3
             },
             "mental": null,
             "dominance": null,
@@ -112739,7 +112739,7 @@
               "bpConvPct": 36.1,
               "rating": 128.7,
               "inclChallenger": true,
-              "index": 47
+              "index": 46.6
             },
             "underPressure": {
               "bpSavedPct": 55.7,
@@ -112749,7 +112749,7 @@
               "rating": 204.3,
               "components": 4,
               "inclChallenger": true,
-              "index": 53.4
+              "index": 53.3
             },
             "mental": {
               "pw": 13,
@@ -113318,7 +113318,7 @@
               "rating": 204.6,
               "components": 4,
               "inclChallenger": false,
-              "index": 59.3
+              "index": 59.4
             },
             "mental": {
               "pw": 822,
@@ -113767,7 +113767,7 @@
               "bpConvPct": 40.7,
               "rating": 127.3,
               "inclChallenger": true,
-              "index": 44.2
+              "index": 43.8
             },
             "underPressure": {
               "bpSavedPct": 63.7,
@@ -114373,7 +114373,7 @@
               "bpConvPct": 39.1,
               "rating": 127.8,
               "inclChallenger": true,
-              "index": 51.5
+              "index": 51.8
             },
             "underPressure": {
               "bpSavedPct": 53.9,
@@ -114907,7 +114907,7 @@
               "bpConvPct": 36.7,
               "rating": 130.5,
               "inclChallenger": true,
-              "index": 59.1
+              "index": 59.5
             },
             "underPressure": {
               "bpSavedPct": 50.2,
@@ -114917,7 +114917,7 @@
               "rating": 186.3,
               "components": 4,
               "inclChallenger": true,
-              "index": 40.2
+              "index": 40.1
             },
             "mental": {
               "pw": 20,
@@ -115368,7 +115368,7 @@
               "rating": 234.5,
               "components": 4,
               "inclChallenger": false,
-              "index": 78.3
+              "index": 78.1
             },
             "mental": {
               "pw": 2734,
@@ -115433,7 +115433,7 @@
               "rating": 216.9,
               "components": 3,
               "inclChallenger": true,
-              "index": 63.4
+              "index": 63.5
             },
             "mental": {
               "pw": 7,
@@ -115927,7 +115927,7 @@
               "rating": 214.4,
               "components": 4,
               "inclChallenger": true,
-              "index": 49.2
+              "index": 49.3
             },
             "mental": {
               "pw": 1,
@@ -116399,7 +116399,7 @@
               "rating": 155,
               "components": 4,
               "inclChallenger": false,
-              "index": 52.7
+              "index": 52.5
             },
             "mental": {
               "pw": 72,
@@ -116837,7 +116837,7 @@
               "rating": 171.1,
               "components": 4,
               "inclChallenger": true,
-              "index": 28.1
+              "index": 28
             },
             "mental": {
               "pw": 53,
@@ -116892,7 +116892,7 @@
               "bpConvPct": 31.3,
               "rating": 116.4,
               "inclChallenger": true,
-              "index": 20.1
+              "index": 19.7
             },
             "underPressure": {
               "bpSavedPct": 44.8,
@@ -117224,7 +117224,7 @@
               "rating": 131.6,
               "components": 3,
               "inclChallenger": true,
-              "index": 18.9
+              "index": 18.7
             },
             "mental": {
               "pw": 6,
@@ -117364,7 +117364,7 @@
               "rating": 189.1,
               "components": 4,
               "inclChallenger": true,
-              "index": 43.1
+              "index": 43.3
             },
             "mental": {
               "pw": 44,
@@ -117719,7 +117719,7 @@
               "svMatches": 39,
               "rating": 250.3,
               "inclChallenger": true,
-              "index": 32.5
+              "index": 32.2
             },
             "return": {
               "ret1stWonPct": 25.3,
@@ -118353,7 +118353,7 @@
               "svMatches": 33,
               "rating": 247.6,
               "inclChallenger": true,
-              "index": 29.5
+              "index": 29.1
             },
             "return": {
               "ret1stWonPct": 24,
@@ -118363,7 +118363,7 @@
               "bpConvPct": 34.5,
               "rating": 112.5,
               "inclChallenger": true,
-              "index": 14.2
+              "index": 13.9
             },
             "underPressure": {
               "bpSavedPct": 57.7,
@@ -118373,7 +118373,7 @@
               "rating": 164.3,
               "components": 4,
               "inclChallenger": true,
-              "index": 33.9
+              "index": 34
             },
             "mental": {
               "pw": 22,
@@ -118727,7 +118727,7 @@
               "svMatches": 41,
               "rating": 249.2,
               "inclChallenger": true,
-              "index": 31.1
+              "index": 30.7
             },
             "return": {
               "ret1stWonPct": 24.1,
@@ -119331,7 +119331,7 @@
               "bpConvPct": 33.1,
               "rating": 118.2,
               "inclChallenger": true,
-              "index": 23.7
+              "index": 23.4
             },
             "underPressure": {
               "bpSavedPct": 57.3,
@@ -120297,7 +120297,7 @@
               "svMatches": 2,
               "rating": 245.7,
               "inclChallenger": true,
-              "index": 26.5
+              "index": 26.2
             },
             "return": {
               "ret1stWonPct": 24.6,
@@ -121100,7 +121100,7 @@
               "bpConvPct": 39.8,
               "rating": 136.6,
               "inclChallenger": true,
-              "index": 71
+              "index": 71.4
             },
             "underPressure": {
               "bpSavedPct": 49.7,
@@ -121250,7 +121250,7 @@
               "rating": 217.8,
               "components": 4,
               "inclChallenger": true,
-              "index": 59.5
+              "index": 59.4
             },
             "mental": {
               "pw": 31,
@@ -121560,7 +121560,7 @@
               "svMatches": 234,
               "rating": 249.8,
               "inclChallenger": false,
-              "index": 26.4
+              "index": 26.1
             },
             "return": {
               "ret1stWonPct": 28.8,
@@ -121625,7 +121625,7 @@
               "svMatches": 8,
               "rating": 250,
               "inclChallenger": false,
-              "index": 32.2
+              "index": 31.8
             },
             "return": {
               "ret1stWonPct": 26.3,
@@ -121635,7 +121635,7 @@
               "bpConvPct": 35.3,
               "rating": 127.8,
               "inclChallenger": false,
-              "index": 45.2
+              "index": 44.9
             },
             "underPressure": {
               "bpSavedPct": 56.5,
@@ -121645,7 +121645,7 @@
               "rating": 185.1,
               "components": 4,
               "inclChallenger": false,
-              "index": 40.9
+              "index": 40.8
             },
             "mental": {
               "pw": 57,
@@ -122574,7 +122574,7 @@
               "rating": 212.7,
               "components": 3,
               "inclChallenger": true,
-              "index": 75.3
+              "index": 75.2
             },
             "mental": {
               "pw": 17,
@@ -122704,7 +122704,7 @@
               "bpConvPct": 32.9,
               "rating": 119.3,
               "inclChallenger": false,
-              "index": 24.8
+              "index": 24.5
             },
             "underPressure": {
               "bpSavedPct": 59.4,
@@ -123240,7 +123240,7 @@
               "bpConvPct": 33.2,
               "rating": 115.3,
               "inclChallenger": true,
-              "index": 17.9
+              "index": 17.5
             },
             "underPressure": {
               "bpSavedPct": 56.9,
@@ -123250,7 +123250,7 @@
               "rating": 206,
               "components": 4,
               "inclChallenger": true,
-              "index": 52.6
+              "index": 52.8
             },
             "mental": {
               "pw": 15,
@@ -123784,7 +123784,7 @@
               "rating": 140.1,
               "components": 4,
               "inclChallenger": true,
-              "index": 23.3
+              "index": 23.4
             },
             "mental": null,
             "dominance": null,
@@ -124226,7 +124226,7 @@
               "svMatches": 20,
               "rating": 244,
               "inclChallenger": true,
-              "index": 22.9
+              "index": 22.5
             },
             "return": {
               "ret1stWonPct": 26.3,
@@ -124246,7 +124246,7 @@
               "rating": 189.4,
               "components": 4,
               "inclChallenger": true,
-              "index": 46.8
+              "index": 46.7
             },
             "mental": null,
             "dominance": null,
@@ -124760,7 +124760,7 @@
               "rating": 190.1,
               "components": 4,
               "inclChallenger": false,
-              "index": 50.8
+              "index": 50.6
             },
             "mental": {
               "pw": 66,
@@ -125154,7 +125154,7 @@
               "rating": 221,
               "components": 4,
               "inclChallenger": false,
-              "index": 67.5
+              "index": 67.4
             },
             "mental": {
               "pw": 149,
@@ -125284,7 +125284,7 @@
               "bpConvPct": 25.2,
               "rating": 113.8,
               "inclChallenger": true,
-              "index": 16.1
+              "index": 15.7
             },
             "underPressure": {
               "bpSavedPct": 55.3,
@@ -126805,7 +126805,7 @@
               "svMatches": 9,
               "rating": 244.5,
               "inclChallenger": true,
-              "index": 23.3
+              "index": 22.9
             },
             "return": {
               "ret1stWonPct": 28.3,
@@ -127294,7 +127294,7 @@
               "rating": 221.3,
               "components": 3,
               "inclChallenger": false,
-              "index": 82.4
+              "index": 82.3
             },
             "mental": {
               "pw": 85,
@@ -127339,7 +127339,7 @@
               "svMatches": 7,
               "rating": 252.4,
               "inclChallenger": false,
-              "index": 39.6
+              "index": 40
             },
             "return": {
               "ret1stWonPct": 21.8,
@@ -127592,7 +127592,7 @@
               "rating": 218,
               "components": 3,
               "inclChallenger": false,
-              "index": 75.4
+              "index": 75.3
             },
             "mental": {
               "pw": 104,
@@ -127785,7 +127785,7 @@
               "bpConvPct": 37.9,
               "rating": 117.9,
               "inclChallenger": true,
-              "index": 22.6
+              "index": 22.3
             },
             "underPressure": {
               "bpSavedPct": 55.9,
@@ -128590,7 +128590,7 @@
               "bpConvPct": 31.1,
               "rating": 128.1,
               "inclChallenger": false,
-              "index": 45.9
+              "index": 45.6
             },
             "underPressure": {
               "bpSavedPct": 62.5,
@@ -129114,7 +129114,7 @@
               "svMatches": 47,
               "rating": 252.5,
               "inclChallenger": true,
-              "index": 37.5
+              "index": 37.8
             },
             "return": {
               "ret1stWonPct": 25.8,
@@ -129124,7 +129124,7 @@
               "bpConvPct": 37,
               "rating": 124.4,
               "inclChallenger": true,
-              "index": 33.6
+              "index": 33.2
             },
             "underPressure": {
               "bpSavedPct": 57.4,
@@ -129134,7 +129134,7 @@
               "rating": 196.3,
               "components": 4,
               "inclChallenger": true,
-              "index": 50.6
+              "index": 50.5
             },
             "mental": {
               "pw": 42,
@@ -130756,7 +130756,7 @@
               "rating": 162.9,
               "components": 4,
               "inclChallenger": false,
-              "index": 34
+              "index": 34.1
             },
             "mental": {
               "pw": 82,
@@ -131280,7 +131280,7 @@
               "bpConvPct": 48,
               "rating": 113.4,
               "inclChallenger": true,
-              "index": 15.3
+              "index": 15
             },
             "underPressure": {
               "bpSavedPct": 54.4,
@@ -132732,7 +132732,7 @@
               "bpConvPct": 44.9,
               "rating": 138.5,
               "inclChallenger": true,
-              "index": 79.6
+              "index": 79.9
             },
             "underPressure": {
               "bpSavedPct": 53,
@@ -133040,7 +133040,7 @@
               "rating": 196.3,
               "components": 4,
               "inclChallenger": true,
-              "index": 49.3
+              "index": 49.2
             },
             "mental": {
               "pw": 87,
@@ -133225,7 +133225,7 @@
               "svMatches": 14,
               "rating": 246.1,
               "inclChallenger": false,
-              "index": 27.3
+              "index": 26.9
             },
             "return": {
               "ret1stWonPct": 29.3,
@@ -133245,7 +133245,7 @@
               "rating": 194.9,
               "components": 4,
               "inclChallenger": false,
-              "index": 53.2
+              "index": 53.3
             },
             "mental": {
               "pw": 102,
@@ -133770,7 +133770,7 @@
               "bpConvPct": 37,
               "rating": 117.6,
               "inclChallenger": false,
-              "index": 21.5
+              "index": 21.2
             },
             "underPressure": {
               "bpSavedPct": 51.8,
@@ -134144,7 +134144,7 @@
               "rating": 128.8,
               "components": 4,
               "inclChallenger": false,
-              "index": 13.9
+              "index": 13.8
             },
             "mental": {
               "pw": 69,
@@ -134274,7 +134274,7 @@
               "bpConvPct": 36.8,
               "rating": 113.1,
               "inclChallenger": false,
-              "index": 15
+              "index": 14.6
             },
             "underPressure": {
               "bpSavedPct": 63.3,
@@ -134798,7 +134798,7 @@
               "svMatches": 21,
               "rating": 245.5,
               "inclChallenger": true,
-              "index": 25.8
+              "index": 25.5
             },
             "return": {
               "ret1stWonPct": 24,
@@ -134808,7 +134808,7 @@
               "bpConvPct": 30.7,
               "rating": 115.5,
               "inclChallenger": true,
-              "index": 18.2
+              "index": 17.9
             },
             "underPressure": {
               "bpSavedPct": 57.2,
@@ -134818,7 +134818,7 @@
               "rating": 155.3,
               "components": 4,
               "inclChallenger": true,
-              "index": 25.4
+              "index": 25.3
             },
             "mental": {
               "pw": 13,
@@ -134940,7 +134940,7 @@
               "bpConvPct": 50,
               "rating": 143.2,
               "inclChallenger": true,
-              "index": 78
+              "index": 77.6
             },
             "underPressure": {
               "bpSavedPct": 51.2,
@@ -135311,7 +135311,7 @@
               "bpConvPct": 34.3,
               "rating": 132.9,
               "inclChallenger": true,
-              "index": 67.9
+              "index": 68.2
             },
             "underPressure": {
               "bpSavedPct": 51.8,
@@ -135698,7 +135698,7 @@
               "rating": 222.6,
               "components": 4,
               "inclChallenger": true,
-              "index": 76.5
+              "index": 76.6
             },
             "mental": {
               "pw": 83,
@@ -135828,7 +135828,7 @@
               "bpConvPct": 38.7,
               "rating": 138.7,
               "inclChallenger": true,
-              "index": 79.9
+              "index": 80.3
             },
             "underPressure": {
               "bpSavedPct": 57.1,
@@ -136725,7 +136725,7 @@
               "bpConvPct": 37,
               "rating": 138.5,
               "inclChallenger": false,
-              "index": 77.7
+              "index": 78.1
             },
             "underPressure": {
               "bpSavedPct": 62.4,
@@ -137729,7 +137729,7 @@
               "bpConvPct": 38,
               "rating": 127.8,
               "inclChallenger": false,
-              "index": 45.2
+              "index": 44.9
             },
             "underPressure": {
               "bpSavedPct": 65.1,
@@ -138167,7 +138167,7 @@
               "rating": 171.4,
               "components": 4,
               "inclChallenger": true,
-              "index": 30.5
+              "index": 30.4
             },
             "mental": {
               "pw": 78,
@@ -138307,7 +138307,7 @@
               "rating": 210.9,
               "components": 4,
               "inclChallenger": true,
-              "index": 64.7
+              "index": 64.6
             },
             "mental": {
               "pw": 198,
@@ -138352,7 +138352,7 @@
               "svMatches": 8,
               "rating": 244.6,
               "inclChallenger": true,
-              "index": 24
+              "index": 23.6
             },
             "return": {
               "ret1stWonPct": 29.9,
@@ -140101,7 +140101,7 @@
               "bpConvPct": 41.6,
               "rating": 138.8,
               "inclChallenger": false,
-              "index": 78.4
+              "index": 78.8
             },
             "underPressure": {
               "bpSavedPct": 58.8,
@@ -140251,7 +140251,7 @@
               "rating": 220.3,
               "components": 4,
               "inclChallenger": false,
-              "index": 63.3
+              "index": 63.2
             },
             "mental": {
               "pw": 125,
@@ -140776,7 +140776,7 @@
               "bpConvPct": 38.1,
               "rating": 127.6,
               "inclChallenger": false,
-              "index": 50.4
+              "index": 50.7
             },
             "underPressure": {
               "bpSavedPct": 45.2,
@@ -141703,7 +141703,7 @@
               "svMatches": 7,
               "rating": 244.5,
               "inclChallenger": false,
-              "index": 23.3
+              "index": 22.9
             },
             "return": {
               "ret1stWonPct": 19.3,
@@ -142107,7 +142107,7 @@
               "bpConvPct": 38.9,
               "rating": 128.8,
               "inclChallenger": false,
-              "index": 47.3
+              "index": 47
             },
             "underPressure": {
               "bpSavedPct": 55.4,
@@ -142117,7 +142117,7 @@
               "rating": 160.4,
               "components": 4,
               "inclChallenger": false,
-              "index": 30.6
+              "index": 30.7
             },
             "mental": {
               "pw": 148,
@@ -142610,7 +142610,7 @@
               "svMatches": 5,
               "rating": 241.6,
               "inclChallenger": false,
-              "index": 19.3
+              "index": 18.9
             },
             "return": {
               "ret1stWonPct": 25,
@@ -142958,7 +142958,7 @@
               "rating": 213.6,
               "components": 4,
               "inclChallenger": false,
-              "index": 73.7
+              "index": 73.8
             },
             "mental": {
               "pw": 2018,
@@ -143003,7 +143003,7 @@
               "svMatches": 8,
               "rating": 249.6,
               "inclChallenger": false,
-              "index": 31.4
+              "index": 31.1
             },
             "return": {
               "ret1stWonPct": 26.3,
@@ -143013,7 +143013,7 @@
               "bpConvPct": 29.2,
               "rating": 129,
               "inclChallenger": false,
-              "index": 48.4
+              "index": 48.1
             },
             "underPressure": {
               "bpSavedPct": 61.4,
@@ -143579,7 +143579,7 @@
               "svMatches": 4,
               "rating": 252.3,
               "inclChallenger": false,
-              "index": 39.3
+              "index": 39.6
             },
             "return": {
               "ret1stWonPct": 28.6,
@@ -144953,7 +144953,7 @@
               "spwPct": 65.5,
               "rpwPct": 37.2,
               "rating": 1.08,
-              "index": 87.9
+              "index": 88.3
             },
             "reliable": true,
             "confidence": "high",
@@ -145007,7 +145007,7 @@
               "rating": 154.5,
               "components": 4,
               "inclChallenger": false,
-              "index": 19.4
+              "index": 19.3
             },
             "mental": {
               "pw": 23,
