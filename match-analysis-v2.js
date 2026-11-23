@@ -1241,6 +1241,196 @@
   }
   root.maProgressionV2 = maProgressionV2;
 
+  // ===================================================================================================
+  // TOURNAMENT (LOCKED 2026-11-21): head card (+ "Show court speed & market": court speed card with the CPI switch on
+  // Masters 1000, ROI favourites / underdogs → the Database ROI box, favourite reliability) → record card (career; "On
+  // similar courts" = every event with the same surface + our speed class). Data: trModelFor (the pipeline's history at
+  // the event, priced on the one Database join), tournament-market.json, court-speed-history.json (the Tournaments page's
+  // yearly readings + CPI), career-history for the similar-courts record.
+  const CSH = { d: undefined, p: null };
+  function cshLoad() {
+    if (CSH.d !== undefined || CSH.p) return;
+    CSH.p = fetch('./court-speed-history.json', { cache: 'no-cache' }).then(r => (r.ok ? r.json() : null)).catch(() => null)
+      .then(d => { CSH.d = d && d.ta ? d : null; CSH.p = null; if (typeof _tr !== 'undefined' && _tr) trRender(); });
+  }
+  const CPI_EV = ['Indian Wells', 'Miami', 'Monte Carlo', 'Madrid', 'Rome', 'Canadian Open', 'Cincinnati', 'Shanghai', 'Paris'];
+  const cpiBand = v => (v < 30 ? 'Slow' : v < 35 ? 'Medium-slow' : v < 40 ? 'Medium' : v < 45 ? 'Medium-fast' : 'Fast');
+  function cpiSeriesOf(key) {
+    const d = CSH.d && CSH.d.cpi; if (!d || !key) return null;
+    const k = key === 'Montreal' || key === 'Toronto' ? 'Canadian Open' : key;
+    if (CPI_EV.indexOf(k) < 0) return null;
+    const out = {}; (k === 'Canadian Open' ? [d.Montreal, d.Toronto] : [d[k]]).forEach(o => Object.entries(o || {}).forEach(([y, v]) => { if (v != null) out[y] = +v; }));
+    return Object.keys(out).length ? out : null;
+  }
+  const catOf = k => (typeof TOURNAMENT_CATALOG !== 'undefined' ? TOURNAMENT_CATALOG.find(t => t.name === k) : null);
+  function evClass(name) {
+    const k = typeof sfEventKey === 'function' ? sfEventKey(name) : null, cc = k && typeof COURT_CONDITIONS !== 'undefined' ? COURT_CONDITIONS[k] : null, c = k ? catOf(k) : null;
+    const surf = c ? (c.surface === 'hard' ? (c.indoor ? 'Indoor hard' : 'Hard') : c.surface.charAt(0).toUpperCase() + c.surface.slice(1)) : null;
+    return { key: k, surf, cls: cc && cc.speed != null ? courtSpeedCategory(cc.speed) : null };
+  }
+  function trSimilar(m, i, cls0) {
+    const key = i ? m.p2Key : m.p1Key, name = i ? m.p2 : m.p1, ch = (key != null && _careerHistoryShards[String(key)]) || null;
+    if (!ch) return null;
+    const ownEk = String(eventKeyOfMatch(m) || ''), rows = [];
+    ch.forEach((x, j) => { if (!x || x.level !== 'atp' || x.qualifying || /^qualif/i.test(String(x.round || ''))) return;
+      const c = evClass(x.tournament); if (!c.key || c.surf !== cls0.surf || c.cls !== cls0.cls) return;
+      if (ownEk && String(x.eventKey) === ownEk && !m.finalScore) return;
+      const r = meRowFromCareer(x, null, String(key), name, j); r.evKey = c.key; rows.push(r); });
+    if (typeof trDbJoinPx === 'function') trDbJoinPx(name, ch)(rows);
+    rows.sort((a, b) => String(b.date).localeCompare(String(a.date)));
+    const eds = [], ix = {};
+    rows.forEach(r => { const y = String(r.date).slice(0, 4), k = r.evKey + '|' + y; if (!ix[k]) { ix[k] = { ev: r.evKey, year: y, rows: [] }; eds.push(ix[k]); } ix[k].rows.push(r); });
+    eds.forEach(e => { const pl = e.rows.filter(r => !r.wo), last = e.rows[0];
+      e.won = pl.filter(r => r.won).length; e.lost = pl.length - e.won;
+      e.result = !last ? '' : last.wo ? (last.round || '') + ' · w/o' : last.won ? (last.round === 'F' ? 'Won' : 'Won ' + (last.round || '') + ', no later match on record') : (TR_RESULT[last.round] || last.round || ''); });
+    const core = window.MarketEdgeCore, all = rows, priced = core ? all.filter(core.inWinner) : [];
+    const W = eds.reduce((s, e) => s + e.won, 0), L = eds.reduce((s, e) => s + e.lost, 0);
+    let best = null; eds.forEach(e => { const last = e.rows[0], code = e.result === 'Won' ? 'Won' : last && !last.won && !last.wo ? last.round : null;
+      if (code && TR_BEST_RANK[code] && (!best || TR_BEST_RANK[code] > TR_BEST_RANK[best.code])) best = { code, year: e.year, ev: e.ev }; });
+    let sW = 0, sT = 0; all.forEach(r => { if (r.pS != null && !r.wo) { sW += r.pS; sT += r.pS + r.oS; } });
+    return { name, key, eds, W, L, n: W + L, best, sW, sT, all, priced, units: priced.reduce((s, r) => s + core.plCents(r), 0) / 100, state: _sfDbJoinSt === 'ready' ? 'ready' : _sfDbJoinSt === 'failed' ? 'failed' : 'loading', names: [...new Set(eds.map(e => e.ev))] };
+  }
+  const TR_G = 'display:grid; grid-template-columns:52px minmax(0,1fr) 34px minmax(0,1.1fr) 56px 44px 44px 8px; gap:0 10px; align-items:center;';
+  const SHORTR = { Won: 'Won', F: 'F', SF: 'SF', QF: 'QF', R16: 'R16', R32: 'R32', R64: 'R64', R128: 'R128' };
+  function trBox(m, P, i, grp, clean, S) {
+    const F = fhStateFor(m), more = !!S.recMoreAll, shown = more ? P.eds : P.eds.slice(0, TR_LIM);
+    P.all.forEach(r => { F.sheetMap[r.mid] = { r, aName: P.name, aKey: P.key, bName: r.opp, bKey: r.oppKey }; });
+    const g = maGate(P.n).mode, pct = !P.n ? 'no matches' : g === 'nopct' ? P.n + (P.n === 1 ? ' match' : ' matches') : Math.round(P.W / P.n * 100) + '% of ' + P.n + ' won';
+    const first = P.eds.length ? P.eds[P.eds.length - 1].year : null;
+    const sub = (grp ? 'On similar courts' : 'At ' + clean) + (first ? ' · since ' + first : '');
+    const loading = P.state === 'loading' || P.state === 'idle', np = P.priced.length;
+    const lp = P.eds.length ? { e: P.eds.reduce((b, e) => (!b || +e.year > +b.year ? e : b), null) } : null, lr = lp && lp.e.rows[0];
+    const tile = (cap, v, sb, col, tip) => { const val = '<span style="' + MONO + ' font-size:17px; font-weight:700; line-height:1; color:' + (col || (v === DASH ? 'var(--ma2-quiet)' : 'var(--ma2-text)')) + '; white-space:nowrap;">' + v + '</span>';
+      return '<div style="background:var(--ma2-card); border:1px solid ' + W(6) + '; border-radius:11px; padding:13px 6px 12px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px; min-width:0;"><span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey); white-space:nowrap;">' + cap + '</span>'
+        + (tip ? maTipHtml('<span tabindex="0" style="display:inline-flex;">' + val + '</span>', tip, { wrap: 280, popStyle: 'bottom:calc(100% + 8px); left:auto; right:0; transform:none;' }) : val)
+        + '<span title="' + esc(sb) + '" style="font-size:11.5px; color:var(--ma2-grey); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;">' + esc(sb) + '</span></div>'; };
+    const core = window.MarketEdgeCore;
+    const backTip = '<span style="' + MONO + ' font-size:11px; line-height:1.5;">' + np + ' of ' + P.all.length + ' matches priced · flat 1u at the closing price (the Database join: Pinnacle closing, else Bet365). ' + esc(core ? core.RET_SETTLE_NOTE : '') + '</span>';
+    const tiles = '<div style="display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; padding:0 18px 18px;">'
+      + tile('Best result', P.best ? (SHORTR[P.best.code] || P.best.code) : DASH, P.best ? (grp && P.best.ev ? (typeof sfEventName === 'function' ? sfEventName(P.best.ev) : P.best.ev) + ' ' : '') + P.best.year : (P.eds.length ? 'no finished edition' : DASH))
+      + tile('Sets won', P.sT ? P.sW + '–' + (P.sT - P.sW) : DASH, P.sT ? (maGate(P.sT).mode === 'nopct' ? P.sT + ' sets' : Math.round(P.sW / P.sT * 100) + '% of sets') : DASH)
+      + tile('Last played', lp ? lp.e.year : DASH, lr ? (lr.wo ? 'walkover ' : lr.won ? 'won ' : 'lost ') + (lr.round || '') + ' v ' + fhSurname(lr.opp) : DASH)
+      + (loading ? tile('Backing', DASH, 'loading prices') : P.state === 'failed' ? tile('Backing', DASH, 'prices unavailable')
+        : tile('Backing', np ? signed(P.units, 1) + 'u' : DASH, np ? 'flat 1u · ' + np + (np === 1 ? ' bet' : ' bets') : 'none priced', np ? (P.units > 0 ? 'var(--ma2-green)' : P.units < 0 ? 'var(--ma2-red)' : 'var(--ma2-text)') : null, backTip)) + '</div>';
+    let rows = '';
+    shown.forEach(e => {
+      const evName = grp ? (typeof sfEventName === 'function' ? sfEventName(e.ev) : e.ev) : clean;
+      const c = grp ? evClass(e.ev) : null;
+      rows += '<div style="display:flex; align-items:baseline; gap:9px; padding:14px 8px 7px; min-width:0; border-top:1px solid ' + W(6) + ';"><span style="font-size:12.5px; font-weight:700; color:var(--ma2-text); white-space:nowrap;">' + esc(evName + ' ' + e.year) + '</span>'
+        + '<span style="font-size:11.5px; color:var(--ma2-grey); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc((c ? c.surf + ' · ' + c.cls + ' · ' : '') + (e.rows.length ? e.result + ' · ' + e.won + '–' + e.lost : 'Withdrawal')) + '</span></div>';
+      e.rows.forEach(r => { const sel = !!(_fh && _fh.sheet === r.mid), wl = r.wo ? 'var(--ma2-quiet)' : r.won ? 'var(--ma2-green)' : 'var(--ma2-red)', mark = typeof fhPxMark === 'function' ? fhPxMark(r) : '';
+        const px = v => r.pxPend ? '' : v == null ? DASH : fhOdd(v), pt = typeof trPxTitle === 'function' ? trPxTitle(r) : '';
+        rows += '<div class="seg ma2-row"' + (r.wo ? '' : ' onclick="fhOpenSheet(\'' + esc(r.mid) + '\')" title="Open the match statistics"') + ' style="' + TR_G + ' padding:8px; border-top:1px solid ' + W(6) + '; background:' + (sel ? 'var(--ma2-lifted)' : 'transparent') + '; cursor:' + (r.wo ? 'default' : 'pointer') + ';">'
+          + '<span style="' + MONO + ' font-size:11.5px; color:var(--ma2-grey);">' + esc(fhDDMM(r.date) + '.') + (r.wo ? '<span title="Walkover: not a match played, counted in no record" style="display:block; font-size:10px; font-weight:700;">WO</span>' : '') + '</span>'
+          + '<span title="' + esc(r.opp || '') + '" style="font-size:13px; font-weight:600; color:var(--ma2-text); overflow-wrap:anywhere; min-width:0;">' + esc(r.opp || DASH) + '</span>'
+          + '<span style="' + MONO + ' font-size:11px; color:var(--ma2-grey);">' + esc(r.round || DASH) + '</span>'
+          + '<span title="' + esc(fhH2hSetScores(r)) + '" style="' + MONO + ' font-size:11.5px; color:var(--ma2-soft); line-height:1.35;">' + String(fhH2hSetScores(r)).split(', ').map((x, j, a) => '<span style="white-space:nowrap;">' + esc(x) + (j < a.length - 1 ? ',' : '') + '</span>').join(' ') + '</span>'
+          + '<span style="justify-self:center; ' + MONO + ' font-size:11.5px; font-weight:700; color:' + wl + '; background:var(--ma2-lifted); box-shadow:inset 0 0 0 1px ' + W(14) + '; border-radius:6px; padding:2px 8px; white-space:nowrap;">' + (r.wo || r.pS == null ? DASH : r.pS + '–' + r.oS) + '</span>'
+          + '<span title="' + esc(pt) + '" style="position:relative; ' + MONO + ' font-size:11.5px; color:' + (r.price == null ? 'var(--ma2-quiet)' : 'var(--ma2-text)') + '; text-align:right;">' + (r.wo ? DASH : px(r.price)) + (mark && !r.wo ? '<span aria-hidden="true" style="position:absolute; top:-3px; right:-8px; font-size:7px; font-weight:700; color:var(--ma2-grey);">' + mark + '</span>' : '') + '</span>'
+          + '<span title="' + esc(pt) + '" style="' + MONO + ' font-size:11.5px; color:' + (r.oppPrice == null ? 'var(--ma2-quiet)' : 'var(--ma2-grey)') + '; text-align:right;">' + (r.wo ? DASH : px(r.oppPrice)) + '</span>'
+          + '<span style="color:var(--ma2-quiet); font-size:14px;">' + (r.wo ? '' : '›') + '</span></div>'; });
+    });
+    const rest = P.eds.length - TR_LIM, any = S._restAny, unit = grp ? ['tournament', 'tournaments'] : ['edition', 'editions'];
+    const ml = rest > 0 ? (more ? 'Show fewer' : 'Show ' + rest + ' earlier ' + unit[rest === 1 ? 0 : 1]) : 'All ' + unit[1] + ' shown';
+    const empty = !P.eds.length ? '<div style="padding:22px; text-align:center; font-size:12.5px; color:var(--ma2-grey); border-top:1px solid ' + W(6) + ';">' + (grp ? 'No main-draw match on similar courts on record.' : P.hasHist ? 'No main-draw match at this event on record.' : 'No main-draw record at ' + esc(clean) + ' on file.') + '</div>' : '';
+    return '<div style="background:var(--ma2-inner); border:1px solid ' + W(6) + '; border-radius:12px; display:flex; flex-direction:column; min-width:0; overflow:hidden;">'
+      + '<div style="display:flex; align-items:center; gap:12px; padding:18px 18px 16px; min-width:0;">' + av(P.name, P.key, 38, '1px solid ' + W(14), 12.5)
+      + '<div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">' + fhNameLink(P.name, P.key, 'font-size:15px; font-weight:800; letter-spacing:-0.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;') + '<span title="' + esc(sub) + '" style="font-size:12.5px; color:var(--ma2-grey); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(sub) + '</span></div>'
+      + '<div style="flex:none; display:flex; flex-direction:column; align-items:flex-end; gap:3px;"><span style="' + MONO + ' font-size:24px; font-weight:700; line-height:1; color:' + (P.n ? 'var(--ma2-text)' : 'var(--ma2-quiet)') + ';">' + (P.n ? P.W + '–' + P.L : DASH) + '</span><span' + (g === 'small' ? ' title="small sample · n=' + P.n + '"' : '') + ' style="font-size:12.5px; font-weight:600; color:var(--ma2-grey); white-space:nowrap;">' + esc(pct) + '</span></div></div>'
+      + tiles + (P.eds.length ? '<div style="' + TR_G + ' padding:9px 18px; border-top:1px solid ' + W(6) + '; font-size:11.5px; font-weight:600; color:var(--ma2-grey);"><span>Date</span><span>Opponent</span><span>Rd</span><span>Score</span><span style="text-align:center;">Sets</span><span title="His closing price" style="text-align:right;">Price</span><span title="The opponent\'s closing price" style="text-align:right;">Opp.</span><span></span></div>'
+        + '<div style="padding:0 10px 8px; display:flex; flex-direction:column;">' + rows + '</div>' : empty)
+      + '<div style="margin-top:auto; display:flex; justify-content:center; padding:12px 18px 16px; border-top:1px solid ' + W(6) + ';">' + btn(any ? (more ? 'Show fewer' : rest > 0 ? ml : 'All ' + unit[1] + ' shown') : ml, any ? 'trSet({recMoreAll:' + !more + '})' : '', { color: any && (rest > 0 || more) ? 'var(--ma2-text)' : 'var(--ma2-grey)' }) + '</div></div>';
+  }
+  function maTournamentV2(m) {
+    const E = trStateFor(m), S = E.S; cshLoad();
+    // one source with the Tournaments page: the page's court-conditions row (its category = courtSpeedCategory of its speed
+    // index, N4), else the match's pipeline copy (a frozen draw-store card can carry last season's row)
+    const clean = trName(m), key = trKeyOf(m), cc = key && typeof COURT_CONDITIONS !== 'undefined' ? COURT_CONDITIONS[key] : null;
+    const cs = cc ? Object.assign({}, cc, { category: courtSpeedCategory(cc.speed) }) : m.courtSpeed, mkt = trMarketFor(key), surf = fhSurfName(m.surface) || 'Hard';
+    const loc = m.venue ? [m.venue.city, m.venue.country].filter(Boolean).join(', ') : '';
+    const cat = catOf(key), indoor = cat ? !!cat.indoor : /indoor/i.test(String(m.surface || ''));
+    const surfLbl = surf === 'Hard' && indoor ? 'Indoor hard' : surf;
+    const ta = CSH.d && key ? CSH.d.ta[key] || null : null, taYs = ta ? Object.keys(ta).filter(y => ta[y] != null && +y >= 2020).sort() : [];   // the Tournaments page's window (2020–2026)
+    const speedV = taYs.length ? +ta[taYs[taYs.length - 1]] : cs && cs.abstractSpeed != null ? +cs.abstractSpeed : null;
+    const isM = m.venue && /1000/.test(String(m.venue.category || '')) || (cat && /1000/.test(String(cat.category || '')));
+    const cpi = isM ? cpiSeriesOf(key) : null, cpiYs = cpi ? Object.keys(cpi).sort() : [], cpiNow = cpiYs.length ? cpi[cpiYs[cpiYs.length - 1]] : null;
+    const dashT = t => '<span title="' + esc(t) + '" style="color:var(--ma2-quiet);">' + DASH + '</span>';
+    const meta = [['Category', m.venue && m.venue.category ? esc(m.venue.category) : dashT('No category on record')],
+      ['Court speed', speedV != null ? speedV.toFixed(2) + (cs && cs.category ? ' · ' + esc(cs.category) : '') : dashT(trSpeedNote(m))]]
+      .concat(cpi ? [['CPI', cpiNow.toFixed(1) + ' · ' + cpiBand(cpiNow)]] : [])
+      .concat([['Altitude', cs && cs.altitude != null ? Number(cs.altitude).toLocaleString('en-US') + ' m' : dashT(trSpeedNote(m))], ['Hold rate', trHoldHtml(m, 'tr-hold')], ['Round', trRoundWords(m) ? esc(trRoundWords(m)) : dashT('No round on record')]]);
+    const note = cs && cs.category && typeof speedDescription === 'function' ? speedDescription(cs.category, String(m.surface || '').toLowerCase().includes('clay') ? 'clay' : String(m.surface || '').toLowerCase().includes('grass') ? 'grass' : 'hard') : '';
+    const head = '<div style="background:var(--ma2-card); border:1px solid ' + W(6) + '; border-radius:16px; padding:24px; display:flex; flex-direction:column; gap:18px;">'
+      + '<div style="display:flex; align-items:center; gap:14px 16px; flex-wrap:wrap;"><span style="flex:none; width:48px; height:48px; border-radius:12px; background:var(--ma2-lifted); border:1px solid ' + W(14) + '; display:flex; align-items:center; justify-content:center; ' + MONO + ' font-size:18px; font-weight:700; color:var(--ma2-text);">' + esc((clean[0] || 'T').toUpperCase()) + '</span>'
+      + '<div style="flex:1 1 200px; min-width:0; display:flex; flex-direction:column; gap:3px;"><span style="font-size:20px; font-weight:800; letter-spacing:-0.01em;">' + esc(clean) + '</span><span style="font-size:13px; color:var(--ma2-grey);">' + esc([loc || DASH, surfLbl].join(' · ')) + '</span></div>'
+      + '<div style="display:flex; gap:14px 28px; flex-wrap:wrap;">' + meta.map(x => '<div style="display:flex; flex-direction:column; gap:5px;"><span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey); white-space:nowrap;">' + x[0] + '</span><span style="' + MONO + ' font-size:13.5px; font-weight:700; color:var(--ma2-text); white-space:nowrap;">' + x[1] + '</span></div>').join('') + '</div></div>'
+      + '<div style="display:flex; align-items:center; justify-content:space-between; gap:14px 24px; flex-wrap:wrap; padding-top:18px; border-top:1px solid ' + W(6) + ';"><div style="flex:1 1 420px; min-width:0; font-size:13px; color:var(--ma2-grey); line-height:1.6; text-wrap:pretty; max-width:720px;">' + esc(note) + '</div>'
+      + '<span class="seg ma2-btn2" role="button" tabindex="0" onclick="trSet({more:' + !S.more + '})" style="height:34px; padding:0 14px; display:inline-flex; align-items:center; gap:8px; border-radius:9px; background:var(--ma2-lifted); font-size:12.5px; font-weight:600; color:var(--ma2-text); cursor:pointer; white-space:nowrap; border:1px solid ' + W(14) + ';">'
+      + (S.more ? 'Hide court speed & market' : 'Show court speed & market') + '<svg width="10" height="10" viewBox="0 0 10 10" style="transform:' + (S.more ? 'rotate(180deg)' : 'none') + '; color:var(--ma2-grey);"><path d="M2 3.5 5 6.5 8 3.5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"></path></svg></span></div></div>';
+    let market = '';
+    if (S.more) {
+      const useCpi = !!(cpi && S.metric === 'cpi');
+      const series = useCpi ? cpiYs.map(y => ({ y, v: cpi[y] })) : taYs.length ? taYs.map(y => ({ y, v: +ta[y] })) : TR_SPEED_YEARS.map(y => ({ y: String(y), v: cs && cs['as' + y] != null ? +cs['as' + y] : null })).filter(p => p.v != null);
+      const big = useCpi ? cpiNow : speedV, band = useCpi ? (cpiNow != null ? cpiBand(cpiNow) : DASH) : cs && cs.category ? cs.category : DASH;
+      const reg = typeof tourxConditionRegistry === 'function' ? tourxConditionRegistry().map(t => t.abstractSpeed) : [];
+      const pos = big == null ? null : useCpi ? Math.max(0, Math.min(100, (big - 25) / 25 * 100)) : typeof tourxKnobPct === 'function' ? tourxKnobPct(big, reg) : null;
+      const vals = series.map(p => p.v), mn = vals.length ? Math.min(...vals) : 0, sp = vals.length ? (Math.max(...vals) - mn) || 1 : 1;
+      const X = i => 26 + i * (308 / Math.max(1, series.length - 1)), Y = v => 66 - (v - mn) / sp * 26;
+      let word = DASH, delta = '';
+      if (series.length > 1) { const d = +(series[series.length - 1].v - series[0].v).toFixed(2), yrs = +series[series.length - 1].y - +series[0].y, thr = useCpi ? 1 : 0.03;
+        word = Math.abs(d) < thr ? 'Holding steady' : d > 0 ? 'Trending faster' : 'Trending slower'; delta = (d >= 0 ? '+' : '−') + Math.abs(d).toFixed(useCpi ? 1 : 2) + ' over ' + yrs + ' yr' + (yrs === 1 ? '' : 's'); }
+      const pts = series.map((p, i) => ({ x: X(i), y: Y(p.v), v: p.v, yr: p.y }));
+      const poly = pts.map(p => p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' ');
+      const area = pts.length > 1 ? 'M' + pts[0].x.toFixed(1) + ',104 L' + pts.map(p => p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' L') + ' L' + pts[pts.length - 1].x.toFixed(1) + ',104 Z' : '';
+      const tabs = cpi ? '<div style="display:inline-flex; gap:2px; background:var(--ma2-track); border:1px solid ' + W(10) + '; border-radius:8px; padding:2px; margin-bottom:18px;">'
+        + [['speed', 'Court speed', 'Tennis Abstract court speed'], ['cpi', 'CPI', 'Court Pace Index, courtspeed.com']].map(t => { const on = (S.metric || 'speed') === t[0];
+          return '<span class="seg ma2-seg" role="button" tabindex="0" onclick="trSet({metric:\'' + t[0] + '\'})" title="' + t[2] + '" style="padding:4px 10px; border-radius:6px; font-size:11.5px; font-weight:' + (on ? 700 : 600) + '; color:' + (on ? 'var(--ma2-text)' : 'var(--ma2-grey)') + '; background:' + (on ? 'var(--ma2-lifted)' : 'transparent') + '; box-shadow:inset 0 0 0 1px ' + (on ? W(14) : 'transparent') + '; cursor:pointer; white-space:nowrap;">' + t[1] + '</span>'; }).join('') + '</div>' : '';
+      const speedCard = '<div style="background:var(--ma2-card); border:1px solid ' + W(6) + '; border-radius:16px; padding:24px; display:flex; flex-wrap:wrap; align-items:center; gap:22px 36px;">'
+        + '<div style="flex:1 1 260px; min-width:0;">' + tabs + '<div style="display:flex; align-items:baseline; gap:14px;"><span style="' + MONO + ' font-size:40px; font-weight:700; line-height:1; letter-spacing:-0.02em; font-variant-numeric:tabular-nums; color:' + (big == null ? 'var(--ma2-quiet)' : 'var(--ma2-text)') + ';">' + (big == null ? DASH : big.toFixed(useCpi ? 1 : 2)) + '</span>'
+        + '<span style="font-size:13px; color:var(--ma2-grey);">' + (useCpi ? 'Court Pace Index' : 'abstract court speed') + ' · <span style="color:var(--ma2-text); font-weight:700;">' + esc(band) + '</span></span></div>'
+        + '<div style="position:relative; height:6px; border-radius:3px; background:' + W(7) + '; margin-top:20px;">' + (pos == null ? '' : '<span style="position:absolute; top:50%; left:' + pos + '%; width:14px; height:14px; box-sizing:border-box; border-radius:50%; background:var(--ma2-text); border:3px solid var(--ma2-card); transform:translate(-50%,-50%);"></span>') + '</div>'
+        + '<div style="display:flex; justify-content:space-between; margin-top:11px; font-size:11.5px; font-weight:600; color:var(--ma2-grey);"><span>Slow</span><span>Medium</span><span>Fast</span></div>' + (big == null ? '<div style="font-size:11.5px; color:var(--ma2-grey); margin-top:9px;">' + esc(trSpeedNote(m)) + '</div>' : '') + '</div>'
+        + '<div style="flex:1 1 360px; min-width:0;"><div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap;"><span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey);">' + (useCpi ? 'Court Pace Index' : 'Abstract court speed') + (series.length ? ' · ' + series[0].y + (series.length > 1 ? '–' + series[series.length - 1].y : '') : '') + '</span>'
+        + '<span style="display:flex; align-items:baseline; gap:10px;"><span style="font-size:12.5px; font-weight:700; color:' + (series.length > 1 ? 'var(--ma2-text)' : 'var(--ma2-quiet)') + ';">' + word + '</span><span style="' + MONO + ' font-size:11.5px; color:var(--ma2-grey);">' + delta + '</span></span></div>'
+        + '<div style="position:relative; height:104px; margin-top:6px;"><svg viewBox="0 0 360 104" preserveAspectRatio="none" width="100%" height="100%" style="position:absolute; inset:0; display:block;" fill="none"><defs><linearGradient id="ma2TrFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--ma2-white)" stop-opacity="0.10"></stop><stop offset="1" stop-color="var(--ma2-white)" stop-opacity="0"></stop></linearGradient></defs>'
+        + (area ? '<path d="' + area + '" fill="url(#ma2TrFill)"></path>' : '') + (pts.length > 1 ? '<polyline points="' + poly + '" fill="none" stroke="var(--ma2-text)" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"></polyline>' : '') + '</svg>'
+        + pts.map(p => { const l = (p.x / 360 * 100).toFixed(2) + '%', t = p.y.toFixed(1) + 'px';
+          return '<span style="position:absolute; left:' + l + '; top:' + t + '; width:8px; height:8px; box-sizing:border-box; border-radius:50%; background:var(--ma2-card); border:1.75px solid var(--ma2-text); transform:translate(-50%,-50%);"></span>'
+            + '<span style="position:absolute; left:' + l + '; top:' + t + '; transform:translate(-50%,calc(-100% - 11px)); ' + MONO + ' font-size:11.5px; font-weight:700; color:var(--ma2-text); white-space:nowrap;">' + p.v.toFixed(useCpi ? 1 : 2) + '</span>'
+            + '<span style="position:absolute; left:' + l + '; bottom:0; transform:translateX(-50%); ' + MONO + ' font-size:11px; color:var(--ma2-grey);">' + p.yr + '</span>'; }).join('')
+        + (!pts.length ? '<span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:12.5px; color:var(--ma2-grey);">No yearly readings on record</span>' : '') + '</div></div></div>';
+      const g = maGate(mkt ? mkt.n : null).mode, rateOk = !!mkt && (g === 'full' || g === 'small'), openable = !!(mkt && mkt.archiveNames && mkt.archiveNames.length);
+      const roi = (label, side, v, avg) => { const has = rateOk && v != null && avg != null, d = has ? v - avg : 0;
+        const cmp = has ? (Math.abs(d) < 1 ? 'in line with tour average' : (d > 0 ? '+' : '−') + Math.abs(d).toFixed(1) + 'pp vs tour avg') + (g === 'small' ? ' · small sample' : '') : mkt ? 'Not enough settled matches here for a yield.' : 'No settled prices for this event on record.';
+        return '<div class="' + (openable ? 'seg ma2-tile ' : '') + 'tr-roi" data-tr="roi-' + side + '"' + (openable ? ' role="button" tabindex="0" onclick="trSet({roi:\'' + side + '\'})"' : '') + ' style="background:var(--ma2-card); border:1px solid ' + W(6) + '; border-radius:16px; padding:22px 24px; display:flex; flex-direction:column;' + (openable ? ' cursor:pointer;' : '') + '">'
+          + '<div style="display:flex; align-items:center; justify-content:space-between; gap:8px;"><span style="font-size:14px; font-weight:700; color:var(--ma2-white);">' + label + '</span>' + (openable ? '<span style="color:var(--ma2-grey);">›</span>' : '') + '</div>'
+          + '<div style="display:flex; align-items:baseline; gap:9px; margin-top:16px;"><span style="' + MONO + ' font-size:26px; font-weight:700; line-height:1; font-variant-numeric:tabular-nums; color:' + (!has ? 'var(--ma2-quiet)' : g === 'small' ? 'var(--ma2-grey)' : 'var(--ma2-text)') + ';">' + (has ? (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(1) + '%' : DASH) + '</span><span style="font-size:11.5px; color:var(--ma2-grey);">flat-stake yield</span></div>'
+          + '<div style="font-size:12.5px; color:var(--ma2-grey); margin-top:8px;">' + esc(cmp) + '</div></div>'; };
+      const relHas = rateOk && mkt.favRel != null, rv = relHas ? mkt.favRel : null, ra = relHas ? mkt.baseline.favRel : null, rd = relHas ? rv - ra : 0;
+      const rel = '<div class="tr-rel" style="background:var(--ma2-card); border:1px solid ' + W(6) + '; border-radius:16px; padding:22px 24px;"><div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;"><span style="font-size:14px; font-weight:700; color:var(--ma2-white);">Favourite reliability</span>'
+        + '<span style="display:inline-flex; align-items:baseline; gap:8px;"><span style="' + MONO + ' font-size:16px; font-weight:700; font-variant-numeric:tabular-nums; color:' + (relHas ? 'var(--ma2-text)' : 'var(--ma2-quiet)') + ';">' + (relHas ? rv + '%' : DASH) + '</span><span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey);">' + (relHas ? (rd >= 3 ? 'Reliable' : rd <= -3 ? 'Upset-prone' : 'Moderate') : '') + '</span></span></div>'
+        + '<div style="height:6px; border-radius:3px; background:' + W(7) + '; overflow:hidden; margin-top:16px;"><span style="display:block; height:100%; width:' + (relHas ? rv : 0) + '%; background:var(--ma2-blue); border-radius:3px;"></span></div>'
+        + '<div style="font-size:12.5px; line-height:1.6; color:var(--ma2-grey); margin-top:12px; text-wrap:pretty;">' + (relHas ? 'Favourites win ' + rv + '% of matches here versus ' + ra + '% across the tour — ' + (rd >= 3 ? 'clearly above average, so chalk tends to hold and backing favourites is a stronger play than usual.' : rd <= -3 ? 'below average, so this is an upset-prone draw where underdogs return more value than the tour norm.' : 'broadly in line with the tour, so no strong lean toward favourites or underdogs.') + (mkt && mkt.nRel ? ' (' + mkt.nRel + ' matches)' : '') : mkt ? 'Not enough settled matches here to measure favourite reliability.' : 'No settled prices for this event on record.') + '</div></div>';
+      market = '<div style="display:flex; flex-direction:column; gap:14px;">' + speedCard + '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px;">'
+        + roi('ROI backing favourites', 'fav', mkt && mkt.roiFav, mkt && mkt.baseline.roiFav) + roi('ROI backing underdogs', 'dog', mkt && mkt.roiDog, mkt && mkt.baseline.roiDog) + rel + '</div></div>';
+    }
+    // record
+    const grp = !!S.sim, c0 = evClass(trClean(m)), cls0 = { surf: c0.surf || surfLbl, cls: c0.cls || (cs && cs.category) || null };
+    const P = grp ? [trSimilar(m, 0, cls0), trSimilar(m, 1, cls0)] : [trModelFor(m, 0), trModelFor(m, 1)];
+    if (grp && P.some(x => !x)) { [m.p1Key, m.p2Key].forEach(k => { if (k != null) Promise.resolve(loadCareerHistory(k)).then(() => trRender()).catch(() => {}); }); }
+    S._restAny = P.some(x => x && x.eds.length > TR_LIM);
+    const names = grp ? [...new Set([].concat(...P.filter(Boolean).map(x => x.names)))].map(k => typeof sfEventName === 'function' ? sfEventName(k) : k) : [];
+    const scope = 'Career · main draw' + (grp ? ' · ' + (cls0.cls || DASH) + ' ' + String(cls0.surf).toLowerCase() + ' · ' + (names.length ? names.length + (names.length === 1 ? ' tournament: ' : ' tournaments: ') + names.slice(0, 5).join(', ') + (names.length > 5 ? ' and ' + (names.length - 5) + ' more' : '') : 'no tournaments on record') : '');
+    const sim = '<span class="seg ma2-seg" role="button" tabindex="0" onclick="trSet({sim:' + !grp + ',recMoreAll:false})" title="' + esc(cls0.cls ? 'His record on every ' + cls0.cls.toLowerCase() + ' ' + String(cls0.surf).toLowerCase() + ' court, by our court-speed class' : 'No speed class for this event') + '" style="flex:none; display:inline-flex; align-items:center; gap:9px; font-size:12.5px; font-weight:' + (grp ? 700 : 600) + '; color:' + (grp ? 'var(--ma2-text)' : 'var(--ma2-grey)') + '; cursor:pointer; white-space:nowrap;">'
+      + '<span style="width:16px; height:16px; box-sizing:border-box; border-radius:5px; background:' + (grp ? 'var(--ma2-lifted)' : 'var(--ma2-track)') + '; border:1px solid ' + W(grp ? 22 : 14) + '; display:flex; align-items:center; justify-content:center;"><svg width="10" height="10" viewBox="0 0 10 10" style="opacity:' + (grp ? 1 : 0) + ';"><path d="M2 5.2 4.2 7.4 8 3" stroke="var(--ma2-text)" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>On similar courts</span>';
+    const boxes = P.map((x, i) => x ? trBox(m, x, i, grp, clean, S) : '<div style="background:var(--ma2-inner); border:1px solid ' + W(6) + '; border-radius:12px; padding:28px; text-align:center; font-size:12.5px; color:var(--ma2-grey);">Loading match history…</div>').join('');
+    const rec = '<div style="background:var(--ma2-card); border:1px solid ' + W(6) + '; border-radius:16px; padding:24px; display:flex; flex-direction:column; gap:18px;">'
+      + '<div style="display:flex; align-items:center; flex-wrap:wrap; gap:10px 14px;"><div style="flex:1 1 260px; min-width:0; display:flex; flex-direction:column; gap:4px;"><span style="font-size:18px; font-weight:800; letter-spacing:-0.01em; color:var(--ma2-text);">' + esc(grp ? 'Record on similar courts' : 'Record at ' + clean) + '</span><span style="font-size:12.5px; color:var(--ma2-grey); text-wrap:pretty;">' + esc(scope) + '</span></div>' + sim + '</div>'
+      + '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(440px,100%),1fr)); gap:14px; align-items:stretch;">' + boxes + '</div></div>';
+    return '<div class="tr" style="max-width:1100px; margin:0 auto; display:flex; flex-direction:column; gap:14px; font-size:16px; line-height:normal; color:var(--ma2-text);">' + head + market + rec + '</div>';
+  }
+  root.maTournamentV2 = maTournamentV2;
+
   root.MA2 = { av, SH_A, SH_B, avIni, ini, help, cardHead, card, track, chip, tile, popShell, signed, RING_A, RING_B, W, MONO, DASH, esc };
   root.maOddsV2 = oddsBuild;
 })(typeof window !== 'undefined' ? window : globalThis);

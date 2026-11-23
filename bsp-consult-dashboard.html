@@ -17386,7 +17386,6 @@ function trRender(){
 // remount it unprompted).
 function trCloseRoi(){ if (_tr) _tr.S.roi = false; const h = document.getElementById('trRoiPop'); if (h) h.innerHTML = ''; }
 function trSet(patch){ if (!_tr) return; Object.assign(_tr.S, patch); trRender(); }
-function trToggleMore(i){ if (!_tr) return; _tr.S.recMore[i] = !_tr.S.recMore[i]; trRender(); }
 
 // One pipeline history match → a normalised row. Joined to his career-history row by event key: set scores, retirement,
 // best-of (meRowFromCareer). Unjoined: the history's own fields, set scores a dash. Prices are never set here: the model's
@@ -17751,61 +17750,6 @@ window.trProfileBacking = trProfileBacking;
 
 // ---- rendering ----
 const TR_MONO = "font-family:'IBM Plex Mono',monospace;";
-function trTileHtml(cap, value, color, sub, o){
-  o = o || {};
-  const val = `<span class="tr-tile-v" style="${TR_MONO} font-size:23px; font-weight:700; line-height:1.15; color:${color}; white-space:nowrap; max-width:100%;">${value}</span>`;
-  const body = `<span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label);">${cap}</span>`
-    // TEN-380 bug fix: the Backing tile is the row's last; a centred 280px pop (hidden) ran past the column and drew a
-    // horizontal scrollbar. It opens leftwards from the value's right edge instead.
-    + (o.tip ? maTipHtml(`<span tabindex="0" style="display:inline-flex;">${val}</span>`, o.tip, { wrap: 280, popStyle: 'bottom:calc(100% + 8px); left:auto; right:0; transform:none;' }) : val)
-    + `<span class="tr-tile-sub" style="font-size:11px; color:var(--text-label); white-space:nowrap;">${sub}</span>`;
-  return `<div class="tr-tile"${o.attrs || ''} style="background:var(--card); border:1px solid var(--edge-6); border-radius:11px; padding:13px 8px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:7px; min-width:0;">${body}</div>`;
-}
-function trTilesHtml(P){
-  const t1 = 'var(--text)', dash = 'var(--text-label)';
-  const loading = P.state === 'loading' || P.state === 'idle';
-  // W–L record: the count always shows; its % through the one gate (D2) — n 1–4 the W–L carries it, n 0 "—".
-  const wlRate = maRateHtml(P.W, P.n, { note: 'title', nopct: '' });
-  const wl = trTileHtml('W–L record', P.n ? P.W + '–' + P.L : '—', P.n ? t1 : dash, (wlRate ? wlRate + ' · ' : '') + 'main draw');
-  const best = trTileHtml('Best result', P.best ? fhEsc(P.best.code) : '—', P.best ? t1 : dash, P.best ? P.best.year : (P.eds.length ? 'no finished edition' : ''));
-  // sets won: finished sets only (a retirement's unfinished set is not a set, rule e); unjoined rows count their result
-  const setsV = maRateHtml(P.sW, P.sT, { color: t1, note: 'title', nopct: '' });
-  const sets = trTileHtml('Sets won', setsV || '—', setsV ? t1 : dash, P.sT ? P.sW + ' of ' + P.sT + ' sets' : '');
-  const lp = trLastPlayed(P);   // TEN-402 r1 fix 1: the newest row of this ledger
-  const last = trTileHtml('Last played', lp ? lp.year : '—', lp ? t1 : dash, P.eds.length + ' edition' + (P.eds.length === 1 ? '' : 's') + ' listed');
-  // Backing (N5): flat 1u at the closing price, Pinnacle then Bet365 (FH_BOOK_ORDER, one book per match); retirements settle
-  // on the ATP result (TEN-325). Units show at any priced n; "vs market" (D6) = win rate − mean de-vigged implied rate, n >= 5,
-  // through the gate (5–9 greyed).
-  const core = window.MarketEdgeCore;
-  const np = P.priced.length;
-  let back;
-  if (loading) back = trTileHtml('Backing', '—', dash, 'loading prices');
-  else if (P.state === 'failed') back = trTileHtml('Backing', '—', dash, 'prices unavailable');
-  else {
-    const uC = np ? meUC(P.units, 1) : dash;
-    const g = maGate(np).mode;
-    const vmTxt = np >= TR_VS_MKT_MIN && P.vm != null ? meSg(P.vm, 1, 'pt') + ' vs market' : '';
-    const sub = vmTxt ? `<span class="ma-rate" data-ma-gate="${g}"${g === 'small' ? ` title="${MA_SMALL_NOTE} · n=${np}"` : ''} style="${g === 'small' ? 'color:' + MA_GREY + ';' : ''}">${vmTxt}</span>`
-      : (np ? np + ' priced' : 'none priced');
-    const nb = P.priced.filter(r => r.book === 'B').length, na = P.priced.filter(r => r.book === 'A' && r.src !== 'oth').length;
-    const no = P.priced.filter(r => r.book === 'A' && r.src === 'oth').length;   // founder 2026-11-03: another book, margin removed
-    // TEN-402 r2: the one Database join (the profile's and Head to Head's); matches after the archive's last date say so
-    const nAfter = P.all.filter(r => r.pxAfter).length;
-    const tip = `<span style="${TR_MONO} font-size:11px; line-height:1.5;">${np} of ${P.all.length} matches priced${np ? ' · flat 1u at the closing price, Pinnacle' + (na ? ', Pinnacle (approx.) snapshot where no close (' + na + ': ' + SF_APPROX_HOVER + ')' : '') + (nb ? ', Bet365 where missing (' + nb + ')' : '') + (no ? ', another book, margin removed, where neither (' + no + ')' : '') : ' (no Pinnacle or Bet365 close on record)'}, from the Database archive.`
-      + (nAfter ? ` ${nAfter} after its last match (${trDayWords(P.dbEnd)}) not priced yet.` : '')
-      + (np >= TR_VS_MKT_MIN ? ' vs market = win rate minus the market’s de-vigged implied win rate.' : ' vs market needs 5 priced matches.')
-      + ` <span data-ret-note="tournament">${fhEsc(core ? core.RET_SETTLE_NOTE : '')}</span></span>`;
-    back = trTileHtml('Backing', np ? meSg(P.units, 1, 'u') : '—', uC, sub, { tip, attrs: ' data-tr="backing"' });
-  }
-  return `<div class="tr-tiles" style="display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px;">${wl}${best}${sets}${last}${back}</div>`;
-}
-// TEN-380 review (founder 2026-10-04): a "B" beside a price means Bet365 filled a missing Pinnacle close — said in words under the
-// records, as Form says it ("Closing odds · Pinnacle, Bet365 where missing (N)"); no B on the page → no line.
-function trSrcLine(cardsHtml){
-  // counts the B marks actually drawn (earlier editions stay folded until opened) — never a mark the reader cannot see
-  const nb = (String(cardsHtml || '').match(/class="ma-row-mark"[^>]*>B</g) || []).length;
-  return nb ? `<div class="tr-srcline" style="margin-top:14px; text-align:center; ${FH_MONO} font-size:10.5px; color:var(--text-label);">Closing odds · Pinnacle, Bet365 where missing (${nb}) · B = Bet365</div>` : '';
-}
 function trPxTitle(r){
   if (r.pxPend) return 'Loading prices';
   if (r.pxAfter) return trPxAfterTitle();   // the one wording (profile rows use it too)
@@ -17824,143 +17768,6 @@ function trRowData(r){
     cls: 'tr-row', attrs: ` data-fh-mid="${fhEsc(r.mid)}"`, click: ` onclick="fhOpenSheet('${fhEsc(r.mid)}')"`,
     selected: !!(_fh && _fh.sheet === r.mid) };
 }
-function trPlayerCardHtml(m, P, i){
-  const S = _tr.S, clean = trName(m);   // r3 fix 1: edition headers + the empty line print the one name
-  const F = fhStateFor(m);
-  const all = !!S.recMore[i];
-  const shown = all ? P.eds : P.eds.slice(0, TR_LIM);
-  // every row opens the ONE sheet (DoD item 8): registered in the Form/H2H sheet map, header from the row, stats by event key
-  P.all.forEach(r => { F.sheetMap[r.mid] = { r, aName: P.name, aKey: P.key, bName: r.opp, bKey: r.oppKey }; });
-  const groups = shown.map(e => ({ title: clean + ' ' + e.year, meta: e.result + ' · ' + e.won + '–' + e.lost, rows: e.rows.map(trRowData) }));
-  const rows = P.eds.length ? maMatchRowsHtml(groups, {}) : '';
-  const nameColor = i ? 'var(--text)' : 'var(--text)';
-  const more = P.eds.length > TR_LIM
-    ? `<span class="seg tr-more" onclick="trToggleMore(${i})" style="align-self:center; font-size:12.5px; font-weight:600; color:var(--text); cursor:pointer;">${all ? 'Show fewer editions' : 'Show ' + (P.eds.length - TR_LIM) + ' earlier edition' + (P.eds.length - TR_LIM === 1 ? '' : 's')}</span>` : '';
-  // DESIGN GAP G18: no record at this event (never entered, or no player key) — the file draws only players with editions;
-  // the tiles dash and the row list says why, in the file's empty-list line.
-  const empty = !P.eds.length ? `<div class="tr-empty" style="padding:18px 6px 6px; font-size:12.5px; color:var(--text-label); text-align:center;">${P.hasHist ? 'No main-draw match at this event on record.' : 'No main-draw record at ' + fhEsc(clean) + ' on file.'}</div>` : '';
-  return `<div class="tr-card" style="background:var(--card); border:1px solid var(--edge-6); border-radius:16px; padding:18px 20px; display:flex; flex-direction:column; gap:14px; min-width:0;">
-      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px;">
-        ${fhNameLink(P.name, P.key, `font-size:15px; font-weight:700; color:${nameColor};`)}
-        <span style="${TR_MONO} font-size:11px; color:var(--text-label);">${fhEsc(P.summary)}</span>
-      </div>
-      ${trTilesHtml(P)}
-      ${rows ? `<div style="display:flex; flex-direction:column;">${rows}</div>` : empty}
-      ${more}
-    </div>`;
-}
-// The header card (DF L217–232): tile + name + location + surface, the meta cells. The reading paragraph (DF L231) is
-// dropped (founder Q11): no node and no space for it.
-function trHeaderHtml(m){
-  const clean = trName(m), cs = m.courtSpeed, surf = fhSurfName(m.surface) || 'Hard';   // r3 fix 1: title + tile = the one name; the location line stays the venue
-  const location = m.venue ? [m.venue.city, m.venue.country].filter(Boolean).join(', ') : '';
-  const round = trRoundWords(m);
-  const t3 = 'var(--text-label)';
-  const speedCell = cs && cs.abstractSpeed != null
-    ? Number(cs.abstractSpeed).toFixed(2) + (cs.category ? ' · ' + cs.category : '')
-    : maTipHtml(`<span tabindex="0" data-tr="speed-dash" style="color:${t3};">—</span>`, fhEsc(trSpeedNote(m)), { wrap: 260, start: true });
-  const altCell = cs && cs.altitude != null ? Number(cs.altitude).toLocaleString('en-US') + ' m'
-    : maTipHtml(`<span tabindex="0" style="color:${t3};">—</span>`, fhEsc(trSpeedNote(m)), { wrap: 260, start: true });
-  // DESIGN GAP G43 (the file draws no hold rate on this tab; founder Q9 puts it here): a fifth meta cell, the file's own
-  // cell pattern, beside court speed and altitude.
-  const meta = [['Category', m.venue && m.venue.category ? fhEsc(m.venue.category) : `<span style="color:${t3};">—</span>`],
-    ['Court speed', speedCell], ['Altitude', altCell], ['Hold rate', trHoldHtml(m, 'tr-hold')], ['Round', round ? fhEsc(round) : `<span style="color:${t3};">—</span>`]];
-  // TEN-380 (step 3 reference): header card = panel (--card + --edge-6); the tile and the surface chip --selected + --line;
-  // meta values in Plex; the meta cells inset --edge-6 on --card, the current one (Round) on --inner.
-  const card = 'var(--card)';
-  return `<div class="tr-head" style="border:1px solid var(--edge-6); border-radius:16px; background:${card}; padding:22px 24px;">
-      <div style="display:flex; align-items:center; gap:16px;">
-        <span class="tr-badge" style="width:56px; height:56px; flex:none; border-radius:14px; background:var(--selected); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; ${TR_MONO} font-size:24px; font-weight:800; color:var(--text);">${fhEsc((clean[0] || 'T').toUpperCase())}</span>
-        <div style="flex:1; min-width:0;">
-          <div style="font-size:26px; font-weight:800; letter-spacing:-0.01em;">${fhEsc(clean)}</div>
-          <div style="font-size:13px; color:${t3}; margin-top:3px;">${location ? fhEsc(location) : '—'}</div>
-        </div>
-        <span class="tr-surf" style="white-space:nowrap; font-size:13px; font-weight:700; letter-spacing:0.01em; color:var(--text); background:var(--selected); border:1px solid var(--line); border-radius:8px; padding:6px 12px;">${fhEsc(surf)} court</span>
-      </div>
-      <div style="display:grid; grid-template-columns:repeat(${meta.length},1fr); gap:1px; background:${card}; border:1px solid var(--edge-6); border-radius:12px; overflow:hidden; margin-top:20px;">
-        ${meta.map(([k, v]) => { const cur = k === 'Round'; return `<div class="tr-meta${cur ? ' tr-meta-cur' : ''}" style="background:${cur ? 'var(--inner)' : card}; padding:15px 16px;${cur ? '' : ' box-shadow:inset 0 0 0 1px var(--edge-6);'}"><div style="font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:${t3}; margin-bottom:7px;">${k}</div><div style="${TR_MONO} font-size:16px; font-weight:700; white-space:nowrap;">${v}</div></div>`; }).join('')}
-      </div>
-    </div>`;
-}
-// "Show court speed & market" (DF L233–266): the speed gauge + the seven-season trend, the two ROI cards (open the
-// Database page embedded) and favourite reliability — real yields from tournament-market.json, dashed when absent.
-function trMarketHtml(m){
-  const cs = m.courtSpeed, key = trKeyOf(m), mkt = trMarketFor(key);
-  const t1 = 'var(--text)', t3 = 'var(--text-label)', t4 = 'var(--text-label)', box = 'var(--card)', line = 'var(--edge-6)';   // TEN-380: panels --card + --edge-6
-  const hasSpeed = !!(cs && cs.abstractSpeed != null);
-  const reg = tourxConditionRegistry().map(t => t.abstractSpeed);
-  // the knob's scale is the venue set's own range (founder ruling 2026-09-19, tourxKnobPct) — the Tournaments page's gauge
-  const pos = hasSpeed ? tourxKnobPct(Number(cs.abstractSpeed), reg) : null;
-  const gauge = `<div style="flex:1 1 260px; min-width:0;">
-      <div style="display:flex; align-items:baseline; gap:14px;"><span data-tr="speed" style="${TR_MONO} font-size:44px; font-weight:700; line-height:0.9; letter-spacing:-0.02em; font-variant-numeric:tabular-nums;${hasSpeed ? '' : ' color:' + t3 + ';'}">${hasSpeed ? Number(cs.abstractSpeed).toFixed(2) : '—'}</span><span style="font-size:13px; color:${t3};">abstract court speed · <span style="color:${t1}; font-weight:600;">${hasSpeed && cs.category ? fhEsc(cs.category) : '—'}</span></span></div>
-      <div class="tr-speed-bar" style="position:relative; height:8px; border-radius:5px; background:var(--white-bar); margin-top:18px;">${hasSpeed ? `<span class="tr-speed-knob" style="position:absolute; top:50%; left:${pos}%; width:16px; height:16px; border-radius:50%; background:${t1}; border:3px solid ${box}; box-shadow:0 0 0 1px var(--edge-16); transform:translate(-50%,-50%);"></span>` : ''}</div>
-      <div style="display:flex; justify-content:space-between; margin-top:9px; font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:${t3};"><span>Slow</span><span>Medium</span><span>Fast</span></div>
-      ${hasSpeed ? '' : `<div style="font-size:11px; color:${t4}; margin-top:9px;">${fhEsc(trSpeedNote(m))}</div>`}
-    </div>`;
-  // seven seasons on the file's axis; the sheet holds 2023–25 (as2023…as2025), so every other season is a dash (no dot,
-  // no line through it — a gap is never interpolated). The trend reads the real span.
-  const val = y => (cs && cs['as' + y] != null ? Number(cs['as' + y]) : null);
-  const pts = TR_SPEED_YEARS.map((y, i) => ({ y, i, v: val(y) }));
-  const have = pts.filter(p => p.v != null);
-  const vals = have.map(p => p.v), tMin = vals.length ? Math.min(...vals) : 0, tSpan = vals.length ? (Math.max(...vals) - tMin) || 1 : 1;
-  const X = i => 26 + i * (308 / Math.max(1, TR_SPEED_YEARS.length - 1)), Y = v => 66 - (v - tMin) / tSpan * 26;
-  let word = '—', delta = '';
-  if (have.length > 1){
-    const d = +(have[have.length - 1].v - have[0].v).toFixed(2), yrs = have[have.length - 1].y - have[0].y;
-    word = Math.abs(d) < 0.03 ? 'Holding steady' : (d > 0 ? 'Trending faster' : 'Trending slower');
-    delta = (d >= 0 ? '+' : '−') + Math.abs(d).toFixed(2) + ' over ' + yrs + ' yr' + (yrs === 1 ? '' : 's');
-  }
-  // segments only between adjacent measured seasons (a hole breaks the line)
-  const segs = []; let cur = [];
-  pts.forEach(p => { if (p.v != null) cur.push(p); else { if (cur.length) segs.push(cur); cur = []; } }); if (cur.length) segs.push(cur);
-  const poly = segs.filter(s => s.length > 1).map(s => `<polyline points="${s.map(p => X(p.i).toFixed(1) + ',' + Y(p.v).toFixed(1)).join(' ')}" fill="none" stroke="var(--text)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"></polyline>`).join('');
-  // founder Q2 (TEN-380, site chart rule): dotted horizontal guides only (--viz-guide, dash 2 6) — no area fill, no vertical ticks
-  const guides = [40, 53, 66].map(y => `<line class="tr-sp-guide" x1="0" x2="360" y1="${y}" y2="${y}" stroke="var(--viz-guide)" stroke-width="1" stroke-dasharray="2 6" vector-effect="non-scaling-stroke"></line>`).join('');
-  const dots = pts.map(p => {
-    const left = (X(p.i) / 360 * 100).toFixed(2) + '%';
-    const yTxt = p.v != null ? Y(p.v).toFixed(1) + 'px' : '66px';
-    return (p.v != null ? `<span style="position:absolute; left:${left}; top:${yTxt}; width:9px; height:9px; border-radius:50%; background:${box}; border:2px solid var(--text); transform:translate(-50%,-50%);"></span>` : '')
-      + `<span class="tr-sp-v" style="position:absolute; left:${left}; top:${yTxt}; transform:translate(-50%,calc(-100% - 11px)); ${TR_MONO} font-size:12px; font-weight:700; color:${p.v != null ? t1 : t3}; white-space:nowrap;">${p.v != null ? p.v.toFixed(2) : '—'}</span>`
-      + `<span style="position:absolute; left:${left}; bottom:0; transform:translateX(-50%); ${TR_MONO} font-size:11px; letter-spacing:0.06em; color:${t3};">${p.y}</span>`;   // a year: digits stay mono
-  }).join('');
-  const trend = `<div style="flex:1 1 360px; min-width:0;">
-      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-        <span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${t3};">Abstract court speed · ${TR_SPEED_YEARS[0]}–${TR_SPEED_YEARS[TR_SPEED_YEARS.length - 1]}</span>
-        <span style="display:flex; align-items:baseline; gap:10px;"><span data-tr="trend" style="font-size:14px; font-weight:700;${have.length > 1 ? '' : ' color:' + t3 + ';'}">${word}</span>${delta ? `<span style="${TR_MONO} font-size:12px; color:${t3};">${delta}</span>` : ''}</span>
-      </div>
-      <div style="position:relative; height:104px; margin-top:6px;">
-        <svg viewBox="0 0 360 104" preserveAspectRatio="none" width="100%" height="100%" style="position:absolute; inset:0; display:block;" fill="none">${guides}${poly}</svg>
-        ${dots}
-      </div>
-    </div>`;
-  // ROI + reliability: the Tournaments page's numbers (build-tournament-market.js), gated on the event's n (D2).
-  const g = maGate(mkt ? mkt.n : null).mode, rateOk = !!mkt && (g === 'full' || g === 'small');
-  const openable = !!(mkt && mkt.archiveNames && mkt.archiveNames.length);
-  const roiCard = (label, side, v, avg) => {
-    const has = rateOk && v != null && avg != null, dlt = has ? v - avg : 0;
-    // TEN-380: the yield is --text (the reference); its colour never follows the gap to the tour average (the old rule drew
-    // a −3.7% yield green because it beat a −6.9% average). Small sample stays grey.
-    const col = !has || g === 'small' ? MA_GREY : t1;
-    const cmp = has ? (Math.abs(dlt) < 1 ? 'in line with tour average' : (dlt > 0 ? '+' : '−') + Math.abs(dlt).toFixed(1) + 'pp vs tour avg') + (g === 'small' ? ' · ' + MA_SMALL_NOTE : '')
-      : (mkt ? 'Not enough settled matches here for a yield.' : 'No settled prices for this event on record.');
-    return `<div class="${openable ? 'seg ' : ''}tr-roi" data-tr="roi-${side}"${openable ? ` onclick="trSet({roi:'${side}'})"` : ''} style="background:${box}; border:1px solid ${line}; border-radius:12px; padding:15px 18px;${openable ? ' cursor:pointer;' : ''}"><div style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${t3}; font-family:var(--font-words);">${label}</div><div style="display:flex; align-items:baseline; gap:9px; margin-top:8px;"><span style="${TR_MONO} font-size:26px; font-weight:700; line-height:1; font-variant-numeric:tabular-nums; color:${col};">${has ? (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(1) + '%' : '—'}</span><span style="font-size:11.5px; color:${t3};">flat-stake yield</span></div><div style="font-size:11.5px; color:${t4}; margin-top:5px;">${cmp}</div>${openable ? `<div style="display:flex; align-items:center; gap:7px; margin-top:11px; font-size:11.5px; font-weight:700; color:var(--link);">Open ${side === 'fav' ? 'favourites' : 'underdogs'} graphics <span style="${TR_MONO}">→</span></div>` : ''}</div>`;
-  };
-  const relHas = rateOk && mkt.favRel != null;
-  const rv = relHas ? mkt.favRel : null, ra = relHas ? mkt.baseline.favRel : null, rd = relHas ? rv - ra : 0;
-  const relWord = rd >= 3 ? 'Reliable' : rd <= -3 ? 'Upset-prone' : 'Moderate';
-  const relTail = rd >= 3 ? 'clearly above average, so chalk tends to hold and backing favourites is a stronger play than usual.'
-    : rd <= -3 ? 'below average, so this is an upset-prone draw where underdogs return more value than the tour norm.'
-    : 'broadly in line with the tour, so no strong lean toward favourites or underdogs.';
-  const rel = `<div class="tr-rel" style="background:${box}; border:1px solid ${line}; border-radius:12px; padding:15px 18px;">
-      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${t3};">Favourite reliability</span><span style="display:inline-flex; align-items:baseline; gap:8px;"><span style="${TR_MONO} font-size:16px; font-weight:700; font-variant-numeric:tabular-nums; color:${relHas ? (g === 'small' ? MA_GREY : t1) : t3};">${relHas ? rv + '%' : '—'}</span>${relHas ? `<span style="font-size:11px; font-weight:600; color:${t1};">${relWord}</span>` : ''}</span></div>
-      <div style="height:4px; border-radius:4px; background:var(--track); overflow:hidden; margin-top:11px;"><span style="display:block; height:100%; width:${relHas ? rv : 0}%; background:var(--bar); border-radius:4px;"></span></div>
-      <div style="font-size:12px; line-height:1.6; color:${t3}; margin-top:9px; text-wrap:pretty;">${relHas ? `Favourites win ${rv}% of matches here versus ${ra}% across the tour — ${relTail}` : (mkt ? 'Not enough settled matches here to measure favourite reliability.' : 'No settled prices for this event on record.')}</div>
-    </div>`;
-  return `<div class="tr-market" style="display:flex; flex-direction:column; gap:12px; margin-top:12px;">
-      <div style="background:${box}; border:1px solid ${line}; border-radius:14px; padding:18px 24px 20px; display:flex; flex-wrap:wrap; align-items:flex-start; gap:20px 32px;">${gauge}${trend}</div>
-      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px;">${roiCard('ROI backing favourites', 'fav', mkt && mkt.roiFav, mkt && mkt.baseline.roiFav)}${roiCard('ROI backing underdogs', 'dog', mkt && mkt.roiDog, mkt && mkt.baseline.roiDog)}${rel}</div>
-    </div>`;
-}
 // The ROI overlay (DF L268–279): the Database page mounted (DatabaseTab.mount — the Tournaments page's own embed), not restyled.
 function trRenderRoi(){
   const E = _tr; if (!E) return;
@@ -17973,12 +17780,12 @@ function trRenderRoi(){
   if (host.querySelector('[data-db-root="tr-roi"]') && host.dataset.side === E.S.roi) return;   // already mounted
   host.dataset.side = E.S.roi;
   const clean = trName(E.m);   // r3 fix 1
-  host.innerHTML = `<div class="ma-pop-overlay ma-fade ma-theme" onclick="if(event.target===this){trSet({roi:false})}" style="position:fixed; inset:0 0 0 var(--sf-side, 0px); z-index:200; background:var(--backdrop); backdrop-filter:blur(3px); display:flex; align-items:flex-start; justify-content:center; overflow:auto; padding:34px 22px 60px;">
-      <div role="dialog" aria-modal="true" aria-label="${fhEsc(clean)} · favourites and underdogs" style="width:100%; max-width:1180px; background:var(--page); border:1px solid var(--edge-10); border-radius:16px; overflow:hidden; font-family:'Hanken Grotesk',sans-serif; color:var(--text); line-height:normal;">
-        <div style="display:flex; align-items:baseline; gap:14px; padding:18px 22px; border-bottom:1px solid var(--line);">
+  host.innerHTML = `<div class="ma-pop-overlay ma-fade ma-theme" onclick="if(event.target===this){trSet({roi:false})}" style="position:fixed; inset:0 0 0 var(--sf-side, 0px); z-index:200; background:var(--ma2-scrim); backdrop-filter:blur(3px); display:flex; align-items:flex-start; justify-content:center; overflow:auto; padding:34px 22px 60px;">
+      <div role="dialog" aria-modal="true" aria-label="${fhEsc(clean)} · favourites and underdogs" style="width:100%; max-width:1180px; background:var(--ma2-ground); border:1px solid color-mix(in srgb, var(--ma2-white) 16%, transparent); border-radius:16px; box-shadow:var(--ma2-shadow-pop); overflow:hidden; font-family:'Hanken Grotesk',sans-serif; color:var(--text); line-height:normal;">
+        <div style="display:flex; align-items:center; gap:14px; padding:18px 24px; background:var(--ma2-card); border-bottom:1px solid color-mix(in srgb, var(--ma2-white) 6%, transparent);">
           <span style="font-size:18px; font-weight:800; letter-spacing:-0.01em;">${fhEsc(clean)} · favourites and underdogs</span>
-          <span style="${TR_MONO} font-size:11.5px; color:var(--text-label);">flat 1u · yields by price band</span>
-          <span class="seg ma-pop-x" role="button" onclick="trSet({roi:false})" style="margin-left:auto; font-size:12.5px; font-weight:700; color:var(--text-soft); background:var(--line); border:1px solid var(--edge-10); border-radius:8px; padding:8px 14px; cursor:pointer;">Close</span>
+          <span style="font-size:12.5px; color:var(--ma2-grey);">flat 1% stake · yields by price band</span>
+          <span class="seg ma-pop-x ma2-btn2" role="button" onclick="trSet({roi:false})" style="margin-left:auto; height:34px; padding:0 14px; display:inline-flex; align-items:center; border-radius:9px; background:var(--ma2-lifted); border:1px solid color-mix(in srgb, var(--ma2-white) 14%, transparent); font-size:12.5px; font-weight:600; color:var(--ma2-text); cursor:pointer;">Close</span>
         </div>
         <div data-db-root="tr-roi" data-page="database" class="pagewrap" style="max-width:none; padding:18px 20px 22px;">
           <div class="sfh db-headcard" data-db="head"><div class="sfh__text"><h1 class="sfh__title">Database</h1><p class="sfh__sub" data-db="subtitle"></p></div><div class="sfh__stats" data-db="fresh"></div></div>
@@ -17991,19 +17798,7 @@ function trRenderRoi(){
   if (root && window.DatabaseTab && window.DatabaseTab.mount)
     window.DatabaseTab.mount(root, { hideHeader: true, lockSubject: true, initialTournamentNames: mkt.archiveNames, initialTournamentFilter: mkt.archiveFilter || null, initialTournamentLabel: typeof tourxEventName === 'function' ? tourxEventName(key) : key, side: E.S.roi });   // r3 fix 1: the chip's words; the join reads archiveNames
 }
-function buildTournamentSection(m){
-  const E = trStateFor(m), S = E.S;
-  const clean = trName(m);   // r3 fix 1: "Record at Shanghai Masters"
-  const P = [trModelFor(m, 0), trModelFor(m, 1)];
-  const t3 = 'var(--text-label)', t4 = 'var(--text-label)';
-  const toggle = `<div style="display:flex; justify-content:center; margin-top:14px;"><span class="seg tr-more-toggle" onclick="trSet({more:${!S.more}})" style="display:inline-flex; align-items:center; gap:8px; padding:6px 4px; font-size:12.5px; font-weight:600; color:var(--text); cursor:pointer;">${S.more ? 'Hide court speed &amp; market' : 'Show court speed &amp; market'}<svg width="10" height="10" viewBox="0 0 10 10" style="transform:${S.more ? 'rotate(180deg)' : 'none'};"><path d="M2 3.5 5 6.5 8 3.5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"></path></svg></span></div>`;
-  const recHead = `<div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin:24px 0 12px;"><span style="font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:${t3};">Record at ${fhEsc(clean)}</span><span style="font-size:11px; color:${t4};">Career main-draw record at this event, newest edition first. Click a match for its stats.</span></div>`;
-  const cards = P.map((p, i) => trPlayerCardHtml(m, p, i)).join('');
-  return `<div class="tr" style="font-family:'Hanken Grotesk',sans-serif; font-size:16px; line-height:normal; color:var(--text);">
-      ${trHeaderHtml(m)}${toggle}${S.more ? trMarketHtml(m) : ''}${recHead}
-      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(560px,100%),1fr)); gap:20px; align-items:start;">${cards}</div>${trSrcLine(cards)}
-    </div>`;
-}
+function buildTournamentSection(m){ return maTournamentV2(m); }
 
 // Extra stats tab REMOVED (TEN-8 Item 5): the founder's spec fixes the rail at
 // exactly ten tabs — Key factors · Playing style · Form · H2H · Match Stats ·
