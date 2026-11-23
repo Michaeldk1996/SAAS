@@ -373,4 +373,29 @@
   --do2-scrim:     rgba(3, 4, 7, 0.62);
   --do2-shadow-menu: 0 16px 36px rgba(0, 0, 0, 0.5);
   --do2-shadow-box:  0 30px 80px rgba(0, 0, 0, 0.55);
+/* Match analysis rebuild (handoff design_handoff_match_analysis_2026-11-23, founder 2026-11-23 "pixel for pixel"):
+   the export's own values, named apart from the foundation tokens. match-analysis-v2.css reads them inside
+   #analysisModal (and the Match Stats sheet wherever it opens); nothing else reads them. Night only. */
+:root {
+  --ma2-frame:   #0A0D14;   /* the box itself */
+  --ma2-card:    #0E1019;   /* every card, tiles inside an inner box, the Match Stats sheet */
+  --ma2-inner:   #0C0E16;   /* inner / list boxes, tiles inside a card, menus */
+  --ma2-lifted:  #121521;   /* picked item, chip, lifted button, best price, avatar fill */
+  --ma2-hover:   #171B28;   /* row hover, lifted-button hover */
+  --ma2-track:   #0A0C13;   /* switch tracks, price pills */
+  --ma2-white:   #FFFFFF;   /* edges, tracks, hairlines — always at a stated alpha */
+  --ma2-text:    #E7E9EE;   /* names, figures; player two */
+  --ma2-soft:    #C6CCDB;   /* secondary text */
+  --ma2-grey:    #8B96B5;   /* labels, scope lines */
+  --ma2-quiet:   #5B6880;   /* quiet grey, empty "—" */
+  --ma2-dim:     #4B5672;   /* score en dash, the losing game score in point by point */
+  --ma2-blue:    #5B9BFF;   /* player one */
+  --ma2-green:   #3DD68C;
+  --ma2-red:     #E0616F;
+  --ma2-ground:  #090B12;   /* the ROI box shell (site ground) */
+  --ma2-scrim:   rgba(4, 5, 8, 0.72);
+  --ma2-shadow:  0 40px 120px rgba(0, 0, 0, 0.6);
+  --ma2-scrim-2: rgba(4, 5, 9, 0.62);   /* the opened boxes (price movement, band, line, matches) */
+  --ma2-shadow-pop: 0 30px 80px rgba(0, 0, 0, 0.55);
+  --ma2-glow:    radial-gradient(ellipse 76px 40px at 26px 50%, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0) 100%);
 }

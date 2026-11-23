@@ -1,0 +1,48 @@
+/* Match analysis rebuild — design_handoff_match_analysis_2026-11-23 (founder 2026-11-23, pixel for pixel).
+   Values are the export's own (Match Analysis Progression v1.dc.html, inline styles), read through the --ma2-*
+   tokens in tokens.css. Scoped to #analysisModal so it wins over the older match-analysis-chrome block. */
+
+/* ---- Frame (template `analysisOpen`) ---- */
+#analysisModal{ background:var(--ma2-scrim); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); }
+#analysisModal .modal-analysis{ --page:var(--ma2-frame); background:var(--ma2-frame); border:1px solid color-mix(in srgb, var(--ma2-white) 9%, transparent);
+  border-radius:20px; box-shadow:var(--ma2-shadow); max-width:1500px; height:88vh; color:var(--ma2-text); }
+#analysisModal .ahead2{ grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:20px; padding:18px 24px;
+  border-bottom:1px solid color-mix(in srgb, var(--ma2-white) 6%, transparent); }
+#analysisModal .atitleblock .atitle{ font-size:20px; font-weight:800; letter-spacing:-0.01em; white-space:nowrap; color:var(--ma2-text); }
+#analysisModal .atitleblock .acontext{ font-size:12.5px; color:var(--ma2-grey); margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#analysisModal .amatchuprow{ gap:13px; }
+#analysisModal .aavatar img, #analysisModal .aavatar .avatar-fallback{ width:40px; height:40px; border-radius:50%; background:var(--ma2-lifted);
+  border:1.5px solid var(--ma2-blue); object-fit:cover; font-family:'IBM Plex Mono', monospace; font-size:12.5px; font-weight:700; color:var(--ma2-text); }
+#analysisModal #aP2Avatar img, #analysisModal #aP2Avatar .avatar-fallback{ border-color:var(--ma2-text); }
+#analysisModal .apname, #analysisModal .apname.b{ font-size:16px; font-weight:800; color:var(--ma2-text); }
+#analysisModal .aodds, #analysisModal #aP2Odds{ font-family:'IBM Plex Mono', monospace; font-size:15px; font-weight:700; color:var(--ma2-text);
+  background:var(--ma2-track); border:1px solid color-mix(in srgb, var(--ma2-white) 14%, transparent); border-radius:8px; padding:5px 11px; }
+#analysisModal .avslabel2{ font-size:12.5px; font-weight:600; letter-spacing:0; text-transform:none; color:var(--ma2-quiet); }
+#analysisModal .ahead2 .close{ width:34px; height:34px; border-radius:9px; font-size:15px; color:var(--ma2-grey); background:var(--ma2-lifted);
+  border:1px solid color-mix(in srgb, var(--ma2-white) 14%, transparent); transition:none; }
+#analysisModal .ahead2 .close:hover{ background:var(--ma2-hover); color:var(--ma2-text); }
+#analysisModal .asidenav{ border-right:1px solid color-mix(in srgb, var(--ma2-white) 6%, transparent); padding:16px 14px; gap:2px; scrollbar-width:none; }
+#analysisModal .asidenav::-webkit-scrollbar{ display:none; }
+#analysisModal .asidenav-item{ font-size:13.5px; font-weight:600; color:var(--ma2-grey); background:transparent; box-shadow:none; }
+#analysisModal .asidenav-item .aicon{ color:var(--ma2-grey); }
+#analysisModal .asidenav-item:hover{ color:var(--ma2-text); }
+#analysisModal .asidenav-item.active{ font-weight:700; color:var(--ma2-text); background:var(--ma2-glow); box-shadow:none; }
+#analysisModal .asidenav-item.active .aicon{ color:var(--ma2-text); }
+#analysisModal .abody{ padding:24px 28px; }
+
+/* ---- Match Stats sheet (locked 2026-11-21): 56px avatars, no ring, 14% edge; switch items white on hover ---- */
+.ma2-sheet .ma2-msava img, .ma2-sheet .ma2-msava .avatar-fallback{ width:56px; height:56px; border-radius:50%; background:var(--ma2-lifted);
+  border:1px solid color-mix(in srgb, var(--ma2-white) 14%, transparent); object-fit:cover; display:flex; align-items:center; justify-content:center;
+  font-family:'Hanken Grotesk', sans-serif; font-weight:800; font-size:17px; color:var(--ma2-text); box-sizing:border-box; }
+.ma2-sheet .ma2-seg:not([aria-disabled]):hover{ color:var(--ma2-white) !important; }
+.ma2-sheet .ma2-close:hover{ background:var(--ma2-hover) !important; color:var(--ma2-text) !important; }
+
+/* ---- shared parts ---- */
+.ma2-av{ display:inline-flex; flex:none; }
+.ma2-av img, .ma2-av .avatar-fallback{ width:var(--s); height:var(--s); flex:none; box-sizing:border-box; border-radius:50%; background:var(--ma2-lifted);
+  border:var(--ring); object-fit:cover; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono', monospace;
+  font-size:var(--fs); font-weight:700; color:var(--ma2-text); }
+#analysisModal .ma2-seg:hover, .ma2-pop .ma2-seg:hover{ color:var(--ma2-text) !important; }
+#analysisModal .ma2-row:hover, .ma2-pop .ma2-row:hover{ background:var(--ma2-hover) !important; }
+.ma2-pop .ma2-btn:hover{ border-color:color-mix(in srgb, var(--ma2-white) 22%, transparent) !important; }
+#aSectionOdds{ font-size:14px; line-height:normal; color:var(--ma2-text); }
