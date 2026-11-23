@@ -97,7 +97,13 @@ check('matchById: the board row wins (fresher); off the board → the store copy
   global.window = prev;
 }
 check('openAnalysisModal and the back-navigation reopen both use matchById', /function openAnalysisModal\(matchId, tab\)\{\n  const m = matchById\(matchId\);/.test(html) && html.includes('reopenModal(s){ if (matchById(s.id)) openAnalysisModal(s.id, s.tab); }'));
-check('the Key factors model card falls back to the store\'s model entry when model-output.json no longer holds the match', /const mo = \(typeof modelOutput[^\n]*modelOutput\.matches\[m\.id\] : null\) \|\| \(ds && ds\.model\) \|\| null;/.test(html));
+// Key factors moved to match-analysis-v2.js (rebuild 2026-11-23): kfModelBox reads the run, else the store's copy.
+{
+  const ma = fs.readFileSync(path.join(ROOT, 'match-analysis-v2.js'), 'utf8');
+  const kfm = /function kfModelBox\(m\) \{[\s\S]*?\n  \}\n/.exec(ma);
+  check('the Key factors model card falls back to the store\'s model entry when model-output.json no longer holds the match',
+    !!kfm && /const ds = [^\n]*_drawMatchStore\.matches\[m\.id\];/.test(kfm[0]) && /const e = \(typeof modelOutput[^\n]*modelOutput\.matches\[m\.id\] : null\) \|\| \(ds && ds\.model\) \|\| null;/.test(kfm[0]));
+}
 check('the store is declared beside the board (no use-before-declaration) and loaded with the Draw section (tournaments-draw.js since the 2026-11-15 rebuild)',
   /let matches = \[\];\nlet _drawMatchStore = null, _drawMatchStoreLoad = null;/.test(html) && /fetch\('\.\/draw-matches\.json\?_=/.test(html) && /if \(sec === 'draw'\) loadDrawMatchStore\(\);/.test(html));
 

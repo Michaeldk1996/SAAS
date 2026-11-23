@@ -1,116 +1,114 @@
-// TEN-341 / TEN-380 — every check in test-ten341-key-factors.mjs (and the Key factors checks it shares with test-ten295-odds-chart.mjs
-// and test-ten314-modal-frame.mjs) must FAIL when the behaviour it locks is reverted. Each mutant is applied to a copy of
-// bsp-consult-dashboard.html and the suites are run against it (TEN341_HTML for this suite, TEN295_HTML for the odds
-// chart, TEN314_HTML for the modal frame); a mutant that leaves them green is a vacuous test and fails this runner.
-// Anchors must occur exactly once in the page.
+// TEN-341 / TEN-380 / the 2026-11-23 rebuild — every check in test-ten341-key-factors.mjs (and the Key factors checks it shares
+// with test-ten314-modal-frame.mjs) must FAIL when the behaviour it locks is reverted. Each mutant is applied to a copy of its
+// file — bsp-consult-dashboard.html (the data models, TEN341_HTML / TEN314_HTML) or match-analysis-v2.js (the boxes,
+// TEN341_MA2) — and its suite is run against it; a mutant that leaves the suite green is a vacuous test and fails this runner.
+// Anchors must occur exactly once in their file.
+//   · The "RENDERER GAP:" tests of test-ten341-key-factors.mjs check rules the rebuilt boxes break today; they are red on the
+//     unmutated code, so the mutant runs skip them (out loud). The suite command itself still reports them.
+//   · A suite that is red on the unmutated code makes its mutants meaningless: they are SKIPPED out loud, never counted caught.
 const fs = require('fs'), os = require('os'), path = require('path'), { spawnSync } = require('child_process');
 const ROOT = path.join(__dirname, '..');
-const PAGE = 'bsp-consult-dashboard.html';
+const PAGE = 'bsp-consult-dashboard.html', MA2 = 'match-analysis-v2.js';
+const KF = 'test-ten341-key-factors.mjs', FRAME = 'test-ten314-modal-frame.mjs';
+const GAP = 'RENDERER GAP:';
+// [name, file, from, to, suite]
 const MUTANTS = [
-  ['review: one story, one line dropped (re-written headlines shown twice)', "return !k || arr.findIndex(y => aNewsStoryKey(y.a.title) === k) === i;", "return true;"],
-  ['review item 2: a dot back on a news item', '<div class="kf-news-item" data-kf-news="${x.who.join(\'\')}" style="position:relative; display:flex; flex-direction:column; gap:2px; padding:8px 0 8px 12px; min-width:0;">', '<div class="kf-news-item" data-kf-news="${x.who.join(\'\')}" style="position:relative; display:flex; flex-direction:column; gap:2px; padding:8px 0 8px 12px; min-width:0;"><span style="width:7px; height:7px; border-radius:50%;"></span>'],
-  ['review F1: the Market edge prefetch loads a match the modal left', "    .then(() => { if (_aM === m) meLoad(m);", "    .then(() => { meLoad(m);"],
+  ['review F1: the Market edge prefetch loads a match the modal left', PAGE, "    .then(() => { if (_aM === m) meLoad(m);", "    .then(() => { meLoad(m);"],
   // Playing style (record vs the opponent's style)
-  ['style: the tug drawn on the losses side', 'const tw = shown && R.w > R.l ? (R.w - R.l) / n * 50 : 0, tl = shown && R.l > R.w ? (R.l - R.w) / n * 50 : 0;', 'const tl = shown && R.w > R.l ? (R.w - R.l) / n * 50 : 0, tw = shown && R.l > R.w ? (R.l - R.w) / n * 50 : 0;'],
-  ['style: the oldest meetings shown as "recent"', ".sort((x, y) => String(y.date || '').localeCompare(String(x.date || ''))).slice(0, 3)", ".sort((x, y) => String(x.date || '').localeCompare(String(y.date || ''))).slice(0, 3)"],
-  ['D2: a record-vs-style % printed at n = 2', "const pct = shown ? Math.round(R.w / n * 100) + '%' : FH_DASHC;", "const pct = n ? Math.round(R.w / n * 100) + '%' : FH_DASHC;"],
-  ['N2: a walkover counted in the record vs style', 'const rows = raw.filter(r => !ps2IsWalkover(r));', 'const rows = raw;'],
+  ['style: the tug drawn on the losses side', MA2, 'const tw = shown && R.w > R.l ? (R.w - R.l) / n * 50 : 0, tl = shown && R.l > R.w ? (R.l - R.w) / n * 50 : 0;', 'const tl = shown && R.w > R.l ? (R.w - R.l) / n * 50 : 0, tw = shown && R.l > R.w ? (R.l - R.w) / n * 50 : 0;'],
+  ['style: the oldest meetings shown as "last 3"', MA2, ".sort((x, y) => String(y.date || '').localeCompare(String(x.date || ''))).slice(0, 3)", ".sort((x, y) => String(x.date || '').localeCompare(String(y.date || ''))).slice(0, 3)"],
+  ['D2: a record-vs-style % printed at n = 2', MA2, "(shown ? Math.round(R.w / n * 100) + '%' : DASH)", "(n ? Math.round(R.w / n * 100) + '%' : DASH)"],
+  ['N2: a walkover counted in the record vs style', PAGE, 'const rows = raw.filter(r => !ps2IsWalkover(r));', 'const rows = raw;'],
   // Recent form
-  ['N2: the bars read the raw rows (a walkover and the match itself become bars)', 'const bars = P.win.slice().reverse().map(', 'const bars = (((m._fhFormRows || [])[idx]) || []).slice(0, 10).reverse().map('],
-  ['Q16: the box counts all surfaces', "{ surf: surf || 'all', role: 'all', wmode: 'n', n: 10 });   // the Form tab's default view (fhStateFor, N1)", "{ surf: 'all', role: 'all', wmode: 'n', n: 10 });"],
-  ['Q13: the meta loses the surface', "meta = fhEsc(`Last 10${surf ? ' · ' + surf : ''}`)", "meta = fhEsc('Last 10')"],
-  ['form: v market not coloured by its sign', "mktCol(d == null ? C.t3 : kfSignCol(d, 1) === C.t3 ? C.text : kfSignCol(d, 1))", 'mktCol(C.text)'],
-  ['form: every scored hot line (no best-per-family pick)', 'hot = FH_HOT_FAM.map(f => P.hot.sc.scored.find(x => fhFamOf(x.L.g) === f[0])).filter(Boolean).map(x => {', 'hot = P.hot.sc.scored.map(x => {'],
+  ['N2: the bars read the raw rows (a walkover and the match itself become bars)', MA2, 'const bars = P.win.slice().reverse().map(', 'const bars = (((m._fhFormRows || [])[i]) || []).slice(0, 10).reverse().map('],
+  ['Q16: the box counts all surfaces', MA2, "{ surf: surf || 'all', role: 'all', wmode: 'n', n: 10 }", "{ surf: 'all', role: 'all', wmode: 'n', n: 10 }"],
+  ['Q13: the scope loses the surface', MA2, "scope = 'Last 10' + (surf ? ' · ' + esc(surf.toLowerCase()) : '')", "scope = 'Last 10'"],
+  ['form: against market not coloured by its sign', MA2, "mc(d == null ? 'var(--ma2-quiet)' : meUc(d, 1))", "mc('var(--ma2-text)')"],
+  ['form: every scored hot line (no best-per-family pick)', MA2, 'hot = FH_HOT_FAM.map(f => P.hot.sc.scored.find(x => fhFamOf(x.L.g) === f[0])).filter(Boolean).map(x => {', 'hot = P.hot.sc.scored.map(x => {'],
   // Tournament
-  ['N6: a synthesised Withdrawal edition counted', "function trEditionsOf(hist){ return ((hist && hist.years) || []).filter(y => !y.withdrew); }", "function trEditionsOf(hist){ return ((hist && hist.years) || []); }"],
-  ['Q25: "no record on file" back', "if (!hist) return `<span class=\"kf-tour-note\">${words('first appearance')}</span>`;", "if (!hist) return `<span class=\"kf-tour-note\">${words('no record on file')}</span>`;"],
-  ['tier: a fabricated tier for an unknown event', "const tier = (m.venue && m.venue.category) || (catHit && catHit.category) || '';", "const tier = (m.venue && m.venue.category) || (catHit && catHit.category) || 'ATP 250';"],
-  ['round: "1/16-finals" left in the feed\'s code', "return /^1\\/\\d+-finals$/i.test(rdRaw) ? (TR_RESULT[psRoundAbbr(rdRaw)] || rdRaw) : rdRaw;", "return rdRaw;"],
-  ['Q14: the knob placed on the abstract speed', 'const idx = cs && cs.speed != null && Number.isFinite(Number(cs.speed)) ? Math.max(0, Math.min(100, Number(cs.speed))) : null;', 'const idx = cs && cs.abstractSpeed != null ? Math.max(0, Math.min(100, Number(cs.abstractSpeed) * 50)) : null;'],
-  ['D2: the ROI tiles ungated', "rateOk = !!mk && (g === 'full' || g === 'small');", 'rateOk = !!mk;'],
-  ['ROI coloured by its delta to the tour, not its sign', "const col = !has ? C.t3 : g === 'small' ? MA_GREY : kfSignCol(v, 1) === C.t3 ? C.text : kfSignCol(v, 1);", "const col = !has ? C.t3 : g === 'small' ? MA_GREY : kfSignCol(dlt, 1);"],
-  // founder Q9 (2026-09-30): the event hold rate is the Tournament tab's cell (our box scores, n in the tooltip)
-  ['Q9: Key factors prints the court-conditions sheet\'s count-less %', "hold ${trHoldHtml(m, 'kf-hold')}", "hold ${cs && cs.serviceHold != null ? cs.serviceHold + '%' : FH_DASHC}"],
-  ['Q9: the tooltip loses n', "(n = ${fmt(H.n)}), both players,", "both players,"],
-  ['Q9: the hold rate gated like a sample rate', "const val = H.state === 'ok' ? Math.round(H.pct) + '%' : FH_DASHC;", "const val = H.state === 'ok' && H.matches >= 100 ? Math.round(H.pct) + '%' : FH_DASHC;"],
+  ['Q25: "no record on file" back', MA2, "(hist[i] ? 'no main-draw match' : 'first appearance')", "(hist[i] ? 'no main-draw match' : 'no record on file')"],
+  ['tier: a fabricated tier for an unknown event', MA2, "const tier = (m.venue && m.venue.category) || (catHit && catHit.category) || '',", "const tier = (m.venue && m.venue.category) || (catHit && catHit.category) || 'ATP 250',"],
+  ['tier: printed twice when it equals the name ("ATP Finals · ATP Finals")', MA2, "tier && tier.toLowerCase() !== tn.toLowerCase() ? tn + ' · ' + tier : tn", "tier ? tn + ' · ' + tier : tn"],
+  ['Q14: the knob placed on the abstract speed', MA2, 'idx = cs && cs.idx != null && isFinite(cs.idx) ? Math.max(0, Math.min(100, cs.idx)) : null', 'idx = cs && cs.v != null ? Math.max(0, Math.min(100, cs.v * 50)) : null'],
+  ['D2: the market rows ungated', MA2, "ok = !!mk && (g === 'full' || g === 'small')", 'ok = !!mk'],
+  ['a return coloured by its gap to the tour, not its sign', MA2, "sc = has ? meUc(v, 1) : 'var(--ma2-quiet)'", "sc = has ? meUc(d, 1) : 'var(--ma2-quiet)'"],
+  ['Q9: Key factors prints the court-conditions sheet\'s count-less %', MA2, "'hold ' + trHoldHtml(m, 'kf-hold')", "'hold ' + (m.courtSpeed && m.courtSpeed.serviceHold != null ? m.courtSpeed.serviceHold + '%' : DASH)"],
+  ['Q9: the tooltip loses n', PAGE, "(n = ${fmt(H.n)}), both players,", "both players,"],
+  ['Q9: the hold rate gated like a sample rate', PAGE, "const val = H.state === 'ok' ? Math.round(H.pct) + '%' : FH_DASHC;", "const val = H.state === 'ok' && H.matches >= 100 ? Math.round(H.pct) + '%' : FH_DASHC;"],
+  ['escaping: the tournament scope unescaped', MA2, 'const tn = trName(m), scope = esc(', 'const tn = trName(m), scope = ('],
   // Odds
-  ['Q17: the book preference dropped (the Odds tab\'s first live row wins)', 'const pick = KF_BOOK_PREF.map(re => live.find(r => re.test(r.name))).find(Boolean) || live[0] || null;', 'const pick = live[0] || null;'],
-  ['odds: a gapped book drawn across the gap', "if (row.gaps && row.gaps.length) return { a: '', b: '', svg: '',", "if (false) return { a: '', b: '', svg: '',"],
-  ['odds: the now from bestOdds (a second book)', "now = row && row[x + 'Now'] != null ? aOddsFmt(row[x + 'Now']) : FH_DASHC;", "now = m.bestOdds && m.bestOdds[x === 'a' ? 'p1' : 'p2'] ? aOddsFmt(m.bestOdds[x === 'a' ? 'p1' : 'p2'].price) : FH_DASHC;"],
-  ['odds: Fair from two unmatched latest quotes', "const fair = x => (row && row.nv && row.nv[x].length ? aOddsFmt(row.nv[x][row.nv[x].length - 1][1]) : FH_DASHC);", "const fair = x => (row && row[x + 'Now'] != null ? aOddsFmt(row[x + 'Now'] * (1 / row.aNow + 1 / row.bNow)) : FH_DASHC);"],
-  ['odds: an all-stale market reads "no prices in the feed"', "kfNote(X.D.hasSeries ? 'No recent prices:", "kfNote(false ? 'No recent prices:"],
-  ['Q12: a "Soft avg" back', '<span>Fair<span class="kf-fair-${x}"', '<span>Soft avg 1.00</span><span>Fair<span class="kf-fair-${x}"'],
+  ['Q17: the book preference dropped (the Odds tab\'s first live row wins)', PAGE, 'const pick = KF_BOOK_PREF.map(re => live.find(r => re.test(r.name))).find(Boolean) || live[0] || null;', 'const pick = live[0] || null;'],
+  ['odds: a gapped book drawn across the gap', MA2, "if (P.length < 2 || (row.gaps && row.gaps.length)) return '<span></span>';", "if (P.length < 2) return '<span></span>';"],
+  ['odds: the now from bestOdds (a second book)', MA2, "n = row && row[x + 'Now'] != null ? aOddsFmt(row[x + 'Now']) : DASH;", "n = m.bestOdds && m.bestOdds[i ? 'p2' : 'p1'] ? aOddsFmt(m.bestOdds[i ? 'p2' : 'p1'].price) : DASH;"],
+  ['odds: Fair from two unmatched latest quotes', MA2, 'const fairOf = x => row && row.nv && row.nv[x] && row.nv[x].length ? aOddsFmt(row.nv[x][row.nv[x].length - 1][1]) : DASH;', "const fairOf = x => row && row[x + 'Now'] != null ? aOddsFmt(row[x + 'Now'] * (1 / row.aNow + 1 / row.bNow)) : DASH;"],
+  ['odds: an all-stale market reads "no prices in the feed"', MA2, "kfNote(X.D.hasSeries ? 'No recent prices:", "kfNote(false ? 'No recent prices:"],
+  ['Q12: a "Soft avg" back', MA2, "hd('Now') + hd('Fair')", "hd('Now') + hd('Soft avg') + hd('Fair')"],
   // DNA (N10)
-  ['N10: the MCP radar fetched again', 'kfEnsureNews(m), kfEnsureMarketEdge(m)]', "kfEnsureNews(m), kfEnsureMarketEdge(m), fetch('./style-radar.json')]"],
-  ['DNA: the raw rating printed instead of the percentile', 'const a = pctOf(D.a.vals[i]), b = pctOf(D.b.vals[i]);', 'const a = D.a.vals[i].raw, b = D.b.vals[i].raw;'],
-  ['ruling 8: the DNA trailer solid (no 45%)', "Math.round(p) < Math.round(o) ? C.dna2 : C.dna}", "Math.round(p) < Math.round(o) ? C.dna : C.dna}"],
-  ['ruling 8: the DNA bars toned per player, not per axis leader', '${val(a)}${bar(a, false, b)}', '${val(a)}${bar(a, false, -1)}'],
-  ["ruling 8: the reference's 40% opacity trailer", "Math.round(p) < Math.round(o) ? C.dna2 : C.dna}", "Math.round(p) < Math.round(o) ? C.dna + '; opacity:0.4' : C.dna}"],
-  ['DNA: the bars on --bar (white inside Key factors)', "dna: 'var(--viz-lead)',", "dna: 'var(--bar)',"],
-  ['DNA: an axis drawn under the 10-match floor', 'd.ok && !!d.ratings && d.ratings[i] != null;', '!!d.ratings && d.ratings[i] != null;'],
-  ['DNA: the axis note (population + n) dropped', '<span tabindex="0" data-aotip="${escapeHtml(ps2AxisTip(D, i))}" style="font-size:11.5px;', '<span tabindex="0" data-x="${escapeHtml(ps2AxisTip(D, i))}" style="font-size:11.5px;'],
+  ['N10: the MCP radar fetched again', PAGE, 'kfEnsureNews(m), kfEnsureMarketEdge(m)]', "kfEnsureNews(m), kfEnsureMarketEdge(m), fetch('./style-radar.json')]"],
+  ['DNA: the raw rating printed instead of the percentile', MA2, 'const pc = v => (v.pct == null ? null : Math.max(0, Math.min(100, v.pct)));', 'const pc = v => (v.raw == null ? null : v.raw);'],
+  ['DNA: an axis drawn under the 10-match floor', PAGE, 'd.ok && !!d.ratings && d.ratings[i] != null;', '!!d.ratings && d.ratings[i] != null;'],
+  ['DNA: the axis note (population + n) dropped', MA2, "return '<div title=\"' + esc(ps2AxisTip(D, i))", "return '<div data-x=\"' + esc(ps2AxisTip(D, i))"],
   // Head to head
-  ['N2: a walkover counted as a meeting', 'const counted = fhMeetings(m).filter(r => !r.wo && (FH_H2H_RET_COUNTS || !r.ret));', 'const counted = fhMeetings(m);'],
-  ['H2H: a retirement dropped from the record', 'const counted = fhMeetings(m).filter(r => !r.wo && (FH_H2H_RET_COUNTS || !r.ret));', 'const counted = fhMeetings(m).filter(r => !r.wo && !r.ret);'],
-  ['H2H: the tug drawn toward the trailer', "style=\"position:absolute; top:0; bottom:0; ${a > b ? 'right' : 'left'}:50%;", "style=\"position:absolute; top:0; bottom:0; ${a > b ? 'left' : 'right'}:50%;"],
-  ['H2H: the sets counted per meeting', "scored.forEach(r => { if (r.done) r.done.forEach(x => { if (x[0] > x[1]) a++; else if (x[1] > x[0]) b++; }); else { a += r.pS; b += r.oS; } });", "scored.forEach(r => { if (r.won) a++; else b++; });"],
-  ['H2H: an absent tally printed as 0', "const pair = p => (p ? [String(p[0]), String(p[1])] : [FH_DASHC, FH_DASHC]);", "const pair = p => (p ? [String(p[0]), String(p[1])] : ['0', '0']);"],
-  ['H2H: hot-line rows on --inner', 'gap:4px 14px; align-items:center; padding:8px 12px; ${KF_PANEL}', 'gap:4px 14px; align-items:center; padding:8px 12px; background:var(--inner);'],
-  ['Q18: a hot line opens the sheet', '<div class="kf-h2h-hot" style=', '<div class="kf-h2h-hot" onclick="event.stopPropagation();fhOpenSheet(\'x\')" style='],
+  ['N2: a walkover counted as a meeting', MA2, 'const counted = fhMeetings(m).filter(r => !r.wo && (FH_H2H_RET_COUNTS || !r.ret))', 'const counted = fhMeetings(m)'],
+  ['H2H: a retirement dropped from the record', MA2, 'const counted = fhMeetings(m).filter(r => !r.wo && (FH_H2H_RET_COUNTS || !r.ret))', 'const counted = fhMeetings(m).filter(r => !r.wo && !r.ret)'],
+  ['H2H: the record bar drawn for the trailer', MA2, "'<span style=\"width:' + (a / n * 100).toFixed(1) + '%; background:var(--ma2-blue);\">", "'<span style=\"width:' + (b / n * 100).toFixed(1) + '%; background:var(--ma2-blue);\">"],
+  ['H2H: the sets counted per meeting', PAGE, "scored.forEach(r => { if (r.done) r.done.forEach(x => { if (x[0] > x[1]) a++; else if (x[1] > x[0]) b++; }); else { a += r.pS; b += r.oS; } });", "scored.forEach(r => { if (r.won) a++; else b++; });"],
+  ['H2H: an absent tally printed as 0', MA2, '(p ? x : DASH)', '(p ? x : 0)'],
+  ['Q18: a hot line opens the sheet', MA2, "'<div title=\"' + esc(KF_HOT_FAM[fhFamOf(x.L.g)]", "'<div onclick=\"event.stopPropagation();fhOpenSheet(\\'x\\')\" title=\"' + esc(KF_HOT_FAM[fhFamOf(x.L.g)]"],
   // Progression
-  ['progression: one round instead of the pooled figure', 'const fig = s => { const f = x ? pgFig(x.avg[s], mt)', 'const fig = s => { const f = x ? pgFig(x.series[s][0], mt)'],
-  ['Q7: Pressure points given a draw average', 'const dr = mt.noDraw || !x ? FH_DASHC : pgDrawFig(x.fAvg, mt).t;', "const dr = !x ? FH_DASHC : '50.0%';"],
-  ['Q8: Pressure points swapped out', 'const rows = PG_METRICS.map((mt, i) => {', "const rows = PG_METRICS.filter(mt => mt.key !== 'pressure').map((mt, i) => {"],
+  ['progression: one round instead of the pooled figure', MA2, 'fa = pgFig(x.avg[0], mt), fb = pgFig(x.avg[1], mt)', 'fa = pgFig(x.series[0][0], mt), fb = pgFig(x.series[1][0], mt)'],
+  ['Q7: Pressure points given a draw average', MA2, 'const dr = mt.noDraw ? DASH : pgDrawFig(x.fAvg, mt).t;', "const dr = mt.noDraw ? '50.0%' : pgDrawFig(x.fAvg, mt).t;"],
+  ['Q8: Pressure points swapped out', MA2, 'PG_METRICS.map((mt, i) => {', "PG_METRICS.filter(mt => mt.key !== 'pressure').map((mt, i) => {"],
   // News
-  ['news: an article in both lists shown twice', "const k = a.news_key != null ? String(a.news_key) : ts + '|' + (a.title || '');", "const k = who + (a.news_key != null ? String(a.news_key) : ts + '|' + (a.title || ''));"],
-  ['news: not newest first', 'return [...by.values()].sort((x, y) => y.ts - x.ts);', 'return [...by.values()];'],
-  // Stennisfy Model
-  ['Q11: the Best soft gap computed', "${kfModelBox('Best soft', FH_DASHC, C.t3, soft,", "${kfModelBox('Best soft', has && bo && fairP > 0 ? '+' + ((fairP - 1 / bo.price) * 100).toFixed(1) + 'pp' : FH_DASHC, C.t3, soft,"],
-  ['model: the flag off another threshold', 'sharp = (edge != null && edge > 0.005) || predV;', 'sharp = (edge != null && edge > 0.05) || predV;'],
-  ['model: a verdict printed with no Pinnacle edge', 'const flag = has && (edge != null || pe != null) ?', 'const flag = has ?'],
-  ['model: the box stops linking to the Model page', "go: `openEdgeModelFromMatch('${idAttr}')`", "go: `aGoTab('odds')`"],
-  ['model: the Model page\'s net adjustment ignored', 'const net = mo && mo.ok && mo.stage2 && mo.stage2.totalDeltaP1 != null ? Number(mo.stage2.totalDeltaP1) * 100 : null;', 'const net = null;'],
-  ['model: "Now" from the legacy books only (chart-shape Pinnacle loses its Now)', "const pinRow = (m.oddsMovement || m._oddsLoaded) ? aOddsRowsOf(m, {}).rows.find(", "const pinRow = (m.oddsMovement && m.oddsMovement.books && Object.keys(m.oddsMovement.books).some(k => /pinnacle/i.test(k))) ? aOddsRowsOf(m, {}).rows.find("],
-  ['model: the move read off unrounded prices', 'mv = po != null && pn != null ? (d2(pn) - d2(po)) / d2(po) * 100 : null;', 'mv = po != null && pn != null ? (pn - po) / po * 100 : null;'],
-  ['model: a shortening move coloured red', 'color:${Math.abs(mv) < 0.05 ? C.t3 : mv < 0 ? C.up : C.dn};', 'color:${Math.abs(mv) < 0.05 ? C.t3 : mv < 0 ? C.dn : C.up};'],
+  ['news: an article outside the 5-day window counted', MA2, ".filter(x => x.cat !== 'Tour News' && isFinite(x.ts) && x.ts >= since)", ".filter(x => x.cat !== 'Tour News' && isFinite(x.ts))"],
+  ['news: not newest first', MA2, '.filter(x => x.hasA || x.hasB).sort((a, b) => b.ts - a.ts)', '.filter(x => x.hasA || x.hasB)'],
+  ['review: one story, one line dropped (re-written headlines shown twice)', MA2, 'if (seen.has(k)) return false;', 'if (false) return false;'],
+  // Stennisfy Model (brief 2026-11-23 item a)
+  ['model: the draw store\'s copy ignored', MA2, '|| (ds && ds.model) || null;', '|| null;'],
+  ['model: an exchange as a best soft book', PAGE, "k !== 'Pncl' && k !== sk && !/exchange|matchbook|smarkets|betdaq/i.test(k) && edgeQuote(m.bookNow, k)", "k !== 'Pncl' && k !== sk && edgeQuote(m.bookNow, k)"],
+  ['model: the best-soft gap dashed (the retired Q11 rule)', MA2, 'sg = kfPP(soft ? edgeGapOf(prob, soft.price) : null)', 'sg = kfPP(null)'],
+  ['model: the box stops linking to the Model page', MA2, "go: \"openEdgeModelFromMatch('\" + idA + \"')\"", "go: \"aGoTab('odds')\""],
+  ['model: the run\'s net adjustment ignored', MA2, 'net = ok && e.stage2 && e.stage2.totalDeltaP1 != null ? e.stage2.totalDeltaP1 * 100 : null', 'net = null'],
+  ['model: the prediction-market verdict dropped', PAGE, "return f.find(x => /sharp/i.test(x.type)) ? 'Sharp value' : pred(s) ? 'Prediction market value' :", "return f.find(x => /sharp/i.test(x.type)) ? 'Sharp value' : false ? 'Prediction market value' :"],
   // Market edge
-  ['market edge: the tiles read another band than today\'s', 'b = ready && M.tb >= 0 ? M.bands[M.tb] : null;', 'b = ready && M.tb >= 0 ? M.bands[0] : null;'],
-  ['market edge: the top-2 lines lose their wash', "background:${r.top ? C.wash : 'transparent'};", 'background:transparent;'],
+  ['market edge: the tiles read another band than today\'s', MA2, 'b = ready && M.tb >= 0 ? M.bands[M.tb] : null', 'b = ready && M.tb >= 0 ? M.bands[0] : null'],
+  ['market edge: the gate dropped (a stake beside two dashes)', MA2, "return { t: R.txt, c: R.mode === 'full' ? c : meGrey }; };", 'return { t: txt || DASH, c }; };'],
   // Weather
-  ['weather: the box reads the card\'s own field, not the Weather tab\'s model', 'else { verdict = W.verdict; if (!W.unavail) at = W.at; }', 'else { verdict = W.verdict; if (!W.unavail) at = { temp: m.weather && m.weather.temperature }; }'],
-  ['Q14: "usual" back on the court pace', "${tile('kf-wx-pace', 'Court pace', pace, cs && cs.category ? fhEsc(cs.category) : '')}", "${tile('kf-wx-pace', 'Court pace', pace, 'usual')}"],
-  // TEN-380 (founder step 3, README §1; replaces Q26): the modal always opens on Odds (test-ten314-modal-frame.mjs "TEN-380")
-  ['TEN-380: the last-used tab restored', "  const first = (tab && A_TAB_BUILD[tab]) ? tab : 'odds';   // TEN-380: the modal opens on Odds (README §1, reference)", "  const first = (tab && A_TAB_BUILD[tab]) ? tab : (Object.keys(A_TAB_BUILD).find(t => { const b = document.querySelector(`#aTabs .asidenav-item[data-atab=\"${t}\"]`); return b && b.classList.contains('active'); }) || 'odds');"],
-  ['TEN-380: the default back on Key factors', "  const first = (tab && A_TAB_BUILD[tab]) ? tab : 'odds';   // TEN-380: the modal opens on Odds (README §1, reference)", "  const first = (tab && A_TAB_BUILD[tab]) ? tab : 'key';"],
+  ['weather: the box reads the card\'s own field, not the Weather tab\'s model', MA2, 'at = vm && !vm.indoor && !vm.unavail ? vm.at : null;', 'at = vm && !vm.indoor && !vm.unavail ? { temp: m.weather && m.weather.temperature } : null;'],
+  ['Q14: "usual" back on the court speed box', MA2, "P.detail ? P.detail.charAt(0).toUpperCase() + P.detail.slice(1) : ''", "'usual'"],
   // the tab
-  ['tab: a box routed nowhere', "const go = o.go || `aGoTab('${tab}')`;", "const go = o.go || '';"],
-  ['tab: the 3-column grid back', '<div class="kf-grid" style="display:grid; grid-template-columns:repeat(6,minmax(0,1fr));', '<div class="kf-grid" style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr));'],
-  ['tab: a header title that can be clipped', '<span class="kf-title" style="flex:none; ${KF_CAP}">', '<span class="kf-title" style="flex:1 1 auto; min-width:0; overflow:hidden; ${KF_CAP}">'],
-  ['DoD 4: the design\'s SAMPLE DATA chip back', '<div class="kf-grid" style="display:grid;', '<span>SAMPLE DATA</span><div class="kf-grid" style="display:grid;'],
-  ['DoD 8: a native title back', '<span class="${cls}"${tip ? ` tabindex="0" data-aotip=', '<span class="${cls}" title="x"${tip ? ` tabindex="0" data-aotip='],
-  ['DoD 8: an old renderer back (hidden, not deleted)', 'function buildKeyFactorsSection(m){', 'function akOddsMoveSvg(m){ return \'\'; }\nfunction buildKeyFactorsSection(m){'],
-  ['D1: a literal colour in a style constant', "const KF_PANEL = 'background:var(--card); border:1px solid var(--edge-6);';", "const KF_PANEL = 'background:#10131d; border:1px solid var(--edge-6);';"],
-  ['D1: a literal colour in the tile surface', "  card: 'var(--card)', edge: 'var(--edge-7)',", "  card: '#10131d', edge: 'var(--edge-7)',"],
-  ['escaping: the tournament title unescaped', "${fhEsc(tier ? `${trName(m)} · ${tier}` : trName(m))}", "${tier ? `${trName(m)} · ${tier}` : trName(m)}"],
-  ['lazy: Key factors stops loading the H2H meetings', 'fhEnsureFormData(m), fhEnsureH2hData(m), ensureMatchDna(),', 'fhEnsureFormData(m), ensureMatchDna(),'],
-  ['lazy: no final paint (Download report prints the loading lines)', '.then(() => { done = true; paint(); });', '.then(() => { done = true; });'],
+  ['tab: a box routed nowhere', MA2, "const go = o.go || \"aGoTab('\" + o.tab + \"')\";", "const go = o.go || '';"],
+  ['tab: the order changed', MA2, "order: 2, size: 'h', title: 'Odds'", "order: 12, size: 'h', title: 'Odds'"],
+  ['tab: a size changed', MA2, "size: 'f', title: 'Stennisfy Model'", "size: 'h', title: 'Stennisfy Model'"],
+  ['DoD 4: a SAMPLE DATA chip back', MA2, "title: 'Stennisfy Model',", "title: 'Stennisfy Model SAMPLE DATA',"],
+  ['DoD 8: an old renderer back (hidden, not deleted)', PAGE, 'function buildKeyFactorsSection(m){', "function kfOddsMove(m){ return ''; }\nfunction buildKeyFactorsSection(m){"],
+  ['D1: a literal colour in a box', MA2, "const kfNote = t => '<span style=\"font-size:12.5px; color:var(--ma2-grey);", "const kfNote = t => '<span style=\"font-size:12.5px; color:#a3aabe;"],
+  // TEN-380 (founder step 3, README §1): the modal always opens on Odds; the Key factors loads (test-ten314-modal-frame.mjs)
+  ['TEN-380: the default back on Key factors', PAGE, "  const first = (tab && A_TAB_BUILD[tab]) ? tab : 'odds';", "  const first = (tab && A_TAB_BUILD[tab]) ? tab : 'key';", FRAME],
+  ['lazy: Key factors stops loading the H2H meetings', PAGE, 'fhEnsureFormData(m), fhEnsureH2hData(m), ensureMatchDna(),', 'fhEnsureFormData(m), ensureMatchDna(),', FRAME],
+  ['lazy: no final paint (Download report prints the loading lines)', PAGE, '.then(() => { done = true; paint(); });', '.then(() => { done = true; });', FRAME],
 ];
-const SUITES = [['test-ten341-key-factors.mjs', 'TEN341_HTML'], ['test-ten295-odds-chart.mjs', 'TEN295_HTML'], ['test-ten314-modal-frame.mjs', 'TEN314_HTML']];
-const run = file => spawnSync(process.execPath, ['--test', ...SUITES.map(([f]) => path.join(ROOT, f))],
-  { env: Object.assign({}, process.env, file ? Object.fromEntries(SUITES.map(([, k]) => [k, file])) : {}), encoding: 'utf8' });
-// Control: the unmutated page must pass, or every "caught" below means nothing.
-{ const r = run(); if (r.status !== 0) { console.error('✖ the suites are red on the unmutated page — mutants are meaningless'); process.exit(1); }
-  console.log('✔ control: the unmutated page passes'); }
-const src = fs.readFileSync(path.join(ROOT, PAGE), 'utf8');
-let survived = 0;
+const ENV = { [KF]: { [PAGE]: 'TEN341_HTML', [MA2]: 'TEN341_MA2' }, [FRAME]: { [PAGE]: 'TEN314_HTML' } };
+const run = (suite, file, copy) => spawnSync(process.execPath, ['--test', ...(suite === KF ? ['--test-skip-pattern=' + GAP] : []), path.join(ROOT, suite)],
+  { env: Object.assign({}, process.env, copy ? { [ENV[suite][file]]: copy } : {}), encoding: 'utf8' });
+// Control per suite: the unmutated code must pass, or every "caught" below means nothing.
+const green = {};
+for (const suite of [KF, FRAME]) {
+  green[suite] = run(suite).status === 0;
+  console.log(green[suite] ? `✔ control: ${suite} passes on the unmutated code` + (suite === KF ? ` (its "${GAP}" tests skipped)` : '')
+    : `⚠ SKIP: ${suite} is red on the unmutated code — its mutants are not run (nothing measured)`);
+}
+if (!green[KF]) { console.error(`✖ ${KF} is red on the unmutated code — its mutants are meaningless`); process.exit(1); }
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ten341-mut-'));
-for (const [name, from, to] of MUTANTS) {
-  if (src.split(from).length !== 2) { console.error(`✖ anchor not found exactly once: ${name}`); survived++; continue; }
-  const file = path.join(dir, PAGE);
-  fs.writeFileSync(file, src.replace(from, to));
-  const r = run(file);
-  if (r.status === 0) { console.error(`✖ SURVIVED: ${name}`); survived++; } else console.log(`✔ caught: ${name}`);
+let survived = 0, skipped = 0;
+for (const [name, file, from, to, suite = KF] of MUTANTS) {
+  const src = fs.readFileSync(path.join(ROOT, file), 'utf8');
+  if (src.split(from).length !== 2) { console.error(`✖ anchor not found exactly once in ${file}: ${name}`); survived++; continue; }
+  if (!green[suite]) { console.log(`⚠ SKIPPED (${suite} red): ${name}`); skipped++; continue; }
+  const copy = path.join(dir, file);
+  fs.writeFileSync(copy, src.replace(from, to));
+  if (run(suite, file, copy).status === 0) { console.error(`✖ SURVIVED: ${name}`); survived++; } else console.log(`✔ caught: ${name}`);
 }
 fs.rmSync(dir, { recursive: true, force: true });
-console.log(`mutants: ${MUTANTS.length - survived} caught, ${survived} survived`);
+console.log(`mutants: ${MUTANTS.length - survived - skipped} caught, ${survived} survived, ${skipped} skipped (suite red, not measured)`);
 process.exit(survived ? 1 : 0);

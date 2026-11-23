@@ -162,7 +162,11 @@ ok('prediction market: Polymarket else Kalshi, ask as decimal odds, open = first
   assert.strictEqual(v.p1.t, 'Sharp value', 'a Pinnacle flag reads first');
   v = mk(null)(e([]), {});
   assert.strictEqual(v.p1.t, 'No value', 'no prediction market = the bookmaker verdict alone');
-  assert.ok(/predV \? 'PREDICTION VALUE'/.test(html), 'Key factors names a prediction-market value flag');
+  // Key factors (rebuild 2026-11-23, brief item a): the Model box prints the Model page's own verdict words (edgeVerdicts),
+  // so "Prediction market value" reaches it through the function checked above.
+  const ma = require('fs').readFileSync(path.join(ROOT, 'match-analysis-v2.js'), 'utf8');
+  const kfm = /function kfModelBox\(m\) \{[\s\S]*?\n  \}\n/.exec(ma);
+  assert.ok(kfm && /const vd = ok \? edgeVerdicts\(e, m\)/.test(kfm[0]) && /esc\(vd\[s\]\.t\)/.test(kfm[0]), 'Key factors names a prediction-market value flag (prints edgeVerdicts\' words)');
 }
 ok('value verdict: prediction market at the 3pp line, after Sharp value, before Soft book value');
 
