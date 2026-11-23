@@ -354,11 +354,3 @@ test('F5: the highlighted round is the Facing row\'s selected segment', () => {
   assert.deepEqual(segs.map(x => /font-weight:700/.test(x[0])), [true, false, false], 'R1 selected, QF idle');
   assert.match(facingOf(h), /onclick="ma2PgPick\(null\)"[^>]*>QF</, 'the idle current round clears the highlight');
 });
-import { writeFileSync } from 'node:fs';
-{
-  const hA = [row('2026-09-24', 'R1', 'A. Shevchenko', W), row('2026-09-26', 'R2', 'M. Damm', W)];
-  const m = match('QF', hA, [row('2026-09-24', 'R1', 'X. One', W), row('2026-09-26', 'R2', 'X. Two', W)]);
-  setBox(m, 0, 0, Object.assign({}, BOX_A, { bpc: [1, 2], bps: [1, 2] }), BOX_B);
-  setBox(m, 0, 1, Object.assign({}, BOX_A, { bpc: [3, 4], bps: [2, 3] }), BOX_B);
-  writeFileSync('/private/tmp/claude-501/-Users-Michael--claude-spares-spare-5pCH5H/6d0219b0-1036-4f71-84eb-d384d85ef45c/scratchpad/d/pg1.html', S.buildMatchProgressionSection(m).replace(/></g, '>\n<'));
-}
