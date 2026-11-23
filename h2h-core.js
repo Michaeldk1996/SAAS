@@ -159,8 +159,10 @@
     return d0 != null && d0 < md;
   }
 
-  function inPopulation(x) {
-    return H2H_LEVELS.includes(String(x.level || '').toLowerCase())
+  // opt.lower (founder brief 2026-11-23, Match analysis "Include Challenger & ITF" tick box): Challenger / ITF
+  // ('chitf') meetings join the list; every other exclusion stands. Default (no opt) = ATP's official population.
+  function inPopulation(x, opt) {
+    return (opt && opt.lower ? H2H_LEVELS.concat('chitf') : H2H_LEVELS).includes(String(x.level || '').toLowerCase())
       && !x.qualifying && !/^qualif/i.test(String(x.round || ''))   // (D1: resolveQualifying has already read both rows)
       && !H2H_NOT_COUNTED.test(String(x.tournament || ''));
   }
@@ -181,7 +183,7 @@
   // (api-tennis key) against the other player's `key`. A feed row from a profile cached before `oppKey` existed still
   // falls back to the roster-unique-name rule (TEN-263) until that profile rebuilds; an archive row never does.
   // a / b: { full, short, key, id } (names as the roster prints them; key = api-tennis key; id = the shard's TML/ATP id).
-  function joinMeetings(a, b, chA, chB, nkCount, ownEks) {
+  function joinMeetings(a, b, chA, chB, nkCount, ownEks, opt) {
     const nk = nameKey, nkA = nk(a.full), nkB = nk(b.full), ck = canonKey;
     const uniq = k => !!k && ((nkCount || {})[k] || 0) <= 1;
     const up = v => (v == null || v === '' ? null : String(v).toUpperCase());
@@ -221,7 +223,7 @@
     });
     const own = new Set((ownEks || []).map(String));
     const all = A.concat(B);
-    return dedupe(out).map(x => resolveQualifying(x, all)).filter(x => inPopulation(x) && !(x.eventKey != null && own.has(String(x.eventKey))))
+    return dedupe(out).map(x => resolveQualifying(x, all)).filter(x => inPopulation(x, opt) && !(x.eventKey != null && own.has(String(x.eventKey))))
       .sort((x, y) => String(x.date).localeCompare(String(y.date)));
   }
 

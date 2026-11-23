@@ -51,3 +51,12 @@
 #analysisModal .ma2-ftip{ display:none; }
 #analysisModal .ma2-fbar:hover .ma2-ftip{ display:flex; }
 #analysisModal .ma2-btn2[onclick]:hover{ background:var(--ma2-hover) !important; }
+/* ---- Head to head: quiet Close, tile hover, narrow column (<640px: Rd, surface word, score in the line history hide) ---- */
+#analysisModal .ma2-quietlink:hover{ color:var(--ma2-text) !important; }
+#analysisModal .ma2-tile:hover{ border-color:color-mix(in srgb, var(--ma2-white) 22%, transparent) !important; }
+@container (max-width: 640px){ #analysisModal .h2wrap .h2hide{ display:none; } }
+@container (max-width: 640px){
+  #analysisModal .h2wrap .h2mg{ grid-template-columns:44px minmax(0,0.7fr) 54px minmax(150px,1.5fr) 40px 40px 8px !important; gap:0 8px !important; padding-left:14px !important; padding-right:14px !important; }
+  #analysisModal .h2wrap .h2hg{ grid-template-columns:minmax(104px,0.8fr) 44px 80px minmax(0,1.6fr) 10px !important; gap:10px !important; padding-left:14px !important; padding-right:14px !important; }
+  #analysisModal .h2wrap .h2dg{ grid-template-columns:62px minmax(0,1.3fr) 110px 100px 8px !important; }
+}

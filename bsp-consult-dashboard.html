@@ -14562,8 +14562,8 @@ function maRoundName(round){
   const n = +m[1];
   return n === 4 ? 'Quarter-finals' : n === 2 ? 'Semi-finals' : n >= 8 ? 'R' + (n * 2) : l;
 }
-// TEN-263: the H2H tab is rebuilt from the design handoff — see fhBuildH2H.
-function buildH2HSection(m){ return fhBuildH2H(m); }
+// TEN-263: the H2H tab is rebuilt from the design handoff — see maH2HV2 (match-analysis-v2.js).
+function buildH2HSection(m){ return maH2HV2(m); }
 
 /* =====================================================================
    TEN-263 · Match analysis → Form + H2H tabs (design_handoff_match_analysis,
@@ -16010,15 +16010,17 @@ function fhH2hWindowCloses(list, closes, m){
   }
   return out;
 }
-function fhH2hMeetingRows(m){
+function fhH2hMeetingRows(m, lower){
   const ch = m._fhCh || [[], []];
   // the match itself, nothing else (ruling 2026-10-16) — and only while it is upcoming or live: once it is finished, its
   // own analysis counts it, like every other surface (founder 2026-10-16 follow-up)
   const own = m.finalScore ? [] : [eventKeyOfMatch(m)].filter(x => x != null && x !== '');
-  return H2HCore.joinMeetings(sfH2hSide(m.p1Key, m.p1), sfH2hSide(m.p2Key, m.p2), ch[0], ch[1], sfH2hNkCount(), own);
+  return H2HCore.joinMeetings(sfH2hSide(m.p1Key, m.p1), sfH2hSide(m.p2Key, m.p2), ch[0], ch[1], sfH2hNkCount(), own, lower ? { lower: true } : undefined);
 }
-function fhMeetings(m){
-  const list = fhH2hMeetingRows(m);
+// lower: the Match analysis "Include Challenger & ITF" tick box (founder brief 2026-11-23) — Challenger / ITF meetings
+// join; off (every other caller) = ATP's official population, unchanged.
+function fhMeetings(m, lower){
+  const list = fhH2hMeetingRows(m, lower);
   const idx = rows => { const o = {}; (rows || []).forEach(x => { if (x && x.eventKey != null) (o[String(x.eventKey)] = o[String(x.eventKey)] || []).push(x); }); return o; };
   const srcs = [
     [idx(m.p1RecentFormMatches), false], [idx(m._fhCh && m._fhCh[0]), false],
@@ -16048,7 +16050,7 @@ function fhMeetings(m){
       surface: fhSurfName(x.surface), round: fhRoundCode(x.round, x.qualifying),
       won: !!x.won, result: x.result, sets, ret: !!ret, wo: !!wo, def: !!x.defaulted, qualifying: qual, tier: tier || x.level || null,
       ek: x.eventKey, opp: m.p2, oppKey: m.p2Key, selfKey: m.p1Key, selfName: m.p1, price: null, oppPrice: null, book: null,
-      level: 'ATP', src0: x._how || 'both' };
+      level: String(x.level || '').toLowerCase() === 'chitf' ? 'CH/ITF' : 'ATP', src0: x._how || 'both' };
     fhFinishRow(r);
     let c = null;
     if (ek){
@@ -16079,51 +16081,6 @@ function fhPriceAvg(PR, isA){
     return 1 / (isA ? pA : 1 - pA);
   }
   return 1 / (PR.reduce((s, r) => s + 1 / (isA ? r.price : r.oppPrice), 0) / PR.length);
-}
-// TEN-331 · the H2H tab rebuilt on the TEN-312 design file (DF template L1153–1332, `h2hV2For` L4283–4510; the file wins
-// over the README). Colours are the design's own shades (fhS — founder 2026-09-29), the neutral D4 player pair (FH_AC /
-// FH_BC) and the shared helpers: meetings are maMatchRowsHtml rows, the price-range pop-up is maTipHtml, every meeting,
-// dot, breakdown row and price opens the shared sheet (DoD item 8). The file's review switcher (State) is not built.
-// The record card (DF L1197–1212 — the file's varA; mkRec L4336): label, "Meetings ↓", names over the W–L, the tug bar
-// from the centre (DF L4351 — founder 2026-09-29: drawn at any n ≥ 1, it is a count, not a rate), "X leads · n meetings"
-// with the level mix (ruling 2026-09-24). A walkover is no meeting (N2); a retirement counts (flag e). The small-sample
-// chip shows for every n 1–9 (D2), not only n = 2 as in the file.
-function fhH2hRecCard(label, arr, onclick, aName, bName, aS, bS){
-  const counted = arr.filter(r => !r.wo && (FH_H2H_RET_COUNTS || !r.ret));
-  const a = counted.filter(r => r.won).length, n = counted.length, b = n - a;
-  const side = a > b ? 'a' : b > a ? 'b' : 'level';
-  const lead = !n ? 'No meetings' : side === 'level' ? 'Level' : (side === 'a' ? aS : bS) + ' leads';
-  // TEN-380 (README §6 + the reference): both names and scores white; the tug white on a --line track, the centre tick
-  // --viz-tick. Founder ruling 8 (Q3): the tug fills only the leader's side, so that fill is the leader's — solid
-  // --white-bar whichever player leads (the reference's 70% on player B is not used).
-  const leadColor = side === 'level' ? 'var(--text-soft)' : 'var(--text)';
-  const tug = s => (side === s && n ? (Math.abs(a - b) / n * 50) + '%' : '0%');
-  const tugTxt = !n ? '' : side === 'level' ? 'Level' : '+' + Math.abs(a - b) + ' ' + (side === 'a' ? aS : bS);
-  const lbl = `font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-soft);`;
-  return `<div${onclick ? ` class="seg fh-h2rec" onclick="${onclick}"` : ''} style="background:var(--card); border:1px solid var(--edge-6); border-radius:16px; padding:20px 22px; display:flex; flex-direction:column; gap:14px; min-width:0;${onclick ? ' cursor:pointer;' : ''}">
-      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;"><span style="${lbl}">${fhEsc(label)}</span><span style="margin-left:auto; font-size:11px; font-weight:600; color:var(--text); white-space:nowrap;">Meetings ↓</span>${maSmallChip(n)}</div>
-      <div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:16px;">
-        <span style="font-size:14px; font-weight:700; color:var(--text); text-align:right; white-space:nowrap;">${fhEsc(aName)}</span>
-        <span style="${FH_MONO} font-size:44px; font-weight:800; line-height:1; white-space:nowrap;"><span style="color:var(--text);">${a}</span><span style="color:var(--text-label);"> – </span><span style="color:var(--text);">${b}</span></span>
-        <span style="font-size:14px; font-weight:700; color:var(--text); white-space:nowrap;">${fhEsc(bName)}</span>
-      </div>
-      <div class="fh-tug" data-tug-a="${tug('a')}" data-tug-b="${tug('b')}" style="display:flex; flex-direction:column; align-items:center; gap:6px;"><div style="position:relative; width:100%; height:8px; background:var(--line); border-radius:4px;"><span style="position:absolute; right:50%; top:0; bottom:0; width:${tug('a')}; background:var(--white-bar); border-radius:4px 0 0 4px;"></span><span style="position:absolute; left:50%; top:0; bottom:0; width:${tug('b')}; background:var(--white-bar); border-radius:0 4px 4px 0;"></span><span style="position:absolute; left:50%; top:-4px; bottom:-4px; width:1.5px; margin-left:-0.75px; background:var(--viz-tick);"></span></div><span style="${FH_MONO} font-size:10.5px; font-weight:700; color:${leadColor};">${fhEsc(tugTxt)}</span></div>
-      <div style="display:flex; justify-content:center; gap:8px; ${FH_MONO} font-size:11.5px; white-space:nowrap;"><span style="font-weight:700; color:${leadColor};">${fhEsc(lead)}</span><span style="color:var(--text-label);">·</span><span style="color:var(--text-label);">${fhEsc(n + (n === 1 ? ' meeting' : ' meetings'))}</span></div>
-    </div>`;
-}
-// Loading (DF L1167–1177), the file's own placeholder shades.
-function fhH2hSkeleton(){
-  const f5 = 'var(--inner)', f4 = 'var(--inner)', f3 = 'color-mix(in srgb, var(--text) 3%, transparent)', f6 = 'var(--inner)';
-  const b = (h, r) => `<div style="height:${h}px; border-radius:${r}px; background:${f4};"></div>`;
-  return `<div style="display:flex; flex-direction:column; gap:14px;">
-      <div style="width:260px; height:30px; border-radius:9px; background:${f5};"></div>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">${b(150, 14)}${b(150, 14)}</div>
-      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:14px;">${b(76, 14)}${b(76, 14)}${b(76, 14)}</div>
-      <div style="border-radius:14px; background:${f3}; padding:16px; display:flex; flex-direction:column; gap:12px;"><div style="width:220px; height:14px; border-radius:4px; background:${f6};"></div><div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">${b(130, 12)}${b(130, 12)}</div></div>
-      <div style="border-radius:14px; background:${f3}; padding:16px; display:flex; flex-direction:column; gap:10px;"><div style="width:180px; height:14px; border-radius:4px; background:${f6};"></div>${b(34, 14)}${b(34, 14)}${b(34, 14)}${b(34, 14)}${b(34, 14)}</div>
-      ${b(300, 14)}
-      <span style="${FH_MONO} font-size:10.5px; color:var(--text-label); text-align:center;">Loading head-to-head…</span>
-    </div>`;
 }
 // "No previous meetings": each player's last-52-weeks record against the OTHER
 // player's playing style, from the same career-meeting shards the Playing style
@@ -16166,237 +16123,6 @@ function fhH2hGapNote(m){
   const one = fhH2hOneSided(m);
   return one.length ? ' No match history on file for ' + one.join(' and ') + ': meetings are read from the other player\'s history alone.' : '';
 }
-function fhBuildH2H(m){
-  fhEnsureStyles();
-  const F0 = fhStateFor(m), S = F0.h2h;
-  const A = m.p1, B = m.p2, aS = fhSurname(A), bS = fhSurname(B);
-  // TEN-380: panels --card + 1px --edge-6 (foundation), section titles outside the cards, blocks 14px apart.
-  const card = 'var(--card)', hair = 'var(--edge-6)', t3 = 'var(--text-label)', t4 = 'var(--text-label)', t2 = 'var(--text-soft)';
-  const link = 'var(--link)';
-  const wrap = inner => `<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:14px;">${inner}</div>`;
-  // A section title outside its card (the reference: 20/800 title, 12.5 --text-label subtitle, an optional right-hand
-  // meta; every section after the first sits under a --line rule, 24px down).
-  const secHead = (title, sub, right, first) => `<div class="fh-h2sec" style="display:flex; align-items:flex-end; justify-content:space-between; gap:8px 24px; flex-wrap:wrap; ${first ? 'margin-top:4px;' : 'margin-top:18px; padding-top:24px; border-top:1px solid var(--line);'}">
-      <div style="display:flex; flex-direction:column; gap:6px; min-width:0;"><span style="font-size:20px; font-weight:800; letter-spacing:-0.01em; color:var(--text);">${fhEsc(title)}</span>${sub ? `<span style="font-size:12.5px; color:${t3};">${sub}</span>` : ''}</div>
-      ${right ? `<span style="${FH_MONO} font-size:11px; color:${t3}; white-space:nowrap;">${right}</span>` : ''}</div>`;
-  // Meetings come from api-tennis AND both players' histories, so "none" is only known
-  // once the histories have loaded — until then the loading skeleton shows.
-  // TEN-437 (5): a history that did not load is a load error with a Retry — never "no meetings on record", never cached.
-  if (m._fhH2hFailed) return wrap(`<div class="fh-h2fail" style="background:${card}; border:1px solid ${hair}; border-radius:16px; padding:26px 24px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:8px;">
-        <span style="font-size:15px; font-weight:800;">Head-to-head could not load</span>
-        <span style="font-size:13px; color:${t2};">Match history for ${fhEsc(m._fhH2hFailed.join(' and '))} did not load, so the meetings are not known yet.</span>
-        <span class="seg fh-h2retry" onclick="fhH2hRetry()" style="font-size:12.5px; font-weight:700; color:var(--text); cursor:pointer;">Retry</span>
-      </div>`);
-  if (!m._fhH2hData){
-    fhEnsureH2hData(m).then(() => { if (_fh && _fh.m === m) fhH2h({}); });
-    return wrap(fhH2hSkeleton());
-  }
-  const E = fhMeetings(m);
-  if (!E.length){
-    // No meetings (DF L1178–1193): the empty state; every section below is hidden. The file's "have not played" is a claim
-    // our coverage cannot make, so the copy says "on record" and names what was searched.
-    if (!m._styleMeetLoaded) Promise.all([ensureStyleMeetings(m), ensurePsMatrix()]).then(() => { if (_fh && _fh.m === m) fhH2h({}); }).catch(() => {});
-    const cards = fhNoMeetingCards(m).map(r => `<div style="border:1px solid var(--edge-6); border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px;">
-        <span style="font-size:13px; color:${t2};"><span style="font-weight:700; color:var(--text);">${fhEsc(r.who)}</span> ${fhEsc(r.vs)}</span>
-        <span style="${FH_MONO} font-size:30px; font-weight:800; line-height:1;${r.dash ? ' color:' + t4 + ';' : ''}">${fhEsc(r.rec)}</span>
-        <span style="${FH_MONO} font-size:11px; color:${t3};">${r.metaHtml != null ? r.metaHtml : fhEsc(r.meta)}</span>
-      </div>`).join('');
-    return wrap(`<div style="background:${card}; border:1px solid ${hair}; border-radius:16px; padding:22px 24px; display:flex; flex-direction:column; gap:16px;">
-        <div style="display:flex; flex-direction:column; align-items:center; text-align:center; gap:5px;">
-          <span style="font-size:17px; font-weight:800;">No previous meetings on record</span>
-          <span style="font-size:13px; color:${t2}; line-height:1.5; text-wrap:pretty;">${fhEsc(A)} and ${fhEsc(B)} have no meeting on record. Closest guide: how each has done against the other's playing style, last 52 weeks.</span>
-          <span style="font-size:10.5px; color:${t3};">${fhEsc(fhH2hScopeNote(m))}</span>
-        </div>
-        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px;">${cards}</div>
-        <span class="seg" onclick="aGoTab('style')" style="font-size:12.5px; font-weight:600; color:${link}; text-align:center; cursor:pointer;">Open the Playing style tab →</span>
-      </div>`);
-  }
-  E.forEach(r => { F0.sheetMap[r.mid] = { r, aName: A, aKey: m.p1Key, bName: B, bKey: m.p2Key }; });   // sheet date DD.MM.YY (DF L4481)
-  // N2: a walkover is not a meeting played — it is listed (marked "w/o") but enters no count, rate, line or price.
-  const played = E.filter(r => !r.wo);
-  const SURF = S.surf, FL = E.filter(r => SURF === 'all' || r.surface === SURF), F = FL.filter(r => !r.wo);
-  // Surface filter with meeting counts (DF L1159–1165); 0 meetings = greyed, not clickable. N1: opens on All.
-  const surfTabs = fhSegTrack([['all', 'All'], ['Hard', 'Hard'], ['Clay', 'Clay'], ['Grass', 'Grass']].map(t => {
-    // the count is meetings played; a surface is greyed only when nothing is listed on it (a w/o-only surface still opens)
-    const n = played.filter(r => t[0] === 'all' || r.surface === t[0]).length, listed = E.some(r => t[0] === 'all' || r.surface === t[0]);
-    return { label: t[1], count: String(n), on: SURF === t[0], off: !listed, onclick: `fhH2h({surf:'${t[0]}',allLines:false,stat:null})` };
-  }), '', true);
-  const top = `<div style="display:flex; align-items:center; gap:12px 14px; flex-wrap:wrap;">${surfTabs}<span style="font-size:11px; color:${t4}; white-space:nowrap;">filters everything below</span></div>`
-    + secHead('Head to head', 'Record, sets and deciders across every meeting in the filter', '', true);
-  // One record card over what the filter shows (DF varA; "Overall", or "On clay" under a surface filter). The file's
-  // "Today's surface" card belongs to its variant B, which the file does not draw.
-  const recCard = `<div style="display:grid; grid-template-columns:minmax(0,1fr); gap:14px;">${fhH2hRecCard(SURF === 'all' ? 'Overall' : 'On ' + SURF.toLowerCase(), F, 'fhH2hToList()', A, B, aS, bS)}</div>`;
-  if (!FL.length){
-    return wrap(`${top}${recCard}<div style="background:${card}; border:1px solid ${hair}; border-radius:14px; padding:28px; text-align:center; font-size:13px; color:${t3};">No meetings on ${SURF.toLowerCase()}.</div>`);
-  }
-  const onlyWo = !F.length;
-  // ---- stats row (Sets won / Tiebreaks / Deciding sets) + the "Breakdown ▾" drawers (DF L1245–1270, L4363–4379) ----
-  const withGames = F.filter(r => r.sets), withTally = F.filter(r => r.pS != null);
-  let sA = 0, sB = 0, tA = 0, tB = 0;
-  withTally.forEach(r => { if (r.done){ r.done.forEach(x => { if (x[0] > x[1]) sA++; else if (x[1] > x[0]) sB++; }); } else { sA += r.pS; sB += r.oS; } });
-  withGames.forEach(r => r.done.forEach(x => { if (Math.max(x[0], x[1]) === 7 && Math.min(x[0], x[1]) === 6){ if (x[0] > x[1]) tA++; else tB++; } }));
-  const dec = F.filter(r => r.decider), dA = dec.filter(r => r.won).length;
-  const one = F.length === 1, pre = one ? 'n=1 · ' : '';
-  // every count carries its population: a tally over fewer meetings than listed says so
-  const gCov = withGames.length < F.length ? ' · ' + withGames.length + ' of ' + F.length + ' with set scores' : '';
-  const sCov = withTally.length < F.length ? ' · ' + withTally.length + ' of ' + F.length + ' with a score' : '';
-  const stats = [
-    { key: 'sets', label: 'Sets won', val: withTally.length ? sA + '–' + sB : FH_DASHC, sub: pre + (sA + sB) + ' completed sets' + sCov },
-    { key: 'tb', label: 'Tiebreaks', val: withGames.length ? tA + '–' + tB : FH_DASHC, sub: pre + (tA + tB) + ' played' + gCov },
-    { key: 'dec', label: 'Deciding sets', val: dec.length ? dA + '–' + (dec.length - dA) : FH_DASHC, sub: pre + dec.length + ' went the distance' + sCov },
-  ];
-  const statsHtml = `<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px;">${stats.map(c => {
-    const on = S.stat === c.key;
-    // TEN-380 (README §6): title left, "Breakdown ▾" (--text) right on one header line; the open tile = --card + --edge-24
-    return `<div class="seg fh-h2stat" data-stat="${c.key}" onclick="fhH2h({stat:${on ? 'null' : "'" + c.key + "'"}})" style="background:${card}; border:1px solid ${on ? 'var(--edge-24)' : hair}; border-radius:14px; padding:14px 18px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:5px; cursor:pointer;">
-        <span style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; width:100%;"><span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${t3}; text-align:left;">${c.label}</span><span class="fh-h2bd" style="font-size:10.5px; font-weight:600; color:var(--text); white-space:nowrap;">${on ? 'Hide breakdown ▴' : 'Breakdown ▾'}</span></span>
-        <span style="${FH_MONO} font-size:22px; font-weight:800; color:${c.val === FH_DASHC ? t4 : 'var(--text)'}; white-space:nowrap;">${c.val}</span>
-        <span style="font-size:11px; color:${t3};">${fhEsc(c.sub)}</span>
-      </div>`; }).join('')}</div>`;
-  const newest = F.slice().reverse();
-  // A breakdown row is one meeting's line in a stat drawer (DF L1253–1260: date, event, the stat, its detail), not a
-  // match-list row; it opens the shared sheet like every meeting.
-  const bRow = (r, val, valColor, meta) => `<div class="seg fh-h2brow" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="display:grid; grid-template-columns:96px minmax(0,1fr) 80px minmax(0,1.2fr); gap:12px; align-items:baseline; padding:8px 0; border-top:1px solid var(--line); cursor:pointer;">
-      <span style="${FH_MONO} font-size:11px; color:${t3}; white-space:nowrap;">${fhLongDate(r.date)}</span>
-      <span style="font-size:12.5px; font-weight:600; min-width:0;">${fhEsc(r.tourn + ' ' + r.round)}</span>
-      <span style="${FH_MONO} font-size:13px; font-weight:700; color:var(--text); white-space:nowrap;">${fhEsc(val)}</span>
-      <span style="${FH_MONO} font-size:11px; color:var(--text-soft);">${fhEsc(meta)}</span>
-    </div>`;
-  let statRows = [], statTitle = '';
-  if (S.stat === 'sets'){ statTitle = 'Sets won per meeting'; statRows = newest.filter(r => r.pS != null).map(r => bRow(r, r.pS + '–' + r.oS, r.pS > r.oS ? FH_AC : r.oS > r.pS ? FH_BC : t2, r.sets ? r.sets.map(fhSetTxt).join('  ') + (r.ret ? '  ret.' : '') : 'set scores not on record')); }
-  if (S.stat === 'tb'){ statTitle = 'Every tiebreak'; newest.forEach(r => (r.done || []).forEach((x, k) => { if (Math.max(x[0], x[1]) === 7 && Math.min(x[0], x[1]) === 6){ const aw = x[0] > x[1]; statRows.push(bRow(r, aw ? aS : bS, aw ? FH_AC : FH_BC, 'Set ' + (k + 1) + ' · ' + fhSetTxt(x))); } })); }
-  if (S.stat === 'dec'){ statTitle = 'Every deciding set'; newest.filter(r => r.decider).forEach(r => { const x = r.sets ? r.sets[r.sets.length - 1] : null; const aw = x ? x[0] > x[1] : r.won; statRows.push(bRow(r, aw ? aS : bS, aw ? FH_AC : FH_BC, 'Set ' + (r.pS + r.oS) + (x ? ' · ' + fhSetTxt(x) : '') + (r.bo === 5 ? ' · Bo5' : ''))); }); }
-  // DESIGN GAP G10: a drawer with no rows (no tiebreak / no deciding set in these meetings). The file opens nothing
-  // (statPanel.empty, drawn nowhere); the same drawer carries the file's empty-line pattern (noF, DF L1242) instead.
-  const statPanel = !S.stat ? '' : `<div class="fh-h2drawer" style="background:${card}; border:1px solid ${hair}; border-radius:14px; padding:14px 18px 8px; display:flex; flex-direction:column;">
-      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding-bottom:8px;">
-        <span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${t3};">${statTitle}</span>
-        <span style="font-size:10.5px; color:${t4};">Click a row for match stats</span>
-      </div>${statRows.length ? statRows.join('') : `<div style="padding:14px 0 10px; border-top:1px solid var(--line); text-align:center; font-size:13px; color:${t3};">${S.stat === 'tb' ? 'No tiebreak in these meetings.' : S.stat === 'dec' ? 'No meeting went the distance.' : 'No set scores on record for these meetings.'}</div>`}</div>`;
-  // ---- Price range (DF L1271–1300, pr L4431–4476): closing odds across the priced meetings, one book per meeting
-  // (FH_BOOK_ORDER); unpriced excluded, never zero. The header names the book actually used (fhPriceRangeSource). ----
-  const PR = F.filter(r => r.price != null), nP = PR.length;
-  const today = fhTodayPair(m);
-  const evLbl = r => r.tourn.replace(' Masters', '') + " '" + String(r.date).slice(2, 4);
-  const prMark = {};
-  const prSides = [0, 1].map(i => {
-    const isA = i === 0, k = isA ? 'a' : 'b', get = r => isA ? r.price : r.oppPrice, color = 'var(--text)';   // TEN-380: both players white
-    const tv = today ? (isA ? today.price : today.oppPrice) : null;
-    const base = { k, name: isA ? A : B, color, rangeBg: fhHexA('var(--text)', isA ? 0.5 : 0.32), today: tv };
-    if (!nP) return Object.assign(base, { lo: null });
-    const so = PR.slice().sort((x, y) => get(x) - get(y)), lo = so[0], hi = so[so.length - 1];
-    (prMark[lo.mid] = prMark[lo.mid] || []).push('pr-' + k + 'Lo'); (prMark[hi.mid] = prMark[hi.mid] || []).push('pr-' + k + 'Hi');
-    return Object.assign(base, { lo, hi, loV: get(lo), hiV: get(hi), avgV: fhPriceAvg(PR, isA),
-      allRows: PR.slice().reverse().map(r => ({ r, isLo: r.mid === lo.mid, isHi: r.mid === hi.mid, v: get(r) })) });
-  });
-  const tx = v => v < 16 ? 'translateX(-6px)' : v > 84 ? 'translateX(calc(-100% + 6px))' : 'translateX(-50%)';
-  const figCap = `font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${t3};`;
-  const chip = txt => `<span class="fh-nchip" style="${FH_MONO} font-size:10px; color:var(--fh-warn); border:1px solid var(--fh-warn-line); border-radius:999px; padding:2px 9px;">${txt}</span>`;
-  const prCard = s => {
-    let inner = '';
-    if (nP !== 1){
-      const dash = !nP;
-      const fig = (v, c) => `<span style="${FH_MONO} font-size:22px; font-weight:800; line-height:1; color:${dash ? t4 : c};">${v}</span>`;
-      const figs = `<div class="seg prh-${s.k}Lo"${dash ? '' : ` onclick="fhOpenSheet('${fhEsc(s.lo.mid)}')"`} style="display:flex; flex-direction:column; gap:4px; min-width:0;">
-            <span style="${figCap}">Lowest</span>${fig(dash ? FH_DASHC : s.loV.toFixed(2), s.color)}<span style="font-size:11px; color:${t3};">${dash ? 'no priced meeting' : fhEsc(evLbl(s.lo))}</span>
-          </div>
-          <div style="display:flex; flex-direction:column; align-items:center; text-align:center; gap:4px; min-width:0;">
-            <span style="${figCap}">Average</span>${fig(dash ? FH_DASHC : s.avgV.toFixed(2), s.color)}<span style="font-size:11px; color:${t3};">${FH_PRICE_AVG_LABEL}</span>
-          </div>
-          <div class="seg prh-${s.k}Hi"${dash ? '' : ` onclick="fhOpenSheet('${fhEsc(s.hi.mid)}')"`} style="display:flex; flex-direction:column; align-items:flex-end; text-align:right; gap:4px; min-width:0;">
-            <span style="${figCap}">Highest</span>${fig(dash ? FH_DASHC : s.hiV.toFixed(2), s.color)}<span style="font-size:11px; color:${t3};">${dash ? 'no priced meeting' : fhEsc(evLbl(s.hi))}</span>
-          </div>`;
-      const grid = 'display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; align-items:start;';
-      if (nP > 1){
-        // "every priced close" (DF L1287–1297) through the shared tooltip, geometry as the file: under the figures,
-        // 8px out on both sides, its own surface / radius / padding and a column of rows.
-        const body = `<span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${t3}; padding-bottom:6px;">${fhEsc(s.name)} · every priced close</span>
-          ${s.allRows.map(o => `<div style="display:grid; grid-template-columns:minmax(0,1fr) auto 48px; gap:10px; align-items:baseline; padding:4px 0; border-top:1px solid color-mix(in srgb, var(--text) 3.5%, transparent);">
-            <span style="display:flex; align-items:baseline; gap:6px; min-width:0;"><span style="font-size:11.5px; color:var(--text-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${fhEsc(o.r.tourn + ' ' + String(o.r.date).slice(0, 4) + ' · ' + o.r.round)}</span>${fhB365Tag(o.r, true)}</span>
-            <span style="font-family:var(--font-words); font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:${t2};">${o.isLo ? 'Lowest' : o.isHi ? 'Highest' : ''}</span>
-            <span style="${FH_MONO} font-size:12.5px; font-weight:${o.isLo || o.isHi ? 800 : 600}; color:${o.isLo || o.isHi ? s.color : 'var(--text-soft)'}; text-align:right;">${o.v.toFixed(2)}</span>
-          </div>`).join('')}
-          <div style="display:flex; justify-content:space-between; padding-top:6px; border-top:1px solid var(--edge-10); ${FH_MONO} font-size:11px; color:${t2};"><span>${FH_PRICE_AVG_LABEL}</span><span style="font-weight:700; color:var(--text);">${s.avgV.toFixed(2)}</span></div>`;
-        inner += maTipHtml(figs, `<span style="display:flex; flex-direction:column;">${body}</span>`, { tag: 'div', cls: 'fh-prtip', style: grid,
-          popStyle: `top:calc(100% + 8px); left:-8px; right:-8px; transform:none; background:var(--card); border-radius:10px; box-shadow:var(--shadow-menu); padding:10px 14px; white-space:normal;` });
-      } else inner += `<div style="position:relative; ${grid}">${figs}</div>`;
-    }
-    if (nP > 1){
-      const has = s.today != null;
-      const p = has ? Math.max(0, Math.min(100, (s.today - s.loV) / ((s.hiV - s.loV) || 1) * 100)) : 0;
-      inner += `<div style="position:relative; height:40px; margin:0 6px;">
-          <span style="position:absolute; top:0; left:${p.toFixed(1)}%; transform:${has ? tx(p) : 'translateX(-6px)'}; ${FH_MONO} font-size:10.5px; font-weight:700; color:var(--text); white-space:nowrap;">Today ${has ? s.today.toFixed(2) : `<span class="fh-today-dash" title="${FH_TODAY_NONE}" style="color:${t4};">${FH_DASHC}</span>`}</span>
-          <span style="position:absolute; top:24px; left:0; right:0; height:6px; border-radius:3px; background:${s.rangeBg};"></span>
-          ${has ? `<span style="position:absolute; top:21px; left:${p.toFixed(1)}%; width:12px; height:12px; margin-left:-6px; border-radius:50%; background:var(--text); box-shadow:0 0 0 3px var(--card);"></span>` : ''}
-        </div>`;
-    }
-    if (nP === 1){
-      inner += `<div class="seg prh-${s.k}Lo" onclick="fhOpenSheet('${fhEsc(s.lo.mid)}')" style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;">
-          <span style="${FH_MONO} font-size:26px; font-weight:800; line-height:1; color:${s.color};">${s.loV.toFixed(2)}</span>
-          <span style="font-size:12px; color:${t2};">${fhEsc(evLbl(s.lo))}</span>${chip('n=1')}
-        </div>`;
-    }
-    // FH_PRICE_THIN: a range from fewer than 3 priced meetings carries its n (the file's empty header slot, DF L1284)
-    return `<div class="fh-prside" style="background:${card}; border:1px solid ${hair}; border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:14px; min-width:0;">
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;"><span style="font-size:14px; font-weight:700; color:${s.color};">${fhEsc(s.name)}</span>${nP > 1 && nP < FH_PRICE_THIN ? chip('n=' + nP).replace('class="fh-nchip"', `class="fh-nchip" title="Range built from ${nP} priced meetings"`) : ''}</div>
-        ${inner}
-      </div>`;
-  };
-  const priceHtml = secHead('Price range', 'Closing odds' + (PR.length ? ' · ' + fhEsc(fhPriceRangeSource(PR, nP > 1 ? today : null)) : ''), `${nP} of ${F.length} meetings priced`)
-    + `<div class="fh-h2price" style="background:${card}; border:1px solid ${hair}; border-radius:16px; padding:18px 20px; display:flex; flex-direction:column; gap:16px;">
-      ${nP ? '' : `<span style="font-size:13px; color:${t2}; text-align:center; padding:4px 0 2px;">No closing odds on record for these meetings</span>`}
-      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:14px;">${prSides.map(prCard).join('')}</div>
-      ${nP && globalThis.MarketEdgeCore ? `<span data-ret-note="h2h" style="font-size:10.5px; color:${t3};">${fhEsc(globalThis.MarketEdgeCore.RET_SETTLE_NOTE)}</span>` : ''}
-    </div>`;
-  // ---- Hot lines (DF L1301–1332): one table, one dot per played meeting; a line needs FH_HOT_MIN_ELIGIBLE eligible
-  // meetings to appear and its bar follows the gate (maGateBar). Column-head dots: the neutral surface token (U22). ----
-  const HM = fhHotModel(F, fhH2hLineDefs(aS, bS), m), sc = HM.sc;
-  const hotOk = HM.mode !== 'none';
-  const hotFew = HM.note || '';
-  const pxCtx = fhLinePxCtx(m, () => { if (_fh && _fh.m === m && aBuilt(m, 'h2h')) fhH2h({}); });
-  const table = hotOk ? fhHotLinesTable(F, sc, { colMin: '26px', colHead: 'year', fixedCols: 9, today: fhSurfName(m.surface), showAll: !!S.allLines, shortPriced: null,
-    results: HM.mode === 'results', price: x => fhLinePxCell(x.L, pxCtx),
-    lineCls: k => `h2hl hl-${k}`,
-    colTip: r => r.tourn + ' ' + String(r.date).slice(0, 4) + ' · ' + r.round,
-    dotTip: r => r.tourn + ' ' + String(r.date).slice(0, 4) }) : null;
-  const hotMore = HM.mode === 'rank' && (sc.scored.length > table.shown || S.allLines);
-  const soft = 'var(--line)';
-  const hotHtml = secHead('Hot lines', fhHotSub(HM, 'Best-covered line in each market family across these meetings'), '')
-    + `<div class="fh-h2hot" style="background:${card}; border:1px solid ${hair}; border-radius:16px; padding:18px 20px 12px; display:flex; flex-direction:column; gap:12px;">
-      ${hotOk ? `<div style="display:flex; flex-direction:column; border-top:1px solid ${soft};">${table.head}${table.lines}</div>
-      <div style="display:flex; flex-direction:column; align-items:center; gap:10px; padding-top:8px; border-top:1px solid ${soft};">
-        <span style="align-self:stretch; font-size:10.5px; color:${t4};">One dot per meeting, oldest → newest · ${FH_HOT_FOOT} · hover a line to find its meetings, click a dot for the match</span>
-        ${hotMore ? fhHotMoreHtml(!!S.allLines, sc.scored.length, `fhH2h({allLines:${!S.allLines}})`).replace('margin-top:8px; ', '') : ''}
-      </div>` : `<div style="padding:22px 0 14px; text-align:center; ${FH_MONO} font-size:12px; color:${t3}; border-top:1px solid ${soft};">${fhEsc(hotFew)}</div>`}
-    </div>`;
-  // ---- Meetings · A's side (TEN-380, the reference): the shared match rows on the H2H grid, grouped by YEAR (newest
-  // first; the header "2025 · 1–0 · 1 meeting"), one row per meeting with an Event column (event + surface · level tag,
-  // then B's Elo at the time — the Q5 slot). Each row wrapper carries the hover-dim hooks (hot lines, price range). ----
-  const years = [];
-  FL.slice().reverse().forEach(r => {
-    const y = String(r.date).slice(0, 4);
-    if (!years.length || years[years.length - 1].y !== y) years.push({ y, rs: [] });
-    years[years.length - 1].rs.push(r);
-  });
-  const groups = years.map(Y => {
-    const pl = Y.rs.filter(r => !r.wo), w = pl.filter(r => r.won).length, nW = Y.rs.length - pl.length;
-    return { title: Y.y, meta: w + '–' + (pl.length - w) + ' · ' + pl.length + (pl.length === 1 ? ' meeting' : ' meetings') + (nW ? ' · ' + nW + ' w/o' : ''),
-      rows: Y.rs.map(r => Object.assign(fhH2hRowData(r), { wrapCls: 'h2m ' + (sc.covMap[r.mid] || []).map(k => 'cov-' + k).join(' ') + ' ' + (prMark[r.mid] || []).join(' ') })) };
-  });
-  const nWo = FL.length - F.length;
-  const recA = F.filter(r => r.won).length, recB = F.length - recA;
-  const recTxt = !F.length ? '' : recA === recB ? ' · level ' + recA + '–' + recB : ' · ' + (recA > recB ? aS : bS) + ' leads ' + Math.max(recA, recB) + '–' + Math.min(recA, recB);
-  const listHtml = `<div id="fhH2hList" style="display:flex; flex-direction:column; min-width:0; gap:14px;">
-      ${secHead('Meetings', `${fhEsc(aS)}'s side · Home = ${fhEsc(aS)}'s closing price`, `${F.length} on record${SURF === 'all' ? '' : ' · ' + SURF.toLowerCase()}${fhEsc(recTxt)}${nWo ? ' · ' + nWo + ' w/o not counted' : ''}`).replace('margin-top:18px;', 'margin-top:4px;')}
-      <div class="fh-h2list" style="border:1px solid ${hair}; border-radius:14px; overflow:clip; background:${card}; display:flex; flex-direction:column;">
-        ${maMatchRowsHtml(groups, { labels: ['Date', '', 'Event', 'Rd', 'Sets', 'Set scores', 'Home', 'Away'], rowCols: MA_ROW_COLS_H2H, rowGap: MA_ROW_GAP_H2H, groupMono: true, headPad: '10px 14px 8px', groupPad: '11px 14px 5px', inset: 8, rowPad: '0 8px', fullNames: true })}
-      </div>
-      <span style="font-size:10.5px; color:${t4}; margin-top:-6px;">Away = ${fhEsc(bS)}'s closing price. Click a meeting for match stats.${fhEsc(fhH2hGapNote(m))}</span>
-    </div>`;
-  // DESIGN GAP G11: every meeting under this filter is a walkover (N2: listed, counted nowhere). The file draws no such
-  // state; the record card (0–0, "No meetings") and the list show, the tally / price / line sections have nothing to show.
-  return wrap(onlyWo ? `${top}${recCard}${listHtml}` : `${top}${recCard}${statsHtml}${statPanel}${priceHtml}${hotHtml}${listHtml}`);
-}
 // Today's price on the range: Pinnacle, else Bet365 (one book, FH_BOOK_ORDER) — never another book's price.
 const FH_TODAY_NONE = 'No Pinnacle or Bet365 price for today on record (one book per match: another book\'s price is never shown here)';
 // Set scores as the H2H list prints them (DF L4479: "6-7(4), 7-6(5)"); a retirement adds " ret." (N2), a walkover
@@ -16405,23 +16131,6 @@ function fhH2hSetScores(r){
   if (r.wo) return 'w/o';
   if (!r.sets) return FH_DASHC;
   return r.sets.map(fhSetTxt).join(', ') + (r.ret ? ' ret.' : '');
-}
-// A meeting as the shared helper's row (maMatchRowsHtml — DoD item 8: the tab has no row renderer of its own).
-// TEN-380: the Event column (the reference) — the event, then its tag "surface · level · Elo" (the level is never
-// dropped, ruling 2026-09-24), the tag's last word labelling the opponent's Elo at the match date that follows (D-12;
-// TEN-350, kept by Q5). The opponent is the same
-// player on every row, named in the hover. The Bet365 marker sits in the Home cell; both price cells name book + source.
-function fhH2hRowData(r){
-  const meta = psTourMeta(r.tournRaw);
-  const surfLbl = r.surface ? (r.surface === 'Hard' && meta && meta.indoor ? 'Indoor hard' : r.surface) : '';
-  return { date: fhDDMM(r.date) + '.', won: r.wo ? null : r.won, opp: r.tourn, oppTag: [surfLbl, r.level].filter(Boolean).join(' · '), rd: r.round,
-    sets: r.wo || r.pS == null ? FH_DASHC : r.pS + ' - ' + r.oS, setsColor: r.wo || r.pS == null ? FH_DASH : null,
-    scores: fhH2hSetScores(r), scoresTitle: fhH2hSetScores(r),
-    h: r.price == null ? FH_DASHC : fhOdd(r.price), a: r.oppPrice == null ? FH_DASHC : fhOdd(r.oppPrice),
-    hTitle: fhH2hSrcTitle(r), aTitle: fhH2hSrcTitle(r), hMark: fhPxMark(r),
-    oppTitle: r.tourn + ' ' + String(r.date).slice(0, 4) + ' · v ' + fhFullName(r.opp, r.oppKey), oppAttrs: ' class="fh-opp"',   // TEN-380 Q5: no Elo in the row (README §5 grid); it lives in the bar tooltip
-    cls: 'fh-h2row', attrs: ` data-fh-mid="${fhEsc(r.mid)}"`, click: ` onclick="fhOpenSheet('${fhEsc(r.mid)}')"`,
-    selected: !!(_fh && _fh.sheet === r.mid) };
 }
 function fhFullName(name, key){ const p = key != null && (typeof ppSlim === 'function' ? ppSlim(key) : (typeof playerProfiles !== 'undefined' && playerProfiles && playerProfiles[String(key)])); return (p && p.name) || fhOppFmt(name); }
 // The record card's "Meetings ↓" (DF onOverall L4492): scroll to the list; the filter stays as it is.
@@ -19597,7 +19306,7 @@ function kfDnaCard(m){
 // Sets won / Tiebreaks / Deciding sets tallies + the record on today's surface, and its hot lines (best per family).
 // The whole box, hot lines included, goes to the H2H tab (founder Q18).
 const KF_HOT_FAM = { hc: 'Handicap', tot: 'Totals', st: 'Sets & TB' };
-// The H2H tab's stat tiles over a list of meetings (fhBuildH2H's counting: finished sets, 7–6 sets, deciders).
+// The H2H tab's stat tiles over a list of meetings (maH2HV2's counting: finished sets, 7–6 sets, deciders).
 function kfH2hTallies(F){
   const scored = F.filter(r => r.pS != null), gamed = F.filter(r => r.sets);
   let a = 0, b = 0, ta = 0, tb = 0;
