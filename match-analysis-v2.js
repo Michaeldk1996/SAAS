@@ -1625,6 +1625,137 @@
   root.maOverviewV2 = maOverviewV2;
   root.maOvPopV2 = maOvPopV2;
 
+  // ---------------------------------------------------------------- News (design 2026-11-21, LOCKED)
+  // The News page's own items (newsWireItems: outlet articles; newsTickerItems: our match reports + quotes), scoped to the
+  // two players by player key, inside the feed's 5-day window (A_NEWS_WINDOW_DAYS). Tour News is not shown here (design).
+  // An outlet article carries the feed's batch stamp, not the outlet's time (news.md): its time column stays empty, the
+  // hover says "Added to feed …"; our own items carry their real time.
+  const NW = { id: null, view: 'compact', cat: '', more: {} };
+  const NCATS = ['Match Reports', 'Quotes', 'Withdrawals & Injuries'];
+  const nAgo = ts => { if (!isFinite(ts)) return ''; const h = (Date.now() - ts) / 36e5; return h < 1 ? 'Now' : h < 24 ? Math.round(h) + 'h ago' : Math.round(h / 24) + 'd ago'; };
+  function newsItemsFor(m) {
+    const ok = typeof aNewsFeedOk === 'function' && aNewsFeedOk();
+    const all = (ok ? newsWireItems() : []).concat(typeof newsTickerItems === 'function' ? newsTickerItems() : []);
+    const since = Date.now() - A_NEWS_WINDOW_DAYS * 864e5, ka = String(m.p1Key), kb = String(m.p2Key), seen = new Set();
+    return all.filter(x => x.cat !== 'Tour News' && isFinite(x.ts) && x.ts >= since)
+      .map(x => Object.assign(x, { hasA: m.p1Key != null && x.players.some(p => String(p.key) === ka), hasB: m.p2Key != null && x.players.some(p => String(p.key) === kb) }))
+      .filter(x => x.hasA || x.hasB).sort((a, b) => b.ts - a.ts)
+      // one story, one line (TEN-380): an outlet article re-written under the same first five words shows once, newest
+      .filter(x => { if (x.kind !== 'wire') return true; const k = (x.hasA ? 'a' : 'b') + aNewsStoryKey(x.title); if (k.length < 2) return true; if (seen.has(k)) return false; seen.add(k); return true; });
+  }
+  const nAv = (p, size, fs, ml) => '<span style="flex:none; margin-left:' + (ml || 0) + 'px; border-radius:50%; box-shadow:0 0 0 2px var(--ma2-card);">' + av(p.name, p.key, size, '1px solid ' + W(14), fs) + '</span>';
+  const nAvs = (ps, size, fs) => '<span style="display:flex; align-items:center; flex:none;">' + ps.slice(0, 3).map((p, i) => nAv(p, size, fs, i ? -7 : 0)).join('') + '</span>';
+  function nMsBox(x, compact) {
+    const ms = x.ms, A = x.players[0] || { name: ms.a }, B = x.players[1] || { name: ms.b };
+    const rows = ms.rows.map(r => { const [label, a, b, k, low] = r, aL = low ? a < b : a > b, bL = low ? b < a : b > a, hi = Math.max(Math.abs(a), Math.abs(b)) || 1, d = Math.abs(a - b);
+      const lw = (12 + d / hi * 88).toFixed(1) + '%', diff = d === 0 ? 'Level' : k === '%' ? Math.round(d) + ' pts' : k === '0' ? String(Math.round(d)) : d.toFixed(k === '1' ? 1 : 2);
+      const fig = (v, lead, right) => '<span style="' + MONO + ' font-size:13.5px; font-weight:' + (lead ? 700 : 500) + '; color:' + (lead ? 'var(--ma2-text)' : 'var(--ma2-grey)') + ';' + (right ? ' text-align:right;' : '') + '">' + newsFigFmt(v, k) + '</span>';
+      return '<div style="column-span:' + (k === 'dr' ? 'all' : 'none') + '; break-inside:avoid; display:flex; flex-direction:column; padding-bottom:10px;"><div style="display:grid; grid-template-columns:1fr auto 1fr; gap:8px; align-items:baseline;">' + fig(a, aL) + '<span style="font-size:12px; font-weight:600; color:var(--ma2-grey); text-align:center; white-space:nowrap;">' + esc(label) + '</span>' + fig(b, bL, true) + '</div>'
+        + '<div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; height:18px;"><span style="height:4px; border-radius:2px 0 0 2px; background:' + W(7) + '; display:flex; justify-content:flex-end;"><span style="width:' + (aL ? lw : '0%') + '; background:var(--ma2-blue); border-radius:2px 0 0 2px;"></span></span>'
+        + '<span style="' + MONO + ' font-size:11px; font-weight:700; line-height:16px; color:var(--ma2-text); background:var(--ma2-lifted); box-shadow:0 0 0 1px ' + W(14) + '; border-radius:8px; padding:0 7px; white-space:nowrap;">' + diff + '</span>'
+        + '<span style="height:4px; border-radius:0 2px 2px 0; background:' + W(7) + '; display:flex;"><span style="width:' + (bL ? lw : '0%') + '; background:var(--ma2-blue); border-radius:0 2px 2px 0;"></span></span></div></div>'; }).join('');
+    const sets = (ms.sets || []).map(t => '<span>' + esc(t[0]) + '<span style="color:var(--ma2-grey); font-weight:500;">-' + esc(t[1]) + '</span></span>').join('');
+    return '<span class="mndiv" style="flex:none; align-self:stretch; width:1px; background:' + W(6) + ';"></span><div style="flex:' + (compact ? '1.6 1 320px; max-width:540px' : '2 1 340px; max-width:560px') + '; min-width:0; box-sizing:border-box; background:var(--ma2-card); border:1px solid ' + W(6) + '; border-radius:11px; padding:2px 22px 14px; display:flex; flex-direction:column; align-self:stretch;">'
+      + '<div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:8px; align-items:center; min-height:66px; border-bottom:1px solid ' + W(6) + ';">'
+      + '<span style="display:flex; align-items:center; gap:8px; min-width:0;">' + av(A.name, A.key, 32, '1px solid ' + W(14), 11) + '<span style="display:flex; flex-direction:column; gap:2px; min-width:0;"><span style="font-size:14px; font-weight:700; color:var(--ma2-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(A.name) + '</span><span style="font-size:11.5px; font-weight:600; color:var(--news-green);">Won</span></span></span>'
+      + '<span style="display:flex; align-items:baseline; gap:10px; white-space:nowrap; ' + MONO + ' font-size:18px; font-weight:700; color:var(--ma2-text);">' + sets + '</span>'
+      + '<span style="display:flex; align-items:center; justify-content:flex-end; gap:8px; min-width:0;"><span style="font-size:14px; font-weight:600; color:var(--ma2-grey); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;">' + esc(B.name) + '</span>' + av(B.name, B.key, 32, '1px solid ' + W(14), 11) + '</span></div>'
+      + '<div style="columns:190px 2; column-gap:28px; padding-top:12px; flex:1;">' + rows + '</div></div>';
+  }
+  function nMore(x) {
+    const q = x.quotes || [], isQ = q.length > 0, body = x.bodyParas || [], open = !!NW.more[x.id];
+    const has = isQ ? q.length > 3 : body.length > (x.ms && x.ms.rows.length > 6 ? 7 : 5);
+    return { isQ, has, paras: isQ ? [] : (has && !open ? body.slice(0, 4) : body), quotes: open ? q : q.slice(0, 3),
+      label: open ? 'Show less' : isQ ? 'Show ' + (q.length - 3) + ' more ' + (q.length - 3 === 1 ? 'topic' : 'topics') : 'Read more',
+      btn: function () { return this.has ? '<span class="seg ma2-ulink" data-id="' + esc(x.id) + '" onclick="event.stopPropagation();ma2NewsMore(this.dataset.id)" style="align-self:flex-start; font-size:13px; font-weight:600; color:var(--ma2-blue); cursor:pointer;">' + this.label + '</span>' : ''; } };
+  }
+  const nMeta = x => x.quotes ? x.quotes.length + (x.quotes.length === 1 ? ' topic' : ' topics') : (x.score || '');
+  const nHM = ts => isFinite(ts) && typeof newsFmtTime === 'function' ? newsFmtTime(ts) : '';
+  const nWho = x => x.ms && x.ms.a && x.ms.b ? [x.players[0] || { name: x.ms.a }, x.players[1] || { name: x.ms.b }] : x.players;
+  const nTime = x => x.kind === 'wire' ? '' : nHM(x.ts);
+  function nReading(x) {
+    const mo = nMore(x), who = nWho(x), sub = [nTime(x), mo.isQ ? '' : x.cat, nMeta(x), x.tour].filter(Boolean).join(' · ');
+    const head = '<div style="display:flex; align-items:center; gap:11px; min-width:0; padding-bottom:16px; border-bottom:1px solid ' + W(6) + ';">' + nAvs(who, 30, 10.5)
+      + '<div style="display:flex; align-items:baseline; flex-wrap:wrap; gap:2px 10px; min-width:0;"><span style="font-size:14.5px; font-weight:700; color:var(--ma2-text); text-wrap:pretty;">' + esc(who.map(p => p.name).join(' · ')) + '</span><span title="' + esc(newsAddedLabel(x)) + '" style="font-size:12px; color:var(--ma2-grey); text-wrap:pretty;">' + esc(sub) + '</span></div></div>';
+    const quotes = q => q.map(z => '<div style="display:flex; flex-direction:column; gap:4px;"><span style="font-size:13px; font-weight:700; line-height:24px; color:var(--ma2-grey);">' + esc(z.topic) + '</span><div style="font-size:16.5px; line-height:1.8; color:var(--ma2-text); text-wrap:pretty;">' + esc(z.text) + '</div></div>').join('');
+    const body = mo.isQ
+      ? '<div style="min-width:0; max-width:980px; display:flex; flex-direction:column; gap:18px; padding-top:18px;">' + quotes(mo.quotes) + mo.btn() + '</div>'
+      : '<div style="display:flex; flex-wrap:wrap; gap:24px 28px; align-items:flex-start; padding-top:18px;"><div style="flex:1 1 300px; min-width:0; max-width:' + (x.ms ? 'none' : '980px') + '; display:flex; flex-direction:column; gap:12px;">'
+        + '<div style="font-size:18px; font-weight:800; letter-spacing:-0.005em; color:var(--ma2-text); line-height:1.35; text-wrap:pretty;">' + esc(x.title) + '</div>'
+        + mo.paras.map(t => '<div style="font-size:' + (x.ms ? '14.5px' : '15.5px') + '; color:var(--ma2-soft); line-height:1.7; text-wrap:pretty;">' + esc(t) + '</div>').join('') + mo.btn() + '</div>' + (x.ms ? nMsBox(x, false) : '') + '</div>';
+    return '<div style="background:var(--ma2-card); border:1px solid ' + W(6) + '; border-radius:16px; padding:22px 24px 24px; display:flex; flex-direction:column;">' + head + body + '</div>';
+  }
+  function nCompact(x) {
+    const open = (typeof _aNewsOpen !== 'undefined' ? _aNewsOpen : '') === x.id, who = nWho(x), p0 = x.players[0];
+    const name = '<span style="display:flex; align-items:center; gap:9px; min-width:0;">' + nAvs(who, 24, 9.5) + '<span class="mnname" style="font-size:13.5px; font-weight:700; color:var(--ma2-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + esc(p0 ? p0.name : '') + '</span></span>';
+    const inj = x.cat === 'Withdrawals & Injuries';
+    const attrs = ' data-id="' + esc(x.id) + '" role="button" tabindex="0" aria-expanded="' + open + '" onclick="ma2NewsRow(this.dataset.id)" onkeydown="if(event.key===\'Enter\'&&event.target===this)ma2NewsRow(this.dataset.id)"';
+    if (!open) {
+      const kind = inj ? 'Injury' : [x.cat === 'Match Reports' ? 'Report' : x.cat, nMeta(x)].filter(Boolean).join(' · ');
+      const ago = x.kind === 'wire' ? '' : nAgo(x.ts);
+      return '<div class="mnrow"' + attrs + ' style="display:flex; flex-direction:column; padding:0 16px; cursor:pointer;"><div class="mngrid" style="display:grid; grid-template-columns:170px minmax(0,1fr) 140px 54px 8px; gap:14px; align-items:center; min-height:54px;">' + name
+        + '<span title="' + esc(newsAddedLabel(x)) + '" style="font-size:14px; font-weight:500; color:var(--ma2-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + esc(x.title) + '</span>'
+        + '<span style="font-size:' + (inj ? '11px' : '12px') + '; font-weight:' + (inj ? 700 : 400) + '; color:' + (inj ? 'var(--ma2-red)' : 'var(--ma2-grey)') + '; background:' + (inj ? 'color-mix(in srgb, var(--ma2-red) 12%, transparent)' : 'transparent') + '; border-radius:6px; padding:' + (inj ? '3px 8px' : '0') + '; justify-self:end; white-space:nowrap;">' + esc(kind) + '</span>'
+        + '<span title="' + esc(newsAddedLabel(x)) + '" style="' + MONO + ' font-size:11.5px; color:var(--ma2-grey); text-align:right; white-space:nowrap;">' + esc(ago) + '</span>'
+        + '<span style="font-size:15px; font-weight:700; color:var(--ma2-grey); line-height:1;">›</span></div></div>';
+    }
+    const mo = nMore(x), ms = !!x.ms;
+    const inner = mo.paras.map(t => '<div style="font-size:14px; color:var(--ma2-soft); line-height:1.7; text-wrap:pretty; max-width:800px;">' + esc(t) + '</div>').join('')
+      + (mo.isQ ? '<div style="display:flex; flex-direction:column; gap:18px; max-width:800px;">' + mo.quotes.map(z => '<div style="display:flex; flex-direction:column; gap:4px;"><span style="font-size:13px; font-weight:700; line-height:24px; color:var(--ma2-grey);">' + esc(z.topic) + '</span><div style="font-size:15.5px; line-height:1.7; color:var(--ma2-text); text-wrap:pretty;">' + esc(z.text) + '</div></div>').join('') + '</div>' : '')
+      + mo.btn()
+      + '<div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:4px;">' + (x.cat ? '<span style="font-size:11.5px; font-weight:600; color:var(--ma2-soft); background:var(--ma2-lifted); border:1px solid ' + W(14) + '; border-radius:8px; padding:4px 10px; white-space:nowrap;">' + esc(x.cat) + '</span>' : '') + '<span style="font-size:12.5px; color:var(--ma2-grey);">' + esc([x.source, x.tour].filter(Boolean).join(' · ')) + '</span></div>';
+    return '<div class="mnrow mnopen"' + attrs + ' style="display:flex; flex-direction:column; padding:0 16px; cursor:pointer;">'
+      + '<div class="mnhead" style="display:grid; grid-template-columns:170px minmax(0,1fr) 8px; gap:14px; align-items:start; padding:15px 0 0;">' + name
+      + '<span style="font-size:15px; font-weight:700; color:var(--ma2-text); line-height:1.4; text-wrap:pretty; padding-top:2px;">' + esc(x.title) + '</span><span style="font-size:15px; font-weight:700; color:var(--ma2-grey); line-height:1; transform:rotate(90deg); padding-top:5px;">›</span></div>'
+      + '<div class="' + (ms ? '' : 'mnindl') + '" style="height:1px; background:' + W(6) + '; margin:' + (ms ? '14px 0' : '14px 0 14px 184px') + ';"></div>'
+      + '<div class="' + (ms ? '' : 'mnindb') + '" style="display:flex; flex-wrap:wrap; gap:20px 26px; align-items:flex-start; padding:' + (ms ? '0 0 16px 0' : '0 0 16px 184px') + ';"><div style="flex:1 1 280px; min-width:0; display:flex; flex-direction:column; gap:10px;">' + inner + '</div>' + (ms ? nMsBox(x, true) : '') + '</div></div>';
+  }
+  function nTabs(items) {
+    return '<div style="display:inline-flex; flex-wrap:wrap; gap:3px; background:var(--ma2-track); border:1px solid ' + W(10) + '; border-radius:10px; padding:3px;">' + items.map(t =>
+      '<span class="seg ma2-seg" role="button" tabindex="0" onclick="' + t.onclick + '" style="display:inline-flex; align-items:baseline; gap:6px; padding:6px 13px; border-radius:7px; font-size:12.5px; white-space:nowrap; cursor:pointer; font-weight:' + (t.on ? 700 : 600) + '; color:' + (t.on ? 'var(--ma2-white)' : 'var(--ma2-grey)') + '; background:' + (t.on ? 'var(--ma2-lifted)' : 'transparent') + '; border:1px solid ' + (t.on ? W(14) : 'transparent') + ';">' + esc(t.label)
+      + (t.n != null ? '<span style="' + MONO + ' font-size:10.5px; font-weight:600; color:var(--ma2-quiet);">' + t.n + '</span>' : '') + '</span>').join('') + '</div>';
+  }
+  const nBox = (t, d) => '<div style="background:var(--ma2-card); border:1px solid ' + W(6) + '; border-radius:16px; padding:24px; display:flex; flex-direction:column; gap:6px;"><span style="font-size:15px; font-weight:700; color:var(--ma2-text);">' + t + '</span><span style="font-size:13px; color:var(--ma2-grey);">' + d + '</span></div>';
+  function maNewsV2(m) {
+    if (NW.id !== m.id) { NW.id = m.id; NW.view = 'compact'; NW.cat = ''; NW.more = {}; }
+    const filt = typeof _aNewsFilter !== 'undefined' ? _aNewsFilter : 'all';
+    const wrap = inner => '<div class="ma2-news" style="display:flex; flex-direction:column; gap:12px; container-type:inline-size; font-family:\'Hanken Grotesk\',sans-serif; font-size:16px; line-height:normal;">' + inner + '</div>';
+    const st = typeof _aNewsState !== 'undefined' ? _aNewsState : 'load';
+    if (st === 'load') return wrap(nBox('Loading news…', ''));
+    const items = newsItemsFor(m), pool = items.filter(x => filt === 'p1' ? x.hasA : filt === 'p2' ? x.hasB : true);
+    const tiles = [['p1', m.p1, m.p1Key, 'hasA'], ['p2', m.p2, m.p2Key, 'hasB']].map(([f, nm, key, k]) => {
+      const list = items.filter(x => x[k]), injx = list.find(x => x.cat === 'Withdrawals & Injuries'), on = filt === f;
+      const sub = list.length ? list.length + (list.length === 1 ? ' article' : ' articles') + (list[0].kind === 'wire' ? '' : ' · latest ' + nAgo(list[0].ts).toLowerCase()) : 'No news in the last ' + A_NEWS_WINDOW_DAYS + ' days';
+      const stt = injx ? 'Injury note' + (injx.kind === 'wire' ? '' : ' · ' + nAgo(injx.ts).toLowerCase()) : 'No injury news';
+      return '<div class="seg ma2-tile" role="button" tabindex="0" onclick="ma2NewsPlayer(\'' + f + '\')" title="' + esc(on ? 'Show both players' : 'Show only ' + nm) + '" style="display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; min-width:0; background:var(--ma2-card); border:1px solid ' + (on ? W(22) : W(6)) + '; border-radius:16px; padding:16px 20px; cursor:pointer;">'
+        + av(nm, key, 36, '1px solid ' + W(14), 11.5)
+        + '<span style="display:flex; flex-direction:column; gap:3px; min-width:0; flex:1 1 150px;"><span style="font-size:14px; font-weight:700; color:var(--ma2-white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(nm) + '</span><span style="font-size:12px; color:var(--ma2-grey); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(sub) + '</span></span>'
+        + '<span style="flex:none; font-size:' + (injx ? '11px' : '12px') + '; font-weight:' + (injx ? 700 : 400) + '; color:' + (injx ? 'var(--ma2-red)' : 'var(--ma2-grey)') + '; background:' + (injx ? 'color-mix(in srgb, var(--ma2-red) 12%, transparent)' : 'transparent') + '; border-radius:6px; padding:' + (injx ? '3px 8px' : '0') + '; white-space:nowrap;">' + stt + '</span></div>'; }).join('');
+    const cTabs = nTabs([{ label: 'All', on: !NW.cat, n: pool.length, onclick: "ma2NewsCat('')" }].concat(NCATS.map(c => ({ label: c, on: NW.cat === c, n: pool.filter(x => x.cat === c).length, onclick: "ma2NewsCat('" + c.replace(/&/g, '&amp;') + "')" }))));
+    const vTabs = nTabs([['reading', 'Reading'], ['compact', 'Compact']].map(([v, l]) => ({ label: l, on: NW.view === v, onclick: "ma2NewsView('" + v + "')" })));
+    let body;
+    if (st === 'unavailable' && !items.length) body = nBox('News feed unavailable.', 'Last checked <span style="' + MONO + '">' + esc(new Date().toLocaleTimeString('en-GB', { hour12: false, timeZone: newsTz() })) + '</span>.');
+    else {
+      const feed = pool.filter(x => !NW.cat || x.cat === NW.cat), whoN = filt === 'p1' ? m.p1 : filt === 'p2' ? m.p2 : m.p1 + ' or ' + m.p2;
+      if (!feed.length) body = nBox(esc(NW.cat ? 'No ' + NW.cat + ' articles for ' + whoN + '.' : 'No recent news for ' + whoN + '.'), NW.cat ? 'Pick another category.' : 'Only articles about the two players of this match are shown here.');
+      else {
+        const days = []; feed.forEach(x => { const k = newsFmtDateKey(x.ts); let g = days[days.length - 1]; if (!g || g.k !== k) { g = { k, ts: x.ts, items: [] }; days.push(g); } g.items.push(x); });
+        const dayLbl = ts => { try { return new Date(ts).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: newsTz() }); } catch (e) { return new Date(ts).toLocaleDateString('en-GB'); } };
+        body = days.map(g => '<div style="display:flex; align-items:center; gap:12px; margin-top:8px;"><span style="font-size:12.5px; font-weight:700; color:var(--ma2-text); white-space:nowrap;">' + esc(dayLbl(g.ts)) + '</span><span style="font-size:12px; color:var(--ma2-grey); white-space:nowrap;">' + g.items.length + (g.items.length === 1 ? ' article' : ' articles') + '</span><span style="flex:1; height:1px; background:' + W(6) + ';"></span></div>'
+          + (NW.view === 'reading' ? g.items.map(nReading).join('') : '<div style="background:var(--ma2-card); border:1px solid ' + W(6) + '; border-radius:16px; display:flex; flex-direction:column; padding:6px 10px;">' + g.items.map(nCompact).join('') + '</div>')).join('');
+      }
+    }
+    return wrap('<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:8px;">' + tiles + '</div>'
+      + '<div style="display:flex; align-items:center; flex-wrap:wrap; gap:10px;">' + cTabs + '<span style="flex:1;"></span>' + vTabs + '</div>' + body);
+  }
+  const nRe = () => { if (typeof renderNewsSection === 'function') renderNewsSection(); };
+  root.ma2NewsPlayer = f => { _aNewsFilter = _aNewsFilter === f ? 'all' : f; _aNewsOpen = ''; nRe(); };
+  root.ma2NewsCat = c => { NW.cat = NW.cat === c ? '' : c; _aNewsOpen = ''; nRe(); };
+  root.ma2NewsView = v => { NW.view = v; nRe(); };
+  root.ma2NewsRow = id => { _aNewsOpen = _aNewsOpen === id ? '' : id; nRe(); };
+  root.ma2NewsMore = id => { NW.more[id] = !NW.more[id]; nRe(); };
+  root.maNewsV2 = maNewsV2;
+
   root.MA2 = { av, SH_A, SH_B, avIni, ini, help, cardHead, card, track, chip, tile, popShell, signed, RING_A, RING_B, W, MONO, DASH, esc };
   root.maOddsV2 = oddsBuild;
 })(typeof window !== 'undefined' ? window : globalThis);

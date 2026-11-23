@@ -1576,15 +1576,6 @@ window.sfEarlyFetch = function (u, init) {
   .modal-analysis .asection{ display:none; }
   /* TEN-338: DF L2080 centres "Match not played yet" in the whole pane (height:100% of the content column) */
   .modal-analysis #aSectionMatchStats:has(> .ma-ms-notplayed){ height:100%; }
-  /* News tab (TEN-333): the file's .wirerow + .seg hover rules (DF L18, L77–80), tokens only. */
-  #aSectionNews .anews-row{ border-bottom:1px solid var(--line); cursor:pointer; }
-  #aSectionNews .anews-row:last-child{ border-bottom:0; }
-  /* TEN-380 (step 3 reference): the open row = white 2% on its --line rule, no periwinkle edge; hover reads the same. */
-  #aSectionNews .anews-row:hover, #aSectionNews .anews-row.open{ background:color-mix(in srgb, var(--text) 2%, transparent); }
-  #aSectionNews .anews-row.open{ border-bottom:1px solid var(--line); }
-  #aSectionNews .anews-row:hover .anews-caret{ color:var(--text) !important; }
-  #aSectionNews .seg{ cursor:pointer; transition:background .14s ease, color .14s ease, border-color .14s ease; }
-  #aSectionNews .anews-viewall:hover{ color:var(--link) !important; }   /* beats the inline colour, as style-hover does */
   /* Progression tab (TEN-339): the file's .seg hover rule and its style-hover values (DF L807 "All metrics", L825 heat cell). */
   #aSectionProgression .seg{ cursor:pointer; transition:background .14s ease, color .14s ease, border-color .14s ease; }
   #aSectionProgression .pg-hcell:hover{ filter:brightness(1.35); }
@@ -17609,21 +17600,6 @@ function renderNewsSection(){
   const el = document.getElementById('aSectionNews');
   if (el && _aNewsMatch) el.innerHTML = buildNewsSection(_aNewsMatch);
 }
-function aNewsSetFilter(f){ _aNewsFilter = f; renderNewsSection(); }
-function aNewsToggle(key){ _aNewsOpen = _aNewsOpen === key ? '' : key; renderNewsSection(); }
-function aNewsViewAll(){
-  closeAnalysisModal();
-  const b = document.querySelector('#mainNav button[data-tab="news"]');
-  if (b) b.click();
-}
-// DF `when`: en-US short month + numeric day, then en-GB 24h time — "Sep 8 · 07:37" — in the member's zone (newsTz).
-function aNewsWhen(ts){
-  if (!isFinite(ts)) return '—';
-  let d;
-  try { d = new Date(ts).toLocaleDateString('en-US', { month:'short', day:'numeric', timeZone:newsTz() }); }
-  catch(e){ d = new Date(ts).toLocaleDateString('en-US', { month:'short', day:'numeric' }); }
-  return d + ' · ' + newsFmtTime(ts);
-}
 // One player's articles inside the rolling window, newest first. player_key is the join; the resolver is the
 // interim fallback for a row without one (never a raw headline string-match).
 function aNewsArticlesFor(key, name){
@@ -17647,71 +17623,7 @@ function aNewsStoryKey(title){
   const w = String(title || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').split(' ').filter(Boolean);   // hyphens split words
   return w.length >= 5 ? w.slice(0, 5).join(' ') : '';
 }
-// DF L2217–2243: name + count + hairline, then the compact wire (closed: one line, ellipsis; open: title wraps,
-// caret turns, body paragraphs under the title column).
-function aNewsGroupHtml(side, name, arts, total){
-  const esc = escapeHtml;   // quotes too: the key and tooltips sit in attributes
-  const rows = arts.map(({ a, ts }) => {
-    const key = side + ':' + (a.news_key != null ? a.news_key : ts + '|' + (a.title || ''));
-    const open = _aNewsOpen === key;
-    const when = `<span class="anews-when" title="${esc(newsFmtDateTime(ts) || '—')}" style="font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--text-label); white-space:nowrap;${open ? ' padding-top:2px;' : ''}">${esc(aNewsWhen(ts))}</span>`;
-    const caret = `<span class="anews-caret" style="font-size:11px; color:var(--text); justify-self:end;${open ? ' transform:rotate(180deg);' : ''}">▾</span>`;
-    const title = open
-      ? `<span class="anews-title" style="min-width:0; font-size:13.5px; font-weight:600; color:var(--text); line-height:1.4; text-wrap:pretty;">${esc(a.title || '—')}</span>`
-      : `<span class="anews-title" style="font-size:13.5px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(a.title || '—')}</span>`;
-    const head = `<div class="anews-grid" style="display:grid; grid-template-columns:104px minmax(0,1fr) 16px; gap:12px; align-items:${open ? 'start' : 'center'};">${when}${title}${caret}</div>`;
-    // an article with no body text shows its headline only (nothing fabricated under it)
-    const paras = open ? newsSplitParas(a.content) : [];
-    const body = paras.length
-      ? `<div class="anews-body" style="display:flex; flex-direction:column; gap:8px; padding:8px 16px 4px 116px;">${paras.map(p => `<div class="anews-para" style="font-size:14px; color:var(--text-soft); line-height:1.7; text-wrap:pretty; max-width:68ch;">${esc(p)}</div>`).join('')}</div>`
-      : '';
-    return `<div class="anews-row${open ? ' open' : ''}" data-anews-key="${esc(key)}" onclick="aNewsToggle(this.dataset.anewsKey)" style="display:flex; flex-direction:column; padding:9px 6px;">${head}${body}</div>`;
-  }).join('');
-  // count = this player's articles in the feed window; the population rides on the tooltip (no new visual)
-  const pop = `${arts.length} of ${total} article${total === 1 ? '' : 's'} in the ATP news feed, last ${A_NEWS_WINDOW_DAYS} days`;
-  return `<div class="anews-ghead" style="display:flex; align-items:center; gap:12px; margin-top:4px;"><span class="anews-gname" style="font-size:13.5px; font-weight:700; color:var(--text); white-space:nowrap;">${esc(name)}</span><span class="anews-gcount" tabindex="0" data-aotip="${esc(esc(pop))}" style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--text-label);">${arts.length}</span><span class="anews-grule" style="flex:1; height:1px; background:var(--edge-10);"></span></div>`
-    + `<div class="anews-rows" style="display:flex; flex-direction:column;">${rows}</div>`;
-}
-function buildNewsSection(m){
-  const esc = escapeHtml;
-  // DF L2204: the `me` segmented geometry (track padding 2 radius 8, item 5px 12px radius 6, 12px)
-  const filters = `<div class="anews-filters" style="align-self:flex-start;">` + maSeg('me', [['all', 'All'], ['p1', m.p1], ['p2', m.p2]].map(([id, label]) =>
-    ({ label: esc(label), on: _aNewsFilter === id, onclick: `aNewsSetFilter('${id}')` }))) + `</div>`;
-  const viewAll = (extra) => `<span class="seg anews-viewall" onclick="aNewsViewAll()" style="font-size:13px; font-weight:600; color:var(--link); align-self:flex-start;${extra || ''}">View all news →</span>`;
-  // the file's content column is 16px / line-height normal / "Hanken Grotesk", sans-serif (the ▾ caret's fallback glyph
-  // comes from that generic family); the modal body's 14px / 1.5 / system-ui would make every row 2.25px taller.
-  const wrap = inner => `<div class="anews" style="display:flex; flex-direction:column; gap:12px; width:100%; min-width:0; box-sizing:border-box; font-family:'Hanken Grotesk',sans-serif; font-size:16px; line-height:normal;">${filters}${inner}</div>`;
-
-  if (_aNewsState === 'unavailable') {
-    let chk;
-    try { chk = new Date().toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false, timeZone:newsTz() }); }
-    catch(e){ chk = new Date().toLocaleTimeString('en-GB', { hour12:false }); }
-    return wrap(`<div class="anews-unavailable" style="display:flex; flex-direction:column; gap:6px; padding:10px 0;">
-        <span style="font-size:15px; color:var(--text);">News feed unavailable.</span>
-        <span style="font-size:13px; color:var(--text-label);">Last checked <span style="font-family:'IBM Plex Mono',monospace;">${chk}</span>.</span>
-      </div>`);
-  }
-  if (_aNewsState !== 'ok') {
-    // DESIGN GAP G8: the file draws no loading state — the unavailable/empty block's secondary line, no new pattern.
-    return wrap(`<div class="anews-loading" style="display:flex; flex-direction:column; gap:6px; padding:10px 0;"><span style="font-size:13px; color:var(--text-label);">Loading news…</span></div>`);
-  }
-
-  const total = Array.isArray(_newsData.articles) ? _newsData.articles.filter(a => newsParseTs(a.published_at) >= Date.now() - A_NEWS_WINDOW_DAYS * 864e5).length : 0;
-  const aArts = aNewsArticlesFor(m.p1Key, m.p1);
-  const bArts = aNewsArticlesFor(m.p2Key, m.p2);
-  const showA = _aNewsFilter !== 'p2' && aArts.length > 0;
-  const showB = _aNewsFilter !== 'p1' && bArts.length > 0;
-  if (!showA && !showB) {
-    // DF emptyTitle names both players. Under a one-player filter the file's sentence would deny the other player's
-    // articles, so the filtered player alone is named (design-file bug not ported; listed in the TEN-333 report).
-    const who = _aNewsFilter === 'p1' ? m.p1 : _aNewsFilter === 'p2' ? m.p2 : `${m.p1} or ${m.p2}`;
-    return wrap(`<div class="anews-empty" style="display:flex; flex-direction:column; gap:6px; padding:10px 0;">
-        <span class="anews-empty-title" style="font-size:15px; color:var(--text);">No recent news for ${esc(who)}.</span>
-        ${viewAll()}
-      </div>`);
-  }
-  return wrap((showA ? aNewsGroupHtml('p1', m.p1, aArts, total) : '') + (showB ? aNewsGroupHtml('p2', m.p2, bArts, total) : '') + viewAll(' margin-top:2px;'));
-}
+function buildNewsSection(m){ return maNewsV2(m); }   // the 2026-11-21 design (match-analysis-v2.js)
 
 // The board match as a sheet entry: header from the match's own data (names, keys, sets, winner, closing price
 // as the card shows it), its inline box score oriented p1 → A, and the event key for the per-set / point-by-point
@@ -19657,7 +19569,8 @@ const A_TAB_BUILD = {
     _aNewsState = (_newsData && Array.isArray(_newsData.articles)) ? 'ok' : 'load';   // = aNewsFeedOk()
     if (typeof initAOddsTips === 'function') initAOddsTips();   // the modal's one tooltip component (the group count's population note)
     renderNewsSection();
-    return ensureNewsData().then(() => { if (_aNewsMatch === m && aBuilt(m, 'news')) renderNewsSection(); });
+    // the tab reads the News page's items: the outlet feed AND the ticker (our match reports, quotes)
+    return Promise.all([ensureNewsData(), (_newsTicker && _newsTicker.length) ? null : loadNewsTicker()]).then(() => { if (_aNewsMatch === m && aBuilt(m, 'news')) renderNewsSection(); });
   },
 };
 // Download report (founder 2026-09-28, D7 reversed: the print stays): the report covers every tab, but tabs build
