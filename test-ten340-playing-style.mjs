@@ -99,17 +99,15 @@ const listState = c => ({ showing: (/>Showing (\d+) of (\d+)/.exec(c) || []).sli
   btn: (/onclick="(ps2Set\(\{more[AB]:(?:true|false)\}\))"[^>]*>([^<]*)</.exec(c) || [])[2] || (/>(All matches shown)</.exec(c) || [])[1] || null,
   onclick: (/onclick="(ps2Set\(\{more[AB]:(?:true|false)\}\))"/.exec(c) || [])[1] });
 
-// RENDERER GAP (modal-playing-style.md "Data": Style matchup = matchup-matrix.json, the cell in p1's direction, the lean,
-// the three surface tiles; a mirror = the 50/50 copy, G5). The rebuilt tab draws no Style matchup and ps2Edge is deleted;
-// no founder ruling drops it (CLAUDE.md carve-out 3). This check stays red until the matchup is back or ruled out.
-test('style matchup: the matrix cell in p1\'s direction, the lean and the surface tiles; a mirror reads 50/50 (G5)', () => {
+// The Style matchup card is REMOVED (founder 2026-11-21, handoff README, Playing style tab: "STYLE MATCHUP card REMOVED
+// from the tab 2026-11-21 (user: 'Remove the style match-up box under, not needed'; do not re-add)"). This supersedes
+// modal-playing-style.md's Style matchup rules (matrix cell, lean, surface tiles, mirror G5, Matrix avg) on the tab.
+test('style matchup: no Style matchup card is drawn (founder 2026-11-21)', () => {
   setup(); S.STY['A. Arnaldi'] = { archetype_label: AB }; S.STY['B. Baez'] = { archetype_label: CP };
   const t = text(S.buildStyleSection(match('A. Arnaldi', 'B. Baez')));
-  assert.match(t, /Counterpunchers beat Attacking Baseliners/, 'the matchup head');
-  assert.match(t, /1,592/, 'the cell\'s tour meetings');
-  assert.match(t, /48%.*52%/, 'p1\'s direction first');
+  assert.doesNotMatch(t, /Style matchup|beat Attacking Baseliners|1,592|Matrix avg|Leans \+/);
   setup(); S.STY['J. Sinner'] = { archetype_label: ACE }; S.STY['C. Alcaraz'] = { archetype_label: ACE };
-  assert.match(text(S.buildStyleSection(match('J. Sinner', 'C. Alcaraz'))), /Style gives neither player an edge/, 'the mirror copy');
+  assert.doesNotMatch(text(S.buildStyleSection(match('J. Sinner', 'C. Alcaraz'))), /Mirror matchup|Style gives neither player an edge/);
 });
 
 // Mutation: the walkover filter removed from ps2Record (a W/O counted as a win / loss, N2).
@@ -233,7 +231,7 @@ function dna(){
     2: { surfaces: { Hard: { last52: node(293.9, 160.1, 245.5, 1.36, 6, 96), sinceBase: since(290.1, 159.6, 225.9, 1.34), elo: { rating: 2050, pct: 99 } } } } } };
 }
 
-const axisTip = (h, name) => { const x = new RegExp(`<span title="([^"]*)"[^>]*>\\s*<span[^>]*>${name}</span>`).exec(h); assert.ok(x, 'axis ' + name + ' has its hover'); return x[1].replace(/&lt;br&gt;/g, ' | ').replace(/&amp;/g, '&'); };
+const axisTip = (h, name) => { const x = new RegExp(`<span title="([^"]*)"[^>]*>\\s*<span[^>]*>${name}(?: · current)?</span>`).exec(h); assert.ok(x, 'axis ' + name + ' has its hover'); return x[1].replace(/&lt;br&gt;/g, ' | ').replace(/&amp;/g, '&'); };
 const dnaCard = h => h.slice(0, h.indexOf('>Record against each style<'));
 const polys = h => [...h.matchAll(/<polygon points="([^"]*)"[^>]*stroke="var\(--ma2-(blue|text)\)"/g)].map(x => ({ who: x[2] === 'blue' ? 'a' : 'b', pts: x[1].trim().split(/\s+/) }));
 

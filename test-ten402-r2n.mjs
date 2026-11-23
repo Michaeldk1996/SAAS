@@ -153,10 +153,10 @@ test('r3.1 Match analysis → Tournament tab: the title, "Record at …", the ed
   // the rebuilt tab (maTournamentV2, match-analysis-v2.js) EXECUTED over the real trClean / trName, its data model stubbed
   const P = eds => ({ eds, all: [], priced: [], name: 'A. Rublev', key: '1', n: 4, W: 3, L: 1, best: null, sW: 0, sT: 0, units: 0, state: 'ready', hasHist: !!eds.length, names: [] });
   const models = [P([{ year: '2025', result: 'QF', won: 3, lost: 1, rows: [] }, { year: '2024', result: 'R32', won: 1, lost: 1, rows: [] }]), P([])];
-  const tab = make([fnSrc('trClean'), fnSrc('trName'), `const __M = (function(){ const window = {}; ${MA2}; return window; })();`].join('\n'), '__M.maTournamentV2', Object.assign({}, env, {
+  const tab = make([fnSrc('trClean'), fnSrc('trName'), fnSrc('trLastPlayed'), `const __M = (function(){ const window = {}; ${MA2}; return window; })();`].join('\n'), '__M.maTournamentV2', Object.assign({}, env, {
     trStateFor: () => ({ S: { more: false } }), trKeyOf: () => null, trMarketFor: () => null, maGate: n => ({ mode: n ? 'full' : 'none' }), trModelFor: (mm, i) => models[i],
     fhStateFor: () => ({ sheetMap: {} }), fhSurname: s => s, fhNameLink: n => '<span>' + n + '</span>', TR_LIM: 3, TR_RESULT: {}, TR_BEST_RANK: {}, TR_SPEED_YEARS: [2023, 2024, 2025],
-    _fh: null, _careerHistoryShards: {}, _sfDbJoinSt: 'ready', trRender: () => {}, loadCareerHistory: () => Promise.resolve(), fetch: () => Promise.resolve({ ok: false }) }));
+    _fh: null, _careerHistoryShards: {}, _sfDbJoinSt: 'ready', TR_VS_MKT_MIN: 5, trDayWords: d => String(d), meSg: v => String(v), fhSrcTitle: () => '', trRender: () => {}, loadCareerHistory: () => Promise.resolve(), fetch: () => Promise.resolve({ ok: false }) }));
   const sec = tab(m);
   assert.match(sec, /font-size:20px; font-weight:800; letter-spacing:-0\.01em;">Shanghai Masters</, 'the title');
   assert.match(sec, />Shanghai, CN · Hard</, 'the location line stays a location');

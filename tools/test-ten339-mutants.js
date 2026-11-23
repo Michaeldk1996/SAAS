@@ -36,6 +36,7 @@ const MUTANTS = [
   // STEP1 #8) and 'seeded numbers in the unplayed-round placeholder' (the design draws no unplayed round)
 ];
 MUTANTS.push(
+  ['gate: the small-sample footnote dropped', "Grey = small sample (5–9): hover a figure for its count.", "", 'ma2'],
   ['Q7: a future round on the Facing track', ".concat([{ label: P.facing, on: hi == null,", ".concat(['SF', 'F'].map(l => ({ label: l, on: false, onclick: '' }))).concat([{ label: P.facing, on: hi == null,", 'ma2'],
   ['Q7: the current round not selected', "{ label: P.facing, on: hi == null,", "{ label: P.facing, on: false,", 'ma2'],
   ['Q7: a bye written from inference', "const opp = c => (c.r ? fhSurname(c.r.opp) || c.r.opp : DASH);", "const opp = c => (c.r ? fhSurname(c.r.opp) || c.r.opp : c.bye ? 'Bye' : DASH);", 'ma2'],

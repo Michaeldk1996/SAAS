@@ -4,9 +4,9 @@
 const fs = require('fs'), os = require('os'), path = require('path'), { spawnSync } = require('child_process');
 const ROOT = path.join(__dirname, '..');
 // Match analysis rebuild (2026-11-23): the tab renderer is maTournamentV2 in match-analysis-v2.js (mutants tagged 'ma2').
-// Dropped with the rebuild: 'vm: shown below n 5' (the tile draws no vs market: a renderer gap, red in the suite), the
-// reading-paragraph and Q11-empty-block mutants (the rebuilt head draws a court read: a gap), 'Q2: an area fill under the
-// trend' (the rebuild draws one: a gap), 'Q2: the trend guides dropped' (the design draws no guides).
+// Dropped with the rebuild: the old reading-paragraph / Q11-empty-block mutants (the 2026-11-23 design supplies the copy:
+// the read is speedDescription, its own mutant below), 'Q2: an area fill under the trend' (the design draws one: founder
+// conflict list, design kept meanwhile), 'Q2: the trend guides dropped' (the design draws no guides).
 const FILES = { html: 'bsp-consult-dashboard.html', pp2: 'player-profile-v2.js', ma2: 'match-analysis-v2.js' };
 const ENV = { html: 'TEN332_HTML', pp2: 'TEN332_PP2', ma2: 'TEN332_MA2' };
 const MUTANTS = [
@@ -22,10 +22,16 @@ const MUTANTS = [
   ['backing: Pinnacle only (the Bet365 fallback dropped)', "  const priced = core ? all.filter(core.inWinner) : [];", "  const priced = core ? all.filter(r => core.inWinner(r) && r.book === 'P') : [];"],
   ['backing: a retirement not settled at the close', "  const priced = core ? all.filter(core.inWinner) : [];", "  const priced = core ? all.filter(r => core.inWinner(r) && !r.ret) : [];"],
   ['vm: implied rate not de-vigged', "  const exp = priced.reduce((s, r) => s + (1 / r.price) / ((1 / r.price) + (1 / r.oppPrice)), 0);", "  const exp = priced.reduce((s, r) => s + (1 / r.price), 0);"],
-  ['backing: the TEN-325 note dropped', "Pinnacle closing, else Bet365). ' + esc(core ? core.RET_SETTLE_NOTE : '')", "Pinnacle closing, else Bet365). '", 'ma2'],
+  ['backing: the TEN-325 note dropped', "      + ' ' + esc(core ? core.RET_SETTLE_NOTE : '') + '</span>';", "      + '</span>';", 'ma2'],
   ["N4: the design's AS cut-offs back", "speedV.toFixed(2) + (cs && cs.category ? ' · ' + esc(cs.category) : '')", "speedV.toFixed(2) + ' · ' + (speedV < 0.9 ? 'Slow' : speedV < 1.15 ? 'Medium' : 'Fast')", 'ma2'],
   ['TEN-321: Roland Garros dash loses its reason', "function trSpeedNote(m){ return trIsRG(m) ? TR_RG_NOTE : TR_NO_SPEED; }", "function trSpeedNote(m){ return TR_NO_SPEED; }"],
   ['trend: an empty season on the axis', "v: cs && cs['as' + y] != null ? +cs['as' + y] : null })).filter(p => p.v != null)", "v: cs && cs['as' + y] != null ? +cs['as' + y] : null }))", 'ma2'],
+  ['Q11: the court read back on placeholder copy', "const note = cs && cs.category && typeof speedDescription === 'function' ? speedDescription(", "const note = cs && cs.category && typeof speedDescription === 'function' ? 'Read the records below with that in mind.' || speedDescription(", 'ma2'],
+  ['trend: a missing season joined into the line', "if (!i || +p.yr - +pts[i - 1].yr > 1) segs.push([]);", "if (!i) segs.push([]);", 'ma2'],
+  ['vm: the vs market line dropped', "const vmTxt = np >= TR_VS_MKT_MIN && P.vm != null ?", "const vmTxt = false ?", 'ma2'],
+  ['TEN-402 r2: the after-archive count dropped from the Backing hover', "(nAfter ? ' ' + nAfter + ' after its last match", "(false ? ' ' + nAfter + ' after its last match", 'ma2'],
+  ['review: the B line dropped', "((n => n ? '<div class=\"tr-srcline\"", "((n => false ? '<div class=\"tr-srcline\"", 'ma2'],
+  ['fix 1: Last played back on the newest edition, rows or not', "const lpx = trLastPlayed(P),", "const lpx = P.eds.length ? { year: P.eds.reduce((b, e) => (!b || +e.year > +b.year ? e : b), null).year, row: P.eds.reduce((b, e) => (!b || +e.year > +b.year ? e : b), null).rows[0] } : null,", 'ma2'],
   ['trend: the delta claims seven years', "' over ' + yrs + ' yr' + (yrs === 1 ? '' : 's')", "' over 7 yrs'", 'ma2'],
   ['ROI: a card clickable with no archive names', "openable = !!(mkt && mkt.archiveNames && mkt.archiveNames.length)", "openable = !!mkt", 'ma2'],
   ['ROI: a small-n yield in full colour', "(!has ? 'var(--ma2-quiet)' : g === 'small' ? 'var(--ma2-grey)' : 'var(--ma2-text)')", "(!has ? 'var(--ma2-quiet)' : 'var(--ma2-text)')", 'ma2'],

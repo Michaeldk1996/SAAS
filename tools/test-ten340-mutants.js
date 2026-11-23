@@ -7,8 +7,8 @@ const ROOT = path.join(__dirname, '..');
 const FILES = { page: ['bsp-consult-dashboard.html', 'TEN340_HTML'], builder: [path.join('tools', 'build-matchup-matrix.js'), 'TEN340_BUILDER'],
   ma2: ['match-analysis-v2.js', 'TEN340_MA2'] };
 // Match analysis rebuild (2026-11-23): the renderer is maStyleV2 in match-analysis-v2.js (mutants tagged 'ma2'). Dropped with
-// the rebuild: the Style matchup mutants (mirror, p2 direction, lean, surface tiles, matrix avg — the card is gone: a
-// renderer gap, red in the suite), the Δ-on-since, DoD-8 native-title and shared-row mutants, and the TEN-380 styling /
+// the rebuild: the Style matchup mutants (mirror, p2 direction, lean, surface tiles, matrix avg — the founder removed the
+// card 2026-11-21; the suite now asserts it is not drawn), the Δ-on-since, DoD-8 native-title and shared-row mutants, and the TEN-380 styling /
 // layout mutants (matchup collapsed, --line cards, white / --link toggles, ruling-8 bars, top-aligned columns).
 const MUTANTS = [
   ['N2: a walkover counted in the personal record', "const rows = raw.filter(r => !ps2IsWalkover(r));", "const rows = raw;"],
@@ -28,6 +28,11 @@ const MUTANTS = [
   ['DoD 4: a SAMPLE chip back', ">Record against each style</span>", ">Record against each style</span><span>SAMPLE</span>", 'ma2'],
   ['DoD 8: an old row renderer back', "function buildStyleSection(m){", "function psvListHtml(side){ return ''; }\nfunction buildStyleSection(m){"],
   ['sets: a final-set tiebreak at 12-12 read as unfinished', " || (tb && hi >= 7 && d === 1); }", "; }"],
+  ['the removed Style matchup card drawn again', "psDnaCard(m, S) + psRecordCard(m, S)", "psDnaCard(m, S) + psRecordCard(m, S) + '<div>Style matchup</div>'", 'ma2'],
+  ['NaN: n = 0 against other styles read as a rate', "const oR = og === 'full' || og === 'small' ? Math.round(ow / on * 100) : null;", "const oR = og !== 'nopct' ? Math.round(ow / on * 100) : null;", 'ma2'],
+  ['D2: the 5–9 small-sample note dropped', "=== 'small' ? 'small sample' : '') + tileP('Vs other styles'", "=== 'small' ? '' : '') + tileP('Vs other styles'", 'ma2'],
+  ['Q14: a centre point for an axis with no figure', "P.vals[i].pct == null ? null : pt(i, P.vals[i].pct / 100)", "pt(i, P.vals[i].pct == null ? 0 : P.vals[i].pct / 100)", 'ma2'],
+  ['D6: the Surface Elo label without "current"', "(/elo/i.test(ax.key || ax.label) ? ' · current' : '')", "''", 'ma2'],
   ['order: the record card above the DNA card', "psDnaCard(m, S) + psRecordCard(m, S)", "psRecordCard(m, S) + psDnaCard(m, S)", 'ma2'],
   ['Vs other styles: the signed colour dropped', "oc = dd > 0 ? 'var(--ma2-green)'", "oc = dd > 0 ? 'var(--ma2-text)'", 'ma2'],
   ['unclassified: the player\'s own box claims no meetings', "  if (!oppLab || !ownLab) return { state: 'unclassified'", "  if (!oppLab) return { state: 'unclassified'"],

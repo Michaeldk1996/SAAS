@@ -191,6 +191,13 @@ test('Best result: Won beats a final; an edition still being played is no result
   assert.equal(text(tile(S.buildTournamentSection(m2), 'Best result')), 'Best result — no finished edition');
 });
 
+// h2h.md fix 1: Last played = the newest edition WITH a row and that edition's own top row (trLastPlayed). Mutation 'fix 1:
+// Last played back on the newest edition, rows or not'.
+test('Last played: the newest edition with a row, never an empty newer edition', () => {
+  const m = fixture([ed(2026, []), ed(2025, [['2025-07-20', 'A. Bee', 'Final', false, L2]]), ed(2024, [['2024-07-20', 'C. Dee', 'Final', true, W2]])]);
+  assert.equal(text(tile(S.buildTournamentSection(m), 'Last played')), 'Last played 2025 lost F v Bee');
+});
+
 // Mutations 'backing: Pinnacle only (Bet365 fallback dropped)', 'backing: a retirement not settled', 'vm: shown below n 5',
 // 'vm: implied rate not de-vigged', 'backing: RET note spelled out / dropped'
 test('Backing (N5 + D6 + TEN-325): the Database join\'s closes, retirements settled on the ATP result, vs market at n >= 5 de-vigged, note from the core', () => {
@@ -281,16 +288,17 @@ test('N4 + TEN-321: the header prints the pipeline\'s 3-band label; Roland Garro
 
 // Founder Q11 (2026-09-30): the reading paragraph is dropped — no node, no heading, no reserved space.
 // Mutations 'the reading paragraph back (placeholder copy)', 'Q11: an empty block reserving its space'
-// RENDERER GAP (founder Q11, 2026-09-30: the reading paragraph is dropped "until the founder sends copy"): the rebuilt head
-// card draws a court read (speedDescription, the Tournaments page's copy) under the meta row — noted for the founder in the
-// rebuild notes, not ruled. The old "nothing between the header card and the toggle" layout check is the design's to set.
-test('Q11: the reading paragraph is dropped — no court read in the head card', () => {
+// Q11 (2026-09-30) held the reading paragraph back "until the founder sends copy"; the founder's 2026-11-23 design supplies
+// it: the court read is speedDescription(category, surface), the Tournaments page's copy. Placeholder copy never returns.
+test('Q11: the head card\'s court read is the design\'s copy (speedDescription), never placeholder text', () => {
   const m = fixture([nMatches(2, () => true)]);
   const h = S.buildTournamentSection(m), head = headOf(m);
   assert.ok(!/Read the records below|plays fast and low|true, medium-paced/.test(h));
   assert.ok(!/SURFACE_CONDITIONS/.test(html));
   assert.ok(!/<p[\s>]|tr-reading|About this event/i.test(h), 'no paragraph node or heading');
-  assert.ok(!/Rewards (aggressive|patient)|Balances serve|courts with a (consistent|high|low)/.test(text(head)), 'no court read (Q11): ' + text(head).slice(-160));
+  const want = new Function(`${constSrc('COURT_CONDITIONS')}; ${constSrc('SURFACE_CLAUSE')}; ${constSrc('SPEED_CLAUSE')}; ${slice('courtSpeedCategory')}; ${slice('speedDescription')};
+    return speedDescription(courtSpeedCategory(COURT_CONDITIONS.Washington.speed), 'hard');`)();
+  assert.ok(want && text(head).includes(want), 'the read = speedDescription: ' + want);
 });
 
 // Founder Q9 (2026-09-30): the event hold rate — our box scores, every edition on file, n = service games — in a fifth
@@ -331,19 +339,12 @@ test('court-speed trend: only seasons with a value on the axis; the delta states
   assert.ok(text(h).includes('Trending faster +0.04 over 2 yrs'));
   assert.ok(text(h).includes('Abstract court speed · 2023–2025'));
 });
-// RENDERER GAP (defect brief 2026-10-24 item 6: "a hole breaks the line"): the rebuilt trend joins 2023 to 2025 across the
-// season with no reading. Mutation: none (the gap itself).
+// Defect brief 2026-10-24 item 6: "a hole breaks the line". (The design's area wash under the trend is kept meanwhile — a
+// founder conflict on the STEP1 list — so no area-fill check.)
 test('court-speed trend: a season with no reading breaks the line', () => {
   const m = fixture([], { m: { tour: 'ATP Nowhere', courtSpeed: { speed: 66, abstractSpeed: 1.02, altitude: 20, as2023: 0.98, as2024: null, as2025: 1.02, category: 'Medium' } } });
   assert.equal((marketOf(m).match(/<polyline/g) || []).length, 0, 'no segment drawn across the 2024 hole');
 });
-// RENDERER GAP (foundation.md "no area fill under a line"; founder Q2 TEN-380: "line only … no area fill"): the rebuilt
-// trend draws the design's white area wash — a founder question in the rebuild notes, not ruled.
-test('court-speed trend: line only, no area fill or gradient (Q2)', () => {
-  const m = fixture([]);
-  assert.ok(!/<linearGradient|fill="url\(/.test(marketOf(m)), 'no area fill');
-});
-
 // Mutations 'ROI: a card clickable with no archive names', 'ROI: a small-n yield in full colour'
 test('ROI + reliability: tournament-market.json figures, dashed when absent, greyed at n 5–9, open only with archive names', () => {
   const m = fixture([]);
