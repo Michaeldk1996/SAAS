@@ -6,8 +6,8 @@
 // design; every data rule is unchanged.
 //
 // Each §6 test names the mutation it catches; tools/test-ten303-mutants.js applies every one (to the page or to
-// match-analysis-v2.js) and fails if any leaves this suite green. Tests named "renderer gap: …" check a rule the rebuild
-// does not meet yet: the runner reports them apart.
+// match-analysis-v2.js) and fails if any leaves this suite green. A test named "renderer gap: …" would check a rule the
+// rebuild does not meet yet (the runner reports those apart); none is open since ma-v2 49127571f.
 //
 // Run: node --test test-ten303-odds-tab.mjs
 import { test } from 'node:test';
@@ -50,8 +50,8 @@ export function fixture({ now = Date.now(), withAt = false, superbetChecked = no
 
 // ---- the rebuilt markup: Bookmakers card = one .ma2-group box per group, a row per book, one .ma2-pbox per player ----
 const unesc = s => s.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
-const tabOf = h => { const i = h.indexOf('class="ma2-pop-ov"'); return i < 0 ? h : h.slice(0, i); };
-const popOf = h => { const i = h.indexOf('class="ma2-pop-ov"'); return i < 0 ? '' : h.slice(i); };
+const tabOf = h => { const i = h.indexOf('class="ma2-pop-ov'); return i < 0 ? h : h.slice(0, i); };
+const popOf = h => { const i = h.indexOf('class="ma2-pop-ov'); return i < 0 ? '' : h.slice(i); };
 const rowsOf = h => {
   const t = tabOf(h), out = [], gs = [...t.matchAll(/class="ma2-group" data-group="([^"]*)"/g)];
   gs.forEach((g, i) => { const seg = t.slice(g.index, i + 1 < gs.length ? gs[i + 1].index : t.length);
@@ -239,7 +239,7 @@ test('rows: one per bookmaker with odds, plain names, SHARP then SOFT, live firs
 });
 
 // founder Q23 (2026-09-30): the Market / No-vig hints are the shared tooltip (data-aotip), never a native title.
-test('renderer gap: Q23 — the Market / No-vig hints are the shared tooltip (data-aotip), never a native title', () => {
+test('Q23 — the Market / No-vig hints are the shared tooltip (data-aotip), never a native title', () => {
   const A = build(); const m = fixture(); A.open(m);
   const h = tabOf(A.buildOddsSection(m));
   const hints = [...h.matchAll(/<span class="seg ma2-seg"([^>]*)>(Market|No-vig)<\/span>/g)].map(x => [x[1], x[2]]);
@@ -713,9 +713,9 @@ test('pop-up: the shared opened-box shell, closed by its Close button and an out
     const A = build(); const m = fixture({ now, withAt: true }); A.open(m);
     A.aOddsOpenMv('Pinnacle');
     let h = A.section();
-    assert.match(h, /class="ma2-pop-ov" onclick="if\(event\.target===this\)\{aOddsCloseMv\(\)\}" style="position:fixed; inset:0 0 0 var\(--sf-side, 0px\);/);
+    assert.match(h, /class="ma2-pop-ov ma-pop-overlay" onclick="if\(event\.target===this\)\{aOddsCloseMv\(\)\}" style="position:fixed; inset:0 0 0 var\(--sf-side, 0px\);/);
     assert.match(h, /class="ma2-pop" style="width:100%; max-width:980px;/, 'the 980 shell');
-    assert.match(h, /class="seg ma2-btn" role="button" tabindex="0" onclick="aOddsCloseMv\(\)"[^>]*>Close</);
+    assert.match(h, /class="seg ma2-btn ma-pop-x" role="button" tabindex="0" onclick="aOddsCloseMv\(\)"[^>]*>Close</);
     A.aOddsOpenMv('Bet105');
     assert.ok(/>Bet105 price movement</.test(A.section()), 'a book-tab switch');
     A.aOddsCloseMv(); assert.ok(!A.section().includes('ma2-pop-ov'), 'closed');
@@ -724,7 +724,7 @@ test('pop-up: the shared opened-box shell, closed by its Close button and an out
 
 // TEN-335 (still in force): Esc closes the odds pop-up — not the whole modal. The one Esc handler (esc-nav.js) only sees
 // frames that register a layer: the page's 'ma-pop' layer looks for .ma-pop-overlay .ma-pop-x (maPopEscKey clicks it).
-test('renderer gap: TEN-335 — Esc closes the odds pop-up through an Esc layer, not the whole modal', () => {
+test('TEN-335 — Esc closes the odds pop-up through an Esc layer, not the whole modal', () => {
   const now = Date.parse('2026-09-27T08:00:00Z');
   atClock(now, () => {
     const A = build(); const m = fixture({ now, withAt: true }); A.open(m);

@@ -88,6 +88,10 @@ const MUTANTS = [  ['review 2: a finished match\'s table row keeps its last tick
   ['v2 review 2: pop-up Move on raw prices', "oddsMove(r[x + 'Open'] != null ? r[x + 'Open'] : open && open[1], r[x + 'Now'])", "((o, n) => { const v = (n - o) / o * 100; return { t: (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(1) + '%', c: 'var(--ma2-grey)' }; })(r[x + 'Open'], r[x + 'Now'])", 'v2'],
   ['v2 the pop-up no longer closes on an outside click', "onclick=\"if(event.target===this){' + o.onClose + '}\"", "onclick=\"\"", 'v2'],
   ['v2 1b: the missing-price mark is an en dash', "const DASH = '—';", "const DASH = '–';", 'v2'],
+  ['v2 Q23: the Market / No-vig hints back on a native title', "(o.aotip ? ' data-aotip=\"' + esc(esc(t.title)) + '\"' : ' title=\"' + esc(t.title) + '\"')", "' title=\"' + esc(t.title) + '\"'", 'v2'],
+  ['v2 Q23: the Odds switch no longer asks for the shared tooltip', "{ inset: true, aotip: true })", "{ inset: true })", 'v2'],
+  ['v2 TEN-335: the shell off the ma-pop Esc layer (overlay class)', "class=\"ma2-pop-ov ma-pop-overlay\"", "class=\"ma2-pop-ov\"", 'v2'],
+  ['v2 TEN-335: the Close button not the frame\'s ma-pop-x', "class=\"seg ma2-btn ma-pop-x\"", "class=\"seg ma2-btn\"", 'v2'],
   ['v2 D1: a literal back in the Odds move colour', "mp.sign > 0 ? 'var(--ma2-green)' : 'var(--ma2-red)' };", "mp.sign > 0 ? '#3ed68c' : 'var(--ma2-red)' };", 'v2'],
 ];
 const run = (env, pattern) => spawnSync(process.execPath, ['--test', pattern, ...SUITES],
