@@ -956,8 +956,8 @@
       const tx = 'translate(' + (Math.abs(c) < 0.2 ? '-50%' : (c > 0) !== side ? '0' : '-100%') + ', ' + (sn < -0.9 ? '-80%' : '-50%') + ')', al = Math.abs(c) < 0.2 ? 'center' : (c > 0) !== side ? 'flex-start' : 'flex-end';
       const up = ps2UpDashed(WIN, ax), tip = up ? PS2_UP_SINCE_TIP : typeof ps2AxisTip === 'function' ? ps2AxisTip(D, i) : '';
       return '<span' + (tip ? ' title="' + esc(tip) + '"' : '') + ' style="position:absolute; left:' + lp + '; top:' + tp + '; transform:' + tx + '; display:flex; flex-direction:column; align-items:' + al + '; gap:3px;">'
-        + '<span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey); white-space:nowrap;">' + esc(ax.short || ax.label) + '</span><span style="' + MONO + ' font-size:11.5px; font-weight:700; white-space:nowrap;"><span style="color:var(--ma2-blue);">' + fmtR(D.a.vals[i].raw, ax.dp) + '</span><span style="color:var(--ma2-grey); font-weight:400;"> · </span><span style="color:var(--ma2-text);">' + fmtR(D.b.vals[i].raw, ax.dp) + '</span></span></span>'; }).join('');
-    const poly = (P, ok) => ok ? PS2_AXES.map((ax, i) => pt(i, P.vals[i].pct == null ? 0 : P.vals[i].pct / 100)).join(' ') : null;
+        + '<span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey); white-space:nowrap;">' + esc((ax.short || ax.label) + (/elo/i.test(ax.key || ax.label) ? ' · current' : '')) + '</span><span style="' + MONO + ' font-size:11.5px; font-weight:700; white-space:nowrap;"><span style="color:var(--ma2-blue);">' + fmtR(D.a.vals[i].raw, ax.dp) + '</span><span style="color:var(--ma2-grey); font-weight:400;"> · </span><span style="color:var(--ma2-text);">' + fmtR(D.b.vals[i].raw, ax.dp) + '</span></span></span>'; }).join('');
+    const poly = (P, ok) => ok ? PS2_AXES.map((ax, i) => P.vals[i].pct == null ? null : pt(i, P.vals[i].pct / 100)).filter(Boolean).join(' ') : null;   // Q14: no point for an axis with no figure
     const dots = (P, ok, a) => ok ? PS2_AXES.map((ax, i) => P.vals[i].pct == null ? '' : (q => '<circle cx="' + q[0] + '" cy="' + q[1] + '" r="3.5" ' + (a ? 'fill="var(--ma2-blue)"' : 'fill="var(--ma2-card)" stroke="var(--ma2-text)" stroke-width="1.5"') + '></circle>')(pt(i, P.vals[i].pct / 100).split(','))).join('') : '';
     const pA = poly(D.a, shapeA), pB = poly(D.b, shapeB);
     const svg = '<svg viewBox="55 0 310 270" style="display:block; width:100%; height:auto; overflow:visible;">'
@@ -1031,7 +1031,7 @@
     RR.forEach((R, i) => {
       const name = i ? m.p2 : m.p1, key = i ? m.p2Key : m.p1Key, ring = i ? RING_B(2) : RING_A(2), vs = R.oppLab ? psPlural(R.oppLab) : 'his opponent’s style';
       const headP = '<div style="display:flex; align-items:center; justify-content:center; gap:12px; min-width:0;">' + av(name, key, 40, ring, 11.5) + '<div style="min-width:0; display:flex; flex-direction:column; gap:2px;"><span style="font-size:15px; font-weight:800; letter-spacing:-0.01em; color:var(--ma2-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(name) + '</span><span style="font-size:12.5px; color:var(--ma2-grey); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">against ' + esc(vs) + '</span></div></div>';
-      const tileP = (l, v, c) => '<div style="display:flex; flex-direction:column; align-items:center; text-align:center; gap:7px; background:var(--ma2-inner); border:1px solid ' + W(6) + '; border-radius:11px; padding:13px 6px 12px;"><span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey);">' + l + '</span><span style="' + MONO + ' font-size:20px; font-weight:700; line-height:1; white-space:nowrap; color:' + (c || 'var(--ma2-white)') + ';">' + v + '</span></div>';
+      const tileP = (l, v, c, note) => '<div style="display:flex; flex-direction:column; align-items:center; text-align:center; gap:7px; background:var(--ma2-inner); border:1px solid ' + W(6) + '; border-radius:11px; padding:13px 6px 12px;"><span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey);">' + l + '</span><span style="' + MONO + ' font-size:20px; font-weight:700; line-height:1; white-space:nowrap; color:' + (c || 'var(--ma2-white)') + ';">' + v + '</span>' + (note ? '<span style="font-size:11px; color:var(--ma2-grey); white-space:nowrap;">' + note + '</span>' : '') + '</div>';
       let rec = DASH, rate = DASH, rateC = 'var(--ma2-quiet)', od = DASH, oc = 'var(--ma2-grey)', gL = 50, gW = 0, avgTxt, list = [];
       if (R.state !== 'ready') avgTxt = R.state === 'loading' ? 'Loading career meetings…' : R.self ? fhSurname(name) + '’s playing style is not classified' : 'Playing style not classified';
       else {
@@ -1044,14 +1044,14 @@
         else {
           rec = w + '–' + (n - w); const g = maGate(n).mode, og = maGate(on).mode;
           rate = g === 'nopct' ? DASH : Math.round(w / n * 100) + '%'; rateC = g === 'full' ? 'var(--ma2-white)' : 'var(--ma2-grey)';
-          const oR = og === 'nopct' ? null : Math.round(ow / on * 100);
+          const oR = og === 'full' || og === 'small' ? Math.round(ow / on * 100) : null;   // n = 0 is 'none': never NaN
           if (g !== 'nopct' && oR != null) { const dd = Math.round(w / n * 100) - oR, gw = Math.min(46, Math.abs(dd) / 40 * 46);
             od = dd === 0 ? '0 pts' : (dd > 0 ? '+' : '−') + Math.abs(dd) + ' pts'; oc = dd > 0 ? 'var(--ma2-green)' : dd < 0 ? 'var(--ma2-red)' : 'var(--ma2-grey)'; gL = dd >= 0 ? 50 : 50 - gw; gW = gw; }
           avgTxt = oR == null ? (on ? 'Only ' + on + ' matches against other styles' : 'No matches against other styles') : 'He wins ' + oR + '% against all other styles';
         }
       }
       boxes.push('<div style="background:var(--ma2-card); border:1px solid ' + W(6) + '; border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:16px; min-width:0;">' + headP
-        + '<div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.2fr); gap:8px;">' + tileP('Record', rec, rec === DASH ? 'var(--ma2-quiet)' : null) + tileP('Win rate', rate, rateC) + tileP('Vs other styles', od, od === DASH ? 'var(--ma2-quiet)' : oc) + '</div>'
+        + '<div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.2fr); gap:8px;">' + tileP('Record', rec, rec === DASH ? 'var(--ma2-quiet)' : null) + tileP('Win rate', rate, rateC, rec !== DASH && maGate(+rec.split('–')[0] + +rec.split('–')[1]).mode === 'small' ? 'small sample' : '') + tileP('Vs other styles', od, od === DASH ? 'var(--ma2-quiet)' : oc) + '</div>'
         + '<div style="display:flex; flex-direction:column; gap:9px;"><span style="position:relative; display:block; height:14px;"><span style="position:absolute; left:0; right:0; top:4px; height:6px; border-radius:3px; background:' + W(7) + ';"></span>'
         + '<span style="position:absolute; top:4px; height:6px; border-radius:3px; background:' + oc + '; left:' + gL.toFixed(1) + '%; width:' + gW.toFixed(1) + '%;"></span><span style="position:absolute; left:50%; top:0; width:1.5px; margin-left:-0.75px; height:14px; background:var(--ma2-soft);"></span></span>'
         + '<span style="font-size:12.5px; color:var(--ma2-grey); text-align:center;">' + esc(avgTxt) + '</span></div></div>');
@@ -1239,7 +1239,10 @@
       + help('The lifted figure is the better of the two players in that round. Draw average = every player still in the draw at that round. Hover a figure to see the opponent, click it for the match stats. Pick a round to compare that round only.') + '</div>'
       + '<span style="font-size:12.5px; color:var(--ma2-grey);">Each player\'s figures in every round played here, against the draw average</span></div>'
       + '<div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px 12px;">' + roundTr + metBtn + '</div>' + sumBox
-      + '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr)); gap:10px;">' + boxes + '</div>');
+      + '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr)); gap:10px;">' + boxes + '</div>'
+      // modal-progression.md D2 / G15: the small-sample footnote under the cards whenever a 5–9 figure is greyed
+      + (shown.some(x => x.series.some(ser => ser.some(v => v && pgFig(v, x.mt).small)) || [0, 1].some(k => pgFig(x.avg[k], x.mt).small))
+        ? '<span class="pg-foot" style="font-size:11.5px; color:var(--ma2-grey);">Grey = small sample (5–9): hover a figure for its count.</span>' : ''));
     return wrap(pgFacing(P, hi) + road + rbr);
   }
   root.maProgressionV2 = maProgressionV2;
@@ -1302,19 +1305,26 @@
     const first = P.eds.length ? P.eds[P.eds.length - 1].year : null;
     const sub = (grp ? 'On similar courts' : 'At ' + clean) + (first ? ' · since ' + first : '');
     const loading = P.state === 'loading' || P.state === 'idle', np = P.priced.length;
-    const lp = P.eds.length ? { e: P.eds.reduce((b, e) => (!b || +e.year > +b.year ? e : b), null) } : null, lr = lp && lp.e.rows[0];
+    const lpx = trLastPlayed(P), lp = lpx ? { e: { year: lpx.year } } : null, lr = lpx && lpx.row;   // h2h.md fix 1: the newest edition WITH a row
     const tile = (cap, v, sb, col, tip) => { const val = '<span style="' + MONO + ' font-size:17px; font-weight:700; line-height:1; color:' + (col || (v === DASH ? 'var(--ma2-quiet)' : 'var(--ma2-text)')) + '; white-space:nowrap;">' + v + '</span>';
       return '<div style="background:var(--ma2-card); border:1px solid ' + W(6) + '; border-radius:11px; padding:13px 6px 12px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px; min-width:0;"><span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey); white-space:nowrap;">' + cap + '</span>'
         + (tip ? maTipHtml('<span tabindex="0" style="display:inline-flex;">' + val + '</span>', tip, { wrap: 280, popStyle: 'bottom:calc(100% + 8px); left:auto; right:0; transform:none;' }) : val)
         + '<span title="' + esc(sb) + '" style="font-size:11.5px; color:var(--ma2-grey); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;">' + esc(sb) + '</span></div>'; };
     const core = window.MarketEdgeCore;
-    const backTip = '<span style="' + MONO + ' font-size:11px; line-height:1.5;">' + np + ' of ' + P.all.length + ' matches priced · flat 1u at the closing price (the Database join: Pinnacle closing, else Bet365). ' + esc(core ? core.RET_SETTLE_NOTE : '') + '</span>';
+    // modal-analysis.md Tournament tab → Prices: the book split, matches after the archive's last day, vs market (D6)
+    const nb = P.priced.filter(r => r.book === 'B').length, na = P.priced.filter(r => r.book === 'A' && r.src !== 'oth').length, nAfter = P.all.filter(r => r.pxAfter).length;
+    const backTip = '<span style="' + MONO + ' font-size:11px; line-height:1.5;">' + np + ' of ' + P.all.length + ' matches priced · flat 1u at the closing price (the Database join): Pinnacle'
+      + (na ? ', Pinnacle (approx.) snapshot where no close (' + na + ')' : '') + (nb ? ', Bet365 where missing (' + nb + ')' : '') + '.'
+      + (nAfter ? ' ' + nAfter + ' after its last match (' + esc(trDayWords(P.dbEnd)) + ') not priced yet.' : '')
+      + (np >= TR_VS_MKT_MIN ? ' vs market = win rate minus the market’s de-vigged implied win rate.' : ' vs market needs ' + TR_VS_MKT_MIN + ' priced matches.')
+      + ' ' + esc(core ? core.RET_SETTLE_NOTE : '') + '</span>';
+    const vmTxt = np >= TR_VS_MKT_MIN && P.vm != null ? meSg(P.vm, 1, 'pt') + ' vs market' + (maGate(np).mode === 'small' ? ' · small sample' : '') : '';
     const tiles = '<div style="display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; padding:0 18px 18px;">'
       + tile('Best result', P.best ? (SHORTR[P.best.code] || P.best.code) : DASH, P.best ? (grp && P.best.ev ? (typeof sfEventName === 'function' ? sfEventName(P.best.ev) : P.best.ev) + ' ' : '') + P.best.year : (P.eds.length ? 'no finished edition' : DASH))
       + tile('Sets won', P.sT ? P.sW + '–' + (P.sT - P.sW) : DASH, P.sT ? (maGate(P.sT).mode === 'nopct' ? P.sT + ' sets' : Math.round(P.sW / P.sT * 100) + '% of sets') : DASH)
       + tile('Last played', lp ? lp.e.year : DASH, lr ? (lr.wo ? 'walkover ' : lr.won ? 'won ' : 'lost ') + (lr.round || '') + ' v ' + fhSurname(lr.opp) : DASH)
       + (loading ? tile('Backing', DASH, 'loading prices') : P.state === 'failed' ? tile('Backing', DASH, 'prices unavailable')
-        : tile('Backing', np ? signed(P.units, 1) + 'u' : DASH, np ? 'flat 1u · ' + np + (np === 1 ? ' bet' : ' bets') : 'none priced', np ? (P.units > 0 ? 'var(--ma2-green)' : P.units < 0 ? 'var(--ma2-red)' : 'var(--ma2-text)') : null, backTip)) + '</div>';
+        : tile('Backing', np ? signed(P.units, 1) + 'u' : DASH, vmTxt || (np ? 'flat 1u · ' + np + (np === 1 ? ' bet' : ' bets') : 'none priced'), np ? (P.units > 0 ? 'var(--ma2-green)' : P.units < 0 ? 'var(--ma2-red)' : 'var(--ma2-text)') : null, backTip)) + '</div>';
     let rows = '';
     shown.forEach(e => {
       const evName = grp ? (typeof sfEventName === 'function' ? sfEventName(e.ev) : e.ev) : clean;
@@ -1341,7 +1351,9 @@
       + '<div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">' + fhNameLink(P.name, P.key, 'font-size:15px; font-weight:800; letter-spacing:-0.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;') + '<span title="' + esc(sub) + '" style="font-size:12.5px; color:var(--ma2-grey); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(sub) + '</span></div>'
       + '<div style="flex:none; display:flex; flex-direction:column; align-items:flex-end; gap:3px;"><span style="' + MONO + ' font-size:24px; font-weight:700; line-height:1; color:' + (P.n ? 'var(--ma2-text)' : 'var(--ma2-quiet)') + ';">' + (P.n ? P.W + '–' + P.L : DASH) + '</span><span' + (g === 'small' ? ' title="small sample · n=' + P.n + '"' : '') + ' style="font-size:12.5px; font-weight:600; color:var(--ma2-grey); white-space:nowrap;">' + esc(pct) + '</span></div></div>'
       + tiles + (P.eds.length ? '<div style="' + TR_G + ' padding:9px 18px; border-top:1px solid ' + W(6) + '; font-size:11.5px; font-weight:600; color:var(--ma2-grey);"><span>Date</span><span>Opponent</span><span>Rd</span><span>Score</span><span style="text-align:center;">Sets</span><span title="His closing price" style="text-align:right;">Price</span><span title="The opponent\'s closing price" style="text-align:right;">Opp.</span><span></span></div>'
-        + '<div style="padding:0 10px 8px; display:flex; flex-direction:column;">' + rows + '</div>' : empty)
+        + '<div style="padding:0 10px 8px; display:flex; flex-direction:column;">' + rows + '</div>'
+        // trSrcLine: counts the B marks actually drawn (folded editions excluded) — never a mark the reader cannot see
+        + ((n => n ? '<div class="tr-srcline" style="padding:0 18px 10px; text-align:center; ' + MONO + ' font-size:10.5px; color:var(--ma2-grey);">Closing odds · Pinnacle, Bet365 where missing (' + n + ') · B = Bet365</div>' : '')((rows.match(/font-size:7px; font-weight:700; color:var\(--ma2-grey\);">B</g) || []).length)) : empty)
       + '<div style="margin-top:auto; display:flex; justify-content:center; padding:12px 18px 16px; border-top:1px solid ' + W(6) + ';">' + btn(any ? (more ? 'Show fewer' : rest > 0 ? ml : 'All ' + unit[1] + ' shown') : ml, any ? 'trSet({recMoreAll:' + !more + '})' : '', { color: any && (rest > 0 || more) ? 'var(--ma2-text)' : 'var(--ma2-grey)' }) + '</div></div>';
   }
   function maTournamentV2(m) {
@@ -1383,8 +1395,11 @@
       if (series.length > 1) { const d = +(series[series.length - 1].v - series[0].v).toFixed(2), yrs = +series[series.length - 1].y - +series[0].y, thr = useCpi ? 1 : 0.03;
         word = Math.abs(d) < thr ? 'Holding steady' : d > 0 ? 'Trending faster' : 'Trending slower'; delta = (d >= 0 ? '+' : '−') + Math.abs(d).toFixed(useCpi ? 1 : 2) + ' over ' + yrs + ' yr' + (yrs === 1 ? '' : 's'); }
       const pts = series.map((p, i) => ({ x: X(i), y: Y(p.v), v: p.v, yr: p.y }));
-      const poly = pts.map(p => p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' ');
-      const area = pts.length > 1 ? 'M' + pts[0].x.toFixed(1) + ',104 L' + pts.map(p => p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' L') + ' L' + pts[pts.length - 1].x.toFixed(1) + ',104 Z' : '';
+      // defect brief 2026-10-24 item 6: a season with no reading breaks the line (and its fill)
+      const segs = []; pts.forEach((p, i) => { if (!i || +p.yr - +pts[i - 1].yr > 1) segs.push([]); segs[segs.length - 1].push(p); });
+      const runs = segs.filter(g => g.length > 1);
+      const poly = runs.map(g => g.map(p => p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' '));
+      const area = runs.map(g => 'M' + g[0].x.toFixed(1) + ',104 L' + g.map(p => p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' L') + ' L' + g[g.length - 1].x.toFixed(1) + ',104 Z').join(' ');
       const tabs = cpi ? '<div style="display:inline-flex; gap:2px; background:var(--ma2-track); border:1px solid ' + W(10) + '; border-radius:8px; padding:2px; margin-bottom:18px;">'
         + [['speed', 'Court speed', 'Tennis Abstract court speed'], ['cpi', 'CPI', 'Court Pace Index, courtspeed.com']].map(t => { const on = (S.metric || 'speed') === t[0];
           return '<span class="seg ma2-seg" role="button" tabindex="0" onclick="trSet({metric:\'' + t[0] + '\'})" title="' + t[2] + '" style="padding:4px 10px; border-radius:6px; font-size:11.5px; font-weight:' + (on ? 700 : 600) + '; color:' + (on ? 'var(--ma2-text)' : 'var(--ma2-grey)') + '; background:' + (on ? 'var(--ma2-lifted)' : 'transparent') + '; box-shadow:inset 0 0 0 1px ' + (on ? W(14) : 'transparent') + '; cursor:pointer; white-space:nowrap;">' + t[1] + '</span>'; }).join('') + '</div>' : '';
@@ -1396,7 +1411,7 @@
         + '<div style="flex:1 1 360px; min-width:0;"><div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap;"><span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey);">' + (useCpi ? 'Court Pace Index' : 'Abstract court speed') + (series.length ? ' · ' + series[0].y + (series.length > 1 ? '–' + series[series.length - 1].y : '') : '') + '</span>'
         + '<span style="display:flex; align-items:baseline; gap:10px;"><span style="font-size:12.5px; font-weight:700; color:' + (series.length > 1 ? 'var(--ma2-text)' : 'var(--ma2-quiet)') + ';">' + word + '</span><span style="' + MONO + ' font-size:11.5px; color:var(--ma2-grey);">' + delta + '</span></span></div>'
         + '<div style="position:relative; height:104px; margin-top:6px;"><svg viewBox="0 0 360 104" preserveAspectRatio="none" width="100%" height="100%" style="position:absolute; inset:0; display:block;" fill="none"><defs><linearGradient id="ma2TrFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--ma2-white)" stop-opacity="0.10"></stop><stop offset="1" stop-color="var(--ma2-white)" stop-opacity="0"></stop></linearGradient></defs>'
-        + (area ? '<path d="' + area + '" fill="url(#ma2TrFill)"></path>' : '') + (pts.length > 1 ? '<polyline points="' + poly + '" fill="none" stroke="var(--ma2-text)" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"></polyline>' : '') + '</svg>'
+        + (area ? '<path d="' + area + '" fill="url(#ma2TrFill)"></path>' : '') + poly.map(pl => '<polyline points="' + pl + '" fill="none" stroke="var(--ma2-text)" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"></polyline>').join('') + '</svg>'
         + pts.map(p => { const l = (p.x / 360 * 100).toFixed(2) + '%', t = p.y.toFixed(1) + 'px';
           return '<span style="position:absolute; left:' + l + '; top:' + t + '; width:8px; height:8px; box-sizing:border-box; border-radius:50%; background:var(--ma2-card); border:1.75px solid var(--ma2-text); transform:translate(-50%,-50%);"></span>'
             + '<span style="position:absolute; left:' + l + '; top:' + t + '; transform:translate(-50%,calc(-100% - 11px)); ' + MONO + ' font-size:11.5px; font-weight:700; color:var(--ma2-text); white-space:nowrap;">' + p.v.toFixed(useCpi ? 1 : 2) + '</span>'
@@ -1558,7 +1573,9 @@
     const row = (l, r) => '<div style="display:flex; align-items:center; justify-content:space-between; gap:12px 16px; flex-wrap:wrap;">' + l + (r || '') + '</div>';
     const career = fcard(row('<span style="display:flex; align-items:center; gap:12px; min-width:0;">' + av(name, pk, 40, i ? RING_B(1.5) : RING_A(1.5), 12.5)
       + '<span style="display:flex; flex-direction:column; gap:3px; min-width:0;"><span style="font-size:15px; font-weight:800; color:var(--ma2-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(name) + '</span><span style="font-size:12.5px; color:var(--ma2-grey);">' + esc('Career · ' + cn + (cn === 1 ? ' match' : ' matches')) + '</span></span></span>', recPair(enRec(cr), pct, true))
-      + ovList(i, cc, api, { surfs }));
+      + ovList(i, cc, api, { surfs })
+      // modal-overview.md (founder 2026-11-23): the card footnote counts the matches with no surface on record
+      + (unk ? (nU => '<span style="font-size:11.5px; color:var(--ma2-grey);">' + nU + (nU === 1 ? ' match' : ' matches') + ' with no surface on record</span>')(cc.unknown && cc.unknown.won + cc.unknown.lost > 0 ? cc.unknown.won + cc.unknown.lost : resid) : ''));
     const yr = String(new Date().getFullYear()), sr = real.find(r => String(r.year) === yr) || null, sg = sr ? api.tierGridCells(sr, tier) : null;
     const st = sg ? sg.total : null, sn = st ? st.won + st.lost : 0, sgm = maGate(sn).mode;
     const tick = {}; surfs.forEach(([k]) => { const c = cc && cc[k], n = c ? c.won + c.lost : 0; if (n && maGate(n).mode !== 'nopct') tick[k] = c.won / n * 100; });
