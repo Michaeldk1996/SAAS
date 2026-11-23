@@ -33,6 +33,8 @@ const PS2 = between('// PLAYING STYLE — TEN-340', "// The modal header's two p
 const MDNA = between('const MDNA_AXES = [', '// =====================================================================\n// PLAYING STYLE — TEN-340');
 const PS_TOUR_META_SRC = /const PS_TOUR_META = \(\(\) => \{[\s\S]*?\n\}\)\(\);/.exec(html)[0];
 const PS_ARCH_SRC = /const PS_ARCHETYPES = \[[\s\S]*?\n\];/.exec(html)[0];
+// Match analysis rebuild (2026-11-23): the tab renderer is maStyleV2 in match-analysis-v2.js (TEN340_MA2 = a mutated copy)
+const MA2_SRC = readFileSync(process.env.TEN340_MA2 || join(HERE, 'match-analysis-v2.js'), 'utf8');
 const S = new Function(`
   const document = { addEventListener(){}, getElementById(){ return null; }, querySelector(){ return null; }, querySelectorAll(){ return []; },
     head: { appendChild(){} }, createElement(){ return { set textContent(v){} }; } };
@@ -57,7 +59,9 @@ const S = new Function(`
   ${TEN263}
   ${MDNA}
   ${PS2}
-  return { buildStyleSection, ps2Record, ps2Edge, ps2Meeting, ps2IsWalkover, ps2StateFor, _maRowReg, STY, ELO,
+  const __MA2 = (function(){ const window = {}; ${MA2_SRC}; return window; })();
+  const maStyleV2 = __MA2.maStyleV2;
+  return { buildStyleSection, ps2Record, ps2Edge: typeof ps2Edge === 'function' ? ps2Edge : null, ps2Meeting, ps2IsWalkover, ps2StateFor, _maRowReg, STY, ELO,
     click(code){ return eval(code); },   // runs a rendered onclick inside the page block's own scope (_ps2, ps2Set)
     set matrix(v){ psMatrixData = v; }, set dna(v){ _mdna = v; }, set styles(v){ playerStyles = v; }, get tips(){ return tips; } };
 `)();
@@ -86,139 +90,123 @@ function match(p1, p2, over){ return Object.assign({ id: 'fx-' + p1 + p2, p1, p2
 const openMu = m => { S.ps2StateFor(m).mu = true; return m; };
 function setup(){ S.matrix = matrix(); S.styles = { byKey: { x: 1 } }; S.dna = { byKey: {}, meta: {} }; for (const k of Object.keys(S.STY)) delete S.STY[k]; for (const k of Object.keys(S.ELO)) delete S.ELO[k]; }
 
-// Mutation: the mirror falls through to the "below the floor" branch (psCellFor's diagonal null read as a thin cell).
-test('mirror matchup (G5): the 50/50 matrix copy, the diagonal n, no surface tiles', () => {
+// ---- 2026-11-23 design (LOCKED 2026-11-21): Playing style card (radar + comparison) → Record against each style (two
+// player boxes Record · Win rate · Vs other styles, then two match lists). Helpers read the rebuilt markup.
+const recTiles = h => [...h.matchAll(/>(Record|Win rate|Vs other styles)<\/span><span style="[^"]*color:([^;]+);">([^<]*)</g)].map(x => ({ label: x[1], color: x[2], v: x[3] }));
+const boxTiles = (h, i) => recTiles(h).slice(i * 3, i * 3 + 3);
+const lists = h => h.split('overflow:hidden; display:flex; flex-direction:column; min-width:0;">').slice(1);
+const listState = c => ({ showing: (/>Showing (\d+) of (\d+)/.exec(c) || []).slice(1).map(Number), rows: (c.match(/class="seg ma2-row"/g) || []).length,
+  btn: (/onclick="(ps2Set\(\{more[AB]:(?:true|false)\}\))"[^>]*>([^<]*)</.exec(c) || [])[2] || (/>(All matches shown)</.exec(c) || [])[1] || null,
+  onclick: (/onclick="(ps2Set\(\{more[AB]:(?:true|false)\}\))"/.exec(c) || [])[1] });
+
+// RENDERER GAP (modal-playing-style.md "Data": Style matchup = matchup-matrix.json, the cell in p1's direction, the lean,
+// the three surface tiles; a mirror = the 50/50 copy, G5). The rebuilt tab draws no Style matchup and ps2Edge is deleted;
+// no founder ruling drops it (CLAUDE.md carve-out 3). This check stays red until the matchup is back or ruled out.
+test('style matchup: the matrix cell in p1\'s direction, the lean and the surface tiles; a mirror reads 50/50 (G5)', () => {
+  setup(); S.STY['A. Arnaldi'] = { archetype_label: AB }; S.STY['B. Baez'] = { archetype_label: CP };
+  const t = text(S.buildStyleSection(match('A. Arnaldi', 'B. Baez')));
+  assert.match(t, /Counterpunchers beat Attacking Baseliners/, 'the matchup head');
+  assert.match(t, /1,592/, 'the cell\'s tour meetings');
+  assert.match(t, /48%.*52%/, 'p1\'s direction first');
   setup(); S.STY['J. Sinner'] = { archetype_label: ACE }; S.STY['C. Alcaraz'] = { archetype_label: ACE };
-  const h = S.buildStyleSection(openMu(match('J. Sinner', 'C. Alcaraz', { p1StyleMeetings: { [ACE]: rows(14, 15) }, p2StyleMeetings: { [ACE]: rows(15, 12) } })));
-  const t = text(h);
-  assert.match(t, /Mirror matchup: both play as All Court Elites n=39 tour meetings · same archetype 50% 50%/);
-  assert.match(t, /Style gives neither player an edge/);
-  assert.doesNotMatch(h, /class="ps2-tile"/, 'no surface tiles on a mirror (G5)');
-  // the personal record's matrix avg on a mirror = the diagonal's 50%
-  assert.match(t, /Sinner vs All Court Elites W14–L15 48% n=29 .*Matrix avg 50% −2/);
-});
-
-// Mutation: the matrix cell read in p2's direction (the leader's name and the percentages swap).
-test('cross-archetype cell: p1 direction, the lean, three surface tiles (today tagged, below-floor dashed with its n)', () => {
-  setup(); S.STY['A. Arnaldi'] = { archetype_label: AB }; S.STY['B. Baez'] = { archetype_label: CP, variety: true };
-  const h = S.buildStyleSection(openMu(match('A. Arnaldi', 'B. Baez')));
-  const t = text(h);
-  assert.match(t, /Counterpunchers beat Attacking Baseliners n=1,592 tour meetings 48% 52% Attacking Baseliner 50% coin-flip Counterpuncher/);
-  assert.match(t, /Leans \+2 pts to the counterpuncher/);
-  assert.match(h, /\+ Variety Player/);
-  const tile = sf => text(new RegExp(`data-ps2-surface="${sf}"[\\s\\S]*?</div>\\s*</div>|data-ps2-surface="${sf}"[\\s\\S]*?</span></div>`).exec(h)[0]);
-  assert.match(tile('Clay'), /Clay n=447 48% – 52%/);
-  assert.match(tile('Hard'), /Hard n=968 47% – 53% Today's surface/);
-  assert.match(tile('Grass'), /Grass n=12 — – —/);
-  // each box's "Matrix avg" in ITS player's direction: Arnaldi (AB) v CP = 48, Baez (CP) v AB = 52
-  assert.match(text(/data-ps2-side="a"[\s\S]*?data-ps2-side="b"/.exec(h)[0]), /Matrix avg 48%/);
-  assert.match(text(/data-ps2-side="b"[\s\S]*?class="ps2-card ps2-matchup"/.exec(h)[0]), /Matrix avg 52%/);
-  // an unknown (or carpet) surface tags no tile as today's
-  assert.doesNotMatch(text(S.buildStyleSection(openMu(match('A. Arnaldi', 'B. Baez', { surface: '' })))), /Today's surface/);
-});
-
-// Mutation: the lean threshold dropped (a 51% cell "leans +1 pts") — the live rule: under 2 points is a coin-flip.
-test('lean: under 2 points reads as a coin-flip on style', () => {
-  setup(); const M = matrix(); M.matrix[CP][AB] = { pct: 51, n: 900 }; M.matrix[AB][CP] = { pct: 49, n: 900 }; S.matrix = M;
-  S.STY['A. Aa'] = { archetype_label: CP }; S.STY['B. Bb'] = { archetype_label: AB };
-  assert.match(text(S.buildStyleSection(match('A. Aa', 'B. Bb'))), /Effectively a coin-flip on style alone · Show matchup/, 'the collapsed head carries the lean');
+  assert.match(text(S.buildStyleSection(match('J. Sinner', 'C. Alcaraz'))), /Style gives neither player an edge/, 'the mirror copy');
 });
 
 // Mutation: the walkover filter removed from ps2Record (a W/O counted as a win / loss, N2).
-// Founder 2026-10-22 (N6 reversed): the walkover is LISTED in Career meetings — WO under the date, "– " scores and prices —
-// and counted in no W–L, n or rate; the "Showing k of N" counts the listed rows and says how many are walkovers.
-test('personal record (N2 + 2026-10-22): a walkover is listed, never in the W–L or n; a retirement counts', () => {
+// Founder 2026-10-22 (N6 reversed): the walkover is LISTED — WO under the date, "–" score and sets, "—" prices, no sheet —
+// and counted in no record, n or rate; the list chip counts the listed rows and says how many are walkovers.
+test('personal record (N2 + 2026-10-22): a walkover is listed, never in the record or rate; a retirement counts', () => {
   setup(); S.STY['A. Aa'] = { archetype_label: CP }; S.STY['B. Bb'] = { archetype_label: AB };
   const extra = [{ won: true, opponent: 'W O', surface: 'hard', tournament: 'Chengdu', result: 'W/O', date: '2026-01-05', round: 'R16', oddsSelf: null, oddsOpp: null },
     { won: true, opponent: 'R T', surface: 'hard', tournament: 'Chengdu', result: '6-4 3-1 RET', date: '2026-01-04', round: 'R32', oddsSelf: 1.4, oddsOpp: 3 }];
-  const m = match('A. Aa', 'B. Bb', { p1StyleMeetings: { [AB]: rows(8, 4, extra) }, p2StyleMeetings: { [CP]: [] } });
+  const m = match('A. Aa', 'B. Bb', { p1StyleMeetings: { [AB]: rows(8, 4, extra), [ACE]: rows(6, 6) }, p2StyleMeetings: { [CP]: [] } });
   const R = S.ps2Record(m, 0);
   assert.equal(R.w, 9); assert.equal(R.l, 4); assert.equal(R.n, 13);
   assert.ok(!R.rows.some(r => /w\/o/i.test(r.result)), 'the counted rows hold no walkover');
   assert.equal(R.listRows.filter(r => /w\/o/i.test(r.result)).length, 1, 'the listed rows do');
-  const html = S.buildStyleSection(m);
-  assert.match(text(html), /Aa vs Attacking Baseliners W9–L4 69% n=13 .*\+5 wins .*Matrix avg 52% \+17 .*Career meetings Showing 6 of 14 · 1 walkover, not counted/);
-  assert.match(html, /data-ps2-wo="1"/, 'the walkover row is painted');
+  const h = S.buildStyleSection(m), A = boxTiles(h, 0);
+  assert.deepEqual(A.map(x => x.v), ['9–4', '69%', '+19 pts'], 'record 9–4 over 13 played, 69%, v the other styles\' 50%');
+  const L = lists(h)[0];
+  assert.match(L, />Showing 6 of 14 · 1 w\/o</, 'the walkover is one of the listed rows and named');
+  const wo = /<div class="seg ma2-row"[^>]*>(?:(?!<div class="seg ma2-row").)*?>WO<\/span>[\s\S]*?(?=<div class="seg ma2-row"|<div style="display:flex; align-items:baseline)/.exec(L);
+  assert.ok(wo, 'the walkover row is painted, WO under the date');
+  assert.doesNotMatch(wo[0].slice(0, 30), /onclick/, 'a walkover opens no sheet');
+  assert.match(text(wo[0]), /W\. O – – — —/, '"–" score and sets, "—" prices');
   S.ps2StateFor(m).moreA = true;
-  assert.match(S.buildStyleSection(m), /6-4, 3-1<span class="ma-ret"[^>]*>ret\.<\/span>/, 'the shared scores cell marks the retirement');
+  assert.match(text(lists(S.buildStyleSection(m))[0]), /6-4, 3-1 ret\./, 'the retirement keeps its scores and "ret."');
 });
 
 // Mutation: the box keeps its own ladder (a % on n 1–4) instead of the one gate (D2).
-test('D2 gate: n 0 "—", n 3 W–L only, n 7 grey + footnote, n 12 full', () => {
+test('D2 gate: n 0 "—", n 3 record only, n 7 grey + "small sample", n 12 full', () => {
   setup(); S.STY['A. Aa'] = { archetype_label: CP }; S.STY['B. Bb'] = { archetype_label: AB };
-  const box = (w, l) => { const h = S.buildStyleSection(match('A. Aa', 'B. Bb', { p1StyleMeetings: { [AB]: rows(w, l) }, p2StyleMeetings: { [CP]: [] } }));
-    return { h, a: /data-ps2-side="a"[\s\S]*?(?=data-ps2-side="b")/.exec(h)[0] }; };
-  let b = box(0, 0); assert.match(text(b.a), /W?— .*No career meetings/); assert.doesNotMatch(text(b.a), /0%|NaN/);
-  b = box(2, 1); assert.match(text(b.a), /W2–L1 n=3/); assert.doesNotMatch(text(b.a), /W2–L1 \d+%/);
-  assert.match(b.a, /right:50%; top:0; bottom:0; width:0%/, 'no tug fill on n 1–4 (a bar whose length is a rate follows the gate)');
-  b = box(5, 2); assert.match(b.a, /data-ma-gate="small"/); assert.match(text(b.h), /Grey = small sample \(5–9 meetings\)/);
-  b = box(8, 4); assert.match(b.a, /data-ma-gate="full"[^>]*>67%/); assert.doesNotMatch(text(b.h), /Grey = small sample/);
+  const box = (w, l) => { const h = S.buildStyleSection(match('A. Aa', 'B. Bb', { p1StyleMeetings: { [AB]: rows(w, l), [ACE]: rows(10, 10) }, p2StyleMeetings: { [CP]: [] } }));
+    return { h, t: boxTiles(h, 0) }; };
+  let b = box(0, 0); assert.deepEqual(b.t.slice(0, 2).map(x => x.v), ['—', '—']); assert.doesNotMatch(text(b.h), /\b0%|NaN/);
+  b = box(2, 1); assert.deepEqual(b.t.slice(0, 2).map(x => x.v), ['2–1', '—'], 'n 1–4: the record, no rate');
+  b = box(5, 2); assert.equal(b.t[1].v, '71%'); assert.equal(b.t[1].color, 'var(--ma2-grey)', 'n 5–9 greyed');
+  // modal-analysis.md D2: "n 5–9 greyed + 'small sample' note" — RENDERER GAP: the rebuilt Win rate tile carries no note
+  assert.match(b.h.slice(b.h.indexOf('>Win rate<') - 400, b.h.indexOf('>Win rate<') + 400), /small sample/i, 'the 5–9 small-sample note');
+  b = box(8, 4); assert.equal(b.t[1].v, '67%'); assert.equal(b.t[1].color, 'var(--ma2-white)', 'n 12 full');
 });
 
-// Mutation: the list drawn by a tab-local row renderer / a row that stops opening the shared sheet (DoD 8).
-// TEN-380: each player's meetings sit under his record box, always shown (the reference); 6 rows under "Showing 6 of N".
-test('career meetings (DoD 8): the shared rows under each record, 6 shown + "Show N more matches" (G18), every row opens the shared sheet', () => {
+// RENDERER GAP (modal-analysis.md D2: "Never render 0%, 0.0% or NaN% at n = 0"): a player with no meeting against any
+// other style gets "−NaN pts" and "He wins NaN% against all other styles" (psRecordCard: maGate(0) is 'none', not 'nopct').
+test('Vs other styles: no meeting against another style reads "—", never NaN', () => {
+  setup(); S.STY['A. Aa'] = { archetype_label: CP }; S.STY['B. Bb'] = { archetype_label: AB };
+  const h = S.buildStyleSection(match('A. Aa', 'B. Bb', { p1StyleMeetings: { [AB]: rows(8, 4) }, p2StyleMeetings: { [CP]: rows(6, 6) } }));
+  assert.doesNotMatch(text(h), /NaN/);
+  assert.equal(boxTiles(h, 0)[2].v, '—');
+});
+
+// Mutation: a row that stops opening the shared sheet. Each player's list shows 6 rows under "Showing 6 of N" + "Show N
+// more matches"; every played row opens the shared sheet with the player's key, name, date and opponent.
+test('career meetings: 6 shown + "Show N more matches", every played row opens the shared sheet', () => {
   setup(); S.STY['A. Aa'] = { archetype_label: CP }; S.STY['B. Bb'] = { archetype_label: AB };
   const m = match('A. Aa', 'B. Bb', { p1StyleMeetings: { [AB]: rows(7, 5) }, p2StyleMeetings: { [CP]: rows(1, 1) } });
-  const h = S.buildStyleSection(m);
-  const card = /class="ps2-meet" data-ps2-side="a"[\s\S]*?(?=data-ps2-side="b")/.exec(h)[0];
-  assert.match(card, /class="ma-rows ma-rows-table"/, 'the shared table variant');
-  assert.match(text(card), /Career meetings Showing 6 of 12/); assert.match(text(card), /Show 6 more matches/);
-  assert.match(card, /<span class="seg ps2-more"[^>]*color:var\(--text\);/, 'the toggle word is --text, never --link');
-  const ids = [...card.matchAll(/maOpenRowSheet\('(mr\d+)', this\)/g)].map(x => x[1]);
+  const h = S.buildStyleSection(m), [A, B] = lists(h);
+  assert.match(text(A), /Showing 6 of 12/); assert.match(text(A), /Show 6 more matches/);
+  const ids = [...A.matchAll(/class="seg ma2-row" onclick="event\.stopPropagation\(\); maOpenRowSheet\('(mr\d+)', this\)"/g)].map(x => x[1]);
   assert.equal(ids.length, 6, 'every shown row opens the sheet');
   const d = S._maRowReg[ids[0]];
   assert.equal(d.key, '1'); assert.equal(d.name, 'A. Aa'); assert.ok(d.date && d.opp, 'joined by date + opponent');
-  const b = /class="ps2-meet" data-ps2-side="b"[\s\S]*$/.exec(h);
-  assert.ok(b && /Showing 2 of 2/.test(text(b[0])), 'B\'s meetings are listed too, no click needed');
+  assert.match(text(B), /Showing 2 of 2/, 'B\'s meetings are listed too, no click needed');
   S.ps2StateFor(m).moreA = true;
-  assert.match(text(S.buildStyleSection(m)), /Showing 12 of 12 .*Show fewer/);
+  assert.match(text(lists(S.buildStyleSection(m))[0]), /Showing 12 of 12 .*Show fewer/);
 });
 
-// Mutations: the two cards share one expanded flag; the columns stretched again (align-items:stretch), the card flexed to
-// the column, or the control pinned to the card's bottom (margin-top:auto) — with the columns stretched, expanding one
-// player's list stretched the other card and its "Show N more" control sat far below its own rows, so its new rows
-// rendered off-screen and the click looked dead (T. Paul v V. Vacherot, Shanghai 2026 R32).
-test('career meetings: each card expands and collapses on its own; counters = rows; no stretched card', () => {
+// Mutation: the two lists share one expanded flag. (Dropped with the 2026-11-23 design: the T. Paul v V. Vacherot layout
+// checks — columns top-aligned, no flex:1 card, no margin-top:auto control — the locked design stretches the lists and pins
+// the control to the foot.)
+test('career meetings: each list expands and collapses on its own; counters = rows', () => {
   setup(); S.STY['T. Paul'] = { archetype_label: CP }; S.STY['V. Vacherot'] = { archetype_label: AB };
   const m = match('T. Paul', 'V. Vacherot', { p1StyleMeetings: { [AB]: rows(30, 15) }, p2StyleMeetings: { [CP]: rows(12, 8) } });
-  const card = (h, sd) => new RegExp(`class="ps2-meet" data-ps2-side="${sd}"[\\s\\S]*?(?=class="ps2-meet" data-ps2-side="b"|class="ps2-card ps2-matchup")`).exec(h)[0];
-  const read = () => { const h = S.buildStyleSection(m); return ['a', 'b'].map(sd => { const c = card(h, sd), t = text(c);
-    return { showing: /Showing (\d+) of (\d+)/.exec(t).slice(1).map(Number), rows: (c.match(/data-ps2-row="/g) || []).length,
-      btn: (/<span class="seg ps2-more"[^>]*>([^<]*)</.exec(c) || [])[1] || null, onclick: (/class="seg ps2-more" onclick="([^"]*)"/.exec(c) || [])[1] }; }); };
-  const press = sd => { const st = read()[sd === 'a' ? 0 : 1]; assert.ok(st.onclick, 'card ' + sd + ' has its control'); S.click(st.onclick); };
+  const read = () => lists(S.buildStyleSection(m)).map(listState);
+  const press = sd => { const st = read()[sd === 'a' ? 0 : 1]; assert.ok(st.onclick, 'list ' + sd + ' has its control'); S.click(st.onclick); };
   const check = (a, b) => { const [A, B] = read();
     assert.deepEqual(A.showing, [a, 45]); assert.equal(A.rows, a, 'A: the counter = the rows drawn');
     assert.deepEqual(B.showing, [b, 20]); assert.equal(B.rows, b, 'B: the counter = the rows drawn');
     assert.equal(A.btn, a === 45 ? 'Show fewer' : 'Show 39 more matches'); assert.equal(B.btn, b === 20 ? 'Show fewer' : 'Show 14 more matches'); };
   check(6, 6);
-  press('a'); check(45, 6);       // A expands, B untouched
-  press('b'); check(45, 20);      // both expanded at once
-  press('a'); check(6, 20);       // collapsing A leaves B expanded
+  press('a'); check(45, 6);
+  press('b'); check(45, 20);
+  press('a'); check(6, 20);
   press('b'); check(6, 6);
-  press('b'); check(6, 20);       // B first (the right-hand card), A untouched
+  press('b'); check(6, 20);
   press('a'); check(45, 20);
-  // 6 or fewer meetings: every row, no control — on the left card and on the right one
   for (const [w, l, sd] of [[4, 2, 'a'], [3, 2, 'b']]) {
     const m2 = match('T. Paul', 'V. Vacherot', sd === 'a' ? { p1StyleMeetings: { [AB]: rows(w, l) }, p2StyleMeetings: { [CP]: rows(12, 8) } } : { p1StyleMeetings: { [AB]: rows(30, 15) }, p2StyleMeetings: { [CP]: rows(w, l) } });
-    const c = card(S.buildStyleSection(m2), sd);
-    assert.match(text(c), new RegExp(`Showing ${w + l} of ${w + l}`)); assert.equal((c.match(/data-ps2-row="/g) || []).length, w + l);
-    assert.doesNotMatch(c, /ps2-more/, 'no Show more control on ' + (w + l) + ' meetings');
+    const st = listState(lists(S.buildStyleSection(m2))[sd === 'a' ? 0 : 1]);
+    assert.deepEqual(st.showing, [w + l, w + l]); assert.equal(st.rows, w + l);
+    assert.equal(st.onclick, undefined, 'no Show more control on ' + (w + l) + ' meetings'); assert.equal(st.btn, 'All matches shown');
   }
-  // layout: each column as tall as its own content; the card never flexes to a stretched column, the control never pinned
-  const h = S.buildStyleSection(m);
-  assert.match(h, /class="ps2-personal-grid" style="[^"]*align-items:start;/, 'the two columns align to the top');
-  assert.doesNotMatch(/<div class="ps2-meet"[^>]*>/.exec(h)[0], /flex:1/, 'the meetings card does not stretch');
-  assert.doesNotMatch(/<span class="seg ps2-more"[^>]*>/.exec(h)[0], /margin-top:auto/, 'the control sits under its own rows');
 });
 
-// Mutation: a player with no style label reads "No career meetings on record" (the meetings are only tracked between
-// classified players — the claim would be false).
-test('personal record: an unclassified player\'s own box says so, never "no meetings"', () => {
+// Mutation: a player with no style label reads "No matches" (the meetings are only tracked between classified players).
+test('personal record: an unclassified player\'s own box says so, never "no matches"', () => {
   setup(); S.STY['B. Bb'] = { archetype_label: CP };
   const h = S.buildStyleSection(match('A. Aa', 'B. Bb', { p1StyleMeetings: null, p2StyleMeetings: null }));
-  const a = text(/data-ps2-side="a"[\s\S]*?data-ps2-side="b"/.exec(h)[0]);
-  assert.match(a, /Aa's playing style is not classified/); assert.doesNotMatch(a, /No career meetings/);
+  const a = h.slice(h.indexOf('>Record against each style<'), h.indexOf('B. Bb</span>', h.indexOf('>Record against each style<')));
+  assert.match(text(a), /Aa’s playing style is not classified/); assert.doesNotMatch(text(a), /No matches/);
 });
 
 // Mutation: the retirement's unfinished set counted in the sets tally (N2 rule e).
@@ -245,119 +233,107 @@ function dna(){
     2: { surfaces: { Hard: { last52: node(293.9, 160.1, 245.5, 1.36, 6, 96), sinceBase: since(290.1, 159.6, 225.9, 1.34), elo: { rating: 2050, pct: 99 } } } } } };
 }
 
-// Mutation: the tooltip drops the population / n (or states the wrong one); the window label back to "Career".
-test('DNA: true percentiles with the population and n on the shared tooltip; "Since Mar 2024", never "Career"', () => {
+const axisTip = (h, name) => { const x = new RegExp(`<span title="([^"]*)"[^>]*>\\s*<span[^>]*>${name}</span>`).exec(h); assert.ok(x, 'axis ' + name + ' has its hover'); return x[1].replace(/&lt;br&gt;/g, ' | ').replace(/&amp;/g, '&'); };
+const dnaCard = h => h.slice(0, h.indexOf('>Record against each style<'));
+const polys = h => [...h.matchAll(/<polygon points="([^"]*)"[^>]*stroke="var\(--ma2-(blue|text)\)"/g)].map(x => ({ who: x[2] === 'blue' ? 'a' : 'b', pts: x[1].trim().split(/\s+/) }));
+
+// Mutation: the hover drops the population / n (or states the wrong one); the window label back to "Career".
+test('DNA: true percentiles with the population and n on the axis hover; "Since Mar 2024", never "Career"', () => {
   setup(); S.dna = dna(); S.ELO['J. Sinner'] = 2234; S.ELO['C. Alcaraz'] = 2071;
   const m = match('J. Sinner', 'C. Alcaraz');
   let h = S.buildStyleSection(m);
-  const tip = k => { const x = new RegExp(`data-ps2-axis="${k}" tabindex="0" data-aotip="([^"]*)"`).exec(h); assert.ok(x, 'axis ' + k + ' has the shared tooltip'); return x[1].replace(/&lt;br&gt;/g, ' | ').replace(/&amp;/g, '&'); };
-  assert.match(tip('serve'), /Sinner: 304 · percentile 99\.0 .*Rank among 178 rated ATP main-tour players with &gt;= 10 matches \(Hard, last 52 weeks\)/);
-  assert.match(tip('elo'), /current Tennis Abstract rating, the same on both views .*Rank among 272 /);
-  assert.match(text(h), /Last 52 weeks Since Mar 2024/); assert.doesNotMatch(text(dnaOf(h)), /\bCareer\b/);
-  assert.ok(S.tips > 0, 'the positioned tooltip listener is initialised');
+  assert.match(axisTip(h, 'Serve'), /Sinner: 304 · percentile 99\.0 .*Rank among 178 rated ATP main-tour players with &gt;= 10 matches \(Hard, last 52 weeks\)/);
+  assert.match(axisTip(h, 'Surface Elo'), /current Tennis Abstract rating, the same on both views .*Rank among 272 /);
+  assert.match(text(dnaCard(h)), /Last 52 weeks Since Mar 2024/); assert.doesNotMatch(text(dnaCard(h)), /\bCareer\b/);
   S.ps2StateFor(m).win = 'since';
   h = S.buildStyleSection(m);
-  assert.match(tip('serve'), /since Mar 2024 .*Rank among 210 /);
-  assert.equal(tip('underPressure'), 'No since-Mar-2024 figure yet; see the career view.', 'founder Q14: the since view dashes Under pressure');
-  assert.match(text(h), /percentile vs the api-tennis field · since Mar 2024/);
+  assert.match(axisTip(h, 'Serve'), /since Mar 2024 .*Rank among 210 /);
+  assert.equal(axisTip(h, 'Under pressure'), 'No since-Mar-2024 figure yet; see the career view.', 'founder Q14: the since view dashes Under pressure');
 });
 
 // Founder Q14 (TEN-312 5262e790). Mutation: falling back to the career scope prints a number.
-test('DNA (Q14): on the since view Under pressure is "—" for both players — no number, shape point, percentile or Δ', () => {
+// RENDERER GAP: the rebuilt radar draws the since-view Under pressure vertex at the centre (a 0th-percentile point);
+// Q14 = no shape point for that axis.
+test('DNA (Q14): on the since view Under pressure is "—" for both players — no number, no shape point', () => {
   setup();
-  const D = dna(); D.byKey[2].surfaces.Hard.last52.sample.matches = 40; S.dna = D;   // both players above the floor
-  const m = match('J. Sinner', 'C. Alcaraz'); S.ps2StateFor(m).prof = true;
-  const TIP = 'No since-Mar-2024 figure yet; see the career view.';
-  const axis = h => /data-ps2-axis="underPressure" tabindex="0" data-aotip="([^"]*)"[\s\S]*?<\/span><\/span><\/span>/.exec(h);
-  const row = h => /<div class="ps2-prow" data-ps2-axis="underPressure"[\s\S]*?<\/div><\/div>/.exec(h)[0];
-  const pts = (h, c) => (new RegExp(`class="${c}" points="([^"]*)"`).exec(h) || [, ''])[1].trim().split(/\s+/).filter(Boolean).length;
-  // 52-week view unchanged: both numbers, five shape points
+  const D = dna(); D.byKey[2].surfaces.Hard.last52.sample.matches = 40; S.dna = D;
+  const m = match('J. Sinner', 'C. Alcaraz');
+  const lab = h => text(new RegExp('<span title="[^"]*"[^>]*>\\s*<span[^>]*>Under pressure</span>[\\s\\S]*?</span></span></span>').exec(h)[0]);
+  const cmp = h => { const i = h.lastIndexOf('>Under pressure</span>'); return text(h.slice(h.lastIndexOf('<div style="display:grid; grid-template-columns:66px', i), h.indexOf('</div></div></div>', i))); };
   let h = S.buildStyleSection(m);
-  assert.match(text(axis(h)[0]), /Under pressure 319\.0 · 245\.5/);
-  assert.equal(pts(h, 'ps2-poly-a'), 5); assert.equal(pts(h, 'ps2-poly-b'), 5);
+  assert.match(lab(h), /Under pressure 319\.0 · 245\.5/);
+  assert.deepEqual(polys(h).map(p => p.pts.length), [5, 5]);
   S.ps2StateFor(m).win = 'since';
   h = S.buildStyleSection(m);
-  const A = axis(h);
-  assert.equal(A[1], TIP, 'the exact founder tooltip');
-  assert.match(text(A[0]), /> Under pressure — · —$/, 'both players dashed on the radar label');
-  const r = row(h);
-  assert.doesNotMatch(text(r), /\d/, 'no number, percentile or Δ in the profile row');
-  assert.match(text(r), /^— UNDER PRESSURE —$|^— Under pressure —$/);
-  assert.match(r, /class="ps2-bar-a" style="width:0%/); assert.match(r, /class="ps2-bar-b" style="width:0%/);
-  assert.equal(pts(h, 'ps2-poly-a'), 4, 'no Under pressure shape point for A'); assert.equal(pts(h, 'ps2-poly-b'), 4, 'nor for B');
-  assert.match(r, new RegExp('data-aotip="' + TIP.replace(/[.;]/g, '\\$&') + '"'), 'the profile row carries the same tooltip');
+  assert.match(lab(h), /Under pressure — · —$/, 'both players dashed on the radar label');
+  assert.match(cmp(h), /^— Under pressure — —(?: |$)/, 'no number in the comparison row: ' + cmp(h));
+  const ctr = '210.0,150.0';
+  assert.ok(polys(h).every(p => !p.pts.includes(ctr)), 'no Under pressure shape point (a vertex at the centre reads 0th percentile)');
 });
 
 // Mutation: the Elo axis read from the window's node (a windowed Elo — D6 says none exists).
-test('DNA (D6): Surface Elo is the current rating on both views and says "current"', () => {
+test('DNA (D6): Surface Elo is the current rating on both views', () => {
   setup(); S.dna = dna(); S.ELO['J. Sinner'] = 2234; S.ELO['C. Alcaraz'] = 2071;
   const m = match('J. Sinner', 'C. Alcaraz');
-  const elo = h => /data-ps2-axis="elo"[\s\S]*?<\/span><\/span><\/span>/.exec(h)[0];
-  const a = text(elo(S.buildStyleSection(m)));
+  const elo = h => text(new RegExp('<span title="[^"]*"[^>]*>\\s*<span[^>]*>Surface Elo[^<]*</span>[\\s\\S]*?</span></span></span>').exec(h)[0]);
+  const a = elo(S.buildStyleSection(m));
   S.ps2StateFor(m).win = 'since';
-  const b = text(elo(S.buildStyleSection(m)));
-  assert.equal(a, b); assert.match(a, /Surface Elo · current 2234 · 2071/);
-  S.ps2StateFor(m).prof = true;
-  assert.match(text(S.buildStyleSection(m)), /current 2234 SURFACE ELO|current 2234 Surface Elo/);
+  const b = elo(S.buildStyleSection(m));
+  assert.equal(a, b); assert.match(a, /2234 · 2071/, 'the live rating, not the file\'s 2200 / 2050');
+});
+// RENDERER GAP (D6 / modal-playing-style.md: "labelled 'current' (the radar label 'Surface Elo · current')"): the rebuilt
+// radar label reads "Surface Elo" and the comparison row "Elo on hard"; "current" is only in the hover.
+test('DNA (D6, renderer gap): the Surface Elo label says "current"', () => {
+  setup(); S.dna = dna(); S.ELO['J. Sinner'] = 2234; S.ELO['C. Alcaraz'] = 2071;
+  const h = S.buildStyleSection(match('J. Sinner', 'C. Alcaraz'));
+  assert.match(text(new RegExp('<span title="[^"]*"[^>]*>\\s*<span[^>]*>Surface Elo[^<]*</span>').exec(h)[0]), /current/, 'the radar label says "current"');
 });
 
-// Mutation: the Δ printed on the since view (or a below-floor player's polygon still drawn).
-test('DNA: Δ only on the 52-week view; a player under the 10-match floor draws no shape and says why', () => {
+// Mutation: a below-floor player's polygon still drawn. (Dropped with the 2026-11-23 design: the Δ vs 2024–now — the
+// profile rows that carried it are replaced by the comparison list.)
+test('DNA: a player under the 10-match floor draws no shape and says why', () => {
   setup(); S.dna = dna();
-  const m = match('J. Sinner', 'C. Alcaraz'); S.ps2StateFor(m).prof = true;
-  let h = S.buildStyleSection(m);
-  assert.match(text(h), /▴ 3 304/, 'serve Δ vs 2024–now');
-  assert.match(h, /class="ps2-poly-a"/); assert.doesNotMatch(h, /class="ps2-poly-b"/, 'Alcaraz has 6 matches: no shape');
-  assert.match(text(h), /Alcaraz: 6 Hard matches last 52 weeks, below the 10-match floor; not drawn\./);
-  S.ps2StateFor(m).win = 'since';
-  h = S.buildStyleSection(m);
-  assert.doesNotMatch(/class="ps2-prof"[\s\S]*$/.exec(dnaOf(h))[0], /[▴▾±]/, 'no Δ (not even ±0) on the since view');
+  const h = S.buildStyleSection(match('J. Sinner', 'C. Alcaraz'));
+  assert.deepEqual(polys(h).map(p => p.who), ['a'], 'Alcaraz has 6 matches: no shape');
+  assert.match(text(h), /No shape · Alcaraz: fewer than 10 matches last 52 weeks on hard \(6\)/);
 });
 
-// Founder ruling 8 (TEN-380 Q3, 2026-10-03): the profile BARS split leader / trailer (higher percentile solid --white-bar,
-// the other --white-bar-2, a tie both solid); the FIGURES stay white for both. Mutation: a player coloured blue, the bars
-// toned per player instead of per axis leader, or a figure greyed for the trailer.
-test('both players white (D4, palette `cur`); profile bars leader solid / trailer 45% per axis, figures white (ruling 8)', () => {
-  // B leads on Serve (A leads the rest), so a bar toned by who leads would differ between the two sides
-  const D = dna(); D.byKey[2].surfaces.Hard.last52.serve.pct = 100; D.byKey[2].surfaces.Hard.last52.sample.matches = 40;
-  setup(); S.dna = D; S.STY['J. Sinner'] = { archetype_label: CP }; S.STY['C. Alcaraz'] = { archetype_label: AB };
-  const m = match('J. Sinner', 'C. Alcaraz'); S.ps2StateFor(m).prof = true;
-  const h = S.buildStyleSection(m);
-  assert.match(h, /class="ps2-poly-a" points="[^"]+" fill="var\(--viz-guide\)" stroke="var\(--text\)"/);
-  const bars = [...h.matchAll(/class="ps2-prow" data-ps2-axis="([^"]+)"[\s\S]*?class="ps2-bar-a" style="width:([\d.]+)%; background:([^;]+);[\s\S]*?class="ps2-bar-b" style="width:([\d.]+)%; background:([^;]+);/g)];
-  assert.equal(bars.length, 5);
-  for (const [, ax, wa, ba, wb, bb] of bars) {
-    const want = (x, y) => (+x < +y ? 'var(--white-bar-2)' : 'var(--white-bar)');
-    assert.equal(ba, want(wa, wb), ax + ' bar A'); assert.equal(bb, want(wb, wa), ax + ' bar B');
-  }
-  assert.ok(bars.some(b => b[3] !== b[5]), 'control: the fixture has a trailing bar (B leads Serve, A the rest)');
-  const figs = [.../class="ps2-prof"[\s\S]*$/.exec(h)[0].matchAll(/font-size:14px; font-weight:700; color:([^;]+);/g)].map(x => x[1]);
-  assert.ok(figs.length >= 10 && figs.every(c => c === 'var(--text)'), 'every figure white: ' + [...new Set(figs)].join(', '));
-  assert.doesNotMatch(/class="ps2-card ps2-dna"[\s\S]*$/.exec(h)[0].replace(/class="seg ps2-prof-toggle"[^>]*>/, ''), /var\(--link\)[^;]*;\s*(stroke|fill)|(stroke|fill)(="|:\s*)var\(--link\)/);
+// 2026-11-23 design (STEP1 #7, founder proceeding): player one blue, player two white — replaces D4's both-white palette
+// and ruling 8's leader / trailer bars inside the box. Mutation: the two series swapped or a --link stroke.
+test('DNA colours: player one blue, player two white; no link blue', () => {
+  const D = dna(); D.byKey[2].surfaces.Hard.last52.sample.matches = 40;
+  setup(); S.dna = D;
+  const h = S.buildStyleSection(match('J. Sinner', 'C. Alcaraz'));
+  assert.match(h, /<polygon points="[^"]+" fill="color-mix\(in srgb, var\(--ma2-blue\) 16%, transparent\)" stroke="var\(--ma2-blue\)"/, 'A = blue');
+  assert.match(h, /<polygon points="[^"]+" fill="color-mix\(in srgb, var\(--ma2-text\) 7%, transparent\)" stroke="var\(--ma2-text\)"/, 'B = white');
+  assert.ok(h.indexOf('stroke="var(--ma2-text)"') < h.indexOf('stroke="var(--ma2-blue)"'), 'A drawn on top');
+  assert.doesNotMatch(h, /var\(--link\)/);
 });
 
 // Mutation: the design's review switchers / SAMPLE chip / seeded rows back in the tab.
 test('no sample data or review switcher in the tab (DoD 4)', () => {
   const code = PS2.split('\n').map(l => l.replace(/\s*\/\/ .*$/, '')).filter(l => !/^\s*\/\//.test(l)).join('\n');   // code, not the comments that name what is not built
   assert.doesNotMatch(code, /SAMPLE|Sample opponent|1,591|psPal|psPrVar|Style dimensions/);
+  const ps = MA2_SRC.slice(MA2_SRC.indexOf('// PLAYING STYLE (LOCKED'), MA2_SRC.indexOf('root.maStyleV2')).split('\n').map(l => l.replace(/\s*\/\/ .*$/, '')).join('\n');
+  assert.doesNotMatch(ps, /SAMPLE|Sample opponent|psPal|psPrVar/, 'the rebuilt renderer carries no sample or review switcher');
   setup(); S.STY['A. Aa'] = { archetype_label: CP }; S.STY['B. Bb'] = { archetype_label: AB };
   assert.doesNotMatch(S.buildStyleSection(match('A. Aa', 'B. Bb')), /SAMPLE/i);
 });
 
-// Mutation: the archetypes read before they load ("Not yet classified" for everyone while the file is in flight).
-test('loading: archetypes not in memory → the one-line loading state, not "not yet classified" (G17)', () => {
+// Mutation: the archetypes read before they load ("not classified" for everyone while the file is in flight).
+test('loading: archetypes not in memory → the one-line loading state, not "not classified" (G17)', () => {
   setup(); S.styles = { byKey: {} };
   assert.equal(text(S.buildStyleSection(match('A. Aa', 'B. Bb', { _ps2Loaded: false }))), 'Loading playing styles…');
-  assert.match(text(S.buildStyleSection(openMu(match('A. Aa', 'B. Bb')))), /Not yet classified .*No style matchup/);
+  assert.match(text(S.buildStyleSection(match('A. Aa', 'B. Bb'))), /playing style is not classified/);
 });
 
-// Mutation: a tab-local row or tooltip renderer (the pre-TEN-340 ones, or any new one) — DoD item 8.
-test('DoD 8: no tab-local row or tooltip renderer; the old renderers are deleted, not hidden', () => {
+// DoD 8 kept: the old renderers are deleted, not hidden; every played row opens the ONE sheet through maRowOnclick.
+// (Superseded by the 2026-11-23 lock: "rows through maMatchRowsHtml" — every rebuilt tab draws the design's own rows.)
+test('DoD 8: the old renderers are deleted, not hidden; rows open the shared sheet', () => {
   for (const f of ['styleVsArchetypeRowHtml', 'psvListHtml', 'styleVsArchetypeCard', 'stylePersonalCard', 'styleEdgeHtml', 'styleDnaRadarHtml', 'styleArchLabelsHtml', 'styleSurfaceTableHtml'])
     assert.equal(html.indexOf(`function ${f}(`), -1, f + ' is deleted');
-  assert.doesNotMatch(PS2, /class="elotip|title="|<div class="[^"]*psvr|grid-template-columns:\$\{PS2_MEET_GRID\}/, 'no own tooltip, native title or row grid');
-  assert.match(PS2, /maMatchRowsHtml\(groups, \{ cols: PS2_MEET_COLS/);
-  assert.match(PS2, /maRowOnclick\(\{ key, name: R\.name/);
+  assert.doesNotMatch(PS2, /class="elotip|<div class="[^"]*psvr/, 'no own tooltip or row grid in the page block');
+  assert.match(MA2_SRC, /const click = wo \? '' : maRowOnclick\(\{ key, name, ek: null, date: r\.date, opp: r\.opponent,/);
 });
 
 // Mutation: the TML walkover skip removed from the builder (a "W/O" counted in the matrix, the record and the shard).
@@ -391,33 +367,15 @@ test('build-matchup-matrix.js (N2 + 2026-10-22): a TML walkover enters no cell a
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
-// TEN-380 (the reference + README §7): order DNA → personal record (each player's meetings under it) → style matchup,
-// collapsed behind "Leans … · Show matchup ▾"; matchup + record bars --pos / --neg with a --text tick; "Show profile" and
-// the matchup toggle --text; cards --card + 1px --edge-6. Mutations: the old order, the matchup open by default, the bars
-// back to white / white 30%, a toggle back to --link, a card back on --line.
-test('TEN-380: reference order, the matchup collapsed behind its Leans line, green / red bars, white toggles, panel cards', () => {
+// 2026-11-23 design order: Playing style (radar + comparison) → Record against each style (boxes, then lists). The
+// record's "Vs other styles" bar is signed: --ma2-green above, --ma2-red below (the Playing-styles signed-bar exception).
+test('2026-11-23 design: order, signed "Vs other styles" bars', () => {
   setup(); S.STY['A. Arnaldi'] = { archetype_label: AB }; S.STY['B. Baez'] = { archetype_label: CP };
-  const m = match('A. Arnaldi', 'B. Baez', { p1StyleMeetings: { [CP]: rows(7, 3) }, p2StyleMeetings: { [AB]: rows(2, 9) } });
+  const m = match('A. Arnaldi', 'B. Baez', { p1StyleMeetings: { [CP]: rows(7, 3), [ACE]: rows(5, 5) }, p2StyleMeetings: { [AB]: rows(2, 9), [ACE]: rows(5, 5) } });
   const h = S.buildStyleSection(m);
-  const at = c => h.indexOf(`class="ps2-card ${c}"`);
-  assert.ok(at('ps2-dna') >= 0 && at('ps2-dna') < at('ps2-personal') && at('ps2-personal') < at('ps2-matchup'), 'DNA → record → matchup');
-  assert.ok(h.indexOf('class="ps2-box" data-ps2-side="a"') < h.indexOf('class="ps2-meet" data-ps2-side="a"')
-    && h.indexOf('class="ps2-meet" data-ps2-side="a"') < h.indexOf('class="ps2-box" data-ps2-side="b"'), 'A\'s meetings sit under A\'s record');
-  const mu = h.slice(at('ps2-matchup'));
-  assert.ok(!/class="ps2-mu-body"/.test(mu), 'collapsed by default: no details');
-  assert.match(text(mu), /Style matchup Counterpunchers beat Attacking Baseliners 48% 52% .*Leans \+2 pts to the counterpuncher · Show matchup ▾/);
-  assert.match(mu, /class="ps2-mu-lean" style="[^"]*color:var\(--text\);/, 'the Leans line and its toggle --text');
-  const mbar = /class="ps2-mbar"[^>]*><span style="width:48%; background:var\(--pos\);[^"]*"><\/span><span style="flex:1; background:var\(--neg\);[^"]*"><\/span><span style="[^"]*background:var\(--text\);"><\/span><\/div>/;
-  assert.match(mu, mbar, 'compact bar: A --pos, B --neg, tick --text');
-  const open = S.buildStyleSection(openMu(m));
-  assert.match(open.slice(open.indexOf('class="ps2-mu-body"')), mbar, 'the big bar the same');
-  assert.match(text(open), /Hide matchup ▾/);
-  // the record tug: wins --pos, losses --neg on a --line track, tick --text
-  const a = /class="ps2-box" data-ps2-side="a"[\s\S]*?(?=class="ps2-meet")/.exec(h)[0], b = /class="ps2-box" data-ps2-side="b"[\s\S]*?(?=class="ps2-meet")/.exec(h)[0];
-  assert.match(a, /height:8px; background:var\(--line\);[\s\S]*right:50%; top:0; bottom:0; width:20%; background:var\(--pos\);/);
-  assert.match(b, /left:50%; top:0; bottom:0; width:31\.8\d*%; background:var\(--neg\);/);
-  assert.match(a, /width:1\.5px; margin-left:-0\.75px; background:var\(--text\);/);
-  assert.match(h, /class="seg ps2-prof-toggle"[^>]*color:var\(--text\);/, '"Show player profile" --text');
-  for (const c of ['ps2-dna', 'ps2-personal', 'ps2-matchup']) assert.match(h, new RegExp(`class="ps2-card ${c}" style="background:var\\(--card\\); border:1px solid var\\(--edge-6\\); border-radius:16px;`), c + ' = panel');
-  assert.ok(!/open-card|var\(--selected\)/.test(h + open), 'no blue open outline, no selected lift on a box');
+  assert.ok(h.indexOf('>Playing style</span>') >= 0 && h.indexOf('>Playing style</span>') < h.indexOf('>Record against each style<'), 'DNA → record');
+  assert.ok(h.indexOf('>Vs other styles<') < h.indexOf('>Showing '), 'boxes before the lists');
+  const vs = [boxTiles(h, 0)[2], boxTiles(h, 1)[2]];
+  assert.deepEqual(vs.map(x => x.v), ['+20 pts', '−32 pts']);
+  assert.deepEqual(vs.map(x => x.color), ['var(--ma2-green)', 'var(--ma2-red)']);
 });

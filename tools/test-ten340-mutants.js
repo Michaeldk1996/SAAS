@@ -4,49 +4,32 @@
 // must occur exactly once in their file.
 const fs = require('fs'), os = require('os'), path = require('path'), { spawnSync } = require('child_process');
 const ROOT = path.join(__dirname, '..');
-const FILES = { page: ['bsp-consult-dashboard.html', 'TEN340_HTML'], builder: [path.join('tools', 'build-matchup-matrix.js'), 'TEN340_BUILDER'] };
+const FILES = { page: ['bsp-consult-dashboard.html', 'TEN340_HTML'], builder: [path.join('tools', 'build-matchup-matrix.js'), 'TEN340_BUILDER'],
+  ma2: ['match-analysis-v2.js', 'TEN340_MA2'] };
+// Match analysis rebuild (2026-11-23): the renderer is maStyleV2 in match-analysis-v2.js (mutants tagged 'ma2'). Dropped with
+// the rebuild: the Style matchup mutants (mirror, p2 direction, lean, surface tiles, matrix avg — the card is gone: a
+// renderer gap, red in the suite), the Δ-on-since, DoD-8 native-title and shared-row mutants, and the TEN-380 styling /
+// layout mutants (matchup collapsed, --line cards, white / --link toggles, ruling-8 bars, top-aligned columns).
 const MUTANTS = [
-  ['mirror: the diagonal read as a below-floor cell (no 50/50 copy)', "if (i1 === i2) return { kind: 'mirror', a: 50, b: 50, n: psMirrorN(i1), l1, l2, i1, i2 };",
-    "if (i1 === i2) return { kind: 'thin', n: psMirrorN(i1), l1, l2, i1, i2 };"],
-  ['matchup: the cell read in p2\'s direction', "return { kind: 'cell', a: c.pct, b: 100 - c.pct,", "return { kind: 'cell', a: 100 - c.pct, b: c.pct,"],
-  ['lean: a 1-point cell "leans" (the coin-flip threshold dropped)', "pts < 2 ? 'Effectively a coin-flip", "pts < 1 ? 'Effectively a coin-flip"],
-  ['surface tiles: the pooled cell on every surface', "const c = psSurfaceCellFor(sf.toLowerCase(), E.i1, E.i2), on = sf === today;", "const c = psCellFor(E.i1, E.i2), on = sf === today;"],
   ['N2: a walkover counted in the personal record', "const rows = raw.filter(r => !ps2IsWalkover(r));", "const rows = raw;"],
-  ['D2: a rate printed on n 1–4', "const rate = ready && n ? maRateHtml(R.w, n, { nopct: ''", "const rate = ready && n ? maRateHtml(R.w, n, { nopct: Math.round(R.w / n * 100) + '%'"],
-  ['D2: the tug and the deviation off the gate', "const g = maGate(n).mode, shown = g === 'full' || g === 'small', small = g === 'small';", "const g = n ? 'full' : 'none', shown = g === 'full' || g === 'small', small = g === 'small';"],
-  ['mirror: no matrix avg on a mirror (the diagonal\'s 50% dropped)', "const c = i === j ? { pct: 50 } : psCellFor(i, j);", "const c = psCellFor(i, j);"],
+  ['D2: a rate printed on n 1–4', "rate = g === 'nopct' ? DASH : Math.round(w / n * 100) + '%';", "rate = Math.round(w / n * 100) + '%';", 'ma2'],
+  ['D2: a 5–9 rate printed full', "rateC = g === 'full' ? 'var(--ma2-white)' : 'var(--ma2-grey)';", "rateC = 'var(--ma2-white)';", 'ma2'],
   ['N2: a retirement\'s unfinished set counted', "sets.forEach(s => { if (!ps2SetDone(s.a, s.b, s.mtb, s.tb)) return; if", "sets.forEach(s => { if"],
-  ['DoD 8: a meeting row stops opening the shared sheet', "        click: maRowOnclick({ key, name: R.name", "        click: '', _was: ({ key, name: R.name"],
-  ['meetings: every row listed, no 6-row head and no G18 control', "list = more ? all : all.slice(0, PS2_ROWS_SHOWN);", "list = all;"],
-  ['DNA: a Δ (±0) on the since-Mar-2024 view', "delta: has && W.scope === 'last52' && d.deltas", "delta: has && d.deltas"],
-  ['DNA: the tooltip without its population and n', "const popTxt = pop ? `Rank among ${pop.n} ${pop.words}.`", "const popTxt = false ? `Rank among ${pop.n} ${pop.words}.`"],
+  ['a meeting row stops opening the shared sheet', "const click = wo ? '' : maRowOnclick({ key, name, ek: null,", "const click = wo ? '' : '' && maRowOnclick({ key, name, ek: null,", 'ma2'],
+  ['meetings: every row listed, no 6-row head', "vis = more ? rows : rows.slice(0, PS2_ROWS_SHOWN)", "vis = rows", 'ma2'],
+  ['show more: both lists read one shared expanded flag', "more = !!S[i ? 'moreB' : 'moreA']", "more = !!(S.moreA || S.moreB)", 'ma2'],
+  ['DNA: the hover without its population and n', "const popTxt = pop ? `Rank among ${pop.n} ${pop.words}.`", "const popTxt = false ? `Rank among ${pop.n} ${pop.words}.`"],
   ['DNA: the since view stops reading the live (current) Elo', "const d = mdnaRadarFor(key, surface, W.scope, name);", "const d = mdnaRadarFor(key, surface, W.scope, W.scope === 'last52' ? name : null);"],
   ['Q14: the since view falls back to the career scope (Under pressure prints a number)', "const ps2UpDashed = (W, ax) => W.scope === 'sinceBase' && ax.key === 'underPressure';", "const ps2UpDashed = (W, ax) => false;"],
-  ['DNA: a player under the floor still draws a shape', "const poly = s => (s.d.ok ?", "const poly = s => (true ?"],
+  ['DNA: a player under the floor still draws a shape', "const shapeA = D.a.d.ok, shapeB = D.b.d.ok;", "const shapeA = true, shapeB = true;", 'ma2'],
   ['DNA: the window labelled "Career" again', "since: { scope: 'sinceBase', label: 'Since Mar 2024', lc: 'since Mar 2024' }", "since: { scope: 'sinceBase', label: 'Career', lc: 'career' }"],
-  ['D4: player A\'s radar line in the link blue', "fill=\"${C.aFill}\" stroke=\"${C.A}\" stroke-width=\"1.75\"", "fill=\"${C.aFill}\" stroke=\"${C.link}\" stroke-width=\"1.75\""],
-  ['loading: archetypes read before they load ("not yet classified" for everyone)', "if (!m._ps2Loaded && !Object.keys(", "if (false && !m._ps2Loaded && !Object.keys("],
-  ['DoD 4: the design\'s SAMPLE chip back', "<span style=\"${PS2_CAP}\">Style matchup</span>${headline ?", "<span style=\"${PS2_CAP}\">Style matchup</span><span>SAMPLE</span>${headline ?"],
-  ['DoD 8: a native title for the percentile tooltip', "<span tabindex=\"0\" data-aotip=\"${escapeHtml(ps2AxisTip(D, i))}\" style=\"font-family:var(--font-words); font-size:10.5px;", "<span tabindex=\"0\" title=\"${escapeHtml(ps2AxisTip(D, i))}\" style=\"font-family:var(--font-words); font-size:10.5px;"],
-  ['DoD 8: a tab-local row renderer back', "function buildStyleSection(m){", "function psvListHtml(side){ return ''; }\nfunction buildStyleSection(m){"],
-  ['matrix avg: p2\'s box read in p1\'s direction', "if (i >= 0 && j >= 0){ const c = i === j ? { pct: 50 } : psCellFor(i, j);", "if (i >= 0 && j >= 0){ const c = i === j ? { pct: 50 } : psCellFor(j, i);"],
-  ['surface: an unknown surface tagged as Hard', "/hard|indoor/.test(sk) ? 'Hard' : null;", "'Hard';"],
+  ['colours: player one\'s radar line in the link blue', 'stroke="var(--ma2-blue)" stroke-width="2"', 'stroke="var(--link)" stroke-width="2"', 'ma2'],
+  ['loading: archetypes read before they load ("not classified" for everyone)', "if (!m._ps2Loaded && !Object.keys(", "if (false && !m._ps2Loaded && !Object.keys(", 'ma2'],
+  ['DoD 4: a SAMPLE chip back', ">Record against each style</span>", ">Record against each style</span><span>SAMPLE</span>", 'ma2'],
+  ['DoD 8: an old row renderer back', "function buildStyleSection(m){", "function psvListHtml(side){ return ''; }\nfunction buildStyleSection(m){"],
   ['sets: a final-set tiebreak at 12-12 read as unfinished', " || (tb && hi >= 7 && d === 1); }", "; }"],
-  // TEN-380 (the reference + README §7)
-  ['TEN-380: the old order back (matchup first, DNA last)', "    ${ps2DnaCard(m, S)}${ps2PersonalCard(m, RR, S)}${ps2MatchupCard(m, s1, s2, !!S.mu)}</div>`;", "    ${ps2MatchupCard(m, s1, s2, !!S.mu)}${ps2PersonalCard(m, RR, S)}${ps2DnaCard(m, S)}</div>`;"],
-  ['TEN-380: the matchup open by default', "_ps2 = { m, mu: false, moreA:", "_ps2 = { m, mu: true, moreA:"],
-  ['TEN-380: matchup bars back to white / white 30%', "<span style=\"width:${a}%; background:${C.up}; border-radius:${r}px 0 0 ${r}px;\"></span><span style=\"flex:1; background:${C.dn};", "<span style=\"width:${a}%; background:${C.A}; border-radius:${r}px 0 0 ${r}px;\"></span><span style=\"flex:1; background:${C.bDim};"],
-  ['TEN-380: record tug back to white / white 70%', "width:${tw}%; background:${small ? MA_GREY : C.up};", "width:${tw}%; background:${small ? MA_GREY : C.A};"],
-  ['ruling 8: profile bars toned per player, not per axis leader', '<span class="ps2-bar-b" style="width:${w(b)}%; background:${fill(b, a)};', '<span class="ps2-bar-b" style="width:${w(b)}%; background:${fill(a, b)};'],
-  ['ruling 8: the trailing profile bar solid (no 45%)', "v.pct < o.pct ? 'var(--white-bar-2)' : 'var(--white-bar)'", "v.pct < o.pct ? 'var(--white-bar)' : 'var(--white-bar)'"],
-  ['TEN-380: Show player profile back to --link', "font-size:12.5px; font-weight:600; color:${C.text}; cursor:pointer; padding:2px 8px;\">${S.prof ?", "font-size:12.5px; font-weight:600; color:${C.link}; cursor:pointer; padding:2px 8px;\">${S.prof ?"],
-  ['TEN-380: Show N more matches back to --link', "font-size:12px; font-weight:600; color:${C.text}; cursor:pointer; padding:4px 0 2px;", "font-size:12px; font-weight:600; color:${C.link}; cursor:pointer; padding:4px 0 2px;"],
-  ['TEN-380: cards back on the --line hairline', "const PS2_CARD = `background:${PS2_C.card}; border:1px solid ${PS2_C.edge};", "const PS2_CARD = `background:${PS2_C.card}; border:1px solid ${PS2_C.line};"],
-  // Show more per card (Paul v Vacherot): independent state, no stretched card
-  ['show more: both cards read one shared expanded flag', "${ps2MeetCard(m, i, RR[i], i ? S.moreB : S.moreA)}", "${ps2MeetCard(m, i, RR[i], S.moreA || S.moreB)}"],
-  ['show more: the columns stretched again', "gap:14px; align-items:start;\">${cols}</div>${smallNote}", "gap:14px; align-items:stretch;\">${cols}</div>${smallNote}"],
-  ['show more: the meetings card flexes to a stretched column', "padding:14px 18px 8px; display:flex; flex-direction:column; gap:12px; min-width:0;\">", "padding:14px 18px 8px; display:flex; flex-direction:column; gap:12px; min-width:0; flex:1;\">"],
-  ['show more: the control pinned to the card bottom', "style=\"align-self:center; font-size:12px; font-weight:600; color:${C.text}; cursor:pointer; padding:4px 0 2px;\"", "style=\"margin-top:auto; align-self:center; font-size:12px; font-weight:600; color:${C.text}; cursor:pointer; padding:4px 0 2px;\""],
+  ['order: the record card above the DNA card', "psDnaCard(m, S) + psRecordCard(m, S)", "psRecordCard(m, S) + psDnaCard(m, S)", 'ma2'],
+  ['Vs other styles: the signed colour dropped', "oc = dd > 0 ? 'var(--ma2-green)'", "oc = dd > 0 ? 'var(--ma2-text)'", 'ma2'],
   ['unclassified: the player\'s own box claims no meetings', "  if (!oppLab || !ownLab) return { state: 'unclassified'", "  if (!oppLab) return { state: 'unclassified'"],
   ['builder N2: a TML walkover no longer dedups its api copy', "        if (wpk && wd) (tmlPairDates.get(wpk) || tmlPairDates.set(wpk, []).get(wpk)).push(wd);\n", '', 'builder'],
   ['builder N2: a TML walkover counted in the matrix, the records and the shards', "      if (/\\bW\\/O\\b/i.test(c[ix.score] || '')) {\n        tmlWalkover++;", "      if (false) {\n        tmlWalkover++;", 'builder'],
