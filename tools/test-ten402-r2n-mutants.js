@@ -25,17 +25,10 @@ const MUTANTS = [
   // ---- Match analysis
   ['r3: trName prints the city', "function trName(m){ const c = trClean(m); return c !== 'Tournament' && typeof sfEventName === 'function' ? sfEventName(c) : c; }",
     'function trName(m){ return trClean(m); }'],
-  ['r3: the Tournament tab title prints the city', "  const clean = trName(m), cs = m.courtSpeed,", "  const clean = trClean(m), cs = m.courtSpeed,"],
-  ['r3: "Record at" prints the city', '  const clean = trName(m);   // r3 fix 1: "Record at Shanghai Masters"', '  const clean = trClean(m);'],
-  ['r3: the edition headers print the city', '  const S = _tr.S, clean = trName(m);', '  const S = _tr.S, clean = trClean(m);'],
   ['r3: the hold tip prints the city', '  const ev = trName(m);   // r3 fix 1: the printed name', '  const ev = trClean(m);'],
   ['r3: the hold lookup reads the printed name', ': _trHoldData.byName[trClean(m).toLowerCase()];', ': _trHoldData.byName[trName(m).toLowerCase()];'],   // the name fallback (a card with no tournamentKey)
   ['r3: the modal subtitle prints the feed name', "  return [ev, roundText, t].filter(Boolean).join(' · ');", "  return [m.tour, roundText, t].filter(Boolean).join(' · ');"],
-  ['r3: Key factors\' card title prints the city', '${fhEsc(tier ? `${trName(m)} · ${tier}` : trName(m))}', '${fhEsc(tier ? `${clean} · ${tier}` : clean)}'],
-  ['r3: Key factors\' catalog match reads the printed name', 'const catHit = TOURNAMENT_CATALOG.find(t => t.name.toLowerCase() === clean.toLowerCase());',
-    'const catHit = TOURNAMENT_CATALOG.find(t => t.name.toLowerCase() === trName(m).toLowerCase());'],
   ['r3: the MA ROI chip prints the key', "initialTournamentLabel: typeof tourxEventName === 'function' ? tourxEventName(key) : key, side: E.S.roi });", 'initialTournamentLabel: key, side: E.S.roi });'],
-  ['r3: the Progression header prints the city', "color:var(--text-label);\">${fhEsc(typeof sfEventName === 'function' ? sfEventName(P.tourn) : P.tourn)}</span>", 'color:var(--text-label);">${fhEsc(P.tourn)}</span>'],
   ['r3: the weather court-speed line prints the city', "  const tourName = (m && m.tour && typeof sfEventName === 'function' ? sfEventName(m.tour) : String((m && m.tour) || '').replace(/^ATP\\s+/, '')) || '—';",
     "  const tourName = String((m && m.tour) || '').replace(/^ATP\\s+/, '') || '—';"],
   // ---- Matches board
@@ -52,6 +45,15 @@ const MUTANTS = [
   ['r3: the ATP Cup prints "Cup"', "const SF_EVENT_LITERAL = { 'cup': 'ATP Cup' };", 'const SF_EVENT_LITERAL = {};'],
 ];
 // The profile module (player-profile-v2.js, TEN402_PP2): Record per tournament.
+// Match analysis rebuild (2026-11-23): the Tournament tab, Key factors' Tournament box and Progression render in
+// match-analysis-v2.js (TEN402_MA2); their r3 mutants moved there.
+const MA2_SRC = fs.readFileSync(path.join(ROOT, 'match-analysis-v2.js'), 'utf8');
+const MA2_MUTANTS = [
+  ['r3: the Tournament tab prints the city (title, "Record at", edition headers, empty line)', "    const clean = trName(m), key = trKeyOf(m),", "    const clean = trClean(m), key = trKeyOf(m),"],
+  ['r3: Key factors\' box prints the city', "const tn = trName(m), scope =", "const tn = trClean(m), scope ="],
+  ['r3: Key factors\' catalog match reads the printed name', "catHit = TOURNAMENT_CATALOG.find(t => t.name.toLowerCase() === clean.toLowerCase());", "catHit = TOURNAMENT_CATALOG.find(t => t.name.toLowerCase() === trName(m).toLowerCase());"],
+  ['r3: the Progression road prints the city', "const P = pgModel(m), ev = typeof sfEventName === 'function' ? sfEventName(P.tourn) : P.tourn;", "const P = pgModel(m), ev = P.tourn;"],
+];
 const PP2_SRC = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
 const PP2_MUTANTS = [
   ['r3: the profile row ignores the page\'s one name', "    var sf = typeof window.sfEventName === 'function' ? window.sfEventName : null;", '    var sf = null;'],
@@ -74,6 +76,12 @@ for (const [name, from, to] of MUTANTS) {
   fs.writeFileSync(file, src.replace(from, to));
   if (run({ TEN402_HTML: file }).status === 0) { console.error(`✖ SURVIVED: ${name}`); survived++; } else console.log(`✔ caught: ${name}`);
 }
+for (const [name, from, to] of MA2_MUTANTS) {
+  if (MA2_SRC.split(from).length !== 2) { console.error(`✖ anchor not found exactly once: ${name}`); survived++; continue; }
+  const file = path.join(dir, 'm2.js');
+  fs.writeFileSync(file, MA2_SRC.replace(from, to));
+  if (run({ TEN402_MA2: file }).status === 0) { console.error(`✖ SURVIVED: ${name}`); survived++; } else console.log(`✔ caught: ${name}`);
+}
 for (const [name, from, to] of PP2_MUTANTS) {
   if (PP2_SRC.split(from).length !== 2) { console.error(`✖ anchor not found exactly once: ${name}`); survived++; continue; }
   const file = path.join(dir, 'm.js');
@@ -81,5 +89,5 @@ for (const [name, from, to] of PP2_MUTANTS) {
   if (run({ TEN402_PP2: file }).status === 0) { console.error(`✖ SURVIVED: ${name}`); survived++; } else console.log(`✔ caught: ${name}`);
 }
 fs.rmSync(dir, { recursive: true, force: true });
-console.log(`mutants: ${MUTANTS.length + PP2_MUTANTS.length - survived} caught, ${survived} survived`);
+console.log(`mutants: ${MUTANTS.length + MA2_MUTANTS.length + PP2_MUTANTS.length - survived} caught, ${survived} survived`);
 process.exit(survived ? 1 : 0);

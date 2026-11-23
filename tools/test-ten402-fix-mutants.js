@@ -208,8 +208,9 @@ const MUTANTS = [
     "const h2hx = !o.inline && typeof _fh !== 'undefined' && _fh && _fh.m && _fh.m.h2hPage;",
     "const h2hx = !o.inline;"],
   ["the Match analysis sheet frame takes the H2H overlay",
-    "  const h2hx = !!(_fh.m && _fh.m.h2hPage);\n  host.innerHTML",
-    "  const h2hx = true;\n  host.innerHTML"],
+    // (Match analysis rebuild 2026-11-23: the locked-sheet branch now sits between the flag and the paint)
+    "  const h2hx = !!(_fh.m && _fh.m.h2hPage);\n  // Match analysis rebuild",
+    "  const h2hx = true;\n  // Match analysis rebuild"],
   ["maSeg recolours every host's sheet track",
     "if ((style === 'sheet' || style === 'pbp') && typeof fhSheetTone === 'function' && fhSheetTone() === 'h2h')",
     "if ((style === 'sheet' || style === 'pbp'))"],

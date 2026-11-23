@@ -70,9 +70,13 @@ test('fix 1: both Last played tiles name the newest played row (Head to Head Tou
   assert.equal(eds.filter(e => e.rows.length)[0].year, '2024', 'control: the list position reads 2024');
   assert.deepEqual([agg.last.year, agg.last.row.opp], ['2025', 'C. Alcaraz'], 'xTrAgg: the newest played row by date, its own edition year');
   assert.match(sliceFrom(html.indexOf('  function tourneyCard('), 'tourneyCard'), /const lr = A\.last \? A\.last\.row : null;/, 'the card reads xTrAgg\'s last played');
-  const tiles = fnSrc('trTilesHtml');
-  assert.match(tiles, /const lp = trLastPlayed\(P\);/);
-  assert.doesNotMatch(tiles, /P\.played\[0\]/);
+  // the Match analysis Tournament tab: rebuilt 2026-11-23 (trBox, match-analysis-v2.js). RENDERER GAP: trBox picks the
+  // newest edition by year whether or not it has a row (an empty 2026 edition reads "2026 · —"), instead of trLastPlayed
+  // (the newest edition WITH a row and its own top row), which the old trTilesHtml called.
+  const MA2 = readFileSync(process.env.TEN402_MA2 || join(HERE, 'match-analysis-v2.js'), 'utf8');
+  const a = MA2.indexOf('\n  function trBox('), tb = MA2.slice(a, MA2.indexOf('\n  }\n', a));
+  assert.ok(a > 0, 'trBox found');
+  assert.match(tb, /trLastPlayed\(P\)/, 'the Tournament tab\'s Last played tile reads trLastPlayed');
 });
 
 // ── fix 2 · ONE tournament name per event (sfEventKey / sfEventName) ─────────────────────────────────────────────────

@@ -447,7 +447,9 @@ test('the Head to Head sheet is drawn by player: A\'s figure and bar --h2h-blue,
 
 test('the sheet\'s tone is set only for a sheet opened from this page; the page sheet = the design overlay + 9% edge, no set chips; closers registered', () => {
   assert.match(slice('fhSheetRender'), /_fhSheetToneNow = \(slot !== 'tab' && _fh && _fh\.m && _fh\.m\.h2hPage\) \? 'h2h'/);
-  assert.match(slice('fhSheetRender'), /: \(slot !== 'tab' && _fh && _fh\.sheet && _fh\.sheet === _fhPp2Mid\) \? 'pp2' : null;/);
+  // Match analysis rebuild (2026-11-23): a third tone, 'ma2' (the locked sheet), after the H2H and profile branches —
+  // a sheet opened from this page or the profile keeps its own tone; every other host is the rebuild's
+  assert.match(slice('fhSheetRender'), /: \(slot !== 'tab' && _fh && _fh\.sheet && _fh\.sheet === _fhPp2Mid\) \? 'pp2'\s*\/\/[^\n]*\n\s*: \(slot === 'tab' \|\| \(_fh && _fh\.ma2\)\) \? 'ma2' : null;/);
   assert.match(slice('fhSheetRender'), /host\.innerHTML = fhSheetSeg\(tabs\) \+ body;\n  _fhSheetToneNow = null;/, 'reset after the paint');
   const os = slice('fhOpenSheet');
   assert.match(os, /const h2hx = !!\(_fh\.m && _fh\.m\.h2hPage\);/);

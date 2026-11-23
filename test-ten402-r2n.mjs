@@ -19,6 +19,9 @@ import { createRequire } from 'node:module';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const html = readFileSync(process.env.TEN402_HTML || join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
+// Match analysis rebuild (2026-11-23): the modal's tab renderers live in match-analysis-v2.js (TEN402_MA2 = a mutated copy)
+const MA2 = readFileSync(process.env.TEN402_MA2 || join(HERE, 'match-analysis-v2.js'), 'utf8');
+const ma2Fn = name => { const a = MA2.indexOf(`\n  function ${name}(`) + 1; assert.ok(a > 0, name); let d = 0, i = MA2.indexOf('{', a); for (; i < MA2.length; i++) { if (MA2[i] === '{') d++; else if (MA2[i] === '}' && --d === 0) break; } return MA2.slice(a, i + 1); };
 const TI = createRequire(import.meta.url)(join(HERE, 'tournament-identity.js'));
 
 function sliceFrom(start, label) {
@@ -138,33 +141,29 @@ const PP2 = process.env.TEN402_PP2 || join(HERE, 'player-profile-v2.js');
 const req = createRequire(import.meta.url);
 const tag = (h, re) => (h.match(re) || [])[1];
 
-test('r3.1 Match analysis → Tournament tab: the title, "Record at …", the edition headers and the hold tip print the one name; the location line and the data name stay', () => {
+test('r3.1 Match analysis → Tournament tab: the title, "Record at …", the edition headers and the empty line print the one name; the location line and the data name stay', () => {
   const env = { fhSurfName: s => s, trRoundWords: () => 'Round of 64', maTipHtml: h => h, fhEsc: s => String(s), trSpeedNote: () => '', trHoldHtml: () => '80%', TR_MONO: '' };
-  const T = make([fnSrc('trClean'), fnSrc('trName'), fnSrc('trHeaderHtml')].join('\n'), '{ trClean, trName, trHeaderHtml }', env);
+  const T = make([fnSrc('trClean'), fnSrc('trName')].join('\n'), '{ trClean, trName }', env);
   const m = { tour: 'ATP Shanghai', surface: 'Hard', venue: { city: 'Shanghai', country: 'CN', category: 'ATP 1000' } };
   assert.equal(T.trName(m), 'Shanghai Masters');
   assert.equal(T.trClean(m), 'Shanghai', 'the data name is unchanged');
   assert.equal(T.trName({ tour: 'ATP Chengdu' }), 'Chengdu', 'an ATP 250 keeps its city');
   assert.equal(T.trName({ tour: 'ATP Canadian Open' }), 'Canadian Open');
   assert.equal(T.trName({}), 'Tournament');
-  const head = T.trHeaderHtml(m);
-  assert.equal(tag(head, /font-size:26px; font-weight:800; letter-spacing:-0\.01em;">([^<]*)</), 'Shanghai Masters');
-  assert.equal(tag(head, /font-size:13px; color:var\(--text-label\); margin-top:3px;">([^<]*)</), 'Shanghai, CN', 'the location line stays a location');
-  // "Record at …": the section head, executed with its cards stubbed
-  const sec = make([fnSrc('trClean'), fnSrc('trName'), fnSrc('buildTournamentSection')].join('\n'), 'buildTournamentSection', Object.assign({}, env, {
-    trStateFor: () => ({ S: { more: false, recMore: [false, false] } }), trModelFor: () => ({}), trHeaderHtml: () => '', trMarketHtml: () => '',
-    trPlayerCardHtml: () => '', trSrcLine: () => '' }))(m);
+  // the rebuilt tab (maTournamentV2, match-analysis-v2.js) EXECUTED over the real trClean / trName, its data model stubbed
+  const P = eds => ({ eds, all: [], priced: [], name: 'A. Rublev', key: '1', n: 4, W: 3, L: 1, best: null, sW: 0, sT: 0, units: 0, state: 'ready', hasHist: !!eds.length, names: [] });
+  const models = [P([{ year: '2025', result: 'QF', won: 3, lost: 1, rows: [] }, { year: '2024', result: 'R32', won: 1, lost: 1, rows: [] }]), P([])];
+  const tab = make([fnSrc('trClean'), fnSrc('trName'), `const __M = (function(){ const window = {}; ${MA2}; return window; })();`].join('\n'), '__M.maTournamentV2', Object.assign({}, env, {
+    trStateFor: () => ({ S: { more: false } }), trKeyOf: () => null, trMarketFor: () => null, maGate: n => ({ mode: n ? 'full' : 'none' }), trModelFor: (mm, i) => models[i],
+    fhStateFor: () => ({ sheetMap: {} }), fhSurname: s => s, fhNameLink: n => '<span>' + n + '</span>', TR_LIM: 3, TR_RESULT: {}, TR_BEST_RANK: {}, TR_SPEED_YEARS: [2023, 2024, 2025],
+    _fh: null, _careerHistoryShards: {}, _sfDbJoinSt: 'ready', trRender: () => {}, loadCareerHistory: () => Promise.resolve(), fetch: () => Promise.resolve({ ok: false }) }));
+  const sec = tab(m);
+  assert.match(sec, /font-size:20px; font-weight:800; letter-spacing:-0\.01em;">Shanghai Masters</, 'the title');
+  assert.match(sec, />Shanghai, CN · Hard</, 'the location line stays a location');
   assert.match(sec, />Record at Shanghai Masters</);
   assert.doesNotMatch(sec, />Record at Shanghai</, 'control: the city is not printed');
-  // the edition headers + the empty line: trPlayerCardHtml executed, the shared row renderer stubbed to capture its groups
-  let groups = null;
-  const card = make([fnSrc('trClean'), fnSrc('trName'), fnSrc('trPlayerCardHtml')].join('\n'), 'trPlayerCardHtml', Object.assign({}, env, {
-    _tr: { S: { recMore: [false, false] } }, fhStateFor: () => ({ sheetMap: {} }), TR_LIM: 3, trRowData: r => r, trTilesHtml: () => '',
-    maMatchRowsHtml: g => { groups = g; return 'rows'; }, fhNameLink: () => '' }));
-  card(m, { eds: [{ year: 2025, result: 'QF', won: 3, lost: 1, rows: [] }, { year: 2024, result: 'R32', won: 1, lost: 1, rows: [] }], all: [], name: 'A. Rublev', summary: '' }, 0);
-  assert.deepEqual(groups.map(g => g.title), ['Shanghai Masters 2025', 'Shanghai Masters 2024']);
-  const empty = card(m, { eds: [], all: [], hasHist: false, name: 'X', summary: '' }, 1);
-  assert.match(empty, /No main-draw record at Shanghai Masters on file\./);
+  assert.deepEqual([...sec.matchAll(/padding:14px 8px 7px;[^"]*">\s*<span[^>]*>([^<]*)<\/span>/g)].map(x => x[1]), ['Shanghai Masters 2025', 'Shanghai Masters 2024'], 'the edition headers');
+  assert.match(sec, /No main-draw record at Shanghai Masters on file\./, 'the empty line');
   // the hold rate: READ by the data name (event-hold.json byName "shanghai"), PRINTED by the one name
   const H = make([fnSrc('trClean'), fnSrc('trName'), 'let _trHoldData = { byName: { shanghai: 0 }, events: [{ games: 200, held: 160, matches: 9, years: [2024, 2025] }] }, _trHoldP = null;',
     fnSrc('trHoldOf'), fnSrc('trHoldTip')].join('\n'), '{ trHoldOf, trHoldTip }', {});
@@ -179,21 +178,23 @@ test('r3.1 Match analysis: the modal subtitle prints the one name; Key factors\'
   assert.equal(ctx({ tour: 'ATP Shanghai' }, 'R64'), 'Shanghai Masters · R64 · 12:00');
   assert.equal(ctx({ tour: 'ATP Chengdu' }, 'Quarter-finals'), 'Chengdu · Quarter-finals · 12:00', 'an ATP 250 keeps its city');
   assert.equal(ctx({ tour: 'ATP Laver Cup' }, 'RR'), 'Laver Cup · RR · 12:00', 'off the registry: the cleaned name');
-  const kf = fnSrc('kfTourCard');
-  assert.match(kf, /\$\{fhEsc\(tier \? `\$\{trName\(m\)\} · \$\{tier\}` : trName\(m\)\)\}/, 'the card title prints trName');
-  assert.match(kf, /const catHit = TOURNAMENT_CATALOG\.find\(t => t\.name\.toLowerCase\(\) === clean\.toLowerCase\(\)\);/, 'the catalog match reads the data name');
+  // Key factors' Tournament box (kfTourBox, match-analysis-v2.js): the scope line prints trName, the joins read the data name
+  const kf = ma2Fn('kfTourBox');
+  assert.match(kf, /const tn = trName\(m\), scope = esc\(tier && tier\.toLowerCase\(\) !== tn\.toLowerCase\(\) \? tn \+ ' · ' \+ tier : tn\)/, 'the box prints trName');
+  assert.match(kf, /const clean = trClean\(m\), catHit = TOURNAMENT_CATALOG\.find\(t => t\.name\.toLowerCase\(\) === clean\.toLowerCase\(\)\);/, 'the catalog match reads the data name');
   assert.match(kf, /const names = \[clean\]\.concat\(trArchiveNames\(mk\)\)/, 'the career join reads the data name');
   assert.match(fnSrc('trModelFor'), /const clean = trClean\(m\), mk = trMarketFor\(trKeyOf\(m\)\);/, 'the Tournament tab model joins on the data name');
   assert.match(fnSrc('trRenderRoi'), /initialTournamentNames: mkt\.archiveNames, initialTournamentFilter: mkt\.archiveFilter \|\| null, initialTournamentLabel: typeof tourxEventName === 'function' \? tourxEventName\(key\) : key,/);
-  // Progression: the header, the first-round lines and the draw-average tip print the one name; the draw lookup reads the data name
+  // Progression: the road's sub line and the two first-round lines print the one name; the draw lookup reads the data name
+  // (the rebuilt draw-average cells name no event, so there is no tip to rename)
   const ON = s => `typeof sfEventName === 'function' ? sfEventName(${s}) : ${s}`.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  assert.match(html, new RegExp('color:var\\(--text-label\\);">\\$\\{fhEsc\\(' + ON('P.tourn') + '\\)\\}</span>'));
+  assert.match(MA2, new RegExp('const P = pgModel\\(m\\), ev = ' + ON('P.tourn') + ';'));
+  assert.match(MA2, /esc\(ev \+ ' · ' \+ P\.sub\)/, 'the road\'s sub line prints it');
   assert.equal((html.match(new RegExp("at ' \\+ \\(" + ON('tourn') + "\\) \\+ '", 'g')) || []).length, 2, 'the two first-round lines');
-  assert.match(html, new RegExp("' at ' \\+ \\(" + ON('P.tourn') + '\\) \\+ \\(F\\.small'));
   assert.match(html, /const t = \(tournamentProgression && tournamentProgression\.tournaments \|\| \{\}\)\[tourn\] \|\| null;/, 'the draw lookup reads the data name');
   // Weather: "Court speed · {tour}" prints the one name (the weather index still reads m.tour)
   assert.match(html, /const tourName = \(m && m\.tour && typeof sfEventName === 'function' \? sfEventName\(m\.tour\) : /);
-  assert.match(html, /const entry = \(m && idx\.tours && idx\.tours\[m\.tour\]\) \|\| null;/);
+  assert.match(html, /(?:const|let) entry = \(m && idx\.tours && idx\.tours\[m\.tour\]\) \|\| null;/);
 });
 
 test('r3.2 Player Profile → Record per tournament: each row prints sfEventName, the tier is the row\'s meta, the data name stays the key', () => {
@@ -293,5 +294,6 @@ test('TEN-407 review: the sheet head, favourites strip, profile Next match, Play
   const card = h.call(h.stylesCard, { a: p, b: q, styles: { sides: [{ p, R: { state: 'ready', oppLab: 'Big Server', avg: 50, rows } }, { p: q, R: { state: 'ready', oppLab: 'Big Server', avg: 50, rows: [] } }], arch: ['x', 'y'] } });
   const titles = [...card.matchAll(/<span style="font-size:13px; font-weight:700; color:var\(--h2h-text\); white-space:nowrap;">([^<]+)<\/span>/g)].map(m => m[1]);
   assert.deepEqual(titles, ['Shanghai Masters', 'China Open'], 'the group titles print the one event name');
-  assert.match(html, /'No box scores for ' \+ P\.labels\[i\] \+ ' at ' \+ \(typeof sfEventName === 'function' \? sfEventName\(P\.tourn\) : P\.tourn\);/);
+  // the rebuilt Progression (2026-11-23) names the event once, in the road's sub line, by the one name (its cell hovers name none)
+  assert.match(MA2, /const P = pgModel\(m\), ev = typeof sfEventName === 'function' \? sfEventName\(P\.tourn\) : P\.tourn;/);
 });

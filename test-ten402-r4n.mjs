@@ -146,8 +146,9 @@ test('r4 fix 3: no Sets value on Head to Head (or in trRowData) is built with " 
   const builders = [H2H.slice(H2H.indexOf('==== H2H REBUILD')), fnSrc('trRowData')].join('\n');
   const hy = [...builders.matchAll(/\bsets = [^\n]*?' - '|\bsets: [^\n]*?' - '/g)].map(m => m[0].slice(0, 80));
   assert.deepEqual(hy, [], 'a hyphen sets builder is left');
-  // control: the sweep can see one — the Match analysis H2H tab (outside this fix) still builds " - "
-  assert.ok(/\bsets: [^\n]*?' - '/.test(fnSrc('fhH2hRowData')), 'control: the sweep regex finds a hyphen builder');
+  // control: the sweep can see one — ps2Meeting (outside this fix: h2h.md "ps2Meeting keeps ' - ' for its other hosts")
+  // still builds " - " (the Match analysis H2H tab's fhH2hRowData, the old control, is deleted by the 2026-11-23 rebuild)
+  assert.ok(/\bsets: [^\n]*?' - '/.test(fnSrc('ps2Meeting')), 'control: the sweep regex finds a hyphen builder');
 });
 
 // ── fix 5 (Entry list "No lists loaded for {week range}") RETIRED 2026-11-15: the Tournaments tab rebuild draws the export's
