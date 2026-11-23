@@ -377,18 +377,22 @@ const tm = (o) => Object.assign({ p1: 'C. Alcaraz', p1Key: '1', p2: 'X', p2Key: 
     }
     return html.slice(m.index + 1, k + 1);
   };
-  // TEN-334: the Overview's real builder, sliced and run (tools/ten334-overview-vm.mjs); rows go in through playerProfiles.
-  const { overviewVM } = await import('./ten334-overview-vm.mjs');
+  // The Overview's real code: the dashboard data layer + maOverviewV2 (match-analysis-v2.js, the 2026-11-23 rebuild), run by
+  // tools/ten313-overview-v2-vm.mjs; rows go in through playerProfiles.
+  const { overviewV2VM } = await import('./ten313-overview-v2-vm.mjs');
   const agg = { year: '2018', allTier: false, total: wl(18, 12), clay: null, hard: wl(18, 12), grass: null, indoor: null, atp: null, chitf: null };
   const tour = { year: '2017', allTier: false, total: wl(2, 1), clay: null, hard: wl(2, 1), grass: null, indoor: null, atp: { total: wl(2, 1), clay: null, hard: wl(2, 1), grass: null, indoor: null }, chitf: null };
-  const out = (rows) => overviewVM(html, { profiles: { 7: { careerByYear: rows } } }).buildYearlyTables({ p1: 'A', p2: 'B', p1Key: 7, p2Key: null });
-  const yearRow = (h, y) => { const i = h.indexOf(`data-ov-year="${y}"`); assert.ok(i >= 0, 'year row ' + y); return h.slice(i, h.indexOf('</span>', i)); };
-  // Mutation: revert the badge condition to `r.allTier === false` → the aggregate row is badged ATP again.
+  const ma2 = fs.readFileSync(process.env.TEN313_MA2 || path.join(__dirname, '..', 'match-analysis-v2.js'), 'utf8');
+  const out = (rows) => { const vm = overviewV2VM(html, { profiles: { 7: { careerByYear: rows } } , ma2 }), m = { p1: 'A', p2: 'B', p1Key: 7, p2Key: null };
+    vm.buildYearlyTables(m); return vm.buildYearlyTables(m); };
+  // a year row's head cell: the year, then (pre-window, tour level only) the "ATP" badge
+  const yearRow = (h, y) => { const i = h.indexOf(`display:flex; align-items:center; gap:6px;">${y}`); assert.ok(i >= 0, 'year row ' + y); return h.slice(i, h.indexOf('</span></span>', i) + 14); };
+  // Mutation (TEN313_MA2): revert the badge condition to `r.allTier === false` → the aggregate row is badged ATP again.
   check('N3 modal: an all-tier aggregate year is NOT badged "ATP"', () => {
-    assert.ok(!/class="ov-atp"/.test(yearRow(out([agg]), '2018')));
+    assert.ok(!/>ATP<\/span>/.test(yearRow(out([agg]), '2018')));
   });
   check('control: a tour-level-only pre-window year IS badged "ATP"', () => {
-    assert.ok(/class="ov-atp"/.test(yearRow(out([tour]), '2017')));
+    assert.ok(/>ATP<\/span>/.test(yearRow(out([tour]), '2017')));
   });
 
   console.log(`\nten313-records: ${pass} passed, ${fail} failed.`);

@@ -1,7 +1,8 @@
 // Match analysis → Overview vs the player profile's Career record (2026-10-21): the same player under the same tier must
 // print the same career record, the same surface records and rates, the same season cells and the same "no surface"
 // count in both places. Both sides are RENDERED by their real code — the profile's renderCareerModal (player-profile-v2.js)
-// and the Overview's buildYearlyTables (bsp-consult-dashboard.html, sliced and executed by tools/ten334-overview-vm.mjs) —
+// and the Overview's buildYearlyTables → maOverviewV2 (match-analysis-v2.js, the 2026-11-23 rebuild, over the sliced
+// dashboard data layer: tools/ten313-overview-v2-vm.mjs) —
 // and compared on the printed figures, so a check cannot pass without running the Overview's record code.
 //
 // Population: a manufactured fixture (an Indoors carve-out, indoor matches with no surface, a "surface not known"
@@ -11,10 +12,13 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { overviewVM, profileWindow } from './ten334-overview-vm.mjs';
+import { profileWindow } from './ten334-overview-vm.mjs';
+import { overviewV2VM } from './ten313-overview-v2-vm.mjs';
 
 const require = createRequire(import.meta.url);
 const HTML = readFileSync(new URL('../bsp-consult-dashboard.html', import.meta.url), 'utf8');
+const MA2 = readFileSync(new URL('../match-analysis-v2.js', import.meta.url), 'utf8');
+const MUT = { ma2: null };   // the mutants' copy of match-analysis-v2.js while they run
 const TIERS = ['all', 'atp', 'chitf'];
 const COLS = ['total', 'hard', 'clay', 'grass', 'indoors', 'unknown'];   // the profile's season-table order (profile v2: the export's)
 const SURFS = ['clay', 'hard', 'indoors', 'grass'];
@@ -80,38 +84,35 @@ function profileFigures(win, p, tier) {
     rateText: I.rateText };
 }
 
-// ── the Overview, rendered ──
-function overviewFigures(src, key, p, tier) {
-  const vm = overviewVM(src, { profiles: { [key]: p } });
+// ── the Overview, rendered (2026-11-23 design: per player a Career card, This season card, Record by season card) ──
+const OV_LABEL = { Total: 'total', Clay: 'clay', Hard: 'hard', Indoors: 'indoors', Grass: 'grass', 'Not known': 'unknown' };
+const FCARD = '<div style="background:var(--ma2-card); border:1px solid color-mix(in srgb, var(--ma2-white) 6%, transparent); border-radius:16px; padding:24px;';
+const ovRows = card => Object.fromEntries([...card.matchAll(/font-size:12\.5px; font-weight:600; color:var\(--ma2-text\); white-space:nowrap;">([^<]+)<\/span>[\s\S]*?text-align:right;">([^<]*)<\/span><span style="[^"]*text-align:right;">([^<]*)<\/span>/g)]
+  .map(x => [OV_LABEL[x[1]], { rec: norm(x[2]), rate: /%$/.test(x[3]) ? x[3] : null }]));
+function overviewFigures(src, key, p, tier, ma2 = MUT.ma2 || MA2) {
+  const vm = overviewV2VM(src, { profiles: { [key]: p }, ma2 });
   const m = { id: 'parity', p1: p.name || key, p2: '—', p1Key: key, p2Key: null };
   vm.buildYearlyTables(m);
   vm._ov.tier = tier;
   const h = vm.buildYearlyTables(m);
-  const col = h.slice(h.indexOf('data-ov-p="0"'), h.indexOf('data-ov-p="1"'));
-  const rec = /class="ov-career-rec"[^>]*>([^<]*)</.exec(col);
-  const pct = /class="ma-rate ov-career-pct"[^>]*>([^<]*)</.exec(col);
-  const bars = {};
-  for (const s of SURFS) {
-    const v = new RegExp(`data-ov-bar="${s}"[\\s\\S]*?class="ov-surf-v"[^>]*>([\\s\\S]*?)</span></div>`).exec(col);
-    const txt = v ? v[1] : '';
-    const r = /^(\d+-\d+|—)/.exec(txt.replace(/<[^>]*>/g, ''));
-    const rate = />(\d+\.\d%)</.exec(txt);
-    bars[s] = { rec: r ? r[1] : null, rate: rate ? rate[1] : null };
-  }
-  const un = /class="ov-unknown-n">(\d+) match/.exec(col);
+  const col = h.split('<div style="display:flex; flex-direction:column; gap:14px; min-width:0;">')[1] || '';
+  const [, careerC = '', seasonC = '', tableC = ''] = col.split(FCARD);
+  const head = /font-size:26px; font-weight:700; line-height:1; color:[^;]+; white-space:nowrap;">([^<]*)<\/span><span style="font-size:14px; color:var\(--ma2-grey\);">([^<]*)</.exec(careerC);
+  const bars = ovRows(careerC), cardRows = ovRows(seasonC);
+  const cols = [...tableC.slice(tableC.indexOf('<span>Year</span>'), tableC.indexOf('</div>', tableC.indexOf('<span>Year</span>'))).matchAll(/<span>([^<]+)<\/span>/g)].map(x => OV_LABEL[x[1]]).filter(Boolean);
+  const cells = row => [...row.matchAll(/<span[^>]*>([^<]*)<\/span>/g)].map(x => norm(x[1]));
   const seasons = {};
-  for (const x of col.matchAll(/data-ov-cell="0\|(\d{4})\|(\w+)"[^>]*>([^<]*)</g)) (seasons[x[1]] = seasons[x[1]] || {})[x[2]] = norm(x[3]);
-  const tot = col.slice(col.indexOf('class="ov-total"'));
-  const tv = [...tot.matchAll(/<span style="font-family:'IBM Plex Mono'[^>]*>([^<]*)<\/span>/g)].map(x => norm(x[1]));
-  const career = Object.fromEntries(OV_COL_ORDER.map((c, i) => [c, tv[i]]));
-  const cards = {};
-  for (const s of SURFS) {
-    const a = col.indexOf(`data-ov-cell="0|season|${s}"`);
-    const sl = col.slice(a, col.indexOf('</div></div>', a));
-    const v = [...sl.matchAll(/<span style="width:\d+px;[^>]*>([\s\S]*?)<\/span>(?=<span|$)/g)].map(x => x[1].replace(/<[^>]*>/g, ''));
-    cards[s] = { rec: norm(v[1]), rate: v[2] && /%$/.test(v[2]) ? v[2] : null };
+  for (const x of tableC.matchAll(/display:flex; align-items:center; gap:6px;">(\d{4})(?:<span[^>]*>ATP<\/span>)?<\/span>([\s\S]*?)<\/div>/g)) {
+    const v = cells(x[2]); seasons[x[1]] = Object.fromEntries(OV_COL_ORDER.map(c => [c, cols.includes(c) ? v[cols.indexOf(c)] : '—']));
   }
-  return { rec: norm(rec && rec[1]), rate: pct ? pct[1].replace(/ win$/, '') : null, bars, unknownN: un ? +un[1] : 0, seasons, career, cards };
+  const ft = /font-weight:700; color:var\(--ma2-text\);">Career<\/span>([\s\S]*?)<\/div>/.exec(tableC), fv = ft ? cells(ft[1]) : [];
+  const career = Object.fromEntries(OV_COL_ORDER.map(c => [c, cols.includes(c) ? fv[cols.indexOf(c)] : '—']));
+  const un = career.unknown && career.unknown !== '—' ? career.unknown.split('-').map(Number) : null;
+  const cards = Object.fromEntries(SURFS.map(s2 => [s2, cardRows[s2] || { rec: null, rate: null }]));
+  return { rec: norm(head && head[1]), rate: head && /%$/.test(head[2]) ? head[2] : null,
+    bars: Object.fromEntries(SURFS.map(s2 => [s2, bars[s2] || { rec: null, rate: null }])),
+    // the no-surface count = the Career row's "Not known" cell (the column shows only when he has such a match)
+    unknownN: un ? un[0] + un[1] : 0, footnote: /(\d+) (?:Davis Cup )?match(?:es)? with no surface/.exec(col), seasons, career, cards };
 }
 
 // One player, one tier: every figure the two pages print, compared. Returns the mismatches as strings.
@@ -201,17 +202,23 @@ const CHECKS = {
   },
 };
 
+// RENDERER GAP (modal-overview.md, founder 2026-10-21, kept 2026-11-23: "the card footnote counts 'N matches with no
+// surface on record'"): the rebuilt Overview prints the count only as the "Not known" column; no footnote names it.
+const CHECKS_GAP = { 'the card footnote counts the matches with no surface on record'(src) {
+  const O = overviewFigures(src, FX.key, FX, 'all');
+  assert.ok(O.footnote, 'no "N matches with no surface on record" footnote');
+  assert.equal(+O.footnote[1], O.unknownN);
+} };
+
+// Mutants of match-analysis-v2.js (the renderer) — 'no-surface footnote dropped' is gone with the footnote (the gap above).
 const MUTANTS = [
   // the Overview reads the raw careerByYear cells again (no Indoors carve, no residual) — the pre-fix state
-  ['year table reads raw cells', 'OV_COLS.map(([s]) => ovCellHtml(i, r, s, tier, pk, false, g)).join(\'\'))(api.tierGridCells(r, tier))',
-    'OV_COLS.map(([s]) => ovCellHtml(i, r, s, tier, pk, false, g)).join(\'\'))(tier === \'all\' ? r : (r[tier] || {}))'],
+  ['year table reads raw cells', 'const gc = api.tierGridCells(r, tier)', "const gc = tier === 'all' ? r : (r[tier] || {})"],
   ['career ignores the tier', 'api.careerTierCells({ careerByYear: real }, tier)', "api.careerTierCells({ careerByYear: real }, 'all')"],
-  ['whole-number win %', "text: cn ? api.rateText(cr.won, cr.lost) + ' win' : null", "text: cn ? maPct(cr.won, cn) + ' win' : null"],
-  ['surface rates on the k / n × 100 formula', "{ text: n ? api.rateText(c.won, c.lost) : null, nopct: '', note: 'title', color: OV_C.text, style: 'font-weight:700;' }",
-    "{ dp: 1, nopct: '', note: 'title', color: OV_C.text, style: 'font-weight:700;' }"],
-  ['no Indoors surface', "const OV_SURFS = [['clay', 'Clay'], ['hard', 'Hard'], ['indoors', 'Indoors'], ['grass', 'Grass']];", "const OV_SURFS = [['clay', 'Clay'], ['hard', 'Hard'], ['grass', 'Grass']];"],
-  ['no unknown column', "const OV_COLS = [...OV_SURFS, ['unknown', 'Surface not known']];", 'const OV_COLS = [...OV_SURFS];'],
-  ['no-surface footnote dropped', "${residN > 0 ? ` · <span class=\"ov-unknown-n\">", "${false ? ` · <span class=\"ov-unknown-n\">"],
+  ['whole-number win %', "pct = cn && g !== 'nopct' ? api.rateText(cr.won, cr.lost) : DASH", "pct = cn && g !== 'nopct' ? Math.round(cr.won / cn * 100) + '%' : DASH"],
+  ['surface rates on the k / n × 100 formula', "const pct = n && g !== 'nopct' ? api.rateText(c.won, c.lost) : DASH", "const pct = n && g !== 'nopct' ? (c.won / n * 100).toFixed(1) + '%' : DASH"],
+  ['no Indoors surface', "const OV_S = [['clay', 'Clay'], ['hard', 'Hard'], ['indoors', 'Indoors'], ['grass', 'Grass']];", "const OV_S = [['clay', 'Clay'], ['hard', 'Hard'], ['grass', 'Grass']];"],
+  ['no unknown column', "const surfs = OV_S.concat(unk ? [['unknown', 'Not known']] : []);", 'const surfs = OV_S;'],
   ['season cards ignore the tier', 'sg = sr ? api.tierGridCells(sr, tier) : null', "sg = sr ? api.tierGridCells(sr, 'all') : null"],
 ];
 
@@ -219,6 +226,7 @@ let failed = 0;
 const ok = (name, fn) => { try { fn(); console.log(`  ✓ ${name}`); } catch (e) { failed++; console.log(`  ✗ ${name}\n    ${String(e.message).split('\n').slice(0, 12).join('\n    ')}`); } };
 console.log('test-overview-profile-parity');
 for (const [name, fn] of Object.entries(CHECKS)) ok(name, () => fn(HTML));
+for (const [name, fn] of Object.entries(CHECKS_GAP)) ok(name, () => fn(HTML));
 
 // ── the deployed roster, every player, every tier ──
 ok('deployed roster: every player, every tier, Overview = profile', () => {
@@ -242,10 +250,11 @@ ok('deployed roster: every player, every tier, Overview = profile', () => {
 ok(`mutants: ${MUTANTS.length} applied, every one caught`, () => {
   const survived = [];
   for (const [label, from, to] of MUTANTS) {
-    assert.equal(HTML.split(from).length, 2, `mutant anchor for "${label}" must occur exactly once`);
-    const mutant = HTML.replace(from, to);
+    assert.equal(MA2.split(from).length, 2, `mutant anchor for "${label}" must occur exactly once`);
+    MUT.ma2 = MA2.replace(from, to);
     let caught = false;
-    for (const fn of Object.values(CHECKS)) { try { fn(mutant); } catch (e) { if (e instanceof assert.AssertionError) { caught = true; break; } throw e; } }
+    try { for (const fn of Object.values(CHECKS)) { try { fn(HTML); } catch (e) { if (e instanceof assert.AssertionError) { caught = true; break; } throw e; } } }
+    finally { MUT.ma2 = null; }
     if (!caught) survived.push(label);
   }
   assert.deepEqual(survived, [], 'mutants that survived');
