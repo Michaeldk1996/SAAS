@@ -105,7 +105,7 @@
     // top row: Market · No-vig (no "Sample" chip: the data is real)
     const top = '<div style="display:flex; align-items:center; gap:10px 14px; flex-wrap:wrap;">' + track([
       { label: 'Market', on: !novig, onclick: 'aOddsSetMode(false)', title: 'Prices as quoted, bookmaker margin included' },
-      { label: 'No-vig', on: novig, onclick: 'aOddsSetMode(true)', title: 'Margin stripped: prices and probabilities sum to 100%' }], { inset: true, aotip: true })   // odds.md Q23: the shared tooltip + '</div>';
+      { label: 'No-vig', on: novig, onclick: 'aOddsSetMode(true)', title: 'Margin stripped: prices and probabilities sum to 100%' }], { inset: true, aotip: true }) + '</div>';   // odds.md Q23: the shared tooltip
 
     // (1) Best price
     const best = ['a', 'b'].map((x, i) => {

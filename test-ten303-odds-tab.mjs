@@ -198,6 +198,24 @@ test('§6.4 Q10: only recorded markets render a row; an unrecorded market cannot
   }
 });
 
+// 2026-11-23: an inline comment once swallowed the top row's closing tag, nesting Best price, Bookmakers and All markets
+// inside the Market / No-vig row on every match while every content check stayed green. The markup must balance and the four
+// blocks must be siblings, in both price modes.
+test('markup: every <div> closes and the four blocks are siblings', () => {
+  const A = build();
+  for (const novig of [false, true]) {
+    const m = fixture({ withAt: true });
+    A.open(m); A.state().novig = novig; A.renderOddsSection();
+    const h = A.section();
+    const open = (h.match(/<div\b/g) || []).length, close = (h.match(/<\/div>/g) || []).length;
+    assert.equal(open, close, `div tags balance (novig ${novig}): ${open} open, ${close} closed`);
+    const body = h.slice(h.indexOf('class="ma2-odds"'));
+    let depth = 1, kids = 0;   // the scan starts inside .ma2-odds
+    for (const t of body.matchAll(/<div\b|<\/div>/g)) { if (t[0] === '</div>') { depth--; if (depth === 0) break; } else { if (depth === 1) kids++; depth++; } }
+    assert.equal(kids, 4, `.ma2-odds holds the top row, Best price, Bookmakers and All markets as siblings (novig ${novig})`);
+  }
+});
+
 // ── §6 test 5 ─ mutant: the spec's Catmull-Rom Bézier (overshoots) instead of step / monotone ──
 test('§6.5 a drawn line never leaves [series min, series max]', () => {
   const A = build();
