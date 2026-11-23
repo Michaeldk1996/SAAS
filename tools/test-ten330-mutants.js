@@ -11,8 +11,6 @@ const MUTANTS = [
     '    if (c && !r.ret){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; r.src = c.src; r.srcLabel = c.srcLabel; }\n    const d = fhDayNum(r.date); r.ago'],
   ['rows: " ret." dropped', "  return r.sets.map(x => x[0] + '-' + x[1]).join(', ') + (r.ret ? ' ret.' : '');", "  return r.sets.map(x => x[0] + '-' + x[1]).join(', ');"],
   ['rows: set scores double-space joined', "  return r.sets.map(x => x[0] + '-' + x[1]).join(', ') + (r.ret ? ' ret.' : '');", "  return r.sets.map(x => x[0] + '-' + x[1]).join('  ') + (r.ret ? ' ret.' : '');"],
-  ['bars: no closing price under the bar', "${r.price != null ? fhOdd(r.price) : FH_DASHC}</span></div>", "</span></div>"],
-  ['bars: an unpriced bar prints nothing', "${r.price != null ? fhOdd(r.price) : FH_DASHC}</span></div>", "${r.price != null ? fhOdd(r.price) : ''}</span></div>"],
   ['N1: Form opens on All', "      form: { surf: fhSurfName(m.surface) || 'all',", "      form: { surf: 'all',"],
   ['career-history: no cap', "  return (walkovers ? rows : rows.slice(0, FH_FORM_ROW_CAP)).map(", "  return rows.map("],
   ['career-history: a walkover row counted into the Form rows (2026-10-22)', "filter(([x]) => x && x.date && !!x.walkover === !!walkovers)", "filter(([x]) => x && x.date)"],
@@ -20,30 +18,32 @@ const MUTANTS = [
     "  const rowsOf = i => (i ? m.p2RecentFormMatches : m.p1RecentFormMatches) || [];"],
   ['rows: group header loses "surface · W–L"', "      entries.push({ isHead: true, tourn: r.tourn, meta: (r.surface || FH_DASHC) + ' · ' + tw + '–' + (tm.length - tw) });",
     "      entries.push({ isHead: true, tourn: r.tourn, meta: '' });"],
-  ['rows: the shared helper loses the Form inset parameter', "{ headPad: '10px 14px 8px', groupPad: '11px 14px 5px', inset: 8,", "{"],
-  ['DoD 8: a Form-local row renderer again', "function fhFormListHtml(P){", "function fhFormRowHtml(r){ return ''; }\nfunction fhFormListHtml(P){"],
-  ['DoD 8: bars back on a Form-local tooltip', "return maTipHtml(bar, tip, { tag: 'div', cls: 'fh-bar',", "return maTipHtml(bar, tip, { tag: 'div', cls: 'fh-bar fh-elotip',"],
   ['hot lines: the Short chip back on', "    hot: { ok: hotOk, table, sc, ctx, hdr, short: false,", "    hot: { ok: hotOk, table, sc, ctx, hdr, short: hotOk,"],
   ['career-history: keyless rows never priced', "    const c = r.oppKey == null && clNoKey ? fhCloseFor(clNoKey, r.date, r.opp, r.won, null, r.ek) : fhCloseFor(", "    const c = false ? null : fhCloseFor("],
   ['career-history: the keyless join only as a fallback (order broken)', "    const c = r.oppKey == null && clNoKey ? fhCloseFor(clNoKey, r.date, r.opp, r.won, null, r.ek) : fhCloseFor(clRows, r.date, r.opp, r.won, r.oppKey, r.ek);", "    const c = fhCloseFor(clRows, r.date, r.opp, r.won, r.oppKey, r.ek) || (r.oppKey == null && clNoKey ? fhCloseFor(clNoKey, r.date, r.opp, r.won, null, r.ek) : null);"],
-  ['rows: an Elo slot back in the Form row (TEN-380 Q5)', "${esc(r.opp)}</span>${tagSlot(r)}</span>`", "${esc(r.opp)}</span>${tagSlot(r)} <span class=\"ma-row-elo\" data-elo=\"\">—</span></span>`"],
-  // TEN-380 (README §5): the Score column, the README grid, the --card head on a --line rule, the --edge-10 divider
-  ['rows: the column back to "Set scores"', "const labels = o.labels || ['Date', '', 'Opponent', 'Rd', 'Sets', 'Score', 'H', 'A'];", "const labels = o.labels || ['Date', '', 'Opponent', 'Rd', 'Sets', 'Set scores', 'H', 'A'];"],
-  ['rows: back on the file\'s grid', "const MA_ROW_COLS = '40px 10px minmax(96px,1fr) 28px 34px minmax(86px,1fr) 38px 38px';", "const MA_ROW_COLS = '48px 12px minmax(0,1.1fr) 36px 40px minmax(0,1.3fr) 46px 46px';"],
-  ['rows: the Score cell back to --text-soft', "<span class=\"ma-row-score\"${t(r.scoresTitle)} style=\"${mono} font-size:11px; color:var(--text-label);", "<span class=\"ma-row-score\"${t(r.scoresTitle)} style=\"${mono} font-size:11px; color:var(--text-soft);"],
-  ['rows: the head back on the page tone', "background:${o.bg || 'var(--card)'}; padding:${o.headPad || '6px 6px 7px'};", "background:${o.bg || 'var(--page)'}; padding:${o.headPad || '6px 6px 7px'};"],
-  ['divider: the blue rules back', "const rule = 'var(--edge-10)';   // README §5: the divider's rules", "const rule = 'var(--open-card)';"],
-  // TEN-380 hot lines (README §5): Rate on the D2 gate, --hot-dot dots, Most covered = --inner, no edge
-  ['hot lines: a % printed on n 3–4', "if (maGate(n).mode === 'nopct') return `<span class=\"fh-hl-rate\" data-ma-gate=\"nopct\"", "if (false) return `<span class=\"fh-hl-rate\" data-ma-gate=\"nopct\""],
-  ['hot lines: the Rate off the gate (no grey tier)', "return `<span class=\"fh-hl-rate\" style=\"display:flex; min-width:0;\">${maRateHtml(c, n, { note: 'title', color: 'var(--text)', style: mono })}</span>`;", "return `<span class=\"fh-hl-rate\" style=\"display:flex; min-width:0;\"><span class=\"ma-rate\" data-ma-gate=\"full\" style=\"color:var(--text);${mono}\">${Math.round(c / n * 100)}%</span></span>`;"],
-  ['hot lines: dots in the player colour again', "const dotC = 'var(--hot-dot)', offDot", "const dotC = opts.color || 'var(--fh-pa)', offDot"],
-  ['hot lines: Most covered back on --selected', "background:${isTop ? 'var(--inner)' : 'transparent'}; cursor:default;", "background:${isTop ? 'var(--selected)' : 'transparent'}; cursor:default;"],
-  ['form: the four filters wrap onto two lines', "<div class=\"fh-filters\" style=\"display:flex; align-items:center; gap:10px; flex-wrap:nowrap; overflow-x:auto;", "<div class=\"fh-filters\" style=\"display:flex; align-items:center; gap:10px; flex-wrap:wrap; overflow-x:auto;"],
-  ['form: Last N back off its track', "  const valsHtml = fhSegTrack(vals);", "  const valsHtml = vals.map(it => it.label).join('');"],
-  ['TEN-325: no settlement note on the pill', "P.srcNote ? 'closing odds: ' + P.srcNote : '', retNote].filter(Boolean)", "P.srcNote ? 'closing odds: ' + P.srcNote : ''].filter(Boolean)"],
   ['TEN-325: no settlement note on Flat 1u', "  metrics.flat.ret = true;", "  metrics.flat.ret = false;"],
-  ['hot lines: header loses the role', "${fhEsc(H.hdr.win)}${dot}${fhEsc(H.hdr.surf)}${dot}${fhEsc(H.hdr.role)}", "${fhEsc(H.hdr.win)}${dot}${fhEsc(H.hdr.surf)}"],
   ["review 2: Laver Cup back in Form", "&& !FH_FORM_NOT_ATP_RECORD.test(", "&& !/^$/.test("],
+  ['DoD 8: a Form-local row renderer back in the dashboard', "\nfunction fhFormPlayer(m, idx, st){", "\nfunction fhFormRowHtml(r){ return ''; }\nfunction fhFormPlayer(m, idx, st){"],
+];
+// Match analysis rebuild (2026-11-23): the Form renderers live in match-analysis-v2.js; these mutants are applied to a copy
+// of it (TEN330_MA2). Each bites the rebuilt renderer.
+const ma2 = fs.readFileSync(path.join(ROOT, 'match-analysis-v2.js'), 'utf8');
+const MA2_MUTANTS = [
+  ['bars: no closing price under the bar', "height:11px;\">' + (n > 12 ? '' : px) + '</span></div>'", "height:11px;\">' + '</span></div>'"],
+  ['bars: an unpriced bar prints nothing', "const px = r.price != null ? fhOdd(r.price) : DASH, elo", "const px = r.price != null ? fhOdd(r.price) : '', elo"],
+  ['DoD 8: a bar no longer opens the sheet', "'<div class=\"ma2-fbar\" onclick=\"fhOpenSheet(\\'' + esc(r.mid) + '\\')\"", "'<div class=\"ma2-fbar\" onclick=\"\""],
+  ['DoD 8: a row no longer opens the sheet', "' data-fh-mid=\"' + esc(r.mid) + '\" onclick=\"fhOpenSheet(\\'' + esc(r.mid) + '\\')\" title=\"Open the match stats\"'", "' data-fh-mid=\"' + esc(r.mid) + '\" title=\"Open the match stats\"'"],
+  ['rows: an Elo slot in the Form row (TEN-380 Q5)', "overflow-wrap:anywhere; min-width:0;\">' + esc(fhOppFmt(r.opp)) + '</span>'", "overflow-wrap:anywhere; min-width:0;\">' + esc(fhOppFmt(r.opp)) + ' <span class=\"ma-row-elo\">Elo</span></span>'"],
+  ['rows: the column back to "Set scores"', "hd + 'Score</span><span style=", "hd + 'Set scores</span><span style="],
+  ['rows: the Score cell cut whole, no break between sets', "'<span style=\"white-space:nowrap;\">' + esc(x) + (i < a.length - 1 ? ',' : '') + '</span>'", "esc(x) + (i < a.length - 1 ? ',' : '')"],
+  ['divider: a blue rule', "padding:8px 18px;\"><span style=\"flex:1; height:1px; background:' + W(6) + ';\"></span>", "padding:8px 18px;\"><span style=\"flex:1; height:1px; background:var(--ma2-blue);\"></span>"],
+  ['hot lines: a % printed on n 3–4', "pct = g === 'nopct' ? DASH : Math.round(", "pct = false ? DASH : Math.round("],
+  ['hot lines: the rate off the gate (no grey tier)', "g === 'small' ? ' title=\"small sample\"' : '') + ' style=\"' + MONO + ' font-size:15px; font-weight:700; color:' + (g === 'full' ? 'var(--ma2-text)' : 'var(--ma2-grey)')", "g === 'small' ? ' title=\"small sample\"' : '') + ' style=\"' + MONO + ' font-size:15px; font-weight:700; color:' + ('var(--ma2-text)')"],
+  ['hot lines: dots in the player colour again', "onclick=\"fhOpenSheet(\\'' + esc(r.mid) + '\\')\" style=\"width:' + (e ? 10 : 6) + 'px; height:' + (e ? 10 : 6) + 'px; border-radius:50%; background:' + (!e ? W(8) : c ? 'var(--ma2-blue)' : 'transparent') + '; border:1.5px solid ' + (!e ? 'transparent' : 'var(--ma2-blue)')", "onclick=\"fhOpenSheet(\\'' + esc(r.mid) + '\\')\" style=\"width:' + (e ? 10 : 6) + 'px; height:' + (e ? 10 : 6) + 'px; border-radius:50%; background:' + (!e ? W(8) : c ? 'var(--ma2-blue)' : 'transparent') + '; border:1.5px solid ' + (!e ? 'transparent' : (P.idx ? 'var(--ma2-text)' : 'var(--ma2-blue)'))"],
+  ['hot lines: Most covered dropped', "const topK = sc.scored.length ? sc.scored[0].k : -1, all", "const topK = -1, all"],
+  ['hot lines: header loses the role', "esc(H.hdr.win + ' · ' + H.hdr.surf + ' · ' + H.hdr.role)", "esc(H.hdr.win + ' · ' + H.hdr.surf)"],
+  ['form: Last N off its own track', "tr([5, 10, 15, 20].map(k => [k, 'Last ' + k]), S.n, 'n')", "[5, 10, 15, 20].map(k => 'Last ' + k).join(' ')"],
+  ['TEN-325: no settlement note on the Against the market hover', "P.mktOk && typeof fhRetNote === 'function' ? fhRetNote() : ''].filter(Boolean)", "''].filter(Boolean)"],
 ];
 const SUITES = ['test-ten330-form.mjs'];
 // Control: the unmutated page must pass, or every "caught" below means nothing.
@@ -57,6 +57,13 @@ for (const [name, from, to] of MUTANTS) {
   const file = path.join(dir, 'm.html');
   fs.writeFileSync(file, html.replace(from, to));
   const r = spawnSync(process.execPath, ['--test', ...SUITES.map(f => path.join(ROOT, f))], { env: Object.assign({}, process.env, { TEN330_HTML: file }), encoding: 'utf8' });
+  if (r.status === 0) { console.error(`✖ SURVIVED: ${name}`); survived++; } else console.log(`✔ caught: ${name}`);
+}
+for (const [name, from, to] of MA2_MUTANTS) {
+  if (ma2.split(from).length !== 2) { console.error(`✖ anchor not found exactly once: ${name}`); survived++; continue; }
+  const file = path.join(dir, 'ma2.js');
+  fs.writeFileSync(file, ma2.replace(from, to));
+  const r = spawnSync(process.execPath, ['--test', ...SUITES.map(f => path.join(ROOT, f))], { env: Object.assign({}, process.env, { TEN330_MA2: file }), encoding: 'utf8' });
   if (r.status === 0) { console.error(`✖ SURVIVED: ${name}`); survived++; } else console.log(`✔ caught: ${name}`);
 }
 fs.rmSync(dir, { recursive: true, force: true });
@@ -97,6 +104,6 @@ try {
     if (r.status === 0 || !/✖ TEN-383/.test(r.stdout)) { console.error(`✖ SURVIVED: ${name}`); survived++; } else console.log(`✔ caught: ${name}`);
   }
 } finally { fs.rmSync(ppDir, { recursive: true, force: true }); }
-const total = MUTANTS.length + PIPE_MUTANTS.length + PP2_MUTANTS.length;
+const total = MUTANTS.length + MA2_MUTANTS.length + PIPE_MUTANTS.length + PP2_MUTANTS.length;
 console.log(`mutants: ${total - survived} caught, ${survived} survived`);
 process.exit(survived ? 1 : 0);

@@ -32,6 +32,11 @@ function sliceBlock() {
   assert.ok(a > 0 && b > a, 'TEN-263 block not found between its sentinels');
   return html.slice(a, b);
 }
+// Match analysis rebuild (2026-11-23): Form and H2H are drawn by match-analysis-v2.js (maFormV2 / maH2HV2) over the
+// TEN-263 data layer; its source runs in the same scope (TEN350_MA2 = a mutated copy, for the mutant runner).
+const { ma2Src } = (await import('node:module')).createRequire(import.meta.url)(join(HERE, 'tools', 'ma2-test-load.cjs'));
+const MA2 = ma2Src(process.env.TEN350_MA2 || join(HERE, 'match-analysis-v2.js'));
+const MA2_CSS = readFileSync(join(HERE, 'match-analysis-v2.css'), 'utf8');
 const PS_TOUR_META_SRC = /const PS_TOUR_META = \(\(\) => \{[\s\S]*?\n\}\)\(\);/.exec(html)[0];
 const HELPERS = ['escapeHtml', 'surnameFirstName', 'psShortName', 'formIni', 'ppCleanTournamentName', 'psNormTour', 'psTourMeta', 'psRoundAbbr', 'h2hRoundLabel', 'maRoundName', 'eventKeyOfMatch'];
 // The page's own code with its outside world stubbed (as test-ten263.mjs); `doc` = a document stub for node, '' in Chrome.
@@ -46,8 +51,11 @@ const code = doc => `${doc}
   ${PS_TOUR_META_SRC}
   ${HELPERS.map(slice).join('\n')}
   ${sliceBlock()}
-  function buildFormSection(m){ return fhBuildForm(m); } function buildH2HSection(m){ return fhBuildH2H(m); }
-  return { fhBuildForm, fhBuildH2H };`;
+  const __MA2_ROOT = Object.create(globalThis);
+  ${MA2}
+  const maFormV2 = __MA2_ROOT.maFormV2, maH2HV2 = __MA2_ROOT.maH2HV2;
+  function buildFormSection(m){ return maFormV2(m); } function buildH2HSection(m){ return maH2HV2(m); }
+  return { maFormV2, maH2HV2 };`;
 const S = new Function(code(`const document = { addEventListener(){}, getElementById(){ return null; }, querySelector(){ return null; },
     querySelectorAll(){ return []; }, head: { appendChild(){} }, createElement(){ return { set textContent(v){} }; } };`))();
 
@@ -84,7 +92,7 @@ const tipElos = h => [...h.matchAll(/v ([^<]+)<\/span><span class="fh-tip-elo" t
 // Mutations: fhEloAt reads the newest snapshot (`if (a != null && a < d)` → `if (a != null)` — the current Elo) · the
 // tooltip's Elo loses its reason (the title dropped) · the dash prints blank · an Elo span back in the row renderer.
 test('Form: the bar tooltip shows the opponent\'s Elo at the match date, never the current Elo; a dash with its reason; no Elo in the rows', () => {
-  const h = S.fhBuildForm(formMatch());
+  const h = S.maFormV2(formMatch());
   const T = tipElos(h);
   const by = Object.fromEntries(T.map(x => [x.txt === '—' ? 'dash' : x.txt, x]));
   assert.ok(by['1880'] && by['1700'] && by['1610'] && by.dash, 'Elo at each match date: ' + JSON.stringify(T.map(x => x.txt)));
@@ -94,7 +102,7 @@ test('Form: the bar tooltip shows the opponent\'s Elo at the match date, never t
   assert.ok(!/ma-row-elo|data-elo/.test(h), 'TEN-380 Q5: no Elo slot in any row');
 });
 test('H2H: no Elo in the meeting rows (TEN-380 Q5); the current Elo never appears', () => {
-  const h = S.fhBuildH2H(h2hMatch());
+  const h = S.maH2HV2(h2hMatch());
   assert.ok(!/ma-row-elo|data-elo/.test(h), 'no Elo slot in any meeting row');
   assert.ok(!/>1990</.test(h), 'the current Elo (1990) never stands in');
 });
@@ -151,15 +159,17 @@ test('layout at 1296 px: long real names are never truncated or overlapped on Fo
   const styles = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map(m => m[1]).join('\n');
   // TEN-376 Foundation: match-analysis-tokens.css is deleted; the ONE token file is tokens.css, linked ahead of the page styles.
   const tokens = readFileSync(join(HERE, 'tokens.css'), 'utf8');
-  const page = `<!doctype html><html data-theme="night"><head><meta charset="utf-8"><style>${tokens}</style><style>${styles}</style></head><body>
+  const page = `<!doctype html><html data-theme="night"><head><meta charset="utf-8"><style>${tokens}</style><style>${styles}</style><style>${MA2_CSS}</style></head><body>
     <div id="analysisModal" class="ma-theme" data-ma-theme="night"><div id="aSectionForm" style="width:936px;"></div><div id="aSectionH2H" style="width:936px;"></div></div>
     <script>window.__T = (function(){ ${code('')} })();</script></body></html>`;
   const res = await inChrome(page, `(() => {
     const fm = ${JSON.stringify(formMatch())}, hm = ${JSON.stringify(h2hMatch())};
-    document.getElementById('aSectionForm').innerHTML = __T.fhBuildForm(fm);
-    document.getElementById('aSectionH2H').innerHTML = __T.fhBuildH2H(hm);
-    const read = sec => [...document.querySelectorAll('#' + sec + ' .ma-row')].map(row => {
-      const cell = row.children[2], next = row.children[3], name = row.querySelector('.fh-opp');
+    document.getElementById('aSectionForm').innerHTML = __T.maFormV2(fm);
+    document.getElementById('aSectionH2H').innerHTML = __T.maH2HV2(hm);
+    // 2026-11-23 rebuild: a Form row's name is its 3rd cell (Rd after it); an H2H meeting's Event cell is its 2nd (the
+    // event name first, Rd after it)
+    const read = (sec, sel, ci) => [...document.querySelectorAll('#' + sec + ' ' + sel)].map(row => {
+      const cell = row.children[ci], next = row.children[ci + 1], name = ci === 2 ? cell : cell.firstElementChild;
       const c = cell.getBoundingClientRect(), n = next.getBoundingClientRect();
       const inCell = el => !el || [...el.getClientRects()].every(q => q.left >= c.left - 0.5 && q.right <= c.right + 0.5);
       // a word broken across two lines is a cut name too ("Davidov-/ich"): every word of the name must sit on one line
@@ -170,7 +180,7 @@ test('layout at 1296 px: long real names are never truncated or overlapped on Fo
         overlap: c.right - n.left, nameIn: inCell(name),
         ellipsis: [cell, name].some(e => e && getComputedStyle(e).textOverflow === 'ellipsis' && getComputedStyle(e).overflow !== 'visible') };
     });
-    return { form: read('aSectionForm'), h2h: read('aSectionH2H') };
+    return { form: read('aSectionForm', '.fh-frow', 2), h2h: read('aSectionH2H', '.h2m > .h2mg', 1) };
   })()`);
   const FORM = ['Davidovich Fokina A.', 'Van De Zandschulp B.', 'Gueymard Wayenburg S.', 'Mpetshi Perricard G.'];
   assert.ok(res.form.length >= 4 && res.h2h.length === 3, `rows rendered (Form ${res.form.length}, H2H ${res.h2h.length})`);
