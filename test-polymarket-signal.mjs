@@ -57,13 +57,32 @@ test('the toggle loads polymarket.json once and repaints the open panel', () => 
 test('Polymarket is its own group, "Prediction market", on the Odds tab and the Dropping Odds box (cards say "Polymarket")', async () => {
   assert.match(html, /\{ name: 'Polymarket', group: 'prediction', sources: \['Polymarket \(odds-api\.io\)'\] \}/);
   assert.match(html, /'Polymarket \(odds-api\.io\)': \{ group: 'prediction'/);
-  assert.match(html, /\['prediction', 'PREDICTION MARKET', C\.soft\]/, 'the Odds tab group label');
   assert.match(html, /const gOrd = g => \(g === 'sharp' \? 0 : g === 'prediction' \? 2 : 1\);/, 'listed after Soft');
   // Dropping Odds v2 (founder brief 2026-11-23): its feed carries no prediction market, so the page lists none (every
   // prediction-market element hidden); the roster is the books it has a source for
   const { createRequire } = await import('node:module');
   const DP = createRequire(import.meta.url)(join(HERE, 'drops-page.js'));
   assert.deepEqual(DP.BOOKS, [['Pinnacle', 'sharp'], ['Bet105', 'sharp'], ['Superbet', 'soft'], ['Napoleon Sports BE', 'soft']]);
+  // Match analysis rebuild 2026-11-23: the Odds tab is drawn by maOddsV2 (match-analysis-v2.js), one box per group —
+  // the old 'PREDICTION MARKET' caps label is now the box head "Prediction markets". Run it on a card with a Polymarket line.
+  const { build } = await import('./tools/ma2-odds-vm.mjs');
+  const now = Date.now(), iso = t => new Date(t).toISOString(), start = new Date(now + 6 * 3600e3), pad = n => String(n).padStart(2, '0');
+  const chart = { books: {}, meta: {} };
+  const put = (k, meta, a, b) => { chart.books[k] = { p1: [[iso(now - 3 * 3600e3), a]], p2: [[iso(now - 3 * 3600e3), b]] }; chart.meta[k] = Object.assign({ checkedAt: iso(now - 60e3) }, meta); };
+  put('Pinnacle +30s', { source: 'Oddspapi', group: 'sharp', clock: 'book tick' }, 2.35, 1.66);
+  put('Superbet', { source: 'odds-api.io', group: 'soft', clock: 'vendor updatedAt' }, 2.4, 1.6);
+  put('Polymarket (odds-api.io)', { source: 'odds-api.io', group: 'prediction', clock: 'vendor updatedAt' }, 2.38, 1.7);
+  const m = { id: 'upcoming-1', p1: 'J. Sinner', p2: 'C. Alcaraz', date: `${start.getUTCFullYear()}-${pad(start.getUTCMonth() + 1)}-${pad(start.getUTCDate())}`,
+    time: `${pad(start.getUTCHours())}:${pad(start.getUTCMinutes())}`, startTs: iso(start.getTime()),
+    oddsMovement: { market: 'Match Winner', capturedAt: iso(now - 26 * 3600e3), books: {}, chart } };
+  const P = build(); P.open(m);
+  const tab = P.buildOddsSection(m), at = k => tab.indexOf(k);
+  assert.ok(at('class="ma2-group" data-group="prediction"') > 0, 'the Odds tab draws a prediction-market group');
+  assert.ok(/Prediction markets/.test(tab), 'the group head "Prediction markets"');
+  assert.ok(at('data-group="soft"') > 0 && at('data-group="soft"') < at('data-group="prediction"'), 'listed after Soft');
+  const pg = tab.slice(at('data-group="prediction"'));
+  assert.ok(/data-book="Polymarket"/.test(pg), 'Polymarket is a row of that group');
+  assert.ok(!/data-book="Polymarket"/.test(tab.slice(0, at('data-group="prediction"'))), 'never in Sharp or Soft');
 });
 const SK = (vol, kvol) => new Function('vol', 'kvol', `
   const window = { sfPlan: null };

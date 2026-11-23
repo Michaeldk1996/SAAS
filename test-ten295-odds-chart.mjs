@@ -33,27 +33,33 @@ function constSrc(name, src = html) {
   return src.slice(start, src.indexOf(';\n', start) + 1);
 }
 
-// TEN-303 rebuilt the Odds tab (test-ten303-odds-tab.mjs owns its markup); this file keeps the TEN-295
-// data rules that outlive it: the Key Factors mini-chart (TEN-341: kfOddsMove) and the page's start cut.
-export function build(src = html) {
-  const s = n => slice(n, src), c = n => constSrc(n, src);
+// TEN-303 rebuilt the Odds tab (test-ten303-odds-tab.mjs owns its markup); this file keeps the TEN-295 data rules that
+// outlive it: the Key Factors mini-chart and the page's start cut. Match analysis rebuild 2026-11-23: the Odds tab is
+// maOddsV2 and the Key factors Odds box is kfOddsBox (match-analysis-v2.js), drawing each player's sparkline from
+// kfOddsBook's row (the card's book, its own pre-match series; no line when the row carries a gap). Both run here in the
+// same scope as the page's sliced Odds data model (tools/ma2-odds-vm.mjs lists it). TEN295_V2: a mutated v2 copy.
+import { CONSTS, FNS } from './tools/ma2-odds-vm.mjs';
+const V2 = readFileSync(process.env.TEN295_V2 || join(HERE, 'match-analysis-v2.js'), 'utf8');
+export function build(src = html, v2 = V2) {
+  const KF = 'root.maKeyFactorsV2 = maKeyFactorsV2;';
+  assert.equal(v2.split(KF).length, 2, 'the Key factors export line');
   return new Function(`
-    ${['AODDS_STALE_MS', 'AODDS_LEGACY_BET365', 'AODDS_ORDER', 'AODDS_ALIAS', 'AODDS_AT_CLOCK', 'AODDS_CONFIG', 'AODDS_BOOKS',
-       'AODDS_MARKET_TILES', 'AODDS_STEAM', 'AODDS_LINE_SHAPE', 'AODDS_DASH', 'AODDS_C', 'AODDS_RECV', 'AODDS_CHECKED', 'AODDS_SIDES',
-       'ANALYSIS_P2_FILL', 'FH_AC', 'FH_MONO', 'KF_BOOK_PREF', 'KF_C', 'MA_POP'].map(c).join(' ')}
+    ${CONSTS.map(n => constSrc(n, src)).join(' ')}
     let _aOdds = { m:null, novig:false, market:'Match Winner', mv:null };
+    let _aoTipTimer = null, _aoTipFor = null;
+    const document = { getElementById: () => null, addEventListener(){}, querySelectorAll: () => [] };
+    const window = {};
     const newsTz = () => 'Europe/Brussels';
-    const buildOddsReduced = () => 'REDUCED';
-    const psEsc = x => String(x);
     const _ocsOf = m => (m && m.__testOcs) || null;   // the page's card-state reader, stubbed
     const _streamNowOver = () => null;                 // the Kibl stream, off
-    ${['acctTzOffsetMin', 'cardStartMs', 'aOddsStartMs', 'escapeHtml', 'aOddsStep', 'aOddsBooksOf', 'aOddsHasSeries', 'aOddsPulledAt',
-       'aOddsHM', 'aOddsDM', 'aOddsStamp', 'aOddsWhen', 'aOddsFmt', 'aOddsMovePct', 'aOddsSrcTitle', 'aOddsGapsMs', 'aOddsInGap', 'aOddsPairTicks',
-       'aOddsNoVig', 'aOddsRowsOf', 'aOddsMonotone', 'aOddsDispSeries', 'aOddsLinePaths', 'aOddsMvChart', 'aOddsDayStrip', 'aOddsTipHtml', 'aOddsStatusOf',
-       'aOddsBookTip', 'aOddsCardTile', 'aOddsIni', 'buildOddsSection', 'aOddsMvHtml', 'maPopFrame', 'kfOddsBook', 'kfOddsMini', 'kfOddsMove'].map(s).join(' ')}
-    // the Key factors Odds card's movement chart (TEN-341: the card's own book, its pre-match series), '' when not drawn
-    const kfMoveSvg = m => { const x = kfOddsMove(m); return (x.mini && x.mini.svg) || ''; };
-    return { buildOddsSection, kfMoveSvg, aOddsBooksOf, cardStartMs, aOddsStartMs,
+    const _mcNowPair = () => null;
+    ${FNS.map(n => slice(n, src)).join('\n')}
+    ${v2.replace(KF, KF + ' root.__kfOddsBox = kfOddsBox;')}
+    const maOddsV2 = window.maOddsV2;
+    // the Key factors Odds box's sparklines (kfOddsBox), '' when none is drawn
+    const kfMoveSvg = m => (window.__kfOddsBox(m).match(/<polyline[^>]*>/g) || []).join('');
+    return { buildOddsSection: m => { _aOdds = { m, novig:false, market:'Match Winner', mv:null }; return buildOddsSection(m); },
+             kfMoveSvg, kfOddsBook, aOddsBooksOf, cardStartMs, aOddsStartMs,
              reset: () => { _aOdds = { m:null, novig:false, market:'Match Winner', mv:null }; },
              state: () => _aOdds };
   `)();
@@ -154,6 +160,12 @@ test('start time: the card time is the account zone (Europe/Berlin), not UTC —
   assert.equal(A.aOddsStartMs(early), Date.parse('2026-09-24T10:00:00Z'));
   assert.ok(!/>7\.70</.test(A.buildOddsSection(early)), 'a tick after the actual (card-state) start is not drawn');
   assert.ok(!/7\.70/.test(A.kfMoveSvg(early)), 'nor in the mini-chart');
+  // the Key factors sparkline draws kfOddsBook's series: with two pre-start ticks it draws, and only from them
+  early.oddsMovement.books.bet365.p1.splice(1, 0, ['2026-09-24T09:30:00.000Z', 2.1]);
+  early.oddsMovement.books.bet365.p2.splice(1, 0, ['2026-09-24T09:30:00.000Z', 1.75]);
+  const ser = A.kfOddsBook(early).row.series;
+  assert.deepEqual([ser.a.map(t => t[1]), ser.b.map(t => t[1])], [[2, 2.1], [1.8, 1.75]], 'the mini-chart series ends at the actual start');
+  assert.ok(A.kfMoveSvg(early).includes('<polyline'), 'and is drawn');
   const withFixture = JSON.parse(JSON.stringify(m)); withFixture.oddsMovement.startTime = '2026-09-24T10:30:00.000Z';
   assert.equal(A.aOddsStartMs(withFixture), Date.parse('2026-09-24T10:30:00Z'), 'no card-state start -> the Oddspapi fixture start');
   withFixture.__testOcs = { startTs: '2026-09-24T10:00:00Z' };
@@ -400,4 +412,41 @@ test('pipeline: pinCloseSeenAt = the latest read at/after both ticks and before 
   const mut = pipe.replace('t >= tick && t < startMs &&', 't >= tick &&');
   assert.notEqual(mut, pipe);
   assert.equal(S(mut)(pc, st, [{ ts: '2026-09-24T10:32:00Z' }]), '2026-09-24T10:32:00.000Z');
+});
+
+// Mutants on the code the four Key factors / start-cut checks now run (the Key factors box moved to match-analysis-v2.js,
+// kfOddsBox; the cut stays the page's aOddsStartMs / cardStartMs). Each must turn its check red.
+test('mutants: the Key factors sparkline and the start cut, each mutation caught', () => {
+  const now = Date.now();
+  const gapCase = () => { const m = fixture({ now, withAt: true, withPin: false }); delete m.oddsMovement.books;
+    for (const k of Object.keys(m.oddsMovement.chart.books)) if (k !== 'Betano') delete m.oddsMovement.chart.books[k];
+    m.oddsMovement.chart.books['Betano'] = { p1: [[iso(now - 9 * H), 2.5], [iso(now - 2 * H), 2.1]], p2: [[iso(now - 9 * H), 1.55], [iso(now - 2 * H), 1.8]] };
+    m.oddsMovement.chart.meta['Betano'].gaps = [[iso(now - 6 * H), iso(now - 4 * H)]]; return m; };
+  const chartOnly = () => { const m = fixture({ now }); delete m.oddsMovement.books; return m; };
+  const early = () => ({ id: 'past-1', p1: 'A. B', p2: 'C. D', date: '2026-09-24', time: '14:00', finalScore: '6-4 6-4', __testOcs: { startTs: '2026-09-24T10:00:00Z' },
+    oddsMovement: { capturedAt: '2026-09-24T13:30:00.000Z', books: { bet365: {
+      p1: [['2026-09-24T09:00:00.000Z', 2.0], ['2026-09-24T09:30:00.000Z', 2.1], ['2026-09-24T11:00:00.000Z', 7.7]],
+      p2: [['2026-09-24T09:00:00.000Z', 1.8], ['2026-09-24T09:30:00.000Z', 1.75], ['2026-09-24T11:00:00.000Z', 1.1]] } } } });
+  const ok = {
+    gap: A => !A.kfMoveSvg(gapCase()).includes('<polyline'),
+    drawn: A => A.kfMoveSvg(chartOnly()).includes('<polyline'),
+    cut: A => JSON.stringify(A.kfOddsBook(early()).row.series.a.map(t => t[1])) === '[2,2.1]',
+    berlin: A => A.cardStartMs({ date: '2026-09-24', time: '14:00' }) === Date.parse('2026-09-24T12:00:00Z'),
+  };
+  const base = build();
+  for (const [k, f] of Object.entries(ok)) assert.ok(f(base), 'control green: ' + k);
+  const M = [
+    ['v2', 'gap', 'a book with a gap still draws its sparkline', "if (P.length < 2 || (row.gaps && row.gaps.length)) return '<span></span>';", "if (P.length < 2) return '<span></span>';"],
+    ['v2', 'drawn', 'the sparkline is never drawn', "if (P.length < 2 || (row.gaps && row.gaps.length)) return '<span></span>';", "return '<span></span>';"],
+    ['html', 'cut', 'the card-state actual start is ignored', 'const cands = [o && o.startTs, m && m.startTs,', 'const cands = [m && m.startTs,'],
+    ['html', 'berlin', 'the card time read as UTC', 'return hits.length ? Math.min(...hits) : naive - before * 60000;', 'return naive;'],
+  ];
+  const survived = [];
+  for (const [file, key, label, from, to] of M) {
+    const src = file === 'v2' ? V2 : html;
+    assert.equal(src.split(from).length, 2, `anchor for "${label}" occurs once in ${file}`);
+    const A = file === 'v2' ? build(html, V2.replace(from, to)) : build(html.replace(from, to), V2);
+    if (ok[key](A)) survived.push(label);
+  }
+  assert.deepEqual(survived, [], 'mutants that survived');
 });
