@@ -3,14 +3,11 @@
 // file — bsp-consult-dashboard.html (the data models, TEN341_HTML / TEN314_HTML) or match-analysis-v2.js (the boxes,
 // TEN341_MA2) — and its suite is run against it; a mutant that leaves the suite green is a vacuous test and fails this runner.
 // Anchors must occur exactly once in their file.
-//   · The "RENDERER GAP:" tests of test-ten341-key-factors.mjs check rules the rebuilt boxes break today; they are red on the
-//     unmutated code, so the mutant runs skip them (out loud). The suite command itself still reports them.
 //   · A suite that is red on the unmutated code makes its mutants meaningless: they are SKIPPED out loud, never counted caught.
 const fs = require('fs'), os = require('os'), path = require('path'), { spawnSync } = require('child_process');
 const ROOT = path.join(__dirname, '..');
 const PAGE = 'bsp-consult-dashboard.html', MA2 = 'match-analysis-v2.js';
 const KF = 'test-ten341-key-factors.mjs', FRAME = 'test-ten314-modal-frame.mjs';
-const GAP = 'RENDERER GAP:';
 // [name, file, from, to, suite]
 const MUTANTS = [
   ['review F1: the Market edge prefetch loads a match the modal left', PAGE, "    .then(() => { if (_aM === m) meLoad(m);", "    .then(() => { meLoad(m);"],
@@ -76,6 +73,11 @@ const MUTANTS = [
   // Weather
   ['weather: the box reads the card\'s own field, not the Weather tab\'s model', MA2, 'at = vm && !vm.indoor && !vm.unavail ? vm.at : null;', 'at = vm && !vm.indoor && !vm.unavail ? { temp: m.weather && m.weather.temperature } : null;'],
   ['Q14: "usual" back on the court speed box', MA2, "P.detail ? P.detail.charAt(0).toUpperCase() + P.detail.slice(1) : ''", "'usual'"],
+  ['escaping: the DNA scope line unescaped (a player name raw)', MA2, "!k ? esc(ws || 'No axis both players carry.')", "!k ? (ws || 'No axis both players carry.')"],
+  ['CLAUDE.md: the DNA box greys the trailing figure', MA2, "const col = x => x == null ? 'var(--ma2-quiet)' : 'var(--ma2-text)';", "const col = (x, o) => x == null ? 'var(--ma2-quiet)' : o == null || x >= o ? 'var(--ma2-text)' : 'var(--ma2-grey)';"],
+  ['CLAUDE.md: the H2H box greys the trailing figure', MA2, "cl = () => 'var(--ma2-text)';", "cl = (x, y) => x >= y ? 'var(--ma2-text)' : 'var(--ma2-grey)';"],
+  ['CLAUDE.md: the Progression box greys the trailing figure', MA2, "const c = f => f.none || f.t === DASH ? 'var(--ma2-quiet)' : f.small ? 'var(--ma2-grey)' : 'var(--ma2-text)';", "const c = (f, v, o) => f.none || f.t === DASH ? 'var(--ma2-quiet)' : f.small ? 'var(--ma2-grey)' : !isFinite(o) || v >= o ? 'var(--ma2-text)' : 'var(--ma2-grey)';"],
+  ['weather: a fresh forecast stamped "Forecast updated"', MA2, "(wxFreshLine(vm) ? ' · ' + esc(wxFreshLine(vm)) : '')", "(vm.fresh && vm.fresh.text ? ' · ' + esc(vm.fresh.text) : '')"],
   // the tab
   ['tab: a box routed nowhere', MA2, "const go = o.go || \"aGoTab('\" + o.tab + \"')\";", "const go = o.go || '';"],
   ['tab: the order changed', MA2, "order: 2, size: 'h', title: 'Odds'", "order: 12, size: 'h', title: 'Odds'"],
@@ -89,13 +91,13 @@ const MUTANTS = [
   ['lazy: no final paint (Download report prints the loading lines)', PAGE, '.then(() => { done = true; paint(); });', '.then(() => { done = true; });', FRAME],
 ];
 const ENV = { [KF]: { [PAGE]: 'TEN341_HTML', [MA2]: 'TEN341_MA2' }, [FRAME]: { [PAGE]: 'TEN314_HTML' } };
-const run = (suite, file, copy) => spawnSync(process.execPath, ['--test', ...(suite === KF ? ['--test-skip-pattern=' + GAP] : []), path.join(ROOT, suite)],
+const run = (suite, file, copy) => spawnSync(process.execPath, ['--test', path.join(ROOT, suite)],
   { env: Object.assign({}, process.env, copy ? { [ENV[suite][file]]: copy } : {}), encoding: 'utf8' });
 // Control per suite: the unmutated code must pass, or every "caught" below means nothing.
 const green = {};
 for (const suite of [KF, FRAME]) {
   green[suite] = run(suite).status === 0;
-  console.log(green[suite] ? `✔ control: ${suite} passes on the unmutated code` + (suite === KF ? ` (its "${GAP}" tests skipped)` : '')
+  console.log(green[suite] ? `✔ control: ${suite} passes on the unmutated code`
     : `⚠ SKIP: ${suite} is red on the unmutated code — its mutants are not run (nothing measured)`);
 }
 if (!green[KF]) { console.error(`✖ ${KF} is red on the unmutated code — its mutants are meaningless`); process.exit(1); }

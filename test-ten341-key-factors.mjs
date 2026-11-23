@@ -552,8 +552,9 @@ test('Weather: the Weather tab\'s model at match time — temp, sky, the verdict
   const m = match({ id: 'upcoming-5', date: new Date(f._t0).toISOString().slice(0, 10), startTs: new Date(f._t0 + 14 * H).toISOString(), weather: { temperature: 99 },
     courtSpeed: { abstractSpeed: 0.98, speed: 58, category: 'Medium' }, _kfWx: { entry: { file: 'weather/x.json', tz: 'UTC' }, file: f, arch: null } });
   const t = text(box(m, 'weather'));
-  assert.match(t, /^Weather at match time \w{3} \w{3} \d+ · 14:00 · .+ › 23° Cloudy .+ Rain Watch 35% chance .+ Wind No concern 20 km\/h gusts .+ Heat No concern 24° feels like .+ Court speed .+ 0\.98 Medium/);
+  assert.match(t, /^Weather at match time \w{3} \w{3} \d+ · 14:00 › 23° Cloudy .+ Rain Watch 35% chance .+ Wind No concern 20 km\/h gusts .+ Heat No concern 24° feels like .+ Court speed .+ 0\.98 Medium/);
   assert.doesNotMatch(t, /99|usual/);
+  assert.doesNotMatch(t, /Forecast updated/i, 'a fresh forecast prints no freshness line (modal-weather.md, TEN-380)');
   assert.match(text(box(match({ _kfWx: { entry: { indoor: true }, file: null, arch: null } }), 'weather')), /^Weather at match time Indoor event › — Indoor event — weather not a factor\. Indoor event, weather is not a factor\.$/);
   assert.match(text(box(match(), 'weather')), /Loading the forecast…/);
 });
@@ -568,10 +569,9 @@ test('escaping: feed strings with markup render as text in every box', () => {
   assert.doesNotMatch(box(match(), 'news'), /<img/);
 });
 
-// RENDERER GAP (2026-11-23): a player name (feed data) must render as text in every box. kfDnaBox prints its "why" line
-// (fhSurname + ': no api-tennis rating on record.') into the scope unescaped when no axis compares (scope = ws || …; the
-// other branch escapes it). Mutation: any box interpolating a name raw.
-test('RENDERER GAP: escaping — a player name with markup renders as text in every box', () => {
+// A player name (feed data) renders as text in every box (kfDnaBox's "why" scope line once leaked it raw; fixed 391b54fa3).
+// Mutation: the DNA scope unescaped.
+test('escaping — a player name with markup renders as text in every box', () => {
   setup();
   const x = '<img src=x onerror=alert(1)>';
   const leaks = ['model', 'odds', 'dna', 'marketedge', 'form', 'style', 'tournament', 'h2h', 'progression', 'news', 'weather'].filter(k => /<img/.test(box(match({ p1: x }), k)));
@@ -629,11 +629,9 @@ test('colours: the Key factors code writes tokens only — no literal hex or rgb
   }
 });
 // CLAUDE.md non-negotiable: "Never highlight the better stat between two players with colour — both players' figures and text
-// are the same colour" (bars excepted, ruling 8; Live's sheet excepted, TEN-417). RENDERER GAP: the rebuilt DNA, Head to head
-// and Progression boxes print the larger figure --ma2-text and the other --ma2-grey (kfDnaBox col(), kfH2hBox cl(),
-// kfProgBox c()); the TEN-380 boxes printed both white (kfDnaCard "values white", kfH2HCard, kfProgCard). Logged as a founder
-// question for the Playing style comparison list (notes.md); not ruled for Key factors.
-test('RENDERER GAP: neutral figures — both players\' figures in the DNA, Head to head and Progression boxes are the same colour', () => {
+// are the same colour" (bars excepted, ruling 8; Live's sheet excepted, TEN-417). Only the gate's grey and the quiet dash
+// may differ. Mutation: the larger figure white, the other grey (as first rebuilt, fixed 391b54fa3).
+test('neutral figures — both players\' figures in the DNA, Head to head and Progression boxes are the same colour', () => {
   setup(); S.dna = { byKey: { 1: dnaSide([58, 71, 44, 56, 74], 30), 2: dnaSide([62, 72, 80, 52, 48], 30) }, meta: {} };
   const figCols = (h, re) => [...h.matchAll(re)].map(x => x[1]);
   const dna = figCols(box(match(), 'dna'), /font-size:12\.5px; font-weight:700; color:([^;]+); min-width:22px;/g);
