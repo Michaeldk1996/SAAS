@@ -5,9 +5,8 @@
 // feed's 5-day window. The SHIPPED code is executed: the dashboard's news data layer is sliced out of
 // bsp-consult-dashboard.html (tools/ten334-overview-vm.mjs `closure`) and match-analysis-v2.js is run in the same scope.
 // Rules: .claude/rules/modal-news.md, news.md, CLAUDE.md. Every check names the mutation that turns it red;
-// tools/test-ten333-mutants.js applies each one. A check tagged [GAP] locks a still-valid rule the rebuild does not
-// meet yet (a renderer gap): it fails until the renderer is fixed; TEN333_SKIP_GAPS=1 leaves it out (the mutant runner
-// does, to judge the mutants against an otherwise green baseline).
+// tools/test-ten333-mutants.js applies each one. A check tagged [GAP] (via gap()) would lock a still-valid rule the
+// rebuild does not meet yet; TEN333_SKIP_GAPS=1 leaves such checks out (the mutant runner does). None are open now.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -204,10 +203,13 @@ test('type: the News pane is 16px / line-height normal / "Hanken Grotesk", sans-
   assert.ok(s.includes("font-family:'Hanken Grotesk',sans-serif; font-size:16px; line-height:normal;"), s);
 });
 
-// modal-news.md: the count's tooltip states its denominator and population ("n of N articles in the ATP news feed, last
-// 5 days"). The old group header did; the rebuilt player tile prints "3 articles" with the tooltip "Show only J. Sinner".
-gap('[GAP] count: the player tile\'s article count carries its denominator and population on a tooltip', () => {
-  assert.match(ok().buildNewsSection(M), /\d+ of \d+ articles in the ATP news feed, last 5 days/, 'population tooltip on the tile count');
+// modal-news.md: the count's tooltip states its denominator and population. The shipped wording is "n of N articles in
+// the news feed, last 5 days" (the rules file says "in the ATP news feed"); N = every in-window item on the tab's
+// population (Tour News out), Djokovic's included. Mutation: the tile count's tooltip dropped, or N = the player's own n.
+test('count: the player tile\'s article count carries its denominator and population on a tooltip', () => {
+  const h = ok().buildNewsSection(M);
+  assert.match(h, /<span title="3 of 5 articles in the news feed, last 5 days"[^>]*>3 articles</, 'Sinner: 3 of the 5 in-window items');
+  assert.match(h, /<span title="1 of 5 articles in the news feed, last 5 days"[^>]*>1 article</, 'Alcaraz: 1 of 5');
 });
 
 // Mutation: the tab builder no longer returns its load, or a new match keeps the previous open row.

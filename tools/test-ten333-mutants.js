@@ -33,6 +33,8 @@ const MUTANTS = [
   ['v2', 'colour: a literal colour on a player name', '<span class="mnname" style="font-size:13.5px; font-weight:700; color:var(--ma2-text);', '<span class="mnname" style="font-size:13.5px; font-weight:700; color:#6a9af8;'],
   ['v2', 'colour: a player name in the blue token', '<span class="mnname" style="font-size:13.5px; font-weight:700; color:var(--ma2-text);', '<span class="mnname" style="font-size:13.5px; font-weight:700; color:var(--ma2-blue);'],
   ['v2', 'type: the pane inherits the modal body type', " font-family:\\'Hanken Grotesk\\',sans-serif; font-size:16px; line-height:normal;\">' + inner", "\">' + inner"],
+  ['v2', 'count: the tile count loses its population tooltip', "<span title=\"' + esc(list.length + ' of ' + tot + ' articles in the news feed, last ' + A_NEWS_WINDOW_DAYS + ' days') + '\" style=", "<span style="],
+  ['v2', 'count: the denominator is the player\'s own n', "esc(list.length + ' of ' + tot + ' articles", "esc(list.length + ' of ' + list.length + ' articles"],
   ['v2', 'escaping: the row id unescaped', "const attrs = ' data-id=\"' + esc(x.id) + '\"", "const attrs = ' data-id=\"' + x.id + '\""],
   ['html', 'lazy: the builder no longer returns its load', '    return Promise.all([ensureNewsData(), (_newsTicker && _newsTicker.length) ? null : loadNewsTicker()]).then(() => { if (_aNewsMatch === m', '    Promise.all([ensureNewsData(), (_newsTicker && _newsTicker.length) ? null : loadNewsTicker()]).then(() => { if (_aNewsMatch === m'],
   ['html', 'lazy: a new match keeps the previous open row', "_aNewsFilter = 'all'; _aNewsOpen = '';", "_aNewsFilter = 'all';"],

@@ -141,8 +141,8 @@ const CHECKS = {
   'a retirement counts in the record and is marked "ret." after its set scores'(src, v2) {
     const { Mo, html } = pop(src, `0|season|clay`, 'all', v2);
     assert.ok(Mo.rows.find(r => r.opp === 'D. Delta').won);
-    assert.match(rowOf(html, 'D. Delta'), /6-2, 2-1 ret\./);
-    assert.match(rowOf(html, 'E. Echo'), /4-6, 0-2 ret\./);
+    assert.match(rowOf(html, 'D. Delta'), /6-2, 2-1<span[^>]*> ret\./);
+    assert.match(rowOf(html, 'E. Echo'), /4-6, 0-2<span[^>]*> ret\./);
   },
   // Mutation: a dash with no tier split, or a count with no player key, says nothing about why.
   'a count or dash that opens nothing says why on hover'(src, v2) {
@@ -167,7 +167,7 @@ const CHECKS = {
   // rebuild draws its rows in maOvPopV2 inside MA2.popShell; maMatchRowsHtml / maPopFrame are no longer the Overview's.)
   'DoD item 8: every pop-up row opens the one sheet; the pop-up is the shared opened-box shell'(src, v2) {
     const { V, html } = pop(src, `0|season|clay`, 'all', v2);
-    assert.match(html, /class="ma2-pop-ov"/, 'the shared shell');
+    assert.match(html, /class="ma2-pop-ov[ "]/, 'the shared shell');
     assert.equal((html.match(/class="seg ma2-row"/g) || []).length, 8, '8 matches; the listed walkover is not a row button');
     const mids = rowsOf(html);
     assert.equal(mids.length, 8, 'every match opens the sheet; the walkover row carries no sheet');
@@ -220,17 +220,15 @@ const CHECKS = {
     V._ov.cell = '0|season|clay'; assert.equal(bg(), 'var(--ma2-lifted)', 'open');
     V._ov.cell = '0|' + YEAR + '|clay'; assert.equal(bg(), 'transparent', 'another cell open');
   },
-};
-// RENDERER GAP (modal-overview.md item 2, DF L1997): "ret." carries the loss red when HE retired, neutral when his opponent
-// did. maOvPopV2 prints " ret." inside the score in --ma2-soft for both. Kept failing; out of the mutant pass.
-const GAPS = {
-  'renderer gap: "ret." in loss red only on his own retirement'(src, v2) {
+  // Mutation: "ret." always red, or never red.
+  '"ret." in loss red only on his own retirement (modal-overview.md item 2, DF L1997)'(src, v2) {
     const { html } = pop(src, `0|season|clay`, 'all', v2);
     assert.match(rowOf(html, 'E. Echo'), /<span[^>]*color:var\(--ma2-red\)[^>]*>\s*ret\./, 'he retired: "ret." in loss red');
     assert.ok(!/<span[^>]*color:var\(--ma2-red\)[^>]*>\s*ret\./.test(rowOf(html, 'D. Delta')), 'the opponent retired: neutral');
   },
 };
-for (const [name, fn] of Object.entries({ ...CHECKS, ...GAPS })) test(name, () => fn(HTML, V2));
+
+for (const [name, fn] of Object.entries(CHECKS)) test(name, () => fn(HTML, V2));
 
 // DoD item 8 (grep): the old Overview renderers are deleted; no literal colour in the v2 Overview.
 test('DoD item 8: the old Overview row / drill / tooltip renderers are deleted; the v2 Overview uses tokens only', () => {
@@ -247,7 +245,9 @@ const MUTANTS = [
   ['win rate ungated', 'v2', "n && g !== 'nopct' ? (w / n * 100).toFixed(1) + '%' : DASH", "n ? (w / n * 100).toFixed(1) + '%' : '0%'"],
   ['win rate small sample not greyed', 'v2', "color: g === 'small' ? 'var(--ma2-grey)' : null })", "color: null })"],
   ['retirement note dropped', 'v2', "' ' + (C4 ? C4.RET_SETTLE_NOTE : ''))", "'')"],
-  ['ret. marker dropped', 'v2', "r.sets.map(q => q[0] + '-' + q[1]).join(', ') + (r.ret ? ' ret.' : '')", "r.sets.map(q => q[0] + '-' + q[1]).join(', ')"],
+  ['ret. marker dropped', 'v2', "(r.ret ? '<span style=\"color:' + (r.won ? 'var(--ma2-soft)' : 'var(--ma2-red)') + ';\"> ret.</span>' : '')", "''"],
+  ['ret. always red', 'v2', "(r.won ? 'var(--ma2-soft)' : 'var(--ma2-red)') + ';\"> ret.</span>'", "'var(--ma2-red);\"> ret.</span>'"],
+  ['ret. never red', 'v2', "(r.won ? 'var(--ma2-soft)' : 'var(--ma2-red)') + ';\"> ret.</span>'", "'var(--ma2-soft);\"> ret.</span>'"],
   ['priced count dropped', 'v2', "np + ' of ' + n + ' priced'", "n + ' matches'"],
   ['no split reason', 'v2', ": !n && tier !== 'all' && r.allTier === false && !r[tier] ? OV_NO_SPLIT : ''", ": ''"],
   ['no key reason', 'v2', "const why = n > 0 && pk == null ? OV_NO_KEY : n > 0", "const why = n > 0"],

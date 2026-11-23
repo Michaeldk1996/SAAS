@@ -105,11 +105,11 @@ check('the Head to Head page routes a captured Bet365 price to the same line',
       "fhB365Approx(r) ? (r.src === 'atb' ? FH_B365_AT_HOVER : r.src === 'teb' ? FH_B365_TE_HOVER : FH_B365_APPROX_HOVER) : FH_B365_HOVER) : " in html)
 # Match analysis rebuild 2026-11-23: the Overview pop-up is maOvPopV2 (match-analysis-v2.js). Its price hover is
 # fhSrcTitle(r) — the line above — and a Bet365 row gets " (no Pinnacle close for this match)" appended. For a captured /
-# snapshot Bet365 (fhB365Approx) that turns the ruled exact line into another one (founder 2026-10-18: every hover on it
-# reads exactly WANT). RENDERER GAP while it fails.
+# snapshot Bet365 (fhB365Approx) the hover must be the ruled exact line (founder 2026-10-18: every hover on it reads exactly
+# WANT; fixed on ma-v2 49127571f).
 v2 = open(os.path.join(ROOT, 'match-analysis-v2.js'), encoding='utf8').read()
 ovp = v2[v2.index('function maOvPopV2('):]; ovp = ovp[:ovp.index('\n  root.maOverviewV2')]
-check('renderer gap: the Overview pop-up hovers a captured Bet365 price with the exact line (nothing appended)',
+check('the Overview pop-up hovers a captured Bet365 price with the exact line (nothing appended)',
       "fhSrcTitle(r) + ' (no Pinnacle close" not in ovp or "fhB365Approx(r)" in ovp, ovp[ovp.find('fhSrcTitle'):][:200])
 WANT_AT = 'Bet365 (approx.) · Bet365 snapshot from api-tennis, no timestamp, not a confirmed close'
 check('api-tennis\'s Bet365 snapshot (book 7, founder brief 2026-10-19): every hover names its source and says "not a confirmed close"',

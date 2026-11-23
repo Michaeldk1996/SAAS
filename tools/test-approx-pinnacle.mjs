@@ -129,7 +129,7 @@ check('trDbJoinPx passes the join\'s own source on (the Tournament tab printed e
   const v2 = readFileSync(join(ROOT, 'match-analysis-v2.js'), 'utf8');
   const PINNED_PAGE = ['fhB365Tag', 'fhH2hSrcTitle', 'fhPriceCell', 'trPxTitle'];
   const PINNED_V2 = ['cell' /* Playing style match lists, inside psList */, 'formBars' /* Form bars */, 'gate' /* Market edge band box rows, meBandPopV2 */,
-    'listed' /* Overview pop-up rows, maOvPopV2 */, 'recentBox' /* Form recent matches */, 'sub' /* Market edge line box rows, meLinePopV2 */];
+    'listed' /* Overview pop-up rows, maOvPopV2 */, 'prc' /* Progression road box price cells, pgRoadBox */, 'recentBox' /* Form recent matches */, 'sub' /* Market edge line box rows, meLinePopV2 */];
   const PINNED_PROFILE = ['pxSrcHtml'];
   check('every caller of fhSrcTitle is pinned (H2H B365 tag, H2H tab, price cells, Tournament tab; v2: Form bars + rows, Market edge boxes, Overview pop-up, Playing style; the profile)',
     JSON.stringify(callers(html)) === JSON.stringify(PINNED_PAGE) && JSON.stringify(callers(v2)) === JSON.stringify(PINNED_V2) && JSON.stringify(callers(prof)) === JSON.stringify(PINNED_PROFILE),
@@ -138,9 +138,10 @@ check('trDbJoinPx passes the join\'s own source on (the Tournament tab printed e
     !v2.split('\n').some(l => !/^\s*\/\//.test(l) && /(?:^|[^.\w])(?:window\.)?fhSrcTitle\s*=(?!=)|(?:const|let|var|function)\s+fhSrcTitle\b/.test(l)));
   // odds.md (founder 2026-10-17 "one price per match … same price, source and hover" incl. Progression; 2026-10-18 item 5
   // "every dash carries its reason"): the old Progression heat cell hovered fhSrcTitle; the rebuilt road box (pgRoadBox,
-  // its `prc` cells) prints prices and dashes with no hover. RENDERER GAP while it fails.
+  // its `prc` cells) must hover the price's source, a dash its reason (fixed on ma-v2 49127571f).
   { const a = v2.indexOf('function pgRoadBox('), b = v2.indexOf('function maProgressionV2(');
-    check('renderer gap: the Progression road box hovers each price / dash with its source (fhSrcTitle)', /fhSrcTitle\(/.test(v2.slice(a, b))); }
+    const pb = v2.slice(a, b);
+    check('the Progression road box hovers each price with its source (fhSrcTitle) and each dash with its reason (sfNoPriceReason)', /prc = [^\n]*fhSrcTitle\(r\)/.test(pb) && /prc = [^\n]*sfNoPriceReason/.test(pb) && /prc\(r\.price, [^)]*, r\)/.test(pb)); }
   const decls = (html.match(/^\s*function fhSrcTitle\s*\(/gm) || []).length;
   const rebinds = html.split('\n').filter(l => !/^\s*\/\//.test(l) && /(?:^|[^.\w])(?:window\.)?fhSrcTitle\s*=(?!=)|(?:const|let|var)\s+fhSrcTitle\b/.test(l)).length;
   check('one declaration of fhSrcTitle on the page and no re-binding of the name, so every bare call reads it', decls === 1 && rebinds === 0, JSON.stringify({ decls, rebinds }));
