@@ -21,6 +21,8 @@ const { spawnSync } = require('child_process');
 
 const ROOT = path.join(__dirname, '..');
 const HTML = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
+// Match analysis rebuild (2026-11-23): the H2H tab's Price range is drawn by match-analysis-v2.js (h2Price)
+const MA2 = fs.readFileSync(path.join(ROOT, 'match-analysis-v2.js'), 'utf8');
 let failures = 0;
 const fail = (msg) => { console.error(`  FAIL ${msg}`); failures += 1; };
 const ok = (msg) => console.log(`  ok   ${msg}`);
@@ -119,7 +121,7 @@ function formRows(src) {
     return r;
   });
 }
-function checkFormH2h(src) {
+function checkFormH2h(src, ma2 = MA2) {
   const bad = [];
   const form = fnSrc('fhFormPlayer', src);
   // Form's priced population and flat 1u, as the page computes them. mutation: `win.filter(r => r.price != null && !r.ret)`
@@ -128,7 +130,7 @@ function checkFormH2h(src) {
   // mutation: flat 1u voids retirements (`r.ret ? 0 : …`)
   if (!form.includes('flat: priceMetric(() => priced.reduce((s, r) => s + (r.won ? r.price - 1 : -1), 0)')) bad.push('Form: flat 1u is no longer won ? price − 1 : −1 over every priced row');
   // H2H Price range: every meeting with a price. mutation: `F.filter(r => r.price != null && !r.ret)`
-  if (!/const PR = F\.filter\(r => r\.price != null\), nP = PR\.length;/.test(src)) bad.push('H2H: the Price range population is no longer "every meeting with a price"');
+  if (!/const PR = F\.filter\(r => r\.price != null\), nP = PR\.length,/.test(ma2)) bad.push('H2H: the Price range population is no longer "every meeting with a price"');
   // executed: the page's own Form rows for two retirements are priced, marked ret, and settle like the Market edge core
   const core = require(path.join(ROOT, 'market-edge-core.js'));
   let rows;
@@ -150,16 +152,21 @@ function checkFormH2h(src) {
 // exact text, and that H2H and both profile sites print the core's constant (never a copy of the words).
 const NOTE = 'Retirements settle on Pinnacle rules for all rows.';
 const PROFILE = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
-function checkLabel(coreSrc, html, profile) {
+function checkLabel(coreSrc, html, profile, ma2 = MA2) {
   const bad = [];
   const m = /const RET_SETTLE_NOTE = '([^']*)';/.exec(coreSrc);
   if (!m || m[1] !== NOTE) bad.push(`core: RET_SETTLE_NOTE is ${m ? JSON.stringify(m[1]) : 'missing'}, not the founder's text`);
   if (!/const api = \{[^}]*\bRET_SETTLE_NOTE\b/.test(coreSrc)) bad.push('core: RET_SETTLE_NOTE is not exported');
-  if (!/data-ret-note="h2h"[^`]*\$\{fhEsc\(globalThis\.MarketEdgeCore\.RET_SETTLE_NOTE\)\}/.test(html)) bad.push('H2H: the Price range card does not print the settlement note');
+  // 2026-11-23 rebuild: the H2H Price range (h2Price) carries the note as the "Closing odds" line's hover, read through
+  // fhRetNote (the page's one reader of MarketEdgeCore.RET_SETTLE_NOTE)
+  const h2p = ma2.slice(ma2.indexOf('  function h2Price('), ma2.indexOf('  const pbox2 ='));
+  if (!/function fhRetNote\(\)\{ return \(globalThis\.MarketEdgeCore && globalThis\.MarketEdgeCore\.RET_SETTLE_NOTE\) \|\| ''; \}/.test(html)
+    || !/const ret = typeof fhRetNote === 'function' \? fhRetNote\(\) : '';/.test(h2p)
+    || !/'<span' \+ \(nP && ret \? ' title="' \+ esc\(ret\) \+ '"' : ''\) \+ ' style="font-size:12\.5px; color:var\(--ma2-grey\);">Closing odds'/.test(h2p)) bad.push('H2H: the Price range card does not print the settlement note');
   if (!/data-ret-note="profile-me">' \+ esc\(window\.MarketEdgeCore\.RET_SETTLE_NOTE\)/.test(profile)) bad.push('profile: the Market edge line does not print the settlement note');
   if (!/data-ret-note="profile-backing" title="' \+ esc\(window\.MarketEdgeCore\.RET_SETTLE_NOTE\)/.test(profile)) bad.push('profile: the Backing column has no settlement tooltip');
   // one source: no surface spells the words out itself
-  if (html.includes(NOTE) || profile.includes(NOTE)) bad.push('a surface hard-codes the note instead of reading RET_SETTLE_NOTE');
+  if (html.includes(NOTE) || profile.includes(NOTE) || ma2.includes(NOTE)) bad.push('a surface hard-codes the note instead of reading RET_SETTLE_NOTE');
   return bad;
 }
 const CORE = fs.readFileSync(path.join(ROOT, 'market-edge-core.js'), 'utf8');
@@ -191,29 +198,31 @@ function controls() {
   const HM = [
     ['Form: void retirements priced again', 'const priced = win.filter(r => r.price != null && fhSettles(r)), np', 'const priced = win.filter(r => r.price != null), np'],
     ['Form: flat 1u voids retirements', 'flat: priceMetric(() => priced.reduce((s, r) => s + (r.won ? r.price - 1 : -1), 0)', 'flat: priceMetric(() => priced.reduce((s, r) => s + (r.ret ? 0 : r.won ? r.price - 1 : -1), 0)'],
-    ['H2H: price range drops retirements', 'const PR = F.filter(r => r.price != null), nP', 'const PR = F.filter(r => r.price != null && !r.ret), nP'],
     ['Form rows: retirement unpriced', 'fhRowFromForm(x, selfKey, selfName, idx){', 'fhRowFromForm(x, selfKey, selfName, idx){ if (x.retired) x = Object.assign({}, x, { date: "1900-01-01" });'],
   ];
   const LM = [
     ['label: wording changed', "RET_SETTLE_NOTE = 'Retirements settle on Pinnacle rules for all rows.'", "RET_SETTLE_NOTE = 'Retirements settled on the official ATP result.'", 'core'],
     ['label: not exported', 'const api = { matchFormat, RET_SETTLE_NOTE, ', 'const api = { matchFormat, ', 'core'],
-    ['label: H2H footnote dropped', 'data-ret-note="h2h"', 'data-x="h2h"', 'html'],
+    ['label: H2H footnote dropped', "'<span' + (nP && ret ? ' title=\"' + esc(ret) + '\"' : '') + ' style=\"font-size:12.5px; color:var(--ma2-grey);\">Closing odds'", "'<span' + ' style=\"font-size:12.5px; color:var(--ma2-grey);\">Closing odds'", 'ma2'],
+    ['label: H2H note read from another source', "const ret = typeof fhRetNote === 'function' ? fhRetNote() : '';", "const ret = 'Retirements are void.';", 'ma2'],
     ['label: profile Market edge line dropped', 'data-ret-note="profile-me"', 'data-x="profile-me"', 'profile'],
     ['label: Backing tooltip dropped', "' data-ret-note=\"profile-backing\" title=\"' + esc(window.MarketEdgeCore.RET_SETTLE_NOTE) + '\"'", "''", 'profile'],
-    ['label: hard-coded copy', 'data-ret-note="h2h" style', 'data-ret-note="h2h" title="Retirements settle on Pinnacle rules for all rows." style', 'html'],
+    ['label: hard-coded copy', "const ret = typeof fhRetNote === 'function' ? fhRetNote() : '';", "const ret = 'Retirements settle on Pinnacle rules for all rows.';", 'ma2'],
   ];
   let caught = 0;
   for (const [name, from, to, where] of LM) {
-    const src = { core: CORE, html: HTML, profile: PROFILE };
+    const src = { core: CORE, html: HTML, profile: PROFILE, ma2: MA2 };
     src[where] = once(src[where], from, to, name);
-    if (checkLabel(src.core, src.html, src.profile).length) caught++; else fail(`control survived: ${name}`);
+    if (checkLabel(src.core, src.html, src.profile, src.ma2).length) caught++; else fail(`control survived: ${name}`);
   }
   for (const [name, from, to, w] of BM) {
     const out = w === 'db' ? runBuilder(BUILDER, once(DB_BUILDER, from, to, name)) : runBuilder(once(BUILDER, from, to, name));
     if (checkBuilder(out).length) caught++; else fail(`control survived: ${name}`);
   }
   for (const [name, from, to] of HM) { if (checkFormH2h(once(HTML, from, to, name)).length) caught++; else fail(`control survived: ${name}`); }
-  console.log(`  mutants: ${caught} of ${LM.length + BM.length + HM.length} caught`);
+  const MM = [['H2H: price range drops retirements', 'const PR = F.filter(r => r.price != null), nP', 'const PR = F.filter(r => r.price != null && !r.ret), nP']];
+  for (const [name, from, to] of MM) { if (checkFormH2h(HTML, once(MA2, from, to, name)).length) caught++; else fail(`control survived: ${name}`); }
+  console.log(`  mutants: ${caught} of ${LM.length + BM.length + HM.length + MM.length} caught`);
 }
 controls();
 if (failures) { console.error(`test-ten325-retirements: ${failures} failure(s)`); process.exit(1); }
