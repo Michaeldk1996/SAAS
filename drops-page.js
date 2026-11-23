@@ -1,22 +1,18 @@
-/* drops-page.js — TEN-294 Dropping Odds page.
+/* drops-page.js — Dropping Odds v2 (sharp vs soft).
  *
- * Built from the Claude Design export `design_handoff_dropping_odds` (LOCKED 2026-09-26).
- * The export's structure and values are the spec (drops-page.css); its sample data is not:
- * every row here comes from the drops endpoint, stennisfy-drops.fly.dev, which reads the
- * database once per 30 s and serves that snapshot to every viewer. This page is a reader.
+ * Built from the Claude Design handoff `design_handoff_dropping_odds_v2` (2026-11-23): `Dropping Odds v2.dc.html` is
+ * the structure and every measured value (drops-page.css reads them through the --do2-* tokens), its README the rules.
+ * Its sample data is not shipped: every selection, book, price and time here comes from the drops endpoint
+ * (stennisfy-drops.fly.dev, one database read per 30 s fanned out to every viewer) and, for a selection whose match is a
+ * Today's Matches card, Pinnacle from that card's TEN-295 chart shard. Rules: .claude/rules/drops.md.
  *
- * Rulings (founder card 79e9db02, 2026-09-26; .claude/rules/drops.md):
- *   Q1  a row is one selection × bookmaker; drop = (open − now) / open, shortened rows only
- *   Q2  WINDOW "Since open" is the default and means everything the feed holds (72h since card 518c56f0 Q4)
- *   TEN-427 r2 (founder 20de43fe, supersedes 518c56f0's three views): upcoming matches only; a row leaves at its start
- *   Q3  past 5 min, or with the endpoint unreachable, the export's FEED DISCONNECTED banner as drawn
- *   Q4  the pop-up plots only recorded prices; missing fields "—"
- *   777a3192 (pop-up rebuild): every recorded book quoting the selection; board-matched rows get metadata + link
- *   TEN-427 Data 7 (supersedes Q5): no Alerts, no Refresh; the list re-reads every 30 s, Reconnect is the one refetch
- * Mapping measured in TEN-297 doc `feed-mapping`.
+ * One row per SELECTION (a player to win a match). Its books come from the endpoint's `lines` (one per match side, each
+ * book's change-only series for that side and the opponent) — Bet105 (Kibl), Superbet and Napoleon Sports BE
+ * (odds-api.io) — plus Pinnacle (Oddspapi) from the board shard. A book's first price is the first one Stennisfy
+ * recorded; its price now is the last one. Every %, implied and pts figure is computed at render from the two prices
+ * printed beside it (README `rd` / `calc`), never stored.
  *
- * Gated by FEATURE_DROPS (default ON; ?drops=0 or localStorage stennisfy.flags.drops=0 turns
- * it off). The sidebar button stays hidden unless this file reveals it.
+ * Gated by FEATURE_DROPS (default ON; ?drops=0 or localStorage stennisfy.flags.drops=0 turns it off).
  */
 (function () {
   'use strict';
@@ -24,41 +20,62 @@
   var ENDPOINT = 'https://stennisfy-drops.fly.dev';
   var POLL_MS = 30000;               // the endpoint's own read cadence; polling faster reads nothing new
   var AMBER_AFTER_S = 90;            // 3x the read interval (drops.md)
-  var DISCONNECTED_AFTER_S = 300;    // 5 min (drops.md)
-  var PH_TTL_MS = 60000;             // the box's copy of a card's price_history expires as the pop-up's does
+  var DISCONNECTED_AFTER_S = 300;    // 5 min (drops.md): the "Feed disconnected" banner
+  var QUOTING_MS = 24 * 3600e3;      // an endpoint book not seen for 24 h is not quoting (drops.md)
+  var CHART_MS = 24 * 3600e3;        // the chart is "Last 24 hours"
   var H = 3600e3;
 
-  // TEN-427 Data 3: ONE Sharp / Soft grouping, odds.md's AODDS_BOOKS (the Odds tab; Model's best-soft scan agrees):
-  // Sharp = Pinnacle (both sources), Betfair Exchange, Bet105; every other book Soft. An exchange is never soft.
-  var SHARP_BOOKS = { 'Pinnacle': 1, 'Pinnacle +30s': 1, 'Pinnacle (api-tennis)': 1, 'Betfair Exchange': 1, 'Bet105': 1 };
-  // Founder 2026-11-01: Polymarket is its own group, "Prediction market" (the Odds tab's AODDS_BOOKS says the same).
-  var PREDICTION_BOOKS = { 'Polymarket': 1 };
-  function bookCls(n) {
-    var s = String(n || ''), base = s.replace(/\s*\([^)]*\)\s*$/, '');   // a source suffix ("(Oddspapi)", "(recorded by us)") is not the book
-    if (PREDICTION_BOOKS[s] || PREDICTION_BOOKS[base]) return 'prediction';
-    return SHARP_BOOKS[s] || SHARP_BOOKS[base] || /exchange|matchbook|smarkets|betdaq/i.test(base) ? 'sharp' : 'soft';
-  }
-  // the two alert books (the bots that write the feed), read through the one grouping
-  var GROUP_NAME = { sharp: 'Sharp', soft: 'Soft', prediction: 'Prediction market' };
-  var BOOK_CLASS = { Bet105: bookCls('Bet105'), Superbet: bookCls('Superbet') };
-  // TEN-427 r2 fix 10: the drop bots record Match winner only, so it is the only market tab (no tab for a market we do
-  // not record — the Alerts rule); "All markets" = the sum of the market tabs
-  var MARKETS = [['mw', 'Match winner']];
-  var LINE_TO_MARKET = { 'Match Winner': 'mw' };
+  // The roster: only books this page has a source for (README books are placeholders). Sharp = Pinnacle, Bet105
+  // (Betfair has no source since 8 Nov); Soft = Superbet, Napoleon Sports BE. Prediction markets: none in the feed, so
+  // every prediction-market element stays hidden (no group, no menu, no amber line, no count).
+  var BOOKS = [['Pinnacle', 'sharp'], ['Bet105', 'sharp'], ['Superbet', 'soft'], ['Napoleon Sports BE', 'soft']];
+  var BOOK_CLS = {}; BOOKS.forEach(function (b) { BOOK_CLS[b[0]] = b[1]; });
+  var BOOK_NAMES = BOOKS.map(function (b) { return b[0]; });
+  var SOFT_NAMES = BOOKS.filter(function (b) { return b[1] === 'soft'; }).map(function (b) { return b[0]; });
+  // Pinnacle on a board card's chart shard: Oddspapi first, the api-tennis copy only without it (one source, never spliced)
+  var PIN_SOURCES = ['Pinnacle +30s', 'Pinnacle (api-tennis)'];
+  var MK = { mw: 'Match winner' };
+  var TIERS = ['ATP', 'Challenger', 'ITF'];
   var WINDOWS = [['open', 'Since open'], ['12h', '12h'], ['24h', '24h'], ['48h', '48h']];
+  var WIN_H = { open: 1e9, '12h': 12, '24h': 24, '48h': 48 };
+  var WIN_TXT = { open: 'since open', '12h': 'last 12h', '24h': 'last 24h', '48h': 'last 48h' };
   var MIN = [[0, 'Any'], [5, '5%'], [10, '10%'], [20, '20%'], [30, '30%']];
-  var STARTS = [[0, 'Any time'], [3, '3h'], [6, '6h'], [12, '12h'], [24, '24h']];
-  var SORT = [['drop', 'Biggest drop'], ['recent', 'Latest move'], ['soon', 'Starting soonest']];
-  // TEN-427 r2 ruling (founder 20de43fe, supersedes the Upcoming · In play · Completed views): the list is upcoming
-  // matches only. A row leaves at its start (the Today's Matches card's when matched, else the vendor's), or earlier
-  // when the feed marks it live (liveAt, in play, finished, a cut). A row with no start cannot be shown as upcoming.
-  function isUpcoming(r, now) {
-    if (r.liveAt || r.cutAt || r.status === 'in_play' || r.status === 'finished') return false;
-    var t = startMs(r);
-    return t != null && now != null && t > now;
-  }
+  var MVL = [['all', 'All'], ['both', 'Sharp and soft'], ['sharp', 'Sharp only'], ['soft', 'Soft only'], ['nosharp', 'No sharp line']];
 
-  // ─── pure helpers (exported for test-ten294-drops.mjs) ───────────────────────
+  // ─── readings (README `rd` / `calc`) ────────────────────────────────────────
+  // half away from zero on the decimal value (4.075 -> 4.08, never the float's 4.0749… -> 4.07)
+  function r1(x) { return Math.sign(x) * Math.round(Math.abs(x) * 10 + 1e-9) / 10; }
+  function r2(x) { return Math.sign(x) * Math.round(Math.abs(x) * 100 + 1e-9) / 100; }
+  function f2(x) { return x.toFixed(2); }
+  // a reading from a first recorded price o (null = one price recorded) and a price now n (null = no line), on the
+  // 2 dp prices the page prints, so every figure follows from what the reader sees
+  function rd(o, n) {
+    if (n == null) return { kind: 'none' };
+    n = r2(n);
+    if (o == null) return { kind: 'one', n: n };
+    o = r2(o);
+    var io = r1(100 / o), inn = r1(100 / n);
+    return { kind: n < o ? 'drop' : n > o ? 'up' : 'flat', o: o, n: n, d: r1((o - n) / o * 100), io: io, inn: inn, pts: r1(inn - io) };
+  }
+  // bk = { book: { first: price | null, now: price, … } }
+  function calc(bk) {
+    var sq = SOFT_NAMES.filter(function (b) { return bk[b]; });
+    var two = sq.filter(function (b) { return bk[b].first != null; });
+    var avg = function (k) { return r2(two.reduce(function (a, b) { return a + r2(bk[b][k]); }, 0) / two.length); };
+    var qn = BOOK_NAMES.filter(function (b) { return bk[b]; }), best = qn[0];
+    qn.forEach(function (b) { if (r2(bk[b].now) > r2(bk[best].now)) best = b; });
+    return {
+      sharp: bk.Pinnacle ? rd(bk.Pinnacle.first, bk.Pinnacle.now) : { kind: 'none' },
+      soft: { quotes: sq.length, two: two.length, down: two.filter(function (b) { return r2(bk[b].now) < r2(bk[b].first); }).length,
+        lead: two.length === 1 ? two[0] : 'avg', r: two.length ? rd(avg('first'), avg('now')) : { kind: sq.length ? 'one' : 'none' } },
+      best: qn.length ? { n: qn.length, book: best, price: r2(bk[best].now) } : null,
+    };
+  }
+  function dOf(r) { return r.d != null ? r.d : -1; }
+  function mvOf(c) {
+    var sd = c.sharp.kind === 'drop', fd = c.soft.down > 0;
+    return c.sharp.kind === 'none' ? 'nosharp' : sd && fd ? 'both' : sd ? 'sharp' : fd ? 'soft' : 'none';
+  }
   function num(v) { var n = typeof v === 'number' ? v : parseFloat(v); return isFinite(n) && n > 0 ? n : null; }
   function tierOf(t) {
     t = String(t || '');
@@ -69,106 +86,6 @@
   }
   function fold(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim(); }
   function price2(v) { var n = num(v); return n == null ? '—' : n.toFixed(2); }
-  // TEN-427 (shell R1): the drop is measured on the 2 dp prices the row SHOWS, by the site's one move formula
-  // (Today's Matches move view, mxMovePct: one decimal, a half away from zero), so a reader can redo every figure.
-  // A shortening price is a negative move; the drop is its size. Outside the dashboard (node) the same digits rule.
-  function movePct(open, now) {
-    if (typeof mxMovePct === 'function') { var m = mxMovePct(open, now); return m ? m.v : null; }   // eslint-disable-line no-undef
-    if (!(open > 0) || !(now > 0)) return null;
-    var o2 = Math.round(Number(Number(open).toFixed(2)) * 100), n2 = Math.round(Number(Number(now).toFixed(2)) * 100);
-    if (!(o2 > 0) || !(n2 > 0)) return null;
-    var q = (n2 - o2) * 1000 / o2;
-    return Math.sign(q) * Math.round(Math.abs(q)) / 10;
-  }
-  function dropOf(open, now) { var v = movePct(open, now); return v == null ? null : (v === 0 ? 0 : -v); }
-
-  // One row per selection × book (Q1). Repeat alerts collapse to the newest; the row's drop is
-  // open → latest at that book, on the shown prices; only a shortened price is listed.
-  function buildRows(feedRows) {
-    var by = {};
-    (feedRows || []).forEach(function (r) {
-      var k = [r.playerA, r.playerB, r.side, r.book, r.line].join('\u0001');
-      if (!by[k] || (Date.parse(r.detectedAt) || 0) > (Date.parse(by[k].detectedAt) || 0)) by[k] = r;
-    });
-    var out = [];
-    Object.keys(by).forEach(function (k) {
-      var r = by[k];
-      var open = num(r.open && r.open.price), now = num(r.latest && r.latest.price);
-      if (open == null || now == null) return;
-      var drop = dropOf(open, now);
-      if (!(drop > 0)) return;
-      var side = r.side || '';
-      var opp = side === r.playerA ? r.playerB : side === r.playerB ? r.playerA : null;
-      var dropped = num(r.droppedTo && r.droppedTo.price);
-      // "moved": the current price's record time when it differs from the alert price, else the alert
-      var movedAt = (dropped != null && dropped !== now && r.latest && r.latest.at) ? r.latest.at : (r.droppedTo && r.droppedTo.at) || r.detectedAt;
-      out.push({
-        id: r.id, book: r.book, cls: bookCls(r.book), tier: tierOf(r.tier), tierRaw: r.tier,
-        mk: LINE_TO_MARKET[r.line] || null, playerA: r.playerA, playerB: r.playerB, side: side, opp: opp,
-        open: open, now: now, drop: drop, openAt: r.open && r.open.at, openKind: r.open && r.open.kind,
-        preDrop: r.preDrop, droppedTo: r.droppedTo, latest: r.latest,
-        detectedAt: r.detectedAt, movedAt: movedAt, start: r.scheduledStart || null,
-        status: (r.match && r.match.status) || 'unknown', apiStatus: (r.match && r.match.apiStatus) || null,
-        liveAt: (r.match && r.match.liveAt) || null, cutAt: (r.match && r.match.cutAt) || null, cutKind: (r.match && r.match.cutKind) || null,
-      });
-    });
-    return out;
-  }
-
-  function defaults(books) {
-    return { tiers: ['ATP', 'Challenger', 'ITF'], btype: 'all', books: (books || Object.keys(BOOK_CLASS)).slice(),
-      win: 'open', min: 0, starts: 0, sort: 'drop', q: '', mk: 'all', surf: 'all' };
-  }
-
-  function passes(r, S, dataNow, ignoreMk) {
-    if (!isUpcoming(r, dataNow)) return false;
-    if (!ignoreMk && S.mk !== 'all' && r.mk !== S.mk) return false;
-    if (S.tiers.indexOf(r.tier) < 0) return false;
-    if (S.books.indexOf(r.book) < 0) return false;
-    if (S.btype !== 'all' && r.cls !== S.btype) return false;
-    if (S.win === '12h' || S.win === '24h' || S.win === '48h') {
-      var hrs = parseInt(S.win, 10);
-      if (!(dataNow - Date.parse(r.detectedAt) <= hrs * H)) return false;
-    }
-    if (S.min > 0 && !(r.drop >= S.min)) return false;
-    if (S.starts > 0 && !((startMs(r) - dataNow) / H <= S.starts)) return false;   // every listed start is upcoming
-    // Surface: a board-matched row's card surface; a row without one passes only "All" (never a guessed surface)
-    if (S.surf && S.surf !== 'all' && r.surface !== S.surf) return false;
-    var q = fold(S.q);
-    if (q && fold([r.playerA, r.playerB, r.dA, r.dB, r.event].filter(Boolean).join(' ')).indexOf(q) < 0) return false;
-    return true;
-  }
-
-  // a row's start: its Today's Matches card's when matched (set by the page), else the feed's scheduledStart
-  function startMs(r) { if (r.cardStart != null && isFinite(r.cardStart)) return r.cardStart; var v = Date.parse(r.start); return isFinite(v) ? v : null; }
-  function sortRows(list, sort, dataNow) {
-    var t = function (s) { var v = Date.parse(s); return isFinite(v) ? v : null; };
-    var now = dataNow == null ? Date.now() : dataNow;
-    var cmp = {
-      drop: function (a, b) { return b.drop - a.drop; },
-      recent: function (a, b) { return (t(b.movedAt) || 0) - (t(a.movedAt) || 0); },
-      // upcoming by start time, then matches whose scheduled start has passed (no live evidence either way)
-      soon: function (a, b) {
-        var x = startMs(a), y = startMs(b);
-        var px = x == null || x < now, py = y == null || y < now;
-        if (px !== py) return px ? 1 : -1;
-        if (x == null || y == null) return x == null && y == null ? 0 : x == null ? 1 : -1;
-        return px ? y - x : x - y;
-      },
-    }[sort] || function () { return 0; };
-    return list.slice().sort(cmp);
-  }
-
-  function view(rows, S, dataNow) {
-    var list = sortRows(rows.filter(function (r) { return passes(r, S, dataNow, false); }), S.sort, dataNow);
-    var mkCount = {};
-    rows.forEach(function (r) { if (r.mk && passes(r, S, dataNow, true)) mkCount[r.mk] = (mkCount[r.mk] || 0) + 1; });
-    var matches = {};
-    list.forEach(function (r) { matches[[r.playerA, r.playerB].sort().join('|')] = 1; });
-    return { list: list, mkCount: mkCount, nMatches: Object.keys(matches).length };
-  }
-
-  // "41m ago", "2h ago", "23s ago", "just now"
   function ago(ms) {
     if (!(ms >= 0)) return '—';
     var s = Math.round(ms / 1000);
@@ -193,7 +110,6 @@
   // hold: the price runs flat to the next change's time, then moves vertically there. Never a diagonal slide,
   // never a diagonal or dashed piece between recorded prices. The solid line stops at the end data rule 25 names; from
   // there TEN-427 r3 item 9 carries the last price on, flat and dashed, to the axis end (boxChart `ext`).
-  var MIN_SPAN_MS = 60 * 60e3;         // the X axis never spans less than an hour
   var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   // TEN-427 Data 6: every clock on the page reads the member's zone (Account settings → stennisfy.tz, newsTz), else
   // the browser zone — the header Updated, the banner's "as of", row times, the box's start line and its time axis.
@@ -211,36 +127,6 @@
   function hm(t) { var p = zp(t); return p.hh + ':' + p.mm; }
   function dayOf(t) { var p = zp(t); return p.d + ' ' + MON[p.m]; }
   function clock(iso) { var t = typeof iso === 'number' ? iso : Date.parse(iso); return isFinite(t) ? hm(t) : '—'; }
-  // data rule 25: where the solid line ends (t), where the axis ends (axisT) and what the end label says
-  //   a row cut at the live start -> "Last pre-match", the line carried to the start (the price in force then),
-  //     or to the book's last sighting when it stopped quoting before it; the axis ends where that line does (no
-  //     dashed carry past a book that stopped quoting — drops.md, review of 52050426c)
-  //   otherwise -> "Now" (TEN-427 r3 item 8, founder 393874e7: the table head's word, the same snapshot — the book's
-  //     latest price); the solid line ends at the book's last snapshot (or a later confirmed sighting of it) and the
-  //     axis runs to now for EVERY book (r3 item 9): boxChart carries that price flat and dashed to the axis end
-  function endOf(series, seen, cutAt, now) {
-    var last = series[series.length - 1];
-    if (!last) return null;
-    var cut = cutAt ? Date.parse(cutAt) : NaN;
-    var seenOk = seen != null && isFinite(seen);
-    if (isFinite(cut)) {
-      var ct = seenOk && seen < cut ? Math.max(last.t, seen) : Math.max(last.t, cut);
-      return { label: 'Last pre-match', t: ct, v: last.v, axisT: ct, confirmed: seenOk };
-    }
-    var lt = seenOk && seen > last.t ? seen : last.t;
-    return { label: 'Now', t: lt, v: last.v, axisT: now != null && now > lt ? now : lt, confirmed: lt > last.t };
-  }
-  // Time axis 1a (TEN-427, the Database chart type): X labels are HH:MM only — 5 (0/25/50/75/100%) from 2 h up,
-  // 3 (0/50/100%) below — and the day sits in a band under them, split at midnight in the member's zone.
-  function axisTicks(a0, a1) {
-    var span = a1 - a0;
-    return (span >= 2 * H ? [0, 0.25, 0.5, 0.75, 1] : [0, 0.5, 1]).map(function (f) {
-      var t = a0 + f * span;
-      return { x: (f * 1000).toFixed(1), left: (f * 100) + '%', tf: f === 0 ? 'none' : f === 1 ? 'translateX(-100%)' : 'translateX(-50%)', label: hm(t) };
-    });
-  }
-  // the day bands under the ticks: one per calendar day the axis touches (member's zone), each as wide as its share
-  // of the axis; `splits` = the midnights inside the axis (x in 0..1000), drawn as the plot's day split
   function dayBands(a0, a1) {
     var span = a1 - a0, cuts = [], key = function (t) { var p = zp(t); return p.y * 400 + p.m * 32 + p.d; };
     if (!(span > 0)) return { bands: [{ w: '100%', label: dayOf(a0) }], splits: [] };
@@ -259,147 +145,6 @@
     for (var i = 0; i + 1 < edges.length; i++) bands.push({ w: ((edges[i + 1] - edges[i]) / span * 100).toFixed(2) + '%', label: dayOf(edges[i]) });
     return { bands: bands, splits: cuts.map(function (c) { return ((c - a0) / span * 1000).toFixed(1); }) };
   }
-  // the chart's geometry (pY in 0..1 from the top; x in 0..1000 over the axis)
-  // holes: [[from, to], …] ms — stretches the book was recorded NOT quoting (odds.md: an api-tennis `meta.gaps`
-  // entry, the book out of the feed or suspended). A hold is never drawn across one: the only breaks in the line.
-  function boxChart(series, openV, end, holes) {
-    var rec = (series || []).filter(function (p) { return isFinite(p.t) && p.v != null; });
-    var first = rec[0], last = rec[rec.length - 1];
-    var endT = end && end.t > last.t ? end.t : last.t;
-    // one recorded price: a line only when a later sighting confirmed it (item 5); otherwise the dot alone
-    // (a cut row's carry to the start is not a sighting)
-    var single = rec.length < 2 && !(end && end.confirmed && endT > first.t);
-    // the open chip sits at the book's first price: keep it inside the Y range
-    var vs = rec.map(function (p) { return p.v; }).concat(!single && openV != null ? [openV] : []);
-    var lo = Math.min.apply(null, vs), hi = Math.max.apply(null, vs);
-    if (hi - lo < 0.1) { lo -= 0.1; hi += 0.1; }
-    var pad = (hi - lo) * 0.12; lo -= pad; hi += pad;
-    lo = Math.max(1, lo);   // TEN-427 r2 fix 11: decimal odds never go under 1.00, so neither does the axis
-    var pY =function (v) { return (hi - v) / (hi - lo); };
-    // the axis: first seen -> the end's axis time (now, or the live start), at least an hour (padded before first seen)
-    var a1 = Math.max(endT, end && end.axisT != null ? end.axisT : endT), a0 = Math.min(first.t, a1 - MIN_SPAN_MS);
-    var fx = function (t) { return (t - a0) / (a1 - a0) * 1000; };
-    var P = function (t, v) { return fx(t).toFixed(1) + ',' + (pY(v) * 300).toFixed(1); };
-    // the step line: each price held flat from its change to the next change (the last to the line's end),
-    // joined by a vertical move at each change's time; a hole removes the hold inside it
-    var pieces = [];
-    rec.forEach(function (p, k) { pieces.push({ s: p.t, e: k + 1 < rec.length ? rec[k + 1].t : endT, v: p.v }); });
-    (holes || []).forEach(function (h) {
-      var hs = h[0], he = h[1] == null ? Infinity : h[1];
-      if (!(he > hs)) return;
-      pieces = [].concat.apply([], pieces.map(function (q) {
-        if (q.e <= hs || q.s >= he) return [q];
-        var out = [];
-        if (q.s < hs) out.push({ s: q.s, e: hs, v: q.v });
-        if (q.e > he) out.push({ s: he, e: q.e, v: q.v });
-        return out;
-      }));
-    });
-    var lines = [], cur = null, prevE = null;
-    pieces.forEach(function (q) {
-      if (cur && q.s === prevE) cur.push(P(q.s, q.v));
-      else { cur = [P(q.s, q.v)]; lines.push(cur); }
-      cur.push(P(q.e, q.v));
-      prevE = q.e;
-    });
-    lines = lines.map(function (l) { return l.filter(function (p, k) { return k === 0 || p !== l[k - 1]; }); });
-    // TEN-427 r3 item 9 (founder 393874e7): ONE rule for every book — from the solid line's end (the last snapshot, or a
-    // later confirmed sighting of it) the last price runs on flat and DASHED to the axis end (now), so every book in the
-    // box ends on the same axis; nothing interpolated. A cut row ("Last pre-match") never carries: its axis ends where its
-    // line does. The carry is a hold too, so it stops where a recorded not-quoting stretch (a hole) begins.
-    var extT = end && end.label === 'Last pre-match' ? endT : a1;
-    (holes || []).forEach(function (h) {
-      var he = h[1] == null ? Infinity : h[1];
-      if (he > endT && h[0] < extT) extT = Math.max(endT, h[0]);
-    });
-    var ext = !single && extT > endT ? { x1: fx(endT).toFixed(1), x2: fx(extT).toFixed(1), y: (pY(last.v) * 300).toFixed(1) } : null;
-    var endP = pY(last.v) * 100;
-    var db = single ? { bands: [{ w: '100%', label: dayOf(last.t) }], splits: [] } : dayBands(a0, a1);
-    return {
-      single: single, bands: db.bands, splits: db.splits, ext: ext,
-      gridY: [0, 0.25, 0.5, 0.75, 1].map(function (g) { return { y: (g * 300).toFixed(1), top: (g * 100) + '%', label: (hi - g * (hi - lo)).toFixed(2) }; }),
-      vticks: [0, 250, 500, 750, 1000],
-      ticks: single ? [{ x: '1000.0', left: '100%', tf: 'translateX(-100%)', label: hm(last.t) }] : axisTicks(a0, a1),
-      lines: single ? [] : lines.map(function (l) { return l.join(' '); }),
-      area: single ? '' : lines.map(function (l) {
-        return 'M' + l.join(' L') + ' L' + l[l.length - 1].split(',')[0] + ',300 L' + l[0].split(',')[0] + ',300 Z';
-      }).join(' '),
-      // founder 33107f2a (11 Oct): ONE recorded price, held by a later sighting, has no open to name — no Open chip,
-      // as the reference; the chart says what the table does ("— → x.xx · one price"): the flat line and the Now plate only
-      hasOpen: !single && openV != null && rec.length > 1,
-      openTop: openV != null ? (pY(openV) * 100).toFixed(2) + '%' : '0%',
-      openLeft: single ? '0%' : (fx(first.t) / 10).toFixed(2) + '%',
-      endDot: endP.toFixed(2) + '%',
-      endLeft: single ? '100%' : (fx(ext ? extT : endT) / 10).toFixed(2) + '%',   // the dot sits where the drawn price ends
-      endTop: Math.min(90, Math.max(10, endP)).toFixed(2) + '%',
-      endLbl: last.v.toFixed(2),
-      endWord: end ? end.label : 'Now'
-    };
-  }
-  // table: "Pinnacle +30s" -> Pinnacle / +30s; "Pinnacle (api-tennis)" -> Pinnacle / api-tennis (the handoff's split)
-  function bookSplit(n) {
-    var s = String(n || '');
-    return { name: s.replace(/\s*[(+].*$/, ''), sub: (s.match(/[(+].*$/) || [''])[0].replace(/^\(|\)$/g, '').trim() };
-  }
-  // drop cell (data rule 27): shortened red ▼ by size, unknown "—"; flat and lengthened read as the shell move view does
-  // (TEN-427 r3 item 7, founder 393874e7; Today's Matches mxMovePct: a drift is "+3.8%" in --pos, no move the muted
-  // "±0.0%") — the same move on the shown prices (d = −move), never a ▲ under the DROP head. A book with ONE recorded
-  // price has no move: the reference's "one price" (Dropping Odds v2: open "—", drop "one price" grey), never "0.0%"
-  function r1(d) { return parseFloat(d.toFixed(1)); }   // exactly the figure shown
-  function zeroTxt() { var z = typeof mxMovePct === 'function' ? mxMovePct(1, 1) : null; return z ? z.text : '±0.0%'; }   // eslint-disable-line no-undef
-  function dropCell(d, onePrice) {
-    if (onePrice) return { txt: 'one price', c: 'muted' };
-    if (d == null || !isFinite(d)) return { txt: '—', c: 'muted' };
-    if (Math.abs(d) < 0.05) return { txt: zeroTxt(), c: 'muted' };
-    if (d < 0) return { txt: '+' + Math.abs(d).toFixed(1) + '%', c: 'pos' };
-    return { txt: '▼ ' + d.toFixed(1) + '%', c: r1(d) >= 10 ? 'big' : 'small' };   // the threshold reads the figure shown
-  }
-  // start line (data rule 28)
-  // every listed row is upcoming (the r2 ruling): the start and its countdown
-  function startLine(r, now) {
-    var t = startMs(r);
-    if (t == null) return null;
-    var mins = Math.max(0, Math.floor((t - now) / 60000));
-    return { start: hm(t), cd: 'in ' + Math.floor(mins / 60) + 'h ' + (mins % 60) + 'm' };
-  }
-
-  // ─── the price-move pop-up's books (founder comment 777a3192, decisions 1–4, 7) ───────────────
-  // Every book we record a pre-match price for, on this selection. Sources, in order:
-  //   'board'    a board-matched card's TEN-295 chart shard: Pinnacle, Bet105, Superbet, Betfair Exchange (house names);
-  //   'endpoint' the drops endpoint's `lines` (tools/ten294-drops-lines.sql): Bet105, Superbet, Betfair Exchange;
-  //   'flagged'  neither available: only the books with a flagged move (drop rows) — the summary says so.
-  // Sharp/Soft is the page's ONE grouping (bookCls above, odds.md AODDS_BOOKS), never the data's.
-  var STRIP_CLASS = {};
-  Object.keys(SHARP_BOOKS).forEach(function (b) { STRIP_CLASS[b] = 'sharp'; });
-  // the dashboard's AODDS_ORDER (Sharp then Soft, stable; never re-sorted by drop)
-  var BOOK_ORDER = ['Pinnacle +30s', 'Pinnacle (api-tennis)', 'Bet105', 'Betano', '1xBet', 'BetVictor', 'Betfair Sportsbook (api-tennis)',
-    'Marathon', 'bet365 (api-tennis)', 'Sbobet', 'William Hill', 'Superbet', 'Napoleon Sports BE',
-    'Betfair Exchange'];
-  var EXCHANGES = { 'Betfair Exchange': true };      // no margin on an exchange (decision 4)
-  function stripName(n) { return String(n || '').replace(/\s*\(recorded by us\)\s*$/i, ''); }
-  // TEN-427 r2 fix 13: the box names a book as the Odds tab does — the dashboard's one config AODDS_BOOKS (odds.md: one
-  // row per bookmaker, plain name, the source only in the tooltip). The stored label "Pinnacle +30s" is Pinnacle's own
-  // prices relayed by Oddspapi 30 s late (AODDS_ALIAS → "Pinnacle +30s (Oddspapi)"); "Pinnacle (api-tennis)" is the same
-  // book via api-tennis. A book with two sources is ONE line, from the first source in its list with a price (never
-  // spliced, as the Odds tab). Outside the dashboard (no config) a label passes through unchanged.
-  function houseOf(src) {
-    var B = null, A = {};
-    try { B = typeof AODDS_BOOKS !== 'undefined' ? AODDS_BOOKS : null; A = typeof AODDS_ALIAS !== 'undefined' ? AODDS_ALIAS : {}; } catch (e) { B = null; }   // eslint-disable-line no-undef
-    var s = A[src] || src;
-    for (var i = 0; B && i < B.length; i++) {
-      var k = B[i].sources.indexOf(s);
-      if (k < 0) k = B[i].sources.indexOf(String(s).replace(/\s*\(recorded by us\)\s*$/i, '') + ' (recorded by us)');
-      if (k >= 0) return { name: B[i].name, rank: k, order: i, src: s };
-    }
-    return { name: stripName(src), rank: 0, order: null, src: s };
-  }
-  function bookOrder(name) {
-    var B = null;
-    try { B = typeof AODDS_BOOKS !== 'undefined' ? AODDS_BOOKS : null; } catch (e) { B = null; }   // eslint-disable-line no-undef
-    for (var i = 0; B && i < B.length; i++) if (B[i].name === name) return i;
-    var j = BOOK_ORDER.indexOf(name);
-    return j < 0 ? BOOK_ORDER.length + (B ? B.length : 0) : j;
-  }
   // the SQL's drops_api.nk(): surname part of "Last, First", its last token, lower-case, a–z only
   function nk(n) {
     var s = String(n == null ? '' : n);
@@ -408,190 +153,7 @@
     return s.replace(/[^a-z]/g, '');
   }
   function lineKey(r) { var a = nk(r.playerA), b = nk(r.playerB); return (a < b ? a + '|' + b : b + '|' + a) + '|' + nk(r.side); }
-  function tsPoints(list) {   // [[at, price], …] -> [{t, v}] sorted, real prices only
-    return (list || []).map(function (p) { return { t: Date.parse(p[0]), v: num(p[1]) }; })
-      .filter(function (p) { return isFinite(p.t) && p.v != null; }).sort(function (a, b) { return a.t - b.t; });
-  }
-  function rowPoints(r) {
-    return [[r.openAt, r.open], [r.preDrop && r.preDrop.at, r.preDrop && r.preDrop.price],
-      [r.droppedTo && r.droppedTo.at, r.droppedTo && r.droppedTo.price], [r.latest && r.latest.at, r.now]];
-  }
-  function marginOf(book, side, other) {
-    if (EXCHANGES[book] || !side.length || !other.length) return null;
-    var a = side[side.length - 1].v, b = other[other.length - 1].v;
-    return a > 0 && b > 0 ? (1 / a + 1 / b - 1) * 100 : null;
-  }
-  // A board shard book's last confirmed sighting of its line (TEN-301), where the shard's check is per line:
-  //   api-tennis — the collector re-reads every event's odds each poll and logs a book leaving the feed as a gap,
-  //     so `checkedAt` confirms the line unless a gap is still open (then its start is the last sighting);
-  //   Oddspapi (Pinnacle +30s) — `checkedAt` is a read of this fixture's own tick history.
-  // Kibl / odds-api.io `checkedAt` is a whole-book poll, not a sighting of this line: those books take the
-  // endpoint's per-line `lastSeen` instead (above), else none.
-  function shardSeen(meta, lastT) {
-    if (!meta || (meta.source !== 'api-tennis' && meta.source !== 'Oddspapi')) return null;
-    var ck = Date.parse(meta.checkedAt);
-    var open = (meta.gaps || []).filter(function (g) { return g && g[1] == null; })[0];
-    if (open) ck = isFinite(ck) ? Math.min(ck, Date.parse(open[0])) : Date.parse(open[0]);
-    return isFinite(ck) && lastT != null && ck >= lastT ? ck : null;
-  }
-  // stretches a shard book was recorded not quoting (odds.md: api-tennis gaps); an open one ends the line (shardSeen).
-  // odds.md also writes a collector outage (> 15 min between heartbeats) as a gap on every line open then. An
-  // outage is no checks at all, not a book leaving the feed, and the founder ruled it is never a break (TEN-301):
-  // a closed gap carried identically by EVERY api-tennis book quoting when it began (two or more) is that outage.
-  function shardHoles(meta, allMeta) {
-    var closed = function (m) {
-      return ((m && m.gaps) || []).filter(function (g) { return g && g[1] != null && isFinite(Date.parse(g[0])) && isFinite(Date.parse(g[1])); });
-    };
-    var api = Object.keys(allMeta || {}).map(function (k) { return allMeta[k]; }).filter(function (m) { return m && m.source === 'api-tennis' && m.firstSeen; });
-    return closed(meta).filter(function (g) {
-      if (!meta || meta.source !== 'api-tennis') return true;
-      var from = Date.parse(g[0]);
-      var quoting = api.filter(function (m) {
-        return Date.parse(m.firstSeen) < from && !(m.gaps || []).some(function (h) { return h && Date.parse(h[0]) < from && (h[1] == null || Date.parse(h[1]) > from) && !(h[0] === g[0] && h[1] === g[1]); });
-      });
-      var carriers = quoting.filter(function (m) { return (m.gaps || []).some(function (h) { return h && h[0] === g[0] && h[1] === g[1]; }); });
-      return !(quoting.length >= 2 && carriers.length === quoting.length);
-    }).map(function (g) { return [Date.parse(g[0]), Date.parse(g[1])]; });
-  }
-  // TEN-427 Data 4: the Today's Matches pop-up rows stand for the Bet105 line only when they read as the Bet105 row
-  // does: the same open and a last pre-cut row equal to its now, at the 2 dp shown. No Bet105 row: nothing to contradict.
-  function phAgrees(side, row) {
-    if (!side.length) return false;
-    if (!row) return true;
-    return price2(side[0].v) === price2(row.open) && price2(side[side.length - 1].v) === price2(row.now);
-  }
-  // ctx: { rows, line (endpoint), chart (shard chart), cardSide ('p1'|'p2'|null) }
-  function modalBooks(r, ctx) {
-    ctx = ctx || {};
-    var raw = {}, source = 'flagged';
-    // card 518c56f0 Q2: nothing at or after the live start is a pre-match price, from any source
-    var cut = ctx.cutAt ? Date.parse(ctx.cutAt) : NaN;
-    var pre = function (list) { return isFinite(cut) ? list.filter(function (p) { return p.t < cut; }) : list; };
-    var ref = isFinite(cut) && ctx.now != null ? Math.min(ctx.now, cut) : ctx.now;   // a finished line's books are judged at its cut
-    if (ctx.chart && ctx.chart.books && ctx.cardSide) {
-      Object.keys(ctx.chart.books).forEach(function (n) {
-        var b = ctx.chart.books[n] || {}, os = ctx.cardSide === 'p1' ? 'p2' : 'p1';
-        var side = pre(tsPoints(b[ctx.cardSide]));
-        if (!side.length) return;
-        var hb = houseOf(n), had = raw[hb.name];
-        if (had && had.rank <= hb.rank) return;   // one line per book: the first source in its list with a price
-        raw[hb.name] = { side: side, other: pre(tsPoints(b[os])), first: side[0], meta: (ctx.chart.meta || {})[n] || null, rank: hb.rank, src: hb.src };
-      });
-      if (Object.keys(raw).length) source = 'board';
-    }
-    if (source === 'flagged' && ctx.line && ctx.line.books) {
-      Object.keys(ctx.line.books).forEach(function (n) {
-        var b = ctx.line.books[n] || {}, side = pre(tsPoints(b.side)), f = b.first ? pre(tsPoints([b.first]))[0] || null : null;
-        var seenAt = Date.parse(b.lastSeen);
-        // a book whose last sighting is older than the window has stopped quoting: left out, never shown as current
-        if (ref != null && isFinite(seenAt) && ref - seenAt > 24 * H) return;
-        if (side.length) raw[stripName(n)] = { side: side, other: pre(tsPoints(b.other)), first: f || side[0], seen: isFinite(seenAt) ? seenAt : null, truncated: b.truncated === true };
-      });
-      if (Object.keys(raw).length) source = 'endpoint';
-    }
-    if (source === 'flagged') {
-      (ctx.rows || []).forEach(function (x) {
-        if (x.playerA === r.playerA && x.playerB === r.playerB && x.side === r.side && x.mk === r.mk && x !== r) {
-          raw[x.book] = { side: pre(tsPoints(rowPoints(x))), other: [], first: { t: Date.parse(x.openAt), v: x.open }, row: x };
-        }
-      });
-    }
-    // the feed's row for each book on this selection (buildRows keeps one per selection × book); the box's own row
-    // for its own book. A book with a row reads exactly as that row in EVERY box opened on the selection (Q1).
-    var rowOf = {};
-    (ctx.rows || []).forEach(function (x) {
-      if (x !== r && x.playerA === r.playerA && x.playerB === r.playerB && x.side === r.side && x.mk === r.mk) rowOf[x.book] = x;
-    });
-    rowOf[r.book] = r;
-    // TEN-427 Data 4 — ONE chart source with Today's Matches: when the board card's book is Bet105, the Bet105 line is
-    // the card's odds-movement pop-up rows (price-history-box.js: the price_history RPC, sideRows + changesOnly, cut at
-    // the card's start) — only when they AGREE with the Bet105 row: the same open, and the last pre-cut row = the
-    // row's now, both at 2 dp. Otherwise the line is the feed's own points (the chart, end plate, table and header of
-    // one box never disagree), and the choice is the same in a box opened from another book's row. ctx.ph = { side, other } as [{t, v}].
-    var phSide = ctx.ph && ctx.ph.side ? pre(ctx.ph.side) : [];
-    var phMismatch = false;
-    if (phSide.length) {
-      if (phAgrees(phSide, rowOf.Bet105)) {
-        var prevB = raw.Bet105 || {}, prevLast = prevB.side && prevB.side.length ? prevB.side[prevB.side.length - 1].v : null;
-        // a sighting confirms the price it saw: carried over only when the earlier line ended on the pop-up's last price
-        var carry = prevB.seen != null && prevLast != null && price2(prevLast) === price2(phSide[phSide.length - 1].v);
-        raw.Bet105 = { side: phSide, other: pre(ctx.ph.other || []), first: phSide[0], ph: true, seen: carry ? prevB.seen : null, meta: null };
-        if (source === 'flagged') source = 'board';
-      } else phMismatch = true;
-    }
-    Object.keys(rowOf).forEach(function (bk) {
-      var x = rowOf[bk], b = raw[bk] || { other: [] }, seen = {};
-      b.margin = marginOf(bk, b.side || [], b.other || []);   // the source's own pair, never the feed's fresher side
-      var srcLast = b.side && b.side.length ? b.side[b.side.length - 1].v : null;
-      if (srcLast == null || Math.abs(srcLast - x.now) > 0.005) b.margin = null;   // a pair older than the price shown is not its margin
-      // a truncated source's series starts at its oldest SENT point: row points older than that would open a
-      // false gap across a stretch that was recorded but not sent (review of bcee4794)
-      var sentFrom = b.truncated && b.side && b.side.length ? b.side[0].t : -Infinity;
-      // the pop-up's rows ARE the recorded snapshots (TEN-427 Data 4): the alert's own points are not spliced in
-      var rowPts = b.ph ? [] : pre(tsPoints(rowPoints(x))).filter(function (p) { return p.t >= sentFrom; });
-      // the line runs from the row's open to the row's now: a source tick before the open or after the now the row
-      // does not show is left out, so the chart's first point and end plate are the table's "from" and NOW
-      var oT = Date.parse(x.openAt), lT = Date.parse(x.latest && x.latest.at);
-      var inRow = function (p) {
-        if (isFinite(oT) && (p.t < oT || (p.t === oT && Math.abs(p.v - x.open) > 0.005))) return false;
-        return !(isFinite(lT) && (p.t > lT || (p.t === lT && Math.abs(p.v - x.now) > 0.005)));
-      };
-      b.side = (b.ph ? b.side || [] : (b.side || []).filter(inRow)).concat(rowPts).filter(function (p) {
-        var k = p.t + '|' + p.v; if (seen[k]) return false; seen[k] = 1; return true;
-      }).sort(function (a, c) { return a.t - c.t; });
-      b.first = { t: Date.parse(x.openAt), v: x.open };
-      b.nowOverride = { t: Date.parse(x.latest && x.latest.at), v: x.now };
-      b.row = x;
-      raw[bk] = b;
-    });
-    var out = Object.keys(raw).map(function (n) {
-      var b = raw[n], isOwn = n === r.book;
-      // the chart starts at the book's first recorded price (opening → now); a first price the series
-      // does not carry is added as its own recorded point, never interpolated
-      // (a truncated endpoint series is not: its unsent stretch would read as a gap with no snapshots)
-      if (!b.truncated && b.first && isFinite(b.first.t) && b.first.v != null && b.side && b.side.length && b.first.t < b.side[0].t) b.side = [b.first].concat(b.side);
-      var now = b.nowOverride || b.side[b.side.length - 1];
-      var first = b.first;
-      var drop = first && first.v && now && now.v ? dropOf(first.v, now.v) : null;   // on the shown prices, as the rows
-      // the book's last confirmed sighting (data rule 25): its own source's, else the endpoint line's for that book
-      // (a board shard's series borrows the endpoint's sighting only when the endpoint's latest price IS the
-      // shard's last price: a confirmation belongs to the price it confirmed — review of a37fc857)
-      var lb = ctx.line && ctx.line.books && (ctx.line.books[n] || ctx.line.books[n + ' (recorded by us)']);
-      var lbLast = lb && lb.side && lb.side.length ? num(lb.side[lb.side.length - 1][1]) : null;
-      var bLast = b.side && b.side.length ? b.side[b.side.length - 1].v : null;
-      var seenAt = b.seen != null ? b.seen
-        : lb && isFinite(Date.parse(lb.lastSeen)) && lbLast != null && bLast != null && Math.abs(lbLast - bLast) < 0.005 ? Date.parse(lb.lastSeen)
-        : shardSeen(b.meta, b.side && b.side.length ? b.side[b.side.length - 1].t : null);
-      if (seenAt != null && isFinite(cut)) seenAt = Math.min(seenAt, cut - 1);
-      return { book: n, src: b.src && b.src !== n ? b.src : null, cls: bookCls(n), own: isOwn, ph: !!b.ph, first: first, now: now, seen: seenAt, holes: shardHoles(b.meta, ctx.chart && ctx.chart.meta),
-        opener: !!b.row && b.row.openKind === 'book opener', single: !b.side || b.side.length < 2,   // one recorded price: no move
-        drop: b.row ? b.row.drop : drop, series: b.side, other: b.other, truncated: !!b.truncated, margin: b.row ? b.margin : marginOf(n, b.side, b.other) };
-    });
-    var rank = function (b) { return b.cls === 'sharp' ? 0 : 1; };
-    var pos = function (b) { return bookOrder(b.book); };
-    out.sort(function (a, b) { return rank(a) - rank(b) || pos(a) - pos(b) || a.book.localeCompare(b.book); });
-    var big = out.filter(function (b) { return b.drop != null && parseFloat(b.drop.toFixed(1)) >= 10; });   // as shown (one decimal)
-    var sharp = out.filter(function (b) { return b.cls === 'sharp'; });
-    return { source: source, phMismatch: phMismatch, books: out, n: big.length, m: out.length,
-      p: big.filter(function (b) { return b.cls === 'sharp'; }).length, q: sharp.length };
-  }
-  function summaryText(mb) {
-    var what = mb.source === 'flagged' ? 'books with a flagged move on this line' : 'books we record quoting this line';
-    return 'Down 10% or more at ' + mb.n + ' of ' + mb.m + ' ' + what + ' (' + mb.p + ' of ' + mb.q + ' sharp).';
-  }
-  // Opening → now (bef04c62 item 2): the axis spans this book's first recorded price to its latest one.
-  function seriesPoints(series) {
-    var s = (series || []).filter(function (p) { return isFinite(p.t) && p.v != null; }).slice().sort(function (a, b) { return a.t - b.t; });
-    if (!s.length) return [];
-    var t0 = s[0].t, span = s[s.length - 1].t - t0;
-    return s.map(function (p) { return { t: p.t, fr: span > 0 ? (p.t - t0) / span : 1, v: p.v }; });
-  }
-
-  // Avatar key: an exact, unordered two-player match against today's board (matches.json names
-  // are "D. Medvedev"). Both players must match one board card, and only one card may match,
-  // or the row keeps the export's inner-tone fallback — never a guessed face.
-  // TEN-427 r2 fix 8: the site's name canon (the dashboard's ocsNfd: accents, case, dots, hyphens and apostrophes
-  // folded), so "Carreno Busta" = "Carreno-Busta" and "Mccormick" = "McCormick"; outside the dashboard the same folds
+  function lineKey(r) { var a = nk(r.playerA), b = nk(r.playerB); return (a < b ? a + "|" + b : b + "|" + a) + "|" + nk(r.side); }
   function canonToks(n) {
     var s;
     try { s = typeof ocsNfd === 'function' ? ocsNfd(n) : null; } catch (e) { s = null; }   // eslint-disable-line no-undef
@@ -715,30 +277,238 @@
       surface: card ? surfLabel(card.surface) : null,
       a: nm(r.playerA), b: nm(r.playerB), side: nm(r.side), opp: nm(r.opp) };
   }
-  // the Bet105 line from the Today's Matches pop-up's own rows (price-history-box.js `sideRows` + `changesOnly`,
-  // after the same cuts as its `model`: the card's start, and on a Completed card its Close sighting) —
-  // PHB = window.PriceHistoryBox, nk = ocsNameKey
-  function phSeries(PHB, payload, nk, card, side, startAt, closeAt) {
-    if (!PHB || !payload || !card || !side) return null;
-    var s0 = startAt ? Date.parse(startAt) : NaN, c0 = closeAt ? Date.parse(closeAt) : NaN;
-    var cut = isFinite(s0) && isFinite(c0) ? Math.min(s0, c0) : isFinite(c0) ? c0 : s0;
-    var conv = function (who) {
-      var rows = PHB.sideRows(payload, nk(card[who]), nk);
-      if (isFinite(cut)) rows = rows.filter(function (x) { return x.at <= cut; });
-      return PHB.changesOnly(rows).map(function (x) { return { t: x.at, v: x.price }; });
-    };
-    return { side: conv(side), other: conv(side === 'p1' ? 'p2' : 'p1') };
+
+  // ─── selections from the feed ───────────────────────────────────────────────
+  // series [[at, price], …] -> [{t, v}] sorted, real prices only, cut before `cut` (nothing at or after a live start)
+  function pts(list, cut) {
+    return (list || []).map(function (p) { return { t: Date.parse(p[0]), v: num(p[1]) }; })
+      .filter(function (p) { return isFinite(p.t) && p.v != null && p.v >= 1.01 && !(cut != null && p.t >= cut); })
+      .sort(function (a, b) { return a.t - b.t; });
+  }
+  // a book from its change series: first = the first recorded price (null when only one is recorded), now = the last,
+  // moveT = the time of its last change (null when it never moved), firstT = its first record
+  function bookOf(series) {
+    if (!series.length) return null;
+    var last = series[series.length - 1];
+    return { first: series.length > 1 ? series[0].v : null, now: last.v, series: series, firstT: series[0].t,
+      moveT: series.length > 1 ? last.t : null };
+  }
+  // One selection per match side. A line holds its side's series ('side') and the opponent's ('other'); a side with a
+  // line of its own takes that one, else its opponent line's 'other'. Match meta (tier, start, status) = the newest alert
+  // row of the match. Only books on the roster; a book not seen for 24 h is not quoting.
+  function buildSelections(lines, feedRows, now) {
+    var meta = {};
+    (feedRows || []).forEach(function (r) {
+      var a = nk(r.playerA), b = nk(r.playerB), k = a < b ? a + '|' + b : b + '|' + a;
+      if (!meta[k] || (Date.parse(r.detectedAt) || 0) > (Date.parse(meta[k].detectedAt) || 0)) meta[k] = r;
+    });
+    var out = {};
+    (lines || []).forEach(function (l) {
+      var a = nk(l.playerA), b = nk(l.playerB), mk = a < b ? a + '|' + b : b + '|' + a, m = meta[mk];
+      if (!m || a === b) return;
+      var sideName = l.side, oppName = nk(l.side) === a ? l.playerB : nk(l.side) === b ? l.playerA : null;
+      if (oppName == null) return;
+      var cut = m.match && (m.match.cutAt || m.match.liveAt) ? Date.parse(m.match.cutAt || m.match.liveAt) : null;
+      [['side', sideName, oppName], ['other', oppName, sideName]].forEach(function (w) {
+        var key = mk + '|' + nk(w[1]);
+        if (out[key] && w[0] === 'other') return;           // the side's own line wins
+        var bk = {};
+        Object.keys(l.books || {}).forEach(function (name) {
+          if (!BOOK_CLS[name]) return;
+          var B = l.books[name] || {}, seen = Date.parse(B.lastSeen);
+          if (isFinite(seen) && now != null && now - seen > QUOTING_MS) return;
+          var o = bookOf(pts(B[w[0]], isFinite(cut) ? cut : null));
+          if (o) { o.seen = isFinite(seen) ? seen : null; bk[name] = o; }
+        });
+        out[key] = { id: key, mk: 'mw', playerA: m.playerA, playerB: m.playerB, side: w[1], opp: w[2], bk: bk,
+          tier: tierOf(m.tier), tierRaw: m.tier, start: m.scheduledStart || null, eventKey: (m.match && m.match.eventKey) || null,
+          status: (m.match && m.match.status) || 'unknown', liveAt: (m.match && m.match.liveAt) || null, cutAt: (m.match && m.match.cutAt) || null };
+      });
+    });
+    return Object.keys(out).map(function (k) { return out[k]; });
+  }
+  // Pinnacle from a board card's chart shard, for the card's side of this selection: one source, never spliced
+  function pinnacleOf(chart, cardSide, cut) {
+    if (!chart || !chart.books || !cardSide) return null;
+    for (var i = 0; i < PIN_SOURCES.length; i++) {
+      var B = chart.books[PIN_SOURCES[i]];
+      var o = B ? bookOf(pts(B[cardSide], cut)) : null;
+      if (o) {
+        var m = (chart.meta || {})[PIN_SOURCES[i]] || {}, ck = Date.parse(m.checkedAt);
+        o.seen = isFinite(ck) ? ck : null; o.source = PIN_SOURCES[i];
+        return o;
+      }
+    }
+    return null;
+  }
+  // the selection's last move (any quoting book) — else its first record; hours before `now`
+  function movedAtOf(s) {
+    var mv = null, first = null;
+    Object.keys(s.bk).forEach(function (b) {
+      var o = s.bk[b];
+      if (o.moveT != null && (mv == null || o.moveT > mv)) mv = o.moveT;
+      if (first == null || o.firstT < first) first = o.firstT;
+    });
+    return { t: mv != null ? mv : first, moved: mv != null };
   }
 
-  var PURE = { BOOK_CLASS: BOOK_CLASS, MARKETS: MARKETS, WINDOWS: WINDOWS, buildRows: buildRows, defaults: defaults,
-    passes: passes, sortRows: sortRows, view: view, ago: ago, feedState: feedState,
-    boardKeyFor: boardKeyFor, tierOf: tierOf, AMBER_AFTER_S: AMBER_AFTER_S, DISCONNECTED_AFTER_S: DISCONNECTED_AFTER_S,
-    ENDPOINT: ENDPOINT, STRIP_CLASS: STRIP_CLASS, modalBooks: modalBooks, summaryText: summaryText, lineKey: lineKey, nk: nk,
-    seriesPoints: seriesPoints, marginOf: marginOf, MIN_SPAN_MS: MIN_SPAN_MS, BOOK_ORDER: BOOK_ORDER,
-    boxChart: boxChart, endOf: endOf, shardHoles: shardHoles, bookSplit: bookSplit, dropCell: dropCell, startLine: startLine,
-    bookCls: bookCls, dropOf: dropOf, dayBands: dayBands, clock: clock, phSeries: phSeries, phAgrees: phAgrees, rowMeta: rowMeta, surfLabel: surfLabel,
-    isUpcoming: isUpcoming, houseOf: houseOf, nameIndex: nameIndex, indexHit: indexHit, shortName: shortName, canonToks: canonToks,
-    kiblSame: kiblSame, photoKeyFor: photoKeyFor };
+  function startMs(s) { if (s.cardStart != null && isFinite(s.cardStart)) return s.cardStart; var v = Date.parse(s.start); return isFinite(v) ? v : null; }
+  // upcoming matches only (drops.md r2): leaves at its start, or when the feed marks it live
+  function isUpcoming(s, now) {
+    if (s.liveAt || s.cutAt || s.status === 'in_play' || s.status === 'finished') return false;
+    var t = startMs(s);
+    return t != null && now != null && t > now;
+  }
+
+  function defaults() {
+    return { tiers: TIERS.slice(), books: BOOK_NAMES.slice(), win: 'open', min: 0, mv: 'all', sort: 'drop', btype: 'all', q: '', mkTab: 'all' };
+  }
+  // README "Sorting and filtering logic" (the file's rank / minVal / pass)
+  function rankOf(c, btype) {
+    if (btype === 'soft') return dOf(c.soft.r);
+    return c.sharp.d != null ? 1000 + c.sharp.d : (btype === 'all' ? dOf(c.soft.r) : -1);
+  }
+  function minValOf(c, btype) {
+    var a = dOf(c.sharp), b = dOf(c.soft.r);
+    return btype === 'sharp' ? a : btype === 'soft' ? b : Math.max(a, b);
+  }
+  function passes(s, S, now, noMv, ignoreMk) {
+    if (!ignoreMk && S.mkTab !== 'all' && s.mk !== S.mkTab) return false;
+    if (S.tiers.indexOf(s.tier) < 0) return false;
+    if (!S.books.some(function (b) { return s.bk[b]; })) return false;
+    var mv = movedAtOf(s);
+    if (mv.t == null || (now - mv.t) / H > WIN_H[S.win]) return false;
+    var c = calc(s.bk);
+    if (!noMv && S.mv !== 'all' && mvOf(c) !== S.mv) return false;
+    if (S.min > 0 && minValOf(c, S.btype) < S.min) return false;
+    var q = String(S.q || '').trim().toLowerCase();
+    if (q && fold([s.playerA, s.playerB, s.dA, s.dB, s.event].filter(Boolean).join(' ')).indexOf(fold(q)) < 0) return false;
+    return true;
+  }
+  function view(sels, S, now) {
+    var up = sels.filter(function (s) { return isUpcoming(s, now); });
+    var list = up.filter(function (s) { return passes(s, S, now); });
+    var mvBase = up.filter(function (s) { return passes(s, S, now, true); });
+    var mvN = {}; MVL.forEach(function (x) { mvN[x[0]] = x[0] === 'all' ? mvBase.length : mvBase.filter(function (s) { return mvOf(calc(s.bk)) === x[0]; }).length; });
+    var mkN = {}; up.forEach(function (s) { if (passes(s, S, now, false, true)) mkN[s.mk] = (mkN[s.mk] || 0) + 1; });
+    var key = function (s) {
+      if (S.sort === 'recent') return -(movedAtOf(s).t || 0);
+      if (S.sort === 'soon') { var t = startMs(s); return t == null ? Infinity : t; }
+      return -rankOf(calc(s.bk), S.btype);
+    };
+    list = list.map(function (s, i) { return { s: s, k: key(s), i: i }; })
+      .sort(function (a, b) { return a.k - b.k || a.i - b.i; }).map(function (x) { return x.s; });
+    var ranked = list.map(function (s) { var c = calc(s.bk); return S.btype === 'soft' ? c.soft.r : c.sharp; }).filter(function (r) { return r.kind === 'drop'; });
+    var matches = {}; list.forEach(function (s) { matches[s.id.split('|').slice(0, 2).join('|')] = 1; });
+    return { list: list, mvN: mvN, mkN: mkN, drops: ranked.length, biggest: ranked.length ? Math.max.apply(null, ranked.map(function (r) { return r.d; })) : null,
+      nMatches: Object.keys(matches).length };
+  }
+
+  // ─── display strings (pure) ─────────────────────────────────────────────────
+  function sgn(v) { return (v < 0 ? '−' : '+') + Math.abs(v).toFixed(1); }
+  // the file's cell(): one reading as the list / tiles show it
+  function cell(r, big, lead, oneTxt, noneTxt) {
+    var p = r.kind === 'drop' || r.kind === 'up' || r.kind === 'flat', moved = r.kind === 'drop' || r.kind === 'up';
+    return { hasP: p, lead: p ? lead : '', open: p ? f2(r.o) : '', now: p ? f2(r.n) : '', strike: r.kind === 'drop',
+      big: r.kind === 'drop' ? r.d.toFixed(1) : r.kind === 'up' ? '+' + Math.abs(r.d).toFixed(1) : r.kind === 'flat' ? 'No move' : '—',
+      pct: moved ? '%' : '', tone: r.kind === 'drop' ? 'drop' : r.kind === 'flat' ? 'flat' : 'dim',
+      fs: (r.kind === 'flat' ? Math.round(big * 0.72) : big) + 'px',
+      impl: moved ? sgn(r.pts) + ' pts implied' : '', implShort: moved ? r.io.toFixed(1) + '% → ' + r.inn.toFixed(1) + '%' : '',
+      shift: moved ? sgn(r.pts) + ' pts' : '', hasImpl: moved,
+      note: r.kind === 'one' ? oneTxt : r.kind === 'none' ? noneTxt : '' };
+  }
+  function meterH(r) { return r.kind === 'drop' ? Math.min(100, Math.max(8, r.d / 40 * 100)).toFixed(0) + '%' : '0%'; }
+  function sharpCell(c, big) {
+    return cell(c.sharp, big, '', '1 price recorded · ' + (c.sharp.n != null ? f2(c.sharp.n) : ''), 'No sharp line');
+  }
+  function softCell(c, big) {
+    var so = c.soft;
+    return cell(so.r, big, so.lead, so.quotes === 1 ? '1 soft book quoting, 1 price recorded' : so.quotes + ' soft books quoting, 1 price recorded each', 'No soft line');
+  }
+  function softCount(c) { var so = c.soft; return so.down + ' of ' + so.quotes + ' ' + (so.quotes === 1 ? 'soft book' : 'soft books') + ' down'; }
+  function softLabel(c) { var so = c.soft; return so.two > 1 ? 'Soft books · average of ' + so.two : so.two === 1 ? 'Soft books · ' + so.lead : 'Soft books'; }
+  function bestSub(c) { return !c.best ? '' : c.best.n > 1 ? 'Best · ' + c.best.book : c.best.book + ' only'; }
+  function agoShort(ms) {   // the file's movedLbl: "16h ago" from an hour, "41m ago" under it
+    if (!(ms >= 0)) return '—';
+    var h = ms / H;
+    return h >= 1 ? Math.round(h) + 'h ago' : Math.round(h * 60) + 'm ago';
+  }
+  function countdown(t, now) {
+    if (t == null || now == null) return '';
+    var m = Math.max(0, Math.round((t - now) / 60e3)), h = Math.floor(m / 60);
+    return 'in ' + (h ? h + 'h ' + (m % 60) + 'm' : m + 'm');
+  }
+  var WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  function startLbl(t, now) {   // "14:00", another day "Tue 02:00" (member zone)
+    if (t == null) return '—';
+    var a = zp(t), b = zp(now == null ? t : now);
+    if (a.y === b.y && a.m === b.m && a.d === b.d) return hm(t);
+    return WD[new Date(Date.UTC(a.y, a.m, a.d)).getUTCDay()] + ' ' + hm(t);
+  }
+  // the box's book rows (the file's `books`)
+  function bookRow(name, o, best, chartRole) {
+    var r = o ? rd(o.first, o.now) : { kind: 'none' };
+    return { name: name, cls: BOOK_CLS[name], quoted: !!o, r: r, now: o ? f2(r2(o.now)) : '—', open: r.o != null ? f2(r.o) : '—',
+      mv: r.kind === 'none' || r.kind === 'one' ? '' : r.kind === 'flat' ? 'No move' : r.kind === 'drop' ? r.d.toFixed(1) + '%' : '+' + Math.abs(r.d).toFixed(1) + '%',
+      sub: r.kind === 'none' ? 'No line' : r.kind === 'one' ? 'One price recorded' : r.kind === 'flat' ? 'Implied unchanged' : 'Implied ' + sgn(r.pts) + ' pts',
+      best: !!o && best != null && r2(o.now) === best, role: chartRole || null };
+  }
+  function bookSummary(rows) {
+    var qd = rows.filter(function (b) { return b.quoted; }), dn = function (b) { return b.r.kind === 'drop'; };
+    if (!qd.length) return 'No book quotes this line.';
+    if (!qd.some(function (b) { return b.r.kind !== 'one'; })) return 'Quoted at ' + qd.length + ' of ' + rows.length + ' books, with one recorded price so far, so no drop yet.';
+    return 'Down at ' + qd.filter(dn).length + ' of ' + qd.length + ' quoting this line (' + [['sharp', 'sharp', 'no sharp line'], ['soft', 'soft', 'no soft line']].map(function (g) {
+      var q = qd.filter(function (b) { return b.cls === g[0]; });
+      return q.length ? q.filter(dn).length + ' of ' + q.length + ' ' + g[1] : g[2];
+    }).join(', ') + ').';
+  }
+  function groupMeta(rows) {
+    var qn = rows.filter(function (b) { return b.quoted; }).length, nl = rows.length - qn;
+    if (!qn) return 'No book quoting';
+    return rows.filter(function (b) { return b.r.kind === 'drop'; }).length + ' of ' + qn + ' quoting book' + (qn === 1 ? '' : 's') + ' down' + (nl ? ' · ' + nl + ' with no line' : '');
+  }
+  // The price history (24 h window ending now). TEN-301 (founder, standing): a recorded price holds until the next one,
+  // so the line is a STEP line — flat holds, vertical moves at each record — never a diagonal between two prices; the
+  // last price runs on flat to now. A dot per recorded price inside the window; a price recorded before the window is
+  // carried in from the left edge with no dot (it was not recorded there).
+  function chartModel(lines, now) {
+    var t0 = now - CHART_MS, span = CHART_MS, vs = [];
+    var shaped = lines.map(function (L) {
+      var s = L.series, inW = s.filter(function (p) { return p.t >= t0; }), before = s.filter(function (p) { return p.t < t0; }).pop();
+      var path = [];
+      if (before) path.push({ t: t0, v: before.v });
+      inW.forEach(function (p) { if (path.length) path.push({ t: p.t, v: path[path.length - 1].v }); path.push({ t: p.t, v: p.v }); });
+      if (path.length) path.push({ t: now, v: path[path.length - 1].v });
+      path.forEach(function (p) { vs.push(p.v); });
+      return { L: L, path: path, dots: inW };
+    });
+    if (!vs.length) return null;
+    var lo = Math.min.apply(null, vs), hi = Math.max.apply(null, vs);
+    if (hi - lo < 0.1) { lo -= 0.1; hi += 0.1; }
+    var pad = (hi - lo) * 0.12; lo -= pad; hi += pad;
+    if (lo < 1) lo = 1;                   // decimal odds never go under 1.00 (drops.md r2 fix 11)
+    var pY = function (v) { return (hi - v) / (hi - lo); }, fx = function (t) { return Math.max(0, Math.min(1, (t - t0) / span)); };
+    var db = dayBands(t0, now);
+    return {
+      gridY: [0, 0.25, 0.5, 0.75, 1].map(function (g) { return { top: (g * 100) + '%', label: (hi - g * (hi - lo)).toFixed(2) }; }),
+      ticks: [0, 0.25, 0.5, 0.75, 1].map(function (f) { return { left: (f * 100) + '%', tf: f === 0 ? 'none' : f === 1 ? 'translateX(-100%)' : 'translateX(-50%)', label: hm(t0 + f * span) }; }),
+      bands: db.bands.map(function (b) { return { w: b.w, label: parseFloat(b.w) < 14 ? '' : b.label }; }), splits: db.splits,
+      lines: shaped.map(function (x) {
+        return { role: x.L.role, points: x.path.map(function (p) { return (fx(p.t) * 1000).toFixed(1) + ',' + (pY(p.v) * 300).toFixed(1); }).join(' '),
+          dots: x.dots.map(function (p, i) { return { left: (fx(p.t) * 100).toFixed(2) + '%', top: (pY(p.v) * 100).toFixed(2) + '%', big: i === x.dots.length - 1 }; }) };
+      }),
+    };
+  }
+
+  var PURE = { BOOKS: BOOKS, rd: rd, calc: calc, mvOf: mvOf, buildSelections: buildSelections, pinnacleOf: pinnacleOf,
+    movedAtOf: movedAtOf, isUpcoming: isUpcoming, defaults: defaults, passes: passes, view: view, rankOf: rankOf,
+    cell: cell, sharpCell: sharpCell, softCell: softCell, softCount: softCount, softLabel: softLabel, bestSub: bestSub,
+    meterH: meterH, bookRow: bookRow, bookSummary: bookSummary, groupMeta: groupMeta, chartModel: chartModel,
+    agoShort: agoShort, countdown: countdown, startLbl: startLbl, feedState: feedState, ago: ago, clock: clock, nk: nk,
+    lineKey: lineKey, tierOf: tierOf, boardKeyFor: boardKeyFor, photoKeyFor: photoKeyFor, kiblSame: kiblSame,
+    rowMeta: rowMeta, nameIndex: nameIndex, indexHit: indexHit, shortName: shortName, canonToks: canonToks,
+    dayBands: dayBands, ENDPOINT: ENDPOINT, AMBER_AFTER_S: AMBER_AFTER_S, DISCONNECTED_AFTER_S: DISCONNECTED_AFTER_S,
+    TIERS: TIERS, WINDOWS: WINDOWS, MIN: MIN, MVL: MVL };
   if (typeof module === 'object' && module.exports) module.exports = PURE;
   if (typeof document === 'undefined') return;
 
@@ -754,15 +524,12 @@
   if (!enabled) return;
 
   var st = {
-    S: defaults(), rows: [], feedRows: null, status: null, statusAt: 0, reachable: true, everLoaded: false,
-    refreshing: false, menu: null, drawer: null, drBook: null, tip: false, active: false, timer: null, ticker: null, etag: null,
-    view: 'drops',                    // founder 2026-11-01: Drops | Arbitrage (arb-page.js)
+    S: defaults(), sels: [], feedRows: null, lines: null, status: null, statusAt: 0, reachable: true, everLoaded: false,
+    refreshing: false, menu: null, tip: false, drawer: null, drBook: null, drPick: false, active: false, timer: null, ticker: null, etag: null,
   };
-
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function root() { return document.getElementById('dropsRoot'); }
   function dataNow() {
-    // data time: the snapshot's generatedAt, advanced by real time since we read it
     if (!st.status || !st.status.generatedAt) return Date.now();
     return Date.parse(st.status.serverNow || st.status.generatedAt) + (Date.now() - st.statusAt);
   }
@@ -770,14 +537,6 @@
     if (!st.status || st.status.ageS == null) return null;
     return st.status.ageS + (Date.now() - st.statusAt) / 1000;
   }
-  // TEN-427 Data 3: the Bookmaker menu lists the books actually in the data, Sharp first (the one grouping)
-  function books() {
-    var set = {};
-    st.rows.forEach(function (r) { set[r.book] = 1; });
-    var order = function (b) { var c = bookCls(b); return c === 'sharp' ? 0 : c === 'prediction' ? 2 : 1; };
-    return Object.keys(set).sort(function (a, b) { return order(a) - order(b) || a.localeCompare(b); });
-  }
-  // the board (Today's Matches' matches.json) and the search index, as the dashboard holds them
   function board() { try { return typeof matches !== 'undefined' && Array.isArray(matches) ? matches : []; } catch (e) { return []; } }   // eslint-disable-line no-undef
   var keyIx = { src: null, map: null };
   function indexEntry(n) {
@@ -793,22 +552,33 @@
     keyOf: function (n) { var e = indexEntry(n); return e ? e.key : null; },
     shortName: function (n) { return shortName(n, indexEntry(n), typeof ppAbbrevName === 'function' ? ppAbbrevName : null); },   // eslint-disable-line no-undef
   };
-  // attach the display strings to every row (re-done when the board or the rows change)
+  // display strings, the board card (event, round, photo, analysis link) and Pinnacle from its chart shard
   function enrich() {
     var b = board(), ni = 0, np = 0;
     try { ni = typeof playerIndex !== 'undefined' && playerIndex ? playerIndex.length : 0; } catch (e) { ni = 0; }           // eslint-disable-line no-undef
     try { np = typeof ppRosterMap === 'function' ? Object.keys(ppRosterMap()).length : (typeof playerProfiles !== 'undefined' && playerProfiles ? Object.keys(playerProfiles).length : 0); } catch (e) { np = 0; }   // eslint-disable-line no-undef
-    var sig = b.length + '|' + st.etag + '|' + st.rows.length + '|' + ni + '|' + np;
-    if (st.metaSig === sig && st.metaRows === st.rows) return;
-    st.metaSig = sig; st.metaRows = st.rows;
-    st.rows.forEach(function (r) {
-      var m = rowMeta(r, b, HELP);
-      r.dA = m.a; r.dB = m.b; r.dSide = m.side; r.dOpp = m.opp; r.event = m.event; r.surface = m.surface; r.card = m.card; r.cardSide = m.cardSide;
-      // a matched row's start = its Today's Matches card's (cardStartMs: api-tennis's Berlin clock), as the card shows it
+    var sig = b.length + '|' + st.etag + '|' + st.sels.length + '|' + st.shardTick + '|' + ni + '|' + np;   // names follow the roster as it loads
+    if (st.metaSig === sig) return;
+    st.metaSig = sig;
+    st.sels.forEach(function (s) {
+      var m = rowMeta(s, b, HELP);
+      s.dA = m.a; s.dB = m.b; s.dSide = m.side; s.dOpp = m.opp; s.event = m.event; s.card = m.card; s.cardSide = m.cardSide;
       var cs = null;
       try { cs = m.card && typeof cardStartMs === 'function' ? cardStartMs(m.card) : null; } catch (e) { cs = null; }   // eslint-disable-line no-undef
-      r.cardStart = cs != null && isFinite(cs) ? cs : null;
-      r.photoKey = photoKeyFor(r, b, typeof cardStartMs === 'function' ? cardStartMs : null);   // eslint-disable-line no-undef
+      s.cardStart = cs != null && isFinite(cs) ? cs : null;
+      s.photoKey = photoKeyFor(s, b, typeof cardStartMs === 'function' ? cardStartMs : null);   // eslint-disable-line no-undef
+      s.round = m.card && typeof roundBadgeText === 'function' && m.card.tournamentRound ? roundBadgeText(m.card.tournamentRound) : null;   // eslint-disable-line no-undef
+      delete s.bk.Pinnacle;
+      if (m.card) {
+        if (!m.card._oddsLoaded && !m.card._doShardAsked && typeof ensureOddsMovement === 'function') {   // eslint-disable-line no-undef
+          m.card._doShardAsked = true;
+          ensureOddsMovement(m.card).then(function () { st.shardTick = (st.shardTick || 0) + 1; render(); }).catch(function () {});   // eslint-disable-line no-undef
+        }
+        var chart = m.card._oddsLoaded && m.card.oddsMovement ? m.card.oddsMovement.chart : null;
+        var cut = s.cutAt || s.liveAt ? Date.parse(s.cutAt || s.liveAt) : null;
+        var pin = pinnacleOf(chart, m.cardSide, isFinite(cut) ? cut : null);
+        if (pin && !(pin.seen != null && dataNow() - pin.seen > QUOTING_MS)) s.bk.Pinnacle = pin;
+      }
     });
   }
 
@@ -821,390 +591,279 @@
       return res.json().then(function (j) { return { json: j, etag: res.headers.get('ETag') }; });
     });
   }
-
   function load() {
     return Promise.all([fetchJson('/status.json'), fetchJson('/drops.json', st.etag)]).then(function (x) {
       st.status = x[0].json; st.statusAt = Date.now(); st.reachable = true;
       if (!x[1].notModified) {
-        st.feedRows = x[1].json.rows || []; st.etag = x[1].etag; st.windowH = x[1].json.windowHours || null; st.rows = buildRows(st.feedRows);
-        st.lines = {};
-        (Array.isArray(x[1].json.lines) ? x[1].json.lines : []).forEach(function (l) { if (l && l.key) st.lines[l.key] = l; });
+        st.feedRows = x[1].json.rows || []; st.lines = Array.isArray(x[1].json.lines) ? x[1].json.lines : [];
+        st.etag = x[1].etag; st.metaSig = null;
+        st.sels = buildSelections(st.lines, st.feedRows, dataNow());
       }
-      var before = st.knownBooks || [];
-      var allSel = !st.everLoaded || before.every(function (b) { return st.S.books.indexOf(b) >= 0; });
-      st.knownBooks = books();
-      if (allSel) st.S.books = st.knownBooks.slice();
       st.everLoaded = true;
     }).catch(function () { st.reachable = false; });
   }
-
   function schedule() {
     clearTimeout(st.timer);
     if (!st.active) return;
     st.timer = setTimeout(function () { load().then(function () { render(); schedule(); }); }, POLL_MS);
   }
-
   function refresh() {
     st.refreshing = true; st.menu = null; render();
     var t0 = Date.now();
-    load().then(function () {
-      // the export's ~800 ms loading beat, never longer than the real read
-      setTimeout(function () { st.refreshing = false; render(); schedule(); }, Math.max(0, 800 - (Date.now() - t0)));
-    });
+    load().then(function () { setTimeout(function () { st.refreshing = false; render(); schedule(); }, Math.max(0, 800 - (Date.now() - t0))); });
   }
 
-  // ─── rendering ──────────────────────────────────────────────────────────────
-  var ICON = {
-    search: '<svg width="14" height="14" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="var(--text-label)" stroke-width="1.7"></circle><path d="M13.2 13.2 17 17" stroke="var(--text-label)" stroke-width="1.7" stroke-linecap="round"></path></svg>',
-    // the site's small chevron (Trading Report's CHEV)
-    chev: '<svg class="do-chev" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5 5 6.5 8 3.5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"></path></svg>',
-    chart: '<svg width="14" height="14" viewBox="0 0 20 20" fill="none" style="flex:none;"><path d="M3 5l5 5 3-3 6 7M17 14v-4M17 14h-4" stroke="var(--text-label)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>',
-  };
-  function lab(arr, v) { for (var i = 0; i < arr.length; i++) if (arr[i][0] === v) return arr[i][1]; return ''; }
-
-  function headerHtml(v, fs, blank) {
-    var withDrop = blank ? '—' : String(v.list.length);
-    var biggest = !blank && v.list.length ? Math.max.apply(null, v.list.map(function (r) { return r.drop; })).toFixed(1) + '%' : '—';
-    // TEN-403: the shared 35b page header (.sfh). TEN-427: the ticket's sentence and nothing after it (round 3, founder
-    // 393874e7 item 4: no "· Live · updated Xs ago" tail — the Updated stat carries the read's time; shell R2: no tail
-    // fragments); stats Drops · Biggest · Window · Updated, a dash grey. Updated = the endpoint's generatedAt (its last
-    // successful read of the bots' tables — the data behind the list), HH:MM in stennisfy.tz; never the clock; "—"
-    // before the first good read. A disconnected feed shows the banner and dims the rows (render), never a header line.
-    var v = function (k, val, cls) {
-      return '<div class="sfh__stat"><span class="sfh__l">' + k + '</span><span class="sfh__v' + (val === '—' ? ' sfh__v--none' : '') + '" data-k="' + cls + '">' + val + '</span></div>';
-    };
-    var upd = st.everLoaded && st.status && st.status.generatedAt ? clock(st.status.generatedAt) : '—';
-    return '<div class="sfh do-head"><div class="sfh__text">' +
-      '<h1 class="sfh__title">Dropping Odds</h1>' +
-      '<p class="sfh__sub"><span class="do-subtitle">Prices that have shortened since we first recorded them, each within one bookmaker. Biggest drops first.</span></p></div>' +
-      '<div class="sfh__stats">' +
-      v('Drops', withDrop, 'drops') +
-      v('Biggest', biggest, 'biggest') +
-      v('Window', esc(lab(WINDOWS, st.S.win)), 'window') +
-      v('Updated', upd, 'updated') +
-      '</div></div>';
+  // ─── components (one each: switch track, meter, price box, box shell) ───────
+  var CHEV = '<svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5 5 6.5 8 3.5" stroke="var(--do2-grey)" stroke-width="1.4" fill="none" stroke-linecap="round"></path></svg>';
+  var ROWCHEV = '<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M3.5 2 6.5 5 3.5 8" stroke="var(--do2-dim)" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+  var SEARCH = '<svg width="15" height="15" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="5.5" stroke="var(--do2-grey)" stroke-width="1.7"></circle><path d="M13.2 13.2 17 17" stroke="var(--do2-grey)" stroke-width="1.7" stroke-linecap="round"></path></svg>';
+  function track(label, opts) {   // opts: [[label, on, act, val, count]]
+    return '<div class="do2-fg"><span class="do2-fl">' + esc(label) + '</span><div class="do2-track">' + opts.map(function (o) {
+      return '<span class="do2-opt' + (o[1] ? ' on' : '') + '" role="button" tabindex="0" data-act="' + o[2] + '" data-v="' + esc(o[3]) + '">' + esc(o[0]) +
+        (o[4] != null ? '<span class="do2-optn">' + esc(o[4]) + '</span>' : '') + '</span>';
+    }).join('') + '</div></div>';
   }
-
-  function bannerHtml() {
-    var asOf = st.status && st.status.generatedAt ? clock(st.status.generatedAt) : '—';
-    return '<div class="do-banner"><span class="do-banner-l"><span class="do-banner-k">FEED DISCONNECTED</span>' +
-      '<span class="do-banner-t">Showing prices as of <span class="do-mono">' + esc(asOf) + '</span>. New moves will not appear until the feed reconnects.</span></span>' +
-      '<button class="do-link" data-act="reconnect">Reconnect</button></div>';
+  function meter(h, soft) {
+    return '<span class="do2-meter' + (soft ? ' soft' : '') + '"><span style="height:' + h + '"></span></span>';
   }
-
-  // TEN-427 Data 7: no Alerts (no per-member alert backend exists, so no button and no pop-over) and no Refresh (the
-  // list re-reads the endpoint every POLL_MS on its own; the banner's Reconnect is the one manual refetch)
-  // r2 fix 16: search always matches player names and a row's event; the placeholder promises tournaments (the
-  // reference's "Search players or tournaments") only when every upcoming row carries an event, else "Search players"
-  function searchHtml() {
-    var now = dataNow(), up = st.rows.filter(function (r) { return isUpcoming(r, now); });
-    var ph = up.length && up.every(function (r) { return !!r.event; }) ? 'Search players or tournaments' : 'Search players';
-    return '<div class="do-search-row"><div class="do-search">' + ICON.search +
-      '<input type="text" data-act="q" placeholder="' + ph + '" value="' + esc(st.S.q) + '" aria-label="' + ph + '"></div>' +
-      '</div>';
+  function priceBox(k) {
+    return '<span class="do2-pbox' + (k.best ? ' best' : '') + '"><span class="do2-pbox-t"><span class="do2-pbox-n' + (k.quoted ? '' : ' none') + '">' + esc(k.now) + '</span>' +
+      '<span class="do2-pbox-d' + (k.r.kind === 'drop' ? ' drop' : '') + '">' + esc(k.mv) + '</span></span>' +
+      '<span class="do2-pbox-b"><span>Opening odd</span><span class="do2-pbox-o">' + esc(k.open) + '</span></span></span>';
   }
-
-  function seg(label, on, act, val, mono, disabled, title) {
-    return '<button class="do-seg' + (mono ? ' mono' : '') + (on ? ' on' : '') + '" data-act="' + act + '" data-v="' + esc(val) + '"' +
-      (disabled ? ' disabled' : '') + (title ? ' title="' + esc(title) + '"' : '') + '>' + esc(label) + '</button>';
-  }
-  // founder 2026-11-01: the page's two views, on the site darker track (the rails' own segment)
-  function viewSegHtml() {
-    if (!window.ArbPage) return '';
-    return '<div class="do-viewseg"><div class="do-rail">' + seg('Drops', st.view === 'drops', 'view', 'drops') +
-      seg('Arbitrage', st.view === 'arb', 'view', 'arb') + '</div></div>';
-  }
-  function railsHtml() {
-    var S = st.S, win = st.windowH || 24;
-    var r = '<div class="do-rails">';
-    r += '<div class="do-rail"><span class="do-rail-k">TIER</span>' + ['ATP', 'Challenger', 'ITF'].map(function (t) { return seg(t, S.tiers.indexOf(t) >= 0, 'tier', t); }).join('') + '</div>';
-    r += '<div class="do-rail"><span class="do-rail-k">BOOKS</span>' + [['all', 'All'], ['sharp', 'Sharp'], ['soft', 'Soft']].map(function (b) { return seg(b[1], S.btype === b[0], 'btype', b[0]); }).join('') + '</div>';
-    r += '<div class="do-rail"><span class="do-rail-k">WINDOW</span>' + WINDOWS.map(function (w) {
-      var dis = w[0] !== 'open' && parseInt(w[0], 10) > win;     // longer than the feed holds
-      var title = w[0] === 'open' ? 'Everything the feed holds: the last ' + win + 'h of flagged moves' : dis ? 'The feed holds ' + win + 'h' : '';
-      return seg(w[1], S.win === w[0], 'win', w[0], true, dis, title);
-    }).join('') + '</div>';
-    r += '<div class="do-rail"><span class="do-rail-k">MIN DROP</span>' + MIN.map(function (m) { return seg(m[1], S.min === m[0], 'min', m[0], true); }).join('') + '</div>';
-    return r + '</div>';
-  }
-
-  function tabsHtml(v) {
-    // r2 fix 10: "All markets" = the sum of the market tabs (Match winner, the one market the bots record)
-    var S = st.S, loaded = st.everLoaded;
-    var sum = loaded ? String(MARKETS.reduce(function (s, m) { return s + (v.mkCount[m[0]] || 0); }, 0)) : '—';
-    var t = '<div class="do-tabs-row"><div class="do-tabs do-hs">';
-    t += '<button class="do-tab' + (S.mk === 'all' ? ' on' : '') + '" data-act="mk" data-v="all">All markets<span class="do-tab-n">' + sum + '</span></button>';
-    MARKETS.forEach(function (m) {
-      var n = loaded ? String(v.mkCount[m[0]] || 0) : '—';
-      t += '<button class="do-tab' + (S.mk === m[0] ? ' on' : '') + '" data-act="mk" data-v="' + m[0] + '">' + m[1] + '<span class="do-tab-n">' + n + '</span></button>';
-    });
-    return t + '</div></div>';
-  }
-
-  // the site filter menu (Trading Report's): trigger card tone (the reference), open / active = --selected + 16% edge, active carries
-  // the ×; the menu --card + 10% edge, radius 10, padding 4, --shadow-menu, max-height 252
-  function menuHtml(key, label, value, active, disabled, body, why) {
-    var open = st.menu === key && !disabled;
-    return '<div class="do-menu"><span class="do-trig' + (active ? ' active' : '') + (open ? ' open' : '') + '" data-act="menu" data-v="' + key + '"' +
-      (disabled ? ' aria-disabled="true" title="' + esc(why || '') + '"' : '') + '>' +
-      '<span class="do-trig-k">' + label + '</span><span class="do-trig-v">' + esc(value) + '</span>' +
-      (active ? '<span class="do-x" data-act="clear" data-v="' + key + '">×</span>' : ICON.chev) + '</span>' +
-      (open ? '<div class="do-pop">' + body + '</div>' : '') + '</div>';
-  }
-  // single-select row: selected = --selected + a white ✓ (no radio); multi-select row: a box, checked = white fill + dark ✓
-  function opt(label, on, act, val, multi) {
-    return '<span class="do-opt' + (on ? ' on' : '') + (multi ? ' multi' : '') + '" data-act="' + act + '" data-v="' + esc(val) + '">' +
-      (multi ? '<span class="do-box">' + (on ? '✓' : '') + '</span>' : '') + '<span class="do-opt-l">' + esc(label) + '</span>' +
-      (!multi && on ? '<span class="do-tick">✓</span>' : '') + '</span>';
-  }
-  // Surface options: the surfaces of the board-matched rows (Today's Matches' card), "All" first
-  function surfaces() {
-    var set = {};
-    st.rows.forEach(function (r) { if (r.surface) set[r.surface] = 1; });
-    return Object.keys(set).sort();
-  }
-  function resultsHtml(v) {
-    var S = st.S, bks = books(), allB = S.books.length === bks.length;
-    var bookBody = ['sharp', 'soft', 'prediction'].map(function (cls) {
-      var bs = bks.filter(function (b) { return bookCls(b) === cls; });
-      if (!bs.length) return '';
-      return '<div class="do-pop-h">' + GROUP_NAME[cls] + '</div>' + bs.map(function (b) { return opt(b, S.books.indexOf(b) >= 0, 'book', b, true); }).join('');
-    }).join('');
-    var bookVal = allB ? 'All' : S.books.length === 1 ? S.books[0] : S.books.length + ' books';
-    var surfs = surfaces();
-    var surfBody = [['all', 'All']].concat(surfs.map(function (s) { return [s, s]; })).map(function (s) { return opt(s[1], (S.surf || 'all') === s[0], 'surf', s[0]); }).join('');
-    var startsBody = STARTS.map(function (s) { return opt(s[1], S.starts === s[0], 'starts', s[0]); }).join('');
-    var sortBody = SORT.map(function (s) { return opt(s[1], S.sort === s[0], 'sort', s[0]); }).join('');
-    var count = st.refreshing || (!st.everLoaded && st.reachable) ? 'Loading moves…' : !st.everLoaded ? '—' :
-      v.list.length + ' ' + (v.list.length === 1 ? 'move' : 'moves') + ' across ' + v.nMatches + ' ' + (v.nMatches === 1 ? 'match' : 'matches');
-    var surfOn = S.surf && S.surf !== 'all';
-    return '<div class="do-results"><span class="do-count">' + count + '</span><div class="do-menus">' +
-      menuHtml('book', 'Bookmaker', bookVal, !allB, false, bookBody) +
-      menuHtml('surf', 'Surface', surfs.length ? (surfOn ? S.surf : 'All') : '—', surfOn, !surfs.length, surfBody,
-        'The feed carries no surface; it comes from a Today’s Matches card, and no row here matches one') +
-      menuHtml('starts', 'Starts within', lab(STARTS, S.starts), S.starts > 0, false, startsBody) +
-      menuHtml('sort', 'Sort', lab(SORT, S.sort), false, false, sortBody) +
-      '</div></div>';
-  }
-
-  // r2 fix 12: ONE word for a book's first recorded price, "Open", always with the dotted tooltip — the list's column
-  // head, the box's chart chip and its table head (one word whether or not our first price is the book's own opener)
-  var OPEN_TIP = 'First price Stennisfy recorded, not necessarily the bookmaker’s opening line.';
-  function openHelp(help, tip) { return '<span class="' + help + '">Open</span><span class="' + tip + '">' + OPEN_TIP + '</span>'; }
-  function colsHtml() {
-    return '<div class="do-cols"><span>DROP</span><span>SELECTION · MATCH · BOOK</span>' +
-      '<span class="do-cols-r">' + openHelp('do-help', 'do-tip') + ' → NOW</span></div>';
-  }
-
-  // Avatars: initials (fhIni) with the player's photo over them when the row joined its fixture (photoKeyFor, founder
-  // 2026-10-23) — the dashboard's one resolver (playerPhotoImg) by that ID; no ID or no photo = the initials alone. No ring.
   function initials(name) {
     if (typeof fhIni === 'function') return fhIni(name);   // eslint-disable-line no-undef
     var w = String(name || '').replace(/\./g, ' ').trim().split(/\s+/).filter(Boolean);
     if (!w.length) return '?';
     return w.length === 1 ? w[0].slice(0, 2).toUpperCase() : (w[0][0] + w[w.length - 1][0]).toUpperCase();
   }
-  function avatarHtml(r) {
-    var ph = (r.photoKey && typeof playerPhotoImg === 'function') ? playerPhotoImg(r.photoKey, r.dSide || r.side) : '';   // eslint-disable-line no-undef
-    return '<span class="do-av" aria-hidden="true">' + esc(initials(r.dSide || r.side)) + ph + '</span>';
+  function avatar(s) {
+    var nm = s.dSide || s.side;
+    var ph = (s.photoKey && typeof playerPhotoImg === 'function') ? playerPhotoImg(s.photoKey, nm) : '';   // eslint-disable-line no-undef
+    return '<span class="do2-av" aria-hidden="true">' + esc(initials(nm)) + ph + '</span>';
+  }
+  function figHtml(cl, x) {   // a reading's figure + prices (the file's sh / so blocks)
+    return '<span class="do2-' + cl + '-fig ' + x.tone + '" style="font-size:' + x.fs + '">' + esc(x.big) + '<span class="do2-pct">' + x.pct + '</span></span>';
+  }
+  function pricesHtml(cl, x) {
+    return '<span class="do2-' + cl + '-px">' + (x.lead ? '<span class="do2-lead">' + esc(x.lead) + '</span>' : '') +
+      '<span class="do2-open' + (x.strike ? ' strike' : '') + '">' + esc(x.open) + '</span><span class="do2-arr">→</span><span class="do2-now">' + esc(x.now) + '</span></span>';
   }
 
-  // every listed row is upcoming (r2 ruling): no status badge, no cut — "moved Xm ago"
-  function movedText(r, now) { return 'moved ' + ago(now - Date.parse(r.movedAt)); }
-  // "market · vs opponent · event · book" (the event only from a matched Today's Matches card: the feed has none)
-  function detailText(r) {
-    return ['Match winner', 'vs ' + (r.dOpp || r.opp || '—'), r.event, r.book].filter(Boolean).join(' · ');
+  // ─── page ───────────────────────────────────────────────────────────────────
+  function headerHtml(v, blank) {
+    var upd = st.everLoaded && st.status && st.status.generatedAt ? clock(st.status.generatedAt) : '—';
+    var stat = function (k, val, dim) { return '<div class="do2-stat"><span class="do2-stat-l">' + k + '</span><span class="do2-stat-v' + (dim ? ' dim' : '') + '">' + esc(val) + '</span></div>'; };
+    return '<div class="do2-card do2-head"><div class="do2-head-t"><h1>Dropping Odds</h1>' +
+      '<div class="do2-head-s">Prices that have shortened since we first recorded them. Sharp and soft movement are read separately, biggest sharp drop first.</div></div>' +
+      '<div class="do2-stats">' + stat('Drops', blank ? '—' : String(v.drops), blank) +
+      stat('Biggest', !blank && v.biggest != null ? v.biggest.toFixed(1) + '%' : '—', blank || v.biggest == null) +
+      stat('Updated', upd, upd === '—') + '</div></div>';
   }
-  function rowHtml(r, now) {
-    var fill = Math.min(100, Math.max(8, r.drop / 40 * 100)).toFixed(0);
-    return '<div class="do-row" role="button" tabindex="0" data-act="row" data-v="' + esc(r.id) + '">' +
-      '<span class="do-meter-c"><span class="do-meter"><span class="do-meter-f" style="height:' + fill + '%"></span></span>' +
-      '<span class="do-fig"><span class="do-fig-n">' + r.drop.toFixed(1) + '<span class="do-fig-p">%</span></span><span class="do-fig-c">DROP</span></span></span>' +
-      '<div class="do-who">' + avatarHtml(r) + '<div class="do-who-t">' +
-      '<span class="do-sel">' + esc(r.dSide || r.side) + ' to win</span>' +
-      '<span class="do-detail">' + esc(detailText(r)) + '</span></div></div>' +
-      '<div class="do-px" title="Show odds movement">' + ICON.chart + '<span class="do-px-c">' +
-      '<span class="do-px-l"><span class="do-px-o">' + price2(r.open) + '</span><span class="do-px-a">→</span><span class="do-px-n">' + price2(r.now) + '</span></span>' +
-      '<span class="do-moved">' + esc(movedText(r, now)) + '</span></span></div></div>';
+  function bookMenuHtml() {
+    var S = st.S, all = S.books.length === BOOK_NAMES.length, open = st.menu === 'book';
+    var val = all ? 'All' : S.books.length === 1 ? S.books[0] : S.books.length + ' books';
+    var groups = [['sharp', 'Sharp books'], ['soft', 'Soft books']].map(function (g) {
+      return '<div class="do2-mhead">' + g[1] + '</div>' + BOOKS.filter(function (b) { return b[1] === g[0]; }).map(function (b) {
+        var on = S.books.indexOf(b[0]) >= 0;
+        return '<span class="do2-mopt' + (on ? ' on' : '') + '" role="menuitemcheckbox" aria-checked="' + on + '" tabindex="0" data-act="book" data-v="' + esc(b[0]) + '">' +
+          '<span class="do2-tick">' + (on ? '✓' : '') + '</span><span class="do2-mopt-l">' + esc(b[0]) + '</span></span>';
+      }).join('');
+    }).join('');
+    return '<div class="do2-mwrap"><span class="do2-mbtn' + (!all ? ' set' : '') + (open ? ' open' : '') + '" role="button" tabindex="0" data-act="menu" data-v="book">' +
+      '<span class="do2-mbtn-l">Bookmaker</span><span class="do2-mbtn-v' + (all ? '' : ' set') + '">' + esc(val) + '</span>' +
+      (all ? CHEV : '<span class="do2-x" role="button" tabindex="0" title="Clear" data-act="clear" data-v="book">×</span>') + '</span>' +
+      (open ? '<div class="do2-menu do2-bmenu" role="menu">' + groups + '</div>' : '') + '</div>';
   }
-
+  function filtersHtml(v) {
+    var S = st.S;
+    var active = S.tiers.length !== 3 || S.books.length !== BOOK_NAMES.length || S.win !== 'open' || S.min > 0 || S.mv !== 'all' || !!S.q;
+    return '<div class="do2-card do2-filters"><div class="do2-frow">' +
+      '<label class="do2-search">' + SEARCH + '<input data-act="q" placeholder="Search players" value="' + esc(S.q) + '" autocomplete="off"></label>' +
+      bookMenuHtml() + (active ? '<span class="do2-btn do2-reset" role="button" tabindex="0" data-act="reset">Reset filters</span>' : '') + '</div>' +
+      '<div class="do2-frow2">' +
+      track('Tier', TIERS.map(function (t) { return [t, S.tiers.indexOf(t) >= 0, 'tier', t]; })) +
+      track('Window', WINDOWS.map(function (w) { return [w[1], S.win === w[0], 'win', w[0]]; })) +
+      track('Min drop', MIN.map(function (m) { return [m[1], S.min === m[0], 'min', m[0]]; })) +
+      track('Movement', MVL.map(function (m) { return [m[1], S.mv === m[0], 'mv', m[0], st.everLoaded ? String(v.mvN[m[0]]) : '—']; })) +
+      '</div></div>';
+  }
+  function bannerHtml() {
+    return '<div class="do2-card do2-banner"><span class="do2-banner-l"><span class="do2-banner-dot"></span><span class="do2-banner-k">Feed disconnected</span>' +
+      '<span class="do2-banner-t">Showing prices as of <span class="do2-mono do2-banner-v">' + esc(st.status && st.status.generatedAt ? clock(st.status.generatedAt) : '—') + '</span>. New moves appear once the feed reconnects.</span></span>' +
+      '<span class="do2-btn do2-btn30" role="button" tabindex="0" data-act="reconnect">Reconnect</span></div>';
+  }
+  var TIP = '<span class="do2-tip" role="tooltip">' +
+    '<span class="do2-tip-b"><span class="do2-tip-h">Drop %</span><span class="do2-tip-t">How far the price has fallen since we first recorded it. <span class="do2-tip-m">2.12 → 1.46</span> is a <span class="do2-tip-m">31.1%</span> drop.</span></span>' +
+    '<span class="do2-tip-b"><span class="do2-tip-h">Pts implied</span><span class="do2-tip-t">A price implies a chance of winning: 1 divided by the price. <span class="do2-tip-m">2.12</span> is <span class="do2-tip-m">47.2%</span>, <span class="do2-tip-m">1.46</span> is <span class="do2-tip-m">68.5%</span>, so the market now gives this player <span class="do2-tip-m">+21.3</span> percentage points more chance. The bookmaker margin is still in the figure.</span></span>' +
+    '<span class="do2-tip-b"><span class="do2-tip-h">Why both</span><span class="do2-tip-t">The same drop can mean very different things. <span class="do2-tip-m">5.30 → 3.65</span> is also a <span class="do2-tip-m">31.1%</span> drop, but only <span class="do2-tip-m">+8.5 pts</span>.</span></span>' +
+    // founder brief (Dropping Odds v2, item f): the handoff's claim about which book moves first is held back until confirmed
+    '<span class="do2-tip-b"><span class="do2-tip-h">Sharp and soft</span><span class="do2-tip-t">Sharp is Pinnacle. Soft is the average of the other bookmakers. The first recorded price is not necessarily the opening line.</span></span></span>';
+  function listHeadHtml() {
+    var S = st.S, sh = S.sort === 'drop' && S.btype !== 'soft', sf = S.sort === 'drop' && S.btype === 'soft', so = S.sort === 'soon';
+    return '<div class="do2-lhead"><span class="do2-lh-sharp"><span class="do2-hc' + (sh ? ' on' : '') + '" role="button" tabindex="0" data-act="sort" data-v="sharp" title="Rank by the sharp drop">Sharp · Pinnacle</span>' +
+      '<span class="do2-harr">' + (sh ? '↓' : '') + '</span><span class="do2-q' + (st.tip ? ' open' : '') + '" role="button" tabindex="0" data-act="tip" title="How to read these figures">?</span>' + TIP + '</span>' +
+      '<span>Selection</span><span class="do2-hc' + (sf ? ' on' : '') + '" role="button" tabindex="0" data-act="sort" data-v="soft" title="Rank by the soft drop">Soft books<span class="do2-harr2">' + (sf ? '↓' : '') + '</span></span>' +
+      '<span>Price now</span><span class="do2-hc do2-hstart' + (so ? ' on' : '') + '" role="button" tabindex="0" data-act="sort" data-v="soon" title="Starting soonest first">Starts<span>' + (so ? '↓' : '') + '</span></span><span></span></div>';
+  }
+  function rowHtml(s, now) {
+    var c = calc(s.bk), sh = sharpCell(c, 23), so = softCell(c, 15), mv = movedAtOf(s), t = startMs(s);
+    var sub = ['vs ' + (s.dOpp || s.opp), s.event, (mv.moved ? 'moved ' : 'first recorded ') + agoShort(now - mv.t)].filter(Boolean).join(' · ');
+    return '<div class="do2-row" role="button" tabindex="0" data-act="row" data-v="' + esc(s.id) + '" title="Show the price history">' +
+      '<span class="do2-c-sharp">' + meter(meterH(c.sharp)) + '<span class="do2-c-in">' +
+      '<span class="do2-figline">' + figHtml('sh', sh) + '<span class="do2-impl">' + esc(sh.impl) + '</span></span>' +
+      (sh.hasP ? pricesHtml('sh', sh) : '<span class="do2-note">' + esc(sh.note) + '</span>') + '</span></span>' +
+      '<div class="do2-c-sel">' + avatar(s) + '<div class="do2-c-in"><span class="do2-sel">' + esc((s.dSide || s.side) + ' to win') + '</span>' +
+      '<span class="do2-sub">' + esc(sub) + '</span></div></div>' +
+      '<span class="do2-c-soft">' + meter(meterH(c.soft.r), true) + '<span class="do2-c-in do2-c-in5">' +
+      '<span class="do2-figline">' + figHtml('so', so) + '<span class="do2-impl12">' + esc(so.impl) + '</span></span>' +
+      (so.hasP ? pricesHtml('so', so) : '<span class="do2-note">' + esc(so.note) + '</span>') +
+      (c.soft.two > 0 ? '<span class="do2-count">' + esc(softCount(c)) + '</span>' : '') + '</span></span>' +
+      '<span class="do2-c-best"><span class="do2-best">' + (c.best ? f2(c.best.price) : '—') + '</span><span class="do2-sub">' + esc(bestSub(c)) + '</span></span>' +
+      '<span class="do2-c-start"><span class="do2-start">' + esc(startLbl(t, now)) + '</span><span class="do2-cd">' + esc(countdown(t, now)) + '</span></span>' +
+      ROWCHEV + '</div>';
+  }
   function listHtml(v, fs) {
-    if (st.refreshing || !st.everLoaded && st.reachable) {
-      var w = [['62%', '44%'], ['54%', '38%'], ['70%', '48%'], ['58%', '40%'], ['66%', '46%'], ['50%', '36%'], ['60%', '42%']];
-      return '<div class="do-list">' + w.map(function (x) {
-        return '<div class="do-skel"><span style="display:flex;align-items:center;gap:12px"><b style="width:4px;height:44px;border-radius:2px"></b><b style="width:56px;height:22px"></b></span>' +
-          '<span style="display:flex;align-items:center;gap:14px"><b style="width:40px;height:40px;border-radius:50%;flex:none"></b><span style="display:flex;flex-direction:column;gap:8px;flex:1"><b style="height:12px;width:' + x[0] + ';background:color-mix(in srgb, var(--text) 7%, transparent)"></b><b style="height:9px;width:' + x[1] + ';background:color-mix(in srgb, var(--text) 4.5%, transparent)"></b></span></span>' +
-          '<b style="height:16px;width:96px"></b></div>';
+    var S = st.S;
+    var tabs = [['all', 'All markets', st.everLoaded ? Object.keys(v.mkN).reduce(function (a, k) { return a + v.mkN[k]; }, 0) : '—']]
+      .concat(Object.keys(MK).filter(function (k) { return v.mkN[k]; }).map(function (k) { return [k, MK[k], v.mkN[k]]; }));
+    var sorts = [['Biggest sharp drop', S.sort === 'drop' && S.btype !== 'soft', 'sort', 'sharp'], ['Biggest soft drop', S.sort === 'drop' && S.btype === 'soft', 'sort', 'soft'],
+      ['Latest move', S.sort === 'recent', 'sort', 'recent'], ['Starting soonest', S.sort === 'soon', 'sort', 'soon']];
+    var loading = st.refreshing || (!st.everLoaded && st.reachable);
+    var count = loading ? 'Loading selections…' : !st.everLoaded ? '—' :
+      v.list.length + ' ' + (v.list.length === 1 ? 'selection' : 'selections') + ' across ' + v.nMatches + ' ' + (v.nMatches === 1 ? 'match' : 'matches');
+    var body;
+    if (loading) {
+      body = '<div class="do2-skels">' + [['62%', '44%'], ['54%', '38%'], ['70%', '48%'], ['58%', '40%'], ['66%', '46%'], ['50%', '36%'], ['60%', '42%']].map(function (w) {
+        return '<div class="do2-skel"><span class="do2-sk1"></span><span class="do2-sk2"><span class="do2-sk-av"></span><span class="do2-sk-t"><span class="do2-sk-l1" style="width:' + w[0] + '"></span><span class="do2-sk-l2" style="width:' + w[1] + '"></span></span></span><span class="do2-sk3"></span></div>';
       }).join('') + '</div>';
+    } else if (!st.everLoaded) {
+      body = '';
+    } else if (!v.list.length) {
+      body = '<div class="do2-empty"><span class="do2-empty-h">No selections match these filters</span><span class="do2-empty-d">Minimum drop ' +
+        esc(MIN.filter(function (m) { return m[0] === S.min; })[0][1]) + ' · ' + esc(WIN_TXT[S.win]) + '</span>' +
+        '<span class="do2-btn do2-btn34" role="button" tabindex="0" data-act="reset">Reset filters</span></div>';
+    } else {
+      var now = dataNow();
+      body = '<div class="do2-rows">' + v.list.map(function (s) { return rowHtml(s, now); }).join('') + '</div>';
     }
-    if (!st.everLoaded) return '';
-    if (!v.list.length) {
-      var h = 'No moves above your threshold in this window.';
-      var d = 'Min drop ' + lab(MIN, st.S.min) + ' · ' + lab([['open', 'since open'], ['12h', 'last 12h'], ['24h', 'last 24h'], ['48h', 'last 48h']], st.S.win);
-      return '<div class="do-empty"><span class="do-empty-h">' + h + '</span><span class="do-empty-d">' + d + '</span>' +
-        '<button class="do-link" data-act="reset">Reset filters</button></div>';
-    }
-    var now = dataNow();
-    return '<div class="do-list' + (fs === 'disconnected' ? ' stale' : '') + '">' + v.list.map(function (r) { return rowHtml(r, now); }).join('') + '</div>';
+    return '<div class="do2-card do2-list' + (fs === 'disconnected' ? ' stale' : '') + '"><div class="do2-ltop"><div class="do2-tabs">' + tabs.map(function (t) {
+      var on = S.mkTab === t[0];
+      return '<span class="do2-tab' + (on ? ' on' : '') + '" role="button" tabindex="0" data-act="mk" data-v="' + t[0] + '">' + esc(t[1]) + '<span class="do2-tabn">' + esc(t[2]) + '</span></span>';
+    }).join('') + '</div><div class="do2-sortw">' + track('Sort by', sorts) + '</div></div>' +
+      '<span class="do2-countline">' + esc(count) + '</span>' +
+      '<div class="do2-lbox">' + listHeadHtml() + body + '</div></div>';
   }
-
   function render() {
     var el = root();
     if (!el) return;
-    var ae = document.activeElement, focusQ = ae && ae.getAttribute && ae.getAttribute('data-act') === 'q';
-    var caret = focusQ ? ae.selectionStart : null;
-    var focusRow = ae && ae.classList && ae.classList.contains('do-row') ? ae.getAttribute('data-v') : null;
+    var ae = document.activeElement, focusQ = ae && ae.getAttribute && ae.getAttribute('data-act') === 'q', caret = focusQ ? ae.selectionStart : null;
     enrich();
-    var now = dataNow(), v = view(st.rows, st.S, now), fs = feedState(ageS(), st.reachable);
-    var blank = !st.everLoaded;
-    var arb = st.view === 'arb' && window.ArbPage;
-    if (arb) { el.innerHTML = '<div class="do-wrap">' + window.ArbPage.headerHtml() + viewSegHtml() + window.ArbPage.bodyHtml() + '</div>'; return; }
-    el.innerHTML = '<div class="do-wrap">' + headerHtml(v, fs, blank) + viewSegHtml() + (fs === 'disconnected' && (st.everLoaded || !st.reachable) ? bannerHtml() : '') +
-      searchHtml(v) + railsHtml() + tabsHtml(v) + resultsHtml(v) + colsHtml() + listHtml(v, fs) +
-      (st.menu ? '<div class="do-clickaway" data-act="clickaway"></div>' : '') + '</div>';
+    var now = dataNow(), v = view(st.sels, st.S, now), fs = feedState(ageS(), st.reachable);
+    el.innerHTML = '<div class="do2-wrap">' + headerHtml(v, !st.everLoaded) + filtersHtml(v) +
+      (fs === 'disconnected' && (st.everLoaded || !st.reachable) ? bannerHtml() : '') + listHtml(v, fs) +
+      (st.menu ? '<div class="do2-clickaway" data-act="clickaway"></div>' : '') + '</div>';
     if (focusQ) { var q = el.querySelector('[data-act="q"]'); q.focus(); try { q.setSelectionRange(caret, caret); } catch (e) {} }
-    if (focusRow) {
-      var sel = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(focusRow) : focusRow.replace(/["\\]/g, '\\$&');
-      var fr = null; try { fr = el.querySelector('.do-row[data-v="' + sel + '"]'); } catch (e) {}
-      if (fr) fr.focus({ preventScroll: true });     // never scroll the page back to a row
-    }
     renderModal();
   }
 
-  // ─── modal ──────────────────────────────────────────────────────────────────
-  function closeModal() { st.drawer = null; st.drBook = null; st.tip = false; renderModal(); }
-  // TEN-376 S1: a sidebar click closes the price-move box before it navigates
+  // ─── the price move box (the box shell: one component) ─────────────────────
+  function closeModal() { st.drawer = null; st.drBook = null; st.drPick = false; st.tip = false; renderModal(); }
   (window.sfOverlayClosers = window.sfOverlayClosers || []).push(function () { if (st.drawer) closeModal(); });
-  function renderModal() {
-    var ov = document.getElementById('doOverlay');
-    var r = st.drawer && st.rows.filter(function (x) { return x.id === st.drawer; })[0];
-    if (!r) { if (ov) ov.remove(); st.modalKey = null; return; }
-    // decision 5: metadata + the analysis link only for a row matched to exactly one board card
-    // the row's card is the one enrich() joined (both players, the card's start within 12 h): one join for list and box
-    var hit = r.card ? { card: r.card, cardSide: r.cardSide } : null;
-    var card = hit && hit.card;
-    if (card && !card._oddsLoaded && typeof ensureOddsMovement === 'function' && !card._doShardAsked) {   // eslint-disable-line no-undef
-      card._doShardAsked = true;
-      ensureOddsMovement(card).then(function () { st.modalKey = null; renderModal(); }).catch(function () {});   // eslint-disable-line no-undef
-    }
-    var chart = card && card._oddsLoaded && card.oddsMovement ? card.oddsMovement.chart : null;
-    // TEN-427 Data 4: a card whose Today's Matches book is Bet105 lends the box its odds-movement pop-up rows for the
-    // Bet105 line (price-history-box.js, the price_history RPC, cached 60 s there) — one source for both charts
-    var PHB = typeof window !== 'undefined' ? window.PriceHistoryBox : null, ph = null;
-    if (card && PHB && PHB.cardData && PHB.fetchHistory && typeof ocsKeyOf === 'function' && typeof ocsNameKey === 'function') {   // eslint-disable-line no-undef
-      var cdat = null;
-      try { cdat = PHB.cardData(card, hit.cardSide); } catch (e) { cdat = null; }
-      if (cdat && cdat.source === 'rpc') {
-        var phc = st.phCache || (st.phCache = {}), ck = ocsKeyOf(card), got = phc[ck];   // eslint-disable-line no-undef
-        // an entry expires after PH_TTL_MS, as the Today's Matches pop-up re-reads (price-history-box.js CACHE_TTL_MS);
-        // the expired rows stay drawn until the re-read answers
-        if (!got || Date.now() - got.at >= PH_TTL_MS) {
-          got = phc[ck] = { payload: got ? got.payload : null, at: Date.now() };
-          (function (ent) {
-            var drop = function () { if (phc[ck] === ent) delete phc[ck]; };
-            PHB.fetchHistory(ck).then(function (p) { if (p == null) { drop(); return; } ent.payload = p; st.modalKey = null; renderModal(); }).catch(drop);
-          })(got);
-        }
-        if (got.payload) ph = phSeries(PHB, got.payload, ocsNameKey, card, hit.cardSide, cdat.startAt, cdat.completed ? cdat.closeAt : null);   // eslint-disable-line no-undef
-      }
-    }
-    // + the minute: "Now" (15 min) and the countdown must age even when no new data arrives (review of a37fc857)
-    var key = [st.drawer, st.drBook, st.tip, st.etag, chart ? 'b' : '-', ph ? 'p' : '-', Math.floor(dataNow() / 60000)].join('|');
-    var now = dataNow();
-    if (ov && st.modalKey === key) {
-      var dl = ov.querySelector('.do-ov-dropc span');
-      if (dl) dl.textContent = movedText(r, now);
-      return;
-    }
-    st.modalKey = key;
-    // a box opens at its top, header in view (TEN-301 item 7); only a re-render of the SAME row keeps its scroll
-    var keepScroll = ov && st.modalRow === st.drawer && ov.querySelector('.do-ov-scroll') ? ov.querySelector('.do-ov-scroll').scrollTop : 0;
-    st.modalRow = st.drawer;
-    if (!ov) { ov = document.createElement('div'); ov.id = 'doOverlay'; ov.className = 'do-ov'; document.body.appendChild(ov); }
-    // the overlay starts at the rail's edge through --sf-side (drops-page.css), so it follows the rail open / closed (TEN-403)
-
-    var mb = modalBooks(r, { rows: st.rows, line: (st.lines || {})[lineKey(r)], chart: chart, cardSide: hit && hit.cardSide, now: now, cutAt: r.cutAt, ph: ph });
-    var ownB = mb.books.filter(function (b) { return b.own; })[0];
-    var sel = (st.drBook && mb.books.filter(function (b) { return b.book === st.drBook; })[0]) || ownB;
-    var cls = bookCls(r.book);
-    // header (price-led). Players line: the shared names, no rank / Elo (the v2 design draws neither); event (the
-    // canonical table) and round only from a matched card, and a segment that does not exist is left out (rules 29, 30)
-    var tail = [];
-    if (card) {
-      if (r.event) tail.push(String(r.event));
-      // the round = the card's own api-tennis round only, as Today's Matches and the MA header read it (founder
-      // 33107f2a, 11 Oct: no Drops-only inference) — a card the feed has not filled yet shows no round
-      var rb = typeof roundBadgeText === 'function' ? roundBadgeText(card.tournamentRound) : null;   // eslint-disable-line no-undef
-      if (rb) tail.push(String(rb));
-    }
-    var sl = startLine(r, now);
-    var dropBig = r1(r.drop) >= 10;
-    // chart: the selected book's recorded prices, its end (rule 25), its open chip (rule 24)
-    var series = (sel.series || []).filter(function (p) { return isFinite(p.t) && p.v != null; }).slice().sort(function (a, b) { return a.t - b.t; });
-    var end = endOf(series, sel.seen, r.cutAt, now);
-    var ch = series.length ? boxChart(series, sel.first && sel.first.v, end, sel.holes) : null;
-    var nameSpan = function (n, d) {
-      return '<span class="do-ov-nm' + (n === r.side ? ' backed' : '') + '"><span>' + esc(d || n) + '</span></span>';
+  function tile(cls, label, figHtmlStr, rightHtml, lines) {
+    return '<div class="do2-tile ' + cls + '"><span class="do2-tile-l">' + esc(label) + '</span>' +
+      '<span class="do2-tile-top">' + figHtmlStr + rightHtml + '</span><span class="do2-hair"></span>' +
+      '<span class="do2-tile-lines">' + lines.map(function (l) {
+        return l[1] == null ? '<span>' + esc(l[0]) + '</span>' : '<span class="do2-kv"><span>' + esc(l[0]) + '</span><span class="do2-kv-v">' + esc(l[1]) + '</span></span>';
+      }).join('') + '</span></div>';
+  }
+  function boxHtml(s) {
+    var now = dataNow(), bk = s.bk, c = calc(bk), sh = sharpCell(c, 28), so = softCell(c, 22), t = startMs(s);
+    var quoted = BOOK_NAMES.filter(function (b) { return bk[b]; }), nonPin = quoted.filter(function (b) { return b !== 'Pinnacle'; });
+    var def = nonPin[0]; nonPin.forEach(function (b) { if (r2(bk[b].now) > r2(bk[def].now)) def = b; });
+    if (!def) def = bk.Pinnacle ? 'Pinnacle' : quoted[0];
+    var sel = st.drBook && bk[st.drBook] ? st.drBook : def;
+    var pinOn = !!bk.Pinnacle && sel !== 'Pinnacle';
+    var roles = {}; if (sel) roles[sel] = sel === 'Pinnacle' ? 'pin' : 'sel'; if (pinOn) roles.Pinnacle = 'pin';
+    var best = c.best ? c.best.price : null;
+    var rows = BOOK_NAMES.map(function (n) { return bookRow(n, bk[n], best, roles[n]); });
+    var pinMv = bk.Pinnacle && bk.Pinnacle.moveT != null ? agoShort(now - bk.Pinnacle.moveT) : '—';
+    var sub = ['Match winner', 'vs ' + (s.dOpp || s.opp), s.event, s.round].filter(Boolean).join(' · ');
+    var nm = (s.dSide || s.side) + ' to win';
+    var head = '<div class="do2-bhead">' + avatar(s) + '<div class="do2-bhead-t"><span class="do2-btitle" id="do2BoxTitle">' + esc(nm) + '</span><span class="do2-bsub">' + esc(sub) + '</span></div>' +
+      (s.card && s.card.id != null ? '<span class="do2-btn do2-btn30" role="button" tabindex="0" data-act="analysis" data-v="' + esc(s.card.id) + '">Match analysis</span>' : '') +
+      '<span class="do2-btn do2-btn30" role="button" tabindex="0" data-act="close">Close</span></div>';
+    var px = function (cl, x) { return x.hasP ? pricesHtml(cl, x) : ''; };
+    var tiles = '<div class="do2-tiles">' +
+      tile('lift', 'Sharp · Pinnacle', '<span class="do2-tfig28 ' + sh.tone + '">' + esc(sh.big) + sh.pct + '</span>', px('tsh', sh),
+        (sh.hasP ? [] : [[sh.note]]).concat(sh.hasImpl ? [['Implied', sh.implShort], ['Shift', sh.shift], ['Last move', pinMv]] : [])) +
+      tile('', softLabel(c), '<span class="do2-tfig22 ' + (so.tone === 'drop' ? 'soft' : so.tone) + '">' + esc(so.big) + so.pct + '</span>', px('tso', so),
+        (so.hasP ? [] : [[so.note]]).concat(so.hasImpl ? [['Implied', so.implShort], ['Shift', so.shift]] : []).concat(c.soft.two > 0 ? [['Books down', c.soft.down + ' of ' + c.soft.quotes]] : [])) +
+      tile('', c.best && c.best.n > 1 ? 'Best now' : 'Now', '<span class="do2-tfig22">' + (c.best ? f2(c.best.price) : '—') + '</span>', '<span class="do2-tbook">' + esc(c.best ? c.best.book : '') + '</span>',
+        [['Quoting', quoted.length + ' of ' + BOOK_NAMES.length], ['Starts', startLbl(t, now)], ['Countdown', countdown(t, now)]]) + '</div>';
+    // chart
+    var lines = []; if (pinOn) lines.push({ role: 'pin', series: bk.Pinnacle.series }); if (sel) lines.push({ role: roles[sel], series: bk[sel].series });
+    var ch = chartModel(lines, now);
+    var legend = (pinOn ? ['Pinnacle'] : []).concat(sel ? [sel] : []).map(function (n) {
+      var r = rd(bk[n].first, bk[n].now);
+      var txt = r.kind === 'one' ? f2(r.n) + ' · 1 price recorded' : f2(r.o) + ' → ' + f2(r.n);
+      var d = r.kind === 'drop' ? r.d.toFixed(1) + '%' : r.kind === 'flat' ? 'No move' : r.kind === 'up' ? '+' + Math.abs(r.d).toFixed(1) + '%' : '';
+      return '<span class="do2-leg"><span class="do2-leg-bar ' + (n === 'Pinnacle' ? 'pin' : 'sel') + '"></span><span class="do2-leg-n">' + esc(n) + '</span>' +
+        '<span class="do2-leg-t">' + esc(txt) + '</span><span class="do2-leg-d' + (r.kind === 'drop' ? ' drop' : '') + '">' + esc(d) + '</span></span>';
+    }).join('');
+    var pickOpts = [['sharp', 'Sharp books'], ['soft', 'Soft books']].map(function (g) {
+      var o = rows.filter(function (k) { return k.cls === g[0] && k.quoted && k.name !== 'Pinnacle'; });
+      return o.length ? '<div class="do2-mhead">' + g[1] + '</div>' + o.map(function (k) {
+        return '<span class="do2-popt' + (k.name === sel ? ' on' : '') + '" role="menuitem" tabindex="0" data-act="drbook" data-v="' + esc(k.name) + '"><span class="do2-mopt-l">' + esc(k.name) + '</span><span class="do2-popt-n">' + esc(k.now) + '</span></span>';
+      }).join('') : '';
+    }).join('');
+    var picker = nonPin.length < 2 ? '' : '<div class="do2-mwrap"><span class="do2-pbtn' + (st.drPick ? ' open' : '') + '" role="button" tabindex="0" data-act="drpick">' +
+      '<span class="do2-mbtn-l">' + (bk.Pinnacle ? 'Compare with Pinnacle' : 'Bookmaker') + '</span><span class="do2-mbtn-v set">' + esc(sel) + '</span>' + CHEV + '</span>' +
+      (st.drPick ? '<div class="do2-pickaway" data-act="drpick"></div><div class="do2-menu do2-pmenu" role="menu">' + pickOpts + '</div>' : '') + '</div>';
+    var plot = !ch ? '' : '<div class="do2-chart"><div class="do2-chart-r"><div class="do2-ylab">' + ch.gridY.map(function (g) { return '<span style="top:' + g.top + '">' + g.label + '</span>'; }).join('') + '</div>' +
+      '<div class="do2-plot"><svg viewBox="0 0 1000 300" preserveAspectRatio="none" aria-hidden="true">' +
+      ch.splits.map(function (x) { return '<line x1="' + x + '" y1="0" x2="' + x + '" y2="300" class="do2-split" vector-effect="non-scaling-stroke"></line>'; }).join('') +
+      ch.lines.map(function (l) { return '<polyline points="' + l.points + '" class="do2-ln ' + l.role + '" vector-effect="non-scaling-stroke"></polyline>'; }).join('') + '</svg>' +
+      ch.lines.map(function (l) { return l.dots.map(function (d) { return '<span class="do2-dot ' + l.role + (d.big ? ' big' : '') + '" style="left:' + d.left + ';top:' + d.top + '"></span>'; }).join(''); }).join('') +
+      '</div></div><div class="do2-xt">' + ch.ticks.map(function (x) { return '<span style="left:' + x.left + ';transform:' + x.tf + '">' + x.label + '</span>'; }).join('') + '</div>' +
+      '<div class="do2-days">' + ch.bands.map(function (b) { return '<div style="width:' + b.w + '"><span></span><span>' + esc(b.label) + '</span></div>'; }).join('') + '</div></div>';
+    var notes = [sel && bk[sel].first == null ? 'One price recorded at ' + sel + ' so far. Its line appears once a second snapshot arrives.' : '',
+      !bk.Pinnacle ? 'Pinnacle has no line on this selection, so the chart has no sharp overlay.' : ''].filter(Boolean);
+    var hist = '<div class="do2-ibox do2-hist"><div class="do2-hist-h"><span class="do2-sec"><span class="do2-sec-h">Price history</span><span class="do2-sec-s">Last 24 hours · each dot is a recorded price</span></span>' +
+      '<div class="do2-hist-m">' + picker + '</div></div><div class="do2-legend">' + legend + '</div>' + plot +
+      (notes.length ? '<div class="do2-notes">' + notes.map(function (n) { return '<span>' + esc(n) + '</span>'; }).join('') + '</div>' : '') + '</div>';
+    var group = function (cls, label, desc) {
+      var gr = rows.filter(function (k) { return k.cls === cls; });
+      return '<div class="do2-ibox do2-bgroup"><div class="do2-bg-h"><span class="do2-bg-t"><span class="do2-bg-n">' + label + '</span><span class="do2-bg-d">' + desc + '</span></span>' +
+        '<span class="do2-bg-m">' + esc(groupMeta(gr)) + '</span></div><div class="do2-bg-col"><span>Bookmaker</span><span class="do2-bg-col2"><span>Price now</span><span>Drop</span></span></div>' +
+        gr.map(function (k) {
+          var tip = !k.quoted ? k.name + ' has no line on this selection' : k.role ? k.name + ' is on the chart' : 'Show ' + k.name + ' on the chart';
+          return '<div class="do2-brow' + (k.role ? ' on' : '') + (k.quoted ? ' q' : '') + '"' + (k.quoted ? ' role="button" tabindex="0" data-act="drbook" data-v="' + esc(k.name) + '"' : '') + ' title="' + esc(tip) + '">' +
+            '<span class="do2-brow-l"><span class="do2-brow-n">' + (k.role ? '<span class="do2-bdot ' + k.role + '"></span>' : '') + '<span class="do2-brow-name' + (k.quoted ? '' : ' none') + '">' + esc(k.name) + '</span></span>' +
+            '<span class="do2-brow-s">' + esc(k.sub) + '</span></span>' + priceBox(k) + '</div>';
+        }).join('') + '</div>';
     };
-    var html = '<div class="do-ov-scrim" data-act="close"></div><div class="do-ov-box" role="dialog" aria-modal="true" aria-label="Price move"><div class="do-ov-scroll">' +
-      '<div class="do-ov-head">' +
-        '<div class="do-ov-dropb"><span class="do-ov-dropf ' + (dropBig ? 'big' : 'small') + '"><span>▼ ' + r.drop.toFixed(1) + '%</span></span>' +
-          '<span class="do-ov-dropc">DROP · <span>' + esc(movedText(r, now)) + '</span></span></div>' +
-        '<div class="do-ov-mid">' +
-          '<span class="do-ov-eye"><span>Match winner</span> · <span>' + esc(r.book) + '</span><span class="do-ov-btag ' + cls + '"><span>' + cls.toUpperCase() + '</span></span></span>' +
-          '<span class="do-ov-sel"><span>' + esc(r.dSide || r.side) + ' to win</span></span>' +
-          '<span class="do-ov-pl">' + nameSpan(r.playerA, r.dA) + '<span class="do-ov-v">v</span>' + nameSpan(r.playerB, r.dB) +
-            (tail.length ? '<span class="do-ov-evr">· ' + tail.map(function (x) { return '<span>' + esc(x) + '</span>'; }).join(' · ') + '</span>' : '') + '</span>' +
-        '</div>' +
-        '<div class="do-ov-right"><span class="do-ov-pxl"><span class="do-ov-open"><span>' + price2(r.open) + '</span></span><span class="do-ov-arrow">→</span>' +
-          '<span class="do-ov-now"><span>' + price2(r.now) + '</span></span></span>' +
-          (sl ? '<span class="do-ov-start"><span>' + esc(sl.start) + '</span> (<span>' + esc(sl.cd) + '</span>)</span>' : '') + '</div>' +
-        '<button class="do-ov-x" data-act="close" aria-label="Close">✕</button>' +
-      '</div>' +
-      '<div class="do-ov-chart"><span class="do-ov-backrow">' + (!sel.own ? '<span class="do-ov-back" role="button" tabindex="0" data-act="back">Back to ' + esc(r.book) + '</span>' : '') + '</span>' +
-      (ch ? '<div class="do-ov-cw">' +
-        '<div class="do-ov-yax">' + ch.gridY.map(function (g) { return '<span style="top:' + g.top + '"><span>' + g.label + '</span></span>'; }).join('') + '</div>' +
-        '<div class="do-ov-plot"><svg viewBox="0 0 1000 300" preserveAspectRatio="none">' +
-          // README §5.8 "Dotted guides" (founder R6.3, TEN-376): dotted horizontal guides only — the model's vticks and
-          // area are not drawn (no vertical gridlines, no area fill)
-          ch.gridY.map(function (g) { return '<line class="do-hg" x1="0" y1="' + g.y + '" x2="1000" y2="' + g.y + '" vector-effect="non-scaling-stroke"></line>'; }).join('') +
-          // time axis 1a: the day split at midnight (member's zone)
-          ch.splits.map(function (x) { return '<line class="do-day" x1="' + x + '" y1="0" x2="' + x + '" y2="300" vector-effect="non-scaling-stroke"></line>'; }).join('') +
-          ch.lines.map(function (pl) { return '<polyline class="do-line" points="' + pl + '" vector-effect="non-scaling-stroke"></polyline>'; }).join('') +
-          // r3 item 9: the last price carried flat and dashed to the axis end
-          (ch.ext ? '<line class="do-ext" x1="' + ch.ext.x1 + '" y1="' + ch.ext.y + '" x2="' + ch.ext.x2 + '" y2="' + ch.ext.y + '" vector-effect="non-scaling-stroke"></line>' : '') +
-          '</svg>' +
-          (ch.hasOpen ? '<span class="do-ov-openchip" style="top:' + ch.openTop + ';left:min(calc(' + ch.openLeft + ' + 8px), calc(100% - 132px))">' + openHelp('do-ov-help', 'do-ov-tip') + ' <span>' + price2(sel.first.v) + '</span></span>' : '') +
-          '<span class="do-ov-enddot" style="top:' + ch.endDot + ';left:' + ch.endLeft + '"></span></div>' +
-        '<div class="do-ov-endc"><div class="do-ov-endbox" style="top:' + ch.endTop + '"><div class="do-ov-endw">' + esc(ch.endWord) + '</div><div class="do-ov-endv"><span>' + ch.endLbl + '</span></div></div></div>' +
-        '</div>' +
-        '<div class="do-ov-xax">' + ch.ticks.map(function (t) { return '<span style="left:' + t.left + ';transform:' + t.tf + '"><span>' + esc(t.label) + '</span></span>'; }).join('') + '</div>' +
-        '<div class="do-ov-days">' + ch.bands.map(function (b) { return '<span class="do-ov-band" style="width:' + b.w + '"><span class="do-ov-bl"></span><span class="do-ov-bt">' + esc(b.label) + '</span></span>'; }).join('') + '</div>' : '') +
-      '<span class="do-ov-note"><span>' + (ch && ch.single ? 'One price recorded so far. The line appears once a second snapshot arrives.' : sel.truncated ? 'Earlier prices were not sent; the chart starts at the oldest one loaded.' : '') + '</span></span></div>' +
-      // r3 item 6 (founder 393874e7) = the reference's table: Book · Open → Now · Drop on minmax(0,1fr) 120px 84px, the
-      // books under SHARP / SOFT group labels (a caps label + a hairline; no TYPE chip column, no "from" column); the
-      // open struck through as on the rows (r3 item 5)
-      '<div class="do-ov-tbl"><div class="do-ov-th"><span>Book</span><span class="r do-ov-hr">' + openHelp('do-ov-help', 'do-ov-tip') + ' → Now</span><span class="r">Drop</span></div>' +
-      ['sharp', 'soft', 'prediction'].map(function (g) {
-        var gb = mb.books.filter(function (b) { return (b.cls === 'sharp' || b.cls === 'prediction' ? b.cls : 'soft') === g; });
-        if (!gb.length) return '';
-        return '<div class="do-ov-grp"><span class="do-ov-grk">' + GROUP_NAME[g] + '</span><span class="do-ov-grl"></span></div>' +
-          gb.map(function (b) {
-            var sp = bookSplit(b.book), dc = dropCell(b.own ? r.drop : b.drop, b.single);
-            return '<div class="do-ov-tr' + (b === sel ? ' sel' : '') + (b.own ? ' own' : '') + '" role="button" tabindex="0" data-act="book" data-v="' + esc(b.book) + '" title="' + esc(b.book + (b.src ? ' · ' + b.src : '')) + '">' +
-              '<span class="do-ov-tb"><span class="n"><span>' + esc(sp.name) + '</span></span><span class="s"><span>' + esc(sp.sub) + '</span></span></span>' +
-              '<span class="r do-ov-tp">' + (!b.single && b.first && b.first.v != null ? '<span class="do-ov-to">' + price2(b.first.v) + '</span>' : '<span class="do-ov-tnil">—</span>') + '<span class="do-ov-ta">→</span>' +
-                '<span class="do-ov-tn">' + price2(b.now && b.now.v) + '</span></span>' +
-              '<span class="r"><span class="do-ov-td ' + dc.c + '"><span>' + dc.txt + '</span></span></span></div>';
-          }).join('');
-      }).join('') + '</div>' +
-      '<div class="do-ov-foot"><span class="do-ov-foot-l"><span class="do-ov-sum"><span>' + esc(summaryText(mb)) + '</span></span>' +
-      '<span class="do-ov-fn">Each drop compares a book’s own first recorded price with its own current price.</span></span>' +
-      (card && typeof openAnalysisModal === 'function' ? '<a class="do-ov-link" href="#" data-act="analysis" data-v="' + esc(card.id) + '">Open match analysis →</a>' : '') +   // eslint-disable-line no-undef
-      '</div></div></div>';
-    ov.innerHTML = html;
-    var sc = ov.querySelector('.do-ov-scroll');
-    if (sc) sc.scrollTop = keepScroll;
+    var books = '<div class="do2-books"><span class="do2-sec"><span class="do2-sec-h">Bookmakers</span><span class="do2-sec-s">' + esc(bookSummary(rows)) + '</span></span>' +
+      '<div class="do2-bcols"><div class="do2-bcol">' + group('sharp', 'Sharp books', 'Low margin, first to move') + '</div>' +
+      '<div class="do2-bcol">' + group('soft', 'Soft books', 'Higher margin, slower to move') + '</div></div>' +
+      '<span class="do2-foot">Each drop compares a book\'s own first recorded price with its own current price.</span></div>';
+    return '<div class="do2-scrim" data-act="close"></div><div class="do2-box" role="dialog" aria-modal="true" aria-labelledby="do2BoxTitle">' + head +
+      '<div class="do2-body">' + tiles + hist + books + '</div></div>';
+  }
+  function renderModal() {
+    var ov = document.getElementById('do2Overlay');
+    var s = st.drawer && st.sels.filter(function (x) { return x.id === st.drawer; })[0];
+    if (!s) { if (ov) ov.remove(); st.boxKey = null; return; }
+    if (!ov) {
+      ov = document.createElement('div'); ov.id = 'do2Overlay'; ov.className = 'do2-ov';
+      document.body.appendChild(ov);
+      ov.addEventListener('click', onClick);
+    }
+    var html = boxHtml(s);
+    if (html === st.boxHtml && st.boxKey === s.id) return;   // rebuilt only when what it shows changes
+    var body = ov.querySelector('.do2-body'), keep = st.boxKey === s.id && body ? body.scrollTop : 0;
+    ov.innerHTML = html; st.boxHtml = html; st.boxKey = s.id;
+    var nb = ov.querySelector('.do2-body'); if (nb) nb.scrollTop = keep;
   }
 
   // ─── events ─────────────────────────────────────────────────────────────────
@@ -1217,70 +876,47 @@
     var t = e.target.closest && e.target.closest('[data-act]');
     if (!t) return;
     var act = t.getAttribute('data-act'), v = t.getAttribute('data-v'), S = st.S;
-    if (t.hasAttribute('disabled') || t.getAttribute('aria-disabled') === 'true') return;
     switch (act) {
       case 'tier': S.tiers = toggle(S.tiers, v, true); break;
-      case 'btype': S.btype = v; break;
       case 'win': S.win = v; break;
       case 'min': S.min = +v; break;
-      case 'mk': S.mk = v; break;
+      case 'mv': S.mv = v; break;
+      case 'mk': S.mkTab = v; break;
+      case 'sort':
+        if (v === 'sharp') { S.sort = 'drop'; S.btype = 'all'; } else if (v === 'soft') { S.sort = 'drop'; S.btype = 'soft'; } else S.sort = v;
+        break;
       case 'menu': st.menu = st.menu === v ? null : v; break;
       case 'clickaway': st.menu = null; break;
-      case 'clear':
-        e.stopPropagation();
-        if (v === 'book') S.books = books();
-        if (v === 'starts') S.starts = 0;
-        if (v === 'surf') S.surf = 'all';
-        st.menu = null; break;
-      case 'book':
-        if (t.closest('.do-ov')) { st.drBook = v; renderModal(); return; }
-        S.books = toggle(S.books, v, true); break;       // multi-select: the menu stays open
-      case 'surf': S.surf = v || 'all'; st.menu = null; break;   // single-select: the menu closes
-      case 'starts': S.starts = +v; st.menu = null; break;
-      case 'sort': S.sort = v; st.menu = null; break;
-      case 'reset': st.S = defaults(books()); st.menu = null; break;
+      case 'clear': e.stopPropagation(); S.books = BOOK_NAMES.slice(); st.menu = null; break;
+      case 'book': S.books = toggle(S.books, v, true); break;    // multi-select, the menu stays open; one stays on
+      case 'reset': st.S = defaults(); st.menu = null; break;
       case 'reconnect': refresh(); return;
-      case 'view':
-        st.view = v === 'arb' ? 'arb' : 'drops'; st.menu = null;
-        if (st.view === 'arb' && window.ArbPage) window.ArbPage.load().then(function () { if (st.active && st.view === 'arb') render(); });
-        break;
-      case 'row': st.drawer = v; st.drBook = null; st.tip = false; st.menu = null; renderModal(); return;
+      case 'tip': st.tip = !st.tip; break;
+      case 'row': st.drawer = v; st.drBook = null; st.drPick = false; st.tip = false; st.menu = null; render(); return;
       case 'close': closeModal(); return;
-      case 'back': st.drBook = null; renderModal(); return;
-      case 'tip': st.tip = !st.tip; renderModal(); return;
+      case 'drpick': st.drPick = !st.drPick; renderModal(); return;
+      case 'drbook': st.drBook = v; st.drPick = false; renderModal(); return;
       case 'analysis':
-        e.preventDefault(); closeModal();
+        closeModal();
         if (typeof openAnalysisModal === 'function') openAnalysisModal(v);   // eslint-disable-line no-undef
         return;
       default: return;
     }
     render();
   }
-  function onInput(e) {
-    if (e.target.getAttribute('data-act') !== 'q') return;
-    st.S.q = e.target.value; render();
-  }
+  function onInput(e) { if (e.target.getAttribute('data-act') === 'q') { st.S.q = e.target.value; render(); } }
   function onKey(e) {
-    // the box's book rows and "Back to" are keyboard-reachable (role=button, tabindex=0)
-    var act = e.target.closest && e.target.closest('.do-ov [role="button"][data-act]');
-    if (act && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); act.click(); return; }
-    var row = e.target.closest && e.target.closest('.do-row');
-    if (row && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); st.drawer = row.getAttribute('data-v'); st.drBook = null; st.tip = false; renderModal(); }
+    var a = e.target.closest && e.target.closest('#dropsRoot [role="button"][data-act], #dropsRoot [role="menuitemcheckbox"], .do2-ov [data-act][tabindex]');
+    if (a && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); a.click(); }
   }
-
   function setActive(on) {
     st.active = !!on;
     clearTimeout(st.timer); clearInterval(st.ticker);
     if (!st.active) { closeModal(); return; }
     render();
     load().then(function () { render(); schedule(); });
-    // re-render the data-time labels ("moved 41m ago", the feed's age behind the banner) between reads
-    st.ticker = setInterval(function () {
-      if (st.view === 'arb' && window.ArbPage && window.ArbPage.stale()) window.ArbPage.load(true).then(function () { if (st.active) render(); });
-      if (!st.menu) render();
-    }, 5000);
+    st.ticker = setInterval(function () { if (!st.menu && !st.tip) render(); }, 5000);   // the data-time labels between reads
   }
-
   function boot() {
     var btn = document.getElementById('dropsTabBtn');
     if (btn) btn.style.display = '';
@@ -1288,9 +924,12 @@
     if (!el) return;
     el.addEventListener('click', onClick);
     el.addEventListener('input', onInput);
-    document.addEventListener('keydown', onKey);
-    (window.sfEscLayers = window.sfEscLayers || []).push({ id: 'drops-drawer', z: 76, isOpen: function () { return !!st.drawer; }, close: closeModal });   // Esc: esc-nav.js
-    document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('.do-ov')) onClick(e); });
+    document.addEventListener('keydown', onKey);   // Enter / Space on the page's buttons; Escape is esc-nav.js's alone
+    // Esc (esc-nav.js, one layer per press, highest z first): the box's compare menu, then the box, then a page menu / the explainer
+    (window.sfEscLayers = window.sfEscLayers || []).push(
+      { id: 'drops-box-menu', z: 77, isOpen: function () { return !!(st.drawer && st.drPick); }, close: function () { st.drPick = false; renderModal(); } },
+      { id: 'drops-drawer', z: 76, isOpen: function () { return !!st.drawer; }, close: closeModal },
+      { id: 'drops-menu', z: 60, isOpen: function () { return !st.drawer && !!(st.menu || st.tip); }, close: function () { st.menu = null; st.tip = false; render(); } });
     var page = el.closest('.tabpage');
     if (page && page.classList.contains('active')) setActive(true);
   }

@@ -341,3 +341,36 @@
   --news-white:    #FFFFFF;   /* edges and tracks, always at a stated alpha */
   --news-shadow:   0 12px 28px rgba(0, 0, 0, 0.45);
 }
+
+/* Dropping Odds v2 (handoff design_handoff_dropping_odds_v2, founder 2026-11-23 "pixel for pixel"): the export's own
+   values, named apart from the foundation tokens; drops-page.css reads them inside [data-page="drops"] and the
+   price move box (.do2-ov). Night only; nothing else reads them. */
+:root {
+  --do2-card:      #0E1019;
+  --do2-inner:     #0C0E16;
+  --do2-lift:      #121521;
+  --do2-track:     #0A0C13;
+  --do2-hover:     #171B28;
+  --do2-text:      #E7E9EE;
+  --do2-text2:     #C6CCDB;
+  --do2-grey:      #8B96B5;
+  --do2-dim:       #5B6880;
+  --do2-dim2:      #4B5672;
+  --do2-red:       #E06266;   /* drop figures */
+  --do2-meter:     #E0616F;   /* the sharp meter, the banner dot and words */
+  --do2-blue:      #5B9BFF;   /* the Pinnacle line only */
+  --do2-hair:      rgba(255, 255, 255, 0.06);
+  --do2-edge-8:    rgba(255, 255, 255, 0.08);
+  --do2-edge-10:   rgba(255, 255, 255, 0.10);
+  --do2-edge-14:   rgba(255, 255, 255, 0.14);
+  --do2-edge-22:   rgba(255, 255, 255, 0.22);
+  --do2-edge-40:   rgba(255, 255, 255, 0.40);
+  --do2-sk-6:      rgba(255, 255, 255, 0.06);
+  --do2-sk-7:      rgba(255, 255, 255, 0.07);
+  --do2-sk-45:     rgba(255, 255, 255, 0.045);
+  --do2-meter-trk: rgba(224, 97, 111, 0.16);
+  --do2-strike:    rgba(224, 97, 111, 0.70);
+  --do2-scrim:     rgba(3, 4, 7, 0.62);
+  --do2-shadow-menu: 0 16px 36px rgba(0, 0, 0, 0.5);
+  --do2-shadow-box:  0 30px 80px rgba(0, 0, 0, 0.55);
+}

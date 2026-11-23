@@ -54,11 +54,9 @@ test('empty, loading and failed states invent nothing', () => {
   assert.match(page(null, true).bodyHtml(), /Arbitrage data unavailable\./);
   assert.match(page(null).headerHtml(), /Arbs<\/span><span class="sfh__v sfh__v--none">—</);
 });
-test('wiring: Drops | Arbitrage switch, script loaded before drops-page.js, published', () => {
-  const dp = readFileSync(new URL('./drops-page.js', import.meta.url), 'utf8');
-  assert.match(dp, /seg\('Drops', st\.view === 'drops', 'view', 'drops'\)/);
-  assert.match(dp, /seg\('Arbitrage', st\.view === 'arb', 'view', 'arb'\)/);
-  assert.match(dp, /case 'view':/);
+// Dropping Odds v2 (founder brief 2026-11-23): the handoff draws no Drops | Arbitrage switch ("view" is dead code there);
+// arb-page.js stays loaded and published, unreached from the page, until the founder rules (Step 1 report, question 1).
+test('wiring: arb-page.js still loaded before drops-page.js and published', () => {
   const html = readFileSync(new URL('./bsp-consult-dashboard.html', import.meta.url), 'utf8');
   assert.match(html, /<script src="arb-page\.js" defer><\/script>\n<script src="drops-page\.js" defer><\/script>/);
   assert.match(readFileSync(new URL('./tools/site-code.sh', import.meta.url), 'utf8'), /arb-page\.js/);

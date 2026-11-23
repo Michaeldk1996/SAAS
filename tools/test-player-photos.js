@@ -107,7 +107,7 @@ const USES = [
   ['Series cards', 'series.js', "playerPhotoImg(String(key), name)"],
   ['Draw view', 'draw-view.js', 'window.playerPhotoUrl(String(s.playerKey))'],
   ['Player Profile (V2)', 'player-profile-v2.js', "window.playerPhotoUrl(p.key, 'l')"],
-  ['Dropping Odds', 'drops-page.js', 'playerPhotoImg(r.photoKey, r.dSide || r.side)'],
+  ['Dropping Odds', 'drops-page.js', 'playerPhotoImg(s.photoKey, nm)'],
   ['Tournament quotes', 'tournaments-overview.js', 'playerPhotoImg(String(q.playerKey), q.player)'],
 ];
 const missing = USES.filter(([, f, t]) => !fs.readFileSync(path.join(ROOT, f), 'utf8').includes(t)).map(([l]) => l);

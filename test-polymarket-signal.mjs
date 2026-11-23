@@ -59,13 +59,11 @@ test('Polymarket is its own group, "Prediction market", on the Odds tab and the 
   assert.match(html, /'Polymarket \(odds-api\.io\)': \{ group: 'prediction'/);
   assert.match(html, /\['prediction', 'PREDICTION MARKET', C\.soft\]/, 'the Odds tab group label');
   assert.match(html, /const gOrd = g => \(g === 'sharp' \? 0 : g === 'prediction' \? 2 : 1\);/, 'listed after Soft');
-  const vm = await import('node:vm');
-  const js = readFileSync(join(HERE, 'drops-page.js'), 'utf8');
-  const bc = js.slice(js.indexOf('var SHARP_BOOKS'), js.indexOf('var GROUP_NAME'));
-  const ctx = {}; vm.runInNewContext(bc + '; this.bookCls = bookCls;', ctx);
-  assert.deepEqual(['Polymarket', 'Polymarket (odds-api.io)', 'Superbet', 'Bet105', 'Betfair Exchange'].map(ctx.bookCls),
-    ['prediction', 'prediction', 'soft', 'sharp', 'sharp']);
-  assert.match(js, /var GROUP_NAME = \{ sharp: 'Sharp', soft: 'Soft', prediction: 'Prediction market' \};/);
+  // Dropping Odds v2 (founder brief 2026-11-23): its feed carries no prediction market, so the page lists none (every
+  // prediction-market element hidden); the roster is the books it has a source for
+  const { createRequire } = await import('node:module');
+  const DP = createRequire(import.meta.url)(join(HERE, 'drops-page.js'));
+  assert.deepEqual(DP.BOOKS, [['Pinnacle', 'sharp'], ['Bet105', 'sharp'], ['Superbet', 'soft'], ['Napoleon Sports BE', 'soft']]);
 });
 const SK = (vol, kvol) => new Function('vol', 'kvol', `
   const window = { sfPlan: null };

@@ -74,6 +74,7 @@ const STATIC = [   // [page, the header markup's opening, the title]
   ['live', '<div class="sfh">\n    <div class="sfh__text">\n      <h1 class="sfh__title">Live</h1>', 'Live'],
   // Stennisfy Model left the shared header on 2026-11-16: its handoff (design_handoff_stennisfy_model) draws its own head.
   // Tennis News left it on 2026-11-19: its handoff (design_handoff_news_v2) draws its own header card with stat pills.
+  // Dropping Odds left it on 2026-11-23: its handoff (design_handoff_dropping_odds_v2) draws its own header card.
 ];
 function checkPages(dash, js, css) {
   for (const [page, open, title] of STATIC) {
@@ -88,8 +89,10 @@ function checkPages(dash, js, css) {
   if (((dash + read('tournaments-overview.js')).match(/<div class="sfh db-headcard" data-db="head"><div class="sfh__text"><h1 class="sfh__title">Database<\/h1><p class="sfh__sub" data-db="subtitle"><\/p><\/div><div class="sfh__stats" data-db="fresh"><\/div><\/div>/g) || []).length !== 2)
     return 'database: an embedded mount is not the 35b header';
   const jsHeads = { trading: /'<div class="sfh tr-hdr">' \+\s*'<div class="sfh__text">' \+\s*'<h1 class="sfh__title">Trading Report<\/h1>' \+\s*'<p class="sfh__sub">/,
-    series: /'<div class="sfh sr-head">' \+\s*'<div class="sfh__text"><h1 class="sfh__title">Series<\/h1><p class="sfh__sub">'/,
-    drops: /'<div class="sfh do-head"><div class="sfh__text">' \+\s*'<h1 class="sfh__title">Dropping Odds<\/h1>' \+\s*'<p class="sfh__sub">/ };
+    series: /'<div class="sfh sr-head">' \+\s*'<div class="sfh__text"><h1 class="sfh__title">Series<\/h1><p class="sfh__sub">'/
+  };
+  // Dropping Odds v2 (2026-11-23): its own header card, the handoff's (title 24/800, one grey sentence, Drops · Biggest · Updated)
+  if (!/'<div class="do2-card do2-head"><div class="do2-head-t"><h1>Dropping Odds<\/h1>'/.test(js.drops)) return 'drops: header is not the v2 design head';
   for (const [k, re] of Object.entries(jsHeads)) if (!re.test(js[k])) return `${k}: header is not the 35b .sfh card`;
   // no caps label line above any title (the old headers' "ATP TOUR · …" eyebrows)
   if (/pgh-eyebrow|tourx-headcap|db-headcap|ATP tour · this week's draws|ATP tour · Season calendar|ATP tour · closing-line archive/.test(dash))
@@ -100,7 +103,6 @@ function checkPages(dash, js, css) {
     /\[data-page="news"\] \.news-head h1\{/, /font-size:29px;font-weight:800;letter-spacing:-0\.015em;line-height:1\.1;">Live/];
   for (const re of OLD) if (re.test(dash)) return 'a page-owned header rule is back: ' + re;
   if (/\.sr-head \{|\.sr-h1 \{/.test(css.series)) return 'series.css restyles the header';
-  if (/\.do-head \{|\.do-h1 \{/.test(css.drops)) return 'drops-page.css restyles the header';
   return null;
 }
 
@@ -141,8 +143,7 @@ function checkOneSentence(dash, js) {
   const subs = [...dash.matchAll(/<p class="sfh__sub"[^>]*>(?:<span class="[^"]*">)?([^<]+)</g)].map(m => m[1].trim());
   const series = (/var SUBTITLE = '([^']+)'/.exec(js.series) || [])[1];
   const trading = (/<p class="sfh__sub">([^<]+)(?:<span class="sfh__tail">[^<]*<\/span>)?<\/p>/.exec(js.trading) || [])[1];   // TEN-421: grey tail allowed
-  const drops = (/<span class="do-subtitle">([^<']+)<\/span>/.exec(js.drops) || [])[1];   // TEN-427: the ticket's sentence, as written
-  const all = subs.concat([series, trading, drops]);
+  const all = subs.concat([series, trading]);   // Dropping Odds v2 left .sfh (its design head, 2026-11-23)
   if (all.some(s => !s)) return 'a header sentence could not be read: ' + JSON.stringify(all);
   // Exception (founder, TEN-408 fix 4, 2026-10-09): Playing Styles carries the reference's full two-sentence line (128
   // characters; it fits one line at 1512).
@@ -204,7 +205,7 @@ test('CONTROL: each check goes red on its mutant', () => {
   assert.ok(red(() => checkPages(m(DASH, '<div class="sfh db-headcard" data-db="head">\n', '<div class="db-headcard" data-db="head">\n'), JS, CSS)), 'database off the component');
   assert.ok(red(() => checkPages(DASH, { ...JS, series: m(JS.series, "'<div class=\"sfh sr-head\">'", "'<div class=\"sr-head\">'") }, CSS)), 'series off the component');
   assert.ok(red(() => checkPages(m(DASH, '#tourListView .tourx-head{ margin-bottom:16px; }', '#tourListView .tourx-head h1{ font-size:29px; }'), JS, CSS)), 'page-owned title rule');
-  assert.ok(red(() => checkPages(DASH, JS, { ...CSS, drops: CSS.drops + '\n[data-page="drops"] .do-head { padding: 22px 26px; }' })), 'drops restyles its header');
+  assert.ok(red(() => checkPages(DASH, { ...JS, drops: m(JS.drops, '<h1>Dropping Odds</h1>', '<h1 class="sfh__title">Dropping Odds</h1>') }, CSS)), 'drops off its v2 head');
   // head to head (the rebuilt design head + sticky picker)
   assert.ok(red(() => checkH2H(m(DASH, '<h1 style="margin:0; font-size:24px; font-weight:800;', '<h1 style="margin:0; font-size:29px; font-weight:800;'))), 'h2h title off the design');
   assert.ok(red(() => checkH2H(m(DASH, "coverageLine: 'a dash means not covered'", "coverageLine: 'Data honesty · em dash means not covered'"))), 'h2h old coverage line back');
