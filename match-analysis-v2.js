@@ -279,8 +279,8 @@
         + '<span class="me-edge" style="' + MONO + ' font-size:12px; font-weight:700; text-align:right; white-space:nowrap;">' + RATE(b.w, n, { text: edge == null ? null : meSg(edge, 1, 'pp'), nopct: DASH, note: 'title', color: edge == null ? meGrey : meUc(edge, 1) }) + '</span>'
         + '<span class="me-units" style="' + MONO + ' font-size:12px; font-weight:700; text-align:right; white-space:nowrap;">' + RATE(b.w, n, { text: n ? meSg(b.units, 1, '%') : null, nopct: DASH, note: 'title', color: n ? meUc(b.units, 1) : meGrey }) + '</span></div>';
     }).join('')).join('');
-    const nP = M.state === 'ready' && M.priced ? M.priced.length : null;
-    return mePlayerBox(E, i, nP == null ? (M.state === 'loading' ? 'Loading…' : DASH) : nP.toLocaleString('en-US') + ' priced matches', 'Today', M.today == null ? DASH : M.today.toFixed(2), 20,
+    const nP = M.state === 'ready' && M.priced ? M.priced.length : null, nB = nP ? M.priced.filter(r => r.book === 'B').length : 0;   // founder 2026-10-30: "12 of 174 on Bet365"
+    return mePlayerBox(E, i, nP == null ? (M.state === 'loading' ? 'Loading…' : DASH) : nP.toLocaleString('en-US') + ' priced matches' + (nB ? ' · ' + nB.toLocaleString('en-US') + ' of ' + nP.toLocaleString('en-US') + ' on Bet365' : ''), 'Today', M.today == null ? DASH : M.today.toFixed(2), 20,
       colHead(BCOLS, ['Price band', 'Won against needed', 'Won', 'Edge', '1% stake'], 2) + body);
   }
   function meBookSplit(MM) {
