@@ -20,6 +20,8 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const html = readFileSync(process.env.TEN332_HTML || join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
 const pp2 = readFileSync(process.env.TEN332_PP2 || join(HERE, 'player-profile-v2.js'), 'utf8');
 const HOUSE_RATINGS_SRC = readFileSync(join(HERE, 'house-ratings.js'), 'utf8');
+// Match analysis rebuild (2026-11-23): the tab renderer is maTournamentV2 in match-analysis-v2.js (TEN332_MA2 = a mutated copy)
+const MA2_SRC = readFileSync(process.env.TEN332_MA2 || join(HERE, 'match-analysis-v2.js'), 'utf8');
 globalThis.MarketEdgeCore = createRequire(import.meta.url)(join(HERE, 'market-edge-core.js'));
 function slice(name) {
   const start = html.indexOf(`function ${name}(`);
@@ -57,11 +59,15 @@ const S = new Function('window', `
   ${constSrc('TOURNAMENT_CATALOG')}
   ${constSrc('COURT_CONDITIONS')}
   const TOURX_KNOB_PAD = 0.08;
+  ${constSrc('SURFACE_CLAUSE')}
+  ${constSrc('SPEED_CLAUSE')}
   ${['escapeHtml', 'surnameFirstName', 'psShortName', 'formIni', 'ppCleanTournamentName', 'psNormTour', 'psTourMeta', 'psRoundAbbr', 'h2hRoundLabel', 'maRoundName',
-     'eventKeyOfMatch', 'courtSpeedCategory', 'tourxKnobPct', 'tourxConditionRegistry'].map(slice).join('\n')}
+     'eventKeyOfMatch', 'courtSpeedCategory', 'tourxKnobPct', 'tourxConditionRegistry', 'speedDescription'].map(slice).join('\n')}
   ${between('/* =====================================================================\n   TEN-263 ', '// Extra stats tab REMOVED (TEN-8 Item 5)')}
+  const __MA2 = (function(){ const window = globalThis; const fetch = () => Promise.resolve({ ok: false }); ${MA2_SRC}; return window; })();
+  const maTournamentV2 = __MA2.maTournamentV2;
   return { recLayers: _careerRecordLayers, recordFixOf, recordFixRow, fhEnsureFormData, fhFormPlayer, trModelOf,
-    meRowFromCareer, sfDbPxRows, buildTournamentSection, trModelFor, trStateFor, trProfileModel, trLoad, trMarketHtml, trHeaderHtml, trRowOf, fhStateFor, maMatchRowsHtml, trProfileBacking,
+    meRowFromCareer, sfDbPxRows, buildTournamentSection, trModelFor, trStateFor, trProfileModel, trLoad, trRowOf, fhStateFor, maMatchRowsHtml, trProfileBacking,
     chShards: _careerHistoryShards, thShards: _tourHistShards, fhCl: _fhCl, profiles: playerProfiles, profileFail: _trProfileFail, set hold(v){ _trHoldData = v; },
     get tr(){ return _tr; }, get fh(){ return _fh; }, set market(v){ tourxMarketData = v; }, TR_RG_NOTE, TR_NO_SPEED,
     // TEN-402 (founder 2026-10-08): the page-wide Database join rows (sfDbJoinLoad's state), set by the tests
@@ -126,36 +132,47 @@ function fixture(eds, o) {
 }
 const W2 = [[6, 3], [6, 4]], L2 = [[3, 6], [4, 6]];
 const nMatches = (n, wonFn, price) => ed(2024, Array.from({ length: n }, (_, i) => ['2024-07-' + String(10 + i).padStart(2, '0'), 'P. Opp' + String.fromCharCode(97 + i), 'Round ' + i, wonFn(i), wonFn(i) ? W2 : L2, price ? { p: price(i) } : null]));
-const card0 = h => h.slice(h.indexOf('class="tr-card"'), h.indexOf('class="tr-card"', h.indexOf('class="tr-card"') + 5));
-const tile = (h, cap) => { const c = card0(h), i = c.indexOf('>' + cap + '<'); assert.ok(i > 0, cap); const a = c.lastIndexOf('<div class="tr-tile"', i), b = c.indexOf('<div class="tr-tile"', i);
-  return c.slice(a, b > 0 ? b : c.indexOf('</div>', c.indexOf('tr-tile-sub', i)) + 6); };
+// 2026-11-23 design (maTournamentV2): head card → (Show court speed & market) speed card + ROI + reliability → record card,
+// one box per player: header W–L + "x% of n won", four tiles (Best result · Sets won · Last played · Backing), edition rows.
+const BOX = 'background:var(--ma2-inner); border:1px solid color-mix(in srgb, var(--ma2-white) 6%, transparent); border-radius:12px; display:flex; flex-direction:column; min-width:0; overflow:hidden;';
+const card0 = h => { const a = h.indexOf(BOX), b = h.indexOf(BOX, a + 5); return a < 0 ? '' : h.slice(a, b > 0 ? b : h.length); };
+const TILE = '<div style="background:var(--ma2-card); border:1px solid color-mix(in srgb, var(--ma2-white) 6%, transparent); border-radius:11px; padding:13px 6px 12px;';
+const tile = (h, cap) => { const c = card0(h), i = c.indexOf('>' + cap + '</span>'); assert.ok(i > 0, cap); const a = c.lastIndexOf(TILE, i), b = c.indexOf(TILE, i), e = c.indexOf('font-size:11.5px; font-weight:600; color:var(--ma2-grey);"><span>Date', i);
+  return c.slice(a, b > 0 ? b : e > 0 ? e : c.length); };
+const tileV = t => (/font-size:17px; font-weight:700; line-height:1; color:([^;]+); white-space:nowrap;">([^<]*)</.exec(t) || []).slice(1);
+const groups = h => [...card0(h).matchAll(/padding:14px 8px 7px;[^"]*">\s*<span[^>]*>([^<]*)<\/span><span[^>]*>([^<]*)<\/span>/g)].map(x => x[1] + ' ' + x[2]);
+const wlHead = h => (/font-size:24px; font-weight:700; line-height:1; color:[^;]+;">([^<]*)<\/span><span( title="[^"]*")?[^>]*>([^<]*)</.exec(card0(h)) || []).slice(1);
+const trRows = h => [...card0(h).matchAll(/title="([^"]*)" style="font-size:13px; font-weight:600;[^>]*>[^<]*<\/span>[\s\S]*?<span title="([^"]*)" style="position:relative;[^>]*>([^<]*)(?:<span aria-hidden="true"[^>]*>([BE])<\/span>)?<\/span><span title="[^"]*"[^>]*>([^<]*)<\/span>/g)]
+  .map(x => ({ opp: x[1], tip: x[2], h: x[3], mark: x[4] || '', a: x[5] }));
+const headOf = m => { S.trStateFor(m).S.more = false; const h = S.buildTournamentSection(m); return h.slice(0, h.search(/>Record (at|on similar)/)); };
+const marketOf = m => { S.trStateFor(m).S.more = true; const h = S.buildTournamentSection(m); S.trStateFor(m).S.more = false; return h.slice(h.indexOf('abstract court speed'), h.search(/>Record (at|on similar)/)); };
 
 // Mutation 'N6: a synthesised Withdrawal edition renders' (drop `.filter(y => !y.withdrew)`)
 test('N6: only editions entered — a stale store\'s gap year never renders', () => {
   const m = fixture([ed(2025, [['2025-07-22', 'A. B', 'Final', true, W2]]), ed(2021, [], { withdrew: true, roundReached: 'Withdrawal' }), ed(2019, [['2019-07-22', 'C. D', '1/8-finals', false, L2]])]);
   const h = S.buildTournamentSection(m);
   assert.ok(!/Withdrawal|2021/.test(text(card0(h))));
-  assert.deepEqual([...card0(h).matchAll(/>Washington Open (\d{4})</g)].map(x => x[1]), ['2025', '2019']);
+  assert.deepEqual(groups(h).map(g => g.slice(16, 20)), ['2025', '2019']);
 });
 
 // Mutations 'result: won final not "Won"', 'result: in-progress edition labelled by its last round', 'rows: group meta loses W–L'
 test('edition headers: "Washington Open YYYY" (the one event name, TEN-402 r3) + result · W–L — Won / the round lost / In progress (DESIGN GAP G17)', () => {
   // this year's edition stays "In progress" whether or not the analysed match itself is finished (never "· w/o")
   const done = fixture([ed(2026, [['2026-07-18', 'E. F', '1/8-finals', true, W2]])], { m: { finalScore: { winner: 'p1' } } });
-  assert.ok(text(card0(S.buildTournamentSection(done))).includes('Washington Open 2026 In progress · 1–0'));
+  assert.deepEqual(groups(S.buildTournamentSection(done)), ['Washington Open 2026 In progress · 1–0']);
   const m = fixture([ed(2026, [['2026-07-18', 'E. F', '1/8-finals', true, W2]]), ed(2025, [['2025-07-20', 'A. B', 'Final', true, W2], ['2025-07-19', 'G. H', 'Semi-finals', true, W2]]),
     ed(2024, [['2024-07-19', 'C. D', 'Quarter-finals', false, L2], ['2024-07-17', 'I. J', '1/8-finals', true, W2]])]);
-  const g = [...card0(S.buildTournamentSection(m)).matchAll(/<div class="ma-rows-group"[\s\S]*?<\/div>/g)].map(x => text(x[0]));
-  assert.deepEqual(g, ['Washington Open 2026 In progress · 1–0', 'Washington Open 2025 Won · 2–0', 'Washington Open 2024 Quarter-final · 1–1']);
+  assert.deepEqual(groups(S.buildTournamentSection(m)), ['Washington Open 2026 In progress · 1–0', 'Washington Open 2025 Won · 2–0', 'Washington Open 2024 Quarter-final · 1–1']);
 });
 
 // Mutation 'gate: W–L % printed below n 5' / 'gate: n 0 prints 0%'
-test('W–L record tile: n 0 "—" (never 0%), 3 count only, 7 greyed + hover note, 12 full', () => {
-  const at = n => tile(S.buildTournamentSection(fixture(n ? [nMatches(n, i => i % 3 !== 2)] : [])), 'W–L record');
-  assert.ok(text(at(0)).includes('—') && !/0%/.test(text(at(0))));
-  assert.ok(!/%/.test(text(at(3))) && text(at(3)).includes('2–1'));
-  assert.match(at(7), /data-ma-gate="small" title="small sample · n=7"[^>]*>71%</);
-  assert.match(at(12), /data-ma-gate="full"[^>]*>67%</);
+// 2026-11-23 design: the W–L sits in the box header over "x% of n won" (the old W–L record tile).
+test('W–L record: n 0 "—" (never 0%), 3 count only, 7 + "small sample" hover, 12 full', () => {
+  const at = n => wlHead(S.buildTournamentSection(fixture(n ? [nMatches(n, i => i % 3 !== 2)] : [])));
+  assert.equal(at(0)[0], '—'); assert.ok(!/0%/.test(at(0)[2]));
+  assert.deepEqual([at(3)[0], at(3)[2]], ['2–1', '3 matches'], 'n 3: the count, no %');
+  assert.deepEqual([at(7)[1], at(7)[2]], [' title="small sample · n=7"', '71% of 7 won']);
+  assert.deepEqual([at(12)[1], at(12)[2]], [undefined, '67% of 12 won']);
 });
 
 // Mutation 'sets: a retirement\'s unfinished set counted'
@@ -163,7 +180,7 @@ test('Sets won: finished sets only — a retirement\'s unfinished set is not a s
   const m = fixture([ed(2024, [['2024-07-20', 'A. B', 'Final', true, [[6, 3], [2, 1]], { ret: true }], ['2024-07-18', 'C. D', 'Semi-finals', true, W2],
     ['2024-07-17', 'E. F', 'Quarter-finals', true, W2], ['2024-07-16', 'G. H', '1/8-finals', true, [[6, 3], [4, 6], [6, 2]]], ['2024-07-15', 'I. J', '1/16-finals', true, W2]])]);
   const t = text(tile(S.buildTournamentSection(m), 'Sets won'));
-  assert.ok(t.includes('90%') && t.includes('9 of 10 sets'), t);   // 1 of the retirement's 2 sets + 6 + 2 of 3
+  assert.ok(t.includes('9–1') && t.includes('90% of sets'), t);   // 1 of the retirement's 2 sets + 6 + 2 of 3
 });
 
 // Mutation 'best: an in-progress edition counts as a result'
@@ -193,13 +210,15 @@ test('Backing (N5 + D6 + TEN-325): the Database join\'s closes, retirements sett
   const exp = pairs.reduce((s, [a, b]) => s + (1 / a) / (1 / a + 1 / b), 0) / 6;
   assert.ok(Math.abs(P.vm - (4 / 6 - exp) * 100) < 1e-9);
   const t = tile(S.buildTournamentSection(m), 'Backing');
-  assert.match(t, /−0\.0u|\+0\.0u|±0\.0u/);
-  assert.match(t, /data-ma-gate="small"[^>]*>[+−]\d+\.\dpt vs market</);
-  assert.ok(t.includes('>' + globalThis.MarketEdgeCore.RET_SETTLE_NOTE + '<') && t.includes('data-ret-note="tournament"'));
+  assert.match(tileV(t)[1], /^[+−]?0\.0u$/);
+  assert.ok(text(t).includes(globalThis.MarketEdgeCore.RET_SETTLE_NOTE), 'the retirement note in the tile\'s hover');
   // n 4 priced: the units show, no vs market
   const m4 = fixture([nMatches(4, i => i < 3, () => [1.5, 2.6])]);
   const t4 = text(tile(S.buildTournamentSection(m4), 'Backing'));
-  assert.ok(t4.includes('+0.5u') && t4.includes('4 priced') && !/vs market/.test(t4.replace('vs market needs', '')), t4);
+  assert.ok(t4.includes('+0.5u') && /4 (priced|bets)/.test(t4) && !/vs market/.test(t4.replace('vs market needs', '')), t4);
+  // RENDERER GAP (modal-analysis.md D6 + Tournament tab "Backing … 'vs market'"): the rebuilt tile drops "+Y.Ypt vs market"
+  // (n >= 5 priced, 5–9 greyed); the old trTiles drew it under the units.
+  assert.match(t, /[+−]\d+\.\dpt vs market/, 'vs market at n >= 5 (D6)');
 });
 
 // Founder 2026-10-22 · the pipeline history now LISTS walkovers (flagged). Mutation 'trRowOf: a flagged walkover is a
@@ -248,36 +267,40 @@ test('the season + opponent fallback joins only a row of this event (name or arc
 test('N4 + TEN-321: the header prints the pipeline\'s 3-band label; Roland Garros dashes its speed with the note', () => {
   // 1.17 is "Fast" on the design's retired AS cut-offs (< 1.15) and "Medium" on the pipeline index (66 <= 68)
   const m = fixture([], { m: { courtSpeed: { speed: 66, abstractSpeed: 1.17, altitude: 20, category: 'Medium' } } });
-  assert.ok(text(S.trHeaderHtml(m)).includes('1.17 · Medium'), 'label from courtSpeed.category, never re-banded here');
+  // an event with no court-conditions row reads the match's pipeline copy: its category, never re-banded from the AS
+  const nr = fixture([], { m: { tour: 'ATP Nowhere', courtSpeed: { speed: 66, abstractSpeed: 1.17, altitude: 20, category: 'Medium' } } });
+  assert.ok(text(headOf(nr)).includes('Court speed 1.17 · Medium'), 'label from courtSpeed.category, never re-banded here');
+  // a keyed event reads the Tournaments page's court-conditions row, banded by the pipeline's 3-band (N4)
+  const wcc = new Function(`${constSrc('COURT_CONDITIONS')}; ${slice('courtSpeedCategory')}; return [COURT_CONDITIONS.Washington, courtSpeedCategory(COURT_CONDITIONS.Washington.speed)];`)();
+  assert.ok(text(headOf(m)).includes('Court speed ' + wcc[0].abstractSpeed.toFixed(2) + ' · ' + wcc[1]), 'Washington: the page row, banded by courtSpeedCategory');
   const rg = fixture([], { m: { tour: 'ATP French Open', courtSpeed: null, venue: { city: 'Paris', country: 'FR', category: 'Grand Slam' } } });
-  const h = S.trHeaderHtml(rg);
-  assert.match(h, /data-tr="speed-dash"[^>]*>—</);
-  assert.ok(h.includes(S.TR_RG_NOTE));
+  const h = headOf(rg);
+  assert.match(h, new RegExp('<span title="' + S.TR_RG_NOTE.replace(/[.()]/g, '\\$&') + '"[^>]*>—<'), 'RG speed dashed with the TEN-321 note');
   assert.ok(!h.includes(S.TR_NO_SPEED));
 });
 
 // Founder Q11 (2026-09-30): the reading paragraph is dropped — no node, no heading, no reserved space.
 // Mutations 'the reading paragraph back (placeholder copy)', 'Q11: an empty block reserving its space'
-test('Q11: the reading paragraph is dropped — no node, no heading, no reserved space; the header card ends at its meta grid', () => {
+// RENDERER GAP (founder Q11, 2026-09-30: the reading paragraph is dropped "until the founder sends copy"): the rebuilt head
+// card draws a court read (speedDescription, the Tournaments page's copy) under the meta row — noted for the founder in the
+// rebuild notes, not ruled. The old "nothing between the header card and the toggle" layout check is the design's to set.
+test('Q11: the reading paragraph is dropped — no court read in the head card', () => {
   const m = fixture([nMatches(2, () => true)]);
-  const h = S.buildTournamentSection(m), head = S.trHeaderHtml(m);
+  const h = S.buildTournamentSection(m), head = headOf(m);
   assert.ok(!/Read the records below|plays fast and low|true, medium-paced/.test(h));
   assert.ok(!/SURFACE_CONDITIONS/.test(html));
   assert.ok(!/<p[\s>]|tr-reading|About this event/i.test(h), 'no paragraph node or heading');
-  assert.ok(h.includes(head + '<div style="display:flex; justify-content:center; margin-top:14px;"><span class="seg tr-more-toggle"'),
-    'nothing between the header card and the toggle');
-  assert.match(head, /class="tr-meta"[^]*<\/div>\s*<\/div>\s*<\/div>$/, 'the header card closes right after its meta grid');
+  assert.ok(!/Rewards (aggressive|patient)|Balances serve|courts with a (consistent|high|low)/.test(text(head)), 'no court read (Q11): ' + text(head).slice(-160));
 });
 
 // Founder Q9 (2026-09-30): the event hold rate — our box scores, every edition on file, n = service games — in a fifth
 // header meta cell (DESIGN GAP G43), no gate, n always in the tooltip. Mutation 'Q9 (tab): the hold cell dropped'.
 test('Q9: the header carries the event hold rate with its n; a dash with the reason when no box score is on file', () => {
   S.hold = { events: { 1532: { name: 'Washington', names: ['Washington'], held: 3252, games: 4034, matches: 178, years: ['2024', '2025', '2026'] } }, byName: { washington: '1532' } };
-  const head = S.trHeaderHtml(fixture([nMatches(2, () => true)]));
-  assert.match(head, /grid-template-columns:repeat\(5,1fr\)/);
-  assert.match(text(head), /Court speed 1\.02 · Medium Altitude 20 m Hold rate 81% Service hold at Washington Open: 3,252 of 4,034 service games held \(n = 4,034\)/);
+  const head = headOf(fixture([nMatches(2, () => true)]));
+  assert.match(text(head), /Hold rate 81% Service hold at Washington Open: 3,252 of 4,034 service games held \(n = 4,034\)/);
   assert.match(text(head), /178 matches with a box score over 3 editions on file \(2024–2026\)/);
-  const none = S.trHeaderHtml(fixture([nMatches(2, () => true)], { m: { tour: 'ATP Nowhere' } }));
+  const none = headOf(fixture([nMatches(2, () => true)], { m: { tour: 'ATP Nowhere' } }));
   assert.match(text(none), /Hold rate — No box score on file for Nowhere, so no hold rate is shown\./);
   S.hold = undefined;
 });
@@ -286,56 +309,67 @@ test('Q9: the header carries the event hold rate with its n; a dash with the rea
 // clay Lyon 2024; the tooltip back on "qualifying included".
 test('event hold: a card with its own tournamentKey reads that event or nothing — never a name twin; main draw only', () => {
   S.hold = { events: { 2752: { name: 'Lyon', names: ['Lyon'], held: 418, games: 554, matches: 25, years: ['2024'] } }, byName: { lyon: '2752' } };
-  const lyon26 = text(S.trHeaderHtml(fixture([nMatches(2, () => true)], { m: { tour: 'ATP Lyon', tournamentKey: '14763' } })));
+  const lyon26 = text(headOf(fixture([nMatches(2, () => true)], { m: { tour: 'ATP Lyon', tournamentKey: '14763' } })));
   assert.match(lyon26, /Hold rate — No box score on file for Lyon/, 'Lyon 2026 (key 14763) never shows the clay Lyon 2024 figure');
-  const clay = text(S.trHeaderHtml(fixture([nMatches(2, () => true)], { m: { tour: 'ATP Lyon', tournamentKey: '2752' } })));
+  const clay = text(headOf(fixture([nMatches(2, () => true)], { m: { tour: 'ATP Lyon', tournamentKey: '2752' } })));
   assert.match(clay, /Hold rate 75% Service hold at [^:]+: 418 of 554 service games held/);
   assert.match(clay, /main draw only\. Our own box scores\./);
   assert.doesNotMatch(clay, /qualifying included/);
-  const legacy = text(S.trHeaderHtml(fixture([nMatches(2, () => true)], { m: { tour: 'ATP Lyon' } })));
+  const legacy = text(headOf(fixture([nMatches(2, () => true)], { m: { tour: 'ATP Lyon' } })));
   assert.match(legacy, /Hold rate 75%/, 'a card published before the key falls back to the cleaned name');
   S.hold = undefined;
 });
 
-// Mutations 'trend: a missing season interpolated', 'trend: header span claims 7 years'
-// Defect brief 2026-10-24 item 6: the axis holds only the seasons the sheet can carry (2023–2025).
-test('court-speed trend: 2023–2025 on the axis, dots only where the sheet holds a value, the rest dashed', () => {
-  const m = fixture([], { m: { courtSpeed: { speed: 66, abstractSpeed: 1.02, altitude: 20, as2023: 0.98, as2024: null, as2025: 1.02, category: 'Medium' } } });
+// Defect brief 2026-10-24 item 6: no axis slot that can never carry a value; the delta states the real span. The rebuild
+// reads the Tournaments page's yearly readings (court-speed-history.json, 2020–2026, only years with a reading; notes.md),
+// else the sheet's seasons that hold a value. Mutation 'trend: an empty season on the axis'.
+test('court-speed trend: only seasons with a value on the axis; the delta states the real span', () => {
+  const m = fixture([], { m: { tour: 'ATP Nowhere', courtSpeed: { speed: 66, abstractSpeed: 1.02, altitude: 20, as2023: 0.98, as2024: null, as2025: 1.02, category: 'Medium' } } });
   S.market = null;
-  const h = S.trMarketHtml(m);
-  const v = [...h.matchAll(/class="tr-sp-v"[^>]*>([^<]*)</g)].map(x => x[1]);
-  assert.deepEqual(v, ['0.98', '—', '1.02']);
-  assert.deepEqual([...h.matchAll(/letter-spacing:0\.06em; color:[^;]+;">(\d{4})</g)].map(x => x[1]), ['2023', '2024', '2025'], 'no 2020–22 or 2026 slot');
-  assert.equal((h.match(/<polyline/g) || []).length, 0, 'a hole in 2024 breaks the line: no segment of 2+ adjacent seasons');
+  const h = marketOf(m);
+  assert.deepEqual([...h.matchAll(/bottom:0; transform:translateX\(-50%\);[^"]*">(\d{4})</g)].map(x => x[1]), ['2023', '2025'], 'no empty 2024 slot, no 2020–22 or 2026 slot');
   assert.ok(text(h).includes('Trending faster +0.04 over 2 yrs'));
   assert.ok(text(h).includes('Abstract court speed · 2023–2025'));
+});
+// RENDERER GAP (defect brief 2026-10-24 item 6: "a hole breaks the line"): the rebuilt trend joins 2023 to 2025 across the
+// season with no reading. Mutation: none (the gap itself).
+test('court-speed trend: a season with no reading breaks the line', () => {
+  const m = fixture([], { m: { tour: 'ATP Nowhere', courtSpeed: { speed: 66, abstractSpeed: 1.02, altitude: 20, as2023: 0.98, as2024: null, as2025: 1.02, category: 'Medium' } } });
+  assert.equal((marketOf(m).match(/<polyline/g) || []).length, 0, 'no segment drawn across the 2024 hole');
+});
+// RENDERER GAP (foundation.md "no area fill under a line"; founder Q2 TEN-380: "line only … no area fill"): the rebuilt
+// trend draws the design's white area wash — a founder question in the rebuild notes, not ruled.
+test('court-speed trend: line only, no area fill or gradient (Q2)', () => {
+  const m = fixture([]);
+  assert.ok(!/<linearGradient|fill="url\(/.test(marketOf(m)), 'no area fill');
 });
 
 // Mutations 'ROI: a card clickable with no archive names', 'ROI: a small-n yield in full colour'
 test('ROI + reliability: tournament-market.json figures, dashed when absent, greyed at n 5–9, open only with archive names', () => {
   const m = fixture([]);
   S.market = null;
-  let h = S.trMarketHtml(m);
-  assert.ok(!/onclick="trSet\(\{roi/.test(h) && text(h).includes('ROI backing favourites — flat-stake yield'));
+  let h = marketOf(m);
+  assert.ok(!/onclick="trSet\(\{roi/.test(h) && /ROI backing favourites — flat-stake yield/.test(text(h)), text(h).slice(0, 300));
   S.market = { baseline: { roiFav: -1.8, roiDog: -6.9, favRel: 70 }, tournaments: { Washington: { n: 120, roiFav: 2.5, roiDog: -9, favRel: 74, nRel: 123, archiveNames: ['Citi Open'] } } };
-  h = S.trMarketHtml(m);
+  h = marketOf(m);
   assert.ok(text(h).includes('+2.5% flat-stake yield +4.3pp vs tour avg'));
-  assert.ok(/data-tr="roi-fav" onclick="trSet\(\{roi:'fav'\}\)"/.test(h));
-  assert.ok(text(h).includes('74% Reliable'));
+  assert.ok(/data-tr="roi-fav" role="button" tabindex="0" onclick="trSet\(\{roi:'fav'\}\)"/.test(h));
+  assert.match(text(h), /74%/, 'favourite reliability');
   S.market = { baseline: { roiFav: -1.8, roiDog: -6.9, favRel: 70 }, tournaments: { Washington: { n: 7, roiFav: 2.5, roiDog: -9, favRel: 74, nRel: 7 } } };
-  h = S.trMarketHtml(m);
-  assert.ok(text(h).includes('small sample') && !/data-tr="roi-fav" onclick/.test(h));
-  assert.match(h, /color:var\(--text-label\);">\+2\.5%</, 'a 5–9 yield is greyed');
+  h = marketOf(m);
+  assert.ok(text(h).includes('small sample') && !/data-tr="roi-fav"[^>]*onclick/.test(h));
+  assert.match(h, /color:var\(--ma2-grey\);">\+2\.5%</, 'a 5–9 yield is greyed');
   S.market = null;
 });
 
 // Mutations 'DoD 8: a row stops opening the sheet', 'DoD 8: a tab-local row renderer again', 'more: the singular plural'
-test('DoD 8: maMatchRowsHtml rows, every row registered in the one sheet map and opening it; the old renderers are gone', () => {
+// (the 2026-11-23 lock draws the design's own rows — "rows through maMatchRowsHtml" is superseded; every row still opens the one sheet)
+test('DoD 8: every row registered in the one sheet map and opening it; the old renderers are gone', () => {
   const m = fixture([ed(2025, [['2025-07-22', 'A. B', 'Final', true, W2]]), ed(2024, [['2024-07-22', 'A. B', 'Final', true, W2]]), ed(2023, [['2023-07-22', 'A. B', 'Final', true, W2]]), ed(2022, [['2022-07-22', 'A. B', 'Final', true, W2]])]);
   const h = card0(S.buildTournamentSection(m));
-  const rows = [...h.matchAll(/class="seg ma-row tr-row" data-fh-mid="([^"]+)" onclick="fhOpenSheet\('([^']+)'\)"/g)];
+  const rows = [...h.matchAll(/class="seg ma2-row" onclick="fhOpenSheet\('([^']+)'\)"/g)];
   assert.equal(rows.length, 3, 'three editions shown before "Show 1 earlier edition"');
-  rows.forEach(r => { assert.equal(r[1], r[2]); assert.ok(S.fh.sheetMap[r[1]], 'registered in the one sheet map'); });
+  rows.forEach(r => { assert.ok(S.fh.sheetMap[r[1]], 'registered in the one sheet map'); });
   assert.ok(text(h).includes('Show 1 earlier edition') && !text(h).includes('Show 1 earlier editions'));
   for (const f of ['atournMatchRowHtml', 'atournYearRowHtml', 'atournPlayerColumn', 'upgradeTournamentRows', 'toggleTournamentYear', 'showTournamentMore'])
     assert.ok(!html.includes('function ' + f + '('), f + ' deleted');
@@ -392,9 +426,9 @@ test('ruling 2026-10-08: the profile\'s per-event Backing and H / A are the Data
   // TEN-402 r2 (founder card 7bc622d5, 2026-10-09): the Match analysis Tournament tab prints the SAME figures — its tile, its
   // rows' H / A and B mark — from the same join; never the closes' +2.5u
   const tabH = S.buildTournamentSection(m), tb = tile(tabH, 'Backing');
-  assert.equal(/class="tr-tile-v"[^>]*>([^<]+)</.exec(tb)[1], '+2.7u', 'the tab = the profile (+2.7u), not the closes (+2.5u)');
-  assert.ok(text(tb).includes('6 of 7 matches priced') && text(tb).includes('Bet365 where missing (1)'), text(tb));
-  const tabPx = o => { const x = new RegExp('>' + o.replace('.', '\\.') + '<[^]*?ma-row-score[^]*?</span></span><span[^>]*>([^<]*)(?:<span class="ma-row-mark"[^>]*>(B)</span>)?</span><span[^>]*>([^<]*)</span>').exec(card0(tabH)); return x ? x[1] + ' / ' + x[3] + (x[2] ? ' B' : '') : null; };
+  assert.equal(tileV(tb)[1], '+2.7u', 'the tab = the profile (+2.7u), not the closes (+2.5u)');
+  assert.ok(text(tb).includes('6 of 7 matches priced'), text(tb));
+  const tabPx = o => { const x = trRows(tabH).find(r => r.opp === o); return x ? x.h + ' / ' + x.a + (x.mark ? ' ' + x.mark : '') : null; };
   assert.deepEqual(['A. B', 'I. J', 'G. H', 'K. L'].map(tabPx), ['1.60 / 2.40', '1.30 / 3.50', '1.50 / 2.70 B', '2.40 / 1.60'], 'the tab rows = the profile rows');
   // one model: row for row, the tab's prices are the profile model's (trProfileModel), and so are the units and n
   const PT = S.trModelFor(m, 0), PP = S.trProfileModel('1', 'J. Sinner', prof.tournamentHistory[0]);
@@ -420,7 +454,7 @@ test('ruling 2026-10-08: the profile\'s per-event Backing and H / A are the Data
   const pend = S.buildTournamentSection(m);
   assert.ok(text(tile(pend, 'Backing')).includes('— loading prices'), text(tile(pend, 'Backing')));
   assert.ok(!/1\.50|2\.60|1\.85/.test(text(card0(pend))), 'no closes price on the tab while pending');
-  assert.equal((card0(pend).match(/<span title="Loading prices" style="position:relative;[^"]*">(<\/span>|<span class="ma-row-mark")/g) || []).length, 7, 'seven empty H cells (every row, the one the Database does not hold included)');
+  assert.deepEqual(trRows(pend).map(r => [r.tip, r.h]), Array(7).fill(['Loading prices', '']), 'seven empty H cells (every row, the one the Database does not hold included)');
   // a failed load: the tab's words, "prices unavailable" — never "loading" forever
   S.dbJoinSt = 'failed';
   assert.ok(text(I.renderTournDetail(prof, I.tournViews(prof).find(x => x.name === 'Washington'))).includes('Backing him here — prices unavailable'));
@@ -444,7 +478,7 @@ test('Q8: two meetings with one opponent in an edition resolve by round; a profi
   const st = dbStore(games, g => (g[5].p ? { px: g[5].p } : { px: g[5].b, book: 1 }));
   S.dbJoin = dbPriceJoinRows(st.base, st.nm);
   const tb = tile(S.buildTournamentSection(m), 'Backing');
-  const tabU = /class="tr-tile-v"[^>]*>([^<]+)</.exec(tb)[1];
+  const tabU = tileV(tb)[1];
   assert.equal(tabU, '+2.2u', 'A. B twice (QF and F): both priced by the tab, by event key (1.5 + 0.5 + 0.8 − 1 + 0.4)');
   const R = { 'Final': 'F', 'Semi-finals': 'SF', 'Quarter-finals': 'QF', '1/8-finals': 'R16', '1/16-finals': 'R32' };
   const row = g => ({ res: g[3] ? 'W' : 'L', round: R[g[2]], opp: g[1], oppKey: null, score: g[3] ? '2 - 0' : '0 - 2' });
@@ -463,53 +497,39 @@ test('Q8: two meetings with one opponent in an edition resolve by round; a profi
   delete S.chShards['1']; delete S.fhCl['1']; delete S.profiles['1'];
 });
 
-// TEN-380 (step 3 reference): the two bugs and the foundation styling.
-// Bug 1: a −3.7% yield that beats a −6.9% tour average was drawn green (its colour followed the gap, not the value).
-// Bug 2: the Backing tile's hidden 280px pop, centred on the row's last tile, ran past the column → a horizontal scrollbar.
-test('TEN-380: ROI values --text (never green on a negative yield); Backing pop opens leftwards; panels, chip, toggle, bar', () => {
+// TEN-380 (step 3 reference): the two bugs, kept on the 2026-11-23 design. Bug 1: a −3.7% yield that beats a −6.9% tour
+// average was drawn green (its colour followed the gap, not the value). Bug 2: the Backing tile's 280px pop, centred on the
+// row's last tile, ran past the column. The founder Q2 court-speed bar stays flat with a white knob. (Superseded by the
+// 2026-11-23 lock: the --card / --edge-6 panels, the surface chip, the --inner current meta cell, the plain-text toggle,
+// --bar on --track for reliability — now the design's --ma2-* tokens.)
+test('TEN-380: ROI values white (never green on a negative yield); the court-speed bar flat; Backing pop opens leftwards', () => {
   const m = fixture([nMatches(6, i => i % 2 === 0, null)]);
   S.market = { baseline: { roiFav: -1.8, roiDog: -6.9, favRel: 70 }, tournaments: { Washington: { n: 120, roiFav: 2.5, roiDog: -3.7, favRel: 74, nRel: 123, archiveNames: ['Citi Open'] } } };
-  const h = S.trMarketHtml(m);
+  const h = marketOf(m);
   const val = side => new RegExp(`data-tr="roi-${side}"[^]*?font-size:26px;[^"]*color:([^;"]+);">([^<]*)<`).exec(h);
-  assert.equal(val('dog')[2], '−3.7%'); assert.equal(val('dog')[1], 'var(--text)', 'a negative yield is not green');
-  assert.equal(val('fav')[1], 'var(--text)');
-  assert.ok(!/var\(--pos\)|var\(--neg\)/.test(h), 'no signed colour on the panel');
+  assert.equal(val('dog')[2], '−3.7%'); assert.equal(val('dog')[1], 'var(--ma2-text)', 'a negative yield is not green');
+  assert.equal(val('fav')[1], 'var(--ma2-text)');
+  assert.ok(!/var\(--(ma2-)?(pos|neg|green|red)\)/.test(h), 'no signed colour on the panel');
   assert.ok(text(h).includes('+3.2pp vs tour avg'), 'Q14: the sub-line keeps "±x.xpp vs tour avg"');
-  assert.match(h, /background:var\(--track\); overflow:hidden; margin-top:11px;"><span style="display:block; height:100%; width:74%; background:var\(--bar\);/, 'reliability bar --bar on --track');
-  assert.ok(!/var\(--page\)|var\(--text-soft\)/.test(h), 'panels on --card, greys --text-label');
-  assert.equal((h.match(/border:1px solid var\(--edge-6\)/g) || []).length, 4, 'speed card, two ROI cards, reliability: --edge-6');
-  // founder Q2 (TEN-380, README §11): the court-speed bar is flat --white-bar with a white knob — no gradient, no blue
-  assert.match(h, /class="tr-speed-bar" style="position:relative; height:8px; border-radius:5px; background:var\(--white-bar\);/);
-  assert.match(h, /class="tr-speed-knob" style="[^"]*background:var\(--text\); border:3px solid var\(--card\); box-shadow:0 0 0 1px var\(--edge-16\);/);
-  assert.ok(!/linear-gradient|var\(--bar\) 50%/.test(h), 'no gradient, no blue ring');
-  // the trend: line only, dotted horizontal guides, no area fill or gradient, no vertical tick
-  assert.equal((h.match(/class="tr-sp-guide" x1="0" x2="360" y1="(\d+)" y2="\1" stroke="var\(--viz-guide\)" stroke-width="1" stroke-dasharray="2 6"/g) || []).length, 3);
-  assert.ok(!/<path|<linearGradient|<rect|fill="url/.test(h), 'no area fill');
-  assert.ok(!/<line[^>]*x1="([\d.]+)"[^>]*x2="\1"/.test(h), 'no vertical tick');
-  const head = S.trHeaderHtml(m);
-  assert.match(head, /class="tr-head" style="border:1px solid var\(--edge-6\); border-radius:16px; background:var\(--card\);/, 'header card = panel');
-  assert.match(head, /class="tr-surf" style="[^"]*background:var\(--selected\); border:1px solid var\(--line\); border-radius:8px;[^"]*">Hard court</, 'surface chip');
-  assert.match(head, /class="tr-meta tr-meta-cur" style="background:var\(--inner\);/, 'the current meta cell (Round) on --inner');
-  assert.equal((head.match(/class="tr-meta" style="background:var\(--card\); padding:15px 16px; box-shadow:inset 0 0 0 1px var\(--edge-6\);/g) || []).length, 4);
-  assert.equal((head.match(/<div style="font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:700; white-space:nowrap;">/g) || []).length, 5, 'meta values in Plex');
+  const bi = h.indexOf('<span>Slow</span>'), bar = h.slice(h.lastIndexOf('<div style="position:relative; height:6px;', bi), bi);
+  assert.ok(bar.length > 0 && !/gradient/.test(bar), 'the court-speed bar is flat');
+  assert.match(bar, /border-radius:50%; background:var\(--ma2-text\);/, 'a white knob');
   const all = S.buildTournamentSection(m);
-  assert.match(all, /class="seg tr-more-toggle"[^>]*style="display:inline-flex; align-items:center; gap:8px; padding:6px 4px; font-size:12\.5px; font-weight:600; color:var\(--text\); cursor:pointer;">/, 'the toggle is plain text, white words, no box');
-  assert.match(all, /class="tr-card" style="background:var\(--card\); border:1px solid var\(--edge-6\);/);
-  assert.ok(!/class="tr-tile"[^>]*var\(--line\)/.test(all), 'tiles --edge-6');
   assert.match(all, /class="elotip-pop" role="tooltip" style="bottom:calc\(100% \+ 8px\); left:auto; right:0; transform:none; white-space:normal; width:280px;"/, 'the Backing pop is right-anchored');
-  assert.match(all, /font-size:11px; color:var\(--text-label\);">\d+ match/, 'count meta --text-label');
   S.market = null;
 });
 
 // TEN-380 review (founder 2026-10-04): the "B" beside a Tournament price (Bet365 filling a missing Pinnacle close) is said in
 // words under the records, as Form says it; no B on the page → no line. Mutation: the line dropped from the section.
+// RENDERER GAP (modal-analysis.md Tournament tab → Prices: "the 'Closing odds · Pinnacle, Bet365 where missing (N)' line";
+// TEN-380 review: the B explained in words under the records): the rebuilt tab draws the B mark on the row but no line,
+// and the Backing hover names no book split (the old trSrcLine + the tile's "Bet365 where missing (N)").
 test('review: a B price is explained under the records ("Closing odds · Pinnacle, Bet365 where missing (N) · B = Bet365")', () => {
-  const f = new Function(`const FH_MONO = "m";\n${slice('trSrcLine')}; return trSrcLine;`)();
-  const mk = t => `<span class="ma-row-mark" aria-hidden="true" style="x">${t}</span>`;
-  assert.equal(f('<div>1.30</div>'), '', 'no B drawn → no line');
-  assert.match(f(mk('B') + mk('B') + '<div>1.20</div>'), />Closing odds · Pinnacle, Bet365 where missing \(2\) · B = Bet365</, 'counts the marks drawn');
-  // review 2: only the rendered (unfolded) editions count — a B in a folded edition is not on the page
-  assert.match(slice('buildTournamentSection'), /\$\{cards\}<\/div>\$\{trSrcLine\(cards\)\}/, 'the section counts the cards it prints');
+  const m = fixture([ed(2024, [['2024-07-20', 'C. D', 'Final', true, W2, { b: [1.4, 2.9] }], ['2024-07-19', 'E. F', 'Semi-finals', true, W2, { p: [1.8, 2.05] }]])]);
+  const h = S.buildTournamentSection(m);
+  assert.deepEqual(trRows(h).map(r => r.mark), ['B', ''], 'the B mark on the Bet365 row');
+  assert.match(text(h), /Closing odds · Pinnacle, Bet365 where missing \(1\) · B = Bet365/, 'the line under the records');
+  assert.match(text(tile(h, 'Backing')), /Bet365 where missing \(1\)/, 'the book split in the Backing hover');
 });
 
 // TEN-402 r2 (founder card 7bc622d5, 2026-10-09; card2 "recent": no fallback after the archive's last date): a match of the
@@ -525,11 +545,14 @@ test('TEN-402 r2: a live-edition match after the archive\'s last date is "—" w
   st.base.meta.dateRange = ['2010-01-04', '2026-09-13'];
   S.dbJoin = dbPriceJoinRows(st.base, st.nm);
   const h = S.buildTournamentSection(m), c = card0(h);
-  assert.match(c, /<span title="After the Database archive’s last match \(13 Sep 2026\): no closing price on record yet" style="position:relative;[^"]*">—</, 'the live row: "—" with the reason');
+  assert.deepEqual(trRows(h).filter(r => r.opp === 'L. Live').map(r => [r.tip, r.h]), [['After the Database archive’s last match (13 Sep 2026): no closing price on record yet', '—']], 'the live row: "—" with the reason');
   assert.ok(!/1\.40|3\.00/.test(text(c)), 'never the closes shard\'s price for the live match');
   assert.ok(text(c).includes('1.50') && text(c).includes('2.60'), 'the archived edition keeps its Database price');
   const tb = text(tile(h, 'Backing'));
-  assert.ok(tb.includes('+0.5u') && tb.includes('1 of 2 matches priced') && tb.includes('1 after its last match (13 Sep 2026) not priced yet'), tb);
+  assert.ok(tb.includes('+0.5u') && tb.includes('1 of 2 matches priced'), tb);
+  // RENDERER GAP (modal-analysis.md Tournament tab → Prices: "the Backing tooltip counts them ('N after its last match …
+  // not priced yet')"): the rebuilt hover does not count the after-archive rows.
+  assert.ok(tb.includes('1 after its last match (13 Sep 2026) not priced yet'), 'the Backing hover counts the after-archive row: ' + tb);
 });
 
 // TEN-402 r2: the tab reads the Database rows through the ONE session loader (sfDbJoinLoad → DatabaseTab.priceRows), shared with
@@ -643,7 +666,7 @@ test('option A · Key factors "Record here": the record\'s results by event key,
   const { m, ch } = flipFixture();
   const T = S.trModelOf(m.p1TournamentHistory, { ch: null, cl: null, fix: S.recordFixOf(ch, { over: [[0, { won: false }]] }) }, '1', 'J. Sinner', 'Washington', ['Washington'], '2026', 'idle');
   assert.deepEqual([T.W, T.L], [1, 2]);
-  assert.match(html, /trModelOf\(i \? m\.p2TournamentHistory : m\.p1TournamentHistory, \{ ch: null, cl: null, fix: recordFixFor\(i \? m\.p2Key : m\.p1Key\) \}/, 'kfTourCard passes the record');
+  assert.match(MA2_SRC, /trModelOf\(i \? m\.p2TournamentHistory : m\.p1TournamentHistory, \{ ch: null, cl: null, fix: recordFixFor\(i \? m\.p2Key : m\.p1Key\) \}/, 'kfTourBox passes the record');
 });
 
 test('option A · the Tournament tab loads the record with the history; a record that does not answer fails the side', { timeout: 15000 }, async () => {
