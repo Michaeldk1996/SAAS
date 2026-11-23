@@ -31,21 +31,16 @@ this file wins.
 5. Deployed and verified on the live URL with a **real match**, not the demo.
 6. Night and Day screenshots from the deployed site posted to the founder.
 7. A list of every parked element and design gap, each with its reason.
-8. **Shared helpers only** (founder 2026-09-29, TEN-314 comment 1641c7ce): the tab renders its match rows with
-   `maMatchRowsHtml`, its tooltips with the shared tooltip, and every match opens the shared sheet. The tab's own row
-   and tooltip renderers are **deleted**, not hidden (Form first: `.fh-elotip-pop` and Form's own rows go). Variant
-   geometry (e.g. Form's 14 px inset) is a parameter of the shared helper, never a second renderer. **Test:** a grep
-   finds no tab-local row or tooltip renderer; a tab that draws no rows or tooltips says so in its report.
-   **The one pop-up frame** is `maPopFrame` (TEN-366). The file draws two frame geometries, each a `MA_POP` variant key:
-   `std` (README §4.4, DF L1485–1560: Overview, Market edge) and `mv` (the Odds movement pop-up, DF L1906–1915).
-   A new pop-up geometry is a new variant key, never a tab-local overlay.
-   **The one tooltip component** is the design's `.elotip-pop` (DF L950). It has two triggers and no other look:
-   `maTipHtml` (hover / focus on a wrapper) and the positioned mode `data-aotip` (`initAOddsTips`: one delegated
-   listener, 250 ms, anchored at the trigger and flipped at the viewport / modal edge; Odds, Weather, Market edge, the
-   News group count). The positioned element carries only the class `elotip-pop ma-tip-float`, no styling of its own.
-   A design-file native `title` (e.g. News article times) stays as the file draws it. The Odds Market / No-vig hints use
-   the shared tooltip (`data-aotip`), as `odds.md` rules (founder Q23, 2026-09-30).
-   **Test:** `test-ten314-components.mjs` (one component; News count on it).
+8. **One sheet, one shell, one tooltip** (2026-11-23 rebuild, `design_handoff_match_analysis_2026-11-23`; replaces the
+   2026-09-29 "rows through `maMatchRowsHtml`, pop-ups through `maPopFrame`" — each tab now draws the design's own rows):
+   every match row, dot and cell opens the ONE match stats sheet (`fhOpenSheet` / `maRowOnclick`); every opened box uses
+   the ONE shell `popShell` (`match-analysis-v2.js`: `ma-pop-overlay` + `ma-pop-x`, so Esc closes the topmost box through
+   the `ma-pop` layer, never the whole modal); no tab-local renderer is left in `bsp-consult-dashboard.html` (the tab
+   builders are one-line delegates to `match-analysis-v2.js`). The "?" help is the native `title`, as the design draws it
+   (STEP1 report item 8); the positioned shared tooltip (`data-aotip`, `initAOddsTips`) stays where a rule names it: the
+   Odds Market / No-vig hints (founder Q23), the Weather day cards (Q22) and the H2H "+N" style hints.
+   **Test:** a grep finds no tab-local row renderer in the dashboard; every row's onclick opens the sheet; Esc on an
+   opened box leaves the modal open.
 
 - **Undrawn states** (TEN-312 `design-gaps`) never block a tab: use the nearest existing pattern in the design file, mark
   the code `// DESIGN GAP Gn`, and list it in the tab report. Never invent a new visual pattern. The TEN-312
@@ -127,8 +122,8 @@ this file wins.
   "All stats are updated live" text.
 
 ## Download report (D7)
-- Keeps the existing behaviour: `printAnalysisReport()` → `window.print()` of the modal. Rendered as designed.
-  **Test:** clicking it calls `window.print`.
+- **Removed** (founder 2026-11-23, design README: the rail has no Download report). `printAnalysisReport` is no longer
+  reachable from the box. **Test:** the side list has no "Download report" item.
 
 ## Sample-size gate (D2) — one gate, `tourxSampleGate`
 - **Counts always show** ("5 of 7", "3 of 3", W–L). **Percentages / rates** go through `tourxSampleGate` (dash)

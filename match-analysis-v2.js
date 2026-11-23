@@ -39,7 +39,7 @@
   function track(items, o) {
     o = o || {};
     return '<div class="ma2-track" style="display:inline-flex; flex-wrap:wrap; gap:' + (o.gap || 2) + 'px; background:var(--ma2-track); border:1px solid ' + W(10) + '; border-radius:10px; padding:3px;">'
-      + items.map(t => '<span class="seg ma2-seg"' + (t.title ? ' title="' + esc(t.title) + '"' : '') + ' role="button" tabindex="0" onclick="' + t.onclick + '"'
+      + items.map(t => '<span class="seg ma2-seg"' + (t.title ? (o.aotip ? ' data-aotip="' + esc(esc(t.title)) + '"' : ' title="' + esc(t.title) + '"') : '') + ' role="button" tabindex="0" onclick="' + t.onclick + '"'
         + ' style="padding:' + (o.pad || '6px 12px') + '; border-radius:7px; font-size:12.5px; white-space:nowrap; cursor:pointer; font-weight:' + (t.on ? 700 : 600) + '; color:' + (t.on ? 'var(--ma2-text)' : 'var(--ma2-grey)') + '; background:' + (t.on ? 'var(--ma2-lifted)' : 'transparent') + '; ' + (o.inset ? 'box-shadow:inset 0 0 0 1px ' : 'border:1px solid ') + (t.on ? W(14) : 'transparent') + ';">' + esc(t.label) + '</span>').join('')
       + '</div>';
   }
@@ -55,12 +55,12 @@
   }
   // the opened-box shell (max 860 / 980), title + "?" + chip over a grey sub, 30px lifted Close
   function popShell(o) {
-    return '<div class="ma2-pop-ov" onclick="if(event.target===this){' + o.onClose + '}" style="position:fixed; inset:0 0 0 var(--sf-side, 0px); z-index:90; background:var(--ma2-scrim-2); display:flex; align-items:center; justify-content:center; padding:24px;">'
+    return '<div class="ma2-pop-ov ma-pop-overlay" onclick="if(event.target===this){' + o.onClose + '}" style="position:fixed; inset:0 0 0 var(--sf-side, 0px); z-index:90; background:var(--ma2-scrim-2); display:flex; align-items:center; justify-content:center; padding:24px;">'
       + '<div data-ovpop="" class="ma2-pop" style="width:100%; max-width:' + (o.max || 860) + 'px; border-radius:16px; background:var(--ma2-card); border:1px solid ' + W(8) + '; box-shadow:var(--ma2-shadow-pop); padding:' + (o.pad || '24px 24px 16px') + '; display:flex; flex-direction:column; gap:18px; max-height:calc(100vh - 48px); overflow-y:auto; box-sizing:border-box;">'
       + '<div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px;"><div style="display:flex; align-items:center; gap:12px; min-width:0;">' + (o.avatar || '')
       + '<div style="display:flex; flex-direction:column; gap:5px; min-width:0;"><span style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;"><span style="font-size:18px; font-weight:800; color:var(--ma2-text);">' + esc(o.title) + '</span>' + (o.help ? help(o.help) : '') + (o.chip || '') + '</span>'
       + '<span style="font-size:12.5px; color:var(--ma2-grey);">' + esc(o.sub || '') + '</span></div></div>'
-      + '<span class="seg ma2-btn" role="button" tabindex="0" onclick="' + o.onClose + '" style="height:30px; padding:0 12px; display:flex; align-items:center; border-radius:8px; background:var(--ma2-lifted); border:1px solid ' + W(14) + '; color:var(--ma2-text); cursor:pointer; font-size:12.5px; font-weight:700; flex:none;">Close</span></div>'
+      + '<span class="seg ma2-btn ma-pop-x" role="button" tabindex="0" onclick="' + o.onClose + '" style="height:30px; padding:0 12px; display:flex; align-items:center; border-radius:8px; background:var(--ma2-lifted); border:1px solid ' + W(14) + '; color:var(--ma2-text); cursor:pointer; font-size:12.5px; font-weight:700; flex:none;">Close</span></div>'
       + o.body + '</div></div>';
   }
   const signed = (v, d) => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(d == null ? 1 : d);
@@ -105,7 +105,7 @@
     // top row: Market · No-vig (no "Sample" chip: the data is real)
     const top = '<div style="display:flex; align-items:center; gap:10px 14px; flex-wrap:wrap;">' + track([
       { label: 'Market', on: !novig, onclick: 'aOddsSetMode(false)', title: 'Prices as quoted, bookmaker margin included' },
-      { label: 'No-vig', on: novig, onclick: 'aOddsSetMode(true)', title: 'Margin stripped: prices and probabilities sum to 100%' }], { inset: true }) + '</div>';
+      { label: 'No-vig', on: novig, onclick: 'aOddsSetMode(true)', title: 'Margin stripped: prices and probabilities sum to 100%' }], { inset: true, aotip: true })   // odds.md Q23: the shared tooltip + '</div>';
 
     // (1) Best price
     const best = ['a', 'b'].map((x, i) => {
@@ -451,7 +451,9 @@
       + tile('Record', b.w + '–' + b.l, b.n.toLocaleString('en-US') + ' priced', { left: true, bg: 'var(--ma2-inner)' })
       + tile('Won', won.t, 'needs ' + (b.needs == null ? DASH : (Math.round(b.needs * 1000) / 10).toFixed(1) + '%'), { left: true, bg: 'var(--ma2-inner)', color: won.c })
       + tile('Edge', ed.t, 'Won − needs', { left: true, bg: 'var(--ma2-inner)', color: ed.c })
-      + tile('At flat 1% stake', un.t, 'yield ' + (b.yield == null ? DASH : meSg(b.yield * 100, 1, '%')), { left: true, bg: 'var(--ma2-inner)', color: un.c }) + '</div>';
+      + tile('At flat 1% stake', un.t, 'yield ' + (b.yield == null ? DASH : meSg(b.yield * 100, 1, '%')), { left: true, bg: 'var(--ma2-inner)', color: un.c }) + '</div>'
+      // D2 (modal-analysis.md): a greyed 5–9 figure carries its "small sample" note
+      + (maRate(b.w, b.n, {}).mode === 'small' ? '<span style="font-size:11.5px; color:var(--ma2-grey);">Grey = small sample (5–9 matches) · n=' + b.n + '</span>' : '');
     const list = meListBox(b.rows, BAND_TCOLS, ['Date', '', 'Opponent', 'Event', 'Rd', 'Score', 'Price', 'Opp', 'P&amp;L'], 6, r => meRowHtml(E, r, name, key, BAND_TCOLS,
       tcell(meDMY(r.date), MONO + ' font-size:11.5px; color:' + meGrey + ';') + meRes(r.won) + tcell(esc(r.opp), 'font-size:12.5px; font-weight:600; color:var(--ma2-text);')
       + tcell(esc(typeof sfEventName === 'function' ? sfEventName(r.tourn) : r.tourn), 'font-size:12px; color:' + meGrey + ';') + tcell(esc(r.round || DASH), MONO + ' font-size:11.5px; color:' + meGrey + ';')
@@ -1144,7 +1146,7 @@
     const priced = real.filter(c => c.r.price != null), avgP = priced.length ? priced.reduce((a, c) => a + c.r.price, 0) / priced.length : null;
     const tl = (l, v, n) => '<div style="background:var(--ma2-card); border:1px solid ' + W(6) + '; border-radius:11px; padding:13px 6px 12px; display:flex; flex-direction:column; align-items:center; gap:3px; text-align:center; min-width:0;"><span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey);">' + l + '</span><span style="' + MONO + ' font-size:20px; font-weight:700; line-height:1.15; color:' + (v === DASH ? 'var(--ma2-quiet)' : 'var(--ma2-text)') + ';">' + v + '</span><span style="font-size:11.5px; color:var(--ma2-grey);">' + esc(n) + '</span></div>';
     const fav = (own, opp) => own != null && opp != null ? own <= opp : null;
-    const prc = (v, isFav) => '<span style="text-align:right; ' + MONO + ' font-size:12px; font-weight:' + (isFav ? 700 : 500) + '; color:' + (v == null ? 'var(--ma2-quiet)' : isFav ? 'var(--ma2-text)' : 'var(--ma2-grey)') + ';">' + (v == null ? DASH : fhOdd(v)) + '</span>';
+    const prc = (v, isFav, r) => '<span' + (r ? ' title="' + esc(v == null ? (typeof sfNoPriceReason === 'function' ? sfNoPriceReason(r) : 'No closing price on record') : fhSrcTitle(r)) + '"' : '') + ' style="text-align:right; ' + MONO + ' font-size:12px; font-weight:' + (isFav ? 700 : 500) + '; color:' + (v == null ? 'var(--ma2-quiet)' : isFav ? 'var(--ma2-text)' : 'var(--ma2-grey)') + ';">' + (v == null ? DASH : fhOdd(v)) + '</span>';
     const rows = p.cells.map((c, i) => {
       const lifted = hi === i;
       if (c.bye || c.missing) return '<div title="' + esc(c.rd + (c.bye ? ' · bye' : ' · no match on record for ' + p.name + ' in this round')) + '" style="' + PG_RG + ' margin:0 8px; padding:8px 10px; border:1px solid transparent; border-radius:8px; background:' + (lifted ? 'var(--ma2-lifted)' : 'transparent') + ';">'
@@ -1157,7 +1159,7 @@
         + '<span style="' + MONO + ' font-size:11.5px; color:var(--ma2-grey);">' + c.rd + '</span>'
         + '<span style="min-width:0; display:flex; flex-direction:column; gap:1px;"><span style="font-size:12.5px; font-weight:600; color:var(--ma2-text); overflow-wrap:anywhere;">' + esc(r.opp) + '</span><span style="font-size:11.5px; color:var(--ma2-grey); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"' + (sty ? '' : ' title="No playing style on file"') + '>' + esc(sty || DASH) + '</span></span>'
         + '<span style="' + MONO + ' font-size:11.5px; color:var(--ma2-soft); line-height:1.35;">' + esc(sc) + '</span>'
-        + (r.wo ? '<span style="text-align:right; color:var(--ma2-quiet);">' + DASH + '</span><span style="text-align:right; color:var(--ma2-quiet);">' + DASH + '</span>' : prc(r.price, f === true) + prc(r.oppPrice, f === false))
+        + (r.wo ? '<span style="text-align:right; color:var(--ma2-quiet);">' + DASH + '</span><span style="text-align:right; color:var(--ma2-quiet);">' + DASH + '</span>' : prc(r.price, f === true, r) + prc(r.oppPrice, f === false, r))
         + '<span style="text-align:right; ' + MONO + ' font-size:12.5px; font-weight:700; color:' + (d === DASH ? 'var(--ma2-quiet)' : 'var(--ma2-text)') + ';">' + d + '</span></div>';
     }).join('');
     const opp = k ? m.p1 : m.p2, osty = styleOf(opp, k ? m.p1Key : m.p2Key), nf = fav(today, oth);
@@ -1487,7 +1489,7 @@
       + '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="var(--ma2-grey)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>'
       + '<span style="font-size:18px; font-weight:800;">Indoor event, weather is not a factor</span><span style="font-size:12.5px; color:var(--ma2-grey);">' + esc(CP.indoorSub) + '</span></div>');
     const lead = vm.lead, cs = ma2CourtSpeed(m);
-    const short = vm.unavail || vm.verdictSev === 'u' ? 'Forecast unavailable' : lead ? lead.name + ' is the main factor' : /Missing/.test(vm.verdict) ? 'No concern in the values we have' : 'No weather concern';
+    const short = vm.unavail || vm.verdictSev === 'u' ? 'Forecast unavailable' : lead ? lead.name + ' is the main factor' : /Missing/.test(vm.verdict) ? vm.verdict : 'No weather concern';   // a partial read names what is missing (modal-weather.md)
     const fresh = wxFreshLine(vm);
     const scope = '<span style="white-space:nowrap;">' + esc(vm.atHead) + '</span>' + (fresh ? '<span style="color:var(--ma2-quiet);">·</span><span style="white-space:nowrap;">' + esc(fresh) + '</span>' : '') + (vm.mayStartLater ? '<span style="color:var(--ma2-quiet);">·</span><span>' + esc(CP.mayStartLater) + '</span>' : '');
     const facts = vm.factors.map(f => ({ name: f.name, sev: f.sev, fig: f.big, unit: f.unit, detail: f.detail === '—' ? '' : f.detail, effect: f.effect, id: f.id }));
@@ -1504,12 +1506,20 @@
       const deg = x => x == null ? DASH : x + '°', picked = sel === i;
       const icon = d.icon ? wIcon(d.icon, 26, 'var(--ma2-grey)') : '<span style="' + MONO + ' font-size:18px; color:var(--ma2-quiet); height:26px; line-height:26px;">' + DASH + '</span>';
       const tag = d.isMatch ? (vm.badge.replace(/^MATCH · /, 'Match ').replace('TBC', 'time TBC')) : d.lowConf ? 'Low confidence' : '';
-      return '<div class="seg ma2-row" data-wxday="" data-date="' + d.date + '" role="button" tabindex="0" onclick="ma2WxPick(' + (picked ? 'null' : i) + ')" style="display:flex; flex-direction:column; align-items:center; gap:10px; padding:14px 8px 12px; border-radius:12px; background:' + (picked ? 'var(--ma2-lifted)' : 'var(--ma2-inner)') + '; border:1px solid ' + W(picked || d.isMatch ? 14 : 6) + '; min-width:0; cursor:pointer;">'
+      // modal-weather.md Q22 + archive: the day's Max values, its window, source and fetch time on the shared tooltip
+      let tip = '';
+      if (!d.unavail) { const TP = CP.tip, CF = WX_CONFIG, ag = d.agg || {}, u = (x, sx) => x == null ? DASH : x + sx;
+        const L = [[TP.gusts, u(ag.gusts, ' km/h')], [TP.wind, u(ag.wind, ' km/h')], [TP.feels, u(ag.feels, '°')], [TP.rain, u(ag.rain, '%')], [TP.mm, ag.mm == null ? DASH : ag.mm.toFixed(1) + ' mm'],
+          [TP.window, wxFmt(TP.windowVal, { from: String(CF.window.fromHour).padStart(2, '0'), to: String(CF.window.toHour).padStart(2, '0') })]];
+        if (d.past || vm.archived) L.push([TP.values, TP.pastVal]);
+        L.push([TP.source, vm.source], [TP.fetched, wxStamp(d.fetchedMs, vm.zone)]);
+        tip = ' data-aotip="' + esc(aOddsTipHtml(d.dow + ' ' + d.label, L)) + '"'; }
+      return '<div class="seg ma2-row" data-wxday="" data-date="' + d.date + '"' + tip + ' role="button" tabindex="0" onclick="ma2WxPick(' + (picked ? 'null' : i) + ')" style="display:flex; flex-direction:column; align-items:center; gap:10px; padding:14px 8px 12px; border-radius:12px; background:' + (picked ? 'var(--ma2-lifted)' : 'var(--ma2-inner)') + '; border:1px solid ' + W(picked || d.isMatch ? 14 : 6) + '; min-width:0; cursor:pointer;">'
         + '<span style="display:flex; align-items:baseline; gap:6px;"><span style="font-size:12.5px; font-weight:700; color:var(--ma2-text);">' + d.dow + '</span><span style="' + MONO + ' font-size:11.5px; color:var(--ma2-grey);">' + d.label + '</span></span>' + icon
         + '<span style="display:flex; align-items:baseline; gap:6px; ' + MONO + '"><span style="font-size:15px; font-weight:700; color:var(--ma2-text);">' + deg(d.hi) + '</span><span style="font-size:12px; color:var(--ma2-grey);">' + deg(d.lo) + '</span></span>'
         + '<div style="width:100%; padding-top:10px; border-top:1px solid ' + W(6) + '; display:flex; align-items:center; justify-content:center; gap:6px; min-height:42px; box-sizing:border-box;"><span style="flex:none; width:8px; height:8px; border-radius:50%; background:' + WX_SEV[v][1] + ';"></span>'
         + '<span style="font-size:11.5px; line-height:1.35; font-weight:' + (top ? 700 : 500) + '; color:' + (top ? 'var(--ma2-text)' : 'var(--ma2-grey)') + '; text-align:center;">' + esc(reason) + '</span>'
-        + (d.flags && d.flags.length > 1 ? '<span title="' + esc(d.flags.slice(1).map(x => x.text).join(' · ')) + '" style="flex:none; ' + MONO + ' font-size:10.5px; font-weight:700; color:var(--ma2-soft); padding:1px 5px; border-radius:6px; background:var(--ma2-lifted); border:1px solid ' + W(14) + ';">+' + (d.flags.length - 1) + '</span>' : '') + '</div>'
+        + (d.flags && d.flags.length > 1 ? '<span tabindex="0" data-aotip="' + esc(esc(d.flags.slice(1).map(x => x.text).join(' · '))) + '" style="flex:none; ' + MONO + ' font-size:10.5px; font-weight:700; color:var(--ma2-soft); padding:1px 5px; border-radius:6px; background:var(--ma2-lifted); border:1px solid ' + W(14) + ';">+' + (d.flags.length - 1) + '</span>' : '') + '</div>'
         + '<span style="font-size:11.5px; font-weight:600; line-height:15px; color:' + (d.isMatch ? 'var(--ma2-text)' : 'var(--ma2-quiet)') + '; min-height:15px; white-space:nowrap;">' + esc(tag) + '</span></div>'; };
     let open = '';
     if (sel != null) {
@@ -1631,14 +1641,14 @@
     const GR = 'display:grid; grid-template-columns:' + OVP + '; gap:0 10px; align-items:center;';
     const body = all.map(x => { if (x.d) { const d = x.d;
         return '<div style="' + GR + ' padding:8px 18px; border-top:1px solid ' + W(6) + ';"><span style="' + MONO + ' font-size:11.5px; color:var(--ma2-grey);">' + esc(fhDDMM(d.date) + '.') + (d.wo ? '<span style="display:block; font-size:10px; font-weight:700;" title="Walkover: not a match played, counted in no record">WO</span>' : '') + '</span><span></span><span style="font-size:12.5px; font-weight:600; color:var(--ma2-text);">' + esc(d.opp || DASH) + '</span><span style="font-size:12px; color:var(--ma2-grey);">' + esc(d.tourn || DASH) + '</span><span style="' + MONO + ' font-size:11px; color:var(--ma2-grey);">' + esc(d.round || DASH) + '</span><span style="color:var(--ma2-quiet);">–</span><span style="' + MONO + ' font-size:11.5px; color:var(--ma2-grey);">' + (d.unconf ? 'unconfirmed, not counted' : '–') + '</span><span style="text-align:right; color:var(--ma2-quiet);">' + DASH + '</span><span style="text-align:right; color:var(--ma2-quiet);">' + DASH + '</span></div>'; }
-      const r = x.r, c = r.won ? 'var(--ma2-green)' : 'var(--ma2-red)', sc = r.sets ? r.sets.map(q => q[0] + '-' + q[1]).join(', ') + (r.ret ? ' ret.' : '') : DASH;
+      const r = x.r, c = r.won ? 'var(--ma2-green)' : 'var(--ma2-red)', sc = r.sets ? esc(r.sets.map(q => q[0] + '-' + q[1]).join(', ')) + (r.ret ? '<span style="color:' + (r.won ? 'var(--ma2-soft)' : 'var(--ma2-red)') + ';"> ret.</span>' : '') : DASH;   // modal-overview.md DF L1997
       return '<div class="seg ma2-row" role="button" tabindex="0" onclick="ovOpenRow(\'' + r.mid + '\')" title="Open the match stats" style="' + GR + ' padding:8px 18px; border-top:1px solid ' + W(6) + '; background:' + (_ov.sel === r.mid ? 'var(--ma2-lifted)' : 'transparent') + '; cursor:pointer;">'
         + '<span style="' + MONO + ' font-size:11.5px; color:var(--ma2-grey);">' + esc(fhDDMM(r.date) + '.' + String(r.date).slice(2, 4)) + '</span><span style="width:8px; height:8px; border-radius:50%; background:' + c + ';"></span>'
         + '<span style="font-size:12.5px; font-weight:600; color:var(--ma2-text); overflow-wrap:anywhere;">' + esc(r.opp || DASH) + '</span><span style="font-size:12px; color:var(--ma2-grey); overflow-wrap:anywhere;">' + esc((r.tourn || DASH) + (M.surf === 'total' && r.surface ? ' · ' + r.surface : '')) + '</span>'
         + '<span style="' + MONO + ' font-size:11px; color:var(--ma2-grey);">' + esc(r.round || DASH) + '</span>'
         + '<span style="justify-self:start; ' + MONO + ' font-size:11.5px; font-weight:700; color:' + c + '; background:var(--ma2-lifted); border:1px solid ' + W(14) + '; border-radius:6px; padding:1px 6px; white-space:nowrap;">' + (r.pS != null ? r.pS + '–' + r.oS : DASH) + '</span>'
-        + '<span style="' + MONO + ' font-size:11.5px; color:var(--ma2-soft); line-height:1.35;">' + esc(sc) + '</span>'
-        + '<span title="' + esc(r.book === 'B' ? fhSrcTitle(r) + ' (no Pinnacle close for this match)' : fhSrcTitle(r)) + '" style="' + MONO + ' font-size:12px; font-weight:700; color:' + (r.price == null ? 'var(--ma2-quiet)' : 'var(--ma2-text)') + '; text-align:right;">' + (r.price == null ? DASH : fhOdd(r.price)) + '</span>'
+        + '<span style="' + MONO + ' font-size:11.5px; color:var(--ma2-soft); line-height:1.35;">' + sc + '</span>'
+        + '<span title="' + esc(r.book === 'B' ? (fhB365Approx(r) ? (r.src === 'atb' ? FH_B365_AT_HOVER : r.src === 'teb' ? FH_B365_TE_HOVER : FH_B365_APPROX_HOVER) : fhSrcTitle(r) + ' (no Pinnacle close for this match)') : fhSrcTitle(r)) + '" style="' + MONO + ' font-size:12px; font-weight:700; color:' + (r.price == null ? 'var(--ma2-quiet)' : 'var(--ma2-text)') + '; text-align:right;">' + (r.price == null ? DASH : fhOdd(r.price)) + '</span>'
         + '<span style="' + MONO + ' font-size:12px; color:' + (r.oppPrice == null ? 'var(--ma2-quiet)' : 'var(--ma2-grey)') + '; text-align:right;">' + (r.oppPrice == null ? DASH : fhOdd(r.oppPrice)) + '</span></div>'; }).join('');
     const list = '<div style="background:var(--ma2-inner); border:1px solid ' + W(6) + '; border-radius:12px; overflow:hidden;"><div style="' + GR + ' padding:9px 18px; font-size:11.5px; font-weight:600; color:var(--ma2-grey);"><span>Date</span><span></span><span>Opponent</span><span>Event</span><span>Rd</span><span>Sets</span><span>Score</span><span style="text-align:right;">Price</span><span style="text-align:right;">Opp</span></div>'
       + (all.length ? body : '<div style="padding:28px 16px; text-align:center; font-size:12.5px; color:var(--ma2-grey); border-top:1px solid ' + W(6) + ';">No matches on file for this selection.</div>') + '</div>';
@@ -1745,13 +1755,16 @@
     const st = typeof _aNewsState !== 'undefined' ? _aNewsState : 'load';
     if (st === 'load') return wrap(nBox('Loading news…', ''));
     const items = newsItemsFor(m), pool = items.filter(x => filt === 'p1' ? x.hasA : filt === 'p2' ? x.hasB : true);
+    // no figure without a count (modal-analysis.md): each tile's count names its population on hover
+    const tot = ((typeof aNewsFeedOk === 'function' && aNewsFeedOk() ? newsWireItems() : []).concat(typeof newsTickerItems === 'function' ? newsTickerItems() : []))
+      .filter(x => x.cat !== 'Tour News' && isFinite(x.ts) && x.ts >= Date.now() - A_NEWS_WINDOW_DAYS * 864e5).length;
     const tiles = [['p1', m.p1, m.p1Key, 'hasA'], ['p2', m.p2, m.p2Key, 'hasB']].map(([f, nm, key, k]) => {
       const list = items.filter(x => x[k]), injx = list.find(x => x.cat === 'Withdrawals & Injuries'), on = filt === f;
       const sub = list.length ? list.length + (list.length === 1 ? ' article' : ' articles') + (list[0].kind === 'wire' ? '' : ' · latest ' + nAgo(list[0].ts).toLowerCase()) : 'No news in the last ' + A_NEWS_WINDOW_DAYS + ' days';
       const stt = injx ? 'Injury note' + (injx.kind === 'wire' ? '' : ' · ' + nAgo(injx.ts).toLowerCase()) : 'No injury news';
       return '<div class="seg ma2-tile" role="button" tabindex="0" onclick="ma2NewsPlayer(\'' + f + '\')" title="' + esc(on ? 'Show both players' : 'Show only ' + nm) + '" style="display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; min-width:0; background:var(--ma2-card); border:1px solid ' + (on ? W(22) : W(6)) + '; border-radius:16px; padding:16px 20px; cursor:pointer;">'
         + av(nm, key, 36, '1px solid ' + W(14), 11.5)
-        + '<span style="display:flex; flex-direction:column; gap:3px; min-width:0; flex:1 1 150px;"><span style="font-size:14px; font-weight:700; color:var(--ma2-white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(nm) + '</span><span style="font-size:12px; color:var(--ma2-grey); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(sub) + '</span></span>'
+        + '<span style="display:flex; flex-direction:column; gap:3px; min-width:0; flex:1 1 150px;"><span style="font-size:14px; font-weight:700; color:var(--ma2-white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(nm) + '</span><span title="' + esc(list.length + ' of ' + tot + ' articles in the news feed, last ' + A_NEWS_WINDOW_DAYS + ' days') + '" style="font-size:12px; color:var(--ma2-grey); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(sub) + '</span></span>'
         + '<span style="flex:none; font-size:' + (injx ? '11px' : '12px') + '; font-weight:' + (injx ? 700 : 400) + '; color:' + (injx ? 'var(--ma2-red)' : 'var(--ma2-grey)') + '; background:' + (injx ? 'color-mix(in srgb, var(--ma2-red) 12%, transparent)' : 'transparent') + '; border-radius:6px; padding:' + (injx ? '3px 8px' : '0') + '; white-space:nowrap;">' + stt + '</span></div>'; }).join('');
     const cTabs = nTabs([{ label: 'All', on: !NW.cat, n: pool.length, onclick: "ma2NewsCat('')" }].concat(NCATS.map(c => ({ label: c, on: NW.cat === c, n: pool.filter(x => x.cat === c).length, onclick: "ma2NewsCat('" + c.replace(/&/g, '&amp;') + "')" }))));
     const vTabs = nTabs([['reading', 'Reading'], ['compact', 'Compact']].map(([v, l]) => ({ label: l, on: NW.view === v, onclick: "ma2NewsView('" + v + "')" })));
