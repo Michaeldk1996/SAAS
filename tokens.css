@@ -373,6 +373,18 @@
   --do2-scrim:     rgba(3, 4, 7, 0.62);
   --do2-shadow-menu: 0 16px 36px rgba(0, 0, 0, 0.5);
   --do2-shadow-box:  0 30px 80px rgba(0, 0, 0, 0.55);
+  /* phone (under 820px) */
+  --do2-m-fill:    #0A0D14;   /* sheet, buttons, skeleton and empty cards */
+  --do2-edge-7:    rgba(255, 255, 255, 0.07);
+  --do2-edge-9:    rgba(255, 255, 255, 0.09);
+  --do2-edge-12:   rgba(255, 255, 255, 0.12);
+  --do2-red-35:    rgba(224, 97, 111, 0.35);
+  --do2-meter-trk-14: rgba(224, 97, 111, 0.14);
+  --do2-blue-16:   rgba(91, 155, 255, 0.16);
+  --do2-blue-30:   rgba(91, 155, 255, 0.30);
+  --do2-blue-35:   rgba(91, 155, 255, 0.35);
+  --do2-blue-ink:  #82B4FF;
+  --do2-scrim-66:  rgba(3, 4, 7, 0.66);
 }
 
 /* Match analysis rebuild (handoff design_handoff_match_analysis_2026-11-23, founder 2026-11-23 "pixel for pixel"):

@@ -77,9 +77,9 @@ answers on card 37612d3d (TEN-294 doc `design`). Suite: `test-ten294-drops.mjs`.
   above fair; **ARB** = back each player at a different source with locked-in profit >= `arb_min` (1%) after fees, best pair
   per match, stakes by 1/e. A prediction-market leg needs >= `min_liq` ($100) at the price. **Retirement mismatch is
   flagged, never excluded** (founder): a prediction market (pays the player who advances once a ball is played) against a
-  bookmaker. Telegram ⚖️ ARB / 📐 DIVERGENCE to the arbitrage chat, one per match + kind + source(s) per 30 min. Page: Dropping Odds
-  → Arbitrage (`arb-page.js`, reads `public.arb_now()` with the publishable key every 30 s; a plain first build the founder
-  designs later). **Test:** `tools/test-arb-engine-sql.py`, `test-arb-page.mjs`.
+  bookmaker. Telegram ⚖️ ARB / 📐 DIVERGENCE to the arbitrage chat, one per match + kind + source(s) per 30 min. No page: the Dropping Odds
+  → Arbitrage view (`arb-page.js`) was retired by the founder on 2026-11-23; `arb_now()` stays for the engine and alerts.
+  **Test:** `tools/test-arb-engine-sql.py`.
   **No alert on a withdrawn match, any kind** (founder 2026-11-03: four ⚖️ ARB of +26% on Davidovich Fokina v Kouame after
   the withdrawal, off a frozen Polymarket book): the fixture spine carries api-tennis's `event_status` / `event_winner`
   (`drops-scope-fixtures.mjs`, every pipeline run) and `arb.fixture_closed` (walkover, retired, cancelled, postponed,
@@ -109,7 +109,7 @@ answers on card 37612d3d (TEN-294 doc `design`). Suite: `test-ten294-drops.mjs`.
   rule applies only to a gap with a prediction-market leg, and a bookmaker-only gap posts with its split. Every live row
   carries `legs[]` (venue, price, after-fee, stake, share, clock, link); ⚡ prints a 🔗 per leg and a retirement warning when a
   bookmaker is in it; the page reads the same legs. **Test:** `tools/test-live-arb-recorder.mjs` (feed, join, directions),
-  `tools/test-arb-engine-sql.py` (bookmaker gaps post, cooldown, message, arb_now), `test-arb-page.mjs`.
+  `tools/test-arb-engine-sql.py` (bookmaker gaps post, cooldown, message, arb_now).
 - **Live arbitrage, Kalshi × Polymarket** (founder 2026-11-02, "Let's go!"; ATP tour only). `tools/live-arb-recorder.mjs`,
   run by `live-arb.yml` (main only, 350-min runs, an hourly start keeps one queued so the next starts as the current ends):
   Polymarket's public CLOB websocket (every book change) + Kalshi's public `KXATPMATCH` list every 2 s (YES ask + size; the
@@ -138,7 +138,7 @@ answers on card 37612d3d (TEN-294 doc `design`). Suite: `test-ten294-drops.mjs`.
   30-s engine covers it) and the Kalshi event is `KXATPMATCH-`, once per match + direction per `live_cooldown` (10 min).
   `arb_now()` carries `live` only while the last push is ≤ `live_hb_max` (90 s) old; otherwise the page draws no live
   section (no feed-status text). Bet105's in-play prices come from the Kibl stream (rule below). **Test:** `tools/test-live-arb-recorder.mjs`, `tools/test-arb-engine-sql.py`
-  ("LIVE"), `test-arb-page.mjs` ("live section").
+  ("LIVE").
 - **No Bet105 leg while the Kibl stream is behind** (founder 2026-11-12, "Pause and fix", after both 11 Nov live signals
   were false: the Fly worker read Kibl up to ~2 min late). Bet105's in-play prices come only from the Fly worker
   (`kibl-stream/now_worker.py` → `kibl_live_ml`), which writes off its consume loop and keeps one stream-position row there
@@ -184,7 +184,7 @@ Supersedes every earlier page ruling (TEN-294 export, the TEN-301 price-move box
 Odds v2.dc.html` (template + `renderVals` / `rd` / `calc`); the file wins over its README; measured values are read through
 the `--do2-*` tokens (`tokens.css`). Page files `drops-page.js`, `drops-page.css`. Suite `test-drops-v2.mjs` (a frozen
 slice of the real feed, `tools/fixtures/drops-v2.json`) + `tools/test-drops-v2-mutants.js` (0 may survive). Desktop ≥ 820px
-is the spec; under 820px is a DRAFT for the founder's review.
+and the phone layout under 820px (the export's `isMob` block, built 2026-11-23) are both the spec.
 
 - **One row per selection (a player to win a match), built from the endpoint's `lines`.** A line is one match side with
   each book's change-only series for that side and the opponent; a side with its own line takes it, else its opponent
@@ -197,8 +197,12 @@ is the spec; under 820px is a DRAFT for the founder's review.
   counts, note) stays hidden. A book not seen for 24 h is not quoting. **Test:** the roster is exactly those four.
 - **Every figure is computed at render from the two prices printed beside it** (README `rd` / `calc`, on 2 dp prices,
   half away from zero): drop % = (open − now) / open, implied = 100 / price, pts = implied now − implied open. "Open" = the
-  first price Stennisfy recorded. Sharp = Pinnacle only (README open decision 4); soft = the average of the soft books with
-  two prices, "n of m soft books down"; best now = the highest current price ("<book> only" with one book). **Test:** the
+  first price Stennisfy recorded. **Sharp = Pinnacle; where Pinnacle has no line, Bet105 without its margin** (founder
+2026-11-23): each Bet105 tick on either side paired with the other side's last Bet105 price at or before it (no pair
+before both sides posted), fair = 1 + own / other; every place it shows names it ("Sharp · Bet105 (no margin)", the row's
+"Bet105" lead, the legend, a chart note); Bet105 is then not offered as the compared line; best now and the Bet105
+bookmaker row stay the quoted price. **Test:** own 2.10 / other 1.80 → 2.1667; Pinnacle wins whenever it has a line; soft = the average of the soft books with
+  two prices, "n of m soft books down"; best now = the highest current QUOTED price ("<book> only" with one book). **Test:** the
   README's 2.12 → 1.46 = 31.1%, 47.2% → 68.5%, +21.3 pts and 5.30 → 3.65 = 31.1%, +8.5 pts; never the soft figure in the
   sharp slot.
 - **Missing is a dash plus its reason** ("No sharp line", "No line", "One price recorded", "No move"), never a zero.
@@ -207,8 +211,8 @@ is the spec; under 820px is a DRAFT for the founder's review.
   Movement counts follow the other filters; search matches both players and the event; the Bookmaker menu keeps one book on.
 - **Header** = the design's own card (not the shared `.sfh`, as Head to Head / Model / News): Drops · Biggest · Updated;
   Updated = the read's `generatedAt` HH:MM in `stennisfy.tz`, a dim "—" before the first good read.
-- **Explainer:** the file's four blocks word for word, except the claim about which book moves first — held back until
-  the founder confirms it (brief item f).
+- **Explainer:** the file's four blocks word for word ("Sharp is Pinnacle, which tends to move first" confirmed by the
+  founder, 2026-11-23).
 - **Price move box:** three tiles, the price history (last 24 h) with Pinnacle blue and the compared book white, the
   Bookmakers boxes, the footnote; Escape closes an open menu first, then the box; "Match analysis" opens the Match
   analysis for the board card and is absent without one. **The chart is a step line** (TEN-301, standing: a recorded
@@ -218,6 +222,12 @@ is the spec; under 820px is a DRAFT for the founder's review.
   the Pinnacle line. Player names wrap, never an ellipsis.
 - **Feed disconnected** (> 5 min since `generatedAt`, or unreachable): the file's banner — red dot, "Feed disconnected",
   "Showing prices as of HH:MM. New moves appear once the feed reconnects.", Reconnect — rows dimmed (the CLAUDE.md exception).
-- **Not built (README out of scope):** the Drops / Arbitrage switch (`arb-page.js` stays loaded, unreached — founder to
-  rule), alerts, surface, starts-within, mobile top-bar Refresh / Alerts.
+- **Retired:** the Drops / Arbitrage view (founder 2026-11-23): `arb-page.js` and its test are deleted, nothing loads or
+  publishes it; the engine, `arb_now()` and the Telegram alerts stay.
+- **Phone (under 820px):** the export's title, disconnected card, search, Filters / Sort buttons opening the bottom sheet
+  (Tier, Book type, Movement, Bookmaker, Window, Min drop, Sort), "How to read these figures" opening the explainer inline,
+  market chips, row cards, the box as a bottom sheet without "Match analysis". Not built: the top-bar Refresh / Alerts and
+  alerts sheet (README out of scope), the ILLUSTRATIVE chip and the placeholder footnote (untrue on real data), the green
+  "LIVE · updated" line (status lines are text only, foundation.md). Checked by hand in headless Chrome (23 Nov): no sideways scroll at 390px with real rows.
+- **Not built (README out of scope):** alerts, surface, starts-within.
 - **No placeholder ever ships:** no README demo player, price, book or time; no `randomuser.me`.

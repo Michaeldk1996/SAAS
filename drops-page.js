@@ -57,6 +57,16 @@
     var io = r1(100 / o), inn = r1(100 / n);
     return { kind: n < o ? 'drop' : n > o ? 'up' : 'flat', o: o, n: n, d: r1((o - n) / o * 100), io: io, inn: inn, pts: r1(inn - io) };
   }
+  // The sharp reading (founder 2026-11-23): Pinnacle; where Pinnacle has no line, Bet105's price with its margin removed
+  // (bk[B105_NM], built from Bet105's two sides). Never a soft book. `src` names which one the figures came from.
+  var B105_NM = '_b105nm';
+  function sharpKey(bk) { return bk.Pinnacle ? 'Pinnacle' : bk[B105_NM] ? B105_NM : null; }
+  function sharpOf(bk) {
+    var k = sharpKey(bk);
+    if (!k) return { kind: 'none' };
+    var r = rd(bk[k].first, bk[k].now); r.src = k === 'Pinnacle' ? 'Pinnacle' : 'Bet105';
+    return r;
+  }
   // bk = { book: { first: price | null, now: price, … } }
   function calc(bk) {
     var sq = SOFT_NAMES.filter(function (b) { return bk[b]; });
@@ -65,7 +75,7 @@
     var qn = BOOK_NAMES.filter(function (b) { return bk[b]; }), best = qn[0];
     qn.forEach(function (b) { if (r2(bk[b].now) > r2(bk[best].now)) best = b; });
     return {
-      sharp: bk.Pinnacle ? rd(bk.Pinnacle.first, bk.Pinnacle.now) : { kind: 'none' },
+      sharp: sharpOf(bk),
       soft: { quotes: sq.length, two: two.length, down: two.filter(function (b) { return r2(bk[b].now) < r2(bk[b].first); }).length,
         lead: two.length === 1 ? two[0] : 'avg', r: two.length ? rd(avg('first'), avg('now')) : { kind: sq.length ? 'one' : 'none' } },
       best: qn.length ? { n: qn.length, book: best, price: r2(bk[best].now) } : null,
@@ -320,12 +330,34 @@
           var o = bookOf(pts(B[w[0]], isFinite(cut) ? cut : null));
           if (o) { o.seen = isFinite(seen) ? seen : null; bk[name] = o; }
         });
+        var b105 = l.books && l.books.Bet105, b105seen = b105 ? Date.parse(b105.lastSeen) : NaN;
+        if (bk.Bet105 && b105) {
+          var nm = bookOf(noMargin(pts(b105[w[0]], isFinite(cut) ? cut : null), pts(b105[w[0] === 'side' ? 'other' : 'side'], isFinite(cut) ? cut : null)));
+          if (nm) { nm.seen = isFinite(b105seen) ? b105seen : null; bk[B105_NM] = nm; }
+        }
         out[key] = { id: key, mk: 'mw', playerA: m.playerA, playerB: m.playerB, side: w[1], opp: w[2], bk: bk,
           tier: tierOf(m.tier), tierRaw: m.tier, start: m.scheduledStart || null, eventKey: (m.match && m.match.eventKey) || null,
           status: (m.match && m.match.status) || 'unknown', liveAt: (m.match && m.match.liveAt) || null, cutAt: (m.match && m.match.cutAt) || null };
       });
     });
     return Object.keys(out).map(function (k) { return out[k]; });
+  }
+  // Bet105 without its margin (founder 2026-11-23): each Bet105 tick on either side is paired with the other side's last
+  // Bet105 price at or before it (one source, the Odds tab's pairing rule); no pair before both sides posted. The fair
+  // price of this side = 1 / (its share of the two implied chances) = 1 + own / other. Same-value re-stamps collapse.
+  function noMargin(own, other) {
+    var ev = own.map(function (p) { return { t: p.t, s: p.v }; }).concat(other.map(function (p) { return { t: p.t, o: p.v }; }))
+      .sort(function (a, b) { return a.t - b.t; });
+    var s = null, o = null, out = [];
+    ev.forEach(function (e) {
+      if (e.s != null) s = e.s; if (e.o != null) o = e.o;
+      if (s == null || o == null) return;
+      var v = 1 + s / o, last = out[out.length - 1];
+      if (last && last.t === e.t) { last.v = v; return; }
+      if (last && r2(last.v) === r2(v)) return;
+      out.push({ t: e.t, v: v });
+    });
+    return out;
   }
   // Pinnacle from a board card's chart shard, for the card's side of this selection: one source, never spliced
   function pinnacleOf(chart, cardSide, cut) {
@@ -345,6 +377,7 @@
   function movedAtOf(s) {
     var mv = null, first = null;
     Object.keys(s.bk).forEach(function (b) {
+      if (b === B105_NM) return;   // a derived line, not a book's own move
       var o = s.bk[b];
       if (o.moveT != null && (mv == null || o.moveT > mv)) mv = o.moveT;
       if (first == null || o.firstT < first) first = o.firstT;
@@ -419,7 +452,7 @@
   }
   function meterH(r) { return r.kind === 'drop' ? Math.min(100, Math.max(8, r.d / 40 * 100)).toFixed(0) + '%' : '0%'; }
   function sharpCell(c, big) {
-    return cell(c.sharp, big, '', '1 price recorded · ' + (c.sharp.n != null ? f2(c.sharp.n) : ''), 'No sharp line');
+    return cell(c.sharp, big, c.sharp.src === 'Bet105' ? 'Bet105' : '', '1 price recorded · ' + (c.sharp.n != null ? f2(c.sharp.n) : ''), 'No sharp line');
   }
   function softCell(c, big) {
     var so = c.soft;
@@ -697,8 +730,8 @@
     '<span class="do2-tip-b"><span class="do2-tip-h">Drop %</span><span class="do2-tip-t">How far the price has fallen since we first recorded it. <span class="do2-tip-m">2.12 → 1.46</span> is a <span class="do2-tip-m">31.1%</span> drop.</span></span>' +
     '<span class="do2-tip-b"><span class="do2-tip-h">Pts implied</span><span class="do2-tip-t">A price implies a chance of winning: 1 divided by the price. <span class="do2-tip-m">2.12</span> is <span class="do2-tip-m">47.2%</span>, <span class="do2-tip-m">1.46</span> is <span class="do2-tip-m">68.5%</span>, so the market now gives this player <span class="do2-tip-m">+21.3</span> percentage points more chance. The bookmaker margin is still in the figure.</span></span>' +
     '<span class="do2-tip-b"><span class="do2-tip-h">Why both</span><span class="do2-tip-t">The same drop can mean very different things. <span class="do2-tip-m">5.30 → 3.65</span> is also a <span class="do2-tip-m">31.1%</span> drop, but only <span class="do2-tip-m">+8.5 pts</span>.</span></span>' +
-    // founder brief (Dropping Odds v2, item f): the handoff's claim about which book moves first is held back until confirmed
-    '<span class="do2-tip-b"><span class="do2-tip-h">Sharp and soft</span><span class="do2-tip-t">Sharp is Pinnacle. Soft is the average of the other bookmakers. The first recorded price is not necessarily the opening line.</span></span></span>';
+    // the handoff's copy word for word (the "moves first" claim confirmed by the founder, 2026-11-23)
+    '<span class="do2-tip-b"><span class="do2-tip-h">Sharp and soft</span><span class="do2-tip-t">Sharp is Pinnacle, which tends to move first. Soft is the average of the other bookmakers. The first recorded price is not necessarily the opening line.</span></span></span>';
   function listHeadHtml() {
     var S = st.S, sh = S.sort === 'drop' && S.btype !== 'soft', sf = S.sort === 'drop' && S.btype === 'soft', so = S.sort === 'soon';
     return '<div class="do2-lhead"><span class="do2-lh-sharp"><span class="do2-hc' + (sh ? ' on' : '') + '" role="button" tabindex="0" data-act="sort" data-v="sharp" title="Rank by the sharp drop">Sharp · Pinnacle</span>' +
@@ -754,13 +787,76 @@
       '<span class="do2-countline">' + esc(count) + '</span>' +
       '<div class="do2-lbox">' + listHeadHtml() + body + '</div></div>';
   }
+  // ─── phone (under 820px): the export's isMob block (README "Mobile"; the top-bar Refresh / Alerts, the alerts sheet,
+  // the demo chip beside the title, the placeholder footnote and the LIVE status line are not built) ───────────────────────────
+  var MOBILE_MAX = 819;
+  function isMobile() { try { return window.innerWidth <= MOBILE_MAX; } catch (e) { return false; } }
+  function nActive(S) { return [S.tiers.length !== 3, S.books.length !== BOOK_NAMES.length, S.win !== 'open', S.min > 0, S.mv !== 'all'].filter(Boolean).length; }
+  function sortLabel(S) { return S.sort === 'recent' ? 'Latest move' : S.sort === 'soon' ? 'Starting soonest' : S.btype === 'soft' ? 'Biggest soft drop' : 'Biggest sharp drop'; }
+  function mChip(label, on, act, val) {
+    return '<span class="do2-mchip' + (on ? ' on' : '') + '" role="button" tabindex="0" data-act="' + act + '" data-v="' + esc(val) + '">' + esc(label) + '</span>';
+  }
+  function mCardHtml(s, now) {
+    var c = calc(s.bk), sh = sharpCell(c, 21), so = softCell(c, 15), mv = movedAtOf(s), t = startMs(s);
+    sh.fs = c.sharp.kind === 'flat' ? '15px' : '21px';   // the export's fsM
+    var sub = ['Match winner', 'vs ' + (s.dOpp || s.opp), s.event].filter(Boolean).join(' · ');
+    var px = function (x, cls) { return x.hasP ? '<span class="do2-m-px ' + cls + '">' + (x.lead ? '<span class="do2-lead">' + esc(x.lead) + '</span>' : '') +
+      '<span class="do2-open' + (x.strike ? ' strike' : '') + '">' + esc(x.open) + '</span><span class="do2-arr">→</span><span class="do2-now">' + esc(x.now) + '</span></span>' : '<span class="do2-m-note">' + esc(x.note) + '</span>'; };
+    return '<div class="do2-mcard" role="button" tabindex="0" data-act="row" data-v="' + esc(s.id) + '">' +
+      '<div class="do2-m-who">' + avatar(s) + '<div class="do2-c-in"><span class="do2-m-sel">' + esc((s.dSide || s.side) + ' to win') + '</span><span class="do2-m-sub">' + esc(sub) + '</span></div></div>' +
+      '<div class="do2-m-grid"><span class="do2-m-sharp"><span class="do2-m-meter"><span style="height:' + meterH(c.sharp) + '"></span></span><span class="do2-m-col">' +
+      '<span class="do2-m-lbl">' + (c.sharp.src === 'Bet105' ? 'Sharp · Bet105 (no margin)' : 'Sharp · Pinnacle') + '</span>' +
+      '<span class="do2-m-fig"><span class="do2-sh-fig ' + sh.tone + '" style="font-size:' + sh.fs + '">' + esc(sh.big) + '<span class="do2-m-pct">' + sh.pct + '</span></span><span class="do2-m-impl">' + esc(sh.impl) + '</span></span>' + px(sh, 'sh') + '</span></span>' +
+      '<span class="do2-m-col"><span class="do2-m-lbl">Soft books</span>' +
+      '<span class="do2-m-fig"><span class="do2-so-fig ' + so.tone + '" style="font-size:' + so.fs + '">' + esc(so.big) + '<span class="do2-m-pct">' + so.pct + '</span></span><span class="do2-m-impl">' + esc(so.impl) + '</span></span>' + px(so, 'so') +
+      (c.soft.two > 0 ? '<span class="do2-m-count">' + esc(softCount(c)) + '</span>' : '') + '</span></div>' +
+      '<div class="do2-m-foot"><span class="do2-m-best">' + (c.best && c.best.n > 1 ? 'Best now' : 'Now') + '<span class="do2-m-bestp">' + (c.best ? f2(c.best.price) : '—') + '</span><span>· ' + esc(c.best ? c.best.book : '—') + '</span></span>' +
+      '<span class="do2-m-when">' + esc(startLbl(t, now) + ' · ' + (mv.moved ? 'moved ' : 'first recorded ') + agoShort(now - mv.t)) + '</span></div></div>';
+  }
+  function sheetHtml(v) {
+    var S = st.S;
+    var g = function (title, chips) { return '<div class="do2-sg"><span class="do2-sg-t">' + title + '</span><div class="do2-sg-c">' + chips + '</div></div>'; };
+    return '<div class="do2-sheet-scrim" data-act="sheetclose"></div><div class="do2-sheet" role="dialog" aria-modal="true" aria-label="Filters">' +
+      '<div class="do2-sheet-h"><span class="do2-sheet-reset" role="button" tabindex="0" data-act="reset">Reset</span><span class="do2-sheet-t">Filters</span>' +
+      '<span class="do2-sheet-x" role="button" tabindex="0" data-act="sheetclose" aria-label="Close">✕</span></div><div class="do2-sheet-b">' +
+      g('TIER · MEN ONLY', TIERS.map(function (t) { return mChip(t, S.tiers.indexOf(t) >= 0, 'tier', t); }).join('')) +
+      g('BOOK TYPE', [['all', 'All'], ['sharp', 'Sharp'], ['soft', 'Soft']].map(function (b) { return mChip(b[1], S.btype === b[0], 'btype', b[0]); }).join('')) +
+      g('MOVEMENT', MVL.map(function (m) { return mChip(m[1], S.mv === m[0], 'mv', m[0]); }).join('')) +
+      g('BOOKMAKER · SHARP', BOOKS.filter(function (b) { return b[1] === 'sharp'; }).map(function (b) { return mChip(b[0], S.books.indexOf(b[0]) >= 0, 'book', b[0]); }).join('')) +
+      g('BOOKMAKER · SOFT', BOOKS.filter(function (b) { return b[1] === 'soft'; }).map(function (b) { return mChip(b[0], S.books.indexOf(b[0]) >= 0, 'book', b[0]); }).join('')) +
+      g('WINDOW', WINDOWS.map(function (w) { return mChip(w[1], S.win === w[0], 'win', w[0]); }).join('')) +
+      g('MIN DROP', MIN.map(function (m) { return mChip(m[1], S.min === m[0], 'min', m[0]); }).join('')) +
+      g('SORT', [['drop', S.btype === 'soft' ? 'Biggest soft drop' : 'Biggest sharp drop'], ['recent', 'Latest move'], ['soon', 'Starting soonest']].map(function (o) { return mChip(o[1], S.sort === o[0], 'msort', o[0]); }).join('')) +
+      '</div><div class="do2-sheet-f"><span class="do2-sheet-cta" role="button" tabindex="0" data-act="sheetclose">Show ' + v.list.length + ' ' + (v.list.length === 1 ? 'selection' : 'selections') + '</span></div></div>';
+  }
+  function mobileHtml(v, fs) {
+    var S = st.S, n = nActive(S), loading = st.refreshing || (!st.everLoaded && st.reachable), now = dataNow(), body;
+    if (loading) body = [['62%', '44%'], ['54%', '38%'], ['70%', '48%'], ['58%', '40%'], ['66%', '46%'], ['50%', '36%']].map(function (w) {
+      return '<div class="do2-mskel"><span class="do2-mskel-a"></span><span class="do2-mskel-t"><span style="width:' + w[0] + '"></span><span style="width:' + w[1] + '"></span><span class="l3"></span></span><span class="do2-mskel-c"></span></div>'; }).join('');
+    else if (!st.everLoaded) body = '';
+    else if (!v.list.length) body = '<div class="do2-mempty"><span class="do2-mempty-h">No selections match these filters</span><span class="do2-mempty-d">Minimum drop ' +
+      esc(MIN.filter(function (m) { return m[0] === S.min; })[0][1]) + ' · ' + esc(WIN_TXT[S.win]) + '</span><span class="do2-mempty-r" role="button" tabindex="0" data-act="reset">Reset filters</span></div>';
+    else body = v.list.map(function (s) { return mCardHtml(s, now); }).join('');
+    return '<div class="do2-mwrapper"><div class="do2-mtitle"><h1>Dropping Odds</h1></div>' +
+      (fs === 'disconnected' && (st.everLoaded || !st.reachable) ? '<div class="do2-mdisc"><span class="do2-mdisc-h"><span class="do2-mdisc-k">FEED DISCONNECTED</span><span class="do2-mdisc-r" role="button" tabindex="0" data-act="reconnect">Reconnect</span></span>' +
+        '<span class="do2-mdisc-t">Showing prices as of <span class="do2-mono do2-banner-v">' + esc(st.status && st.status.generatedAt ? clock(st.status.generatedAt) : '—') + '</span>.</span></div>' : '') +
+      '<label class="do2-msearch">' + SEARCH.replace('width="15" height="15"', 'width="14" height="14"') + '<input data-act="q" placeholder="Search players" value="' + esc(S.q) + '" autocomplete="off"></label>' +
+      '<div class="do2-mbtns"><span class="do2-mbtn2" role="button" tabindex="0" data-act="sheet"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 5.5h14M6 10h8M8.5 14.5h3" stroke="var(--do2-grey)" stroke-width="1.7" stroke-linecap="round"></path></svg>Filters' +
+      (n ? '<span class="do2-mbadge">' + n + '</span>' : '') + '</span><span class="do2-mbtn2 sort" role="button" tabindex="0" data-act="sheet"><span class="do2-msort-l">Sort</span><span class="do2-msort-v">' + esc(sortLabel(S)) + '</span></span></div>' +
+      '<div class="do2-mhow"><span class="do2-mhow-l" role="button" tabindex="0" data-act="tip"><span class="do2-q' + (st.tip ? ' open' : '') + '">?</span>How to read these figures</span>' + (st.tip ? TIP.replace('class="do2-tip"', 'class="do2-tip do2-tip-m"') : '') + '</div>' +
+      '<div class="do2-mchips">' + Object.keys(MK).map(function (k) { return mChip(MK[k], S.mkTab === 'all' || S.mkTab === k, 'mk', k); }).join('') + '</div>' +
+      '<div class="do2-mlist' + (fs === 'disconnected' ? ' stale' : '') + '">' + body + '</div>' + (st.sheet ? sheetHtml(v) : '') + '</div>';
+  }
+
   function render() {
     var el = root();
     if (!el) return;
     var ae = document.activeElement, focusQ = ae && ae.getAttribute && ae.getAttribute('data-act') === 'q', caret = focusQ ? ae.selectionStart : null;
     enrich();
     var now = dataNow(), v = view(st.sels, st.S, now), fs = feedState(ageS(), st.reachable);
-    el.innerHTML = '<div class="do2-wrap">' + headerHtml(v, !st.everLoaded) + filtersHtml(v) +
+    st.mobile = isMobile();
+    if (st.mobile) el.innerHTML = '<div class="do2-wrap do2-m">' + mobileHtml(v, fs) + '</div>';
+    else el.innerHTML = '<div class="do2-wrap">' + headerHtml(v, !st.everLoaded) + filtersHtml(v) +
       (fs === 'disconnected' && (st.everLoaded || !st.reachable) ? bannerHtml() : '') + listHtml(v, fs) +
       (st.menu ? '<div class="do2-clickaway" data-act="clickaway"></div>' : '') + '</div>';
     if (focusQ) { var q = el.querySelector('[data-act="q"]'); q.focus(); try { q.setSelectionRange(caret, caret); } catch (e) {} }
@@ -779,15 +875,17 @@
   }
   function boxHtml(s) {
     var now = dataNow(), bk = s.bk, c = calc(bk), sh = sharpCell(c, 28), so = softCell(c, 22), t = startMs(s);
-    var quoted = BOOK_NAMES.filter(function (b) { return bk[b]; }), nonPin = quoted.filter(function (b) { return b !== 'Pinnacle'; });
+    // the sharp line (blue): Pinnacle, else Bet105 without its margin; its source book is not offered for comparison
+    var sk = sharpKey(bk), sharpBook = sk === 'Pinnacle' ? 'Pinnacle' : sk ? 'Bet105' : null;
+    var sharpName = sk === 'Pinnacle' ? 'Pinnacle' : 'Bet105 (no margin)';
+    var quoted = BOOK_NAMES.filter(function (b) { return bk[b]; }), nonPin = quoted.filter(function (b) { return b !== sharpBook; });
     var def = nonPin[0]; nonPin.forEach(function (b) { if (r2(bk[b].now) > r2(bk[def].now)) def = b; });
-    if (!def) def = bk.Pinnacle ? 'Pinnacle' : quoted[0];
-    var sel = st.drBook && bk[st.drBook] ? st.drBook : def;
-    var pinOn = !!bk.Pinnacle && sel !== 'Pinnacle';
-    var roles = {}; if (sel) roles[sel] = sel === 'Pinnacle' ? 'pin' : 'sel'; if (pinOn) roles.Pinnacle = 'pin';
+    var sel = st.drBook && bk[st.drBook] && st.drBook !== sharpBook ? st.drBook : def;
+    var pinOn = !!sk;
+    var roles = {}; if (sel) roles[sel] = 'sel'; if (pinOn) roles[sharpBook] = 'pin';
     var best = c.best ? c.best.price : null;
     var rows = BOOK_NAMES.map(function (n) { return bookRow(n, bk[n], best, roles[n]); });
-    var pinMv = bk.Pinnacle && bk.Pinnacle.moveT != null ? agoShort(now - bk.Pinnacle.moveT) : '—';
+    var pinMv = sk && bk[sk].moveT != null ? agoShort(now - bk[sk].moveT) : '—';
     var sub = ['Match winner', 'vs ' + (s.dOpp || s.opp), s.event, s.round].filter(Boolean).join(' · ');
     var nm = (s.dSide || s.side) + ' to win';
     var head = '<div class="do2-bhead">' + avatar(s) + '<div class="do2-bhead-t"><span class="do2-btitle" id="do2BoxTitle">' + esc(nm) + '</span><span class="do2-bsub">' + esc(sub) + '</span></div>' +
@@ -795,24 +893,24 @@
       '<span class="do2-btn do2-btn30" role="button" tabindex="0" data-act="close">Close</span></div>';
     var px = function (cl, x) { return x.hasP ? pricesHtml(cl, x) : ''; };
     var tiles = '<div class="do2-tiles">' +
-      tile('lift', 'Sharp · Pinnacle', '<span class="do2-tfig28 ' + sh.tone + '">' + esc(sh.big) + sh.pct + '</span>', px('tsh', sh),
+      tile('lift', 'Sharp · ' + (sk ? sharpName : 'Pinnacle'), '<span class="do2-tfig28 ' + sh.tone + '">' + esc(sh.big) + sh.pct + '</span>', px('tsh', sh),
         (sh.hasP ? [] : [[sh.note]]).concat(sh.hasImpl ? [['Implied', sh.implShort], ['Shift', sh.shift], ['Last move', pinMv]] : [])) +
       tile('', softLabel(c), '<span class="do2-tfig22 ' + (so.tone === 'drop' ? 'soft' : so.tone) + '">' + esc(so.big) + so.pct + '</span>', px('tso', so),
         (so.hasP ? [] : [[so.note]]).concat(so.hasImpl ? [['Implied', so.implShort], ['Shift', so.shift]] : []).concat(c.soft.two > 0 ? [['Books down', c.soft.down + ' of ' + c.soft.quotes]] : [])) +
       tile('', c.best && c.best.n > 1 ? 'Best now' : 'Now', '<span class="do2-tfig22">' + (c.best ? f2(c.best.price) : '—') + '</span>', '<span class="do2-tbook">' + esc(c.best ? c.best.book : '') + '</span>',
         [['Quoting', quoted.length + ' of ' + BOOK_NAMES.length], ['Starts', startLbl(t, now)], ['Countdown', countdown(t, now)]]) + '</div>';
     // chart
-    var lines = []; if (pinOn) lines.push({ role: 'pin', series: bk.Pinnacle.series }); if (sel) lines.push({ role: roles[sel], series: bk[sel].series });
+    var lines = []; if (pinOn) lines.push({ role: 'pin', series: bk[sk].series }); if (sel) lines.push({ role: 'sel', series: bk[sel].series });
     var ch = chartModel(lines, now);
-    var legend = (pinOn ? ['Pinnacle'] : []).concat(sel ? [sel] : []).map(function (n) {
-      var r = rd(bk[n].first, bk[n].now);
+    var legend = (pinOn ? [sk] : []).concat(sel ? [sel] : []).map(function (n) {
+      var r = rd(bk[n].first, bk[n].now), lbl = n === sk ? sharpName : n;
       var txt = r.kind === 'one' ? f2(r.n) + ' · 1 price recorded' : f2(r.o) + ' → ' + f2(r.n);
       var d = r.kind === 'drop' ? r.d.toFixed(1) + '%' : r.kind === 'flat' ? 'No move' : r.kind === 'up' ? '+' + Math.abs(r.d).toFixed(1) + '%' : '';
-      return '<span class="do2-leg"><span class="do2-leg-bar ' + (n === 'Pinnacle' ? 'pin' : 'sel') + '"></span><span class="do2-leg-n">' + esc(n) + '</span>' +
+      return '<span class="do2-leg"><span class="do2-leg-bar ' + (n === sk ? 'pin' : 'sel') + '"></span><span class="do2-leg-n">' + esc(lbl) + '</span>' +
         '<span class="do2-leg-t">' + esc(txt) + '</span><span class="do2-leg-d' + (r.kind === 'drop' ? ' drop' : '') + '">' + esc(d) + '</span></span>';
     }).join('');
     var pickOpts = [['sharp', 'Sharp books'], ['soft', 'Soft books']].map(function (g) {
-      var o = rows.filter(function (k) { return k.cls === g[0] && k.quoted && k.name !== 'Pinnacle'; });
+      var o = rows.filter(function (k) { return k.cls === g[0] && k.quoted && k.name !== sharpBook; });
       return o.length ? '<div class="do2-mhead">' + g[1] + '</div>' + o.map(function (k) {
         return '<span class="do2-popt' + (k.name === sel ? ' on' : '') + '" role="menuitem" tabindex="0" data-act="drbook" data-v="' + esc(k.name) + '"><span class="do2-mopt-l">' + esc(k.name) + '</span><span class="do2-popt-n">' + esc(k.now) + '</span></span>';
       }).join('') : '';
@@ -828,7 +926,8 @@
       '</div></div><div class="do2-xt">' + ch.ticks.map(function (x) { return '<span style="left:' + x.left + ';transform:' + x.tf + '">' + x.label + '</span>'; }).join('') + '</div>' +
       '<div class="do2-days">' + ch.bands.map(function (b) { return '<div style="width:' + b.w + '"><span></span><span>' + esc(b.label) + '</span></div>'; }).join('') + '</div></div>';
     var notes = [sel && bk[sel].first == null ? 'One price recorded at ' + sel + ' so far. Its line appears once a second snapshot arrives.' : '',
-      !bk.Pinnacle ? 'Pinnacle has no line on this selection, so the chart has no sharp overlay.' : ''].filter(Boolean);
+      !sk ? 'Pinnacle has no line on this selection, so the chart has no sharp overlay.' : '',
+      sk && sk !== 'Pinnacle' ? 'Pinnacle has no line on this selection, so the sharp line is Bet105 with its margin removed.' : ''].filter(Boolean);
     var hist = '<div class="do2-ibox do2-hist"><div class="do2-hist-h"><span class="do2-sec"><span class="do2-sec-h">Price history</span><span class="do2-sec-s">Last 24 hours · each dot is a recorded price</span></span>' +
       '<div class="do2-hist-m">' + picker + '</div></div><div class="do2-legend">' + legend + '</div>' + plot +
       (notes.length ? '<div class="do2-notes">' + notes.map(function (n) { return '<span>' + esc(n) + '</span>'; }).join('') + '</div>' : '') + '</div>';
@@ -890,6 +989,10 @@
       case 'clear': e.stopPropagation(); S.books = BOOK_NAMES.slice(); st.menu = null; break;
       case 'book': S.books = toggle(S.books, v, true); break;    // multi-select, the menu stays open; one stays on
       case 'reset': st.S = defaults(); st.menu = null; break;
+      case 'btype': S.btype = v; break;
+      case 'msort': S.sort = v; break;
+      case 'sheet': st.sheet = true; break;
+      case 'sheetclose': st.sheet = false; break;
       case 'reconnect': refresh(); return;
       case 'tip': st.tip = !st.tip; break;
       case 'row': st.drawer = v; st.drBook = null; st.drPick = false; st.tip = false; st.menu = null; render(); return;
@@ -924,11 +1027,13 @@
     if (!el) return;
     el.addEventListener('click', onClick);
     el.addEventListener('input', onInput);
+    window.addEventListener('resize', function () { if (st.active && isMobile() !== st.mobile) render(); });   // the 820px switch
     document.addEventListener('keydown', onKey);   // Enter / Space on the page's buttons; Escape is esc-nav.js's alone
     // Esc (esc-nav.js, one layer per press, highest z first): the box's compare menu, then the box, then a page menu / the explainer
     (window.sfEscLayers = window.sfEscLayers || []).push(
       { id: 'drops-box-menu', z: 77, isOpen: function () { return !!(st.drawer && st.drPick); }, close: function () { st.drPick = false; renderModal(); } },
       { id: 'drops-drawer', z: 76, isOpen: function () { return !!st.drawer; }, close: closeModal },
+      { id: 'drops-sheet', z: 74, isOpen: function () { return !st.drawer && !!st.sheet; }, close: function () { st.sheet = false; render(); } },
       { id: 'drops-menu', z: 60, isOpen: function () { return !st.drawer && !!(st.menu || st.tip); }, close: function () { st.menu = null; st.tip = false; render(); } });
     var page = el.closest('.tabpage');
     if (page && page.classList.contains('active')) setActive(true);

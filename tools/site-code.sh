@@ -37,7 +37,7 @@ cp admin.html admin-config.js "$SITE/" 2>/dev/null || true
 cp trading-report.js "$SITE/" 2>/dev/null || true
 cp series.js series.css "$SITE/" 2>/dev/null || true
 cp tokens.css theme.js "$SITE/"
-cp drops-page.js drops-page.css arb-page.js "$SITE/" 2>/dev/null || true
+cp drops-page.js drops-page.css "$SITE/" 2>/dev/null || true
 cp picks-core.js picks-store.js picks-page.js picks-drawer.js picks-shell.js picks-page.css "$SITE/"
 cp tournaments-overview.js tournaments-entry.js tournaments-reports.js tournaments-draw.js tournaments-tab.css h2h-page.css news-page.css match-analysis-v2.css match-analysis-v2.js "$SITE/"
 cp sharp-drops-core.js sharp-drops-page.js sharp-drops-page.css "$SITE/"
