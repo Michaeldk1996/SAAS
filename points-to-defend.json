@@ -1,11 +1,11 @@
 {
  "schemaVersion": 1,
- "generatedAt": "2026-11-22T13:34:48.412Z",
- "asOf": "2026-11-22",
+ "generatedAt": "2026-11-23T16:26:25.769Z",
+ "asOf": "2026-11-23",
  "sources": {
   "fixtures": "api-tennis get_fixtures (event_type_key 265), per prior edition",
   "playerIndex": {
-   "fetchedAt": "2026-11-21T20:36:22.204Z",
+   "fetchedAt": "2026-11-23T15:50:32.480Z",
    "source": "api-tennis get_standings (ATP)"
   },
   "draws": {
@@ -13,7 +13,7 @@
   },
   "entryLists": {
    "snapshots": 1,
-   "latestGeneratedAt": "2026-11-21T03:41:50Z"
+   "latestGeneratedAt": "2026-11-23T03:25:37Z"
   },
   "pointsTable": "2026 ATP Official Rulebook §9.03 G.5 (Singles Point table), p.272-273"
  },
@@ -2310,7 +2310,8 @@
      "flags": [],
      "status": "Not entered",
      "statusBasis": "not-on-entry-list",
-     "statusInferred": false
+     "statusInferred": false,
+     "statusFrozen": true
     },
     {
      "order": 2,
@@ -2337,7 +2338,8 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-27T01:46:24Z"
+     "listLastSeen": "2026-10-27T01:46:24Z",
+     "statusFrozen": true
     },
     {
      "order": 3,
@@ -2362,7 +2364,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "main",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "order": 4,
@@ -2389,7 +2392,8 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-27T01:46:24Z"
+     "listLastSeen": "2026-10-27T01:46:24Z",
+     "statusFrozen": true
     },
     {
      "order": 5,
@@ -2414,7 +2418,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "main",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "order": 6,
@@ -2439,7 +2444,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "main",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "order": 7,
@@ -2464,7 +2470,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "main",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "order": 8,
@@ -2489,7 +2496,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "main",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "order": 9,
@@ -2514,7 +2522,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "main",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "order": 10,
@@ -2539,7 +2548,8 @@
      "statusBasis": "draw-sheet-withdrawal",
      "statusInferred": false,
      "drawSection": "main",
-     "withdrawalReason": "Back"
+     "withdrawalReason": "Back",
+     "statusFrozen": true
     },
     {
      "order": 11,
@@ -2564,7 +2574,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "main",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "order": 12,
@@ -2589,7 +2600,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "main",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "order": 13,
@@ -2614,7 +2626,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "main",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "order": 14,
@@ -2639,7 +2652,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "main",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "order": 15,
@@ -2664,7 +2678,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "qualifying",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "order": 16,
@@ -2689,7 +2704,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "main",
-     "drawEntry": "Q"
+     "drawEntry": "Q",
+     "statusFrozen": true
     },
     {
      "order": 17,
@@ -2714,7 +2730,8 @@
      ],
      "status": "Not entered",
      "statusBasis": "not-on-entry-list",
-     "statusInferred": false
+     "statusInferred": false,
+     "statusFrozen": true
     },
     {
      "order": 18,
@@ -2739,7 +2756,8 @@
      "statusBasis": "draw-sheet-withdrawal",
      "statusInferred": false,
      "drawSection": "main",
-     "withdrawalReason": "Left leg"
+     "withdrawalReason": "Left leg",
+     "statusFrozen": true
     },
     {
      "order": 19,
@@ -2764,7 +2782,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "main",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "order": 20,
@@ -2789,7 +2808,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "main",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "order": 21,
@@ -2816,7 +2836,8 @@
      "listSections": [
       "Main Draw"
      ],
-     "listLastSeen": "2026-10-26T00:55:56Z"
+     "listLastSeen": "2026-10-26T00:55:56Z",
+     "statusFrozen": true
     },
     {
      "order": 22,
@@ -2841,7 +2862,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "main",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "order": 23,
@@ -2866,7 +2888,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "qualifying",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "order": 24,
@@ -2889,7 +2912,8 @@
      "flags": [],
      "status": "Not entered",
      "statusBasis": "not-on-entry-list",
-     "statusInferred": false
+     "statusInferred": false,
+     "statusFrozen": true
     },
     {
      "order": 25,
@@ -2916,7 +2940,8 @@
      "listSections": [
       "Qualifying"
      ],
-     "listLastSeen": "2026-10-31T01:56:50Z"
+     "listLastSeen": "2026-10-31T01:56:50Z",
+     "statusFrozen": true
     },
     {
      "order": 26,
@@ -2941,7 +2966,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "qualifying",
-     "drawEntry": "WC"
+     "drawEntry": "WC",
+     "statusFrozen": true
     },
     {
      "order": 27,
@@ -2964,7 +2990,8 @@
      "flags": [],
      "status": "Not entered",
      "statusBasis": "not-on-entry-list",
-     "statusInferred": false
+     "statusInferred": false,
+     "statusFrozen": true
     },
     {
      "order": 28,
@@ -2987,7 +3014,8 @@
      "flags": [],
      "status": "Not entered",
      "statusBasis": "not-on-entry-list",
-     "statusInferred": false
+     "statusInferred": false,
+     "statusFrozen": true
     },
     {
      "order": 29,
@@ -3010,7 +3038,8 @@
      "flags": [],
      "status": "Not entered",
      "statusBasis": "not-on-entry-list",
-     "statusInferred": false
+     "statusInferred": false,
+     "statusFrozen": true
     },
     {
      "order": 30,
@@ -3037,7 +3066,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "main",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "order": 31,
@@ -3062,7 +3092,8 @@
      ],
      "status": "Not entered",
      "statusBasis": "not-on-entry-list",
-     "statusInferred": false
+     "statusInferred": false,
+     "statusFrozen": true
     },
     {
      "order": 32,
@@ -3090,7 +3121,8 @@
      "statusInferred": false,
      "playingElsewhere": [
       "Stockholm"
-     ]
+     ],
+     "statusFrozen": true
     },
     {
      "order": 33,
@@ -3117,7 +3149,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "qualifying",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "order": 34,
@@ -3142,7 +3175,8 @@
      ],
      "status": "Not entered",
      "statusBasis": "not-on-entry-list",
-     "statusInferred": false
+     "statusInferred": false,
+     "statusFrozen": true
     },
     {
      "order": 35,
@@ -3167,7 +3201,8 @@
      ],
      "status": "Not entered",
      "statusBasis": "not-on-entry-list",
-     "statusInferred": false
+     "statusInferred": false,
+     "statusFrozen": true
     },
     {
      "order": 36,
@@ -3192,7 +3227,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "main",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "order": 37,
@@ -3217,7 +3253,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "qualifying",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "order": 38,
@@ -3240,7 +3277,8 @@
      "flags": [],
      "status": "Not entered",
      "statusBasis": "not-on-entry-list",
-     "statusInferred": false
+     "statusInferred": false,
+     "statusFrozen": true
     },
     {
      "order": 39,
@@ -3263,7 +3301,8 @@
      "flags": [],
      "status": "Not entered",
      "statusBasis": "not-on-entry-list",
-     "statusInferred": false
+     "statusInferred": false,
+     "statusFrozen": true
     },
     {
      "order": 40,
@@ -3290,7 +3329,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "main",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "order": 41,
@@ -3315,7 +3355,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "main",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "order": 42,
@@ -3342,7 +3383,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "main",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "order": 43,
@@ -3367,7 +3409,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "main",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "order": 44,
@@ -3392,7 +3435,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "main",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "order": 45,
@@ -3419,7 +3463,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "main",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "order": 46,
@@ -3444,7 +3489,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "main",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "order": 47,
@@ -3469,7 +3515,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "main",
-     "drawEntry": "LL"
+     "drawEntry": "LL",
+     "statusFrozen": true
     },
     {
      "order": 48,
@@ -3494,7 +3541,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "qualifying",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "order": 49,
@@ -3519,7 +3567,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "main",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "order": 50,
@@ -3544,7 +3593,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "main",
-     "drawEntry": "LL"
+     "drawEntry": "LL",
+     "statusFrozen": true
     },
     {
      "order": 51,
@@ -3569,7 +3619,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "main",
-     "drawEntry": "Q"
+     "drawEntry": "Q",
+     "statusFrozen": true
     },
     {
      "order": 52,
@@ -3596,7 +3647,8 @@
      "listSections": [
       "Qualifying"
      ],
-     "listLastSeen": "2026-10-31T01:56:50Z"
+     "listLastSeen": "2026-10-31T01:56:50Z",
+     "statusFrozen": true
     },
     {
      "order": 53,
@@ -3621,7 +3673,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "qualifying",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "order": 54,
@@ -3644,7 +3697,8 @@
      "flags": [],
      "status": "Not entered",
      "statusBasis": "not-on-entry-list",
-     "statusInferred": false
+     "statusInferred": false,
+     "statusFrozen": true
     },
     {
      "order": 55,
@@ -3672,7 +3726,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "qualifying",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "order": 56,
@@ -3695,7 +3750,8 @@
      "flags": [],
      "status": "Not entered",
      "statusBasis": "not-on-entry-list",
-     "statusInferred": false
+     "statusInferred": false,
+     "statusFrozen": true
     },
     {
      "order": 57,
@@ -3721,7 +3777,8 @@
      ],
      "status": "Not entered",
      "statusBasis": "not-on-entry-list",
-     "statusInferred": false
+     "statusInferred": false,
+     "statusFrozen": true
     },
     {
      "order": 58,
@@ -3744,7 +3801,8 @@
      "flags": [],
      "status": "Not entered",
      "statusBasis": "not-on-entry-list",
-     "statusInferred": false
+     "statusInferred": false,
+     "statusFrozen": true
     },
     {
      "order": 59,
@@ -3767,7 +3825,8 @@
      "flags": [],
      "status": "Not entered",
      "statusBasis": "not-on-entry-list",
-     "statusInferred": false
+     "statusInferred": false,
+     "statusFrozen": true
     },
     {
      "order": 60,
@@ -3793,7 +3852,8 @@
      ],
      "status": "Not entered",
      "statusBasis": "not-on-entry-list",
-     "statusInferred": false
+     "statusInferred": false,
+     "statusFrozen": true
     }
    ],
    "zeroRows": [
@@ -3821,7 +3881,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "main",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "playerKey": "1192",
@@ -3847,7 +3908,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "main",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "playerKey": "1925",
@@ -3873,7 +3935,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "main",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "playerKey": "438",
@@ -3899,7 +3962,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "qualifying",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "playerKey": "2112",
@@ -3925,7 +3989,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "main",
-     "drawEntry": "Q"
+     "drawEntry": "Q",
+     "statusFrozen": true
     },
     {
      "playerKey": "1083",
@@ -3951,7 +4016,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "qualifying",
-     "drawEntry": null
+     "drawEntry": null,
+     "statusFrozen": true
     },
     {
      "playerKey": "2677",
@@ -3975,7 +4041,8 @@
      ],
      "status": "Not entered",
      "statusBasis": "not-on-entry-list",
-     "statusInferred": false
+     "statusInferred": false,
+     "statusFrozen": true
     },
     {
      "playerKey": "1096",
@@ -3999,7 +4066,8 @@
      ],
      "status": "Not entered",
      "statusBasis": "not-on-entry-list",
-     "statusInferred": false
+     "statusInferred": false,
+     "statusFrozen": true
     },
     {
      "playerKey": "1335",
@@ -4025,7 +4093,8 @@
      "statusBasis": "draw-sheet",
      "statusInferred": false,
      "drawSection": "main",
-     "drawEntry": "WC"
+     "drawEntry": "WC",
+     "statusFrozen": true
     },
     {
      "playerKey": "2169",
@@ -4049,7 +4118,8 @@
      ],
      "status": "Not entered",
      "statusBasis": "not-on-entry-list",
-     "statusInferred": false
+     "statusInferred": false,
+     "statusFrozen": true
     },
     {
      "playerKey": "10070",
@@ -4073,7 +4143,8 @@
      ],
      "status": "Not entered",
      "statusBasis": "not-on-entry-list",
-     "statusInferred": false
+     "statusInferred": false,
+     "statusFrozen": true
     },
     {
      "playerKey": "1775",
@@ -4097,7 +4168,8 @@
      ],
      "status": "Not entered",
      "statusBasis": "not-on-entry-list",
-     "statusInferred": false
+     "statusInferred": false,
+     "statusFrozen": true
     },
     {
      "playerKey": "1748",
@@ -4121,7 +4193,8 @@
      ],
      "status": "Not entered",
      "statusBasis": "not-on-entry-list",
-     "statusInferred": false
+     "statusInferred": false,
+     "statusFrozen": true
     },
     {
      "playerKey": "1903",
@@ -4145,7 +4218,8 @@
      ],
      "status": "Not entered",
      "statusBasis": "not-on-entry-list",
-     "statusInferred": false
+     "statusInferred": false,
+     "statusFrozen": true
     }
    ],
    "dashRows": [],
@@ -4154,8 +4228,7 @@
     "paris"
    ],
    "sources": [
-    "calendar",
-    "draws"
+    "calendar"
    ]
   },
   "stockholm-2026": {
@@ -4258,10 +4331,7 @@
      "flags": [],
      "status": "Not entered",
      "statusBasis": "not-in-draw",
-     "statusInferred": false,
-     "playingElsewhere": [
-      "Nanterre"
-     ]
+     "statusInferred": false
     },
     {
      "order": 4,
@@ -4407,10 +4477,7 @@
      "flags": [],
      "status": "Not entered",
      "statusBasis": "not-in-draw",
-     "statusInferred": false,
-     "playingElsewhere": [
-      "Nanterre"
-     ]
+     "statusInferred": false
     },
     {
      "order": 10,
@@ -4481,10 +4548,7 @@
      "flags": [],
      "status": "Not entered",
      "statusBasis": "not-in-draw",
-     "statusInferred": false,
-     "playingElsewhere": [
-      "Nanterre"
-     ]
+     "statusInferred": false
     },
     {
      "order": 13,
@@ -4605,10 +4669,7 @@
      ],
      "status": "Not entered",
      "statusBasis": "not-in-draw",
-     "statusInferred": false,
-     "playingElsewhere": [
-      "Nanterre"
-     ]
+     "statusInferred": false
     },
     {
      "order": 18,
@@ -4801,10 +4862,7 @@
      "flags": [],
      "status": "Not entered",
      "statusBasis": "not-in-draw",
-     "statusInferred": false,
-     "playingElsewhere": [
-      "Nanterre"
-     ]
+     "statusInferred": false
     },
     {
      "playerKey": "401",
@@ -4982,10 +5040,7 @@
      ],
      "status": "Not entered",
      "statusBasis": "not-in-draw",
-     "statusInferred": false,
-     "playingElsewhere": [
-      "Nanterre"
-     ]
+     "statusInferred": false
     },
     {
      "playerKey": "10869",
