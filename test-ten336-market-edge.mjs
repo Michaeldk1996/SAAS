@@ -1,46 +1,57 @@
-// TEN-336 — Market edge on the TEN-312 design file (`Match Analysis Progression v1.dc.html`, meFor DF L3359 + template
-// L1516–1598, L1801–1880) and on the shared helpers (DoD item 8). Runs the page's own renderer and data layer (sliced out
-// of bsp-consult-dashboard.html by tools/ten310-harness.mjs) with the real market-edge-core.js over the frozen TEN-310
-// fixtures (Sinner 2072, Alcaraz 2382). Every test names the mutation that must turn it red (tools/test-ten336-mutants.js).
+// TEN-336 — Market edge, now on the Match analysis rebuild (design_handoff_match_analysis_2026-11-23, founder lock
+// 2026-11-22 / 23): the tab renderer is match-analysis-v2.js (maMarketEdgeV2, maMeBandPopV2, maMeLinePopV2) over the
+// page's unchanged data layer (meStateFor / meModels / the D2 gate, sliced out of bsp-consult-dashboard.html by
+// tools/ten310-harness.mjs) and the real market-edge-core.js, on the frozen TEN-310 fixtures (Sinner 2072, Alcaraz 2382).
+// Every test names the mutation that must turn it red (tools/test-ten336-mutants.js). The rebuild replaced the TEN-380
+// markup, the ME_C palette, the CLOSING ODDS pill and the maMatchRowsHtml pop-up rows (STEP1 report: items 7–8, g); what
+// those tests guarded as a RULE is checked here on the new renderer. A test named "RENDERER GAP" (none today) would check a
+// standing rule the new renderer does not meet yet: red until the renderer is fixed (the mutant runner skips it).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildUI, HTML, slice, constSrc } from './tools/ten310-harness.mjs';
+import { buildUI, HTML, V2, slice, constSrc } from './tools/ten310-harness.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FX = join(HERE, 'tools/fixtures/ten310');
 const rd = (f) => JSON.parse(readFileSync(join(FX, f), 'utf8'));
-// TEN-376 Foundation: match-analysis-tokens.css is deleted; every colour is a token of the ONE file tokens.css.
 const TOKENS = readFileSync(join(HERE, 'tokens.css'), 'utf8');
 const ui = buildUI();
 const M = { id: 'upcoming-x', p1: 'J. Sinner', p2: 'C. Alcaraz', p1Key: 2072, p2Key: 2382, date: '2026-09-27',
   tour: 'ATP Beijing', tournamentRound: 'ATP Beijing - Final', tourBadge: 'ATP', bestOdds: { p1: { price: 1.54 }, p2: { price: 2.62 } } };
 const rows = [['2072', 'J. Sinner'], ['2382', 'C. Alcaraz']].map(([k, n]) => ui.meRowsFor(rd(`career-history-${k}.json`).matches, ui.fhParseCloses(rd(`match-closes-${k}.json`)), k, n));
-// The Market edge block of the page (TEN-310 header → the Tournament sub-tab).
-const BLOCK = HTML.slice(HTML.indexOf('// TEN-310 · MATCH ANALYSIS → MARKET EDGE TAB'), HTML.indexOf('/* ---------- TOURNAMENT SUB-TAB ---------- */'));
+// The Market edge block of match-analysis-v2.js (its header comment → the Form tab).
+const BLOCK = V2.slice(V2.indexOf('// MARKET EDGE (LOCKED'), V2.indexOf('// FORM (LOCKED'));
+const txt = (h) => h.replace(/<[^>]*>/g, '\u0001').split('\u0001').map((s) => s.trim()).filter(Boolean);
+const rowOf = (h, attr, key) => { const i = h.indexOf(`${attr}="${key}"`); const j = h.indexOf(`${attr}="`, i + 10); return h.slice(h.lastIndexOf('<div', i), j < 0 ? undefined : h.lastIndexOf('<div', j)); };
+const openTag = (r) => r.slice(0, r.indexOf('>'));
+const unesc = (s) => s.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+const helps = (h) => [...h.matchAll(/<span title="([^"]*)" style="width:16px; height:16px;/g)].map((m) => unesc(m[1]));
+const tileRe = (l) => new RegExp(`>${l.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}</span><span style="([^"]*)">([^<]*)</span><span style="[^"]*">([^<]*)</span>`);
+const tile = (h, l) => { const m = tileRe(l).exec(h); return m ? { style: m[1], fig: m[2], sub: m[3] } : null; };
+const sg = (e, d, u) => (Math.round(Math.abs(e) * 10 ** d + 1e-7) ? (e > 0 ? '+' : '−') : '±') + (Math.round(Math.abs(e) * 10 ** d + 1e-7) / 10 ** d).toFixed(d) + u;
+const BANDS = ui.core.BANDS;
 
-// Mutation: put a tab-local row or tooltip renderer back (meRowsHtml / meTableHead / meCommonCells, a data-aotip or a
-// native title on a pop-up cell), or render the pop-up rows outside maMatchRowsHtml.
-test('DoD 8: no tab-local row or tooltip renderer — pop-up rows are maMatchRowsHtml rows, tooltips maTipHtml', () => {
-  assert.ok(BLOCK.length > 20000, 'block found');
-  for (const fn of ['meRowsHtml', 'meTableHead', 'meCommonCells', 'mePillTip']) assert.ok(!new RegExp(`function ${fn}\\(`).test(BLOCK), `${fn} is deleted`);
-  assert.ok(!/data-aotip|aOddsTipHtml|initAOddsTips|aOddsTipHide/.test(BLOCK), 'no TEN-303 tooltip in the tab');
-  assert.ok(!/ title="/.test(BLOCK.replace(/\/\/.*$/gm, '')), 'no native title written by the tab itself');
+// Mutation: a row stops opening the shared sheet (meOpenRow), or a price loses its source hover (fhSrcTitle).
+// DoD 8 rebuilt: the 2026-11-23 design draws its own opened-box rows (no maMatchRowsHtml) and its "?" / price hovers are the
+// native title (STEP1 report item 8); the rule kept is one sheet for every row and the one price-source hover.
+test('DoD 8 (rebuild): every opened-box row opens the shared sheet; every price carries the one price-source hover', () => {
   const R = ui.render(M, { meView: 'winner' }, rows);
-  const pop = R.band('a2');
+  const pop = R.band('a2'), b = R.MM[0].bands[2];
   const n = (pop.match(/data-me-row="/g) || []).length;
-  assert.ok(n > 10, 'pop-up rows');
-  assert.equal((pop.match(/class="seg ma-row"/g) || []).length, n, 'every pop-up row is a shared ma-row');
-  assert.equal((pop.match(/onclick="meOpenRow\('/g) || []).length, n, 'every row opens the shared sheet');
-  assert.equal((pop.match(/class="elotip ma-row-tip"/g) || []).length, n, 'every price carries the shared tooltip');
-  assert.match(pop, /<span class="elotip-pop" role="tooltip"[^>]*><span style="font-family:'IBM Plex Mono',monospace; font-size:11px;">Pinnacle close · /);
-  assert.ok(!/ title="/.test(pop), 'no native browser tooltip in the rendered pop-up (the file draws none)');
+  assert.ok(n > 10 && n === b.n, `pop-up rows = band n (${n} / ${b.n})`);
+  assert.equal((pop.match(/onclick="meOpenRow\('[^']+'\)"/g) || []).length, n, 'every row opens the shared sheet');
+  assert.equal(Object.keys(R.E.rowMap).length, n, 'every row registered for the sheet hand-off (meOpenRow reads E.rowMap)');
+  const titles = [...pop.matchAll(/<span title="([^"]*)" style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:700; text-align:right;/g)].map((m) => unesc(m[1]));
+  assert.equal(titles.length, n, 'every price carries the hover');
+  assert.ok(titles.every((t) => /^(Pinnacle|Bet365)/.test(t)), 'the price-source hover (fhSrcTitle)');
+  assert.ok(!/data-aotip|aOddsTipHtml/.test(BLOCK), 'no TEN-303 tooltip in the tab');
+  for (const fn of ['meRowsHtml', 'meTableHead', 'meCommonCells', 'mePillTip', 'meBandPopHtml', 'meLinePopHtml']) assert.ok(!new RegExp(`function ${fn}\\(`).test(HTML), `${fn} is deleted from the page`);
   const line = R.line('a|0', 'all');
-  assert.equal((line.match(/class="seg ma-row"/g) || []).length, (line.match(/data-me-row="/g) || []).length, 'line pop-up rows too');
-  assert.ok(!/ title="/.test(line), 'nor in the line pop-up');
+  const ln = (line.match(/data-me-row="/g) || []).length;
+  assert.ok(ln > 10 && (line.match(/onclick="meOpenRow\('/g) || []).length === ln, 'line pop-up rows open the sheet too');
 });
 
 // Mutation: default meView back to 'lines' (the design file's own default, DF L3374).
@@ -50,64 +61,70 @@ test('D3: a fresh modal opens Market edge on Match winner (the Price sensitivity
   assert.ok(R.html.indexOf('Price sensitivity') > 0 && !R.html.includes('Derived lines at today'), 'Match winner cards only');
 });
 
-// Mutation: any ME_C value back on a modal token (var(--ma-t1) …), a raw colour, or a token tokens.css doesn't define.
-// TEN-376 Foundation supersedes the TEN-336 "design shade token" palette (fhS('<hex>') → --ma-s-<hex>): every ME_C colour is
-// now a tokens.css token, or a color-mix of one with transparent.
-test('palette: every Market edge colour is a foundation token that tokens.css defines', () => {
-  const src = constSrc('ME_C');
-  const C = new Function(`${src}\nreturn ME_C;`)();
-  // cardLine is 'transparent': the top-level tab card has no outline, top-light only (founder R5, TEN-376)
-  assert.equal(C.cardLine, 'transparent', 'top-level Market edge card: no outline');
-  // hiBd is 'transparent' too: the top-2 In band cells are --wash-4 with no edge (TEN-380, decisions §1)
-  assert.equal(C.hiBd, 'transparent'); assert.equal(C.hiBg, 'var(--wash-4)');
-  // ring is 'transparent': today's band has no ring (founder Q2, 2026-10-03: a neutral --wash-5 wash only)
-  assert.equal(C.ring, 'transparent'); assert.equal(C.wash, 'var(--wash-5)');
-  const colours = Object.entries(C).filter(([k]) => k !== 'hw' && k !== 'cardLine' && k !== 'hiBd' && k !== 'ring');
-  assert.ok(colours.length >= 24, 'every ME_C colour role is still there');
-  // README §5.8 / R6.3 "Dotted guides": no area fill, no loss wash, no vertical tick lines
-  for (const k of ['aFill', 'bFill', 'loss', 'tick']) assert.ok(!(k in C), `ME_C.${k} is gone (no area fill / wash / vertical gridlines)`);
-  assert.deepEqual([C.grid, C.zero, C.panelLine], ['var(--viz-guide)', 'var(--viz-rule)', 'var(--edge-6)']);
-  assert.ok(!/fhS\(|--ma-|#[0-9a-f]{3,8}\b|rgba?\(/i.test(src), 'no deleted helper, modal token or raw colour left in ME_C');
-  for (const [k, v] of colours) {
-    assert.match(v, /^(var\(--[a-z0-9-]+\)|color-mix\(in srgb, var\(--[a-z0-9-]+\) [\d.]+%, transparent\))$/, `ME_C.${k} = a token or token + opacity: ${v}`);
-    const t = /var\((--[a-z0-9-]+)\)/.exec(v)[1];
-    assert.ok(new RegExp(`^\\s*${t}:`, 'm').test(TOKENS), `ME_C.${k}: ${t} defined in tokens.css`);
+// Mutation: a raw colour back in the block, or a token tokens.css doesn't define. The foundation rule (one colour file) holds;
+// the TEN-376 ME_C palette is replaced by the rebuild's --ma2-* tokens (foundation.md / notes: "Colours = the --ma2-* tokens").
+test('palette: every Market edge colour is a tokens.css token (the --ma2-* set) or one at an opacity; no raw colour', () => {
+  assert.ok(BLOCK.length > 15000, 'block found');
+  const code = BLOCK.replace(/\/\/.*$/gm, '');
+  assert.ok(!/#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(/i.test(code), 'no raw colour');
+  const used = [...new Set([...code.matchAll(/var\((--[a-z0-9-]+)/g)].map((m) => m[1]))];
+  assert.ok(used.length >= 8, 'tokens read');
+  for (const t of used) assert.ok(new RegExp(`^\\s*${t}:`, 'm').test(TOKENS), `${t} defined in tokens.css`);
+  // players: A blue, B white (STEP1 item 7: the design's identity colours replace ruling 8 inside the box); green / red on signed values only
+  assert.match(code, /const col = \['var\(--ma2-blue\)', 'var\(--ma2-text\)'\];/);
+  assert.match(code, /const meUc = \(v, dp\) => \{[^}]*\? meGrey : v > 0 \? 'var\(--ma2-green\)' : 'var\(--ma2-red\)'; \};/, 'sign colour: grey at a rounded 0, green above, red below');
+});
+
+// Mutation: a 0.33px / 1.25px edge back anywhere in the tab.
+test('geometry: all edges 1px (no 0.33px, no 1.25px) in the tab and both opened boxes', () => {
+  const R = ui.render(M, { meView: 'winner' }, rows), RL = ui.render(M, { meView: 'lines' }, rows);
+  const all = R.html + R.band('a2') + RL.html + RL.line('a|0', 'all');
+  assert.ok(!/0\.33px|1\.25px/.test(all), 'no 0.33px / 1.25px edge anywhere in the tab');
+  assert.ok((all.match(/border:1px solid/g) || []).length > 10, 'the edges are drawn');
+});
+
+// Mutation: today's band unmarked, or another band marked.
+// The 2026-11-23 design marks today's band as a selection (lifted + 14% edge: foundation "selection is lift, never blue");
+// founder Q2's "--wash-5, no ring" and DF L3443 "the open band takes the wash" are TEN-380 styling the rebuild replaced
+// (the band now opens as a box over the tab).
+test('band rows: today\'s band (and only it) is lifted and titled "Today’s price band"', () => {
+  const R = ui.render(M, { meView: 'winner' }, rows);
+  R.MM.forEach((Mi, i) => {
+    const k = i ? 'b' : 'a';
+    assert.ok(Mi.tb >= 0, 'fixture: a today band');
+    BANDS.forEach((b, bi) => {
+      const o = openTag(rowOf(R.html, 'data-me-band', k + bi)), today = bi === Mi.tb;
+      assert.equal(/background:var\(--ma2-lifted\); box-shadow:inset 0 0 0 1px color-mix\(in srgb, var\(--ma2-white\) 14%, transparent\);/.test(o), today, `${k}${bi}: lifted iff today`);
+      assert.equal(/title="Today’s price band"/.test(o), today);
+      if (!today) assert.match(o, /background:transparent; box-shadow:inset 0 0 0 1px transparent;/);
+    });
+  });
+});
+
+// Mutation: the book split dropped from the Price sensitivity help, or its counts not the model's.
+// The CLOSING ODDS pill is not in the 2026-11-23 design; its disclosure (closing prices, book split, never "sample data")
+// is the card's "?" help.
+test('closing prices: the Price sensitivity help names the book split, summed over both players; no "sample data"', () => {
+  const R = ui.render(M, { meView: 'winner' }, rows);
+  assert.ok(!/sample data/i.test(R.html + R.band('a2')), 'no SAMPLE DATA chip');
+  const h = helps(R.html.slice(0, R.html.indexOf('class="me-card me-chart"')));
+  const P = R.MM.reduce((s, m) => s + m.book.P, 0), B = R.MM.reduce((s, m) => s + m.book.B, 0);
+  assert.ok(P > 0 && B > 0, 'fixture: both books');
+  assert.ok(h.some((t) => t.includes(`Closing prices: Pinnacle ${P}`) && t.includes(`Bet365 ${B} (no Pinnacle close)`)), 'the split = the model');
+});
+
+// Mutation: the latest-match date dropped from the help, or not the latest priced match.
+// modal-market-edge.md "Pill = CLOSING ODDS, hover = Pinnacle / Bet365 split + latest match date in scope": the pill is not
+// in the 2026-11-23 design; the split and the date are in the Price sensitivity "?" help.
+test('closing prices: the help names the latest priced match in scope ("Latest match: DD Mon YYYY")', () => {
+  const MONS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  for (const scope of ['l52', 'career']) {   // career last: the harness keeps one modal state per match, as the page does
+    const R = ui.render(M, { meView: 'winner', meScope: scope }, rows);
+    const last = R.MM.flatMap((m) => m.priced.map((r) => r.date)).sort().pop();
+    const [y, mo, d] = last.split('-');
+    const h = helps(R.html.slice(0, R.html.indexOf('class="me-card me-chart"'))).join(' ');
+    assert.ok(h.includes(`Latest match: ${d} ${MONS[+mo - 1]} ${y}.`), `${scope}: the latest priced match (${last}) is named next to the book split`);
   }
-  // players neutral: A primary white, B the label grey; up/down green / red on signed values; "blue" accent TEXT is white
-  // (blue is a fill, never text — foundation.md)
-  assert.equal(C.text, 'var(--text)'); assert.equal(C.b, 'var(--text-label)');
-  assert.deepEqual([C.up, C.dn], ['var(--pos)', 'var(--neg)']); assert.equal(C.blue, 'var(--text)');
-  assert.equal(C.hw, '1px', 'all borders 1px (no 0.33px hairline)');
-});
-
-// Mutation: the card back on 1.25px, a 0.33px hairline back, the pane padding back, the column-head rule back to the row rule.
-// TEN-376 Foundation: "All edges 1px solid (no 0.33px, no 1.25px)" supersedes the file's 1.25px card / 0.33px rules.
-test('geometry: card without an outline (top-light only, R5), no pane padding, column heads on the --line rule (DF L1817, L1802)', () => {
-  const R = ui.render(M, { meView: 'winner' }, rows);
-  assert.match(R.html, /class="me-card me-price" style="background:var\(--card\); border:1px solid transparent; box-shadow:var\(--top-light\);/);
-  assert.match(R.html, /<div class="me-pane" style="font-family:/);
-  assert.match(R.html, /padding:0 8px 7px; border-bottom:1px solid var\(--line\);/);
-  assert.ok(!/0\.33px|1\.25px/.test(R.html + R.band('a2') + R.line('a|0', 'all')), 'no 0.33px / 1.25px edge anywhere in the tab');
-});
-
-// Mutation: the wash only on today's band (drop `|| on`).
-test('band rows: the open band takes the today wash too, the ring stays on today only (DF L3443)', () => {
-  const R = ui.render(M, { meView: 'winner', meBand: 'a0' }, rows);
-  const row = (k) => { const i = R.html.indexOf(`data-me-band="${k}"`); return R.html.slice(R.html.lastIndexOf('<div', i), R.html.indexOf('>', i)); };
-  assert.match(row('a0'), /background:var\(--wash-5\); box-shadow:inset 0 0 0 1px transparent;/);   // founder Q2 (2026-10-03): the neutral --wash-5 wash
-  const t = R.MM[0].tb;
-  assert.match(row('a' + t), /background:var\(--wash-5\); box-shadow:inset 0 0 0 1px transparent;/, 'today: the same neutral wash, no ring, no blue');
-  assert.match(row('a1'), /background:transparent;/);
-});
-
-// Mutation: the pill loses its tooltip, or the tooltip is not the shared one.
-test('pill: CLOSING ODDS, its book split through the shared tooltip', () => {
-  const R = ui.render(M, { meView: 'winner' }, rows);
-  assert.ok(!/sample data/i.test(R.html), 'no SAMPLE DATA chip');
-  const i = R.html.indexOf('class="me-pill"'); assert.ok(i > 0);
-  const wrap = R.html.slice(R.html.lastIndexOf('<span class="elotip"', i), R.html.indexOf('</span></span></span></span>', i));
-  assert.ok(wrap.startsWith('<span class="elotip"'), 'wrapped by maTipHtml');
-  assert.match(wrap, /Closing odds<\/span>/); assert.match(wrap, />Pinnacle<\/span><span[^>]*>\d+</); assert.match(wrap, />Latest match<\/span>/);
 });
 
 // Mutation: the helper's table variant keeps a group header for a titleless group, loses the right alignment of the
@@ -164,147 +181,155 @@ test('data: a best-of-3 recorded at a Slam-named event is a complete match, in t
   assert.equal(ret.ret, true, 'the feed flag still stands');
 });
 
-// Mutation: the shared pop-up frame's foot back on the deleted 12a var(--label).
-// TEN-376: the file's #4B5672 foot shade (--ma-s-4b5672) is now the foundation label grey --text-label.
-test('pop-up foot on the label grey --text-label (DF L1512 / L1543 #4B5672 → foundation)', () => {
+
+// Mutation: the band box's help loses its "every match … newest first" text or the retirement note.
+// TEN-376's foot line ("Every match …" on --text-label) moved into the opened box's "?" help in the 2026-11-23 design.
+test('band box: its help says what the list is and how retirements settle', () => {
   const R = ui.render(M, { meView: 'winner' }, rows);
-  assert.match(R.band('a2'), /<span class="ma-pop-foot" style="font-size:11px; color:var\(--text-label\);">Every match/);
+  const h = helps(R.band('a2'));
+  assert.ok(h.some((t) => t.startsWith('Every match with a closing price in this band, newest first.') && t.includes(ui.core.RET_SETTLE_NOTE)));
+  assert.ok(helps(R.line('a|0', 'all')).some((t) => t.includes('Click a match for its stats')), 'line box: click a match for its stats');
 });
 
-// ──────────────── TEN-380 (founder's locked reference, OFFICIAL VERSION 1, measured 2026-10-03) ────────────────
-const txt = (h) => h.replace(/<[^>]*>/g, '\u0001').split('\u0001').map((s) => s.trim()).filter(Boolean);
-const rowOf = (h, attr, key) => { const i = h.indexOf(`${attr}="${key}"`); const j = h.indexOf(`${attr}="`, i + 10); return h.slice(h.lastIndexOf('<div', i), j < 0 ? undefined : h.lastIndexOf('<div', j)); };
-
-// Mutation: the Needs / W–L columns back, the bar back on --text, the tick colour off --viz-tick, the Edge not won − needs.
-test('TEN-380 price sensitivity: "today X · N priced" on a rule; one white bar + grey Needs tick; Edge (pp) = Won − Needs', () => {
+// Mutation: the Bet365 share dropped from the sub-line, the Today price not the header's, the Edge read as Won alone, the
+// tick off Needs, the fill not Won.
+test('price sensitivity: "N priced matches · k of N on Bet365" (founder 2026-10-30), Today = the header price; bar = Won, tick = Needs, Edge = Won − Needs', () => {
   const R = ui.render(M, { meView: 'winner' }, rows);
-  const heads = [...R.html.matchAll(/class="me-phead"[^>]*border-bottom:1px solid var\(--line\);"><span[^>]*>([^<]*)<\/span><span class="me-pmeta"[^>]*>today <span[^>]*>([^<]*)<\/span> · (\d+) priced(?: · (\d+) of \d+ on Bet365)?</g)].map((m) => [m[1], m[2], +m[3], +(m[4] || 0)]);
-  assert.deepEqual(heads.map((h) => h.slice(0, 2)), [['J. Sinner', '1.54'], ['C. Alcaraz', '2.62']], 'the header price per player');
-  assert.deepEqual(heads.map((h) => h[2]), R.MM.map((m) => m.priced.length), 'N priced = the model');
-  assert.deepEqual(heads.map((h) => h[3]), R.MM.map((m) => m.priced.filter((r) => r.book === 'B').length), 'the Bet365 share = the model (founder 2026-10-30: "12 of 174 on Bet365")');
-  const head = R.html.slice(R.html.lastIndexOf('<span', R.html.indexOf('>Price<')), R.html.indexOf('>1u stake<') + 16);
-  assert.deepEqual(txt(head), ['Price', 'Won · needs', 'Won', 'Edge', '1u stake']);
-  const M0 = R.MM[0];
-  for (const b of M0.bands.filter((x) => x.n >= 10)) {
-    const r = rowOf(R.html, 'data-me-band', 'a' + b.i);
-    assert.ok(!r.includes(`>${b.w}–${b.l}<`), 'no W–L text in the row');
-    const ob = R.MM[1].bands[b.i], lead = ob.won == null || b.won >= ob.won - 1e-9;
-    assert.match(r, new RegExp(`<span style="width:${(b.w / b.n * 100).toFixed(1)}%; background:var\\(--white-bar${lead ? '' : '-2'}\\);`), 'the fill = Won, white (Q3: trailer 45%)');
-    assert.match(r, new RegExp(`class="me-tick" style="position:absolute; left:calc\\(${(b.needs * 100).toFixed(1)}% - 1px\\);[^"]*background:var\\(--viz-tick\\);`), 'the tick = Needs, --viz-tick');
-    const e = (b.won - b.needs) * 100, want = (e > 0 ? '+' : e < 0 ? '−' : '±') + (Math.round(Math.abs(e) * 10 + 1e-7) / 10).toFixed(1) + 'pp';
-    assert.ok(new RegExp(`class="me-edge"[^>]*><span class="ma-rate"[^>]*color:var\\(--(pos|neg|text-soft)\\);">${want.replace('+', '\\+')}<`).test(r), `${b.label}: Edge ${want}`);
-  }
-  assert.ok(!/#aSectionMarketEdge\{ --viz-tick/.test(HTML), 'no tab override re-points the grey tick (decisions §1: --viz-tick)');
-  assert.ok(R.html.includes('Bar = win rate at closing odds in the band; grey tick = break-even win rate'), 'the footnote names the bar and the tick');
+  const box = (k) => { const i = R.html.lastIndexOf('<div', R.html.indexOf(`class="me-pbox" data-side="${k}"`)); return R.html.slice(i, k === 'a' ? R.html.indexOf('class="me-pbox" data-side="b"') : undefined); };
+  ['a', 'b'].forEach((k, i) => {
+    const Mi = R.MM[i], t = txt(box(k)), nP = Mi.priced.length, nB = Mi.priced.filter((r) => r.book === 'B').length;
+    assert.ok(nB > 0, 'fixture: Bet365 rows');
+    assert.equal(t[0], [M.p1, M.p2][i]);
+    assert.equal(t[1], `${nP} priced matches · ${nB} of ${nP} on Bet365`, 'the Bet365 share = the model');
+    assert.deepEqual(t.slice(2, 4), ['Today', ['1.54', '2.62'][i]], 'Today = the header price');
+    assert.deepEqual(t.slice(4, 9), ['Price band', 'Won against needed', 'Won', 'Edge', '1% stake']);
+    for (const b of Mi.bands.filter((x) => x.n >= 10)) {
+      const r = rowOf(R.html, 'data-me-band', k + b.i);
+      assert.ok(!r.includes(`>${b.w}–${b.l}<`), 'no W–L text in the row (the Record tile carries it)');
+      assert.match(r, new RegExp(`<span style="position:absolute; left:0; top:0; bottom:0; width:${(b.w / b.n * 100).toFixed(1)}%; background:var\\(--ma2-text\\);`), 'the fill = Won');
+      assert.match(r, new RegExp(`class="me-tick" style="position:absolute; left:${(b.needs * 100).toFixed(1)}%;`), 'the tick = Needs');
+      const want = sg((b.won - b.needs) * 100, 1, 'pp');
+      assert.ok(new RegExp(`class="me-edge"[^>]*><span class="ma-rate" data-ma-gate="full" style="color:var\\(--ma2-(green|red)\\);">${want.replace('+', '\\+')}<`).test(r) || (want.startsWith('±') && r.includes(`>${want}<`)), `${b.label}: Edge ${want}`);
+    }
+  });
+  const h = helps(R.html.slice(0, R.html.indexOf('class="me-card me-chart"'))).join(' ');
+  assert.ok(h.includes('The bar is his win rate in the band, the grey tick is the win rate needed to break even'), 'the help names the bar and the tick');
 });
 
-// Mutation: the profit lines back on --text / the B grey, or the 2.6px lead width.
-test('TEN-380 profit chart: lead --white-bar 2.4px, other --white-bar-2 2px; swatches match; labels --text-label', () => {
+// Mutation: the series colours swapped, the legend count off the model, the chart footnote's retirement note dropped.
+test('profit chart: A blue / B white (STEP1 item 7), legend swatches match, legend n = the model, "Break even" on the rule', () => {
   const R = ui.render(M, { meView: 'winner' }, rows);
-  assert.match(R.html, /data-me-series="a" points="[^"]*" fill="none" style="stroke:var\(--white-bar\)" stroke-width="2\.4"/);
-  assert.match(R.html, /data-me-series="b" points="[^"]*" fill="none" style="stroke:var\(--white-bar-2\)" stroke-width="2"/);
-  const chart = R.html.slice(R.html.indexOf('me-card me-chart'));
-  assert.equal((chart.match(/width:16px; height:3px; border-radius:2px; background:var\(--white-bar(-2)?\);/g) || []).length, 2, 'legend swatches');
-  assert.match(chart, /color:var\(--text-label\);">Break even</);
-  assert.ok(!/font-weight:500; color:var\(--text-soft\)/.test(chart), 'y labels on --text-label');
+  const chart = R.html.slice(R.html.indexOf('class="me-card me-chart"'));
+  assert.match(chart, /data-me-series="a" points="[^"]*" fill="none" style="stroke:var\(--ma2-blue\)" stroke-width="2\.2"/);
+  assert.match(chart, /data-me-series="b" points="[^"]*" fill="none" style="stroke:var\(--ma2-text\)" stroke-width="2\.2"/);
+  assert.equal((chart.match(/width:16px; height:3px; border-radius:2px; background:var\(--ma2-blue\);/g) || []).length, 1, 'A swatch');
+  assert.equal((chart.match(/width:16px; height:3px; border-radius:2px; background:var\(--ma2-text\);/g) || []).length, 1, 'B swatch');
+  const ns = [...chart.matchAll(/>([\d,]+) priced</g)].map((m) => +m[1].replace(/,/g, ''));
+  assert.deepEqual(ns, R.MM.map((m) => m.priced.length));
+  assert.ok(txt(chart).includes('Break even'));
+  assert.ok(!/<polygon|<path[^>]*fill="(?!none)/.test(chart), 'no area fill under a line');
 });
 
-// Mutation: the highlighted In band cells back on --inner + an edge, the In band head off --link, the meta off its rule.
-test('TEN-380 derived lines: highlighted cells --wash-4 with no edge, "In band" head --link, meta "in band X · n=N" on a rule', () => {
+// Mutation: a raw colour on the chart, a vertical guide drawn dotted, the break-even rule dropped, the wash off break even.
+// The 2026-11-23 design draws a 1.4% white loss wash under break even and a solid 4.5% line at each x tick; both are on the
+// founder conflict list (foundation.md "Charts": horizontal guides only, no loss wash) and the design is kept meanwhile.
+// Held here: horizontal guides dotted (2 6), the break-even rule solid, every colour a white token at an opacity.
+test('profit chart: dotted horizontal guides, a solid break-even rule, the design\'s loss wash and tick lines; no raw colour', () => {
+  const R = ui.render(M, { meView: 'winner' }, rows);
+  const svg = /<svg class="me-chart-svg"[\s\S]*?<\/svg>/.exec(R.html)[0];
+  assert.ok(!/#[0-9a-f]{3,8}\b|rgba?\(/i.test(svg), 'no raw colour in the chart');
+  const lines = [...svg.matchAll(/<line x1="([\d.]+)" y1="([\d.]+)" x2="([\d.]+)" y2="([\d.]+)" style="stroke:([^"]+)"([^>]*)>/g)];
+  const horiz = lines.filter((m) => m[2] === m[4]), vert = lines.filter((m) => m[1] === m[3]);
+  const zero = horiz.filter((m) => !/stroke-dasharray/.test(m[6]));
+  assert.equal(zero.length, 1, 'one solid horizontal rule: break even');
+  assert.equal(zero[0][5], 'color-mix(in srgb, var(--ma2-white) 40%, transparent)');
+  const guides = horiz.filter((m) => /stroke-dasharray="2 6"/.test(m[6]));
+  assert.ok(guides.length >= 3 && guides.length === horiz.length - 1, 'every other horizontal line is a dotted 2 6 guide');
+  assert.ok(vert.length >= 3 && vert.every((m) => m[5] === 'color-mix(in srgb, var(--ma2-white) 4.5%, transparent)' && !/dasharray/.test(m[6])), 'the design\'s x-tick lines: solid, white 4.5%');
+  const wash = /<rect x="0" y="([\d.]+)" width="1000" height="([\d.]+)" style="fill:([^"]+)"/.exec(svg);
+  assert.ok(wash, 'the design\'s loss wash');
+  assert.equal(+wash[1], +zero[0][2], 'the wash starts at break even');
+  assert.equal(wash[3], 'color-mix(in srgb, var(--ma2-white) 1.4%, transparent)');
+});
+
+// Mutation: the lines box's sub-line or Today's band off the model; the cover card after the lines card.
+// TEN-380's "--wash-4 top-two In band cells" and "In band head --link" are the replaced TEN-380 styling.
+test('derived lines: per player "N in today’s band · M priced matches" and Today’s band = the model; cover card first', () => {
   const R = ui.render(M, { meView: 'lines' }, rows);
   const card = R.html.slice(R.html.indexOf('me-card me-lines'));
-  const hi = card.match(/background:var\(--wash-4\); border:1px solid transparent;/g) || [];
-  // the two most covered In band cells per player, counted among cells that carry a rate (ten bands, 2026-11-14: a narrower
-  // band can leave a player with fewer gated rates); never a vacuous pass — at least one player lights two cells
-  const want = R.MM.map((m) => Math.min(2, m.lines.rows.filter((r) => r.bPct != null).length));
-  assert.ok(want.some((n) => n === 2), 'fixture: a player with two rated In band cells');
-  assert.equal(hi.length, want.reduce((x, y) => x + y, 0), 'two highlighted cells per player (of those with a rate)');
-  assert.ok(!/background:var\(--inner\); border:1px solid var\(--edge-10\); border-radius:6px; padding:3px 8px/.test(card));
-  assert.equal((card.match(/color:var\(--link\);">In band</g) || []).length, 2);
-  const metas = [...card.matchAll(/class="me-pmeta"[^>]*>in band <span[^>]*>([^<]*)<\/span> · n=(\d+)</g)].map((m) => [m[1], +m[2]]);
-  assert.deepEqual(metas, R.MM.map((m) => [window_BANDS[m.lines.tb].label, m.lines.inBand.length]));
-  assert.ok(R.html.indexOf('me-card me-cover') < R.html.indexOf('me-card me-lines'), 'Cover rate by price band comes first');
+  const subs = [...card.matchAll(/>(\d+) in today’s band · (\d+) priced matches<\/span><\/span><span[^>]*><span[^>]*>Today’s band<\/span><span[^>]*>([^<]*)</g)].map((m) => [+m[1], +m[2], m[3]]);
+  assert.deepEqual(subs, R.MM.map((m) => [m.lines.inBand.length, m.lines.all.length, BANDS[m.lines.tb].label]));
+  assert.ok(R.html.indexOf('me-card me-cover') > 0 && R.html.indexOf('me-card me-cover') < R.html.indexOf('me-card me-lines'), 'Cover rate by price band comes first');
+  const L = R.MM[0].lines, r0 = L.rows[0], row = rowOf(card, 'data-me-line', 'a|0');
+  assert.match(openTag(row), new RegExp(`title="${r0.label}: in band ${r0.bC} of ${r0.bN}, all ${r0.aC} of ${r0.aN}`), 'the row hover carries the counts');
 });
-const window_BANDS = ui.core.BANDS;
 
 // Mutation: the cover rate counted over the Match winner rows, the tick dropped, today's row unmarked, an empty band clickable.
-test('TEN-380 cover rate by price band: per band the Bo3 cover share, the all-matches tick, today lifted, empty bands inert', () => {
+test('cover rate by price band: per band the Bo3 cover share, the all-matches tick, today lifted, empty bands inert', () => {
   for (const [j, li] of [[0, 0], [2, 3], [4, 5]]) {
     const R = ui.render(M, { meView: 'lines', meCov: j }, rows);
     const card = R.html.slice(R.html.indexOf('me-card me-cover'), R.html.indexOf('me-card me-lines'));
-    const segAt = card.indexOf('<div class="ma-seg"');
+    const segAt = card.indexOf('<div class="ma2-track"', card.indexOf('<div class="ma2-track"') + 1);   // the first track is the window
     assert.deepEqual(txt(card.slice(segAt, card.indexOf('</div>', segAt))),
       ['Wins match', 'Wins set 1', '−3.5 games', 'Over 22.5 games', 'Tiebreak in match'], 'the five lines, surname stripped');
+    let checked = 0;
     R.MM.forEach((Mi, i) => {
-      const k = i ? 'b' : 'a', L = Mi.lines, def = L.rows[li], all = L.all;
-      const aPct = Math.round(all.filter(def.fn).length / all.length * 100);
-      assert.ok(card.includes(`${def.label} · all matches <span class="ma-rate"`), `${k}: the meta names the player's own line`);
-      window_BANDS.forEach((b, bi) => {
+      const k = i ? 'b' : 'a', L = Mi.lines, def = L.rows[li], all = L.all, allC = all.filter(def.fn).length;
+      const box = card.slice(card.lastIndexOf('<div', card.indexOf(`class="me-pbox" data-side="${k}"`)));
+      assert.equal(txt(box)[1], def.label, `${k}: the sub names the player's own line`);
+      BANDS.forEach((b, bi) => {
         const rs = all.filter((r) => ui.core.bandOf(r.price) === bi), n = rs.length, c = rs.filter(def.fn).length;
-        const r = rowOf(card, 'data-me-cov', k + bi);
+        const r = rowOf(card, 'data-me-cov', k + bi), o = openTag(r);
         assert.ok(txt(r).includes(n ? `${c}/${n}` : '—'), `${k}${bi} count ${c}/${n}`);
-        if (n >= 10) assert.ok(txt(r).includes(Math.round(c / n * 100) + '%'), `${k}${bi} rate`);
-        if (n) assert.match(r, new RegExp(`class="me-tick" style="position:absolute; left:calc\\(${(all.filter(def.fn).length / all.length * 100).toFixed(1)}% - 1px\\)`), 'tick = all matches');
-        assert.equal(/opacity:0\.45/.test(r.slice(0, r.indexOf('>'))), !n, 'an empty band at 45%');
-        assert.equal(/onclick="meSet\(\{meBand:/.test(r.slice(0, r.indexOf('>'))), n > 0 && Mi.bands[bi].n > 0, 'clickable only with matches');
-        if (bi === L.tb) assert.match(r.slice(0, r.indexOf('>')), /background:var\(--wash-5\); cursor/, 'today: the neutral wash (Q2)');
-        // Q3: leader solid, trailer 45% — the other player's gated rate in the same band
-        const O = R.MM[1 - i].lines, od = O.rows[li], ors = O.all.filter((x) => ui.core.bandOf(x.price) === bi);
-        const oRate = ors.length >= 5 ? ors.filter(od.fn).length / ors.length : null, own = n >= 5 ? c / n : null;
-        if (n >= 10) assert.match(r, new RegExp(`background:var\\(--white-bar${own == null || oRate == null || own >= oRate - 1e-9 ? '' : '-2'}\\);`), `${k}${bi} leader / trailer`);
+        if (n >= 10) { assert.ok(txt(r).includes(Math.round(c / n * 100) + '%'), `${k}${bi} rate`); checked++; }
+        if (n) assert.match(r, new RegExp(`class="me-tick" style="position:absolute; left:${(allC / all.length * 100).toFixed(1)}%;`), 'tick = all matches');
+        assert.equal(/class="me-row-empty"/.test(o), !(n > 0 && Mi.bands[bi].n > 0), 'an empty band is inert');
+        assert.equal(/onclick="meSet\(\{meBand:/.test(o), n > 0 && Mi.bands[bi].n > 0, 'clickable only with matches');
+        assert.equal(/background:var\(--ma2-lifted\)/.test(o), bi === L.tb, 'today lifted');
       });
-      assert.ok(aPct >= 0);
     });
+    assert.ok(checked >= 4, 'rates checked');
   }
 });
 
-// Mutation: the band pop-up back to five tiles without sub-lines, or its Edge not won − needs.
-test('TEN-380 band pop-up: four tiles with sub-lines — Record / n priced, Won / needs, Edge / won − needs, At 1u flat / yield', () => {
+// Mutation: the band box's Edge sub-line dropped or its Edge not Won − Needs.
+test('band box: four tiles — Record / n priced, Won / needs, Edge / Won − needs, At flat 1% stake / yield', () => {
   const R = ui.render(M, { meView: 'winner' }, rows);
   const b = R.MM[0].bands[2], P = R.band('a2');
-  const tiles = [...P.matchAll(/class="me-tile"[^>]*><span[^>]*>([^<]*)<\/span><span class="me-stat"[^>]*color:([^;]+);[^>]*>([^<]*)<\/span><span class="me-tile-sub"[^>]*>([^<]*)</g)].map((m) => [m[1], m[3], m[4]]);
-  assert.deepEqual(tiles.map((t) => t[0]), ['Record', 'Won', 'Edge', 'At 1u flat']);
-  assert.deepEqual(tiles[0].slice(1), [`W${b.w}–L${b.l}`, `${b.n.toLocaleString('en-US')} priced`]);
-  assert.equal(tiles[1][2], 'needs ' + (Math.round(b.needs * 1000) / 10).toFixed(1) + '%');
-  assert.equal(tiles[2][2], 'won − needs');
-  const e = (b.won - b.needs) * 100;
-  assert.equal(tiles[2][1], (e > 0 ? '+' : '−') + (Math.round(Math.abs(e) * 10 + 1e-7) / 10).toFixed(1) + 'pp');
-  assert.match(tiles[3][2], /^yield [+−±]\d+\.\d%$/);
-  assert.match(P, /class="me-tile" style="background:var\(--card\); border:1px solid var\(--edge-6\);/, 'tiles are panels');
-  assert.match(P, /class="ma-pop ma-sigin me-pop"[^>]*border:1px solid var\(--edge-10\);/, 'the sheet edge --edge-10');
+  const T = ['Record', 'Won', 'Edge', 'At flat 1% stake'].map((l) => tile(P, l));
+  assert.ok(T.every(Boolean), 'four tiles');
+  assert.deepEqual([T[0].fig, T[0].sub], [`${b.w}–${b.l}`, `${b.n.toLocaleString('en-US')} priced`]);
+  assert.equal(T[1].sub, 'needs ' + (Math.round(b.needs * 1000) / 10).toFixed(1) + '%');
+  assert.equal(T[2].sub, 'Won − needs');
+  assert.equal(T[2].fig, sg((b.won - b.needs) * 100, 1, 'pp'));
+  assert.match(T[3].sub, /^yield [+−±]\d+\.\d%$/);
+  assert.match(P, /class="ma2-pop"[^>]*border:1px solid color-mix\(in srgb, var\(--ma2-white\) 8%, transparent\);/, 'the opened-box shell');
 });
 
-// Mutation: the line pop-up back to three inline boxes, "Vs all" printed on All matches, or Vs all not in-band − all.
-test('TEN-380 line pop-up: segment + hint, then Matches · Covered · Rate · Vs all (in band − all, pp; --inner, no edge)', () => {
+// Mutation: "Against all" printed on All matches, or not in-band − all.
+test('line box: segment, then Matches · Covered · Rate · Against all (in band − all, pp)', () => {
   const R = ui.render(M, { meView: 'lines' }, rows);
   const L = R.MM[0].lines, row = L.rows[0];
-  const tiles = (h) => [...h.matchAll(/class="me-tile"[^>]*><span[^>]*>([^<]*)<\/span><span class="me-stat"[^>]*>([^<]*)<\/span><span class="me-tile-sub"[^>]*>([^<]*)</g)].map((m) => [m[1], m[2], m[3]]);
-  const all = tiles(R.line('a|0', 'all')), band = tiles(R.line('a|0', 'band'));
+  const T = (h) => ['Matches', 'Covered', 'Rate', 'Against all'].map((l) => { const t = tile(h, l); return [l, t.fig, t.sub]; });
+  const all = T(R.line('a|0', 'all')), band = T(R.line('a|0', 'band'));
   const aC = L.all.filter(row.fn).length, aN = L.all.length, bC = L.inBand.filter(row.fn).length, bN = L.inBand.length;
-  assert.deepEqual(all, [['Matches', String(aN), 'all priced'], ['Covered', `${aC} of ${aN}`, `${aN - aC} not covered`], ['Rate', Math.round(aC / aN * 100) + '%', 'this line'], ['Vs all', '—', 'in band − all']]);
+  assert.deepEqual(all, [['Matches', String(aN), 'All priced'], ['Covered', `${aC} of ${aN}`, `${aN - aC} not covered`], ['Rate', Math.round(aC / aN * 100) + '%', 'This line'], ['Against all', '—', 'In band − all']]);
   const vs = Math.round(bC / bN * 100) - Math.round(aC / aN * 100);
-  assert.deepEqual(band[0], ['Matches', String(bN), 'priced in band']);
-  assert.deepEqual(band[2], ['Rate', Math.round(bC / bN * 100) + '%', 'all matches ' + Math.round(aC / aN * 100) + '%']);
-  assert.equal(band[3][1], (vs > 0 ? '+' : vs < 0 ? '−' : '±') + Math.abs(vs) + 'pp');
-  assert.match(R.line('a|0', 'all'), /Click a match for its stats/);
-  assert.match(R.line('a|0', 'all'), /class="me-tile" style="background:var\(--inner\); border:1px solid transparent;[^>]*><span[^>]*>Vs all</);
+  assert.deepEqual(band[0], ['Matches', String(bN), 'Priced in band']);
+  assert.deepEqual(band[2], ['Rate', Math.round(bC / bN * 100) + '%', 'All matches ' + Math.round(aC / aN * 100) + '%']);
+  assert.equal(band[3][1], sg(vs, 0, 'pp'));
+  assert.ok(txt(R.line('a|0', 'all')).includes('All matches') && txt(R.line('a|0', 'all')).includes('In today’s band'), 'the All / In today’s band segment');
 });
 
-// Founder Q3 (ruling 8, 2026-10-03): Market edge bars keep the leader / trailer split per band — the higher rate solid
-// (--white-bar), the other 45% (--white-bar-2); figures stay white for both. Mutations: no split; the trailer solid.
-test('Q3: price-sensitivity bars — per band the leader solid, the trailer --white-bar-2; both Won figures white', () => {
-  const R = ui.render(M, { meView: 'winner' }, rows);
-  let split = 0;
-  R.MM[0].bands.forEach((b, bi) => {
-    const o = R.MM[1].bands[bi];
-    if (b.won == null || o.won == null || b.won === o.won) return;
-    const ra = rowOf(R.html, 'data-me-band', 'a' + bi), rb = rowOf(R.html, 'data-me-band', 'b' + bi);
-    const fill = (r) => /<span style="width:[\d.]+%; background:([^;]+);/.exec(r)[1];
-    const [lead, trail] = b.won > o.won ? [ra, rb] : [rb, ra];
-    const [ln, tn] = b.won > o.won ? [b.n, o.n] : [o.n, b.n];
-    if (ln >= 10) assert.equal(fill(lead), 'var(--white-bar)');
-    if (tn >= 10) { assert.equal(fill(trail), 'var(--white-bar-2)'); split++; }
-    for (const r of [lead, trail]) assert.ok(!/class="ma-rate" data-ma-gate="full" style="color:var\(--text-(soft|label)\);">\d+%/.test(r), 'Won figures never greyed for trailing');
-  });
-  assert.ok(split >= 3, `bands compared: ${split}`);
+// Mutation: the identity-unverified line dropped (section or opened box). odds.md "Archive identity": "N rows hidden: identity
+// unverified" on the profile's Market edge line and the Market edge tab.
+test('identity unverified: the tab and the band box say how many rows the identity gate hid', () => {
+  const rr = rows.map((r) => Object.assign(r.slice(), r, { idHidden: 0 }));
+  rr[0].idHidden = 3; rr[1].idHidden = 1;
+  const R = ui.render(M, { meView: 'winner' }, rr);
+  const i = R.html.indexOf('class="me-id-hidden"');
+  assert.ok(i > 0);
+  assert.equal(txt(R.html.slice(R.html.lastIndexOf('<', i))).join(' '), 'J. Sinner: 3 rows hidden: identity unverified · C. Alcaraz: 1 row hidden: identity unverified');
+  assert.ok(txt(R.band('a2')).some((t) => t.endsWith('3 rows hidden: identity unverified')), 'the band box sub-line');
+  assert.ok(!ui.render(M, { meView: 'winner' }, rows).html.includes('me-id-hidden'), 'control: no line without hidden rows');
 });

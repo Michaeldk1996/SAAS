@@ -1,6 +1,6 @@
 // TEN-338 — every check in test-ten338-match-stats.mjs must FAIL when the behaviour it locks is reverted. Each mutant is
 // applied to a copy of bsp-consult-dashboard.html and the suite is run against it (TEN338_HTML); a mutant that leaves
-// the suite green is a vacuous test and fails this runner. Anchors must occur exactly once in the page.
+// the suite green is a vacuous test and fails this runner. Anchors must occur exactly once in the page (or the stated number of times).
 const fs = require('fs'), os = require('os'), path = require('path'), { spawnSync } = require('child_process');
 const ROOT = path.join(__dirname, '..');
 const html = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
@@ -13,7 +13,7 @@ const MUTANTS = [
   ['Key stats: its own W/UE copy', "    row('Winners / unforced errors', M.wue[0], M.wue[1], 'ratio'),", "    row('Winners / unforced errors', M.wue[1], M.wue[0], 'ratio'),"],
   ['D2: the sheet rates ungated', "  const row = (label, cells, kind, k) => ({ label, a: kind === 'pct' ? fhGateCell(cells[0]) : cells[0], b: kind === 'pct' ? fhGateCell(cells[1]) : cells[1], kind, k });", "  const row = (label, cells, kind, k) => ({ label, a: cells[0], b: cells[1], kind, k });"],
   ['D2: n 1–4 keeps its %', "  if (m === 'nopct') return Object.assign({}, c, { v: null, txt: c.won + '/' + c.total, sub: '', gate: m,", "  if (m === 'nopct') return Object.assign({}, c, { gate: m,"],
-  ['D2: no footnote', "  return dr + secs + note + (M.gated ? maSheetGateNote() : '');", "  return dr + secs + note;"],
+  ['D2: no footnote', "  return (ma2 ? drMa2 : dr) + secs + note + (M.gated ? maSheetGateNote() : '');", "  return (ma2 ? drMa2 : dr) + secs + note;"],
   ['pbp: SP back to the old target rule', "      const sp = !over && p.a !== p.b && hi >= T - 1 && hi + 1 - lo >= 2;", "      const tgt = Math.max(T, Math.max(lastTb.a, lastTb.b)); const sp = !over && hi > lo && hi >= tgt - 1 && hi < tgt;"],
   ['pbp: 10-point tiebreak not detected', "i < tbPts.length - 1 && Math.max(p.a, p.b) >= 7 && Math.abs(p.a - p.b) >= 2)) ? 10 : 7;", "false)) ? 10 : 7;"],
   ['pbp: caption loses the set score', "  return { set: st.set, label: 'SET ' + st.set + (setSc ? ' · ' + setSc[0] + '-' + setSc[1] : ''), games, tb, won };", "  return { set: st.set, label: 'SET ' + st.set, games, tb, won };"],
@@ -36,7 +36,8 @@ const MUTANTS = [
   ['MP: a Bo5 fifth-set tiebreak read as 7 points', " || (c.need === 3 && Number(st.set) === 5) || ", " || "],
   ['MP: the set winner read off T (a repeated point loses the set)', "  const won = lastTb ? (Math.max(lastTb.a, lastTb.b) >= 7 && Math.abs(lastTb.a - lastTb.b) >= 2 ?", "  const won = lastTb ? (tbDone ?"],
   ['header: raw surface', "      tourn: m.tour, surface: fhSurfName(m.surface), round:", "      tourn: m.tour, surface: m.surface, round:"],
-  ['header: a missing round dropped', " r.surface || FH_DASHC, r.round || FH_DASHC, dateTxt]", " r.surface || FH_DASHC, r.round, dateTxt]"],
+  // the rebuild (2026-11-23) draws the header twice (the locked ma2 head + the shared one): the mutant hits both
+  ['header: a missing round dropped', " r.surface || FH_DASHC, r.round || FH_DASHC, dateTxt]", " r.surface || FH_DASHC, r.round, dateTxt]", 2],
   ['DoD 8: the old stat sheet back', "function maMsNotPlayedHtml(live){", "function buildMatchStatsSheet(m, setNo){ return ''; }\nfunction maMsNotPlayedHtml(live){"],
 ];
 MUTANTS.push(
@@ -49,10 +50,10 @@ const SUITES = ['test-ten338-match-stats.mjs'];
   console.log('✔ control: the unmutated page passes'); }
 let survived = 0;
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ten338-mut-'));
-for (const [name, from, to] of MUTANTS) {
-  if (html.split(from).length !== 2) { console.error(`✖ anchor not found exactly once: ${name}`); survived++; continue; }
+for (const [name, from, to, times = 1] of MUTANTS) {
+  if (html.split(from).length !== times + 1) { console.error(`✖ anchor not found exactly ${times}×: ${name}`); survived++; continue; }
   const file = path.join(dir, 'm.html');
-  fs.writeFileSync(file, html.replace(from, to));
+  fs.writeFileSync(file, html.split(from).join(to));
   const r = spawnSync(process.execPath, ['--test', ...SUITES.map(f => path.join(ROOT, f))], { env: Object.assign({}, process.env, { TEN338_HTML: file }), encoding: 'utf8' });
   if (r.status === 0) { console.error(`✖ SURVIVED: ${name}`); survived++; } else console.log(`✔ caught: ${name}`);
 }

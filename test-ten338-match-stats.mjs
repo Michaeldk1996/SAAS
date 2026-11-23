@@ -81,7 +81,7 @@ test('uncompleted match: the file\'s "Match not played yet" block; live: the sam
   assert.match(text(live), /^Match in progress /, 'a live match is not "not played"');
   assert.match(slice('maMsNotPlayedHtml') + html.slice(html.indexOf('function buildMatchStatsSection('), html.indexOf('function maMsNotPlayedHtml(')), /DESIGN GAP G15/);
   const done = S.buildMatchStatsSection({ id: 'past-5', p1: 'A', p2: 'B', finalScore: { sets: [{ p1: 6, p2: 4 }, { p1: 6, p2: 3 }], p1Sets: 2, p2Sets: 0, winner: 'p1' } });
-  assert.match(done, /class="ma-ms-sheet"/); assert.match(done, /id="maMsSheetBody"/);
+  assert.match(done, /class="ma-ms-sheet[ "]/); assert.match(done, /id="maMsSheetBody"/);
   assert.match(html, /\.modal-analysis #aSectionMatchStats:has\(> \.ma-ms-notplayed\)\{ height:100%; \}/, 'the block is centred in the whole pane (DF height:100%)');
 });
 
@@ -298,5 +298,7 @@ test('TEN-380: sheet frame, neutral values, labels --text-label, bars --bar / --
   const K = S.fhSheetKeyModel({ own: SIDE(), opp: SIDE() });
   assert.deepEqual(K.filter(r => r.kind === 'ratio').map(r => r.label), ['Dominance ratio', 'Winners / unforced errors'], 'Q6: DR and W/UE stay numbers only');
   const done = S.buildMatchStatsSection({ id: 'past-1', p1: 'A. Zverev', p2: 'B. C', p1Key: 1, p2Key: 2, finalScore: { sets: [{ p1: 6, p2: 4 }] }, date: '2026-07-18', tour: 'ATP Washington' });
-  assert.match(done, /class="ma-ms-sheet" style="max-width:760px; margin:0 auto; background:var\(--card\); border:1px solid var\(--edge-6\);/);
+  // Match analysis rebuild (locked Match Stats design, 2026-11-21 / 2026-11-23): the inline sheet is the design's card —
+  // --ma2-card, a 1px 6% white edge, max 760 — replacing TEN-380's --card + --edge-6 frame (colours = the --ma2-* tokens).
+  assert.match(done, /class="ma-ms-sheet ma2-sheet" style="position:relative; width:100%; max-width:760px; margin:0 auto; background:var\(--ma2-card\); border:1px solid color-mix\(in srgb, var\(--ma2-white\) 6%, transparent\);/);
 });

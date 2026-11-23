@@ -1,5 +1,5 @@
-// TEN-310 — Match analysis → Market edge tab. Runs the page's own data layer and renderer (sliced out of
-// bsp-consult-dashboard.html) and the real market-edge-core.js over committed snapshots of the deployed
+// TEN-310 — Match analysis → Market edge tab. Runs the page's own data layer (sliced out of bsp-consult-dashboard.html),
+// the rebuilt renderer (match-analysis-v2.js, Match analysis rebuild 2026-11-23) and the real market-edge-core.js over committed snapshots of the deployed
 // career-history + match-closes shards (Sinner 2072, Alcaraz 2382; tools/fixtures/ten310/). No gitignored
 // store is read. Brief §6 checks 1–7, plus the §4 edge cases.
 import { test as nodeTest } from 'node:test';
@@ -29,31 +29,34 @@ function chunk(html, attr, key) {
   return html.slice(i, j < 0 ? html.length : j);
 }
 const unitsOf = (s) => (s === '—' ? null : (s.startsWith(MINUS) ? -1 : 1) * parseFloat(s.replace(/^[+−±]/, '')));
-// TEN-380: a band row reads Price · bar (Won fill + Needs tick) · Won · Edge · 1u stake — its W–L is no longer printed in
-// the row, so the record is read where the tab prints it: the band pop-up's Record tile (an n = 0 band has none: 0–0).
+// Match analysis rebuild (2026-11-23, match-analysis-v2.js): a band row reads Price band · bar (Won fill + Needs tick) ·
+// Won · Edge · 1% stake ("1% stake" = the flat 1u written in %, STEP1 report g). Its W–L is read where the tab prints it:
+// the band box's Record tile (an n = 0 band has none: 0–0). Today's band carries the title "Today’s price band".
 function bandRow(R, key) {
   const html = R.html, c = chunk(html, 'data-me-band', key); if (!c) return null;
-  const t = texts(c.slice(c.indexOf('>') + 1)).filter((x) => x !== 'TODAY');
-  const clickable = /onclick="meSet\(\{meBand:/.test(c.slice(0, c.indexOf('>')));
-  const rec = clickable ? /^W(\d+)–L(\d+)$/.exec(stat(R.band(key), 'Record') || '') : null;
+  const open = c.slice(0, c.indexOf('>'));
+  const t = texts(c.slice(c.indexOf('>') + 1));
+  const clickable = /onclick="meSet\(\{meBand:/.test(open);
+  const rec = clickable ? /^(\d+)–(\d+)$/.exec(stat(R.band(key), 'Record') || '') : null;
   const [w, l] = rec ? [+rec[1], +rec[2]] : [0, 0];
-  const tick = /class="me-tick" style="position:absolute; left:calc\(([\d.]+)% - 1px\)/.exec(c);
-  return { label: t[0], today: c.includes('>TODAY<'), w, l, won: t[1], edge: t[2], u: unitsOf(t[3]), uTxt: t[3], clickable, raw: c,
+  const tick = /class="me-tick" style="position:absolute; left:([\d.]+)%;/.exec(c);
+  return { label: t[0], today: /title="Today’s price band"/.test(open), w, l, won: t[1], edge: t[2], u: unitsOf(t[3].replace(/%$/, '')), uTxt: t[3], clickable, raw: c,
     needsTick: tick ? +tick[1] : null };
 }
+// a Derived lines row: its counts are in its hover ("label: in band c of n, all c of n · today's line price"); the cells
+// print All, In band (a dash under the thin floor) and Diff
 function lineRow(html, key) {
   const c = chunk(html, 'data-me-line', key); if (!c) return null;
-  const t = texts(c.slice(c.indexOf('>') + 1));
-  const cell = (s) => { const m = /^(\d+)\/(\d+) · (\d+)%$/.exec(s); const d = /^— · n=(\d+)$/.exec(s); return m ? { c: +m[1], n: +m[2], pct: +m[3] } : d ? { c: null, n: +d[1], pct: null } : null; };
-  // founder 2026-10-26: a Price column after Line (me-pxcol) — a single dash in this harness, which loads no line prices
-  const o = c.includes('class="me-pxcol"') ? 1 : 0;
-  return { label: t[0], price: o ? t[1] : null, all: cell(t[1 + o]), band: cell(t[2 + o]), diff: t[3 + o] || '' };
+  const open = c.slice(0, c.indexOf('>'));
+  const m = /title="([^"]*): in band (\d+) of (\d+), all (\d+) of (\d+)/.exec(open);
+  const cells = [...c.matchAll(/<span style="font-family:'IBM Plex Mono'[^"]*">(.*?)<\/span>(?=<span style="font-family|<\/div>)/g)].map((x) => texts(x[1]).join('') || '');
+  return { label: m[1], all: { c: +m[4], n: +m[5], txt: cells[0] }, band: { c: +m[2], n: +m[3], txt: cells[1] }, diff: cells[2] || '' };
 }
 function legend(html) {
-  html = html.slice(html.indexOf('Profit at 1u flat'));   // the chart card's legend (the band card's headers say "N priced" too)
+  html = html.slice(html.indexOf('Return at flat 1% stake'));   // the chart card's legend (the band boxes say "N priced matches")
   const out = [];
-  const re = /(\d+) priced<\/span>(?:<span[^>]*>([^<]*)<\/span>)?/g; let m;
-  while ((m = re.exec(html))) out.push({ n: +m[1], end: m[2] ? unitsOf(m[2]) : null });
+  const re = /([\d,]+) priced<\/span>(?:<span[^>]*>([^<]*)<\/span>)?/g; let m;
+  while ((m = re.exec(html))) out.push({ n: +m[1].replace(/,/g, ''), end: m[2] ? unitsOf(m[2].replace(/u$/, '')) : null });
   return out;
 }
 function series(html, k) {
@@ -68,7 +71,12 @@ function yToUnits(html) {
   const [a, b] = [g[0], g[g.length - 1]];
   return (y) => a.v + (y - a.y) * (b.v - a.v) / (b.y - a.y);
 }
-function stat(html, l) { const m = new RegExp(`data-me-stat="${l}"[^>]*>([^<]*)<`).exec(html); return m ? m[1] : null; }
+// an opened box's tile: label → figure (stat) and its grey sub-line (sub)
+const tileRe = (l) => new RegExp(`>${l.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}</span><span style="[^"]*">([^<]*)</span><span style="[^"]*">([^<]*)</span>`);
+function stat(html, l) { const m = tileRe(l).exec(html); return m ? m[1] : null; }
+function tileSub(html, l) { const m = tileRe(l).exec(html); return m ? m[2] : null; }
+// the "?" help text (the design's native hover) of each card head
+const helps = (html) => [...html.matchAll(/<span title="([^"]*)" style="width:16px; height:16px;/g)].map((m) => m[1].replace(/&#39;/g, "'").replace(/&amp;/g, '&').replace(/&quot;/g, '"'));
 
 // ---- the fixture match: Sinner (A, 1.54) v Alcaraz (B, 2.62) — the design's own demo prices ----
 const M = { id: 'upcoming-x', p1: 'J. Sinner', p2: 'C. Alcaraz', p1Key: 2072, p2Key: 2382, date: '2026-09-27',
@@ -134,14 +142,14 @@ function checkPlayer(ui, R, k, rows, scope) {
     if (!n) { assert.ok(!b.clickable, 'n = 0 band not clickable'); assert.equal(b.won, '—'); assert.equal(b.uTxt, '—'); return; }
     assert.ok(b.clickable, 'band with rows is clickable');
     const P = R.band(k + j);
-    assert.equal(stat(P, 'Record'), `W${b.w}–L${b.l}`);
-    if (n >= 5) assert.equal(stat(P, 'At 1u flat'), b.uTxt);
-    else { assert.equal(b.uTxt, '—', 'row 1u dashed under n = 5 (review item 6)'); assert.equal(stat(P, 'At 1u flat'), '—', 'review 2: the pop-up\'s 1u dashes with its Won and Edge'); }
+    assert.equal(stat(P, 'Record'), `${b.w}–${b.l}`);
+    if (n >= 5) assert.equal(stat(P, 'At flat 1% stake'), b.uTxt);
+    else { assert.equal(b.uTxt, '—', 'row 1u dashed under n = 5 (review item 6)'); assert.equal(stat(P, 'At flat 1% stake'), '—', 'review 2: the pop-up\'s 1u dashes with its Won and Edge'); }
     assert.equal((P.match(/data-me-row="/g) || []).length, n, 'pop-up rows = band n');
     // TEN-380: the yield is the At 1u flat tile's sub-line; Edge = Won − Needs (pp) on the row and in the pop-up; the
     // row's grey tick sits at Needs (the pop-up's "needs x%")
-    const sub = (l) => { const m = new RegExp(`data-me-stat="${l}"[^>]*>[^<]*<\\/span><span class="me-tile-sub"[^>]*>([^<]*)<`).exec(P); return m ? m[1] : null; };
-    const y = sub('At 1u flat').replace(/^yield /, '');
+    const sub = (l) => tileSub(P, l);
+    const y = sub('At flat 1% stake').replace(/^yield /, '');
     if (n < core.ME_THIN_FLOOR) assert.equal(y, '—'); else assert.ok(Math.abs(unitsOf(y.replace('%', '')) - b.u / n * 100) <= 5 / n + 0.051, `yield ${y} vs ${b.u}/${n}`);
     if (n < core.ME_THIN_FLOOR) assert.equal(b.won, '—', 'thin sample dashes Won'); else assert.equal(b.won, Math.round(b.w / n * 100) + '%');
     const needs = parseFloat(sub('Won').replace(/^needs /, ''));
@@ -153,11 +161,11 @@ function checkPlayer(ui, R, k, rows, scope) {
       assert.equal(stat(P, 'Edge'), b.edge, 'the pop-up Edge = the row Edge');
     }
   });
-  // (4) line pop-up "Covered x of n" = the card's All / In band cell; (5) today's band = "In band = …"
+  // (4) line pop-up "Covered x of n" = the card's All / In band counts; (5) today's band = the lines box's "Today’s band"
   const today = bands.findIndex((b) => b.today);
-  const lbl = [...R.html.matchAll(/in band <span[^>]*>([^<]*)<\/span> · n=(\d+)/g)][i];
-  assert.ok(today >= 0 && lbl, 'a TODAY band and an In band label');
-  assert.equal(lbl[1], bands[today].label, 'today band = In band label');
+  const lbl = [...R.html.matchAll(/(\d+) in today’s band · \d+ priced matches<\/span><\/span><span[^>]*><span[^>]*>Today’s band<\/span><span[^>]*>([^<]*)</g)].map((x) => [x[0], x[2], x[1]])[i];
+  assert.ok(today >= 0 && lbl, 'a today band and a Today’s band label');
+  assert.equal(lbl[1], bands[today].label, 'today band = the lines box\'s Today’s band');
   for (let li = 0; li < 6; li++) {
     const L = lineRow(R.html, `${k}|${li}`);
     const all = stat(R.line(`${k}|${li}`, 'all'), 'Covered'), band = stat(R.line(`${k}|${li}`, 'band'), 'Covered');
@@ -307,23 +315,25 @@ test('§4 edge cases: half-open bands, 2.00 is underdog, match-tiebreak is not a
   const b0 = bandRow(R, 'b0');
   assert.deepEqual([b0.w, b0.l, b0.won, b0.uTxt, b0.clickable], [0, 0, '—', '—', false]);
   // TEN-380 review item 6: the 1u dash is the sample gate's, so it matches the Won and Edge dashes beside it
-  assert.ok(/class="me-units"[^>]*><span class="ma-rate" data-ma-gate="none" style="color:var\(--text-label\);">—</.test(b0.raw), 'n = 0 1u dash in the gate grey, like Won and Edge');
+  assert.ok(/class="me-units"[^>]*><span class="ma-rate" data-ma-gate="none" style="color:var\(--text-label\);">—</.test(b0.raw), 'n = 0 1% stake dash in the gate grey, like Won and Edge');
   const lg = legend(R.html);
   assert.equal(lg[1].n, 0); assert.equal(lg[1].end, null); assert.equal(series(R.html, 'b'), null, 'no line for 0 priced');
   const RL = ui.render(m, { meView: 'lines' }, [rows, empty]);
-  assert.deepEqual(lineRow(RL.html, 'b|0').all, { c: null, n: 0, pct: null }, 'no data = dash, not 0%');
+  assert.deepEqual(lineRow(RL.html, 'b|0').all, { c: 0, n: 0, txt: '—' }, 'no data = dash, not 0%');
+  assert.equal(lineRow(RL.html, 'b|0').band.txt, '—', 'in band: a dash, not 0%');
   // no price in the header: no TODAY anywhere, derived lines show the empty state, match winner still renders
   const done = Object.assign({}, m, { finalScore: { p1Sets: 2, p2Sets: 0 } });
   const RN = ui.render(done, { meView: 'lines' }, [rows, empty]);
   assert.ok(RN.html.includes('Derived lines need today’s price.')); assert.ok(!RN.html.includes('data-me-line='));
   const RW = ui.render(done, { meView: 'winner' }, [rows, empty]);
-  assert.ok(!RW.html.includes('>TODAY<') && RW.html.includes('data-me-band="a0"'));
-  // loading: frames + column headers + a muted Loading… row, at the loaded height
+  assert.ok(!RW.html.includes('Today’s price band') && RW.html.includes('data-me-band="a0"'));
+  // loading: frames + column headers + a muted Loading… row (the 2026-11-23 design draws one line, no reserved height)
   const RLd = ui.render(m, { meView: 'winner' }, [null, null]);
-  assert.ok(RLd.html.includes('Loading…') && RLd.html.includes('>1u stake<') && RLd.html.includes('min-height:282px'));
+  assert.ok(RLd.html.includes('Loading…') && RLd.html.includes('>1% stake<'));
   // real figures never wear the sample-data pill; signed figures use U+2212 and ±0
   assert.ok(!/sample data/i.test(R.html + R.band('a0') + RL.html), 'no "sample data" anywhere');
-  assert.ok(R.html.includes('>CLOSING ODDS<'));
+  // the CLOSING ODDS pill is gone in the 2026-11-23 design; the closing-price disclosure is the card's "?" help
+  assert.ok(helps(R.html).some((t) => t.includes('Closing prices: Pinnacle')), 'the closing-price book split in the card help');
   assert.equal(ui.render(m, {}, [rows, empty]).E && true, true);
 });
 
@@ -504,8 +514,9 @@ test('TEN-325: the price-band and profit-chart footnotes say retirements settle 
   for (const scope of ['career', 'l52']) {
     const html = ui.render(M, { meView: 'winner', meScope: scope }, rows).html;
     const band = html.slice(0, html.indexOf('class="me-card me-chart"')), chart = html.slice(html.indexOf('class="me-card me-chart"'));
-    assert.ok(texts(band).some((t) => t.includes(note)), `${scope}: band card footnote carries the note`);
-    assert.ok(texts(chart).some((t) => t.startsWith('Cumulative units') && t.includes(note)), `${scope}: chart footnote carries the note`);
+    // the 2026-11-23 design puts each card's footnote in its "?" help (STEP1 report item 8: the native hover, as drawn)
+    assert.ok(helps(band).some((t) => t.includes(note)), `${scope}: band card help carries the note`);
+    assert.ok(helps(chart).some((t) => t.startsWith('A flat 1% stake') && t.includes(note)), `${scope}: chart help carries the note`);
   }
 });
 
@@ -518,8 +529,8 @@ test('TEN-322: the profit-chart footnote says the axis is shared dates, never pe
   for (const scope of ['career', 'l52']) {
     const html = ui.render(M, { meView: 'winner', meScope: scope }, rows).html;
     const card = html.slice(html.indexOf('class="me-card me-chart"'));
-    const foot = texts(card).find((t) => t.startsWith('Cumulative units'));
-    assert.ok(foot, `${scope}: chart footnote renders`);
+    const foot = helps(card).find((t) => t.startsWith('A flat 1% stake'));
+    assert.ok(foot, `${scope}: chart footnote (its "?" help) renders`);
     assert.ok(!/own matches|each line spans/i.test(foot), `${scope}: no per-player span claim: ${foot}`);
     assert.ok(foot.includes('one date axis shared by both players'), `${scope}: says the axis is shared dates: ${foot}`);
     // the copy is true of the render: Alcaraz's career starts later than Sinner's, so his line starts further right

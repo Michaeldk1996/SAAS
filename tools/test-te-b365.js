@@ -92,7 +92,11 @@ try { const Mu = build(path.join(tmp, 'lower-base.csv'), path.join(tmp, 'main-te
   ok(html.includes("esc(M.books[0])+' closing'+(M.bookCounts && !M.bookCounts[M.books[1]] ? ' only' : ', else '+esc(M.books[1]))+', per match, '"), 'the Database header sentence follows the data');
   ok(hdr(x => x, { books: ['Pinnacle', 'Bet365'], bookCounts: { Pinnacle: 9, Bet365: 0 } }) === 'Pinnacle closing only'
     && hdr(x => x, { books: ['Pinnacle', 'Bet365'], bookCounts: { Pinnacle: 9, Bet365: 2 } }) === 'Pinnacle closing, else Bet365', 'header: "Pinnacle closing only" with no Bet365 row; control: "else Bet365" with one');
-  ok(/' of ' \+ M\.priced\.length\.toLocaleString\('en-US'\) \+ ' on Bet365'/.test(html), 'Match analysis Market edge: "N of M on Bet365" in the Price sensitivity header');
+  // Match analysis rebuild (2026-11-23): the Price sensitivity player box (match-analysis-v2.js meBandsBox) carries the count in
+  // its sub-line, "174 priced matches · 12 of 174 on Bet365"; the rendered figure = the model is executed in
+  // test-ten336-market-edge.mjs ("Bet365 share").
+  const v2 = fs.readFileSync(path.join(ROOT, 'match-analysis-v2.js'), 'utf8');
+  ok(/nB = nP \? M\.priced\.filter\(r => r\.book === 'B'\)\.length : 0/.test(v2) && /' of ' \+ nP\.toLocaleString\('en-US'\) \+ ' on Bet365'/.test(v2), 'Match analysis Market edge: "N of M on Bet365" in the Price sensitivity header');
   // founder 2026-11-10: the tile reads the export's words; the Bet365 count lives in the Market edge drawer's note
   ok(/b365N \+ ' of ' \+ \(d\.favN \+ d\.dogN\)\.toLocaleString\('en-US'\) \+ ' priced on Bet365'/.test(pp), 'profile Market edge drawer: "N of M priced on Bet365"');
 }

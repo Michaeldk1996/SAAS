@@ -160,7 +160,11 @@ ok(red, 'MUTANT (the identity gate removed) hands Alberto and Andrej to key 1056
   ok(/idGate\.allow\(hit0\.key, side\.name, row\.date, side\.name === row\.winner \? row\.loser : row\.winner\)/.test(rd('build-odds-performance.js')) && /shard\.identityHidden = idGate && idGate\.hidden/.test(rd('build-odds-performance.js')), 'odds performance: passes the opponent, publishes identityHidden');
   ok(/' hidden: identity unverified'/.test(rd('player-profile-v2.js')) && /mk\.identityHidden > 0/.test(rd('player-profile-v2.js')), 'profile Market edge line says "N rows hidden: identity unverified"');
   const h = rd('bsp-consult-dashboard.html');
-  ok(/rows\.idHidden = \(ms && ms\.identityHidden\) \|\| 0;/.test(h) && /class="me-id-hidden"/.test(h) && /hidden: identity unverified` : ''\]\.filter\(Boolean\)\.join\(' · '\)/.test(h), 'Market edge tab: the section line and the band pop-up say the count');
+  // Match analysis rebuild (2026-11-23): the tab's renderer moved to match-analysis-v2.js; the data layer (rows.idHidden) stays
+  // in the page. The rendered count is also executed in test-ten336-market-edge.mjs ("identity unverified").
+  const v2 = rd('match-analysis-v2.js');
+  ok(/rows\.idHidden = \(ms && ms\.identityHidden\) \|\| 0;/.test(h) && /class="me-id-hidden"/.test(v2) && /' hidden: identity unverified' : ''\]\.filter\(Boolean\)\.join\(' · '\)/.test(v2)
+    && /' hidden: identity unverified' : ''; \}\)\.filter\(Boolean\)\.join\(' · '\)/.test(v2), 'Market edge tab: the section line and the band pop-up say the count');
   ok(fs.existsSync(path.join(__dirname, '..', 'ambiguous-archive-names.json.gz')), 'the ambiguous-names evidence is committed (the gate reads it with no TML at run time)');
 }
 

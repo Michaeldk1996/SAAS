@@ -54,17 +54,18 @@ export function buildData({ src = HTML } = {}) {
   return Object.assign(api, { core });
 }
 
-// TEN-314: MA_* / ma* = the modal's shared components (D2 sample gate, segmented control, pop-up frame).
-const UI_CONSTS = ['FH_DASHC', 'FH_MONO', 'FH_MONS', 'FH_BOOK', 'FH_SRC', 'FH_B365_HOVER', 'FH_B365_APPROX_HOVER', 'FH_B365_AT_HOVER', 'AODDS_C', 'ME_C', 'ME_NOPRICE_MSG', 'ME_BO3_MSG', 'mePct0', 'mePct1', 'meUC', 'ME_CARD',
-  'ME_TITLE', 'ME_COLH', 'ME_FOOT', 'ME_HINT', 'ME_PGRID', 'ME_BCOLS', 'ME_LCOLS', 'meScopeLbl', 'meNoHist', 'meLoadingRow', 'meStatBox', 'ME_BAND_TCOLS', 'ME_LINE_TCOLS',
-  'MA_GREY', 'MA_SMALL_NOTE', 'MA_SEG', 'MA_POP', 'meRateBox', 'MA_ROW_COLS', 'MA_ROW_CELLS', 'ME_COV_LINES', 'ME_COV_COLS'];
-const UI_FNS = ['escapeHtml', 'fhDayNum', 'psShortName', 'fhSurname', 'fhEsc', 'fhRefDay', 'fhLongDate', 'fhOdd', 'fhB365Approx', 'fhSrcTitle', 'aOddsTipHtml', 'aHeaderOdds', 'meStateFor',
-  'meSg', 'meDMY', 'meModels', 'meSegHtml', 'meScopeSeg', 'meBarHtml', 'meLeadFill', 'meCovRate', 'meBandsCol', 'meCoverCol', 'meCoverCard', 'meTile', 'mePriceCard', 'meChartCard', 'meLinesCol', 'meLinesCard', 'mePill',
-  'buildMarketEdgeSection', 'meScoreTxt', 'mePopShell', 'meBookNote', 'meRowOf', 'mePopTable', 'meBandPopHtml', 'meLinePopHtml',
-  'meSmallFoot', 'tourxSampleGate', 'maGate', 'maPct', 'maRate', 'maRateHtml', 'maGateBar', 'maSmallNote', 'maSeg', 'maPopFrame', 'maMatchRowsHtml', 'maTipHtml'];
+// Match analysis rebuild (2026-11-23): the tab renderer is match-analysis-v2.js (maMarketEdgeV2 / maMeBandPopV2 /
+// maMeLinePopV2); the data layer (meStateFor, meModels, the D2 gate maRate / maRateHtml / maGateBar, fhSrcTitle …) still
+// lives in the dashboard. The v2 file runs inside the same sandbox, so its bare global names resolve to the page's slices.
+export const V2_PATH = process.env.TEN310_V2 || join(HERE, 'match-analysis-v2.js');
+export const V2 = readFileSync(V2_PATH, 'utf8');
+const UI_CONSTS = ['FH_DASHC', 'FH_MONO', 'FH_MONS', 'FH_BOOK', 'FH_SRC', 'FH_B365_HOVER', 'FH_B365_APPROX_HOVER', 'FH_B365_AT_HOVER',
+  'MA_GREY', 'MA_SMALL_NOTE', 'ME_NOPRICE_MSG', 'ME_BO3_MSG'];
+const UI_FNS = ['escapeHtml', 'fhDayNum', 'psShortName', 'fhSurname', 'fhEsc', 'fhRefDay', 'fhLongDate', 'fhOdd', 'fhB365Approx', 'fhSrcTitle', 'aHeaderOdds', 'meStateFor',
+  'meSg', 'meDMY', 'meModels', 'meBookNote', 'buildMarketEdgeSection', 'tourxSampleGate', 'maGate', 'maPct', 'maRate', 'maRateHtml', 'maGateBar', 'maSmallNote'];
 
-/** The page's data layer + renderer. ui.render(m, S, rowsA, rowsB) → { html, band(k), line(k) }. */
-export function buildUI({ src = HTML } = {}) {
+/** The page's data layer + the v2 renderer. ui.render(m, S, rows, states) → { E, MM, html, band(k), line(k, scope) }. */
+export function buildUI({ src = HTML, v2 = V2 } = {}) {
   const data = buildData({ src });
   const window = { MarketEdgeCore: data.core };
   const ui = new Function('window', `
@@ -74,6 +75,8 @@ export function buildUI({ src = HTML } = {}) {
     function _mcNowPair(m){ if (!m) return null; if ('cardNow' in m) return m.cardNow; const b = m.bestOdds; return b && b.p1 && b.p2 ? { p1: b.p1.price, p2: b.p2.price } : null; }
     ${UI_CONSTS.map((n) => constSrc(n, src)).join('\n')}
     ${UI_FNS.map((n) => slice(n, src)).join('\n')}
+    ${v2}
+    const maMarketEdgeV2 = window.maMarketEdgeV2, maMeBandPopV2 = window.maMeBandPopV2, maMeLinePopV2 = window.maMeLinePopV2;
     function render(m, S, rows, states){
       _me = meStateFor(m);
       Object.assign(_me.S, S || {});
@@ -81,8 +84,8 @@ export function buildUI({ src = HTML } = {}) {
       _me.idx = { ms: new Set(), ss: new Set(), pbp: new Set() }; _me.rowMap = {};
       const MM = meModels(_me);
       return { E: _me, MM, html: buildMarketEdgeSection(m),
-        band: key => { _me.S.meBand = key; const h = meBandPopHtml(_me, meModels(_me)); _me.S.meBand = null; return h; },
-        line: (key, sc) => { _me.S.meLine = key; _me.S.meLineScope = sc || 'all'; const h = meLinePopHtml(_me, meModels(_me)); _me.S.meLine = null; return h; } };
+        band: key => { _me.S.meBand = key; const h = maMeBandPopV2(_me, meModels(_me)); _me.S.meBand = null; return h; },
+        line: (key, sc) => { _me.S.meLine = key; _me.S.meLineScope = sc || 'all'; const h = maMeLinePopV2(_me, meModels(_me)); _me.S.meLine = null; return h; } };
     }
     return { render, aHeaderOdds };
   `)(window);
