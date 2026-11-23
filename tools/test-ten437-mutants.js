@@ -15,7 +15,7 @@ const CORE_MUTANTS = [
   ['the eventKey-only join back (keyless archive rows skipped on both sides — the TEN-437 root cause)', [
     ["    A.forEach(x => {\n      if (!x || typeof x.won !== 'boolean') return;", "    A.forEach(x => {\n      if (!x || typeof x.won !== 'boolean' || x.eventKey == null) return;"],
     ["      if (!y || used.has(y) || bad.has(y) || typeof y.won !== 'boolean'", "      if (!y || y.eventKey == null || used.has(y) || bad.has(y) || typeof y.won !== 'boolean'"]]],
-  ['a 2021 date cut-off', "    return dedupe(out).map(x => resolveQualifying(x, all)).filter(x => inPopulation(x) &&", "    return dedupe(out).map(x => resolveQualifying(x, all)).filter(x => String(x.date) >= '2021' && inPopulation(x) &&"],
+  ['a 2021 date cut-off', "    return dedupe(out).map(x => resolveQualifying(x, all)).filter(x => inPopulation(x, opt) &&", "    return dedupe(out).map(x => resolveQualifying(x, all)).filter(x => String(x.date) >= '2021' && inPopulation(x, opt) &&"],
   ['Challengers / ITF back in', "  const H2H_LEVELS = ['atp'];", "  const H2H_LEVELS = ['atp', 'chitf'];"],
   ['Hopman Cup and exhibitions back in', "  const ATP_RECORD_NOT_COUNTED = /hopman cup|ultimate tennis showdown|\\buts\\b|six kings|exhibition|kooyong classic|mubadala world tennis|", "  const ATP_RECORD_NOT_COUNTED = /$^|"],
   ['qualifying back in', "      && !x.qualifying && !/^qualif/i.test(String(x.round || ''))", "      && true"],
@@ -39,15 +39,14 @@ const CORE_MUTANTS = [
   ['D1: a same-day main-draw double read as qualifying (on-or-before instead of before)', "    if (md == null || d0 < md) return Object.assign({}, x, { qualifying: true });", "    if (md == null || d0 <= md) return Object.assign({}, x, { qualifying: true });"],
 ];
 const PAGE_MUTANTS = [
-  ['the Match analysis tab back on the api-tennis list (m.h2h)', "  return H2HCore.joinMeetings(sfH2hSide(m.p1Key, m.p1), sfH2hSide(m.p2Key, m.p2), ch[0], ch[1], sfH2hNkCount(), own);",
+  ['the Match analysis tab back on the api-tennis list (m.h2h)', "  return H2HCore.joinMeetings(sfH2hSide(m.p1Key, m.p1), sfH2hSide(m.p2Key, m.p2), ch[0], ch[1], sfH2hNkCount(), own, lower ? { lower: true } : undefined);",
     "  return ((m.h2h && m.h2h.matches) || []).map(x => Object.assign({}, x, { won: x.p1Won, level: 'atp' }));"],
   ['a failed history load cached as an answer (Match analysis)', "      if (!c1.ok || !c2.ok){ m._fhH2hP = null;", "      if (false){ m._fhH2hP = null;"],
   ['a failed history load cached as an answer (H2H page)', "        if (!ra.ok || !rb.ok) { S.st = 'failed';", "        if (false) { S.st = 'failed';"],
   ['the H2H page loses its Retry', "<span class=\"seg\" onclick=\"H2HPage._h2hRetry()\"", "<span class=\"seg\""],
-  ['a display read of m.h2h.record (a second source)', "function kfH2HCard(m){", "function kfH2HCard(m){ const _r = m.h2h && m.h2h.record;"],
+  ['a display read of m.h2h.record (a second source)', "function fhMeetings(m, lower){", "function fhMeetings(m, lower){ const _r = m.h2h && m.h2h.record;"],
   ['a team tie priced off a tour match\'s close', "!/davis cup|laver cup|atp cup|united cup/i.test(String(x.tournament || ''))", "true"],
   ['two meetings share one close (the pairing takes the first, not a dash)', "      if (cls.size !== grp.length) continue;", "      if (cls.size < 1) continue;"],
-  ['the coverage line counts priced meetings only (Y ≠ the full H2H count)', "`${nP} of ${F.length} meetings priced`", "`${nP} of ${PR.length} meetings priced`"],
   ['D3: the tab passes no TML/ATP id', "id: key != null ? careerHistoryIdOf(key) : null", "id: null"],
   ['ruling 3: the page infers a walkover from an empty score again (a 0 - 0 retirement read as one)', "  // Founder 2026-10-22 (ruling 3): a walkover is the row's EXPLICIT flag", "  if (!r.wo && !r.sets && (r.pS == null || r.pS + r.oS === 0)) r.wo = true;\n  // Founder 2026-10-22 (ruling 3): a walkover is the row's EXPLICIT flag"],
   ['S1: Next Gen sets read with the 6-game set test (a retirement)', "const setDone = x => (ng ? Math.max(x[0], x[1]) === 4 : fhSetDone(x));", "const setDone = x => fhSetDone(x);"],
@@ -62,6 +61,14 @@ const PAGE_MUTANTS = [
   ['board exclusion: the tab counts its own match while upcoming / live', "  const own = m.finalScore ? [] : [eventKeyOfMatch(m)].filter(x => x != null && x !== '');", "  const own = [];"],
   ['board exclusion: the tab still leaves its own match out once finished', "  const own = m.finalScore ? [] : [eventKeyOfMatch(m)].filter(x => x != null && x !== '');", "  const own = [eventKeyOfMatch(m)].filter(x => x != null && x !== '');"],
   ['board exclusion: the H2H page leaves out this week\'s board matches again', "      const nkF = fn('sfH2hNkCount');\n      const own = [];", "      const nkF = fn('sfH2hNkCount');\n      const own = (typeof matches !== 'undefined' ? matches : []).filter(x => x && x.finalScore).map(eventKeyOfMatch);"],
+];
+// Match analysis rebuild (2026-11-23): the tab is drawn by match-analysis-v2.js; these mutants go to a copy of it (TEN437_MA2).
+const MA2 = fs.readFileSync(path.join(ROOT, 'match-analysis-v2.js'), 'utf8');
+const MA2_MUTANTS = [
+  ['the coverage line counts priced meetings only (Y ≠ the full H2H count)', "nP + ' of ' + F.length + ' meetings priced<", "nP + ' of ' + PR.length + ' meetings priced<"],
+  ['a display read of m.h2h.record in the rebuilt tab', "  function kfH2hBox(", "  const _h2hRead = m => m.h2h && m.h2h.record;\n  function kfH2hBox("],
+  ['the tab\'s B marker dropped', "mark = typeof fhPxMark === 'function' ? fhPxMark(r) : '';\n      const sel = !!(_fh && _fh.sheet === r.mid);", "mark = '';\n      const sel = !!(_fh && _fh.sheet === r.mid);"],
+  ['Key factors\' H2H box off the tab\'s rows', "const counted = fhMeetings(m).filter(", "const counted = (m._fhCh ? [] : []).filter("],
 ];
 // Mutants applied to a copy of career-backfill.js / bsp-pipeline.js written NEXT TO the original (so its relative
 // requires resolve), passed to the suite as TEN437_BACKFILL / TEN437_PIPELINE, and removed afterwards.
@@ -160,7 +167,15 @@ for (const [file, envName, list] of [['career-backfill.js', 'TEN437_BACKFILL', B
     } finally { fs.rmSync(copy, { force: true }); }
   }
 }
+for (const [name, from, to] of MA2_MUTANTS) {
+  if (MA2.split(from).length !== 2) { console.error(`✖ anchor not found exactly once: ${name}`); survived++; continue; }
+  const file = path.join(dir, 'ma2.js');
+  fs.writeFileSync(file, MA2.replace(from, to));
+  const r = run({ TEN437_MA2: file });
+  if (r.status === 0) { console.error(`✖ SURVIVED: ${name}`); survived++; }
+  else console.log(`✔ caught: ${name}`);
+}
 fs.rmSync(dir, { recursive: true, force: true });
-const total = CORE_MUTANTS.length + PAGE_MUTANTS.length + WORKFLOW_MUTANTS.length + BACKFILL_MUTANTS.length + PIPELINE_MUTANTS.length;
+const total = MA2_MUTANTS.length + CORE_MUTANTS.length + PAGE_MUTANTS.length + WORKFLOW_MUTANTS.length + BACKFILL_MUTANTS.length + PIPELINE_MUTANTS.length;
 console.log(`mutants: ${total - survived} caught, ${survived} survived`);
 process.exit(survived ? 1 : 0);

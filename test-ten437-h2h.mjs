@@ -85,6 +85,10 @@ function block() {
 }
 const PS_TOUR_META_SRC = /const PS_TOUR_META = \(\(\) => \{[\s\S]*?\n\}\)\(\);/.exec(html)[0];
 const HELPERS = ['escapeHtml', 'surnameFirstName', 'psShortName', 'formIni', 'ppCleanTournamentName', 'psNormTour', 'psTourMeta', 'psRoundAbbr', 'h2hRoundLabel', 'maRoundName', 'eventKeyOfMatch'];
+// Match analysis rebuild (2026-11-23): the H2H tab is drawn by match-analysis-v2.js (maH2HV2, h2List) over this data
+// layer; its source runs in the same scope. TEN437_MA2 = a mutated copy (tools/test-ten437-mutants.js).
+const { ma2Src } = require(join(HERE, 'tools', 'ma2-test-load.cjs'));
+const MA2 = ma2Src(process.env.TEN437_MA2 || join(HERE, 'match-analysis-v2.js'), ['h2List']);
 const MODAL = new Function('ENV', `
   const document = { addEventListener(){}, getElementById(){ return null; }, querySelector(){ return null; }, querySelectorAll(){ return []; },
     head: { appendChild(){} }, createElement(){ return { set textContent(v){} }; } };
@@ -103,7 +107,9 @@ const MODAL = new Function('ENV', `
   ${PS_TOUR_META_SRC}
   ${HELPERS.map(n => slice(n)).join('\n')}
   ${block()}
-  return { fhMeetings, fhH2hMeetingRows, fhEnsureH2hData, fhBuildH2H, fhStateFor, fhSrcTitle, fhH2hSrcTitle, fhB365Tag, formRule: FH_FORM_NOT_ATP_RECORD };
+  const __MA2_ROOT = Object.create(globalThis);
+  ${MA2}
+  return { maH2HV2: __MA2_ROOT.maH2HV2, h2List: __MA2_ROOT.__t.h2List, fhMeetings, fhH2hMeetingRows, fhEnsureH2hData, fhStateFor, fhSrcTitle, fhH2hSrcTitle, fhB365Tag, formRule: FH_FORM_NOT_ATP_RECORD };
 `);
 const ENV = { profiles: {}, loadCareerHistory: () => Promise.resolve([]), answered: () => true,
   ids: Object.fromEntries(G.pairs.flatMap(p => [[p.a.key, p.a.id], [p.b.key, p.b.id]]).filter(e => e[1])) };
@@ -119,21 +125,26 @@ test('UI: the Match analysis H2H tab\'s own code reads Medvedev–Tsitsipas 10�
   const E = S.fhMeetings(m).filter(r => !r.wo);
   assert.equal(E.length, 15); assert.equal(E.filter(r => r.won).length, 10);
   S.fhStateFor(m);
-  const t = text(S.fhBuildH2H(m));
-  assert.match(t, /D\. Medvedev 10 – 5 S\. Tsitsipas/);
-  assert.match(t, /Medvedev leads · 15 meetings/);
+  const t = text(S.maH2HV2(m));
+  assert.match(t, /D\. Medvedev 10 wins Overall 10 – 5 15 meetings S\. Tsitsipas 5 wins/);
+  assert.match(t, /Medvedev leads/);
   assert.match(t, /0 of 15 meetings priced/, 'the price coverage line counts the full population (Y = 15)');
 });
 test('UI: the H2H page builds its meetings with the same join and the same inputs as the tab', () => {
   assert.equal((html.match(/H2HCore\.joinMeetings\(/g) || []).length, 2, 'exactly two callers: the tab (fhH2hMeetingRows) and the page (h2hPairFor)');
-  assert.match(slice('fhH2hMeetingRows'), /H2HCore\.joinMeetings\(sfH2hSide\(m\.p1Key, m\.p1\), sfH2hSide\(m\.p2Key, m\.p2\), ch\[0\], ch\[1\], sfH2hNkCount\(\), own\)/);
+  // 2026-11-23 rebuild: the tab's "Include Challenger & ITF" tick passes { lower: true }; unticked (and every other
+  // caller) passes nothing — the ATP population, unchanged
+  assert.match(slice('fhH2hMeetingRows'), /H2HCore\.joinMeetings\(sfH2hSide\(m\.p1Key, m\.p1\), sfH2hSide\(m\.p2Key, m\.p2\), ch\[0\], ch\[1\], sfH2hNkCount\(\), own, lower \? \{ lower: true \} : undefined\)/);
   const page = slice('h2hPairFor');
   assert.match(page, /const nkF = fn\('sfH2hNkCount'\);\n\s*const own = \[\];/, 'the page excludes no board match (ruling 2026-10-16)');
   assert.match(page, /H2HCore\.joinMeetings\(withId\(a\), withId\(b\), S\.chA, S\.chB, nkF \? nkF\(\) : NK_COUNT, own\)/);
   assert.match(page, /const withId = p => Object\.assign\(\{\}, p, \{ id: idF \? idF\(p\.key\) : null \}\);/, 'the page passes each side\'s TML/ATP id (D3)');
   assert.match(slice('sfH2hSide'), /id: key != null \? careerHistoryIdOf\(key\) : null/, 'the tab passes each side\'s TML/ATP id (D3)');
-  assert.match(slice('fhMeetings'), /const list = fhH2hMeetingRows\(m\);/, 'Key factors and the tab read fhMeetings');
-  assert.match(slice('kfH2HCard'), /fhMeetings\(m\)/, 'Key factors\' H2H box reads the tab\'s rows');
+  assert.match(slice('fhMeetings'), /const list = fhH2hMeetingRows\(m, lower\);/, 'Key factors and the tab read fhMeetings (the tab passes its Challenger and ITF tick)');
+  // 2026-11-23 rebuild: Key factors' H2H box is match-analysis-v2.js kfH2hBox (kfH2HCard deleted)
+  const v2 = readFileSync(process.env.TEN437_MA2 || join(HERE, 'match-analysis-v2.js'), 'utf8'), kf = v2.slice(v2.indexOf('  function kfH2hBox('), v2.indexOf('  function kfProgBox('));
+  assert.ok(kf.length > 100, 'kfH2hBox found');
+  assert.match(kf, /fhMeetings\(m\)/, 'Key factors\' H2H box reads the tab\'s rows');
 });
 
 // Mutation: the namesake rule dropped. A row only one side records counts only when the name it carries is unique on the
@@ -205,7 +216,7 @@ test('failed load (Match analysis): a history that did not load reads "could not
   assert.deepEqual(m._fhH2hFailed, ['S. Tsitsipas']);
   assert.equal(m._fhH2hP, null, 'the promise memo is released');
   S.fhStateFor(m);
-  const t = text(S.fhBuildH2H(m));
+  const t = text(S.maH2HV2(m));
   assert.match(t, /Head-to-head could not load Match history for S\. Tsitsipas did not load/);
   assert.match(t, /Retry/);
   assert.doesNotMatch(t, /no meeting on record|No previous meetings/i);
@@ -254,11 +265,12 @@ test('single source: no shipped display code reads m.h2h\'s record or meetings; 
   const files = [...new Set(CODE_REQUIRED.concat(shipped))].filter(f => /\.(html|js)$/.test(f) && !/[*]/.test(f));
   assert.ok(files.includes('trading-report.js') && files.includes('admin.html'), 'every file the site ships is scanned');
   assert.ok(files.includes('h2h-core.js') && files.includes('bsp-consult-dashboard.html'), 'h2h-core.js is published with the page');
+  assert.ok(files.includes('match-analysis-v2.js'), 'the rebuilt Match analysis tabs (2026-11-23) are scanned');
   const READ = /\.h2h\s*(?:\?\.|\.)\s*(?:record|matches|p1Wins|p2Wins)\b|\b(?:m|match|mm|x|row|card|fx)\s*(?:\?\.|\.)\s*h2h\b(?![-\w])|\[\s*['"]h2h['"]\s*\]|\{\s*(?:[\w$]+\s*,\s*)*h2h\s*(?:,|\})/;
   const hits = [];
   for (const f of files) {
     const fp = join(HERE, f); if (f !== 'bsp-consult-dashboard.html' && !existsSync(fp)) continue;
-    const src = f === 'bsp-consult-dashboard.html' ? html : readFileSync(fp, 'utf8');
+    const src = f === 'bsp-consult-dashboard.html' ? html : f === 'match-analysis-v2.js' && process.env.TEN437_MA2 ? readFileSync(process.env.TEN437_MA2, 'utf8') : readFileSync(fp, 'utf8');
     // code only: a // comment, a /* … */ block line or a ` * ` doc line names m.h2h in prose, it reads nothing
     src.split('\n').forEach((l, i) => { if (/^\s*(\*|\/\*)/.test(l)) return; if (READ.test(l.replace(/\/\/.*$/, ''))) hits.push(`${f}:${i + 1}: ${l.trim().slice(0, 120)}`); });
     if (f !== 'h2h-core.js') assert.doesNotMatch(src, /function\s+\w*(?:joinMeetings|JoinMeetings|AllMeetingRows|MeetingList)\s*\(/, `${f} defines its own meeting join`);
@@ -268,7 +280,7 @@ test('single source: no shipped display code reads m.h2h\'s record or meetings; 
   // pair's meetings outside H2HCore). Style meetings are a player against an archetype, not a pair.
   const named = [...new Set((html.match(/function [A-Za-z0-9_]*[Mm]eet[A-Za-z0-9_]*\(/g) || []).map(s => s.slice(9, -1)))].sort();
   assert.deepEqual(named, ['_styleMeetSlug', 'ensureStyleMeetings', 'fhH2hMeetingRows', 'fhMeetings', 'fhNoMeetingCards', 'h2hOpenMeeting',
-    'loadStyleMeetIndex', 'loadStyleMeetShard', 'ps2MeetCard', 'ps2Meeting', 'psFmtMeetDate', 'psGroupMeetings', 'styleMeetRowsFor']);
+    'loadStyleMeetIndex', 'loadStyleMeetShard', 'ps2Meeting', 'psFmtMeetDate', 'psGroupMeetings', 'styleMeetRowsFor']);
   // the model (founder ruling 2026-10-14, card edd72529): its H2H input is the SAME list — the pipeline hands
   // modelH2hMatches (H2HCore over career-history) to runModel as h2h.matches; executed in "model" below
   const pipe = readFileSync(join(HERE, 'bsp-pipeline.js'), 'utf8');
@@ -632,9 +644,16 @@ test('a Bet365-priced meeting: "B" marker kept, hover "Bet365 closing odds, Pinn
   // H2H only: Form and every other surface keep the source label
   assert.equal(S.fhSrcTitle({ book: 'B', src: 'td' }), 'Bet365 close · Tennis-Data', 'Form keeps its hover');
   assert.match(S.fhB365Tag({ book: 'B', src: 'td' }), /title="Bet365 close · Tennis-Data \(no Pinnacle close for this match\)"/, 'a non-H2H tag keeps its hover');
-  assert.match(slice('fhH2hRowData'), /hTitle: fhH2hSrcTitle\(r\), aTitle: fhH2hSrcTitle\(r\)/, 'the tab\'s H2H rows read the H2H hover');
+  // the tab's meeting rows (2026-11-23 rebuild: h2List), executed: both price cells carry the H2H hover, A's the B marker
+  const trow = (o) => Object.assign({ mid: 'h2h_' + o.date, date: o.date, won: true, tourn: 'Monte Carlo', tournRaw: 'Monte Carlo', surface: 'Clay', level: 'ATP', round: 'F', sets: [[6, 4], [6, 4]], done: [[6, 4], [6, 4]], pS: 2, oS: 0 }, o);
+  const TF = [trow({ date: '2025-04-12', price: 1.7, oppPrice: 2.2, book: 'P', src: 'td' }), trow({ date: '2026-04-12', price: 1.8, oppPrice: 2.0, book: 'B', src: 'td' })];
+  const tm = { id: 'x', p1: 'A. One', p2: 'B. Two', p1Key: '1', p2Key: '2', date: '2026-10-14' };
+  S.fhStateFor(tm);
+  const tab = S.h2List(tm, TF, TF, { surf: 'all' }, 'One', 'Two');
+  assert.match(tab, new RegExp(`<span title="${HOVER}" style="[^"]*">1\\.80<span aria-hidden="true"[^>]*>B</span></span><span title="${HOVER}" style="[^"]*">2\\.00</span>`), 'the tab\'s H2H rows read the H2H hover, the B marker after A\'s price');
+  assert.equal((tab.match(/>B<\/span><\/span>/g) || []).length, 1, 'control: the Pinnacle meeting carries no marker');
   assert.match(slice('h2hPriceTitle'), /if \(r\.price != null\) return r\.book === 'B' \? \(typeof fhB365Approx === 'function' && fhB365Approx\(r\) \? \(r\.src === 'atb' \? FH_B365_AT_HOVER : r\.src === 'teb' \? FH_B365_TE_HOVER : FH_B365_APPROX_HOVER\) : FH_B365_HOVER\) : /, 'the H2H page reads the same hover (our captured Bet365: the approx. line, founder 2026-10-18; api-tennis Bet365 its own, 2026-10-19)');
-  assert.match(slice('fhH2hRowData'), /hMark: fhPxMark\(r\)/, 'the tab\'s B marker in the H cell (fhPxMark: B, or E for the early cut — founder 2026-10-25)');
+  assert.match(readFileSync(process.env.TEN437_MA2 || join(HERE, 'match-analysis-v2.js'), 'utf8'), /mark = typeof fhPxMark === 'function' \? fhPxMark\(r\) : ''/, 'the tab\'s B marker in the price cell (fhPxMark: B, or E for the early cut — founder 2026-10-25)');
   // item 4 (founder 2026-10-16): "show it on the H2H page meeting rows too, same as the tab"
   // the H2H page meeting rows (the rebuilt meetings box), executed: the "B" after A's price, the hover on both prices
   const HX = require(join(HERE, 'tools/h2h-test-harness.js'));
