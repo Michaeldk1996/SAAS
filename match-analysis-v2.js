@@ -678,8 +678,8 @@
   const M_H2 = '52px minmax(0,1.4fr) 36px 56px minmax(0,1.3fr) 46px 46px 8px';
   const hd = (t, x) => '<span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey);' + (x || '') + '">' + t + '</span>';
   const chev = (rot) => '<span style="color:var(--ma2-quiet); font-size:14px; display:inline-block; transition:transform .2s;' + (rot ? ' transform:rotate(90deg);' : '') + '">›</span>';
-  function h2LinePx(L, m) {
-    const ctx = fhLinePxCtx(m, () => { if (_fh && _fh.m === m && aBuilt(m, 'h2h')) fhH2h({}); });
+  function h2LinePx(L, m, repaint) {
+    const ctx = fhLinePxCtx(m, repaint || (() => { if (_fh && _fh.m === m && aBuilt(m, 'h2h')) fhH2h({}); }));
     if (!ctx || typeof LinePrices === 'undefined' || !L.px) return { txt: DASH, price: null, title: L.px ? 'No line price' : 'No bet105 market for this line' };
     const px = L.px, side = px.side || (px.who === 'A' ? ctx.aKey : px.who === 'B' ? ctx.bKey : null);
     const r = LinePrices.linePrice(ctx.ek, side, px.mk, px.line, { date: ctx.date, started: !!ctx.started });
@@ -1438,8 +1438,8 @@
     cshLoad();
     const key = typeof trKeyOf === 'function' ? trKeyOf(m) : null, cc = key && typeof COURT_CONDITIONS !== 'undefined' ? COURT_CONDITIONS[key] : null;
     if (cc) { const ta = CSH.d && CSH.d.ta[key], ys = ta ? Object.keys(ta).filter(y => ta[y] != null && +y >= 2020).sort() : [];
-      return { v: ys.length ? +ta[ys[ys.length - 1]] : cc.abstractSpeed != null ? +cc.abstractSpeed : null, label: courtSpeedCategory(cc.speed), key }; }
-    const cs = m && m.courtSpeed; return cs ? { v: cs.abstractSpeed != null ? +cs.abstractSpeed : null, label: cs.category || '', key } : null;
+      return { v: ys.length ? +ta[ys[ys.length - 1]] : cc.abstractSpeed != null ? +cc.abstractSpeed : null, label: courtSpeedCategory(cc.speed), idx: cc.speed != null ? +cc.speed : null, key }; }
+    const cs = m && m.courtSpeed; return cs ? { v: cs.abstractSpeed != null ? +cs.abstractSpeed : null, label: cs.category || '', idx: cs.speed != null ? +cs.speed : null, key } : null;
   }
   root.ma2CourtSpeed = ma2CourtSpeed;
   // ===================================================================================================
@@ -1755,6 +1755,326 @@
   root.ma2NewsRow = id => { _aNewsOpen = _aNewsOpen === id ? '' : id; nRe(); };
   root.ma2NewsMore = id => { NW.more[id] = !NW.more[id]; nRe(); };
   root.maNewsV2 = maNewsV2;
+
+  // ---------------------------------------------------------------- Key factors (design 2026-11-23)
+  // One wrapping flex row (gap 14, max 1240); every box a clickable card that opens its tab (the Model box: the Model page).
+  // Each box reads the tab it opens; nothing inside a box opens anything else (founder Q18).
+  const KF_BASIS = { f: '100%', h: 'min(100%,440px)', s: 'min(100%,304px)' };
+  function kfBox(o) {
+    const go = o.go || "aGoTab('" + o.tab + "')";
+    return '<div class="seg ma2-tile kf2-box" data-kf="' + (o.key || o.tab) + '" role="button" tabindex="0" onclick="' + go + '" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();' + go + '}"'
+      + (o.aria ? ' aria-label="' + esc(o.aria) + '"' : '') + ' style="order:' + o.order + '; flex:1 1 ' + KF_BASIS[o.size] + '; min-width:0; box-sizing:border-box; background:var(--ma2-card); border:1px solid ' + W(6) + '; border-radius:16px; padding:24px; display:flex; flex-direction:column; gap:18px; cursor:pointer;">'
+      + '<div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;"><div style="display:flex; flex-direction:column; gap:5px; min-width:0;"><span style="display:flex; align-items:center; gap:8px;"><span style="font-size:18px; font-weight:800; letter-spacing:-0.01em; color:var(--ma2-white); white-space:nowrap;">' + esc(o.title) + '</span>' + (o.help ? help(o.help) : '') + '</span>'
+      + '<span style="font-size:12.5px; color:var(--ma2-grey); line-height:1.4; text-wrap:pretty;">' + o.scope + '</span></div>'
+      + '<span style="flex:none; width:26px; height:26px; border-radius:8px; background:var(--ma2-lifted); border:1px solid ' + W(14) + '; display:inline-flex; align-items:center; justify-content:center; font-size:14px; color:var(--ma2-grey);">›</span></div>'
+      + o.body + '</div>';
+  }
+  const kfNote = t => '<span style="font-size:12.5px; color:var(--ma2-grey); line-height:1.5;">' + esc(t) + '</span>';
+  const kfAv = (m, i, size, fs) => av(i ? m.p2 : m.p1, i ? m.p2Key : m.p1Key, size, i ? RING_B(1.5) : RING_A(1.5), fs);
+  const kfPP = g => g == null || !isFinite(g) ? { t: DASH, c: 'var(--ma2-quiet)' } : (() => { const r = Math.round(g * 10) / 10; return { t: (r > 0 ? '+' : r < 0 ? '−' : '') + Math.abs(r).toFixed(1) + 'pp', c: r > 0 ? 'var(--ma2-green)' : r < 0 ? 'var(--ma2-red)' : 'var(--ma2-grey)' }; })();
+
+  // Stennisfy Model = the Model page's own run and rules (brief item a): model-output.json (else the draw store's copy), the
+  // run's adjusted fair odds, the page's verdict (edgeVerdicts: the run's flags, 3% sharp / 5% soft, prediction market),
+  // its best soft book (edgeBestSoft: no Pinnacle, no exchange) and its sharp tile (edgeSharp: Pinnacle, else Bet365).
+  function kfModelBox(m) {
+    const ds = typeof _drawMatchStore !== 'undefined' && _drawMatchStore && _drawMatchStore.matches && _drawMatchStore.matches[m.id];
+    const e = (typeof modelOutput !== 'undefined' && modelOutput && modelOutput.matches ? modelOutput.matches[m.id] : null) || (ds && ds.model) || null;
+    const ok = !!(e && e.ok), fair = ok && e.stage3 ? e.stage3.fair || {} : {}, net = ok && e.stage2 && e.stage2.totalDeltaP1 != null ? e.stage2.totalDeltaP1 * 100 : null;
+    const vd = ok ? edgeVerdicts(e, m) : null, sharp = ok ? edgeSharp(m) : null, surf = fhSurfName(m.surface);
+    const netTxt = net == null ? DASH : Math.round(Math.abs(net) * 10) === 0 ? '0.0pp' : '+' + Math.abs(net).toFixed(1) + 'pp';
+    const scope = 'Adjusted model price against the market' + (surf ? ' · ' + esc(surf) : '') + ' · net adjustment <span style="' + MONO + ' color:var(--ma2-text);">' + netTxt + '</span>' + (net != null && Math.round(Math.abs(net) * 10) ? ' toward ' + esc(net > 0 ? m.p1 : m.p2) : '');
+    const col = i => {
+      const s = i ? 'p2' : 'p1', f = fair[s] || {}, prob = f.prob != null ? f.prob : null, soft = ok ? edgeBestSoft(m, s) : null;
+      const pinNow = sharp && sharp.now ? sharp.now[s] : null, pinOpen = sharp && sharp.open ? sharp.open[s] : null;
+      const fc = vd ? (vd[s].c === 'pos' ? 'var(--ma2-green)' : vd[s].c === 'neg' ? 'var(--ma2-red)' : 'var(--ma2-grey)') : 'var(--ma2-quiet)';
+      const sg = kfPP(soft ? edgeGapOf(prob, soft.price) : null), pg = kfPP(pinNow != null ? edgeGapOf(prob, pinNow) : null), mv = oddsMove(pinOpen, pinNow);
+      const tileP = (lbl, g, fig, sub) => '<div style="background:var(--ma2-card); border:1px solid ' + W(6) + '; border-radius:11px; padding:13px 14px 12px; display:flex; flex-direction:column; gap:6px; min-width:0;"><span style="display:flex; align-items:baseline; justify-content:space-between; gap:6px;"><span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey); white-space:nowrap;">' + esc(lbl) + '</span><span style="' + MONO + ' font-size:12.5px; font-weight:700; color:' + g.c + ';">' + g.t + '</span></span>'
+        + '<span style="' + MONO + ' font-size:20px; font-weight:700; line-height:1.1; color:' + (fig === DASH ? 'var(--ma2-quiet)' : 'var(--ma2-text)') + ';">' + fig + '</span><span style="font-size:11.5px; color:var(--ma2-grey); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + sub + '</span></div>';
+      return '<div style="background:var(--ma2-inner); border:1px solid ' + W(6) + '; border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:16px; min-width:0;">'
+        + '<div style="display:flex; align-items:center; justify-content:space-between; gap:12px 16px; flex-wrap:wrap;"><span style="display:flex; align-items:center; gap:12px; min-width:0;">' + kfAv(m, i, 40, 12.5)
+        + '<span style="display:flex; flex-direction:column; gap:4px; min-width:0; align-items:flex-start;"><span style="font-size:15px; font-weight:800; color:var(--ma2-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;">' + esc(i ? m.p2 : m.p1) + '</span>'
+        + (vd ? '<span style="font-size:12px; font-weight:700; color:' + fc + '; background:var(--ma2-lifted); border:1px solid ' + W(14) + '; border-radius:8px; padding:3px 9px; white-space:nowrap;">' + esc(vd[s].t) + '</span>' : '') + '</span></span>'
+        + '<span style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;"><span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey);">Adjusted fair odd' + (prob != null ? ' · ' + (prob * 100).toFixed(1) + '%' : '') + '</span><span style="' + MONO + ' font-size:26px; font-weight:700; line-height:1.1; color:' + (f.odds != null ? 'var(--ma2-text)' : 'var(--ma2-quiet)') + ';">' + (f.odds != null ? Number(f.odds).toFixed(2) : DASH) + '</span></span></div>'
+        + '<div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px;">'
+        + tileP('Best soft book', sg, soft ? mxOddsTxt(soft.price) : DASH, soft ? 'At ' + esc(soft.name) : DASH)
+        + tileP(sharp ? sharp.name : 'Pinnacle', pg, pinNow != null ? mxOddsTxt(pinNow) : DASH, pinOpen != null ? 'Open ' + mxOddsTxt(pinOpen) + (pinNow != null ? ' · <span style="color:' + mv.c + '; font-weight:700;">' + mv.t + '</span>' : '') : DASH)
+        + '</div></div>';
+    };
+    const body = ok ? '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr)); gap:14px;">' + col(0) + col(1) + '</div>'
+      : kfNote('The model has not published an adjusted fair price for this match yet.');
+    const idA = String(m.id == null ? '' : m.id).replace(/'/g, "\\'");
+    return kfBox({ key: 'model', go: "openEdgeModelFromMatch('" + idA + "')", aria: 'Open the Stennisfy Model for this match', order: 1, size: 'f', title: 'Stennisfy Model',
+      help: 'Gap = adjusted fair probability minus the probability implied by the bookmaker price. Pinnacle shows its opening odd and the price now.', scope, body });
+  }
+
+  // Odds = the Odds tab's one book (kfOddsBook: the card's book, its open, now, series and vig-free pair). No Soft avg column:
+  // removed by founder Q12, question open (STEP1 report 3).
+  function kfOddsBox(m) {
+    const loading = !m.oddsMovement && !m._oddsLoaded, X = loading ? null : kfOddsBook(m), row = X && X.row, books = X ? X.D.rows.filter(r => !r.noData).length : 0;
+    const G = 'display:grid; grid-template-columns:minmax(0,1fr) 44px 56px 52px 44px; gap:10px; align-items:center;';
+    const spark = (pts, i) => { const P = typeof aOddsDispSeries === 'function' ? aOddsDispSeries(pts || []) : []; if (P.length < 2 || (row.gaps && row.gaps.length)) return '<span></span>';
+      const v = P.map(q => q[1]), mn = Math.min.apply(null, v), rg = (Math.max.apply(null, v) - mn) || 1, t0 = P[0][0], sp = (P[P.length - 1][0] - t0) || 1;
+      return '<svg viewBox="0 0 64 20" width="56" height="20" preserveAspectRatio="none" style="display:block;"><polyline points="' + P.map(q => (2 + (q[0] - t0) / sp * 60).toFixed(1) + ',' + (17 - (q[1] - mn) / rg * 14).toFixed(1)).join(' ') + '" fill="none" stroke="' + (i ? 'var(--ma2-text)' : 'var(--ma2-blue)') + '" stroke-width="1.5" stroke-linejoin="round" vector-effect="non-scaling-stroke"></polyline></svg>'; };
+    const hd = l => '<span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey); text-align:right; white-space:nowrap;">' + l + '</span>';
+    const fairOf = x => row && row.nv && row.nv[x] && row.nv[x].length ? aOddsFmt(row.nv[x][row.nv[x].length - 1][1]) : DASH;
+    const line = i => { const x = i ? 'b' : 'a', o = row && row[x + 'Open'] != null ? aOddsFmt(row[x + 'Open']) : DASH, n = row && row[x + 'Now'] != null ? aOddsFmt(row[x + 'Now']) : DASH;
+      return '<div style="' + G + ' padding:14px 0; flex:1;"><span style="display:flex; align-items:center; gap:8px; min-width:0;">' + kfAv(m, i, 22, 9) + '<span style="font-size:13.5px; font-weight:700; color:var(--ma2-white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(i ? m.p2 : m.p1) + '</span></span>'
+        + '<span style="' + MONO + ' font-size:12.5px; color:var(--ma2-grey); text-align:right;">' + o + '</span>' + (row ? spark((row.series || {})[x], i) : '<span></span>')
+        + '<span style="' + MONO + ' font-size:18px; font-weight:700; color:' + (n === DASH ? 'var(--ma2-quiet)' : 'var(--ma2-text)') + '; text-align:right;">' + n + '</span>'
+        + '<span style="' + MONO + ' font-size:12.5px; color:var(--ma2-soft); text-align:right;">' + fairOf(x) + '</span></div>'; };
+    const body = '<div style="display:flex; flex-direction:column; flex:1;"><div style="' + G + ' padding-bottom:9px; border-bottom:1px solid ' + W(6) + ';"><span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey);">Player</span>' + hd('Open') + '<span></span>' + hd('Now') + hd('Fair') + '</div>'
+      + line(0) + line(1) + '</div>' + (loading ? kfNote('Loading bookmaker odds…') : !row ? kfNote(X.D.hasSeries ? 'No recent prices: every book on file was last checked over an hour ago.' : 'No prices in the feed for this match yet.') : '');
+    const scope = loading ? 'Match winner · loading' : row ? 'Match winner · ' + esc(row.name) + ' price, ' + books + ' bookmaker' + (books === 1 ? '' : 's') + ' compared' : 'Match winner · no prices';
+    return kfBox({ tab: 'odds', order: 2, size: 'h', title: 'Odds', scope, body });
+  }
+
+  // Playing style DNA = the Playing style tab's five axes (ps2DnaModel, last 52 weeks, true percentiles, the 10-match floor;
+  // N10). Mirrored 6px bars blue / white (design); the stronger figure white, the other grey (design, conflict noted).
+  function kfDnaBox(m) {
+    const D = ps2DnaModel(m, { win: 'w52' }); let nA = 0, nB = 0, k = 0;
+    const pc = v => (v.pct == null ? null : Math.max(0, Math.min(100, v.pct)));
+    const rows = PS2_AXES.map((ax, i) => {
+      const a = pc(D.a.vals[i]), b = pc(D.b.vals[i]), ra = a == null ? null : Math.round(a), rb = b == null ? null : Math.round(b);
+      if (ra != null && rb != null) { k++; if (ra > rb) nA++; else if (rb > ra) nB++; }
+      const col = (x, o) => x == null ? 'var(--ma2-quiet)' : o == null || x >= o ? 'var(--ma2-text)' : 'var(--ma2-grey)';
+      const fig = (x, o, right) => '<span style="' + MONO + ' font-size:12.5px; font-weight:700; color:' + col(x, o) + '; min-width:22px;' + (right ? ' text-align:right;' : '') + '">' + (x == null ? DASH : x) + '</span>';
+      const bar = (x, right, c) => '<div style="flex:1; height:6px; border-radius:3px; background:' + W(7) + ';' + (right ? '' : ' display:flex; justify-content:flex-end;') + '"><div style="width:' + (x == null ? 0 : x) + '%; height:6px; border-radius:3px; background:' + c + ';"></div></div>';
+      return '<div title="' + esc(ps2AxisTip(D, i)) + '" style="display:grid; grid-template-columns:minmax(0,1fr) 108px minmax(0,1fr); gap:12px; align-items:center;">'
+        + '<div style="display:flex; align-items:center; gap:10px;">' + fig(ra, rb) + bar(a, false, 'var(--ma2-blue)') + '</div>'
+        + '<span style="font-size:12.5px; font-weight:600; color:var(--ma2-soft); text-align:center; white-space:nowrap;">' + esc(ax.short || ax.label) + '</span>'
+        + '<div style="display:flex; align-items:center; gap:10px;">' + bar(b, true, 'var(--ma2-text)') + fig(rb, ra, true) + '</div></div>'; }).join('');
+    const why = x => (!x.d.inPool ? fhSurname(x.name) + ': no api-tennis rating on record.' : !x.d.ok ? fhSurname(x.name) + ': ' + (x.d.matches || 0) + ' ' + D.surface + ' ' + (x.d.matches === 1 ? 'match' : 'matches') + ' in the last 52 weeks, below the ' + MDNA_FLOOR + '-match floor.' : '');
+    const ws = [why(D.a), why(D.b)].filter(Boolean).join(' ');
+    const scope = D.loading ? 'Loading DNA…' : !k ? (ws || 'No axis both players carry.') : (nA === nB ? 'Axes split ' + nA + '–' + nB : esc(fhSurname(nA > nB ? m.p1 : m.p2)) + ' leads ' + Math.max(nA, nB) + ' of ' + k + ' axes') + ' · last 52 weeks' + (ws ? ' · ' + esc(ws) : '');
+    const name = (i, rev) => '<span style="display:flex; align-items:center; gap:8px; min-width:0;' + (rev ? ' flex-direction:row-reverse;' : '') + '">' + kfAv(m, i, 22, 9) + '<span style="font-size:13.5px; font-weight:700; color:var(--ma2-white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(i ? m.p2 : m.p1) + '</span></span>';
+    const body = '<div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">' + name(0) + name(1, true) + '</div><div style="display:flex; flex-direction:column; gap:12px;">' + rows + '</div>';
+    return kfBox({ tab: 'style', key: 'dna', order: 3, size: 'h', title: 'Playing style DNA', help: 'Where each player stands on tour over the last 52 weeks, 0 to 100. A higher figure is better.', scope, body });
+  }
+
+  // Market edge = the tab's own models (meStateFor / meModels, the tab's scope), per player: today's price (the header's)
+  // and its band; the band's record, won vs needs, edge, flat 1% stake (the tab's gate, n < 5 dashed, 5–9 grey); the
+  // derived lines at today's price as plain rows (design: no wash on the top lines).
+  const kfTile = (label, fig, figC, sub) => '<div style="background:var(--ma2-card); border:1px solid ' + W(6) + '; border-radius:11px; padding:13px 14px 12px; display:flex; flex-direction:column; gap:6px; min-width:0;"><span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey); white-space:nowrap;">' + label + '</span>'
+    + '<span style="' + MONO + ' font-size:20px; font-weight:700; line-height:1.1; color:' + figC + ';">' + fig + '</span><span style="font-size:11.5px; color:var(--ma2-grey); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + sub + '</span></div>';
+  function kfMeBox(m) {
+    const E = meStateFor(m), MM = meModels(E), core = root.MarketEdgeCore, fmt = core ? core.matchFormat(m) : { bo3: false };
+    const col = i => {
+      const M = MM[i], ready = M.state === 'ready', b = ready && M.tb >= 0 ? M.bands[M.tb] : null;
+      const gate = (txt, c) => { if (!b) return { t: DASH, c: meGrey }; const R = maRate(b.w, b.n, { text: txt, nopct: DASH }); return { t: R.txt, c: R.mode === 'full' ? c : meGrey }; };
+      const edge = b && b.won != null && b.needs != null ? (b.won - b.needs) * 100 : null;
+      const won = gate(b && b.won != null ? (Math.round(b.won * 1000) / 10).toFixed(1) + '%' : null, 'var(--ma2-text)');
+      const ed = gate(edge == null ? null : meSg(edge, 1, 'pp'), edge == null ? meGrey : meUc(edge, 1)), un = b && b.n ? gate(meSg(b.units, 1, '%'), meUc(b.units, 1)) : { t: DASH, c: meGrey };
+      const tiles = '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(104px,1fr)); gap:10px;">'
+        + kfTile('Record', b ? b.w + '–' + b.l : DASH, b ? 'var(--ma2-text)' : meGrey, b ? b.n.toLocaleString('en-US') + ' priced' : '&nbsp;')
+        + kfTile('Won', won.t, won.c, 'Needs ' + (b && b.needs != null ? (Math.round(b.needs * 1000) / 10).toFixed(1) + '%' : DASH))
+        + kfTile('Edge', ed.t, ed.c, 'Won − needs')
+        + kfTile('At flat 1% stake', un.t, un.c, 'Yield ' + (b && b.yield != null ? meSg(b.yield * 100, 1, '%') : DASH)) + '</div>';
+      const G = 'display:grid; grid-template-columns:minmax(0,1fr) 52px 64px 56px; gap:10px; align-items:baseline;', L = ready ? M.lines : null;
+      const lines = !fmt.bo3 ? kfNote(ME_BO3_MSG) : M.today == null ? kfNote(ME_NOPRICE_MSG)
+        : !ready ? kfNote(M.state === 'loading' ? 'Loading…' : M.state === 'none' ? 'No history on file for this player.' : 'History unavailable — reopen the tab to retry.')
+        : !L ? kfNote(ME_NOPRICE_MSG)
+        : '<div style="display:flex; flex-direction:column;"><div style="' + G + ' padding:0 0 9px; border-bottom:1px solid ' + W(6) + '; margin-bottom:6px;"><span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey);">Derived line</span>'
+          + ['All', 'In band', 'Diff'].map(h => '<span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey); text-align:right; white-space:nowrap;">' + h + '</span>').join('') + '</div>'
+          + L.rows.map(r => { const d = r.diff, aR = maRate(r.aC, r.aN, {}), bR = maRate(r.bC, r.bN, {}), sm = aR.mode === 'small' || bR.mode === 'small';
+            return '<div style="' + G + ' padding:6px 0;"><span style="font-size:12.5px; font-weight:600; color:var(--ma2-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(r.label) + '</span>'
+              + '<span style="' + MONO + ' font-size:12px; text-align:right;">' + maRateHtml(r.aC, r.aN, { text: r.aPct == null ? null : r.aPct + '%', nopct: DASH, note: false, color: 'var(--ma2-grey)' }) + '</span>'
+              + '<span style="' + MONO + ' font-size:12.5px; font-weight:700; text-align:right;">' + maRateHtml(r.bC, r.bN, { text: r.bPct == null ? null : r.bPct + '%', nopct: DASH, note: false, color: 'var(--ma2-text)' }) + '</span>'
+              + '<span style="' + MONO + ' font-size:12px; font-weight:700; text-align:right; color:' + (d == null ? meGrey : sm ? meGrey : meUc(d, 0)) + ';">' + (d == null ? '' : meSg(d, 0, '')) + '</span></div>'; }).join('') + '</div>';
+      const band = ready && M.tb >= 0 && core ? core.BANDS[M.tb].label : DASH;
+      return '<div style="background:var(--ma2-inner); border:1px solid ' + W(6) + '; border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:16px; min-width:0;">'
+        + '<div style="display:flex; align-items:center; justify-content:space-between; gap:12px 16px; flex-wrap:wrap;"><span style="display:flex; align-items:center; gap:12px; min-width:0;">' + kfAv(m, i, 40, 12.5)
+        + '<span style="display:flex; flex-direction:column; gap:4px; min-width:0; align-items:flex-start;"><span style="font-size:15px; font-weight:800; color:var(--ma2-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;">' + esc(i ? m.p2 : m.p1) + '</span><span style="font-size:12.5px; color:var(--ma2-grey);">Price band ' + esc(band) + '</span></span></span>'
+        + '<span style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;"><span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey);">Today</span><span style="' + MONO + ' font-size:20px; font-weight:700; line-height:1.1; color:' + (M.today != null ? 'var(--ma2-text)' : 'var(--ma2-quiet)') + ';">' + (M.today != null ? M.today.toFixed(2) : DASH) + '</span></span></div>'
+        + tiles + lines + '</div>';
+    };
+    return kfBox({ tab: 'marketedge', order: 4, size: 'f', title: 'Market edge',
+      help: 'Won = share of matches won in this price band. Needs = the share the price asks for. Edge = won minus needs. Derived lines compare the cover rate in the band with all matches. ' + (core ? core.RET_SETTLE_NOTE : ''),
+      scope: "His record in today's price band · " + esc(scopeLbl(E.S)) + ' · closing odds', body: '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr)); gap:14px;">' + col(0) + col(1) + '</div>' });
+  }
+
+  // Small boxes: two plain columns, each led by the 22px ringed avatar + name.
+  const kfWho = (m, i) => '<span style="display:flex; align-items:center; gap:8px; min-width:0;">' + kfAv(m, i, 22, 9) + '<span style="font-size:13.5px; font-weight:700; color:var(--ma2-white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(i ? m.p2 : m.p1) + '</span></span>';
+  const kfCols = (a, b) => '<div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:20px; flex:1;">' + a + b + '</div>';
+  const kfStat = (label, val, c, tip) => '<div' + (tip ? ' title="' + esc(tip) + '"' : '') + ' style="display:flex; justify-content:space-between; align-items:baseline; gap:8px;"><span style="font-size:12.5px; color:var(--ma2-grey); white-space:nowrap;">' + label + '</span><span style="' + MONO + ' font-size:12.5px; font-weight:700; color:' + c + ';">' + val + '</span></div>';
+  // Recent form = the Form tab's default view (today's surface, last 10, all roles; fhFormPlayer), its v market / expected
+  // wins (FH_THIN gate) and the best hot line per family.
+  function kfFormBox(m) {
+    const surf = fhSurfName(m.surface), scope = 'Last 10' + (surf ? ' · ' + esc(surf.toLowerCase()) : '');
+    if (!m._fhFormData) return kfBox({ tab: 'form', order: 5, size: 's', title: 'Recent form', scope, body: kfNote('Loading recent matches…') });
+    const st = Object.assign({}, fhStateFor(m).form, { surf: surf || 'all', role: 'all', wmode: 'n', n: 10 });
+    const side = i => {
+      const P = fhFormPlayer(m, i, st), n = P.n, sur = fhSurname(i ? m.p2 : m.p1);
+      const bars = P.win.slice().reverse().map(r => '<div title="' + esc((r.won ? 'Won' : 'Lost') + ' v ' + (r.opp || '') + (r.price != null ? ' · ' + fhOdd(r.price) : '')) + '" style="flex:1; height:6px; border-radius:3px; background:' + (r.won ? 'var(--ma2-green)' : 'var(--ma2-red)') + '; min-width:0;"></div>');
+      while (bars.length < P.NWIN) bars.unshift('<div style="flex:1; height:6px; border-radius:3px; background:' + W(7) + '; min-width:0;"></div>');
+      const d = P.mktOk ? P.winsP - P.expW : null, mc = c => (!P.mktOk ? 'var(--ma2-quiet)' : P.mktSmall ? 'var(--ma2-grey)' : c);
+      const mtip = P.mktOk ? 'Against the market and expected wins on ' + P.np + ' of ' + n + ' priced (closing odds).' : n ? 'Fewer than ' + FH_THIN + ' priced matches: no market figure.' : '';
+      let hot;
+      if (P.hot.ok) hot = FH_HOT_FAM.map(f => P.hot.sc.scored.find(x => fhFamOf(x.L.g) === f[0])).filter(Boolean).map(x => {
+        const lbl = x.name.indexOf(sur + ' ') === 0 ? x.name.slice(sur.length + 1) : x.name;
+        return '<div title="' + esc(x.name + ': ' + x.c + ' of ' + x.n + (x.L.basis ? ' · ' + x.L.basis : '')) + '" style="display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px; align-items:baseline;"><span style="font-size:12.5px; font-weight:600; color:var(--ma2-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(lbl.charAt(0).toUpperCase() + lbl.slice(1)) + '</span><span style="' + MONO + ' font-size:12.5px; font-weight:700;">' + maRateHtml(x.c, x.n, { nopct: x.c + '/' + x.n, note: false, color: 'var(--ma2-text)' }) + '</span></div>'; }).join('');
+      else hot = '<span style="font-size:11.5px; color:var(--ma2-quiet); line-height:1.4;">' + esc(P.hot.fewTxt) + '</span>';
+      return '<div style="display:flex; flex-direction:column; gap:14px; min-width:0;">' + kfWho(m, i)
+        + '<div style="display:flex; flex-direction:column; gap:4px;"><span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey);">Record</span><span style="' + MONO + ' font-size:22px; font-weight:700; line-height:1.1; color:' + (n ? 'var(--ma2-text)' : 'var(--ma2-quiet)') + ';">' + (n ? P.wins + '–' + (n - P.wins) : DASH) + '</span></div>'
+        + '<div style="display:flex; gap:3px;">' + bars.join('') + '</div>'
+        + '<div style="display:flex; flex-direction:column; gap:8px;">' + kfStat('Against market', d == null ? DASH : fhSigned(d, 1), mc(d == null ? 'var(--ma2-quiet)' : meUc(d, 1)), mtip) + kfStat('Expected wins', P.mktOk ? P.expW.toFixed(1) : DASH, mc('var(--ma2-text)'), mtip) + '</div>'
+        + '<div style="display:flex; flex-direction:column; gap:8px; padding-top:14px; margin-top:auto; border-top:1px solid ' + W(6) + ';"><span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey);">Hot lines</span>' + hot + '</div></div>';
+    };
+    return kfBox({ tab: 'form', order: 5, size: 's', title: 'Recent form', scope, body: kfCols(side(0), side(1)) });
+  }
+
+  // Playing style = the Playing style tab's record against the opponent's style (ps2Record: career, walkovers out, the D2
+  // gate on the rate), its tug from the centre (wins green / losses red) and his last 3 meetings with that style.
+  function kfStyleBox(m) {
+    const side = i => {
+      const R = ps2Record(m, i), ready = R.state === 'ready', n = ready ? R.n : 0, g = maGate(n).mode, shown = g === 'full' || g === 'small';
+      const vs = R.oppLab ? 'vs ' + ps2Plural(R.oppLab) : R.state === 'loading' ? 'Loading…' : 'Style not classified';
+      const tw = shown && R.w > R.l ? (R.w - R.l) / n * 50 : 0, tl = shown && R.l > R.w ? (R.l - R.w) / n * 50 : 0;
+      const tt = !ready || !n ? DASH : R.w === R.l ? 'Level' : R.w > R.l ? '+' + (R.w - R.l) + ' ' + (R.w - R.l === 1 ? 'win' : 'wins') : '+' + (R.l - R.w) + ' ' + (R.l - R.w === 1 ? 'loss' : 'losses');
+      const tc = !ready || !n || R.w === R.l ? 'var(--ma2-grey)' : g === 'small' ? 'var(--ma2-grey)' : R.w > R.l ? 'var(--ma2-green)' : 'var(--ma2-red)';
+      const rows = ready && n ? R.rows.slice().sort((x, y) => String(y.date || '').localeCompare(String(x.date || ''))).slice(0, 3).map(r => { const x = ps2Meeting(r);
+        return '<div title="' + esc([r.tournament || r.event || '', r.score || ''].filter(Boolean).join(' · ')) + '" style="display:grid; grid-template-columns:8px minmax(0,1fr) auto; gap:8px; align-items:center;"><span style="width:8px; height:8px; border-radius:50%; background:' + (r.won ? 'var(--ma2-green)' : 'var(--ma2-red)') + ';"></span><span style="font-size:12.5px; font-weight:600; color:var(--ma2-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(r.opponent ? String(r.opponent).replace(/^([A-Za-zÀ-ÿ])[^\s.]*\.?\s+(?=\S)/, '$1. ') : DASH) + '</span><span style="' + MONO + ' font-size:12px; font-weight:700; color:var(--ma2-text); white-space:nowrap;">' + (x.pS + x.oS ? x.pS + '–' + x.oS : DASH) + '</span></div>'; }).join('')
+        : '<span style="font-size:11.5px; color:var(--ma2-quiet);">' + (R.state === 'loading' ? 'Loading…' : R.state === 'unclassified' ? 'Not classified' : 'No career meeting') + '</span>';
+      const tip = ready ? fhSurname(i ? m.p2 : m.p1) + ' ' + vs + ': ' + (n ? R.w + '–' + R.l + ' in ' + n + ' career ' + (n === 1 ? 'meeting' : 'meetings') : 'no career meeting') + ' on record, walkovers excluded.' : '';
+      return '<div style="display:flex; flex-direction:column; gap:14px; min-width:0;"><div style="display:flex; flex-direction:column; gap:6px; min-width:0;">' + kfWho(m, i) + '<span title="' + esc(vs) + '" style="font-size:11.5px; color:var(--ma2-grey); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(vs) + '</span></div>'
+        + '<div title="' + esc(tip) + '" style="display:flex; align-items:baseline; gap:8px;"><span style="' + MONO + ' font-size:22px; font-weight:700; line-height:1.1; color:' + (!shown ? 'var(--ma2-quiet)' : g === 'small' ? 'var(--ma2-grey)' : 'var(--ma2-text)') + ';">' + (shown ? Math.round(R.w / n * 100) + '%' : DASH) + '</span>' + (ready && n ? '<span style="' + MONO + ' font-size:12px; color:var(--ma2-grey);">' + R.w + '–' + R.l + '</span>' : '') + '</div>'
+        + '<div style="display:flex; flex-direction:column; gap:7px;"><div style="position:relative; height:6px; border-radius:3px; background:' + W(7) + ';"><span style="position:absolute; right:50%; top:0; bottom:0; width:' + tw + '%; background:var(--ma2-green); border-radius:3px 0 0 3px;"></span><span style="position:absolute; left:50%; top:0; bottom:0; width:' + tl + '%; background:var(--ma2-red); border-radius:0 3px 3px 0;"></span><span style="position:absolute; left:50%; top:-3px; bottom:-3px; width:1px; background:var(--ma2-grey);"></span></div>'
+        + '<div style="display:grid; grid-template-columns:1fr auto 1fr; font-size:11.5px; font-weight:600; color:var(--ma2-grey);"><span>Won</span><span style="' + MONO + ' font-size:11.5px; font-weight:700; color:' + tc + ';">' + tt + '</span><span style="text-align:right;">Lost</span></div></div>'
+        + '<div style="display:flex; flex-direction:column; gap:8px; padding-top:14px; margin-top:auto; border-top:1px solid ' + W(6) + ';"><span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey);">Last 3 against this style</span>' + rows + '</div></div>';
+    };
+    return kfBox({ tab: 'style', order: 6, size: 's', title: 'Playing style', scope: "Record against the opponent's style", body: kfCols(side(0), side(1)) });
+  }
+
+  // Tournament = the Tournament tab's figures: the event's ONE name and tier, surface · the event hold rate (trHoldHtml,
+  // founder Q9), court speed from our one source (ma2CourtSpeed: knob on the 0–100 index), the Tournaments page's yields
+  // (trMarketFor through the event's gate), and the record here per player (trModelOf; "first appearance", Q25).
+  function kfTourBox(m) {
+    const clean = trClean(m), catHit = TOURNAMENT_CATALOG.find(t => t.name.toLowerCase() === clean.toLowerCase());
+    const tier = (m.venue && m.venue.category) || (catHit && catHit.category) || '', surf = fhSurfName(m.surface);
+    const cs = ma2CourtSpeed(m), idx = cs && cs.idx != null && isFinite(cs.idx) ? Math.max(0, Math.min(100, cs.idx)) : null;
+    const tn = trName(m), scope = esc(tier && tier.toLowerCase() !== tn.toLowerCase() ? tn + ' · ' + tier : tn) + ' · ' + (surf ? esc(surf) + ' · ' : '') + 'hold ' + trHoldHtml(m, 'kf-hold');
+    const speed = '<div style="display:flex; align-items:center; gap:14px;"><span style="' + MONO + ' font-size:26px; font-weight:700; line-height:1.1; color:' + (cs && cs.v != null ? 'var(--ma2-text)' : 'var(--ma2-quiet)') + ';">' + (cs && cs.v != null ? cs.v.toFixed(2) : DASH) + '</span>'
+      + '<div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:8px;"><div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px;"><span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey); white-space:nowrap;">Court speed</span><span style="font-size:12.5px; font-weight:700; color:var(--ma2-text); white-space:nowrap;">' + esc(cs && cs.label || DASH) + '</span></div>'
+      + '<div style="position:relative; height:6px; border-radius:3px; background:' + W(7) + ';">' + (idx == null ? '' : '<span style="display:block; height:100%; width:' + idx + '%; background:var(--ma2-text); border-radius:3px;"></span><span style="position:absolute; top:50%; left:' + idx + '%; width:12px; height:12px; box-sizing:border-box; border-radius:50%; background:var(--ma2-text); border:2px solid var(--ma2-card); transform:translate(-50%,-50%);"></span>') + '</div>'
+      + '<div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--ma2-grey);"><span>Slow</span><span>Fast</span></div></div></div>';
+    const mk = trMarketFor(trKeyOf(m)), g = maGate(mk ? mk.n : null).mode, ok = !!mk && (g === 'full' || g === 'small');
+    const pending = !mk && typeof tourxMarketData !== 'undefined' && !tourxMarketData && !tourxMarketFailed;
+    const why = pending ? 'Loading' : mk ? 'Too few settled' : 'No settled prices';
+    const roi = (label, v, avg) => { const has = ok && v != null && avg != null, d = has ? v - avg : 0, sc = has ? meUc(v, 1) : 'var(--ma2-quiet)';
+      const left = has ? (Math.abs(d) < 1 ? '<span style="color:var(--ma2-grey); font-weight:700;">in line</span> with tour' : '<span style="color:' + meUc(d, 1) + '; font-weight:700;">' + (d > 0 ? '+' : '−') + Math.abs(d).toFixed(1) + 'pp</span> tour') : esc(why);
+      return '<div style="display:flex; justify-content:space-between; align-items:baseline; gap:8px;"><span style="font-size:12.5px; color:var(--ma2-grey);">' + label + '</span><span style="white-space:nowrap;"><span style="font-size:11.5px; color:var(--ma2-grey); margin-right:8px;">' + left + '</span>'
+        + '<span style="' + MONO + ' font-size:12.5px; font-weight:700; color:' + (g === 'small' && has ? 'var(--ma2-grey)' : sc === meGrey ? 'var(--ma2-text)' : sc) + ';">' + (has ? meSg(v, 1, '%') : DASH) + '</span></span></div>'; };
+    const relHas = ok && mk.favRel != null;
+    const market = '<div style="display:flex; flex-direction:column; gap:9px; padding-top:16px; border-top:1px solid ' + W(6) + ';">'
+      + '<div' + (relHas ? ' title="' + esc('Favourites win ' + mk.favRel + '% of matches here (n = ' + (mk.nRel != null ? mk.nRel : mk.n) + ')' + (mk.baseline && mk.baseline.favRel != null ? ' versus ' + mk.baseline.favRel + '% across the tour.' : '.')) + '"' : '') + ' style="display:flex; justify-content:space-between; align-items:baseline; gap:8px;"><span style="font-size:12.5px; color:var(--ma2-grey);">Favourites win</span><span style="' + MONO + ' font-size:12.5px; font-weight:700; color:' + (relHas ? (g === 'small' ? 'var(--ma2-grey)' : 'var(--ma2-text)') : 'var(--ma2-quiet)') + ';">' + (relHas ? mk.favRel + '%' : DASH) + '</span></div>'
+      + roi('Return on favourites', mk && mk.roiFav, mk && mk.baseline && mk.baseline.roiFav) + roi('Return on underdogs', mk && mk.roiDog, mk && mk.baseline && mk.baseline.roiDog) + '</div>';
+    const names = [clean].concat(trArchiveNames(mk)), yr = String(m.date || '').slice(0, 4);
+    const T = [0, 1].map(i => trModelOf(i ? m.p2TournamentHistory : m.p1TournamentHistory, { ch: null, cl: null, fix: recordFixFor(i ? m.p2Key : m.p1Key) }, i ? m.p2Key : m.p1Key, i ? m.p2 : m.p1, clean, names, yr, 'idle'));
+    const hist = [m.p1TournamentHistory, m.p2TournamentHistory], first = i => !hist[i] || !T[i].n;
+    const cell = (i, v) => first(i) ? DASH : v;
+    const row = (lbl, a, b) => '<div style="display:grid; grid-template-columns:1fr auto 1fr; align-items:baseline; gap:10px;"><span style="' + MONO + ' font-size:13px; font-weight:700; color:' + (first(0) ? 'var(--ma2-quiet)' : 'var(--ma2-text)') + '; white-space:nowrap;">' + a + '</span><span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey); white-space:nowrap;">' + lbl + '</span><span style="' + MONO + ' font-size:13px; font-weight:700; color:' + (first(1) ? 'var(--ma2-quiet)' : 'var(--ma2-text)') + '; text-align:right; white-space:nowrap;">' + b + '</span></div>';
+    const best = t => t.best ? esc(t.best.code) + ' ' + t.best.year : DASH;
+    const sets = t => t.sT ? maRateHtml(t.sW, t.sT, { nopct: t.sW + '/' + t.sT, note: false, color: 'var(--ma2-text)' }) : DASH;
+    const notes = [0, 1].filter(first).map(i => fhSurname(i ? m.p2 : m.p1) + ' · ' + (hist[i] ? 'no main-draw match' : 'first appearance'));
+    const name = (i, rev) => '<span style="display:flex; align-items:center; gap:8px; min-width:0;' + (rev ? ' flex-direction:row-reverse;' : '') + '">' + kfAv(m, i, 22, 9) + '<span style="font-size:13.5px; font-weight:700; color:var(--ma2-white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(i ? m.p2 : m.p1) + '</span></span>';
+    const rec = '<div style="display:flex; flex-direction:column; gap:9px; padding-top:16px; margin-top:auto; border-top:1px solid ' + W(6) + ';"><div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">' + name(0) + name(1, true) + '</div>'
+      + row('Record', cell(0, T[0].W + '–' + T[0].L), cell(1, T[1].W + '–' + T[1].L)) + row('Best', cell(0, best(T[0])), cell(1, best(T[1]))) + row('Sets', cell(0, sets(T[0])), cell(1, sets(T[1])))
+      + (notes.length ? '<span style="font-size:11.5px; color:var(--ma2-quiet);">' + esc(notes.join(' · ')) + '</span>' : '') + '</div>';
+    return kfBox({ tab: 'tournament', order: 7, size: 's', title: 'Tournament', scope, body: speed + market + rec });
+  }
+
+  // Head to head = the H2H tab's ATP-official meetings (fhMeetings; walkovers out, a retirement counts), its tallies, the
+  // record on today's surface and its hot lines (fhHotModel: the best line per family, or results at 1–2 meetings). The
+  // leader's figure white, the other grey; one split bar blue | white. The bet105 line price rides in each line's hover.
+  function kfH2hBox(m) {
+    const surf = fhSurfName(m.surface), name = (i, rev) => '<span style="display:flex; align-items:center; gap:8px; min-width:0;' + (rev ? ' flex-direction:row-reverse;' : '') + '">' + kfAv(m, i, 22, 9) + '<span style="font-size:13.5px; font-weight:700; color:var(--ma2-white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(i ? m.p2 : m.p1) + '</span></span>';
+    const names = '<div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">' + name(0) + name(1, true) + '</div>';
+    if (m._fhH2hFailed) return kfBox({ tab: 'h2h', order: 8, size: 's', title: 'Head to head', scope: 'Not loaded', body: names + kfNote('Head-to-head could not load: match history for ' + m._fhH2hFailed.join(' and ') + ' did not load.') + '<span class="seg" onclick="event.stopPropagation();fhH2hRetry()" style="font-size:12.5px; font-weight:700; color:var(--ma2-blue); cursor:pointer;">Retry</span>' });
+    if (!m._fhH2hData) return kfBox({ tab: 'h2h', order: 8, size: 's', title: 'Head to head', scope: 'Loading', body: names + kfNote('Loading head-to-head…') });
+    const counted = fhMeetings(m).filter(r => !r.wo && (FH_H2H_RET_COUNTS || !r.ret)), a = counted.filter(r => r.won).length, n = counted.length, b = n - a;
+    const A = fhSurname(m.p1), B = fhSurname(m.p2), cl = (x, y) => x >= y ? 'var(--ma2-text)' : 'var(--ma2-grey)';
+    const big = (v, c) => '<span style="' + MONO + ' font-size:26px; font-weight:700; line-height:1.1; color:' + c + ';">' + v + '</span>';
+    const score = '<div style="display:grid; grid-template-columns:auto 1fr auto; gap:14px; align-items:center;">' + big(a, n ? cl(a, b) : 'var(--ma2-quiet)')
+      + '<div style="display:flex; flex-direction:column; gap:7px; align-items:center; min-width:0;"><div style="display:flex; gap:2px; width:100%; height:6px; border-radius:3px; background:' + W(7) + '; overflow:hidden;">' + (n ? '<span style="width:' + (a / n * 100).toFixed(1) + '%; background:var(--ma2-blue);"></span><span style="flex:1; background:var(--ma2-text);"></span>' : '') + '</div>'
+      + '<span style="font-size:11.5px; color:var(--ma2-grey); white-space:nowrap;">' + esc(!n ? 'No meeting on record' : a === b ? 'Level' : '+' + Math.abs(a - b) + ' ' + (a > b ? A : B)) + '</span></div>' + big(b, n ? cl(b, a) : 'var(--ma2-quiet)') + '</div>';
+    const T = kfH2hTallies(counted), S = surf ? counted.filter(r => r.surface === surf) : null, sa = S ? S.filter(r => r.won).length : 0;
+    const vr = (lbl, p) => { const x = p ? p[0] : null, y = p ? p[1] : null;
+      return '<div style="display:grid; grid-template-columns:1fr auto 1fr; align-items:baseline; gap:10px;"><span style="' + MONO + ' font-size:13px; font-weight:700; color:' + (p ? cl(x, y) : 'var(--ma2-quiet)') + '; white-space:nowrap;">' + (p ? x : DASH) + '</span><span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey); white-space:nowrap;">' + esc(lbl) + '</span><span style="' + MONO + ' font-size:13px; font-weight:700; color:' + (p ? cl(y, x) : 'var(--ma2-quiet)') + '; text-align:right; white-space:nowrap;">' + (p ? y : DASH) + '</span></div>'; };
+    const rows = '<div style="display:flex; flex-direction:column; gap:9px; padding-top:16px; border-top:1px solid ' + W(6) + ';">' + vr('Sets won', T.sets) + vr('Tiebreaks', T.tb) + vr('Deciding sets', T.dec)
+      + vr(surf ? 'On ' + surf.toLowerCase() : 'On this surface', S && n ? [sa, S.length - sa] : null) + '</div>';
+    const HM = fhHotModel(counted, fhH2hLineDefs(A, B), m), sc = HM.sc, rep = () => { if (_fh && _fh.m === m && aBuilt(m, 'key')) aPaint('aSectionKey', buildKeyFactorsSection(m)); };
+    const picks = HM.mode === 'none' ? [] : HM.mode === 'results' ? Object.keys(KF_HOT_FAM).flatMap(f => sc.scored.filter(x => fhFamOf(x.L.g) === f)) : Object.keys(KF_HOT_FAM).map(f => sc.scored.find(x => fhFamOf(x.L.g) === f)).filter(Boolean);
+    const hot = picks.length ? picks.map(x => { const lp = h2LinePx(x.L, m, rep);
+      return '<div title="' + esc(KF_HOT_FAM[fhFamOf(x.L.g)] + (lp.price != null ? ' · bet105 ' + lp.txt : '') + (lp.title ? '\n' + lp.title : '')) + '" style="display:grid; grid-template-columns:minmax(0,1fr) auto 38px; gap:10px; align-items:baseline;"><span style="font-size:12.5px; font-weight:600; color:var(--ma2-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(x.name) + '</span>'
+        + '<span style="' + MONO + ' font-size:11.5px; color:var(--ma2-grey); white-space:nowrap;">' + x.c + ' of ' + x.n + '</span><span style="' + MONO + ' font-size:12.5px; font-weight:700; text-align:right;">' + (HM.mode === 'results' ? '' : maRateHtml(x.c, x.n, { nopct: '', note: false, color: 'var(--ma2-text)' })) + '</span></div>'; }).join('')
+      : '<span style="font-size:11.5px; color:var(--ma2-quiet);">' + esc(n ? HM.note : 'No meetings') + '</span>';
+    const hotBox = '<div style="display:flex; flex-direction:column; gap:8px; padding-top:16px; margin-top:auto; border-top:1px solid ' + W(6) + ';"><div style="display:flex; justify-content:space-between; gap:8px;"><span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey);">Hot lines</span><span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey);">Covered</span></div>' + hot + '</div>';
+    return kfBox({ tab: 'h2h', order: 8, size: 's', title: 'Head to head', scope: esc(n ? n + (n === 1 ? ' meeting' : ' meetings') + ' · ATP-official count' : 'No meeting on record'), body: names + score + rows + hotBox });
+  }
+
+  // Progression = the Progression tab's model (pgModel): each player's road here (wins, sets) and his pooled figure per
+  // metric (pgFig through the gate); the stronger figure white, the other grey; the draw average in the row's hover.
+  function kfProgBox(m) {
+    if (!m._pg) return kfBox({ tab: 'progression', order: 9, size: 's', title: 'Progression', scope: 'This tournament · loading', body: kfNote('Loading tournament progression…') });
+    const P = pgModel(m), meta = P.isEmpty ? '' : 'average of ' + (P.labels.length > 1 ? P.labels[0] + '–' + P.labels[P.labels.length - 1] : P.labels[0]);
+    const who = k => { const road = P.isEmpty ? null : P.roads[k], real = road ? road.cells.filter(c => c.r && !c.r.wo) : [];
+      const w = real.filter(c => c.r.won).length, sw = real.reduce((t, c) => t + (c.r.pS || 0), 0), sl = real.reduce((t, c) => t + (c.r.oS || 0), 0);
+      const sub = !road ? 'No rounds yet' : real.length ? w + (w === 1 ? ' win' : ' wins') + ' · sets ' + sw + '–' + sl : 'No round on record';
+      return '<span style="display:flex; flex-direction:column; gap:5px; min-width:0;' + (k ? ' align-items:flex-end; text-align:right;' : '') + '"><span style="display:flex; align-items:center; gap:8px; min-width:0;' + (k ? ' flex-direction:row-reverse;' : '') + '">' + kfAv(m, k, 22, 9) + '<span style="font-size:13.5px; font-weight:700; color:var(--ma2-white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(k ? m.p2 : m.p1) + '</span></span><span style="font-size:11.5px; color:var(--ma2-grey);">' + esc(sub) + '</span></span>'; };
+    let body = '<div style="display:flex; justify-content:space-between; gap:12px;">' + who(0) + who(1) + '</div>';
+    if (P.isEmpty) body += '<span style="font-size:12.5px; color:var(--ma2-quiet); line-height:1.4;">No rounds played yet. The figures start after the first round.</span>';
+    else body += '<div style="display:flex; flex-direction:column; gap:9px; padding-top:16px; border-top:1px solid ' + W(6) + ';">' + PG_METRICS.map((mt, i) => {
+      const x = P.metrics[i], fa = pgFig(x.avg[0], mt), fb = pgFig(x.avg[1], mt), na = parseFloat(String(fa.t).replace('−', '-')), nb = parseFloat(String(fb.t).replace('−', '-'));
+      const c = (f, v, o) => f.none || f.t === DASH ? 'var(--ma2-quiet)' : f.small ? 'var(--ma2-grey)' : !isFinite(o) || v >= o ? 'var(--ma2-text)' : 'var(--ma2-grey)';
+      const dr = mt.noDraw ? DASH : pgDrawFig(x.fAvg, mt).t;
+      return '<div style="display:grid; grid-template-columns:1fr auto 1fr; align-items:baseline; gap:10px;"><span style="' + MONO + ' font-size:13px; font-weight:700; color:' + c(fa, na, nb) + '; white-space:nowrap;">' + fa.t + '</span>'
+        + '<span title="' + esc('Draw average ' + dr) + '" style="font-size:11.5px; font-weight:600; color:var(--ma2-grey); white-space:nowrap;">' + esc(KF_PG_SHORT[mt.key] || mt.name) + '</span>'
+        + '<span style="' + MONO + ' font-size:13px; font-weight:700; color:' + c(fb, nb, na) + '; text-align:right; white-space:nowrap;">' + fb.t + '</span></div>'; }).join('') + '</div>';
+    return kfBox({ tab: 'progression', order: 9, size: 's', title: 'Progression', scope: 'This tournament' + (meta ? ' · ' + esc(meta) : ''), body });
+  }
+  // News = the News tab's own items (newsItemsFor: outlet articles, our reports and quotes, the 5-day window), newest
+  // first, six shown: who + the day label over the headline. No dot (removed 2026-10-04; re-adding is an open question).
+  function kfNewsBox(m) {
+    const st = aNewsFeedOk() ? 'ok' : m._kfNews === 'unavailable' ? 'unavailable' : 'load';
+    if (st === 'load') return kfBox({ tab: 'news', order: 10, size: 's', title: 'News', scope: 'Loading', body: kfNote('Loading news…') });
+    const items = newsItemsFor(m), N = items.length;
+    const scope = N + (N === 1 ? ' article' : ' articles') + ' · last ' + A_NEWS_WINDOW_DAYS + ' days';
+    if (!N) return kfBox({ tab: 'news', order: 10, size: 's', title: 'News', scope, body: kfNote(st === 'unavailable' ? 'News feed unavailable.' : 'No recent news for ' + m.p1 + ' or ' + m.p2 + '.') });
+    let prev = '';
+    const rows = items.slice(0, 6).map(x => { const d = kfNewsDay(x.ts), lbl = d === prev ? '' : d; prev = d;
+      const who = x.hasA && x.hasB ? 'Both' : x.hasA ? m.p1 : m.p2;
+      return '<div style="display:grid; grid-template-columns:8px minmax(0,1fr); gap:10px; align-items:baseline;"><span></span><div style="display:flex; flex-direction:column; gap:3px; min-width:0;"><span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey);">' + esc(who) + ' <span style="color:var(--ma2-quiet); font-weight:500;">' + esc(lbl) + '</span></span>'
+        + '<span style="font-size:12.5px; color:var(--ma2-text); line-height:1.4; text-wrap:pretty;">' + esc(x.title) + '</span></div></div>'; }).join('');
+    return kfBox({ tab: 'news', order: 10, size: 's', title: 'News', scope, body: '<div style="display:flex; flex-direction:column; gap:14px; flex:1; justify-content:space-between;">' + rows + '</div>' });
+  }
+
+  // Weather at match time = the Weather tab's model (wxModel at the match hour): temperature, the match day's sky, the
+  // verdict; factor boxes as the tab (the main factor lifted) + Court speed from the one source. Indoor = one plain line.
+  function kfWxBox(m) {
+    const CP = WX_COPY, X = m._kfWx, vm = X ? wxModel(m, X.entry, X.file, Date.now(), wxForced(), X.arch) : null;
+    const sky = vm && vm.days ? (vm.days.find(d => d.isMatch) || {}).icon : '', at = vm && !vm.indoor && !vm.unavail ? vm.at : null;
+    const scope = !vm ? 'Loading' : vm.indoor ? 'Indoor event' : esc(vm.atHead) + (vm.fresh && vm.fresh.text ? ' · ' + esc(vm.fresh.text) : '');
+    const verdict = !vm ? CP.loading : vm.indoor ? CP.indoorTitle : vm.verdict;
+    const left = '<div style="flex:1 1 220px; max-width:300px; display:flex; flex-direction:column; gap:10px; justify-content:center; min-width:0;"><div style="display:flex; align-items:baseline; gap:10px;"><span style="' + MONO + ' font-size:26px; font-weight:700; line-height:1.1; color:' + (at && at.temp != null ? 'var(--ma2-text)' : 'var(--ma2-quiet)') + ';">' + (at && at.temp != null ? at.temp + '°' : DASH) + '</span><span style="font-size:12.5px; color:var(--ma2-grey);">' + esc(sky ? KF_WX_SKY[sky] || '' : '') + '</span></div>'
+      + '<span style="font-size:13.5px; font-weight:600; color:var(--ma2-text); line-height:1.4; text-wrap:pretty;">' + esc(verdict) + '</span></div>';
+    let right;
+    if (!vm || vm.indoor || vm.unavail) right = '<div style="flex:999 1 420px; display:flex; align-items:center; justify-content:center; background:var(--ma2-inner); border:1px solid ' + W(6) + '; border-radius:12px; padding:18px; font-size:12.5px; color:var(--ma2-grey); text-align:center;">' + esc(!vm ? 'Loading the forecast…' : vm.indoor ? 'Indoor event, weather is not a factor.' : 'Forecast unavailable.') + '</div>';
+    else {
+      const cs = ma2CourtSpeed(m), lead = vm.lead;
+      const box = (name, sev, sevC, fig, unit, sub, lifted) => '<div style="background:' + (lifted ? 'var(--ma2-lifted)' : 'var(--ma2-inner)') + '; border:1px solid ' + W(lifted ? 14 : 6) + '; border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:12px; min-width:0;">'
+        + '<div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px;"><span style="font-size:14px; font-weight:700; color:var(--ma2-white); white-space:nowrap;">' + esc(name) + '</span><span style="font-size:11.5px; font-weight:700; color:' + sevC + '; white-space:nowrap;">' + esc(sev) + '</span></div>'
+        + '<div style="display:flex; align-items:baseline; gap:6px; white-space:nowrap;"><span style="' + MONO + ' font-size:22px; font-weight:700; line-height:1.1; color:' + (fig === DASH ? 'var(--ma2-quiet)' : 'var(--ma2-text)') + ';">' + esc(fig) + '</span><span style="font-size:12.5px; color:var(--ma2-grey);">' + esc(unit || '') + '</span></div>'
+        + '<span style="font-size:11.5px; color:var(--ma2-grey); line-height:1.4;">' + esc(sub || '') + '</span></div>';
+      const facs = vm.factors.map(f => { const S = WX_SEV[f.sev] || WX_SEV.u; return box(f.name, S[0], S[1], f.big, f.unit, f.detail === DASH ? '' : f.detail, lead && f.id === lead.id); });
+      const P = vm.pace; facs.push(box('Court speed', P.sevL ? P.sevL.charAt(0) + P.sevL.slice(1).toLowerCase() : '', 'var(--ma2-text)', cs && cs.v != null ? cs.v.toFixed(2) : DASH, cs && cs.label || '', P.detail ? P.detail.charAt(0).toUpperCase() + P.detail.slice(1) : '', false));
+      right = '<div style="flex:999 1 420px; min-width:0; display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr)); gap:12px;">' + facs.join('') + '</div>';
+    }
+    return kfBox({ tab: 'weather', order: 11, size: 'f', title: 'Weather at match time', scope, body: '<div style="display:flex; flex-wrap:wrap; gap:14px 24px; align-items:stretch;">' + left + right + '</div>' });
+  }
+  function maKeyFactorsV2(m) {
+    return '<div class="kf2" style="max-width:1240px; margin:0 auto; line-height:normal; font-family:\'Hanken Grotesk\',sans-serif; font-size:16px; color:var(--ma2-text);"><div style="display:flex; flex-wrap:wrap; gap:14px; align-items:stretch;">'
+      + [kfModelBox, kfOddsBox, kfDnaBox, kfMeBox, kfFormBox, kfStyleBox, kfTourBox, kfH2hBox, kfProgBox, kfNewsBox, kfWxBox].map(f => f(m)).join('') + '</div></div>';
+  }
+  root.maKeyFactorsV2 = maKeyFactorsV2;
 
   root.MA2 = { av, SH_A, SH_B, avIni, ini, help, cardHead, card, track, chip, tile, popShell, signed, RING_A, RING_B, W, MONO, DASH, esc };
   root.maOddsV2 = oddsBuild;

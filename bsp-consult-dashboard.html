@@ -1700,14 +1700,8 @@ window.sfEarlyFetch = function (u, init) {
   .modal-analysis .arow .atrack{ height:6px; background:var(--track); border-radius:3px; overflow:hidden; }
   .modal-analysis .arow .atrack div{ height:100%; background:var(--bar); border-radius:3px; }
   .modal-analysis .acomingsoon{ text-align:center; color:var(--text-label); font-size:13px; padding:30px 0; }
-  /* ---- Key factors tab (TEN-380): the reference's .seg tiles, their hover (border + --tile-hover) and a focus ring. ---- */
-  #aSectionKey .seg{ cursor:pointer; transition:none; }   /* the reference's tiles switch on hover with no transition */
-  /* README §5.10: Key factors boxes are clickable tiles — 7% edge, hover --tile-hover + 16% edge */
-  #aSectionKey .kf-card{ border-color:var(--edge-7) !important; }
-  #aSectionKey .kf-card:hover{ border-color:var(--edge-16) !important; background:var(--tile-hover) !important; }
-  #aSectionKey .kf-card:focus-visible{ outline:2px solid var(--edge-16); outline-offset:2px; }
-  /* the Tournament box's hold cell sits in the right-hand column: its tooltip opens leftwards so it never widens the pane */
-  #aSectionKey .kf-tour-sub .elotip-pop { left:auto !important; right:0; }
+  /* ---- Key factors tab (design 2026-11-23): boxes are .ma2-tile (hover 22% edge); a focus ring. ---- */
+  #aSectionKey .kf2-box:focus-visible{ outline:2px solid color-mix(in srgb, var(--ma2-white) 16%, transparent); outline-offset:2px; }
   /* ---- Playing style tab (TEN-340): the file's .seg hover rule and its style-hover values (DF L548 personal box, DF L604 row). ---- */
   #aSectionStyle .seg{ transition:background .14s ease, color .14s ease, border-color .14s ease; }
   /* TEN-366: the row whose match sheet is open (DF L3642 rowBg: blue 0.1) — set by maOpenRowSheet, cleared by fhMarkRow. */
@@ -18411,49 +18405,8 @@ function buildOddsSection(m){ return maOddsV2(m); }   // Match analysis rebuild 
 
 
 /* ---------- KEY FACTORS TAB ---------- */
-// TEN-380 · Key factors rebuilt on the founder's locked reference (step 3 package, Key factors locked 2026-10-03:
-// `OFFICIAL VERSION 1.html` → See full analysis, measured at 1512 px night + day; README §2). ONE 6-column grid, gap 14,
-// eleven clickable tiles in the reference's order and spans:
-//   row 1  Playing style (2) · Recent form (2) · Tournament (2)
-//   row 2  Odds · Match winner (3) · Playing style DNA (3)
-//   row 3  Head to head (2) · Progression (2) · News (2)
-//   then   Stennisfy Model (6) · Market edge (6) · Weather (6)
-// Every tile is `--card` + 1px `--edge-7`, hover `--tile-hover` + `--edge-16` (the #aSectionKey .kf-card rules), with a
-// one-line header: the caps title never clips, the Plex meta truncates, a grey `›`. Inner figure boxes are panels
-// (`--card` + 1px `--edge-6`); chips are `--inner`, no edge.
-// DATA — every box reads what the tab it links to reads (never the reference's sample figures):
-//   · Playing style   each player's career record vs the opponent's archetype + his last three meetings with it
-//                     (ps2Record / ps2Meeting: the meetings shard, walkovers out — the Playing style tab's own record)
-//   · Recent form     the Form tab's default rows (fhFormPlayer on today's surface, last 10 — founder Q16 / founder TEN-380 Q13), its
-//                     v market / expected wins and its collapsed hot lines (best line per family)
-//   · Tournament      the round words, the event hold cell (trHoldHtml, founder Q9), m.courtSpeed (N4 category; the knob
-//                     on the 0–100 COURT_CONDITIONS index, founder TEN-380 Q14), tournament-market.json (trMarketFor) and the
-//                     Tournament tab's record model (trModelOf: editions, best result, finished sets)
-//   · Odds            ONE book from the Odds tab's rows (aOddsRowsOf): Pinnacle, then Bet365, then the tab's order (founder
-//                     Q17) — its open, its pre-match series, its now and its vig-free price; no "Soft avg" (founder TEN-380 Q12)
-//   · DNA             the five-axis DNA percentiles (ps2DnaModel, last 52 weeks, the match's surface)
-//   · Head to head    the H2H tab's meetings (fhMeetings, all surfaces, walkovers out, retirements in) and its hot lines
-//   · Progression     the Progression tab's model (pgModel): each road's record and the nine metrics with the draw avg
-//   · News            the News tab's per-player articles in the 5-day window (aNewsArticlesFor); one article in both
-//                     players' lists is tagged BOTH
-//   · Model           m.valueSnapshot + the Odds tab's Pinnacle row + pinnacleOpen + m.bestOdds, the Model page's
-//                     stage-2 net adjustment (modelOutput); links to the Model page (modal-key-factors.md)
-//   · Market edge     the Market edge tab's per-player models (meModels: today's band, its record / won / needs / 1u,
-//                     the derived lines at today's price); KF triggers the tab's loads (kfEnsureMarketEdge)
-//   · Weather         the Weather tab's model at match time (wxModel) + the court-speed row
-// Both players' names and values are `--text` (D4; founder ruling 8 — only bars split leader / trailer). Rates go through the
-// one gate (maGate / maRateHtml). Absent → "—", a genuine zero → 0. No tooltip of its own (data-aotip / maTipHtml).
-// Rules: .claude/rules/modal-key-factors.md + modal-analysis.md.
-const KF_C = {
-  card: 'var(--card)', edge: 'var(--edge-7)', panel: 'var(--edge-6)', line: 'var(--line)', rule: 'var(--edge-10)',
-  t3: 'var(--text-label)', soft: 'var(--text-soft)', text: 'var(--text)', inner: 'var(--inner)', track: 'var(--track)',
-  tick: 'var(--viz-tick)', white: 'var(--white-bar)', white70: 'color-mix(in srgb, var(--white-bar) 70%, transparent)',
-  dna: 'var(--viz-lead)', dna2: 'var(--viz-second)', wash: 'var(--wash-4)', up: 'var(--pos)', dn: 'var(--neg)',
-  upBg: 'color-mix(in srgb, var(--pos) 16%, transparent)', dnBg: 'color-mix(in srgb, var(--neg) 16%, transparent)'
-};
-const KF_CAP = 'font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label);';
-const KF_ONE = 'overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
-const KF_PANEL = 'background:var(--card); border:1px solid var(--edge-6);';
+// The boxes are built in match-analysis-v2.js (maKeyFactorsV2, design 2026-11-23); what stays here is the data each box
+// shares with its tab (kfOddsBook, kfH2hTallies, kfNewsDay) and the loads (kfEnsure*). Rules: .claude/rules/modal-key-factors.md.
 
 // Jump to another tab in this modal. The rail has no named switcher — the whole
 // linkage is data-atab -> data-asection — so clicking the nav item IS the API.
@@ -18461,187 +18414,9 @@ function aGoTab(tab){
   const btn = document.querySelector(`#aTabs .asidenav-item[data-atab="${tab}"]`);
   if (btn) { btn.click(); const body = document.querySelector('.modal-analysis .abody'); if (body) body.scrollTop = 0; }
 }
-// One Key factors tile (the reference's `div.seg`): the whole box is the hit target, the `›` only the affordance.
-function kfLink(go){ return ` role="button" tabindex="0" onclick="${go}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();${go}}"`; }
-// o.span = grid columns (2 · 3 · 6), o.gap = the column gap, o.shell = a header-strip box (Model, Market edge: no padding),
-// o.key = data-kf when two tiles open the same tab (DNA → Playing style), o.go = another destination (the Model page).
-function kfCard(tab, inner, o){
-  o = o || {};
-  const go = o.go || `aGoTab('${tab}')`;
-  const body = o.shell ? 'overflow:hidden; display:flex; flex-direction:column;' : `padding:18px 20px; display:flex; flex-direction:column; gap:${o.gap == null ? 14 : o.gap}px;`;
-  return `<div class="seg kf-card" data-kf="${o.key || tab}"${kfLink(go)}${o.aria ? ` aria-label="${o.aria}"` : ''} style="grid-column:span ${o.span || 2}; min-width:0; background:${KF_C.card}; border:1px solid ${KF_C.edge}; border-radius:12px; ${body}${o.style ? ' ' + o.style : ''}">${inner}</div>`;
-}
-// The one-line box header: caps title (flex:none, never clipped) · meta (Plex 11, truncates) · `›`. `meta` is markup.
-function kfHead(title, meta, o){
-  o = o || {};
-  const metaHtml = meta ? `<span class="kf-meta" style="${o.metaFont || `${FH_MONO} font-size:11px;`} color:${KF_C.t3}; min-width:0; ${KF_ONE}">${meta}</span>` : '';
-  return `<div class="kf-head" style="display:flex; align-items:center; justify-content:space-between; gap:${o.gap || 8}px; min-width:0;${o.style ? ' ' + o.style : ''}"><span class="kf-title" style="flex:none; ${KF_CAP}">${title}</span><span style="display:flex; flex:1 1 auto; align-items:center; justify-content:flex-end; gap:8px; min-width:0;">${metaHtml}<span aria-hidden="true" style="font-size:16px; color:${KF_C.t3};">›</span></span></div>`;
-}
-// A line inside a box when its data is loading or absent — the tabs' one-line pattern (DESIGN GAP G29).
-function kfNote(t){ return `<div class="kf-note" style="font-size:11.5px; color:${KF_C.t3}; line-height:1.45;">${fhEsc(t)}</div>`; }
-function kfName(name, extra){ return `<span class="kf-name" style="font-size:13.5px; font-weight:700; color:${KF_C.text}; min-width:0; ${KF_ONE}${extra ? ' ' + extra : ''}">${fhEsc(name)}</span>`; }
-// A signed figure with the true minus (fhSigned's rounding), coloured by the sign of what it prints.
-function kfSignCol(v, dp){ const r = Number(Number(v).toFixed(dp)); return r > 0 ? KF_C.up : r < 0 ? KF_C.dn : KF_C.t3; }
-// Three-cell comparison row (H2H, Progression): A value · centred caps label (+ sub) · B value. Both values `--text` (ruling 8).
-function kfVsRow(a, label, b, o){
-  o = o || {};
-  const val = (v, right) => `<span style="${FH_MONO} font-size:14px; font-weight:800; color:${v === FH_DASHC ? KF_C.t3 : KF_C.text};${right ? ' text-align:right;' : ''} white-space:nowrap;">${v}</span>`;
-  const mid = `<span style="display:flex; flex-direction:column; align-items:center; gap:1px; text-align:center; min-width:0;"><span style="${KF_CAP}">${label}</span>${o.sub ? `<span style="${FH_MONO} font-size:9.5px; color:${KF_C.t3}; white-space:nowrap;">${o.sub}</span>` : ''}</span>`;
-  return `<div class="${o.cls || 'kf-vs'}" style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:10px; align-items:center; padding:6px 0; border-top:1px solid ${KF_C.line};">${val(a)}${mid}${val(b, true)}</div>`;
-}
 
-// ---- 1 · Playing style (span 2) ----
-// Each player's career record vs the OPPONENT's archetype (the Playing style tab's "Personal record vs this style",
-// ps2Record: the meetings shard, walkovers out), the tug from the centre (wins left, losses right; a bar whose length is a
-// rate follows the gate), then "Recent vs this style": his three latest of those meetings, sets from his side.
-function kfStyleSide(m, side){
-  const C = KF_C, M = FH_MONO, R = ps2Record(m, side), name = side ? m.p2 : m.p1;
-  const ready = R.state === 'ready', n = ready ? R.n : 0, g = maGate(n).mode, shown = g === 'full' || g === 'small', small = g === 'small';
-  const vs = R.oppLab ? 'vs ' + ps2Plural(R.oppLab) : 'Style not classified';
-  const pct = shown ? Math.round(R.w / n * 100) + '%' : FH_DASHC;
-  const wl = ready && n ? `${R.w}–${R.l}` : '';
-  const tw = shown && R.w > R.l ? (R.w - R.l) / n * 50 : 0, tl = shown && R.l > R.w ? (R.l - R.w) / n * 50 : 0;
-  const tugTxt = R.state === 'loading' ? 'Loading…' : !ready || !n ? FH_DASHC : R.w === R.l ? 'Level' : R.w > R.l ? `+${R.w - R.l} ${R.w - R.l === 1 ? 'win' : 'wins'}` : `+${R.l - R.w} ${R.l - R.w === 1 ? 'loss' : 'losses'}`;
-  const tip = ready ? `${fhSurname(name)} ${vs}: ${n ? `${R.w}–${R.l} in ${n} career ${n === 1 ? 'meeting' : 'meetings'}` : 'no career meeting'} on record, walkovers excluded (the Playing style tab's record).` : '';
-  return `<div class="kf-style-side" data-kf-side="${side ? 'b' : 'a'}" style="display:flex; flex-direction:column; gap:14px; text-align:center; min-width:0;">
-      <div style="display:flex; flex-direction:column; gap:2px; min-width:0;">${kfName(fhSurname(name), 'display:block;')}<span class="kf-vs" style="font-size:11.5px; line-height:1.3; color:${C.t3}; display:block; ${KF_ONE}">${fhEsc(vs)}</span></div>
-      <div style="display:flex; align-items:baseline; justify-content:center; gap:8px;"><span class="kf-style-pct"${tip ? ` tabindex="0" data-aotip="${escapeHtml(fhEsc(tip))}"` : ''} data-ma-gate="${g}" style="${M} font-size:34px; font-weight:800; line-height:34px; color:${pct === FH_DASHC ? C.t3 : small ? MA_GREY : C.text};">${pct}</span>${wl ? `<span class="kf-style-wl" style="${M} font-size:12px; color:${C.soft};">${wl}</span>` : ''}</div>
-      <div class="kf-tug" style="position:relative; height:8px; border-radius:4px; background:${C.track};"><span style="position:absolute; right:50%; top:0; bottom:0; width:${tw}%; background:${small ? MA_GREY : C.white}; border-radius:3px 0 0 3px;"></span><span style="position:absolute; left:50%; top:0; bottom:0; width:${tl}%; background:${small ? MA_GREY : C.white70}; border-radius:0 3px 3px 0;"></span><span style="position:absolute; left:50%; top:-3px; bottom:-3px; width:1.5px; margin-left:-0.75px; background:${C.tick};"></span></div>
-      <div style="display:grid; grid-template-columns:1fr auto 1fr; align-items:center; ${M} font-size:9px; letter-spacing:0.08em; color:${C.t3};"><span style="text-align:left;">W</span><span class="kf-tug-txt" style="font-size:10.5px; font-weight:700; letter-spacing:0; color:${tugTxt === FH_DASHC || tugTxt === 'Loading…' ? C.t3 : C.text};">${fhEsc(tugTxt)}</span><span style="text-align:right;">L</span></div>
-    </div>`;
-}
-function kfStyleRecent(m, side){
-  const C = KF_C, M = FH_MONO, R = ps2Record(m, side);
-  if (R.state !== 'ready' || !R.n){
-    const t = R.state === 'loading' ? 'Loading…' : R.state === 'unclassified' ? 'Not classified' : 'No career meeting';
-    return `<div class="kf-recent" data-kf-side="${side ? 'b' : 'a'}" style="display:flex; flex-direction:column; gap:5px; min-width:0;"><span style="padding:8px 0; border-top:1px solid ${C.line}; font-size:11.5px; color:${C.t3};">${t}</span></div>`;
-  }
-  const rows = R.rows.slice().sort((x, y) => String(y.date || '').localeCompare(String(x.date || ''))).slice(0, 3).map(r => {
-    const x = ps2Meeting(r), w = !!r.won;
-    return `<div class="kf-recent-m" style="display:grid; grid-template-columns:14px minmax(0,1fr) auto; gap:6px; align-items:center; padding:8px 0; border-top:1px solid ${C.line};"><span style="width:14px; height:14px; border-radius:3px; display:flex; align-items:center; justify-content:center; font-size:9.5px; font-weight:800; color:${w ? C.up : C.dn}; background:${w ? C.upBg : C.dnBg};">${w ? 'W' : 'L'}</span><span style="font-size:11.5px; font-weight:600; color:${C.text}; min-width:0; ${KF_ONE}">${fhEsc(r.opponent || FH_DASHC)}</span><span style="${M} font-size:11px; font-weight:700; color:${C.text};">${x.pS + x.oS ? `${x.pS}–${x.oS}` : FH_DASHC}</span></div>`;
-  }).join('');
-  return `<div class="kf-recent" data-kf-side="${side ? 'b' : 'a'}" style="display:flex; flex-direction:column; gap:5px; min-width:0;">${rows}</div>`;
-}
-function kfStyleCard(m){
-  const C = KF_C;
-  return kfCard('style', `${kfHead('Playing style', 'Record vs style')}
-    <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px; padding-top:8px;">${kfStyleSide(m, 0)}${kfStyleSide(m, 1)}</div>
-    <div style="display:flex; flex-direction:column; gap:10px; margin-top:auto; padding-top:16px; border-top:1px solid ${C.line};">
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;"><span style="flex:none; ${KF_CAP}">Recent vs this style</span><span style="${FH_MONO} font-size:10.5px; color:${C.t3}; ${KF_ONE}">last 3 · sets</span></div>
-      <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px;">${kfStyleRecent(m, 0)}${kfStyleRecent(m, 1)}</div>
-    </div>`, { gap: 20 });
-}
 
-// ---- 2 · Recent form (span 2) ----
-// The Form tab's own player model (fhFormPlayer) on the Form tab's default view — today's surface (N1; founder Q16 /
-// founder TEN-380 Q13: meta "Last 10 · <Surface>"), last 10: its rows (walkovers and the analysed match out) as ten bars oldest →
-// newest, its record, v market and market-expected wins (the tab's mktOk gate), and its collapsed hot lines (the best line
-// of each family, the Form tab's fhScoreLines ranking).
-function kfFormSide(m, idx, st){
-  const C = KF_C, M = FH_MONO, P = fhFormPlayer(m, idx, st), name = idx ? m.p2 : m.p1, sur = fhSurname(name);
-  const bars = P.win.slice().reverse().map(r => `<span class="kf-bar" data-won="${r.won ? 1 : 0}" style="flex:1 1 0; min-width:0; height:34px; border-radius:4px; background:${r.won ? C.up : C.dn};"></span>`);
-  while (bars.length < P.NWIN) bars.unshift(`<span class="kf-bar" data-won="" style="flex:1 1 0; min-width:0; height:34px; border-radius:4px; background:${C.track};"></span>`);
-  const n = P.n, on = st.surf === 'all' ? 'on all surfaces' : `on ${st.surf}`;
-  const recTip = n ? `Last ${n}: ${P.wins}–${n - P.wins} over the ${n} latest ${n === 1 ? 'match' : 'matches'} ${on} at every level, walkovers excluded (the Form tab’s rows).` : `No recent matches ${on} on record.`;
-  const d = P.mktOk ? P.winsP - P.expW : null;
-  const mktCol = c => (!P.mktOk ? C.t3 : P.mktSmall ? MA_GREY : c);
-  const mktTip = P.mktOk ? `v market and expected wins on ${P.np} of ${n} priced (closing odds).` : n ? `Fewer than ${FH_THIN} priced matches: no market figure.` : '';
-  const stat = (label, val, col, cls, tip) => `<div style="display:flex; justify-content:space-between; gap:8px;"><span>${label}</span><span class="${cls}"${tip ? ` tabindex="0" data-aotip="${escapeHtml(fhEsc(tip))}"` : ''} style="${M} font-weight:700; color:${col};">${val}</span></div>`;
-  let hot;
-  if (P.hot.ok){
-    hot = FH_HOT_FAM.map(f => P.hot.sc.scored.find(x => fhFamOf(x.L.g) === f[0])).filter(Boolean).map(x => {
-      const label = x.name.indexOf(sur + ' ') === 0 ? x.name.slice(sur.length + 1) : x.name;   // the box already names him
-      return `<div class="kf-hot" tabindex="0" data-aotip="${escapeHtml(fhEsc(`${x.name}: ${x.c} of ${x.n}${x.L.basis ? ' · ' + x.L.basis : ''}`))}" style="display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px; align-items:baseline; padding:6px; ${KF_PANEL} border-radius:7px;"><span style="font-size:12px; font-weight:600; color:${C.text}; min-width:0; ${KF_ONE}">${fhEsc(label)}</span><span style="${M} font-size:13px; font-weight:800;">${maRateHtml(x.c, x.n, { nopct: `${x.c}/${x.n}`, note: false, color: C.text })}</span></div>`;
-    }).join('');
-  } else hot = kfNote(P.hot.fewTxt);
-  return `<div class="kf-form-side" data-kf-side="${idx ? 'b' : 'a'}" style="display:flex; flex-direction:column; gap:14px; min-width:0;">
-      ${kfName(name)}
-      <div class="kf-bars" style="display:flex; gap:3px;">${bars.join('')}</div>
-      <div style="display:flex; flex-direction:column; gap:10px; padding-top:14px; border-top:1px solid ${C.line}; font-size:12.5px; color:${C.t3};">
-        ${stat('Record', n ? `${P.wins}–${n - P.wins}` : FH_DASHC, n ? C.text : C.t3, 'kf-last', recTip)}
-        ${stat('v market', d == null ? FH_DASHC : fhSigned(d, 1), mktCol(d == null ? C.t3 : kfSignCol(d, 1) === C.t3 ? C.text : kfSignCol(d, 1)), 'kf-vm', mktTip)}
-        ${stat('Expected wins', P.mktOk ? P.expW.toFixed(1) : FH_DASHC, mktCol(C.text), 'kf-exp', mktTip)}
-      </div>
-      <div style="display:flex; flex-direction:column; gap:7px; padding-top:14px; border-top:1px solid ${C.line};">
-        <div style="display:flex; justify-content:center;"><span style="${KF_CAP}">Hot lines</span></div>${hot}
-      </div>
-    </div>`;
-}
-function kfFormCard(m){
-  const surf = fhSurfName(m.surface), meta = fhEsc(`Last 10${surf ? ' · ' + surf : ''}`);
-  if (!m._fhFormData) return kfCard('form', kfHead('Recent form', meta) + kfNote('Loading recent matches…'), { gap: 20 });
-  const st = Object.assign({}, fhStateFor(m).form, { surf: surf || 'all', role: 'all', wmode: 'n', n: 10 });   // the Form tab's default view (fhStateFor, N1)
-  return kfCard('form', `${kfHead('Recent form', meta)}<div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px;">${kfFormSide(m, 0, st)}${kfFormSide(m, 1, st)}</div>`, { gap: 20 });
-}
 
-// ---- 3 · Tournament (span 2) ----
-// "City · TIER" (modal-key-factors.md: venue category, else the catalogue, else the name alone); "<Surface> · hold" = the
-// Tournament tab's hold cell (founder Q9); the court speed (abstract, 2 dp) with its N4 category and the knob on the
-// 0–100 COURT_CONDITIONS index (founder TEN-380 Q14: ≤43 Slow, ≤68 Medium, else Fast — no "usual"); ROI fav / ROI dog / Fav wins
-// from tournament-market.json (the Tournament tab's yields, gated on the event's n; "±x.xpp vs tour avg", Q14); the
-// record here per player from the Tournament tab's record model (trModelOf: editions entered, N6; best finished result;
-// finished sets), "first appearance" when our store has no history of him at this event (founder Q25).
-function kfTourCard(m){
-  const C = KF_C, M = FH_MONO, clean = trClean(m);
-  const catHit = TOURNAMENT_CATALOG.find(t => t.name.toLowerCase() === clean.toLowerCase());
-  const tier = (m.venue && m.venue.category) || (catHit && catHit.category) || '';
-  const rd = trRoundWords(m), surf = fhSurfName(m.surface);
-  const cs = m.courtSpeed || null, hasSpeed = !!(cs && cs.abstractSpeed != null);
-  const dash = t => maTipHtml(`<span tabindex="0" style="color:${C.t3};">${FH_DASHC}</span>`, fhEsc(t), { wrap: 220, start: true });
-  const speed = hasSpeed ? Number(cs.abstractSpeed).toFixed(2) : dash(trSpeedNote(m));
-  const kfSpeedCat = fhEsc(cs && cs.category || FH_DASHC);
-  const idx = cs && cs.speed != null && Number.isFinite(Number(cs.speed)) ? Math.max(0, Math.min(100, Number(cs.speed))) : null;
-  const gauge = `<div class="kf-speed" style="display:flex; align-items:center; gap:14px;">
-      <span class="kf-speed-v" style="${M} font-size:32px; font-weight:700; line-height:28.8px; letter-spacing:-0.02em; color:${hasSpeed ? C.text : C.t3};">${speed}</span>
-      <div style="display:flex; flex-direction:column; gap:7px; flex:1 1 0; min-width:0;">
-        <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px;"><span style="flex:none; ${KF_CAP}">Court speed</span><span class="kf-speed-cat" style="font-size:11.5px; font-weight:600; color:${cs && cs.category ? C.text : C.t3};">${kfSpeedCat}</span></div>
-        <div style="position:relative; height:6px; border-radius:4px; background:${C.track};">${idx == null ? '' : `<span style="display:block; height:6px; width:${idx}%; border-radius:4px; background:${C.white};"></span><span class="kf-knob" data-idx="${idx}" style="position:absolute; top:3px; left:${idx}%; width:12px; height:12px; box-sizing:border-box; border-radius:50%; background:${C.white}; border:2px solid ${C.card}; transform:translate(-6px,-6px);"></span>`}</div>
-        <div style="display:flex; justify-content:space-between; ${KF_CAP}"><span>Slow</span><span>Medium</span><span>Fast</span></div>
-      </div>
-    </div>`;
-  // ROI + favourite reliability: the Tournaments page's yields (build-tournament-market.js) through the event's gate (D2)
-  const mk = trMarketFor(trKeyOf(m)), g = maGate(mk ? mk.n : null).mode, rateOk = !!mk && (g === 'full' || g === 'small');
-  const pending = !mk && !tourxMarketData && !tourxMarketFailed;
-  const tile = (cls, val, col, label, sub) => `<div class="${cls}" style="display:flex; flex-direction:column; gap:3px; padding:8px 10px; ${KF_PANEL} border-radius:9px; min-width:0;"><span style="${M} font-size:16px; font-weight:700; line-height:17.6px; color:${col};">${val}</span><span style="${KF_CAP} ${KF_ONE}">${label}</span>${sub}</div>`;
-  const roi = (cls, label, v, avg) => {
-    const has = rateOk && v != null && avg != null, dlt = has ? v - avg : 0;
-    const val = has ? (Number(v.toFixed(1)) > 0 ? '+' : Number(v.toFixed(1)) < 0 ? '−' : '') + Math.abs(v).toFixed(1) + '%' : FH_DASHC;
-    const col = !has ? C.t3 : g === 'small' ? MA_GREY : kfSignCol(v, 1) === C.t3 ? C.text : kfSignCol(v, 1);
-    const cmp = has ? (Math.abs(dlt) < 1 ? '<span style="font-weight:700;">in line</span> with tour avg' : fhEsc((dlt > 0 ? '+' : '−') + Math.abs(dlt).toFixed(1) + 'pp vs tour avg'))
-      : fhEsc(pending ? 'loading' : mk ? 'too few settled' : 'no settled prices');
-    return tile(cls, val, col, label, `<span style="font-size:10.5px; line-height:1.35; color:${C.t3};">${cmp}${has && g === 'small' ? ' · ' + MA_SMALL_NOTE : ''}</span>`);
-  };
-  const relHas = rateOk && mk.favRel != null && mk.baseline && mk.baseline.favRel != null;
-  const fav = tile('kf-favwins', relHas ? mk.favRel + '%' : FH_DASHC, !relHas ? C.t3 : g === 'small' ? MA_GREY : C.text, 'Fav wins',
-    relHas ? `<span tabindex="0" data-aotip="${escapeHtml(fhEsc(`Favourites win ${mk.favRel}% of matches here (n = ${mk.nRel != null ? mk.nRel : mk.n}) versus ${mk.baseline.favRel}% across the tour (the tick).`))}" style="position:relative; display:block; height:3px; margin-top:3px; border-radius:3px; background:${C.track};"><span style="display:block; height:3px; width:${Math.max(0, Math.min(100, mk.favRel))}%; border-radius:3px; background:${g === 'small' ? MA_GREY : C.white};"></span><span style="position:absolute; top:-2px; bottom:-2px; left:${Math.max(0, Math.min(100, mk.baseline.favRel))}%; width:1px; background:${C.tick};"></span></span>`
-      : `<span style="font-size:10.5px; color:${C.t3};">${fhEsc(pending ? 'loading' : mk ? 'too few settled' : 'no settled prices')}</span>`);
-  const tiles = `<div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px;">${roi('kf-roi-fav', 'ROI fav', mk && mk.roiFav, mk && mk.baseline && mk.baseline.roiFav)}${roi('kf-roi-dog', 'ROI dog', mk && mk.roiDog, mk && mk.baseline && mk.baseline.roiDog)}${fav}</div>`;
-  // Record here: the Tournament tab's model over the pipeline history (no shards needed: W–L, best, sets are the history's)
-  const names = [clean].concat(trArchiveNames(mk)), yr = String(m.date || '').slice(0, 4);
-  const T = [0, 1].map(i => trModelOf(i ? m.p2TournamentHistory : m.p1TournamentHistory, { ch: null, cl: null, fix: recordFixFor(i ? m.p2Key : m.p1Key) },
-    i ? m.p2Key : m.p1Key, i ? m.p2 : m.p1, clean, names, yr, 'idle'));   // option A: the record's results (fhEnsureFormData loads it)
-  const words = t => `<span style="font-family:var(--font-words); font-size:11.5px; font-weight:400; color:${C.t3};">${t}</span>`;
-  const wl = (t, hist) => {
-    if (!hist) return `<span class="kf-tour-note">${words('first appearance')}</span>`;
-    if (!t.n) return `<span class="kf-tour-note">${words('no main-draw match')}</span>`;
-    const ed = t.eds.length;
-    return `<span class="kf-tour-rec" tabindex="0" data-aotip="${escapeHtml(fhEsc(`${t.W}–${t.L} in ${t.n} main-draw ${t.n === 1 ? 'match' : 'matches'} over ${ed} ${ed === 1 ? 'edition' : 'editions'} at ${trName(m)}, walkovers excluded.`))}">${t.W}–${t.L}</span>`;
-  };
-  const best = (t, right) => {
-    if (!t.best) return `<span style="color:${C.t3};">${FH_DASHC}</span>`;
-    const y = `<span style="font-weight:400; color:${C.t3};">${t.best.year}</span>`, c = fhEsc(t.best.code);
-    return right ? `${y} ${c}` : `${c} ${y}`;
-  };
-  const sets = t => (t.sT ? maRateHtml(t.sW, t.sT, { nopct: `${t.sW}/${t.sT}`, note: false, color: C.text }) : `<span style="color:${C.t3};">${FH_DASHC}</span>`);
-  const recRow = (label, a, b, last) => `<div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:10px; align-items:baseline; padding:${last ? '7px 0 0' : '7px 0'};${last ? '' : ` border-bottom:1px solid ${C.line};`}"><span style="${M} font-size:13.5px; font-weight:700; color:${C.text}; white-space:nowrap;">${a}</span><span style="${KF_CAP}">${label}</span><span style="${M} font-size:13.5px; font-weight:700; color:${C.text}; text-align:right; white-space:nowrap;">${b}</span></div>`;
-  const table = `<div class="kf-tour-table" style="display:flex; flex-direction:column; margin-top:auto;">
-      <div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:10px; align-items:baseline; padding:0 0 7px; border-bottom:1px solid ${C.line};"><span style="font-size:12.5px; font-weight:700; color:${C.text}; ${KF_ONE}">${fhEsc(fhSurname(m.p1))}</span><span style="${KF_CAP}">Record here</span><span style="font-size:12.5px; font-weight:700; color:${C.text}; text-align:right; ${KF_ONE}">${fhEsc(fhSurname(m.p2))}</span></div>
-      ${recRow('W–L', wl(T[0], m.p1TournamentHistory), wl(T[1], m.p2TournamentHistory))}${recRow('Best', best(T[0], false), best(T[1], true))}${recRow('Sets', sets(T[0]), sets(T[1]), true)}
-    </div>`;
-  return kfCard('tournament', `${kfHead('Tournament', rd ? fhEsc(rd) : '')}
-    <div style="display:flex; flex-direction:column; gap:2px; min-width:0;"><span class="kf-tour-title" style="font-size:13.5px; font-weight:700; color:${C.text}; ${KF_ONE}">${fhEsc(tier ? `${trName(m)} · ${tier}` : trName(m))}</span><span class="kf-tour-sub" style="font-size:11.5px; color:${C.t3};">${surf ? fhEsc(surf) + ' · ' : ''}hold ${trHoldHtml(m, 'kf-hold')}</span></div>
-    ${gauge}${tiles}${table}`);
-}
 
 // ---- 4 · Odds · Match winner (span 3) ----
 // ONE book for the whole box (one book per fixture, founder Q17): the Odds tab's rows (aOddsRowsOf: every series cut at
@@ -18669,80 +18444,7 @@ function kfOddsBook(m){
   const pick = KF_BOOK_PREF.map(re => live.find(r => re.test(r.name))).find(Boolean) || live[0] || null;
   return { D, row: pick };
 }
-function kfOddsMini(row){
-  const C = KF_C, s = row.series || {};
-  if (row.gaps && row.gaps.length) return { a: '', b: '', svg: '', note: `${row.name} left the feed for a while: its movement is not drawn across the gap.` };
-  const one = pts => {
-    const P = aOddsDispSeries(pts || []);
-    if (P.length < 2) return '';
-    const v = P.map(p => p[1]), mn = Math.min.apply(null, v), mx = Math.max.apply(null, v), rg = (mx - mn) || 1;
-    const t0 = P[0][0], sp = (P[P.length - 1][0] - t0) || 1;
-    const xy = P.map(p => (2 + (p[0] - t0) / sp * 60).toFixed(1) + ',' + (17 - (p[1] - mn) / rg * 14).toFixed(1)).join(' ');
-    return `<svg class="kf-spark" viewBox="0 0 64 20" width="64" height="20" style="display:block;"><polyline points="${xy}" style="fill:none; stroke:${C.text};" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"></polyline></svg>`;
-  };
-  const a = one(s.a), b = one(s.b);
-  return { a, b, svg: a + b, note: a || b ? '' : `One ${row.name} price on record — no movement yet.` };
-}
-// The box's book and its movement, in one place (the box and the tests read the same call).
-function kfOddsMove(m){ const { D, row } = kfOddsBook(m); return { D, row, mini: row ? kfOddsMini(row) : null }; }
-function kfOddsCard(m){
-  const C = KF_C, M = FH_MONO, cols = 'grid-template-columns:minmax(0,1fr) 48px 64px 56px; gap:10px;';
-  const loading = !m.oddsMovement && !m._oddsLoaded;
-  const X = loading ? { D: null, row: null, mini: null } : kfOddsMove(m), row = X.row, mini = X.mini;
-  const books = X.D ? X.D.rows.filter(r => !r.noData).length : 0;
-  const meta = loading ? 'loading' : row ? `${fhEsc(row.name)} · ${books} ${books === 1 ? 'book' : 'books'}` : 'no prices';
-  // the vig-free price = the latest MATCHED pair (two quotes from different ticks are no pair: then a dash)
-  const fair = x => (row && row.nv && row.nv[x].length ? aOddsFmt(row.nv[x][row.nv[x].length - 1][1]) : FH_DASHC);
-  const side = (x, name, first) => {
-    const open = row && row[x + 'Open'] != null ? aOddsFmt(row[x + 'Open']) : FH_DASHC, now = row && row[x + 'Now'] != null ? aOddsFmt(row[x + 'Now']) : FH_DASHC;
-    const sp = mini && mini[x] ? mini[x] : '<span style="display:block; width:64px; height:20px;"></span>';
-    return `<div class="kf-odds-side" data-kf-side="${x}" style="display:flex; flex-direction:column; justify-content:center; gap:8px; flex:1 1 0; padding:${first ? '12px 0' : '12px 0 0'};${first ? ` border-bottom:1px solid ${C.line};` : ''}">
-        <div style="display:grid; ${cols} align-items:center;">${kfName(name)}<span class="kf-odds-open" style="${M} font-size:14px; color:${C.t3}; text-align:right;">${open}</span>${sp}<span class="kf-odds-${x}" style="${M} font-size:19px; font-weight:700; color:${now === FH_DASHC ? C.t3 : C.text}; text-align:right;">${now}</span></div>
-        <div style="display:flex; gap:18px; font-size:11.5px; color:${C.t3};"><span>Fair<span class="kf-fair-${x}" style="margin-left:4px; ${M} font-weight:700; color:${C.soft};">${fair(x)}</span></span></div>
-      </div>`;
-  };
-  const note = loading ? kfNote('Loading bookmaker odds…')
-    : !row ? kfNote(X.D.hasSeries ? 'No recent prices: every book on file was last checked over an hour ago.' : 'No prices in the feed for this match yet.')
-    : mini && mini.note ? kfNote(mini.note) : '';
-  return kfCard('odds', `${kfHead('Odds · Match winner', meta)}
-    <div style="display:flex; flex-direction:column; flex:1 1 0;">
-      <div style="display:grid; ${cols} align-items:baseline; padding:0 0 8px; border-bottom:1px solid ${C.line};"><span></span><span style="${KF_CAP} text-align:right;">Open</span><span></span><span style="${KF_CAP} text-align:right;">Now</span></div>
-      ${side('a', m.p1, true)}${side('b', m.p2, false)}
-    </div>${note}`, { span: 3 });
-}
 
-// ---- 5 · Playing style DNA (span 3) ----
-// The Playing style tab's five-axis DNA (ps2DnaModel: true percentiles, last 52 weeks, the match's surface, 10-match floor;
-// N10 — never the MCP radar): one mirrored bar row per axis, the percentile printed. The bars are the blue data fill
-// (`--viz-lead`: #aSectionKey re-points `--bar` to white for the other boxes); founder ruling 8 (TEN-380 Q3): per axis the
-// leader's bar solid `--viz-lead`, the trailer's `--viz-second` (45%), both values `--text`. Each axis label carries the tab's axis note.
-function kfDnaCard(m){
-  const C = KF_C, M = FH_MONO, D = ps2DnaModel(m, { win: 'w52' });
-  let nA = 0, nB = 0, k = 0;
-  const pctOf = v => (v.pct == null ? null : Math.max(0, Math.min(100, v.pct)));
-  const rows = PS2_AXES.map((ax, i) => {
-    const a = pctOf(D.a.vals[i]), b = pctOf(D.b.vals[i]);
-    if (a != null && b != null){ k++; if (Math.round(a) > Math.round(b)) nA++; else if (Math.round(b) > Math.round(a)) nB++; }
-    const val = (p, right) => `<span style="${M} font-size:12px; font-weight:700; min-width:20px; color:${p == null ? C.t3 : C.text};${right ? ' text-align:right;' : ''}">${p == null ? FH_DASHC : Math.round(p)}</span>`;
-    // founder ruling 8 (TEN-380 Q3): leader solid --viz-lead, trailer --viz-second (45%) per axis, a tie both solid;
-    // the figures stay white for both.
-    const bar = (p, right, o) => `<span style="display:flex; flex:1 1 0; height:6px; border-radius:3px; background:${C.track};${right ? '' : ' justify-content:flex-end;'}"><span class="kf-dna-bar" style="width:${p == null ? 0 : p}%; height:6px; border-radius:3px; background:${p != null && o != null && Math.round(p) < Math.round(o) ? C.dna2 : C.dna};"></span></span>`;
-    return `<div class="kf-dna-ax" data-kf-axis="${ax.key}" style="display:grid; grid-template-columns:minmax(0,1fr) 100px minmax(0,1fr); gap:10px; align-items:center;">
-        <div style="display:flex; align-items:center; gap:8px;">${val(a)}${bar(a, false, b)}</div>
-        <span tabindex="0" data-aotip="${escapeHtml(ps2AxisTip(D, i))}" style="font-size:11.5px; color:${C.t3}; text-align:center; cursor:default; ${KF_ONE}">${fhEsc(ax.short || ax.label)}</span>
-        <div style="display:flex; align-items:center; gap:8px;">${bar(b, true, a)}${val(b, true)}</div>
-      </div>`;
-  }).join('');
-  const why = s => (!s.d.inPool ? `${fhSurname(s.name)}: no api-tennis rating on record.` : !s.d.ok ? `${fhSurname(s.name)}: ${s.d.matches || 0} ${D.surface} ${s.d.matches === 1 ? 'match' : 'matches'} in the last 52 weeks, below the ${MDNA_FLOOR}-match floor.` : '');
-  const foot = D.loading ? 'Loading DNA…'
-    : !k ? ([why(D.a), why(D.b)].filter(Boolean).join(' ') || 'No axis both players carry.')
-    : 'Percentile on tour · ' + (nA === nB ? `axes split ${nA}–${nB}` : `${fhSurname(nA > nB ? m.p1 : m.p2)} leads ${Math.max(nA, nB)} of ${k} axes`)
-      + ([why(D.a), why(D.b)].filter(Boolean).length ? ' · ' + [why(D.a), why(D.b)].filter(Boolean).join(' ') : '');
-  return kfCard('style', `${kfHead('Playing style DNA', 'Last 52 weeks')}
-    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">${kfName(m.p1)}${kfName(m.p2, 'text-align:right;')}</div>
-    <div class="kf-dna" style="display:flex; flex-direction:column; gap:9px;">${rows}</div>
-    <span class="kf-dna-foot" style="font-size:11.5px; color:${C.t3}; margin-top:auto;">${fhEsc(foot)}</span>`, { span: 3, key: 'dna' });
-}
 
 // ---- 6 · Head to head (span 2) ----
 // The H2H tab's meetings over all surfaces (N1; fhMeetings: api-tennis H2H ∪ both career histories, a walkover is no
@@ -18759,48 +18461,6 @@ function kfH2hTallies(F){
   const deciders = F.filter(r => r.decider), dWon = deciders.filter(r => r.won).length;
   return { sets: scored.length ? [a, b] : null, tb: gamed.length ? [ta, tb] : null, dec: deciders.length ? [dWon, deciders.length - dWon] : null };
 }
-function kfH2HCard(m){
-  const C = KF_C, M = FH_MONO, A = fhSurname(m.p1), B = fhSurname(m.p2);
-  const surf = fhSurfName(m.surface);
-  // TEN-437 (5): a history that did not load is never "No meeting on record".
-  if (m._fhH2hFailed) return kfCard('h2h', `${kfHead('Head to head', 'not loaded')}
-    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">${kfName(m.p1)}${kfName(m.p2, 'text-align:right;')}</div>
-    ${kfNote('Head-to-head could not load: match history for ' + m._fhH2hFailed.join(' and ') + ' did not load.')}<span class="seg kf-h2h-retry" onclick="fhH2hRetry()" style="font-size:12px; font-weight:700; color:${C.text}; cursor:pointer;">Retry</span>`);
-  if (!m._fhH2hData) return kfCard('h2h', `${kfHead('Head to head', 'loading')}
-    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">${kfName(m.p1)}${kfName(m.p2, 'text-align:right;')}</div>
-    ${kfNote('Loading head-to-head…')}`);
-  const counted = fhMeetings(m).filter(r => !r.wo && (FH_H2H_RET_COUNTS || !r.ret));
-  const a = counted.filter(r => r.won).length, n = counted.length, b = n - a;
-  const meta = n ? `${n} ${n === 1 ? 'meeting' : 'meetings'}` : 'No meeting on record';
-  const tw = n && a !== b ? Math.abs(a - b) / n * 50 : 0;
-  const tug = `<div style="position:relative; width:100%; height:6px; border-radius:3px; background:${C.track};"><span class="kf-h2h-tug" data-lead="${a > b ? 'a' : b > a ? 'b' : ''}" style="position:absolute; top:0; bottom:0; ${a > b ? 'right' : 'left'}:50%; width:${tw}%; border-radius:3px; background:${C.white};"></span><span style="position:absolute; left:50%; top:-3px; bottom:-3px; width:1px; background:${C.tick};"></span></div>`;
-  const cap = !n ? 'No meeting on record' : a === b ? 'Level' : `+${Math.abs(a - b)} ${a > b ? A : B}`;
-  const big = v => `<span style="${M} font-size:30px; font-weight:800; color:${C.text};">${v}</span>`;
-  const score = `<div class="kf-h2h-score" style="display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:14px; align-items:center;">${big(a)}<div style="display:flex; flex-direction:column; align-items:center; gap:6px; min-width:0;">${tug}<span class="kf-h2h-n" style="${M} font-size:11px; color:${C.t3}; ${KF_ONE}">${fhEsc(cap)}</span></div>${big(b)}</div>`;
-  const T = kfH2hTallies(counted), S = surf ? counted.filter(r => r.surface === surf) : null, sa = S ? S.filter(r => r.won).length : 0;
-  const pair = p => (p ? [String(p[0]), String(p[1])] : [FH_DASHC, FH_DASHC]);
-  const rows = [['Sets won', pair(T.sets)], ['Tiebreaks', pair(T.tb)], ['Deciding sets', pair(T.dec)],
-    [surf ? 'On ' + surf.toLowerCase() : 'On this surface', S && n ? [String(sa), String(S.length - sa)] : [FH_DASHC, FH_DASHC]]]
-    .map(([l, v]) => kfVsRow(v[0], l, v[1], { cls: 'kf-h2h-vs' })).join('');
-  // hot lines: the H2H tab's ranking over the same meetings (a line needs FH_HOT_MIN_ELIGIBLE eligible meetings)
-  const HM = fhHotModel(counted, fhH2hLineDefs(A, B), m), sc = HM.sc;
-  const hotOk = HM.mode !== 'none';
-  const kfPx = fhLinePxCtx(m, () => { if (_fh && _fh.m === m && aBuilt(m, 'key')) aPaint('aSectionKey', buildKeyFactorsSection(m)); });
-  // 1–2 comparable meetings: every line's result in family order, no rate and no pick (founder 2026-10-26); 3+: the best per family
-  const picks = HM.mode === 'results' ? Object.keys(KF_HOT_FAM).flatMap(f => sc.scored.filter(x => fhFamOf(x.L.g) === f))
-    : Object.keys(KF_HOT_FAM).map(f => sc.scored.find(x => fhFamOf(x.L.g) === f)).filter(Boolean);
-  const hot = hotOk ? picks.map(x => {
-    const rate = HM.mode === 'results' ? '' : maRateHtml(x.c, x.n, { nopct: '', note: false, color: C.text });
-    return `<div class="kf-h2h-hot" style="display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px 14px; align-items:center; padding:8px 12px; ${KF_PANEL} border-radius:8px; min-width:0;">
-        <span style="display:flex; flex-direction:column; gap:3px; min-width:0;"><span style="${KF_CAP} line-height:13.65px;">${KF_HOT_FAM[fhFamOf(x.L.g)]}</span><span style="font-size:12.5px; font-weight:700; line-height:16.875px; color:${C.text};">${fhEsc(x.name)}</span></span>
-        <span style="display:flex; flex-direction:column; align-items:flex-end; gap:3px;">${rate ? `<span style="${M} font-size:16px; font-weight:800; line-height:16px;">${rate}</span>` : ''}<span style="${M} font-size:10.5px; color:${C.t3}; white-space:nowrap;">${x.c} of ${x.n}</span>${fhLinePx(x.L, kfPx)}</span>
-      </div>`;
-  }).join('') : kfNote(HM.note);
-  return kfCard('h2h', `${kfHead('Head to head', fhEsc(meta))}
-    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">${kfName(m.p1)}${kfName(m.p2, 'text-align:right;')}</div>
-    ${score}<div style="display:flex; flex-direction:column;">${rows}</div>
-    <div style="display:flex; flex-direction:column; gap:8px; padding-top:12px; border-top:1px solid ${C.line};"><div style="display:flex; justify-content:center;"><span style="${KF_CAP}">Hot lines</span></div><div style="display:flex; flex-direction:column; gap:4px;">${hot}</div></div>`);
-}
 
 // ---- 7 · Progression (span 2) ----
 // The Progression tab's model (pgModel over pgEnsureData: each player's rounds at this event before this match, main draw
@@ -18808,28 +18468,6 @@ function kfH2HCard(m){
 // on the road; per metric his pooled figure over his rounds (pgFig: a rate through the gate on its own count) and the
 // draw average (pgDrawFig). Pressure points stays (founder TEN-380 Q8) and has no draw average (founder Q7).
 const KF_PG_SHORT = { firstServeWon: '1st serve pts won', secondServeWon: '2nd serve pts won', wue: 'Winners / UE', winners: 'Winners / total pts' };
-function kfProgCard(m){
-  const C = KF_C, M = FH_MONO;
-  if (!m._pg) return kfCard('progression', `${kfHead('Progression', 'loading')}${kfNote('Loading tournament progression…')}`, { gap: 12 });
-  const P = pgModel(m);
-  const meta = P.isEmpty ? 'first round' : 'avg ' + (P.labels.length > 1 ? `${P.labels[0]}–${P.labels[P.labels.length - 1]}` : P.labels[0]);
-  const who = k => {
-    const name = k ? m.p2 : m.p1, road = P.isEmpty ? null : P.roads[k];
-    const real = road ? road.cells.filter(c => c.r && !c.r.wo) : [];
-    const w = real.filter(c => c.r.won).length, sw = real.reduce((s, c) => s + (c.r.pS || 0), 0), sl = real.reduce((s, c) => s + (c.r.oS || 0), 0);
-    const sub = !road ? 'no round here yet' : real.length ? `${w} ${w === 1 ? 'win' : 'wins'} · sets ${sw}–${sl}` : 'no round on record';
-    return `<div style="display:flex; flex-direction:column; gap:2px; min-width:0;${k ? ' text-align:right;' : ''}">${kfName(name, 'display:block;')}<span class="kf-pg-rec" style="${M} font-size:10.5px; color:${C.t3}; ${KF_ONE}">${fhEsc(sub)}</span></div>`;
-  };
-  const rows = PG_METRICS.map((mt, i) => {
-    const x = P.isEmpty ? null : P.metrics[i];
-    const fig = s => { const f = x ? pgFig(x.avg[s], mt) : { t: FH_DASHC, none: true }; return f.small ? `<span style="color:${MA_GREY};">${f.t}</span>` : f.t; };
-    const dr = mt.noDraw || !x ? FH_DASHC : pgDrawFig(x.fAvg, mt).t;
-    return kfVsRow(fig(0), fhEsc(KF_PG_SHORT[mt.key] || mt.name), fig(1), { sub: 'draw ' + dr, cls: 'kf-pg-m' });
-  }).join('');
-  return kfCard('progression', `${kfHead('Progression', fhEsc(meta))}
-    <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:12px;">${who(0)}${who(1)}</div>
-    <div class="kf-pg" style="display:flex; flex-direction:column;">${rows}</div>${P.isEmpty ? kfNote(P.emptyBody) : ''}`, { gap: 12 });
-}
 
 // ---- 8 · News (span 2) ----
 // The News tab's articles for each player inside the feed's 5-day window (aNewsArticlesFor: player_key, the resolver
@@ -18843,150 +18481,8 @@ function kfNewsDay(ts){
   if (d === day(now - 864e5)) return 'Yesterday';
   try { return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: tz }); } catch (e){ return d; }
 }
-function kfNewsItems(m){
-  const by = new Map(), add = (list, who) => list.forEach(({ a, ts }) => {
-    const k = a.news_key != null ? String(a.news_key) : ts + '|' + (a.title || '');
-    const x = by.get(k) || { a, ts, who: [] };
-    if (x.who.indexOf(who) < 0) x.who.push(who);
-    by.set(k, x);
-  });
-  add(aNewsArticlesFor(m.p1Key, m.p1), 'a'); add(aNewsArticlesFor(m.p2Key, m.p2), 'b');
-  return [...by.values()].sort((x, y) => y.ts - x.ts);
-}
-const KF_NEWS_SHOWN = 6;
-// TEN-380 review item 2 (founder 2026-10-04): the timeline is text only — no dot on an item; the date gutter is 64px so
-// "Yesterday" never runs into the rule.
-function kfNewsCard(m){
-  const C = KF_C, M = FH_MONO, head = meta => kfHead('News', meta, { style: 'margin-bottom:4px;' });
-  if (!aNewsFeedOk()) return kfCard('news', head(m._kfNews === 'unavailable' ? 'unavailable' : 'loading') + kfNote(m._kfNews === 'unavailable' ? 'News feed unavailable.' : 'Loading news…'), { gap: 6 });
-  const items = kfNewsItems(m), N = items.length;
-  const meta = `${N} ${N === 1 ? 'article' : 'articles'} · last ${A_NEWS_WINDOW_DAYS} days`;
-  if (!N) return kfCard('news', head(fhEsc(meta)) + kfNote(`No recent news for ${m.p1} or ${m.p2}.`), { gap: 6 });
-  let prev = '';
-  const rows = items.slice(0, KF_NEWS_SHOWN).map(x => {
-    const day = kfNewsDay(x.ts), lbl = day === prev ? '' : day; prev = day;
-    const tag = x.who.length > 1 ? 'Both' : fhSurname(x.who[0] === 'a' ? m.p1 : m.p2);
-    return `<span class="kf-news-day" style="padding:8px 0; ${M} font-size:10.5px; color:${C.t3}; text-align:right; white-space:nowrap;">${fhEsc(lbl)}</span>
-      <div class="kf-news-item" data-kf-news="${x.who.join('')}" style="position:relative; display:flex; flex-direction:column; gap:2px; padding:8px 0 8px 12px; min-width:0;"><span class="kf-news-tag" style="${KF_CAP}">${fhEsc(tag)}</span><span style="font-size:12.5px; line-height:17.5px; color:${C.text}; overflow-wrap:anywhere;">${fhEsc(x.a.title || FH_DASHC)}</span></div>`;
-  }).join('');
-  return kfCard('news', `${head(fhEsc(meta))}<div class="kf-news" style="position:relative; display:grid; grid-template-columns:64px minmax(0,1fr); column-gap:12px; flex:1 1 0; align-content:start;"><span style="position:absolute; top:12px; bottom:12px; left:75.5px; width:1px; background:${C.rule};"></span>${rows}</div>`, { gap: 6 });
-}
 
-// ---- 9 · Stennisfy Model (span 6, header strip) ----
-// The box deep-links to the top-level Stennisfy Model page for THIS match (modal-key-factors.md): role=button, the
-// ruled `›`. Header: the surface and the Model page's own stage-2 net adjustment (modelOutput, "—" without one). Per
-// player: the adjusted fair odd + its probability from the value snapshot, the SHARP VALUE / NO VALUE flag from the SAME
-// edge the Pinnacle box prints (edgeVsPinnacle; NO VALUE kept by ruling R4; no edge → no flag), then the Best soft box (price + bookmaker;
-// its pp gap is a dash by ruling — best prices cannot be de-vigged; founder TEN-380 Q11) and the Pinnacle box (now, its pp gap,
-// open → now and the move). No snapshot → the box's empty state with dashes (DESIGN GAP G31), still a link.
-function kfModelBox(cap, gap, gapCol, px, sub, cls){
-  return `<div class="${cls}" style="display:flex; flex-direction:column; gap:8px; padding:12px 13px; ${KF_PANEL} border-radius:12px; min-width:0;">
-      <span style="display:flex; align-items:baseline; justify-content:space-between; gap:6px;"><span style="${KF_CAP} ${KF_ONE}">${cap}</span><span class="kf-gap" style="${FH_MONO} font-size:12.5px; font-weight:700; color:${gapCol};">${gap}</span></span>
-      <span class="kf-px" style="${FH_MONO} font-size:20px; font-weight:700; color:${px === FH_DASHC ? KF_C.t3 : KF_C.text}; text-align:center;">${px}</span>
-      <span style="${FH_MONO} font-size:11px; color:${KF_C.t3}; text-align:center; ${KF_ONE}">${sub}</span>
-    </div>`;
-}
-function kfModelCard(m){
-  const C = KF_C, M = FH_MONO;
-  const idAttr = String(m.id == null ? '' : m.id).replace(/'/g, "\\'");
-  const surf = fhSurfName(m.surface);
-  // a finished draw match off the board: model-output.json no longer holds it, its draw-store copy does (round 3)
-  const ds = typeof _drawMatchStore !== 'undefined' && _drawMatchStore && _drawMatchStore.matches && _drawMatchStore.matches[m.id];
-  const mo = (typeof modelOutput !== 'undefined' && modelOutput && modelOutput.matches ? modelOutput.matches[m.id] : null) || (ds && ds.model) || null;
-  const net = mo && mo.ok && mo.stage2 && mo.stage2.totalDeltaP1 != null ? Number(mo.stage2.totalDeltaP1) * 100 : null;
-  const strong = (t, mono) => `<span style="${mono ? M : ''} font-weight:600; color:${C.text};">${t}</span>`;
-  const netTxt = net == null ? `Net adjustment ${strong(FH_DASHC, true)}`
-    : Math.abs(net) < 0.05 ? `Net adjustment ${strong('±0.0pp', true)}`
-    : `Net adjustment ${strong('+' + Math.abs(net).toFixed(1) + 'pp', true)} toward ${strong(fhEsc(fhSurname(net > 0 ? m.p1 : m.p2)))}`;
-  const head = kfHead(`Stennisfy Model · adjusted model price vs the market${surf ? ' · ' + fhEsc(surf) : ''}`, netTxt,
-    { gap: 12, metaFont: 'font-size:11.5px;', style: `padding:13px 20px; border-bottom:1px solid ${C.line};` });
-  const vs = m.valueSnapshot, has = !!(vs && vs.fairP1 != null && vs.fairP2 != null);
-  // "Now" = the Odds tab's Pinnacle row (chart + legacy shapes, cut at the real start; a stale book has no now) — the same
-  // row the Odds box reads, so the two never disagree; "open" = the pipeline's Pinnacle opener.
-  const pin = m.pinnacleOpen || null;
-  const pinRow = (m.oddsMovement || m._oddsLoaded) ? aOddsRowsOf(m, {}).rows.find(r => /^pinnacle/i.test(r.name) && !r.noData && !r.stale) || null : null;
-  const pinNow = side => { const v = pinRow ? pinRow[side === 1 ? 'aNow' : 'bNow'] : null; return v != null && v >= 1.01 ? Number(v) : null; };
-  const col = (side, name, fairP, edge, divider) => {
-    // prediction market (founder 2026-11-21): no Pinnacle value → the live prediction market's no-vig gap, same 0.5pp line
-    const pe = has && typeof edgePredEdge === 'function' ? edgePredEdge(m, fairP, side === 1 ? 'p1' : 'p2') : null;
-    const predV = !(edge != null && edge > 0.005) && pe != null && pe > 0.005;
-    const fair = has && fairP > 0 ? (1 / fairP).toFixed(2) : FH_DASHC, sharp = (edge != null && edge > 0.005) || predV;
-    const flag = has && (edge != null || pe != null) ? `<span class="kf-flag" style="align-self:flex-start; ${KF_CAP} color:${sharp ? C.up : C.dn}; background:${C.inner}; border:1px solid transparent; border-radius:6px; padding:4px 8px; white-space:nowrap;">${predV ? 'PREDICTION VALUE' : sharp ? 'SHARP VALUE' : 'NO VALUE'}</span>` : '';
-    const po = pin ? (side === 1 ? pin.p1 : pin.p2) : null, pn = pinNow(side);
-    const px = !has ? FH_DASHC : pn != null ? pn.toFixed(2) : po != null ? Number(po).toFixed(2) : FH_DASHC;
-    // compared as printed (2 dp): 1.8137 against an opener of 1.81 reads "1.81 → 1.81", so no move is claimed
-    const d2 = v => Math.round(Number(v) * 100), mv = po != null && pn != null ? (d2(pn) - d2(po)) / d2(po) * 100 : null;
-    const mvTxt = mv == null ? '' : ` · <span class="kf-move" style="color:${Math.abs(mv) < 0.05 ? C.t3 : mv < 0 ? C.up : C.dn};">${Math.abs(mv) < 0.05 ? '±0.0' : (mv > 0 ? '+' : '−') + Math.abs(mv).toFixed(1)}%</span>`;
-    const pinSub = !has ? FH_DASHC : po != null ? `${Number(po).toFixed(2)}${pn != null ? ` → ${pn.toFixed(2)}${mvTxt}` : ''}` : FH_DASHC;
-    const gap = has && edge != null ? `${edge > 0 ? '+' : '−'}${Math.abs(edge * 100).toFixed(1)}pp` : FH_DASHC;
-    const bo = m.bestOdds ? (side === 1 ? m.bestOdds.p1 : m.bestOdds.p2) : null;
-    const soft = has && bo && bo.price != null ? Number(bo.price).toFixed(2) : FH_DASHC;
-    const pctTxt = has && fairP > 0 ? ' · ' + (fairP * 100).toFixed(1) + '%' : '';
-    return `<div class="kf-model-col" style="display:flex; flex-direction:column; gap:14px; padding:14px 20px 16px; min-width:0;${divider ? ` border-right:1px solid ${C.line};` : ''}">
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
-          <span style="display:flex; flex-direction:column; align-items:flex-start; gap:6px; min-width:0;">${kfName(name)}${flag}</span>
-          <span style="display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex:none;"><span class="kf-fair" style="${M} font-size:40px; font-weight:700; line-height:36px; color:${fair === FH_DASHC ? C.t3 : C.text};">${fair}</span><span style="${KF_CAP}">Adjusted fair odd${pctTxt}</span></span>
-        </div>
-        <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px;">${kfModelBox('Best soft', FH_DASHC, C.t3, soft, fhEsc(has && bo && bo.bookmaker ? mxBookLabel(bo.bookmaker) : FH_DASHC), 'kf-soft')}${kfModelBox('Pinnacle', gap, gap === FH_DASHC ? C.t3 : edge > 0 ? C.up : C.dn, px, pinSub, 'kf-pin')}</div>
-      </div>`;
-  };
-  const body = `<div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr);">${col(1, m.p1, has ? vs.fairP1 : null, has ? vs.edgeVsPinnacleP1 : null, true)}${col(2, m.p2, has ? vs.fairP2 : null, has ? vs.edgeVsPinnacleP2 : null, false)}</div>`;
-  const foot = `<span class="kf-model-foot" style="display:block; padding:10px 20px 12px; font-size:11px; color:${C.t3}; border-top:1px solid ${C.line};">${has ? `Gap = adjusted fair probability minus the book's implied probability · Pinnacle open → now` : 'The model has not published an adjusted fair price for this match yet.'}</span>`;
-  return kfCard('model', head + body + foot, { span: 6, shell: true, key: 'model', go: `openEdgeModelFromMatch('${idAttr}')`, aria: 'Open the Stennisfy Model for this match' });
-}
 
-// ---- 10 · Market edge (span 6, header strip) ----
-// The Market edge tab's per-player models (meModels over meLoad: market-edge/{key}.json for the Match winner bands,
-// career-history + closes for the derived lines), in the tab's scope (Career by default). Per player: today's price (the
-// header's, aHeaderOdds) and its band; that band's record, win rate vs needs, edge and 1u flat (n < 5 dashed, the tab's
-// thin floor; 5–9 grey); the derived lines at today's price, the tab's two most covered in-band lines on `--wash-4`.
-function kfMeCol(E, i, M, fmt, divider){
-  const C = KF_C, MO = FH_MONO, core = window.MarketEdgeCore, name = i ? E.m.p2 : E.m.p1;
-  const ready = M.state === 'ready', b = ready && M.tb >= 0 ? M.bands[M.tb] : null;
-  const chip = (l, v) => `<span style="display:flex; align-items:baseline; gap:6px; padding:3px 8px; background:${C.inner}; border:1px solid transparent; border-radius:6px; white-space:nowrap;"><span style="${KF_CAP}">${l}</span><span style="${MO} font-size:12px; font-weight:700; color:${v === FH_DASHC ? C.t3 : C.text};">${v}</span></span>`;
-  const band = ready && M.tb >= 0 && core ? core.BANDS[M.tb].label : FH_DASHC;
-  const tile = (cls, label, val, col, sub) => `<div class="${cls}" style="display:flex; flex-direction:column; gap:3px; padding:10px 12px; ${KF_PANEL} border-radius:9px; min-width:0;"><span style="${KF_CAP} ${KF_ONE}">${label}</span><span style="${MO} font-size:17px; font-weight:700; color:${col}; white-space:nowrap;">${val}</span><span style="font-size:10.5px; color:${C.t3}; ${KF_ONE}">${sub}</span></div>`;
-  const g = b ? maGate(b.n).mode : 'none', small = g === 'small';
-  const gc = c => (small ? MA_GREY : c);
-  const edge = b && b.won != null && b.needs != null ? (b.won - b.needs) * 100 : null;
-  const tiles = `<div style="display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px;">`
-    + tile('kf-me-rec', 'Record', b ? `${b.w}–${b.l}` : FH_DASHC, b ? C.text : C.t3, b ? `${b.n.toLocaleString('en-US')} priced` : '&nbsp;')
-    + tile('kf-me-won', 'Won', b && b.won != null ? mePct1(b.won) : FH_DASHC, b && b.won != null ? gc(C.text) : C.t3, b && b.needs != null ? 'needs ' + mePct1(b.needs) : '&nbsp;')
-    + tile('kf-me-edge', 'Edge', edge == null ? FH_DASHC : meSg(edge, 1, 'pp'), edge == null ? C.t3 : gc(kfSignCol(edge, 1)), 'won − needs')
-    + tile('kf-me-flat', 'At 1u flat', b && b.n ? meSg(b.units, 1, 'u') : FH_DASHC, b && b.n ? gc(kfSignCol(b.units, 1)) : C.t3, 'yield ' + (b && b.yield != null ? meSg(b.yield * 100, 1, '%') : FH_DASHC))
-    + `</div>`;
-  const cols = 'display:grid; grid-template-columns:minmax(0,1fr) 52px 64px 44px; gap:10px;';
-  const L = ready ? M.lines : null;
-  let body;
-  if (!fmt.bo3) body = kfNote(ME_BO3_MSG);
-  else if (M.today == null) body = kfNote(ME_NOPRICE_MSG);
-  else if (!ready) body = kfNote(M.state === 'loading' ? 'Loading…' : M.state === 'none' ? 'No history on file for this player.' : 'History unavailable — reopen the tab to retry.');
-  else if (!L) body = kfNote(ME_NOPRICE_MSG);
-  else body = L.rows.map((r, k) => {
-    const prevTop = k > 0 && L.rows[k - 1].top, last = k === L.rows.length - 1;
-    const d = r.diff, aR = maRate(r.aC, r.aN, {}), bR = maRate(r.bC, r.bN, {}), dSmall = aR.mode === 'small' || bR.mode === 'small';
-    return `<div class="kf-me-line${r.top ? ' kf-me-top' : ''}" style="${cols} align-items:baseline; padding:6px 8px; border-radius:7px; margin-top:${k === 0 ? 4 : r.top || prevTop ? 2 : 0}px; background:${r.top ? C.wash : 'transparent'}; border-bottom:1px solid ${r.top || last ? 'transparent' : C.panel};">
-        <span style="font-size:12.5px; color:${C.text}; min-width:0; ${KF_ONE}">${fhEsc(r.label)}</span>
-        <span style="${MO} font-size:12px; text-align:right;">${maRateHtml(r.aC, r.aN, { text: r.aPct == null ? null : r.aPct + '%', nopct: FH_DASHC, note: false, color: C.t3 })}</span>
-        <span style="${MO} font-size:12.5px; font-weight:700; text-align:right;">${maRateHtml(r.bC, r.bN, { text: r.bPct == null ? null : r.bPct + '%', nopct: FH_DASHC, note: false, color: C.text })}</span>
-        <span style="${MO} font-size:12px; font-weight:700; text-align:right; color:${d == null ? C.t3 : dSmall ? MA_GREY : kfSignCol(d, 0)};">${d == null ? '' : meSg(d, 0, '')}</span>
-      </div>`;
-  }).join('');
-  return `<div class="kf-me-col" data-kf-side="${i ? 'b' : 'a'}" style="display:flex; flex-direction:column; gap:12px; padding:14px 20px 16px; min-width:0;${divider ? ` border-right:1px solid ${C.line};` : ''}">
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:0 0 8px; border-bottom:1px solid ${C.line};">${kfName(name)}<span style="display:flex; gap:6px; flex:none;">${chip('Today', M.today != null ? M.today.toFixed(2) : FH_DASHC)}${chip('Band', band)}</span></div>
-      ${tiles}
-      <div style="display:flex; flex-direction:column;">
-        <div style="${cols} padding:0 8px 6px; border-bottom:1px solid ${C.line};"><span style="${KF_CAP}">Derived lines</span><span style="${KF_CAP} text-align:right;">All</span><span style="${KF_CAP} text-align:right;">In band</span><span style="${KF_CAP} text-align:right;">Δ</span></div>
-        ${body}
-      </div>
-    </div>`;
-}
-function kfMeCard(m){
-  const E = meStateFor(m), MM = meModels(E), core = window.MarketEdgeCore;
-  const fmt = core ? core.matchFormat(m) : { bo3: false };
-  const head = kfHead("Market edge · today's price band", fhEsc(`${meScopeLbl(E.S)} · closing odds`), { style: `padding:13px 20px; border-bottom:1px solid ${KF_C.line};` });
-  return kfCard('marketedge', `${head}<div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr);">${kfMeCol(E, 0, MM[0], fmt, true)}${kfMeCol(E, 1, MM[1], fmt, false)}</div>`, { span: 6, shell: true });
-}
 // The Market edge tab's own loads (career history, closes, the profile shard — each cached by its module), then the tab's
 // loader (meLoad) so its models exist before the tab is opened; resolves after meLoad has settled its states.
 function kfEnsureMarketEdge(m){
@@ -18994,7 +18490,7 @@ function kfEnsureMarketEdge(m){
   return Promise.all(keys.map(k => Promise.all([loadCareerHistory(k), fhLoadCloses(k), meLoadProfileShard(k)]).catch(() => null)))
     .then(() => { if (_aM === m) meLoad(m); return new Promise(r => setTimeout(r, 0)); });   // TEN-380 review F1: never swap the Market edge state to a match the modal no longer shows
 }
-function kfEnsureNews(m){ return ensureNewsData().then(() => { m._kfNews = aNewsFeedOk() ? 'ok' : 'unavailable'; }); }
+function kfEnsureNews(m){ return Promise.all([ensureNewsData(), (_newsTicker && _newsTicker.length) ? null : loadNewsTicker()]).then(() => { m._kfNews = aNewsFeedOk() ? 'ok' : 'unavailable'; }); }
 
 // ---- 11 · Weather (span 6) ----
 // The Weather tab's model (wxModel) at match time: temperature, the match day's sky (the tab's WMO icon bucket: clear /
@@ -19005,38 +18501,8 @@ const KF_WX_SKY = { sun: 'Clear', cloud: 'Cloudy', rain: 'Rain' };
 function kfEnsureWeather(m){
   return ensureWeather(m).then(r => { m._kfWx = r; return r; }).catch(() => { m._kfWx = { entry: null, file: null, arch: null }; return m._kfWx; });
 }
-function kfWeatherCard(m){
-  const C = KF_C, M = FH_MONO;
-  let W = null, at = null, verdict;
-  if (!m._kfWx) verdict = WX_COPY.loading;
-  else {
-    W = wxModel(m, m._kfWx.entry, m._kfWx.file, Date.now(), wxForced(), m._kfWx.arch);
-    if (W.indoor) verdict = WX_COPY.indoorTitle;
-    else { verdict = W.verdict; if (!W.unavail) at = W.at; }
-  }
-  const v = (x, unit) => (at && at[x] != null ? `${at[x]}${unit || ''}` : FH_DASHC);
-  const md = W && W.days ? W.days.find(d => d.isMatch) : null, sky = md && md.icon ? KF_WX_SKY[md.icon] : '';
-  const cond = at && at.feels != null ? `${sky ? sky + ' · ' : ''}feels like ${at.feels}°` : (sky || FH_DASHC);
-  const when = W && !W.indoor && W.atHead ? `${W.atHead} · outdoor` : W && W.indoor ? 'indoor' : '';
-  const city = (m.venue && m.venue.city) || trClean(m);
-  const fr = W && W.fresh && W.fresh.text ? W.fresh.text.replace(' · ' + W.source, '') : '', fresh = fr ? fr.charAt(0).toLowerCase() + fr.slice(1) : '';   // the stamp without the source name
-  const cs = m.courtSpeed || null, pace = cs && cs.abstractSpeed != null ? Number(cs.abstractSpeed).toFixed(2) : FH_DASHC;
-  const tile = (cls, label, val, unit) => `<div class="${cls}" style="display:flex; flex-direction:column; justify-content:center; gap:8px; padding:12px 14px; ${KF_PANEL} border-radius:9px; min-width:0;"><span style="${KF_CAP}">${label}</span><span style="${M} font-size:22px; font-weight:700; line-height:24.2px; color:${val === FH_DASHC ? C.t3 : C.text}; white-space:nowrap;">${val}${unit ? ` <span style="font-size:11px; font-weight:400; line-height:12.1px; color:${C.t3};">${unit}</span>` : ''}</span></div>`;
-  return kfCard('weather', `<div style="display:flex; flex-direction:column; gap:8px; min-width:0;">
-      <div style="display:flex; align-items:center; gap:8px;"><span style="flex:none; ${KF_CAP}">Weather · at match time</span><span aria-hidden="true" style="font-size:16px; color:${C.t3};">›</span></div>
-      <div style="display:flex; align-items:center; gap:12px;"><span class="kf-wx-temp" style="${M} font-size:40px; font-weight:700; line-height:36px; letter-spacing:-0.02em; color:${at && at.temp != null ? C.text : C.t3};">${v('temp', '°')}</span><div style="display:flex; flex-direction:column; gap:2px; min-width:0;"><span class="kf-wx-cond" style="font-size:13px; font-weight:700; color:${C.text};">${fhEsc(cond)}</span>${when ? `<span style="${M} font-size:11px; color:${C.t3};">${fhEsc(when)}</span>` : ''}</div></div>
-      <span class="kf-wx-note" style="font-size:13.5px; font-weight:600; line-height:18.9px; color:${C.text};">${fhEsc(verdict)}</span>
-      ${fresh ? `<span style="font-size:11px; color:${C.t3};">${fhEsc(city + ' · ' + fresh)}</span>` : ''}
-    </div>
-    <div style="display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px;">${tile('kf-wx-wind', 'Wind', v('gusts'), 'km/h')}${tile('kf-wx-heat', 'Heat', v('feels', '°'), 'feels')}${tile('kf-wx-rain', 'Rain', v('rain', '%'), '')}${tile('kf-wx-pace', 'Court pace', pace, cs && cs.category ? fhEsc(cs.category) : '')}</div>`,
-    { span: 6, style: 'display:grid; grid-template-columns:230px minmax(0,1fr); gap:20px; align-items:stretch; padding:16px 20px;' });
-}
 
-function buildKeyFactorsSection(m){
-  initAOddsTips();
-  return `<div class="kf-wrap" style="max-width:1100px; margin:0 auto; line-height:normal; font-family:'Hanken Grotesk',system-ui,sans-serif; font-size:16px; color:${KF_C.text};">
-    <div class="kf-grid" style="display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:14px; align-items:stretch;">${kfStyleCard(m)}${kfFormCard(m)}${kfTourCard(m)}${kfOddsCard(m)}${kfDnaCard(m)}${kfH2HCard(m)}${kfProgCard(m)}${kfNewsCard(m)}${kfModelCard(m)}${kfMeCard(m)}${kfWeatherCard(m)}</div></div>`;
-}
+function buildKeyFactorsSection(m){ initAOddsTips(); return maKeyFactorsV2(m); }   // the 2026-11-23 design (match-analysis-v2.js)
 
 /* ---------- PLAYING STYLE TAB ---------- */
 // Shared by the Playing style tab (ps2*, below) and Key factors: the matchup matrix loader and the archetype lookups.
