@@ -287,7 +287,8 @@
     const ok = MM.filter(M => M.state === 'ready');
     if (!ok.length) return '';
     const P = ok.reduce((s, M) => s + M.book.P, 0), B = ok.reduce((s, M) => s + M.book.B, 0), A = ok.reduce((s, M) => s + (M.book.A || 0), 0);
-    return ' Closing prices: Pinnacle ' + P + (A ? ', Pinnacle (approx.) ' + A + ' (a snapshot, not a confirmed close)' : '') + ', Bet365 ' + B + (B ? ' (no Pinnacle close)' : '') + '.';
+    const last = ok.map(M => M.lastDate).filter(Boolean).sort().pop();   // modal-market-edge.md: the split + the latest match in scope
+    return ' Closing prices: Pinnacle ' + P + (A ? ', Pinnacle (approx.) ' + A + ' (a snapshot, not a confirmed close)' : '') + ', Bet365 ' + B + (B ? ' (no Pinnacle close)' : '') + '. Latest match: ' + (last ? fhLongDate(last) : DASH) + '.';
   }
   function mePriceCard(E, MM) {
     const S = E.S, core = root.MarketEdgeCore;
@@ -685,7 +686,7 @@
     const r = LinePrices.linePrice(ctx.ek, side, px.mk, px.line, { date: ctx.date, started: !!ctx.started });
     if (r.state === 'loading') { LinePrices.load(ctx.date, ctx.ek).then(() => { if (ctx.repaint) ctx.repaint(); }); return { txt: DASH, price: null, title: 'Loading' }; }
     const title = LinePrices.hoverLines(r, L.name).join('\n');
-    if (r.state === 'ok') return { txt: LinePrices.fmtOdd(r.price), price: r.price, title };
+    if (r.state === 'ok') return { txt: LinePrices.fmtOdd(r.price), price: r.price, title, age: r.ageMin };   // odds.md: every priced cell shows its age
     if (r.state === 'close') return { txt: 'Close ' + LinePrices.fmtOdd(r.price), price: r.price, title };
     return { txt: DASH, price: null, title };
   }
@@ -829,7 +830,9 @@
         + '<div style="display:flex; justify-content:space-between; padding-top:7px; border-top:1px solid ' + W(6) + '; font-size:11.5px; color:var(--ma2-grey);"><span>Average, margin removed</span><span style="' + MONO + ' font-weight:700; color:var(--ma2-text);">' + avgV.toFixed(2) + '</span></div></div>';
       const fig = (v, lbl, al, mid) => '<div class="seg"' + (mid ? ' onclick="fhOpenSheet(\'' + esc(mid) + '\')"' : '') + ' style="display:flex; flex-direction:column; align-items:' + al + '; text-align:' + (al === 'flex-end' ? 'right' : al === 'center' ? 'center' : 'left') + '; gap:2px; min-width:0;' + (mid ? ' cursor:pointer;' : '') + '">'
         + '<span style="' + MONO + ' font-size:15px; font-weight:700; color:var(--ma2-text);">' + v + '</span><span style="font-size:11.5px; font-weight:600; line-height:1.35; color:var(--ma2-grey); text-wrap:balance;">' + esc(lbl) + '</span></div>';
-      return pbox2(headL + '<span style="font-size:12.5px; color:var(--ma2-grey);">' + esc(note) + '</span></div>' + todayR
+      // modal-form-h2h.md: a range from fewer than FH_PRICE_THIN priced meetings carries an n=k chip
+      const thin = nP < FH_PRICE_THIN ? ' <span title="Range built from ' + nP + ' priced meetings" style="font-size:11.5px; font-weight:600; color:var(--ma2-grey); background:var(--ma2-lifted); border:1px solid ' + W(14) + '; border-radius:6px; padding:2px 8px; white-space:nowrap;">n=' + nP + '</span>' : '';
+      return pbox2(headL + '<span style="font-size:12.5px; color:var(--ma2-grey);">' + esc(note) + thin + '</span></div>' + todayR
         + '<div style="display:flex; flex-direction:column; gap:10px;">' + bar + '<div class="ma2-fbar" style="position:relative; display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; align-items:start;">' + pop
         + fig(get(lo).toFixed(2), 'Lowest · ' + evLbl(lo), 'flex-start', lo.mid) + fig(avgV.toFixed(2), 'Average', 'center', null) + fig(get(hi).toFixed(2), 'Highest · ' + evLbl(hi), 'flex-end', hi.mid) + '</div></div>');
     });
@@ -858,7 +861,7 @@
         + '<span style="display:flex; flex-direction:column; gap:3px; min-width:0;">' + (fam ? '<span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey);">' + esc(fam) + '</span>' : '')
         + '<span style="display:flex; align-items:center; flex-wrap:wrap; gap:6px 8px;"><span style="font-size:13.5px; font-weight:700; color:var(--ma2-text);">' + esc(x.name) + '</span>'
         + (x.k === topK ? '<span style="font-size:11px; font-weight:700; color:var(--ma2-text); background:var(--ma2-lifted); border:1px solid ' + W(14) + '; border-radius:6px; padding:1px 7px; white-space:nowrap;">Most covered</span>' : '') + '</span></span>'
-        + '<span title="' + esc(px.title + (be ? '\nNeeds ' + Math.round(be) + '% to break even' : '')) + '" style="justify-self:start; ' + MONO + ' font-size:12.5px; font-weight:700; color:' + (px.price ? 'var(--ma2-text)' : 'var(--ma2-quiet)') + '; background:var(--ma2-track); border:1px solid ' + W(14) + '; border-radius:6px; padding:2px 7px; white-space:nowrap;">' + esc(px.txt) + '</span>'
+        + '<span style="justify-self:start; display:flex; flex-direction:column; gap:2px;">' + '<span title="' + esc(px.title + (be ? '\nNeeds ' + Math.round(be) + '% to break even' : '')) + '" style="' + MONO + ' font-size:12.5px; font-weight:700; color:' + (px.price ? 'var(--ma2-text)' : 'var(--ma2-quiet)') + '; background:var(--ma2-track); border:1px solid ' + W(14) + '; border-radius:6px; padding:2px 7px; white-space:nowrap;">' + esc(px.txt) + '</span>' + (px.age != null ? '<span style="' + MONO + ' font-size:10.5px; color:var(--ma2-grey); white-space:nowrap;">' + px.age + 'm ago</span>' : '') + '</span>'
         + '<span style="display:flex; flex-direction:column; gap:2px; min-width:0;"><span style="display:flex; align-items:baseline; gap:7px; white-space:nowrap;"><span data-ma-gate="' + g + '"' + (results ? ' title="Results only: fewer than ' + FH_HOT_MIN_ELIGIBLE + ' comparable meetings"' : g === 'nopct' ? ' title="' + esc(x.n + ' eligible: too few for a rate') + '"' : '') + ' style="' + MONO + ' font-size:15px; font-weight:700; color:' + (g === 'full' ? 'var(--ma2-text)' : 'var(--ma2-grey)') + ';">' + pct + '</span>'
         + '<span style="' + MONO + ' font-size:11.5px; color:var(--ma2-grey);">' + x.c + ' of ' + x.n + '</span></span>' + (x.L.basis && x.n < F.length ? '<span style="font-size:11.5px; color:var(--ma2-grey);">' + esc(x.L.basis) + '</span>' : '') + '</span>'
         + '<span style="display:grid; grid-template-columns:' + cols + '; align-items:center;">' + dts + '</span>' + chev(open) + '</div>';
@@ -977,7 +980,7 @@
     const fmtC = (v, k) => v == null ? DASH : k === 0 ? String(Math.round(v)) : k === 2 ? v.toFixed(2) : k === 3 ? v.toFixed(1) + '%' : v.toFixed(1);
     const cmp = rows.map(r => { const x = r[2], y = r[3], both = x != null && y != null, ld = !both || x === y ? 0 : x > y ? 1 : -1, d = both ? Math.abs(x - y) : 0, w = ld ? Math.min(46, 14 + d / Math.max(x, y) * 400) : 0;
       const lc = ld > 0 ? 'var(--ma2-blue)' : ld < 0 ? 'var(--ma2-text)' : 'var(--ma2-grey)', gap = !both ? DASH : ld ? (r[4] === 0 ? String(Math.round(d)) : r[4] === 2 ? d.toFixed(2) : d.toFixed(1)) : 'Level';
-      const col = (v, me) => v == null ? 'var(--ma2-quiet)' : ld === me ? 'var(--ma2-text)' : 'var(--ma2-grey)';
+      const col = v => v == null ? 'var(--ma2-quiet)' : 'var(--ma2-text)';   // CLAUDE.md: never highlight the better stat
       return '<div>' + (r[0] ? '<div style="padding:12px 0 6px; font-size:11.5px; font-weight:600; color:var(--ma2-grey); text-align:center;">' + r[0] + '</div>' : '')
         + '<div style="display:grid; grid-template-columns:66px minmax(0,1fr) 66px; align-items:center; gap:16px; padding:10px 0; border-top:1px solid ' + W(6) + ';">'
         + '<span style="' + MONO + ' font-size:16px; font-weight:' + (ld > 0 ? 800 : 500) + '; color:' + col(x, 1) + ';">' + fmtC(x, r[4]) + '</span>'
@@ -1457,6 +1460,8 @@
           + '<span style="font-size:11.5px; line-height:1.35; color:var(--ma2-grey); min-height:31px;">' + esc(f.detail || '') + '</span></div>')
       + '<span style="flex:1; padding-top:14px; border-top:1px solid ' + W(6) + '; font-size:12.5px; line-height:1.5; color:var(--ma2-grey); text-wrap:pretty;">' + esc(f.effect || '') + '</span></div>';
   }
+  // modal-weather.md (TEN-380): a fresh forecast prints no freshness line; only unavailable, archived or 6–24 h stale do
+  const wxFreshLine = vm => vm.fresh && (vm.unavail || vm.archived || vm.fresh.tone === 'amber') ? vm.fresh.text : '';
   function maWeatherV2(m, entry, file, nowMs, arch) {
     const CP = WX_COPY, vm = wxModel(m, entry, file, nowMs, wxForced(), arch);
     const wrap = inner => '<div class="wx-tab" style="max-width:1040px; margin:0 auto; display:flex; flex-direction:column; gap:14px; font-size:14px; line-height:normal; color:var(--ma2-text);">' + inner + '</div>';
@@ -1468,8 +1473,8 @@
       + '<span style="font-size:18px; font-weight:800;">Indoor event, weather is not a factor</span><span style="font-size:12.5px; color:var(--ma2-grey);">' + esc(CP.indoorSub) + '</span></div>');
     const lead = vm.lead, cs = ma2CourtSpeed(m);
     const short = vm.unavail || vm.verdictSev === 'u' ? 'Forecast unavailable' : lead ? lead.name + ' is the main factor' : /Missing/.test(vm.verdict) ? 'No concern in the values we have' : 'No weather concern';
-    const fresh = vm.unavail ? vm.fresh.text : vm.archived ? vm.fresh.text : vm.fresh.text;
-    const scope = '<span style="white-space:nowrap;">' + esc(vm.atHead) + '</span><span style="color:var(--ma2-quiet);">·</span><span style="white-space:nowrap;">' + esc(fresh) + '</span>' + (vm.mayStartLater ? '<span style="color:var(--ma2-quiet);">·</span><span>' + esc(CP.mayStartLater) + '</span>' : '');
+    const fresh = wxFreshLine(vm);
+    const scope = '<span style="white-space:nowrap;">' + esc(vm.atHead) + '</span>' + (fresh ? '<span style="color:var(--ma2-quiet);">·</span><span style="white-space:nowrap;">' + esc(fresh) + '</span>' : '') + (vm.mayStartLater ? '<span style="color:var(--ma2-quiet);">·</span><span>' + esc(CP.mayStartLater) + '</span>' : '');
     const facts = vm.factors.map(f => ({ name: f.name, sev: f.sev, fig: f.big, unit: f.unit, detail: f.detail === '—' ? '' : f.detail, effect: f.effect, id: f.id }));
     const P = vm.pace, sp = cs && cs.v != null ? cs.v.toFixed(2) : DASH;
     const paceF = { name: 'Court speed', stat: P.sevL ? P.sevL.charAt(0) + P.sevL.slice(1).toLowerCase() : '', statC: 'var(--ma2-text)', fig: vm.unavail ? DASH : sp, unit: cs && cs.label ? cs.label : '', detail: P.detail, effect: P.effect };
@@ -1836,7 +1841,7 @@
     const rows = PS2_AXES.map((ax, i) => {
       const a = pc(D.a.vals[i]), b = pc(D.b.vals[i]), ra = a == null ? null : Math.round(a), rb = b == null ? null : Math.round(b);
       if (ra != null && rb != null) { k++; if (ra > rb) nA++; else if (rb > ra) nB++; }
-      const col = (x, o) => x == null ? 'var(--ma2-quiet)' : o == null || x >= o ? 'var(--ma2-text)' : 'var(--ma2-grey)';
+      const col = x => x == null ? 'var(--ma2-quiet)' : 'var(--ma2-text)';   // CLAUDE.md: never highlight the better stat
       const fig = (x, o, right) => '<span style="' + MONO + ' font-size:12.5px; font-weight:700; color:' + col(x, o) + '; min-width:22px;' + (right ? ' text-align:right;' : '') + '">' + (x == null ? DASH : x) + '</span>';
       const bar = (x, right, c) => '<div style="flex:1; height:6px; border-radius:3px; background:' + W(7) + ';' + (right ? '' : ' display:flex; justify-content:flex-end;') + '"><div style="width:' + (x == null ? 0 : x) + '%; height:6px; border-radius:3px; background:' + c + ';"></div></div>';
       return '<div title="' + esc(ps2AxisTip(D, i)) + '" style="display:grid; grid-template-columns:minmax(0,1fr) 108px minmax(0,1fr); gap:12px; align-items:center;">'
@@ -1845,7 +1850,7 @@
         + '<div style="display:flex; align-items:center; gap:10px;">' + bar(b, true, 'var(--ma2-text)') + fig(rb, ra, true) + '</div></div>'; }).join('');
     const why = x => (!x.d.inPool ? fhSurname(x.name) + ': no api-tennis rating on record.' : !x.d.ok ? fhSurname(x.name) + ': ' + (x.d.matches || 0) + ' ' + D.surface + ' ' + (x.d.matches === 1 ? 'match' : 'matches') + ' in the last 52 weeks, below the ' + MDNA_FLOOR + '-match floor.' : '');
     const ws = [why(D.a), why(D.b)].filter(Boolean).join(' ');
-    const scope = D.loading ? 'Loading DNA…' : !k ? (ws || 'No axis both players carry.') : (nA === nB ? 'Axes split ' + nA + '–' + nB : esc(fhSurname(nA > nB ? m.p1 : m.p2)) + ' leads ' + Math.max(nA, nB) + ' of ' + k + ' axes') + ' · last 52 weeks' + (ws ? ' · ' + esc(ws) : '');
+    const scope = D.loading ? 'Loading DNA…' : !k ? esc(ws || 'No axis both players carry.') : (nA === nB ? 'Axes split ' + nA + '–' + nB : esc(fhSurname(nA > nB ? m.p1 : m.p2)) + ' leads ' + Math.max(nA, nB) + ' of ' + k + ' axes') + ' · last 52 weeks' + (ws ? ' · ' + esc(ws) : '');
     const name = (i, rev) => '<span style="display:flex; align-items:center; gap:8px; min-width:0;' + (rev ? ' flex-direction:row-reverse;' : '') + '">' + kfAv(m, i, 22, 9) + '<span style="font-size:13.5px; font-weight:700; color:var(--ma2-white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(i ? m.p2 : m.p1) + '</span></span>';
     const body = '<div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">' + name(0) + name(1, true) + '</div><div style="display:flex; flex-direction:column; gap:12px;">' + rows + '</div>';
     return kfBox({ tab: 'style', key: 'dna', order: 3, size: 'h', title: 'Playing style DNA', help: 'Where each player stands on tour over the last 52 weeks, 0 to 100. A higher figure is better.', scope, body });
@@ -1991,7 +1996,7 @@
     if (m._fhH2hFailed) return kfBox({ tab: 'h2h', order: 8, size: 's', title: 'Head to head', scope: 'Not loaded', body: names + kfNote('Head-to-head could not load: match history for ' + m._fhH2hFailed.join(' and ') + ' did not load.') + '<span class="seg" onclick="event.stopPropagation();fhH2hRetry()" style="font-size:12.5px; font-weight:700; color:var(--ma2-blue); cursor:pointer;">Retry</span>' });
     if (!m._fhH2hData) return kfBox({ tab: 'h2h', order: 8, size: 's', title: 'Head to head', scope: 'Loading', body: names + kfNote('Loading head-to-head…') });
     const counted = fhMeetings(m).filter(r => !r.wo && (FH_H2H_RET_COUNTS || !r.ret)), a = counted.filter(r => r.won).length, n = counted.length, b = n - a;
-    const A = fhSurname(m.p1), B = fhSurname(m.p2), cl = (x, y) => x >= y ? 'var(--ma2-text)' : 'var(--ma2-grey)';
+    const A = fhSurname(m.p1), B = fhSurname(m.p2), cl = () => 'var(--ma2-text)';   // CLAUDE.md: both players' figures one colour
     const big = (v, c) => '<span style="' + MONO + ' font-size:26px; font-weight:700; line-height:1.1; color:' + c + ';">' + v + '</span>';
     const score = '<div style="display:grid; grid-template-columns:auto 1fr auto; gap:14px; align-items:center;">' + big(a, n ? cl(a, b) : 'var(--ma2-quiet)')
       + '<div style="display:flex; flex-direction:column; gap:7px; align-items:center; min-width:0;"><div style="display:flex; gap:2px; width:100%; height:6px; border-radius:3px; background:' + W(7) + '; overflow:hidden;">' + (n ? '<span style="width:' + (a / n * 100).toFixed(1) + '%; background:var(--ma2-blue);"></span><span style="flex:1; background:var(--ma2-text);"></span>' : '') + '</div>'
@@ -2024,7 +2029,7 @@
     if (P.isEmpty) body += '<span style="font-size:12.5px; color:var(--ma2-quiet); line-height:1.4;">No rounds played yet. The figures start after the first round.</span>';
     else body += '<div style="display:flex; flex-direction:column; gap:9px; padding-top:16px; border-top:1px solid ' + W(6) + ';">' + PG_METRICS.map((mt, i) => {
       const x = P.metrics[i], fa = pgFig(x.avg[0], mt), fb = pgFig(x.avg[1], mt), na = parseFloat(String(fa.t).replace('−', '-')), nb = parseFloat(String(fb.t).replace('−', '-'));
-      const c = (f, v, o) => f.none || f.t === DASH ? 'var(--ma2-quiet)' : f.small ? 'var(--ma2-grey)' : !isFinite(o) || v >= o ? 'var(--ma2-text)' : 'var(--ma2-grey)';
+      const c = f => f.none || f.t === DASH ? 'var(--ma2-quiet)' : f.small ? 'var(--ma2-grey)' : 'var(--ma2-text)';   // the gate's grey only; never the better stat
       const dr = mt.noDraw ? DASH : pgDrawFig(x.fAvg, mt).t;
       return '<div style="display:grid; grid-template-columns:1fr auto 1fr; align-items:baseline; gap:10px;"><span style="' + MONO + ' font-size:13px; font-weight:700; color:' + c(fa, na, nb) + '; white-space:nowrap;">' + fa.t + '</span>'
         + '<span title="' + esc('Draw average ' + dr) + '" style="font-size:11.5px; font-weight:600; color:var(--ma2-grey); white-space:nowrap;">' + esc(KF_PG_SHORT[mt.key] || mt.name) + '</span>'
@@ -2052,7 +2057,7 @@
   function kfWxBox(m) {
     const CP = WX_COPY, X = m._kfWx, vm = X ? wxModel(m, X.entry, X.file, Date.now(), wxForced(), X.arch) : null;
     const sky = vm && vm.days ? (vm.days.find(d => d.isMatch) || {}).icon : '', at = vm && !vm.indoor && !vm.unavail ? vm.at : null;
-    const scope = !vm ? 'Loading' : vm.indoor ? 'Indoor event' : esc(vm.atHead) + (vm.fresh && vm.fresh.text ? ' · ' + esc(vm.fresh.text) : '');
+    const scope = !vm ? 'Loading' : vm.indoor ? 'Indoor event' : esc(vm.atHead) + (wxFreshLine(vm) ? ' · ' + esc(wxFreshLine(vm)) : '');
     const verdict = !vm ? CP.loading : vm.indoor ? CP.indoorTitle : vm.verdict;
     const left = '<div style="flex:1 1 220px; max-width:300px; display:flex; flex-direction:column; gap:10px; justify-content:center; min-width:0;"><div style="display:flex; align-items:baseline; gap:10px;"><span style="' + MONO + ' font-size:26px; font-weight:700; line-height:1.1; color:' + (at && at.temp != null ? 'var(--ma2-text)' : 'var(--ma2-quiet)') + ';">' + (at && at.temp != null ? at.temp + '°' : DASH) + '</span><span style="font-size:12.5px; color:var(--ma2-grey);">' + esc(sky ? KF_WX_SKY[sky] || '' : '') + '</span></div>'
       + '<span style="font-size:13.5px; font-weight:600; color:var(--ma2-text); line-height:1.4; text-wrap:pretty;">' + esc(verdict) + '</span></div>';
