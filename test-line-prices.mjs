@@ -212,11 +212,9 @@ test('5-6: same line, same match, same price — the three match-card views; the
 });
 
 const LinePrices_fmt = v => globalThis.window.LinePrices.fmtOdd(v);
-// odds.md "Line prices → Age on screen": every priced cell shows minutes since the heartbeat. The old Hot lines cell
-// (fhLinePxCell: "48% · 1m ago" under the price) did; the rebuilt H2H tab's Today cell (match-analysis-v2.js h2Hot →
-// h2LinePx: { txt: fmtOdd(price) }) prints the price alone — the age is only in its hover. RENDERER GAP (reported): this
-// test stays red until the Today cell shows the age. Mutant runners skip it by name.
-test('RENDERER GAP: the H2H tab\'s Today cell carries the price\'s age on screen (odds.md "Age on screen")', async () => {
+// odds.md "Line prices → Age on screen": every priced cell shows minutes since the heartbeat — the H2H tab's Today cell
+// too (h2LinePx returns the age; h2Hot draws "Xm ago" under the price; fixed on ma-v2 391b54fa3).
+test('2: the H2H tab\'s Today cell carries the price\'s age on screen (odds.md "Age on screen")', async () => {
   const { L, restore } = fresh();
   try {
     await L.load('2026-10-24', 12173801);
@@ -224,7 +222,8 @@ test('RENDERER GAP: the H2H tab\'s Today cell carries the price\'s age on screen
     const A25 = D.fhH2hLineDefs('Medvedev', 'Bublik').find(d => d.name === 'Medvedev −2.5 games');
     const v2 = ma2().h2LinePx(A25, m);
     assert.equal(v2.price, 2.01);
-    assert.match(v2.txt, /\b1m\b/, 'the Today cell shows "1m" (the age) beside 2.01, as the column does');
+    assert.equal(v2.age, 1, 'the Today cell\'s age: 1 min since the heartbeat (mutant: age dropped)');
+    assert.match(v2fn('h2Hot'), /\+ esc\(px\.txt\) \+ '<\/span>' \+ \(px\.age != null \? '<span style="[^"]*">' \+ px\.age \+ 'm ago<\/span>' : ''\)/, 'h2Hot draws "Xm ago" under the price (mutant: age not drawn)');
   } finally { restore(); }
 });
 

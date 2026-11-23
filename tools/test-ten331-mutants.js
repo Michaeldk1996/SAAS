@@ -30,6 +30,7 @@ const MA2_MUTANTS = [
   ['N2: a w/o-only surface greyed out', "off = !E.some(r => t[0] === 'all' || r.surface === t[0])", "off = n === 0"],
   ['price: header counts a today price it does not draw', "fhPriceRangeSource(PR, nP > 1 ? today : null)", "fhPriceRangeSource(PR, today)"],
   ['price: header names one book over mixed data', "Closing odds' + (nP ? ' · ' + esc(fhPriceRangeSource(PR, nP > 1 ? today : null)) : '')", "Closing odds' + (nP ? ' · Pinnacle' : '')"],
+  ['price: n=2 loses its count', "const thin = nP < FH_PRICE_THIN ?", "const thin = false ?"],
   ['price: no TEN-325 note', "'<span' + (nP && ret ? ' title=\"' + esc(ret) + '\"' : '') + ' style=", "'<span' + ' style="],
   ['price: the every-close pop-up dropped', "gap:10px; align-items:start;\">' + pop", "gap:10px; align-items:start;\">'"],
   ['today: the dash loses its reason', "<span' + (tv == null ? ' title=\"' + esc(FH_TODAY_NONE) + '\"' : '') + ' style=", "<span' + ' style="],
@@ -45,12 +46,9 @@ const MA2_MUTANTS = [
   ['drawer: an empty panel opens nothing', "if (S.stat && F.length) {", "if (S.stat && F.length && rowsP.length) {"],
   ['drawer: sets rows lose " ret."', "r.sets ? r.sets.map(fhSetTxt).join(', ') + (r.ret ? ' ret.' : '') : 'Set scores not on record'", "r.sets ? r.sets.map(fhSetTxt).join(', ') : 'Set scores not on record'"],
 ];
-// Known renderer gaps (reported to the lead) stay red in the suite; mutants are judged on the rest, said out loud.
-const SKIP = ['--test-skip-pattern=RENDERER GAP'];
-console.log('note: mutants skip the tests named "RENDERER GAP" (known red, reported)');
 const SUITES = ['test-ten331-h2h.mjs'];
 // Control: the unmutated page must pass, or every "caught" below means nothing.
-{ const r = spawnSync(process.execPath, ['--test', ...SKIP, ...SUITES.map(f => path.join(ROOT, f))], { encoding: 'utf8' });
+{ const r = spawnSync(process.execPath, ['--test', ...SUITES.map(f => path.join(ROOT, f))], { encoding: 'utf8' });
   if (r.status !== 0) { console.error('✖ the suite is red on the unmutated page — mutants are meaningless'); process.exit(1); }
   console.log('✔ control: the unmutated page passes'); }
 let survived = 0;
@@ -59,14 +57,14 @@ for (const [name, from, to] of MUTANTS) {
   if (html.split(from).length !== 2) { console.error(`✖ anchor not found exactly once: ${name}`); survived++; continue; }
   const file = path.join(dir, 'm.html');
   fs.writeFileSync(file, html.replace(from, to));
-  const r = spawnSync(process.execPath, ['--test', ...SKIP, ...SUITES.map(f => path.join(ROOT, f))], { env: Object.assign({}, process.env, { TEN331_HTML: file }), encoding: 'utf8' });
+  const r = spawnSync(process.execPath, ['--test', ...SUITES.map(f => path.join(ROOT, f))], { env: Object.assign({}, process.env, { TEN331_HTML: file }), encoding: 'utf8' });
   if (r.status === 0) { console.error(`✖ SURVIVED: ${name}`); survived++; } else console.log(`✔ caught: ${name}`);
 }
 for (const [name, from, to] of MA2_MUTANTS) {
   if (ma2.split(from).length !== 2) { console.error(`✖ anchor not found exactly once: ${name}`); survived++; continue; }
   const file = path.join(dir, 'ma2.js');
   fs.writeFileSync(file, ma2.replace(from, to));
-  const r = spawnSync(process.execPath, ['--test', ...SKIP, ...SUITES.map(f => path.join(ROOT, f))], { env: Object.assign({}, process.env, { TEN331_MA2: file }), encoding: 'utf8' });
+  const r = spawnSync(process.execPath, ['--test', ...SUITES.map(f => path.join(ROOT, f))], { env: Object.assign({}, process.env, { TEN331_MA2: file }), encoding: 'utf8' });
   if (r.status === 0) { console.error(`✖ SURVIVED: ${name}`); survived++; } else console.log(`✔ caught: ${name}`);
 }
 fs.rmSync(dir, { recursive: true, force: true });

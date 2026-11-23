@@ -203,15 +203,13 @@ test('price range: book actually used, n = 1 / 2 carry their count, the every-cl
   assert.ok(!/fh-elotip/.test(html), 'no tab-local tooltip class anywhere');
   assert.match(priceOf(three), /title="Retirements settle on Pinnacle rules for all rows\."[^>]*>Closing odds/, 'TEN-325 note on the price range');
 });
-// modal-form-h2h.md "Price range: a range from fewer than FH_PRICE_THIN = 3 priced meetings shows an n=k chip". The old
-// tab drew it (fhBuildH2H, base 3bde6a71a L16524: chip('n=' + nP) titled "Range built from N priced meetings"); the rebuilt h2Price marks n = 1
-// ("1 priced meeting") but draws the n = 2 range with no count. RENDERER GAP (reported) — this test stays red until
-// h2Price marks it. Mutant runners skip it by name.
-test('RENDERER GAP: a price range from 2 priced meetings carries its count (FH_PRICE_THIN)', () => {
+// modal-form-h2h.md "Price range: a range from fewer than FH_PRICE_THIN = 3 priced meetings shows an n=k chip" (h2Price;
+// fixed on ma-v2 391b54fa3). Mutation 'price: n=2 loses its count'.
+test('price range: a range from 2 priced meetings carries its count (FH_PRICE_THIN)', () => {
   const m = nMeet(3, () => true);
   m._fhCloses = [{ rows: [0, 1].map(i => ({ date: d(i), opp: 'Alcaraz C.', won: true, P: [1.8 + i / 10, 2.0], B: null, oppKey: '2' })), cap: [] }, null];
   const h = build(m), pr = h.slice(h.indexOf('>Price range<'), h.indexOf('>Hot lines<'));
-  assert.match(text(pr.slice(pr.indexOf('meetings priced') + 15)), /\b2 priced meetings\b|\bn=2\b/, 'n = 2 shows its count on each side\'s range');
+  assert.equal((pr.match(/<span title="Range built from 2 priced meetings"[^>]*>n=2<\/span>/g) || []).length, 2, 'n = 2 shows its count on each side\'s range');
 });
 // Mutations 'DoD 8: an H2H-local row renderer again', 'rows: the event tag loses the level', 'rows: a row stops opening the sheet'
 test('meetings: grouped by year with an Event column, the level in every tag, each row opening the sheet', () => {
