@@ -21,6 +21,15 @@ function slice(name) {
   for (; i < html.length; i++) { if (html[i] === '{') d++; else if (html[i] === '}' && --d === 0) break; }
   return html.slice(start, i + 1);
 }
+// Match analysis rebuild 2026-11-23: the tab renderers live in match-analysis-v2.js (inside its IIFE, 2-space indent).
+const v2 = readFileSync(process.env.TEN314_V2 || join(HERE, 'match-analysis-v2.js'), 'utf8');
+function slice2(name) {
+  const start = v2.indexOf(`\n  function ${name}(`);
+  assert.ok(start > 0, `${name} not found in match-analysis-v2.js`);
+  let d = 0, i = v2.indexOf('{', start);
+  for (; i < v2.length; i++) { if (v2[i] === '{') d++; else if (v2[i] === '}' && --d === 0) break; }
+  return v2.slice(start, i + 1);
+}
 function sliceBlock() {
   const a = html.indexOf('/* =====================================================================\n   TEN-263 ');
   const b = html.indexOf('/* ---------- TOURNAMENT SUB-TAB ---------- */');
@@ -36,7 +45,7 @@ const S = new Function(`
   const HouseRatings = (function(){ const window = {}; ${HOUSE_RATINGS_SRC}; return window.HouseRatings; })();
   ${['escapeHtml', 'surnameFirstName', 'psShortName', 'formIni', 'ppCleanTournamentName', 'h2hRoundLabel', 'maRoundName', 'eventKeyOfMatch'].map(slice).join('\n')}
   ${sliceBlock()}
-  return { fhSheetModel, fhSheetKeyModel, fhSheetKeyHtml, fhSheetStatsHtml, fhSheetHeadHtml, fhSheetTabs, MA_SHEET_NA };
+  return { fhSheetModel, fhSheetKeyModel, fhSheetKeyHtml, fhSheetStatsHtml, fhSheetHeadHtml, fhSheetTabs, MA_SHEET_NA, fhSheetRowMa2 };
 `)();
 const SIDE = (o = {}) => Object.assign({
   'Service:Aces': 5, 'Service:Double Faults': 1, 'Points:Winners': 28, 'Points:Unforced errors': 18,
@@ -114,6 +123,28 @@ test('header: the meta date follows the design per source (Form DD.MM · lists D
   assert.match(html, /_fh\.sheetMap\[r\.mid\] = \{ r, aName: name, aKey: key, bName: r\.opp, bKey: r\.oppKey, noYear: true \}/, 'the Form list registers noYear');
 });
 
+// 2026-11-23 rebuild: the Match analysis sheet draws through fhSheetHeadMa2 / fhSheetRowMa2 (c4ea08163; the older head and
+// row stay for the profile and the Head to Head page). The same rules on the Match analysis copy: the date per source,
+// the sheet / tab header avatars through the one resolver, and no track under a row with no bar on either side.
+// Mutations: the .yy back on a Form sheet / the year dropped / the inline copy back to DD.MM.YY (fhSheetHeadMa2); a
+// number-only or dash row keeps its track (fhSheetRowMa2).
+test('Match analysis sheet (ma2): the date per source, avatars through the one resolver, no track without a bar', () => {
+  const r = { sets: [[6, 4], [6, 4]], pS: 2, oS: 0, won: true, price: 1.05, oppPrice: 10.53, tourn: 'Washington', surface: 'Hard', round: 'R16', date: '2026-07-18' };
+  const meta = h => /class="fh-sheet-meta" title="([^"]*)"/.exec(h)[1];
+  const H = (e, o) => S.fhSheetHeadHtml(Object.assign({ aName: 'J. Sinner', aKey: 7, bName: 'T. Griekspoor', bKey: 8 }, e), r, Object.assign({ ma2: true }, o));
+  assert.equal(meta(H({ noYear: true })), 'Washington · Hard · R16 · 18.07');
+  assert.equal(meta(H({})), 'Washington · Hard · R16 · 18.07.26');
+  assert.equal(meta(H({}, { inline: true })), 'Washington · Hard · R16 · Jul 18, 2026');
+  assert.ok(H({}).includes('<AV J. Sinner|7>') && H({}).includes('<AV T. Griekspoor|8>'), 'D5: aAvatarHtml, the one resolver');
+  assert.ok(H({}).includes('fhCloseSheet()') && !H({}, { inline: true }).includes('fhCloseSheet()'), 'the inline copy has no close');
+  const cell = v => ({ v, txt: v == null ? '—' : String(v), sub: '', title: '' });
+  const halves = h => (h.match(/fh-shalf/g) || []).length;
+  assert.equal(halves(S.fhSheetRowMa2({ label: 'Dominance ratio', kind: 'ratio', a: cell(1.2), b: cell(0.9) }, 50, 50)), 0, 'ratio row: no track');
+  assert.equal(halves(S.fhSheetRowMa2({ label: 'Winners / total points', kind: 'pct', a: cell(null), b: cell(null) }, null, null)), 0, 'both "—": no track');
+  assert.equal(halves(S.fhSheetRowMa2({ label: 'Aces', kind: 'count', a: cell(0), b: cell(0) }, 0, 0)), 0, 'a real 0 | 0: no track');
+  assert.equal(halves(S.fhSheetRowMa2({ label: 'Aces', kind: 'count', a: cell(0), b: cell(3) }, 0, 40)), 2, '0 | 3 keeps the track');
+});
+
 // Mutation: the Match Stats tab back to buildMatchStatsSheet for a completed match, or maMsSheetInit not called.
 test('the Match Stats tab renders THE sheet inline for a finished match, filled from the match\'s own box score', () => {
   assert.match(slice('buildMatchStatsSection'), /if \(hasPointLog\) return maMsSheetHtml\(m\);/);
@@ -136,15 +167,18 @@ test('the Match Stats tab renders THE sheet inline for a finished match, filled 
 
 // Mutation: put back meSheetOk (Market edge rows without stats on file stop opening), or drop the row opener from
 // the Overview drill / Tournament / Playing-style rows.
+// 2026-11-23 rebuild: the rows are drawn in match-analysis-v2.js (meRowHtml, maOvPopV2, trBox, psList) — re-pointed there;
+// a walkover row (listed, never a match — founder 2026-10-22) carries no sheet.
 test('every match row opens the sheet: Market edge and Tournament rows unconditionally; Overview and Playing style through maRowOnclick', () => {
-  const me = slice('meRowOf');   // TEN-336: the Market edge pop-up rows are maMatchRowsHtml rows; meRowOf hands each its opener
-  assert.ok(me.includes(`click: \` onclick="meOpenRow('\${r.mid}')"\``) && !/meSheetOk|\? ` onclick/.test(me));
-  assert.ok(!html.includes('function meSheetOk('), 'the stats-on-file gate is gone');
-  // TEN-334: the Overview pop-up rows are maMatchRowsHtml rows; each opens the sheet through ovOpenRow → fhOpenSheet
-  assert.ok(slice('ovPopHtml').includes(`click: \` onclick="ovOpenRow('\${r.mid}')"\``));
+  const me = slice2('meRowHtml');   // the Market edge band / line pop-up rows
+  assert.ok(me.includes(`onclick="meOpenRow(\\'' + r.mid + '\\')"`) && !/meSheetOk|\? ' onclick/.test(me), 'every Market edge row opens');
+  assert.ok(!html.includes('function meSheetOk(') && !v2.includes('meSheetOk'), 'the stats-on-file gate is gone');
+  assert.match(slice('meOpenRow'), /fhOpenSheet\(/);
+  // the Overview pop-up rows: each played match opens the sheet through ovOpenRow → fhOpenSheet
+  assert.ok(slice2('maOvPopV2').includes(`onclick="ovOpenRow(\\'' + r.mid + '\\')"`));
   assert.match(slice('ovOpenRow'), /fhStateFor\(S\.m\)\.sheetMap\[mid\] = \{ r,[\s\S]*fhOpenSheet\(mid\);/);
-  assert.match(slice('trRowData'), /click: ` onclick="fhOpenSheet\('\$\{fhEsc\(r\.mid\)\}'\)"`/);   // TEN-332: a registered sheet row
-  assert.match(slice('ps2MeetCard'), /click: maRowOnclick\(\{ key, name: R\.name/);   // TEN-340: the Playing style meetings (shared rows)
+  assert.ok(slice2('trBox').includes(`(r.wo ? '' : ' onclick="fhOpenSheet(\\'' + esc(r.mid) + '\\')"`), 'Tournament: every played row a registered sheet row');
+  assert.match(slice2('psList'), /const click = wo \? '' : maRowOnclick\(\{ key, name/, 'Playing style meetings: the shared opener');
 });
 
 // The row opener over a fake history; `modalOpen` models #analysisModal.open.

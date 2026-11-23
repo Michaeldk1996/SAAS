@@ -744,11 +744,14 @@ check('N4: the three renderers print the pipeline stamp, and the stamp is courtS
     'the three match builders must each take courtSpeed from venueAndCourtSpeedFor()');
   assert.strictEqual((pipeSrc.match(/\.courtSpeed = (?!courtSpeed;)/g) || []).length, 0,
     'no match builder may stamp courtSpeed any other way');
-  // TEN-332: the rebuilt Tournament header prints the stamp beside the abstract speed (trHeaderHtml)
-  assert(/Number\(cs\.abstractSpeed\)\.toFixed\(2\) \+ \(cs\.category \? ' · ' \+ cs\.category : ''\)/.test(DASH_SPEED_SRC), 'modal Tournament card no longer prints cs.category');
-  // TEN-380: the Key factors Tournament box prints the stamp beside "Court speed" (kfTourCard, kfSpeedCat)
-  assert(/const kfSpeedCat = fhEsc\(cs && cs\.category \|\| FH_DASHC\);/.test(DASH_SPEED_SRC), 'Key factors no longer prints cs.category');
-  assert(/spdLabel = cs\.category/.test(DASH_SPEED_SRC), 'Weather pace tile no longer reads cs.category');
+  // Match analysis rebuild 2026-11-23 (match-analysis-v2.js): the Tournament head card, Key factors and the Weather pace
+  // read the page's court-conditions row with its category = courtSpeedCategory(speed) (N4), else the pipeline stamp.
+  const MA2_SRC = fs.readFileSync(path.join(ROOT, 'match-analysis-v2.js'), 'utf8');
+  assert(/const cs = cc \? Object\.assign\(\{\}, cc, \{ category: courtSpeedCategory\(cc\.speed\) \}\) : m\.courtSpeed/.test(MA2_SRC), 'modal Tournament card no longer stamps cs.category from courtSpeedCategory()');
+  assert(/speedV\.toFixed\(2\) \+ \(cs && cs\.category \? ' · ' \+ esc\(cs\.category\) : ''\)/.test(MA2_SRC), 'modal Tournament card no longer prints cs.category');
+  assert(/label: courtSpeedCategory\(cc\.speed\)/.test(MA2_SRC) && /label: cs\.category \|\| ''/.test(MA2_SRC), 'ma2CourtSpeed no longer labels with courtSpeedCategory() / the pipeline stamp');
+  assert(/function kfTourBox[\s\S]{0,400}const cs = ma2CourtSpeed\(m\)/.test(MA2_SRC) && /esc\(cs && cs\.label/.test(MA2_SRC), 'Key factors no longer prints the ma2CourtSpeed label');
+  assert(/spdLabel = csv \? \(csv\.label \|\| ''\) : \(cs\.category \|\| ''\)/.test(DASH_SPEED_SRC), 'Weather pace tile no longer reads the court-speed category');
   assert(/const cat = courtSpeedCategory\(c\.speed\);/.test(DASH_SPEED_SRC), 'Tournament Report registry no longer calls courtSpeedCategory()');
 });
 

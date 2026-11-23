@@ -16,6 +16,7 @@ import { fileURLToPath } from 'node:url';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = process.env.EARLY_ROOT || join(HERE, '..');
 const html = readFileSync(join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
+const v2 = readFileSync(join(ROOT, 'match-analysis-v2.js'), 'utf8');
 let pass = 0, fail = 0;
 const check = (name, fn) => { try { fn(); pass++; console.log('  PASS  ' + name); } catch (e) { fail++; console.log('  FAIL  ' + name + '\n        ' + String(e.message).split('\n')[0]); } };
 
@@ -25,6 +26,13 @@ function slice(name) {
   let depth = 0, i = html.indexOf('{', start);
   for (; i < html.length; i++) { if (html[i] === '{') depth++; else if (html[i] === '}') { depth--; if (depth === 0) break; } }
   return html.slice(start, i + 1);
+}
+function v2Slice(name) {
+  const start = v2.indexOf(`function ${name}(`);
+  assert.ok(start > 0, `${name} not found in match-analysis-v2.js`);
+  let depth = 0, i = v2.indexOf('{', start);
+  for (; i < v2.length; i++) { if (v2[i] === '{') depth++; else if (v2[i] === '}') { depth--; if (depth === 0) break; } }
+  return v2.slice(start, i + 1);
 }
 const constLine = name => {
   const m = new RegExp(`^\\s*const ${name} = [^\\n]*$`, 'm').exec(html);
@@ -142,7 +150,15 @@ check('one label (founder 2026-10-28): a Market edge / profile early-cut row (no
 check('every "B" marker site now draws through fhPxMark (Form, H2H tab, Tournament, Head to Head page, price cell)', () => {
   const old = html.match(/hMark: r\.price != null && r\.book === 'B' \? 'B' : ''/g) || [];
   assert.equal(old.length, 0, 'no hMark site keeps the B-only expression');
-  assert.equal((html.match(/hMark: fhPxMark\(r\)/g) || []).length, 3);
+  // Match analysis rebuild 2026-11-23: the Tournament tab's row data keeps its hMark (trRowData); the Form, H2H and Tournament
+  // rows are drawn in match-analysis-v2.js, each taking its letter from fhPxMark and printing it after the price.
+  assert.equal((html.match(/hMark: fhPxMark\(r\)/g) || []).length, 1, 'trRowData');
+  assert.equal((v2.match(/=== 'B' \? 'B'/g) || []).length, 0, 'no v2 row draws a B-only letter');
+  for (const [name, fn] of [['Form (recentBox)', 'recentBox'], ['H2H meetings (h2List)', 'h2List'], ['Tournament (trBox)', 'trBox']]) {
+    const body = v2Slice(fn);
+    assert.match(body, /mark = [^;,]*fhPxMark\(r\)/, name + ' takes its letter from fhPxMark');
+    assert.match(body, /\(mark[^?]*\? '<span[^']*' \+ mark \+ '<\/span>'/, name + ' prints the letter after the price');
+  }
   // the Head to Head page (design build 2026-11-16): the meetings box draws fhPxMark's letter (B or E) after A's price
   assert.equal((html.match(/r\.price != null && typeof fhPxMark === 'function' && fhPxMark\(r\) \? `<sup [^`]*>\$\{E\(fhPxMark\(r\)\)\}<\/sup>`/g) || []).length, 1);
   assert.match(slice('fhPriceCell'), /fhPxMark\(r\)/);

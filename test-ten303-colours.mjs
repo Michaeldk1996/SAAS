@@ -17,13 +17,15 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { build, constSrc } from './tools/ten303-odds-harness.mjs';
+import { build, constSrc, V2, v2OddsSrc } from './tools/ma2-odds-vm.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const HTML = readFileSync(process.env.TEN303_HTML || join(HERE, 'bsp-consult-dashboard.html'), 'utf8');   // mutant runner: a mutated copy
 const SPEC = readFileSync(join(HERE, 'design/handoff-15-odds-tab/Odds Tab - Spec.md'), 'utf8');
 const TOKEN_CSS = readFileSync(process.env.TEN303_TOKENS || join(HERE, 'tokens.css'), 'utf8');
 const RULES = readFileSync(join(HERE, '.claude/rules/foundation.md'), 'utf8');
+// Match analysis rebuild 2026-11-23: the tab renderers live in match-analysis-v2.js / .css (TEN303_V2: the runner's mutated copy)
+const V2CSS = readFileSync(join(HERE, 'match-analysis-v2.css'), 'utf8');
 
 // ---- tokens.css, read the way the browser reads it ----
 function props(css, sel) {
@@ -124,10 +126,14 @@ const mixOf = v => { const m = /^color-mix\(in srgb, var\(--([\w-]+)\) ([\d.]+)%
 
 test('0: the modal\'s builders and CSS hold no literal colour (every colour is a tokens.css token)', () => {
   assert.deepEqual(modalLiterals(HTML).map(x => `${x.where} L${x.line} ${x.lit}`), []);
-  // mutant: one literal back in a shared builder (the Form bar; TEN-331 deleted the W/L chip) — the grep sees it
-  const m = HTML.replace("const c = r.won ? 'var(--pos)' : 'var(--neg)';", "const c = r.won ? '#3ed68c' : 'var(--neg)';");
-  assert.notEqual(m, HTML, 'mutant anchor');
-  assert.equal(modalLiterals(m).length, 1, 'mutant survived: a literal in the Form bar');
+  // the rebuild's renderers and stylesheet (match-analysis-v2.js / .css): every colour a var() of tokens.css
+  const lit = src => (src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '').match(/(?<![\w&-])#[0-9a-fA-F]{3,8}\b|rgba?\([^)]*\)/g) || []);
+  assert.deepEqual(lit(V2), [], 'match-analysis-v2.js');
+  assert.deepEqual(lit(V2CSS), [], 'match-analysis-v2.css');
+  // mutant: one literal back in the rebuild's Odds move colour — the grep sees it
+  const m = V2.replace("mp.sign > 0 ? 'var(--ma2-green)' : 'var(--ma2-red)' };", "mp.sign > 0 ? '#3ed68c' : 'var(--ma2-red)' };");
+  assert.notEqual(m, V2, 'mutant anchor');
+  assert.equal(lit(m).length, 1, 'mutant survived: a literal in the Odds move');
 });
 
 test('0b: every Odds-tab token is set by tokens.css; Night = foundation.md, Day re-tones only the surfaces', () => {
@@ -141,6 +147,11 @@ test('0b: every Odds-tab token is set by tokens.css; Night = foundation.md, Day 
     else assert.equal(d, n, `--${k} is identical in Night and Day`);
   }
   for (const k of SURFACES) assert.notEqual(resolve(`var(--${k})`, 'day'), resolve(`var(--${k})`), `--${k} changes with the setting`);
+  // the rebuild's Odds code (match-analysis-v2.js): every token it reads is set by tokens.css (the --ma2-* set is the
+  // export's own values, night only — tokens.css "Match analysis rebuild")
+  const v2used = [...new Set([...v2OddsSrc().matchAll(/var\(--([\w-]+)/g)].map(x => x[1]))];
+  assert.ok(v2used.length >= 8, `the Odds code reads tokens (${v2used.length})`);
+  for (const k of v2used) if (k !== 'sf-side') assert.ok(new RegExp('--' + k + '\\s*:').test(TOKEN_CSS), `--${k} is set by tokens.css`);
   // mutant: a drifted token value in the token file
   const drift = TOKEN_CSS.replace('--text-soft:   #DDE0EA;', '--text-soft:   #DDE0EB;');
   assert.notEqual(drift, TOKEN_CSS, 'mutant anchor');

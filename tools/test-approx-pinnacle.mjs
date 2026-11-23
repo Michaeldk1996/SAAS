@@ -125,11 +125,22 @@ check('trDbJoinPx passes the join\'s own source on (the Tournament tab printed e
       for (let k = n; k >= 0 && k > n - 500; k--) { const m = /^\s*(?:async\s+)?function\s+(\w+)\s*\(|^\s*(?:const|let)\s+(\w+)\s*=\s*(?:\(|function|async)/.exec(L[k]);
         if (m && (m[1] || m[2]) !== 'fhSrcTitle') { out.add(m[1] || m[2]); break; } } });
     return [...out].sort(); };
-  const PINNED_PAGE = ['cell' /* Playing style meeting rows (ruling 5), inside ps2MeetCard */, 'cellHtml' /* Progression heat cell, inside buildMatchProgressionSection */, 'fhB365Tag', 'fhFormColumnHtml', 'fhFormRowData', 'fhH2hSrcTitle', 'fhPriceCell', 'meRowOf', 'ovPopHtml', 'trPxTitle'];
+  // Match analysis rebuild 2026-11-23: the tab renderers moved to match-analysis-v2.js; its callers are pinned on their own.
+  const v2 = readFileSync(join(ROOT, 'match-analysis-v2.js'), 'utf8');
+  const PINNED_PAGE = ['fhB365Tag', 'fhH2hSrcTitle', 'fhPriceCell', 'trPxTitle'];
+  const PINNED_V2 = ['cell' /* Playing style match lists, inside psList */, 'formBars' /* Form bars */, 'gate' /* Market edge band box rows, meBandPopV2 */,
+    'listed' /* Overview pop-up rows, maOvPopV2 */, 'recentBox' /* Form recent matches */, 'sub' /* Market edge line box rows, meLinePopV2 */];
   const PINNED_PROFILE = ['pxSrcHtml'];
-  check('every caller of fhSrcTitle is pinned (Progression, H2H B365 tag, Form bars + rows, H2H tab, price cells, Market edge, Overview pop-up, Tournament tab; the profile)',
-    JSON.stringify(callers(html)) === JSON.stringify(PINNED_PAGE) && JSON.stringify(callers(prof)) === JSON.stringify(PINNED_PROFILE),
-    JSON.stringify({ page: callers(html), profile: callers(prof) }));
+  check('every caller of fhSrcTitle is pinned (H2H B365 tag, H2H tab, price cells, Tournament tab; v2: Form bars + rows, Market edge boxes, Overview pop-up, Playing style; the profile)',
+    JSON.stringify(callers(html)) === JSON.stringify(PINNED_PAGE) && JSON.stringify(callers(v2)) === JSON.stringify(PINNED_V2) && JSON.stringify(callers(prof)) === JSON.stringify(PINNED_PROFILE),
+    JSON.stringify({ page: callers(html), v2: callers(v2), profile: callers(prof) }));
+  check('match-analysis-v2.js never re-binds fhSrcTitle (every bare call reads the page\'s one declaration)',
+    !v2.split('\n').some(l => !/^\s*\/\//.test(l) && /(?:^|[^.\w])(?:window\.)?fhSrcTitle\s*=(?!=)|(?:const|let|var|function)\s+fhSrcTitle\b/.test(l)));
+  // odds.md (founder 2026-10-17 "one price per match … same price, source and hover" incl. Progression; 2026-10-18 item 5
+  // "every dash carries its reason"): the old Progression heat cell hovered fhSrcTitle; the rebuilt road box (pgRoadBox,
+  // its `prc` cells) prints prices and dashes with no hover. RENDERER GAP while it fails.
+  { const a = v2.indexOf('function pgRoadBox('), b = v2.indexOf('function maProgressionV2(');
+    check('renderer gap: the Progression road box hovers each price / dash with its source (fhSrcTitle)', /fhSrcTitle\(/.test(v2.slice(a, b))); }
   const decls = (html.match(/^\s*function fhSrcTitle\s*\(/gm) || []).length;
   const rebinds = html.split('\n').filter(l => !/^\s*\/\//.test(l) && /(?:^|[^.\w])(?:window\.)?fhSrcTitle\s*=(?!=)|(?:const|let|var)\s+fhSrcTitle\b/.test(l)).length;
   check('one declaration of fhSrcTitle on the page and no re-binding of the name, so every bare call reads it', decls === 1 && rebinds === 0, JSON.stringify({ decls, rebinds }));
@@ -202,7 +213,10 @@ const oneHover = src => {
   const tags = F.fhB365Tag(A, true) + F.fhB365Tag(A, false) + F.fhB365Meta(A);
   // founder ruling 2026-10-25: every marker site draws through fhPxMark ('B' Bet365, 'E' the early cut) — an approx. snapshot none
   const PM = new Function(`${fn(src, 'fhPxMark')}\nreturn fhPxMark;`)();
-  const marks = [...src.matchAll(/hMark: (?:typeof fhPxMark === 'function' \? )?fhPxMark\(r\)|typeof fhPxMark === 'function' && fhPxMark\(r\) \? `<sup/g)].map(() => PM(A) + '|' + PM(B));
+  // Match analysis rebuild 2026-11-23: the Form / H2H / Tournament rows draw their letter in match-analysis-v2.js (`mark = … fhPxMark(r)`)
+  const v2src = readFileSync(join(ROOT, 'match-analysis-v2.js'), 'utf8');
+  const marks = [...src.matchAll(/hMark: (?:typeof fhPxMark === 'function' \? )?fhPxMark\(r\)|typeof fhPxMark === 'function' && fhPxMark\(r\) \? `<sup/g),
+    ...v2src.matchAll(/mark = [^;,]*fhPxMark\(r\)/g)].map(() => PM(A) + '|' + PM(B));
   return { ok: titles.every(t => t === 'Pinnacle (approx.) · ' + HOVER) && tags === '' && marks.length >= 4 && marks.every(m => m === '|B')
     && F.fhH2hSrcTitle(B) === B365H && F.h2hPriceTitle(B) === B365H, titles, tags, marks };
 };

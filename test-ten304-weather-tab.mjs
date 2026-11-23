@@ -1,12 +1,15 @@
-// TEN-304 Wave B · Match analysis → Weather tab. Executes the PAGE's renderer (sliced out of
-// bsp-consult-dashboard.html by tools/ten304-weather-harness.mjs) — no rule is re-implemented here.
-// Each test names the mutation that makes it fail; tools/test-ten304-mutants.js runs them.
+// TEN-304 Wave B · Match analysis → Weather tab, on the 2026-11-23 rebuild: executes the PAGE's renderer — maWeatherV2
+// (match-analysis-v2.js) over the page's own data layer (wxModel, WX_CONFIG, WX_COPY sliced from bsp-consult-dashboard.html),
+// tools/ma2-weather-vm.mjs — no rule is re-implemented here. Each test names the mutation that makes it fail;
+// tools/test-ten304-mutants.js runs them (a mutant is caught when a test that passes on the shipped code goes red).
+// Rules: .claude/rules/modal-weather.md. Checks that fail on the shipped code are renderer gaps (named in the test).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
-import { build, buildTips, buildCache, buildReport, attrsOf, makeFile, elements, text, HTML } from './tools/ten304-weather-harness.mjs';
+import { buildTips, buildCache, buildReport, makeFile, HTML } from './tools/ten304-weather-harness.mjs';
+import { build, V2, card, boxes, days, day, dayOf, chip, scope, textOf } from './tools/ma2-weather-vm.mjs';
 import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
 // TEN-376: the modal's token file (match-analysis-tokens.css) is gone — every colour resolves through tokens.css (Night).
 const FOUNDATION_CSS = readFileSync(new URL('./tokens.css', import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
@@ -47,73 +50,84 @@ const M0 = M;
 const file = (hour, extra = {}) => makeFile(Object.assign({ from: '2026-09-25', fetchedAt: FETCHED, hour }, extra));
 const render = (f, opts = {}, m = M, entry = ENTRY, now = NOW) => build(opts).buildWeatherSection(m, entry, f, now);
 
+// ---- reading the rebuilt tab (tools/ma2-weather-vm.mjs) ----
+const matchBoxes = h => boxes(card(h, 'match'));
+const fac = (h, name) => matchBoxes(h).find(b => b.name === name);
+const leads = h => matchBoxes(h).filter(b => b.lead && b.name !== 'Court speed');
+const pace = h => fac(h, 'Court speed');
+const badge = h => days(h).map(day).map(x => x.tag).find(t => /^Match /.test(t || '')) || null;
+const banner = h => h.includes(build().WX_COPY.banner);
+const mscope = h => scope(card(h, 'match'));
+const openDay = (f, date, opts = {}, m = M, entry = ENTRY, now = NOW) => {
+  const i = days(build(opts).buildWeatherSection(m, entry, f, now)).findIndex(d => d.includes(`data-date="${date}"`));
+  assert.ok(i >= 0, date + ' is on the strip');
+  return build(Object.assign({}, opts, { sel: i })).buildWeatherSection(m, entry, f, now);
+};
+const dayBox = (h, name) => boxes(card(h, 'day')).find(b => b.name === name);
+
 // Mutation: drop the `v == null → 'u'` branch in wxSev (a null reads as calm) or let a 'u' factor lead.
 test('a factor with a null headline value renders "—", is UNAVAILABLE, and is never the lead', () => {
   const f = file((d, h) => d === '2026-09-27' && h === 16 ? { gusts: null, wind: 30, feels: 36 } : {});
   const html = render(f);
-  const lead = elements(html, 'wx-lead');
-  assert.equal(lead.length, 1);
-  assert.match(text(elements(html, 'wx-verdict')[0]), /^Main factor at match time: Heat — feels like 36°$/);
-  assert.match(lead[0], /data-factor="heat"/, 'heat (a real CONCERN value) leads, not the missing wind');
-  const wind = elements(html, 'wx-tile').find(t => /data-factor="wind"/.test(t));
-  assert.ok(wind, 'wind tile rendered');
-  assert.equal(text(elements(wind, 'wx-val')[0]), '—');
-  assert.equal(text(elements(wind, 'wx-sevl')[0]), 'UNAVAILABLE');
-  assert.ok(!/>0 km\/h</.test(html), 'a missing gust never shows as 0');
-  // gusts missing and nothing else hot → no lead at all, verdict never claims "no concern" from a partial read
-  const f2 = file((d, h) => d === '2026-09-27' && h === 16 ? { gusts: null } : {});
-  const h2 = render(f2);
-  assert.equal(elements(h2, 'wx-lead').length, 0);
-  assert.ok(!text(elements(h2, 'wx-verdict')[0]).includes('No weather concern at match time.'));
+  assert.equal(leads(html).length, 1);
+  assert.equal(chip(html), 'Heat is the main factor');
+  assert.equal(leads(html)[0].name, 'Heat', 'heat (a real CONCERN value) leads, not the missing wind');
+  const wind = fac(html, 'Wind');
+  assert.ok(wind, 'wind box rendered');
+  assert.equal(wind.fig, '—');
+  assert.equal(wind.stat, 'Unavailable');
+  assert.ok(!matchBoxes(html).some(b => b.fig === '0'), 'a missing gust never shows as 0');
+  // gusts missing and nothing else hot → no lead at all, never "no concern" from a partial read
+  const h2 = render(file((d, h) => d === '2026-09-27' && h === 16 ? { gusts: null } : {}));
+  assert.equal(leads(h2).length, 0);
+  assert.notEqual(chip(h2), 'No weather concern');
 });
 
 // Mutation: remove the `if (vm.indoor) return wrap(<indoor panel>)` early return.
 test('indoor flag true → only the indoor panel renders (no strip, no tiles)', () => {
   const html = render(null, {}, M, { key: 'Basel', indoor: true, file: null });
-  assert.equal(elements(html, 'wx-indoor').length, 1);
-  for (const c of ['wx-strip', 'wx-tiles', 'wx-tile', 'wx-day', 'wx-verdict', 'wx-head']) assert.equal(elements(html, c).length, 0, c);
+  assert.match(html, /Indoor event, weather is not a factor/);
+  assert.equal(card(html, 'match') + card(html, 'week'), '');
+  assert.equal(days(html).length + boxes(html).length, 0);
 });
 
 // Mutation: raise/ignore staleHours.unavailable, or print "—" instead of the real stamp.
 test('a forecast older than the cut-off → unavailable, with the real last-update time in the freshness line', () => {
-  const f = file(() => ({}), { fetchedAt: '2026-09-26T00:00:00Z' });           // 28 h old
-  const html = render(f);
-  assert.equal(elements(html, 'wx-banner').length, 1);
-  const fresh = text(elements(html, 'wx-fresh')[0]);
-  assert.match(fresh, /last successful update Sep 26, 08:00/, fresh);           // 00:00Z = 08:00 venue time
-  assert.ok(!fresh.includes('update —'));
-  assert.match(fresh, /· Open-Meteo$/, 'the real provider is named');
-  assert.ok(elements(html, 'wx-day').every(d => text(elements(d, 'wx-hi')[0]) === '—'));
-  // control: 2 h old is not unavailable
-  assert.equal(elements(render(file(() => ({}))), 'wx-banner').length, 0);
+  const html = render(file(() => ({}), { fetchedAt: '2026-09-26T00:00:00Z' }));     // 28 h old
+  assert.ok(banner(html));
+  const s = mscope(html);
+  assert.match(s, /last successful update Sep 26, 08:00/, s);                           // 00:00Z = 08:00 venue time
+  assert.ok(!s.includes('update —'));
+  assert.match(s, /· Open-Meteo$/, 'the real provider is named');
+  assert.ok(days(html).map(day).every(d => d.hi === '—'));
+  assert.ok(matchBoxes(html).every(b => b.fig === '—'), 'every figure dashed, the court speed too (as the old pace value)');
+  assert.ok(!banner(render(file(() => ({})))), 'control: 2 h old is not unavailable');
 });
 
 // Mutation: badge in the viewer zone; header formatted in UTC. The renderer runs in a child process
 // whose REAL process zone is set with TZ (no zone preference: newsTz() is undefined, as on the page).
 test('Chengdu match viewed with TZ=Asia/Shanghai vs TZ=UTC: badge (venue time) and header (viewer time) are one instant', () => {
-  const harness = new URL('./tools/ten304-weather-harness.mjs', import.meta.url).href;
-  const child = `import { build, makeFile, elements, text } from ${JSON.stringify(harness)};
+  const vmUrl = new URL('./tools/ma2-weather-vm.mjs', import.meta.url).href, hUrl = new URL('./tools/ten304-weather-harness.mjs', import.meta.url).href;
+  const child = `import { build, days, day, card, scope } from ${JSON.stringify(vmUrl)}; import { makeFile } from ${JSON.stringify(hUrl)};
     const M = ${JSON.stringify(M)}, ENTRY = ${JSON.stringify(ENTRY)};
     const R = build({});
     const f = makeFile({ from: '2026-09-25', fetchedAt: ${JSON.stringify(FETCHED)} });
     const html = R.buildWeatherSection(M, ENTRY, f, ${NOW});
-    console.log(JSON.stringify({ header: R.aContextLine(M, 'Quarter-finals'), badge: text(elements(html, 'wx-badge')[0]),
-      athead: text(elements(html, 'wx-athead')[0]), start: R.cardStartMs(M) }));`;
+    console.log(JSON.stringify({ header: R.aContextLine(M, 'Quarter-finals'), badge: days(html).map(day).map(x => x.tag).find(t => /^Match /.test(t)),
+      athead: scope(card(html, 'match')), start: R.cardStartMs(M) }));`;
   const out = {};
   for (const tz of ['Asia/Shanghai', 'UTC']) {
     const r = spawnSync(process.execPath, ['--input-type=module', '-e', child], { env: Object.assign({}, process.env, { TZ: tz }), encoding: 'utf8' });
     assert.equal(r.status, 0, r.stderr);
     out[tz] = JSON.parse(r.stdout.trim().split('\n').pop());
   }
-  // header = viewer's clock; badge = Chengdu's clock (UTC+8) of the SAME instant, whoever views it
   assert.equal(out['Asia/Shanghai'].header, 'Chengdu · Quarter-finals · 16:00');
   assert.equal(out['UTC'].header, 'Chengdu · Quarter-finals · 08:00');
   for (const tz of ['Asia/Shanghai', 'UTC']) {
-    assert.equal(out[tz].badge, 'MATCH · 16:00', tz);
-    assert.equal(out[tz].athead, 'Sun Sep 27 · 16:00', tz);
+    assert.equal(out[tz].badge, 'Match 16:00', tz);
+    assert.match(out[tz].athead, /^Sun Sep 27 · 16:00 · /, tz);
     assert.equal(out[tz].start, Date.parse('2026-09-27T08:00:00Z'), tz);
   }
-  // the header's clock time, read in the viewer's zone, is the badge's instant
   const hm = s => s.slice(-5), at = (hhmm, offH) => Date.parse('2026-09-27T' + hhmm + ':00Z') - offH * 3600e3;
   assert.equal(at(hm(out['UTC'].header), 0), at(hm(out['UTC'].badge), 8));
   assert.equal(at(hm(out['Asia/Shanghai'].header), 8), at(hm(out['Asia/Shanghai'].badge), 8));
@@ -123,76 +137,62 @@ test('Chengdu match viewed with TZ=Asia/Shanghai vs TZ=UTC: badge (venue time) a
 test('the MATCH badge is the header\'s instant in venue time, for viewers in other zones', () => {
   for (const [viewerTz, headerTime] of [['UTC', '08:00'], ['Asia/Shanghai', '16:00'], ['America/New_York', '04:00']]) {
     const R = build({ viewerTz });
-    const header = R.aContextLine(M, 'Quarter-finals');
-    assert.equal(header, 'Chengdu · Quarter-finals · ' + headerTime, viewerTz);
-    const html = R.buildWeatherSection(M, ENTRY, file(() => ({})), NOW);
-    assert.equal(text(elements(html, 'wx-badge')[0]), 'MATCH · 16:00', viewerTz);    // same instant, Chengdu clock
-    // header instant (viewer zone) and badge instant (venue zone) are the same moment
+    assert.equal(R.aContextLine(M, 'Quarter-finals'), 'Chengdu · Quarter-finals · ' + headerTime, viewerTz);
+    assert.equal(badge(R.buildWeatherSection(M, ENTRY, file(() => ({})), NOW)), 'Match 16:00', viewerTz);
     assert.equal(R.cardStartMs(M), Date.parse('2026-09-27T08:00:00Z'));
   }
-  // after the DST change the same wall clock is one hour later in UTC (CET)
-  const late = Object.assign({}, M, { date: '2026-10-26' });
-  assert.equal(build({ viewerTz: 'UTC' }).aContextLine(late, 'R1'), 'Chengdu · R1 · 09:00');
+  assert.equal(build({ viewerTz: 'UTC' }).aContextLine(Object.assign({}, M, { date: '2026-10-26' }), 'R1'), 'Chengdu · R1 · 09:00');
 });
 
-// Founder Q21 (2026-09-30): the heat flag is the file's words ("Heat — high", DF L2411) at the EXISTING feels-like
-// severities — watch and concern both, the colour telling them apart (TEN-376: watch neutral --text-soft, concern
-// --neg; amber is Model + Trading Report only); wind keeps its value flag.
-// Mutation: WX_COPY.flag.heat back to "Feels like {v}°" (tools/test-ten304-mutants.js).
+// Founder Q21 (2026-09-30): the heat flag is the file's words ("Heat — high") at the EXISTING feels-like severities.
+// Mutation: WX_COPY.flag.heat back to "Feels like {v}°".
 test('Q21: the heat flag reads "Heat — high" at watch and at concern, at the WX_CONFIG cut-offs', () => {
   const T = build().WX_COPY.flag.heat, cut = build().WX_CONFIG.thresholds.feels;
   assert.deepEqual([cut.watch, cut.concern], [30, 35], 'no threshold change (D8 still open)');
   assert.deepEqual(T, { a: 'Heat — high', r: 'Heat — high' });
-  const at = feels => { const f = file((d, h) => d === '2026-09-28' && h === 14 ? { feels } : {});
-    return elements(render(f), 'wx-day').find(x => /data-date="2026-09-28"/.test(x)); };
-  const watch = at(31), concern = at(36), calm = at(29);
-  assert.equal(text(elements(watch, 'wx-reason')[0]), 'Heat — high');
-  assert.equal(text(elements(concern, 'wx-reason')[0]), 'Heat — high');
-  assert.equal(text(elements(calm, 'wx-reason')[0]), 'No concern', 'below the watch cut-off no flag');
-  assert.equal(elements(watch, 'wx-dot').length + elements(concern, 'wx-dot').length, 0, 'TEN-380 review item 2: the flag is text only, no status dot');
-  assert.ok(!/Feels like \d/.test(watch + concern), 'never the old "Feels like {v}°" flag');
+  const at = feels => dayOf(render(file((d, h) => d === '2026-09-28' && h === 14 ? { feels } : {})), '2026-09-28');
+  assert.equal(day(at(31)).reason, 'Heat — high');
+  assert.equal(day(at(36)).reason, 'Heat — high');
+  assert.equal(day(at(29)).reason, 'No concern', 'below the watch cut-off no flag');
+  assert.ok(!/Feels like \d/.test(at(31) + at(36)), 'never the old "Feels like {v}°" flag');
 });
 
 // Mutation: widen WX_CONFIG.window to 0–23 (or drop the window filter in wxModel).
 test('an hourly value outside 10:00–23:00 does not flag the day card', () => {
-  const night = file((d, h) => d === '2026-09-28' && h === 3 ? { gusts: 60, rainChance: 95, feels: 40 } : {});
-  const day = elements(render(night), 'wx-day').find(x => /data-date="2026-09-28"/.test(x));
-  assert.equal(text(elements(day, 'wx-reason')[0]), 'No concern');
-  const noon = file((d, h) => d === '2026-09-28' && h === 12 ? { gusts: 60 } : {});
-  const day2 = elements(render(noon), 'wx-day').find(x => /data-date="2026-09-28"/.test(x));
-  assert.equal(text(elements(day2, 'wx-reason')[0]), 'Gusts 60 km/h');       // control: inside the window flags
+  assert.equal(day(dayOf(render(file((d, h) => d === '2026-09-28' && h === 3 ? { gusts: 60, rainChance: 95, feels: 40 } : {})), '2026-09-28')).reason, 'No concern');
+  assert.equal(day(dayOf(render(file((d, h) => d === '2026-09-28' && h === 12 ? { gusts: 60 } : {})), '2026-09-28')).reason, 'Gusts 60 km/h', 'control: inside the window flags');
 });
 
 // Mutation: hard-code a cut-off in wxSev instead of reading WX_CONFIG.thresholds.
 test('thresholds come from config: changing one flips severity in the render', () => {
   const f = file((d, h) => d === '2026-09-27' && h === 16 ? { gusts: 20 } : {});
-  assert.equal(elements(render(f), 'wx-lead').length, 0, 'gusts 20 < placeholder watch 25');
+  assert.equal(leads(render(f)).length, 0, 'gusts 20 < placeholder watch 25');
   const R = build({ over: { WX_CONFIG: `{ thresholds: { gusts: { watch: 15, concern: 18 }, feels: { watch: 30, concern: 35 }, rain: { watch: 30, concern: 60 } },
     window: { fromHour: 10, toHour: 23 }, staleHours: { amber: 6, unavailable: 24 }, stripDays: 7, lowConfFromOffset: 3 }` } });
-  const lead = elements(R.buildWeatherSection(M, ENTRY, f, NOW), 'wx-lead');
-  assert.equal(lead.length, 1); assert.match(lead[0], /data-factor="wind"/); assert.match(text(lead[0]), /CONCERN/);
+  const L = leads(R.buildWeatherSection(M, ENTRY, f, NOW));
+  assert.equal(L.length, 1); assert.equal(L[0].name, 'Wind'); assert.equal(L[0].stat, 'Concern');
 });
 
-test('missing match time → badge "MATCH · TBC", header "… · time TBC", no-time verdict, dashed tiles', () => {
+// Dropped: the no-time verdict sentence ("Match time not set — no hourly forecast yet.") — the 2026-11-23 design replaces
+// the verdict line with the head chip; the TBC badge / head / dashes rule below still holds.
+test('missing match time → badge "MATCH · TBC", header "… · time TBC", dashed tiles', () => {
   const html = render(file(() => ({})), {}, Object.assign({}, M, { time: null }));
-  assert.equal(text(elements(html, 'wx-badge')[0]), 'MATCH · TBC');
-  assert.match(text(elements(html, 'wx-athead')[0]), /time TBC$/);
-  assert.equal(text(elements(html, 'wx-verdict')[0]), 'Match time not set — no hourly forecast yet.');
-  assert.ok(elements(html, 'wx-tile').filter(t => !/data-factor="pace"/.test(t)).every(t => text(elements(t, 'wx-val')[0]) === '—'));
+  assert.equal(badge(html), 'Match time TBC');
+  assert.match(mscope(html), /^Sun Sep 27 · time TBC · /);
+  assert.ok(matchBoxes(html).filter(b => b.name !== 'Court speed').every(b => b.fig === '—'));
 });
 
 test('court speed missing → pace tile "—", blank status, no effect text, no empty number in copy', () => {
   const html = render(file(() => ({})), {}, Object.assign({}, M, { courtSpeed: null }));
-  const pace = elements(html, 'wx-tile').find(t => /data-factor="pace"/.test(t));
-  assert.equal(text(elements(pace, 'wx-val')[0]), '—');
-  assert.equal(text(elements(pace, 'wx-effect')[0]), '');
-  assert.ok(!/\(\)|usual  |speed is  /.test(text(html)));
+  const p = pace(html);
+  assert.equal(p.fig, '—'); assert.equal(p.effect, ''); assert.equal(p.stat, '');
+  assert.ok(!/\(\)|usual  |speed is  /.test(textOf(html)));
 });
 
 test('the test-only ?wxForce=unavailable param forces the unavailable state; nothing else does', () => {
   const f = file(() => ({}));
-  assert.equal(elements(build({ search: '?wxForce=unavailable' }).buildWeatherSection(M, ENTRY, f, NOW), 'wx-banner').length, 1);
-  assert.equal(elements(build({ search: '?wxForce=1' }).buildWeatherSection(M, ENTRY, f, NOW), 'wx-banner').length, 0);
+  assert.ok(banner(build({ search: '?wxForce=unavailable' }).buildWeatherSection(M, ENTRY, f, NOW)));
+  assert.ok(!banner(build({ search: '?wxForce=1' }).buildWeatherSection(M, ENTRY, f, NOW)));
 });
 
 // Mutation: a <script src> to the pixel fixture/harness in the dashboard, or a cp of tools/ into _site.
@@ -200,81 +200,75 @@ test('the test-only pixel fixture never ships: not referenced by the dashboard, 
   const { readFileSync } = await import('node:fs');
   const root = new URL('./', import.meta.url);
   const page = readFileSync(new URL('bsp-consult-dashboard.html', root), 'utf8');
-  for (const s of ['ten304-weather-fixture', 'ten304-weather-harness', '__wxDiff', '__wxCol']) assert.ok(!page.includes(s), s);
+  for (const s of ['ten304-weather-fixture', 'ten304-weather-harness', 'ma2-weather-vm', '__wxDiff', '__wxCol']) assert.ok(!page.includes(s), s);
   const yml = readFileSync(new URL('.github/workflows/pipeline.yml', root), 'utf8');
   const assemble = yml.slice(yml.indexOf('name: Assemble site'));
   const copies = assemble.split('\n').filter(l => /^\s*(cp|rsync)\s/.test(l));
   assert.ok(copies.length > 10, 'the assemble step was found');
   assert.ok(!copies.some(l => /tools|ten304-weather-f/.test(l)), copies.filter(l => /tools/.test(l)).join('\n'));
-  // …and the files the tab DOES fetch are published
   assert.ok(copies.some(l => /cp weather-index\.json _site\//.test(l)), 'weather-index.json copied');
   assert.ok(copies.some(l => /cp -r weather _site\//.test(l)), 'weather/ copied');
 });
 
-// Mutation: the shared delay changed (250 → 0), the focusin listener dropped, or a Weather tip moved to
-// another attribute / a second tooltip. The Weather tab's chip, "+1" and day cards are driven through
-// TEN-303's REAL initAOddsTips / aOddsTipShow (sliced from the page) with a fake DOM and clock.
-test('Weather tooltips use the ONE shared tooltip: data-aotip + tabindex, 250 ms delay, hover and keyboard focus', () => {
-  // two flags at the match hour (10:00 Berlin = 16:00 Chengdu) → "+1" on the match-day tile (founder review 2: match-time figures)
-  const f = file((d, h) => d === '2026-09-27' && h === 16 ? { gusts: 40, feels: 36 } : {});
-  const html = render(f);
-  const targets = { more: attrsOf(html, 'wx-more'), day: attrsOf(html, 'wx-day') };
-  assert.equal(attrsOf(html, 'wx-tbd').length, 0, 'TEN-380 review item 1: no THRESHOLDS chip'); assert.ok(targets.more.length >= 1); assert.equal(targets.day.length, 7);
-  for (const [k, list] of Object.entries(targets)) for (const a of list) {
-    assert.equal(a.tabindex, '0', k + ' is keyboard-focusable');
-    assert.ok(a['data-aotip'] && a['data-aotip'].length > 20, k + ' carries a shared-tooltip body');
-    assert.ok(!('title' in a) && !('data-sftip' in a), k + ': no native title, no second tooltip');
-  }
-  assert.ok(!/data-sftip|\bsfTip|SF_TIP/.test(HTML), 'no second tooltip component on the page');
-  assert.match(targets.more[0]['data-aotip'], /Heat — high/);   // founder Q21: the file's words
-  assert.match(targets.day[0]['data-aotip'], /Max gusts.*40 km\/h.*Open-Meteo/s);
+// Mutation: the shared delay changed (250 → 0), the focusin listener dropped, or a second tooltip component. TEN-303's REAL
+// initAOddsTips / aOddsTipShow (sliced from the page) run with a fake DOM and clock.
+test('the ONE shared tooltip: 250 ms delay, hover and keyboard focus, no second component', () => {
+  assert.ok(!/data-sftip|\bsfTip|SF_TIP/.test(HTML + V2), 'no second tooltip component on the page');
+  const a = { 'data-aotip': '<b>Max gusts 40 km/h</b>', tabindex: '0' };
   for (const type of ['focusin', 'mouseover']) {
-    for (const a of [targets.more[0], targets.day[0]]) {
-      const T = buildTips(); T.api.initAOddsTips();
-      const el = T.mkEl(a);
-      T.fire(type, el);
-      assert.equal(T.tip(), null, type + ': nothing before the delay');
-      assert.deepEqual(T.delays, [250], type + ': the shared 250 ms delay');
-      T.tick(249); assert.equal(T.tip(), null);
-      T.tick(1); assert.equal(T.tip(), a['data-aotip'], type + ': the body shows after 250 ms');
-      T.fire(type === 'focusin' ? 'focusout' : 'mouseout', el); assert.equal(T.tip(), null, 'hidden on leave / blur');
-    }
+    const T = buildTips(); T.api.initAOddsTips();
+    const el = T.mkEl(a);
+    T.fire(type, el);
+    assert.equal(T.tip(), null, type + ': nothing before the delay');
+    assert.deepEqual(T.delays, [250], type + ': the shared 250 ms delay');
+    T.tick(249); assert.equal(T.tip(), null);
+    T.tick(1); assert.equal(T.tip(), a['data-aotip'], type + ': the body shows after 250 ms');
+    T.fire(type === 'focusin' ? 'focusout' : 'mouseout', el); assert.equal(T.tip(), null, 'hidden on leave / blur');
   }
 });
 
+// RENDERER GAP (founder Q22, modal-weather.md "Each day card keeps its hover tooltip: the shared tooltip, data-aotip"):
+// maWeatherV2's day cards carry no tooltip (the old card's data-aotip listed the day's Max values, the window and the
+// source — wxDayTip / aOddsTipHtml in buildWeatherSection), and the "+N" flag count uses a native title (it was data-aotip).
+test('Weather day cards and "+N" use the ONE shared tooltip (data-aotip + tabindex), listing the day\'s Max values', () => {
+  const html = render(file((d, h) => d === '2026-09-27' && h === 16 ? { gusts: 40, feels: 36 } : {})), D = days(html);
+  assert.equal(D.length, 7);
+  const more = D.find(d => />\+1</.test(d));
+  assert.ok(more, 'two flags at the match hour → "+1"');
+  for (const d of D) {
+    assert.match(d, /data-aotip="[^"]{20,}"/, 'every day card carries a shared-tooltip body (Q22)');
+    assert.match(d, /data-aotip="[^"]*Max gusts/, 'its hover lists the day\'s Max values');
+  }
+  assert.ok(!/<span title="[^"]*"[^>]*>\+1</.test(more), '"+N" on the shared tooltip, not a native title');
+});
+
 // ── review fold-in (TEN-304 Wave B) ─────────────────────────────────────────────────────────────────
-// Mutation: build-weather.js keeps Open-Meteo's fixed-offset labels as if they were true instants
-// (`t - off * 1000` → `t`), or the page buckets hours in UTC instead of the venue's IANA zone.
+// Mutation: build-weather.js keeps Open-Meteo's fixed-offset labels as instants, or the page buckets hours in UTC.
 test('DST: a Sydney match after the 4 Oct 2026 change reads the RIGHT hour (real toFile → page renderer)', () => {
-  // Open-Meteo, timezone=auto, Sydney 3–8 Oct 2026: every label at the FIXED +10 of the range start.
   const time = []; for (let h = 0; h < 6 * 24; h++) time.push(`2026-10-0${3 + Math.floor(h / 24)}T${String(h % 24).padStart(2, '0')}:00`);
   const base = (v) => time.map(() => v);
   const gusts = base(12), feels = base(20);
   gusts[time.indexOf('2026-10-05T15:00')] = 41;     // label 15:00 (+10) = 05:00Z = 16:00 AEDT, the match hour
   feels[time.indexOf('2026-10-05T09:00')] = 33;     // label 09:00 (+10) = 23:00Z 4 Oct = 10:00 AEDT 5 Oct: IN the window
-  feels[time.indexOf('2026-10-06T09:00')] = 34;     // label 09:00 (+10) 6 Oct = 10:00 AEDT 6 Oct: in 6 Oct's window
+  feels[time.indexOf('2026-10-06T09:00')] = 34;     // 10:00 AEDT 6 Oct: in 6 Oct's window
   const f = BW.toFile('Sydney', -33.9, 151.2, { timezone: 'Australia/Sydney', utc_offset_seconds: 36000,
     hourly: { time, temperature_2m: base(18), relative_humidity_2m: base(50), apparent_temperature: feels, precipitation_probability: base(5),
       precipitation: base(0), wind_speed_10m: base(8), wind_gusts_10m: gusts },
     daily: { time: ['2026-10-03', '2026-10-04', '2026-10-05', '2026-10-06', '2026-10-07', '2026-10-08'], weather_code: base(3).slice(0, 6),
       temperature_2m_max: base(22).slice(0, 6), temperature_2m_min: base(14).slice(0, 6) } }, '2026-10-05T00:00:00Z');
-  // 16:00 AEDT 5 Oct = 05:00Z = 07:00 Berlin (CEST), the api-tennis wall clock
-  const m = { tour: 'ATP Sydney', date: '2026-10-05', time: '07:00', surface: 'Hard' };
-  const html = build({ viewerTz: 'UTC' }).buildWeatherSection(m, { key: 'Sydney', indoor: false, file: 'weather/sydney.json' }, f, Date.parse('2026-10-05T01:00:00Z'));
-  assert.equal(text(elements(html, 'wx-badge')[0]), 'MATCH · 16:00');
-  const lead = elements(html, 'wx-lead');
-  assert.equal(lead.length, 1, 'the 41 km/h gust at the true match hour leads');
-  assert.match(lead[0], /data-factor="wind"/); assert.match(text(lead[0]), /41/);
-  const d5 = elements(html, 'wx-day').find(x => /data-date="2026-10-05"/.test(x));
-  assert.equal(text(elements(d5, 'wx-reason')[0]).replace(/\+1$/, ''), 'Gusts 41 km/h');
-  // founder review 2 (2026-10-04): the match-day tile prints the match-hour figures (feels 20° at 16:00 → no heat flag);
-  // its hover still carries the window max, so the 10:00 AEDT 33° proves the DST bucketing there, and 6 Oct's tile too.
-  assert.doesNotMatch(d5, /class="wx-reason"[^>]*>Heat/, 'match day: the match-hour figures, not the window max');
-  assert.match(d5, /Feels-like max.*?33°/s, '10:00 AEDT is inside the playing window (the day hover)');
-  const d6 = elements(html, 'wx-day').find(x => /data-date="2026-10-06"/.test(x));
-  assert.match(d6, /Heat — high/, '10:00 AEDT 6 Oct is inside that day\'s window');
+  const m = { tour: 'ATP Sydney', date: '2026-10-05', time: '07:00', surface: 'Hard' }, E = { key: 'Sydney', indoor: false, file: 'weather/sydney.json' }, now = Date.parse('2026-10-05T01:00:00Z');
+  const html = build({ viewerTz: 'UTC' }).buildWeatherSection(m, E, f, now);
+  assert.equal(badge(html), 'Match 16:00');
+  const L = leads(html);
+  assert.equal(L.length, 1, 'the 41 km/h gust at the true match hour leads');
+  assert.equal(L[0].name, 'Wind'); assert.equal(L[0].fig, '41');
+  assert.equal(day(dayOf(html, '2026-10-05')).reason, 'Gusts 41 km/h');
+  // the match-day card prints the match-hour figures (feels 20° at 16:00 → no heat flag); the opened day carries the
+  // window max, so the 10:00 AEDT 33° proves the DST bucketing there, and 6 Oct's card too.
+  const o5 = openDay(f, '2026-10-05', { viewerTz: 'UTC' }, m, E, now);
+  assert.equal(dayBox(o5, 'Heat').fig, '33°', '10:00 AEDT is inside the playing window');
+  assert.equal(day(dayOf(html, '2026-10-06')).reason, 'Heat — high', '10:00 AEDT 6 Oct is inside that day\'s window');
 });
-
 // Mutation: wxFileDue never says due for a cached file; the matches reload no longer marks the index stale.
 test('session cache: a venue file ≥ 3 h old is fetched again on open; a matches reload re-reads the index and the open tab', async () => {
   const H = 3600e3, T0 = Date.parse('2026-09-27T04:00:00Z');
@@ -329,32 +323,28 @@ test('Download report never prints "Loading forecast…": an unloaded Weather se
   await R.print();
   const printed = R.log.find(x => x.startsWith('print:'));
   assert.ok(!printed.includes(R0.WX_COPY.loading), 'no loading line in the report');
-  assert.equal(elements(printed.slice(6), 'wx-banner').length, 1, 'the unavailable state');
-  assert.ok(elements(printed.slice(6), 'wx-day').every(d => text(elements(d, 'wx-hi')[0]) === '—'), 'dashes, never a guess');
+  assert.ok(banner(printed.slice(6)), 'the unavailable state');
+  assert.ok(days(printed.slice(6)).map(day).every(d => d.hi === '—'), 'dashes, never a guess');
 });
 
 // Mutation: the pace shift reads an UNAVAILABLE rain as calm (the old `on('rain') ? … : on('heat') ? 'quicker'`).
 test('pace: "PLAYS QUICKER" needs heat hot AND rain calm — an UNAVAILABLE rain gives no status and no copy', () => {
-  const pace = f => elements(render(f), 'wx-tile').find(t => /data-factor="pace"/.test(t));
-  const noRain = pace(file((d, h) => d === '2026-09-27' && h === 16 ? { feels: 32, rainChance: null } : {}));
-  assert.equal(text(elements(noRain, 'wx-sevl')[0]), ''); assert.equal(text(elements(noRain, 'wx-effect')[0]), '');
-  assert.equal(text(elements(noRain, 'wx-val')[0]), '1.17', 'the court speed itself still shows');
-  const calmRain = pace(file((d, h) => d === '2026-09-27' && h === 16 ? { feels: 32, rainChance: 5 } : {}));
-  assert.equal(text(elements(calmRain, 'wx-sevl')[0]), 'PLAYS QUICKER');   // control
+  const noRain = pace(render(file((d, h) => d === '2026-09-27' && h === 16 ? { feels: 32, rainChance: null } : {})));
+  assert.equal(noRain.stat, ''); assert.equal(noRain.effect, '');
+  assert.equal(noRain.fig, '1.17', 'the court speed itself still shows');
+  assert.equal(pace(render(file((d, h) => d === '2026-09-27' && h === 16 ? { feels: 32, rainChance: 5 } : {}))).stat, 'Plays quicker');   // control
 });
 
 // Mutation: drop `|| uncovered` (a match day the file does not reach renders a dashed strip with an "ok" line).
 test('a match day outside the forecast file → the unavailable state, with the real last-update time', () => {
-  const far = Object.assign({}, M, { date: '2026-10-20' });                    // beyond the file's last day
-  const html = render(file(() => ({})), {}, far);
-  assert.equal(elements(html, 'wx-banner').length, 1);
-  assert.match(text(elements(html, 'wx-fresh')[0]), /^Forecast unavailable · last successful update Sep 27, 10:00 · Open-Meteo$/);
-  assert.equal(text(elements(html, 'wx-verdict')[0]), 'Match-time forecast unavailable.');
-  assert.equal(elements(render(file(() => ({}))), 'wx-banner').length, 0, 'control: an in-range match is available');
+  const html = render(file(() => ({})), {}, Object.assign({}, M, { date: '2026-10-20' }));
+  assert.ok(banner(html));
+  assert.match(mscope(html), / · Forecast unavailable · last successful update Sep 27, 10:00 · Open-Meteo$/);
+  assert.equal(chip(html), 'Forecast unavailable');
+  assert.ok(!banner(render(file(() => ({})))), 'control: an in-range match is available');
 });
 
 // ── founder rulings, 27 Sep 06:54Z ──────────────────────────────────────────────────────────────────
-// Completed match = our archived pre-start forecast only (build-weather.js's real updateArchive builds it).
 const PAST = Object.assign({}, M, { id: 'past-12166157' });                  // 08:00Z = 16:00 Chengdu
 const LATER = Date.parse('2026-09-27T12:00:00Z');
 const archOf = (fetchedAt, hour) => BW.updateArchive(null, makeFile({ from: '2026-09-25', fetchedAt, hour }),
@@ -364,62 +354,62 @@ test('completed match: the archived pre-start forecast shows, labelled "forecast
   const arch = archOf('2026-09-27T04:00:00Z', (d, h) => d === '2026-09-27' && h === 16 ? { gusts: 38 } : {});
   const R = build({});
   const html = R.buildWeatherSection(PAST, ENTRY, null, LATER, arch);
-  assert.equal(elements(html, 'wx-banner').length, 0);
-  assert.equal(text(elements(html, 'wx-athead')[0]), 'Sun Sep 27 · 16:00 · forecast, not observed');
-  assert.equal(text(elements(html, 'wx-verdict')[0]), 'Main factor at match time: Wind — gusts 38 km/h');
-  assert.equal(text(elements(html, 'wx-fresh')[0]), 'Archived forecast · fetched Sep 27, 12:00 · Open-Meteo');
-  const tip = attrsOf(html, 'wx-day').find(a => a['data-date'] === '2026-09-27')['data-aotip'];
-  assert.ok(tip.includes('archived forecast, not observed'), 'day tooltip labels the archive');
-  // no archive → unavailable; a CURRENT forecast file is never read for a started match
+  assert.ok(!banner(html));
+  assert.match(mscope(html), /^Sun Sep 27 · 16:00 · forecast, not observed · Archived forecast · fetched Sep 27, 12:00 · Open-Meteo$/);
+  assert.equal(chip(html), 'Wind is the main factor'); assert.equal(leads(html)[0].fig, '38');
+  const i = days(html).findIndex(d => d.includes('data-date="2026-09-27"'));
+  assert.match(card(build({ sel: i }).buildWeatherSection(PAST, ENTRY, null, LATER, arch), 'day'), /forecast, not observed/, 'the opened archived day is labelled');
   for (const [f, a] of [[null, null], [file(() => ({ gusts: 38 })), null], [file(() => ({ gusts: 38 })), { v: 1, days: {}, matches: {} }]]) {
     const h = R.buildWeatherSection(PAST, ENTRY, f, LATER, a);
-    assert.equal(elements(h, 'wx-banner').length, 1);
-    assert.equal(text(elements(h, 'wx-verdict')[0]), 'Match-time forecast unavailable.');
-    assert.ok(!/38/.test(text(elements(h, 'wx-tiles')[0] || '')), 'never the current forecast for a past date');
-    assert.ok(!text(elements(h, 'wx-athead')[0]).includes('not observed'), 'no archived label when nothing archived is shown');
+    assert.ok(banner(h));
+    assert.equal(chip(h), 'Forecast unavailable');
+    assert.ok(!matchBoxes(h).some(b => /38/.test(b.fig || '')), 'never the current forecast for a past date');
+    assert.ok(!mscope(h).includes('not observed'), 'no archived label when nothing archived is shown');
   }
 });
 
-// Mutation: archived day tooltips stamp the MATCH row's fetch time instead of the day's own.
+// RENDERER GAP (modal-weather.md "A completed match shows OUR archived pre-start forecast": each archived day says when ITS
+// forecast was fetched — the old day card's tooltip, TP.fetched + wxStamp(d.fetchedMs)). maWeatherV2's day cards and opened
+// day carry no per-day fetch time. Mutation: the match row's fetch time printed for every day.
 test('completed match: each archived day card says when ITS forecast was fetched', () => {
   const f = t => makeFile({ from: '2026-09-25', fetchedAt: t });
   const mk = [{ key: '12166157', startMs: Date.parse('2026-09-27T08:00:00Z') }];
   const arch = BW.updateArchive(BW.updateArchive(null, f('2026-09-27T01:00:00Z'), mk, LATER), f('2026-09-27T04:00:00Z'), mk, LATER);
   const html = build({}).buildWeatherSection(PAST, ENTRY, null, LATER, arch);
-  const tipOf = date => attrsOf(html, 'wx-day').find(a => a['data-date'] === date)['data-aotip'];
-  assert.ok(tipOf('2026-09-27').includes('Sep 27, 09:00'), 'the 27th: fetched 01:00Z (before its window)');
-  assert.ok(tipOf('2026-09-28').includes('Sep 27, 12:00'), 'the 28th: the later pre-window fetch');
-  assert.equal(text(elements(html, 'wx-fresh')[0]), 'Archived forecast · fetched Sep 27, 12:00 · Open-Meteo');
+  assert.match(mscope(html), /Archived forecast · fetched Sep 27, 12:00 · Open-Meteo$/);
+  assert.ok(dayOf(html, '2026-09-27').includes('Sep 27, 09:00'), 'the 27th: fetched 01:00Z (before its window)');
+  assert.ok(dayOf(html, '2026-09-28').includes('Sep 27, 12:00'), 'the 28th: the later pre-window fetch');
 });
 
-// Mutation: the partial verdict loses its {missing} list (or lists an available factor).
+// RENDERER GAP (modal-weather.md "Partial read wording: 'No weather concern in the values we have. Missing: {factor list}.'"):
+// maWeatherV2 prints only the chip "No concern in the values we have"; vm.verdict (WX_COPY.verdictPartial with the list) is
+// never rendered (the old verdict line printed it). Mutation: the list loses an unavailable factor / gains an available one.
 test('partial read: "No weather concern in the values we have. Missing: rain."', () => {
   const html = render(file((d, h) => d === '2026-09-27' && h === 16 ? { rainChance: null } : {}));
-  assert.equal(text(elements(html, 'wx-verdict')[0]), 'No weather concern in the values we have. Missing: rain.');
+  assert.ok(textOf(html).includes('No weather concern in the values we have. Missing: rain.'), chip(html));
   const h2 = render(file((d, h) => d === '2026-09-27' && h === 16 ? { rainChance: null, gusts: null } : {}));
-  assert.equal(text(elements(h2, 'wx-verdict')[0]), 'No weather concern in the values we have. Missing: wind, rain.');
+  assert.ok(textOf(h2).includes('No weather concern in the values we have. Missing: wind, rain.'));
 });
 
 // Mutation: the zone ignores the index entry's tz (falls back to the viewer's zone with no forecast file).
 test('no forecast file: venue time still comes from the venue list (index tz); the viewer-zone note is only a fallback', () => {
   const withTz = render(null, { viewerTz: 'UTC' }, M, Object.assign({}, ENTRY, { tz: 'Asia/Shanghai' }));
-  assert.equal(text(elements(withTz, 'wx-tznote')[0]), 'Times shown in venue local time');
-  assert.equal(text(elements(withTz, 'wx-badge')[0]), 'MATCH · 16:00');
+  assert.match(scope(card(withTz, 'week')), / · Times shown in venue local time$/);
+  assert.equal(badge(withTz), 'Match 16:00');
   const noTz = render(null, { viewerTz: 'UTC' }, M, ENTRY);
-  assert.equal(text(elements(noTz, 'wx-tznote')[0]), 'Times shown in your time zone');
-  assert.equal(text(elements(noTz, 'wx-badge')[0]), 'MATCH · 08:00');
+  assert.match(scope(card(noTz, 'week')), / · Times shown in your time zone$/);
+  assert.equal(badge(noTz), 'Match 08:00');
 });
 
 // Mutation: wxFirstSlot always true (no note) or always false (the first match gets it too).
 test('"may start later" note on every match that is not first on court that day', () => {
   const first = M, second = Object.assign({}, M, { time: '13:00' }), other = Object.assign({}, M, { tour: 'ATP Beijing', time: '06:00' });
-  const board = [first, second, other];
-  const note = m => elements(build({ board }).buildWeatherSection(m, ENTRY, file(() => ({})), NOW), 'wx-later').map(text);
-  assert.deepEqual(note(second), ['Scheduled time — later matches often start later.']);
-  assert.deepEqual(note(first), [], 'the first match of the day at that tournament has no note');
-  assert.deepEqual(note(Object.assign({}, M, { time: '10:00' })), [], 'a tie with the first slot is first on court');
+  const board = [first, second, other], L = 'Scheduled time — later matches often start later.';
+  const has = m => mscope(build({ board }).buildWeatherSection(m, ENTRY, file(() => ({})), NOW)).endsWith(' · ' + L);
+  assert.ok(has(second));
+  assert.ok(!has(first), 'the first match of the day at that tournament has no note');
+  assert.ok(!has(Object.assign({}, M, { time: '10:00' })), 'a tie with the first slot is first on court');
 });
-
 // Mutation: the shared TEN-303 tooltip's Esc layer closes nothing (registered in initAOddsTips, run by esc-nav.js).
 test('Escape closes the shared tooltip (open or pending)', () => {
   const T = buildTips(); T.api.initAOddsTips();
@@ -449,41 +439,21 @@ test('Escape with a tooltip up is consumed by the tooltip (ranked above the pop-
   assert.equal(T.key('Escape').stopped, false, 'a tooltip in a closed (hidden) modal does not take the Esc');
 });
 
-// ── colours: the ONE token file, tokens.css (TEN-376 Foundation; supersedes the TEN-314 modal token file) ──
-// Each WX_C colour is the var() (or a colour-mix of one) of the foundation token its ROLE maps to (.claude/rules/foundation.md,
-// modal-weather.md), and tokens.css resolves it (Night) to the foundation value. All borders 1px (README §4).
-// Severity: CONCERN --neg; WATCH neutral (--text-soft, --edge-16 border) — amber is Model + Trading Report only (U3).
-// Mutation: a WX_C value back to a literal (text #E7E9EE), CONCERN back to the Weather red, amber leaking into WX_C,
-// the badge fill on the text token, a hairline 0.33px.
-const WX_ROLE = { text: 'var(--text)', sub: 'var(--text-soft)', muted: 'var(--text-soft)', dim: 'var(--text-label)', faint: 'var(--text-label)', card: 'var(--card)',
-  lead: 'var(--card)', bd: 'var(--edge-6)', box: 'var(--line)', rule: 'var(--line)', ruleFx: 'var(--line)', inner: 'var(--inner)',
-  dashBd: 'var(--edge-10)', tagBd: 'var(--edge-10)', bar: 'var(--track)', amber: 'var(--text-soft)', red: 'var(--text)',   // founder R4: CONCERN has no colour
-  amberBd: 'var(--edge-6)', redBd: 'var(--edge-6)',
-  chipBd: 'var(--edge-16)', unavail: 'color-mix(in srgb, var(--text) 15%, transparent)',
-  match: 'var(--text)', matchFill: 'var(--inner)', matchBd: 'var(--edge-24)', badgeInk: 'var(--text-soft)', badgeBd: 'var(--edge-16)' };
-// tokens.css Night values the roles above must resolve to
-const WX_NIGHT = { text: '#E7E9EE', sub: '#DDE0EA', muted: '#DDE0EA', dim: '#A3AABE', faint: '#A3AABE', card: '#10131D', lead: '#10131D',
-  bd: 'RGBA(255,255,255,0.06)', box: 'RGBA(255,255,255,0.05)', rule: 'RGBA(255,255,255,0.05)', ruleFx: 'RGBA(255,255,255,0.05)', inner: '#171B28',
-  dashBd: 'RGBA(255,255,255,0.1)', tagBd: 'RGBA(255,255,255,0.1)', bar: 'RGBA(255,255,255,0.06)', amber: '#DDE0EA', red: '#E7E9EE',
-  amberBd: 'RGBA(255,255,255,0.06)', redBd: 'RGBA(255,255,255,0.06)', chipBd: 'RGBA(255,255,255,0.16)', unavail: 'RGBA(231,233,238,0.15)',
-  match: '#E7E9EE', matchFill: '#171B28', matchBd: 'RGBA(255,255,255,0.24)', badgeInk: '#DDE0EA', badgeBd: 'RGBA(255,255,255,0.16)' };
-test('Weather colours are foundation role tokens (no literal), resolving to the tokens.css Night values; borders 1px', () => {
-  const C = build({}).WX_C, n = v => String(v).replace(/\s/g, '');
-  assert.deepEqual(Object.keys(C).sort(), Object.keys(WX_ROLE).concat(['hw', 'hw1']).sort(), 'every colour is locked');
-  for (const [k, v] of Object.entries(WX_ROLE)) {
-    assert.equal(n(C[k]), n(v), k);
-    assert.equal(resolveToken(C[k]), WX_NIGHT[k], `${k} resolves (Night)`);
-  }
-  assert.equal(C.hw, '1px'); assert.equal(C.hw1, '1px');
-  // amber is Model + Trading Report only (TEN-376 U3): no WX_C colour reads the amber tokens
-  assert.deepEqual(Object.keys(C).filter(k => /--(viz-)?amber\b/.test(C[k])), []);
-  // founder Q1 (TEN-380, README §9): the MATCH badge is NEUTRAL — --inner fill, --text-soft ink, a neutral ring; no blue
-  const h = render(file(() => ({}))), badge = attrsOf(h, 'wx-badge')[0] || {};
-  assert.match(badge.style || '', /color:var\(--text-soft\); background:var\(--inner\); box-shadow:inset 0 0 0 1px var\(--edge-16\);/, 'MATCH badge neutral');
-  assert.ok(!/var\(--bar\)|var\(--open-card\)|var\(--link\)/.test(h), 'no blue anywhere on the tab');
-  assert.ok(elements(h, 'wx-day').filter(d => /is-match/.test(d)).every(d => /border:1px solid var\(--edge-24\)/.test(d)), 'match-day edge neutral --edge-24');
+// ── colours: tokens only (TEN-376), on the 2026-11-23 design's --ma2-* tokens (tokens.css). The TEN-376 WX_C role map is
+// dropped: the rebuilt tab does not read WX_C (only the loading line does). Severity keeps the R4 grey ladder — CONCERN
+// --ma2-text, WATCH --ma2-soft, calm --ma2-grey, never red, never amber (founder R4, U3) — and the MATCH tag is neutral
+// (founder Q1: no blue). Mutations: CONCERN on the red, WATCH on amber, the match tag blue, a literal colour.
+const WX_SRC = (() => { const a = V2.indexOf('  // WEATHER (LOCKED'), b = V2.indexOf('root.maWeatherV2 = maWeatherV2;'); assert.ok(a > 0 && b > a, 'Weather block found'); return V2.slice(a, b); })();
+test('Weather colours are tokens (no literal) resolving in tokens.css; the severity ladder is grey; the MATCH tag neutral; borders 1px', () => {
+  assert.ok(!/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/.test(WX_SRC), 'no literal colour in the Weather renderer');
+  for (const t of new Set(WX_SRC.match(/--ma2-[\w-]+/g))) assert.ok(/^#|^RGBA/.test(resolveToken(`var(${t})`)), t + ' resolves (Night)');
+  assert.match(WX_SRC, /const WX_SEV = \{ r: \['Concern', 'var\(--ma2-text\)'\], a: \['Watch', 'var\(--ma2-soft\)'\], n: \['No concern', 'var\(--ma2-grey\)'\], u: \['Unavailable', 'var\(--ma2-quiet\)'\] \};/, 'R4 grey ladder');
+  const flagged = render(file((d, h) => d === '2026-09-27' && h === 16 ? { gusts: 40, feels: 36, rainChance: 70 } : {}));
+  assert.ok(!/--ma2-(red|green|blue)|--amber|--neg|--pos|--bar\b|--link/.test(flagged), 'no meaning colour or blue on the tab');
+  const md = dayOf(flagged, '2026-09-27');
+  assert.match(md, /color:var\(--ma2-text\); min-height:15px; white-space:nowrap;">Match 16:00</, 'MATCH tag neutral white');
+  assert.ok(!/border:(?!1px)[\d.]+px/.test(flagged), 'every border 1px');
 });
-
 // Mutation: a literal put back into WX_C (the engine would re-tone it; a DESIGN_ZONES entry would be needed again).
 test('the 12a engine has nothing to map in WX_C (no design-verbatim zone left); a literal put back would be re-toned', async () => {
   const src = readFileSync(new URL('./tools/theme-12a/recolour.mjs', import.meta.url), 'utf8');
@@ -497,123 +467,98 @@ test('the 12a engine has nothing to map in WX_C (no design-verbatim zone left); 
   assert.notEqual(wx(out(R.recolourFile('bsp-consult-dashboard.html', mut))), wx(mut), 'control: a literal in WX_C is re-toned');
 });
 
-// ── the api-tennis 02:00Z placeholder (founder ruling 27 Sep; 33 of 34 cards first published at it were revised) ──
+// ── the api-tennis 02:00Z placeholder (founder ruling 27 Sep) ──
 // Mutation: apiStartMs returns cardStartMs unchanged (the placeholder read as a real 02:00Z start).
 test('api-tennis 02:00Z placeholder = no time: "MATCH · TBC", "time TBC", no header time — CEST and CET; a real 02:05Z is a time', () => {
   const E = Object.assign({}, ENTRY, { tz: 'Asia/Shanghai' });
   const R = build({ viewerTz: 'UTC' });
-  const view = m => { const h = R.buildWeatherSection(m, E, null, NOW); return { badge: text(elements(h, 'wx-badge')[0]), head: text(elements(h, 'wx-athead')[0]), header: R.aContextLine(m, 'Quarter-finals') }; };
-  const cest = view(Object.assign({}, M, { time: '04:00' }));                 // 04:00 Berlin CEST = 02:00Z
-  assert.equal(cest.badge, 'MATCH · TBC'); assert.equal(cest.head, 'Sun Sep 27 · time TBC'); assert.equal(cest.header, 'Chengdu · Quarter-finals');
-  const cet = view(Object.assign({}, M, { date: '2026-10-26', time: '03:00' })); // 03:00 Berlin CET = 02:00Z (after 25 Oct)
-  assert.equal(cet.badge, 'MATCH · TBC');
-  const real = view(Object.assign({}, M, { time: '04:05' }));                 // 02:05Z: a real time, 10:05 Chengdu
-  assert.equal(real.badge, 'MATCH · 10:05'); assert.match(real.header, / · 02:05$/);
-  const cet4 = view(Object.assign({}, M, { date: '2026-10-26', time: '04:00' })); // 04:00 CET = 03:00Z: real, 11:00 Chengdu
-  assert.equal(cet4.badge, 'MATCH · 11:00');
-  const ts = view(Object.assign({}, M, { time: '04:00', startTs: '2026-09-27T02:00:00Z' }));   // an explicit startTs is trusted
-  assert.equal(ts.badge, 'MATCH · 10:00');
-  // the build never archives a forecast for the placeholder hour
+  const view = m => { const h = R.buildWeatherSection(m, E, null, NOW); return { badge: badge(h), head: mscope(h), header: R.aContextLine(m, 'Quarter-finals') }; };
+  const cest = view(Object.assign({}, M, { time: '04:00' }));
+  assert.equal(cest.badge, 'Match time TBC'); assert.match(cest.head, /^Sun Sep 27 · time TBC · /); assert.equal(cest.header, 'Chengdu · Quarter-finals');
+  assert.equal(view(Object.assign({}, M, { date: '2026-10-26', time: '03:00' })).badge, 'Match time TBC');
+  const real = view(Object.assign({}, M, { time: '04:05' }));
+  assert.equal(real.badge, 'Match 10:05'); assert.match(real.header, / · 02:05$/);
+  assert.equal(view(Object.assign({}, M, { date: '2026-10-26', time: '04:00' })).badge, 'Match 11:00');
+  assert.equal(view(Object.assign({}, M, { time: '04:00', startTs: '2026-09-27T02:00:00Z' })).badge, 'Match 10:00');
   assert.ok(Number.isNaN(BW.defaultStartMs({ date: '2026-09-27', time: '04:00' })));
   assert.equal(BW.defaultStartMs({ date: '2026-09-27', time: '04:05' }), Date.parse('2026-09-27T02:05:00Z'));
 });
 
-// ── TEN-337 re-verification against Match Analysis Progression v1.dc.html (TEN-312) ──
-// TEN-380 review item 1 (founder 2026-10-04): the THRESHOLDS TBD chip is an internal note and never ships, so the STATE row
-// goes with it — the tab opens on the strip header, as the reference draws it. Mutation: the chip row back.
-test('no STATE switcher and no THRESHOLDS chip ship; the tab opens on the strip header', () => {
+// TEN-380 review item 1 (founder 2026-10-04): no THRESHOLDS chip, no STATE row. The 2026-11-23 design opens the tab on
+// "At match time" (the unavailable note above it when the forecast is missing). Mutation: the chip row back.
+test('no STATE switcher and no THRESHOLDS chip ship; the tab opens on its first card', () => {
   const html = render(file(() => ({})));
-  assert.equal(elements(html, 'wx-chiprow').length + elements(html, 'wx-tbd').length, 0);
-  assert.ok(!/THRESHOLDS TBD/.test(html), 'no internal note in the product');
-  assert.match(html, /^<div class="wx-tab"[^>]*><div class="wx-head"/, 'the strip header comes first');
+  assert.ok(!/wx-chiprow|wx-tbd|THRESHOLDS/.test(html), 'no internal note in the product');
+  assert.match(html, /^<div class="wx-tab"[^>]*><div data-wxcard="match"/, 'At match time comes first');
   for (const s of ['a · Calm week', 'b · One problem day', 'c · Match day red', 'd · Indoor', 'e · Unavailable', '>STATE<']) assert.ok(!html.includes(s), s);
 });
 
 // Mutation: write the pace copy's apostrophe as ’ (U+2019) — the file (DF wxFor) and the spec §5 write ASCII '.
 test('pace copy quotes the file verbatim: "Today\'s heat should make it play quicker than that." (ASCII apostrophe)', () => {
-  const pace = elements(render(file((d, h) => d === '2026-09-27' && h === 16 ? { feels: 32, rainChance: 5 } : {})), 'wx-tile').find(t => /data-factor="pace"/.test(t));
-  assert.equal(text(elements(pace, 'wx-effect')[0]), "Base court speed is 1.17 (Fast). Today's heat should make it play quicker than that.");
+  assert.equal(pace(render(file((d, h) => d === '2026-09-27' && h === 16 ? { feels: 32, rainChance: 5 } : {}))).effect,
+    "Base court speed is 1.17 (Fast). Today's heat should make it play quicker than that.");
 });
 
-// TEN-380 (README §9, step 3 reference): the legend row and the "Forecast updated" stamp are gone; a 6–24 h old forecast
-// keeps its ruled staleness line. Lead box = panel, its metric tiles --inner with no edge, sentence-case names 14/700,
-// unit and effect text --text-label; side tiles 13/700 sentence case; FROM TOURNAMENT tag dashed --edge-10.
-// Mutation: the legend row back, or the fresh stamp printed again.
-test('TEN-380: no legend row, no "Forecast updated" stamp (the stale line stays); lead box and tiles restyled', () => {
-  const f = file((d, h) => d === '2026-09-27' && h === 16 ? { gusts: 40, wind: 22 } : {});
-  const html = render(f);
-  assert.ok(!/Days 4\+ ahead|Forecast updated/.test(text(html)), 'no legend, no fresh stamp');
-  assert.equal(elements(html, 'wx-fresh').length, 0);
+// TEN-380 (README §9): a 6–24 h old forecast keeps its ruled staleness line. Mutation: the stale line dropped.
+test('a 6–24 h old forecast keeps its staleness line', () => {
+  assert.match(mscope(render(file(() => ({}), { fetchedAt: '2026-09-26T20:00:00Z' }))), / · Forecast updated 8h ago · Open-Meteo$/);
+});
+
+// RENDERER GAP (modal-weather.md "No legend row and no 'Forecast updated' stamp (TEN-380, README §9). A fresh forecast
+// prints no freshness line"): maWeatherV2 prints vm.fresh.text in the At-match-time scope on every forecast, fresh ones too
+// (the old renderer printed wx-fresh only for unavailable / archived / tone 'amber'). Dropped (superseded by the 2026-11-23
+// design, notes.md Weather): the TEN-380 lead-box / tile / FROM TOURNAMENT styling asserts.
+test('TEN-380: no legend row, no "Forecast updated" stamp on a fresh forecast', () => {
+  const html = render(file((d, h) => d === '2026-09-27' && h === 16 ? { gusts: 40, wind: 22 } : {}));
   assert.ok(!/legend/.test(JSON.stringify(build({}).WX_COPY || {})), 'the legend copy is deleted, not hidden');
-  const stale = render(file(() => ({}), { fetchedAt: '2026-09-26T20:00:00Z' }));
-  assert.match(text(elements(stale, 'wx-fresh')[0] || ''), /^Forecast updated 8h ago · Open-Meteo$/, 'a 6–24 h old forecast keeps its staleness line');
-  const lead = elements(html, 'wx-lead')[0];
-  assert.match(lead, /class="wx-lead-name" style="font-size:14px; font-weight:700;">Wind</, 'sentence case 14/700');
-  assert.match(lead, /class="wx-unit" style="font-size:14px; color:var\(--text-label\);">km\/h gusts</);
-  const met = elements(lead, 'wx-metric');
-  assert.equal(met.length, 2);
-  assert.ok(met.every(x => /background:var\(--inner\); border:1px solid transparent;/.test(x)), 'metric tiles --inner, no edge');
-  assert.match(elements(lead, 'wx-effect')[0], /color:var\(--text-label\)/);
-  const tiles = elements(html, 'wx-tile');
-  assert.ok(tiles.every(t => /border:1px solid var\(--edge-6\)/.test(t)), 'tiles --edge-6');
-  assert.ok(tiles.every(t => /class="wx-name" style="font-size:13px; font-weight:700;/.test(t)), 'tile names 13/700, no caps');
-  assert.ok(tiles.every(t => /class="wx-effect"[^>]*color:var\(--text-label\)/.test(t)), 'effect text --text-label');
-  assert.match(html, /FROM TOURNAMENT/);
-  assert.match(html, /font-size:9\.5px;[^"]*border:1px dashed var\(--edge-10\);">FROM TOURNAMENT</);
-  assert.ok(elements(html, 'wx-day').every(d => /border:1px solid var\(--edge-(6|24)\)/.test(d)), 'day cards --edge-6 (match day keeps its edge, Q1)');
-  assert.ok(!/THRESHOLDS TBD/.test(html), 'TEN-380 review item 1: no THRESHOLDS chip');
+  assert.ok(!/Days 4\+ ahead/.test(textOf(html)), 'no legend');
+  assert.ok(!/Forecast updated/.test(textOf(html)), 'no fresh stamp on a 2 h old forecast');
 });
 
-// TEN-380 review items 2 + 3 (founder 2026-10-04): status lines are text only — no round dot on a day line, the verdict
-// line or a factor tile; and the court pace never says "usual" (ruling 14 — no source). Founder review 2 (2026-10-04):
-// calm conditions read against the event's base court speed instead — "PLAYS AT BASE" + its sentence (below).
-// Mutations: a dot back on the day reason / verdict / tile; "AS USUAL" or "close to its usual" back.
-test('TEN-380 review: no status dots anywhere on the tab; calm court pace never says "usual"', () => {
-  const flagged = render(file((d, h) => d === '2026-09-27' && h === 16 ? { gusts: 40, wind: 22 } : {}));
-  const calm = render(file(() => ({})));
-  for (const h of [flagged, calm]) {
-    assert.ok(!/border-radius:50%/.test(h), 'no round dot on the tab');
-    assert.equal(elements(h, 'wx-dot').length, 0);
-  }
-  const pace = elements(calm, 'wx-tile').find(t => /data-factor="pace"/.test(t));
-  assert.ok(pace, 'pace tile renders');
-  assert.ok(!/usual/i.test(text(pace)), 'no "usual" on a calm day: ' + text(pace));
-  assert.match(text(pace), /1\.17/, 'the figure still prints');
+// RENDERER GAP (TEN-380 review item 2, founder 2026-10-04: "Status lines are text only — no dots"; notes.md Weather: the
+// design's dots are drawn in the grey tones pending founder question 4, which has not superseded the ruling): maWeatherV2
+// draws an 8px round dot in the head chip (chipDot), on every day card's status line and in the opened day's chip.
+test('TEN-380 review: no status dots anywhere on the tab', () => {
+  for (const h of [render(file((d, h) => d === '2026-09-27' && h === 16 ? { gusts: 40, wind: 22 } : {})), render(file(() => ({})))])
+    assert.ok(!/width:8px; height:8px; border-radius:50%/.test(h), 'no round status dot on the tab');
 });
 
-// Founder review 2 (TEN-380, 2026-10-04) item 4: calm rain and heat → the pace keeps its verdict, "PLAYS AT BASE", and the
-// sentence under the figure names the base speed — in the lead layout (wind leads) and the calm layout alike.
-// Mutations: the base label or sentence dropped; the calm layout prints no label.
-test('review 2: calm conditions → "PLAYS AT BASE" + "Base court speed is 1.17 (Fast)…" in both layouts', () => {
+// TEN-380 review item 3 + founder review 2 (2026-10-04): the court pace never says "usual"; calm rain and heat → "PLAYS AT
+// BASE" + the base-speed sentence, in the lead layout (wind leads) and the calm layout alike. Mutations: "usual" back, the
+// base label or sentence dropped, the calm layout printing no label.
+test('review 2: calm conditions → "PLAYS AT BASE" + "Base court speed is 1.17 (Fast)…" in both layouts; never "usual"', () => {
   const windy = render(file((d, h) => d === '2026-09-27' && h === 16 ? { gusts: 40, wind: 22 } : {}));
   const calm = render(file(() => ({})));
   for (const [name, h] of [['lead layout', windy], ['calm layout', calm]]) {
-    const pace = elements(h, 'wx-tile').find(t => /data-factor="pace"/.test(t));
-    assert.ok(pace, name + ': pace tile');
-    assert.equal(text(elements(pace, 'wx-sevl')[0]), 'PLAYS AT BASE', name);
-    assert.match(text(pace), /Base court speed is 1\.17 \(Fast\)\. Today's conditions should not change it\./, name);
-    assert.ok(!/usual/i.test(text(pace)), name + ': still no "usual"');
+    const p = pace(h);
+    assert.ok(p, name + ': pace tile');
+    assert.equal(p.stat, 'Plays at base', name);
+    assert.match(p.effect, /^Base court speed is 1\.17 \(Fast\)\. Today's conditions should not change it\./, name);
+    assert.ok(!/usual/i.test(textOf(p.html)), name + ': no "usual"');
+    assert.equal(p.fig, '1.17');
   }
-  assert.match(text(elements(windy, 'wx-tile').find(t => /data-factor="pace"/.test(t))), /Wind adds variance on top\./, 'wind on → the variance clause');
+  assert.match(pace(windy).effect, /Wind adds variance on top\.$/, 'wind on → the variance clause');
 });
 
-// Founder review 2 item 3: the match-day tile prints the MATCH-HOUR figure, the same as Main factor — never the day's
-// max (57 at 13:00 vs 40 at the 16:00 match hour). Another day keeps its window max. Mutation: the match day keeps the max.
+// Founder review 2 item 3: the match-day card prints the MATCH-HOUR figure, the same as the lead box — never the day's max
+// (57 at 13:00 vs 40 at the 16:00 match hour); the opened day keeps the window max; another day keeps its window max.
+// Mutation: the match day keeps the max.
 test('review 2: the match-day tile = the match-hour figure (= Main factor); other days keep the window max', () => {
   const f = file((d, h) => d === '2026-09-27' ? (h === 13 ? { gusts: 57 } : h === 16 ? { gusts: 40 } : {}) : d === '2026-09-28' && h === 13 ? { gusts: 57 } : {});
   const html = render(f);
-  assert.match(text(elements(html, 'wx-verdict')[0]), /gusts 40 km\/h/);
-  const day = date => elements(html, 'wx-day').find(x => new RegExp('data-date="' + date + '"').test(x));
-  assert.equal(text(elements(day('2026-09-27'), 'wx-reason')[0]), 'Gusts 40 km/h', 'match day = match hour');
-  assert.match(day('2026-09-27'), /Max gusts.*?57 km\/h/s, 'its hover still lists the day max, labelled Max');
-  assert.equal(text(elements(day('2026-09-28'), 'wx-reason')[0]), 'Gusts 57 km/h', 'another day = its window max');
+  assert.equal(chip(html), 'Wind is the main factor'); assert.equal(leads(html)[0].fig, '40');
+  assert.equal(day(dayOf(html, '2026-09-27')).reason, 'Gusts 40 km/h', 'match day = match hour');
+  assert.equal(dayBox(openDay(f, '2026-09-27'), 'Wind').fig, '57', 'the opened match day lists the day max');
+  assert.equal(day(dayOf(html, '2026-09-28')).reason, 'Gusts 57 km/h', 'another day = its window max');
 });
 
-// Founder review 2 next-round item: "LOW CONFIDENCE" on one line where the day card holds it (≥ 1400px), wrapping inside
-// its card below that instead of spilling into the next card (clean review 3: 8px overflow per side at 1280).
-test('review 2: LOW CONFIDENCE is one line at ≥ 1400px and wraps inside its card below', () => {
-  assert.match(HTML, /\.modal-analysis \.wx-lowconf\{ white-space:nowrap; \}/);
-  assert.match(HTML, /@media \(max-width:1399px\)\{ \.modal-analysis \.wx-lowconf\{ white-space:normal; \} \}/);
-  const far = render(file(() => ({})), {}, Object.assign({}, M, { date: '2026-09-27' }));
-  assert.ok(elements(far, 'wx-lowconf').length >= 1, 'the label carries its class');
+// Founder review 2 next-round item: "LOW CONFIDENCE" stays on one line and never spills into the next card. The 2026-11-23
+// design gives every day card a 116px floor (wide enough for the label at 11.5px), so the label is nowrap at every width;
+// the old ≥1400px media-query pair (.wx-lowconf) is superseded with the old strip. Mutation: the label wraps / the floor goes.
+test('review 2: LOW CONFIDENCE is one line inside a card that always holds it', () => {
+  const html = render(file(() => ({})));
+  const low = days(html).filter(d => day(d).tag === 'Low confidence');
+  assert.ok(low.length >= 1, 'days 3+ ahead carry the label');
+  for (const d of low) assert.match(d, /min-height:15px; white-space:nowrap;">Low confidence</);
+  assert.match(card(html, 'week'), /grid-template-columns:repeat\(auto-fit, minmax\(116px, 1fr\)\)/, 'the day card floor');
 });

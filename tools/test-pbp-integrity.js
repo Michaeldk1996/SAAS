@@ -121,10 +121,11 @@ function page(shardJson, warned = []) {
     const _pbpShards = {}, _pbpShardPromises = {};
     const _pbpLiveRows = {}, _pbpLiveAt = {}, _pbpLiveCand = new Set();   // carry-over state loadPbpShard reads (empty: no candidate)
     ${['escapeHtml', 'fhEsc', 'fhSheetSectionHead', 'pbpParseScore', 'pbpSplitSet', 'pbpPointList', 'pbpRowHtml', 'buildPointByPointHtml',
-       'fhPbpSetModel', 'fhPbpMatchCtx', 'fhSheetPbpHtml', 'loadPbpShard', 'pbpStampIntegrity'].map(slice).join('\n')}
+       'fhPbpSetModel', 'fhPbpMatchCtx', 'fhSheetPbpHtml', 'fhSheetPbpHtmlMa2', 'fhSheetTone', 'loadPbpShard', 'pbpStampIntegrity'].map(slice).join('\n')}
+    let _fhSheetToneNow = null;   // the sheet's tone: null = the shared sheet; 'ma2' = the Match analysis copy (rebuild 2026-11-23)
     ${konst('FH_MONO')}${konst('FH_DASHC')}${konst('PBP_LOST_TAG')}
     const PBP_BALL = '';
-    return { loadPbpShard, buildPointByPointHtml, fhPbpSetModel, fhPbpMatchCtx, fhSheetPbpHtml };
+    return { loadPbpShard, buildPointByPointHtml, fhPbpSetModel, fhPbpMatchCtx, fhSheetPbpHtml, tone(t){ _fhSheetToneNow = t; } };
   `)(integrityWindow().PbpIntegrity, fetch, { warn: (...a) => warned.push(a.join(' ')), log() {} });
 }
 const text = h => h.replace(/<[^>]*>/g, ' ').replace(/&#39;/g, "'").replace(/\s+/g, ' ').trim();
@@ -136,9 +137,14 @@ check('page · Match Stats sheet and the class-based log draw every stored point
   const ctx = pg.fhPbpMatchCtx(sh, 3);
   const sheet = sh.sets.map(s => pg.fhSheetPbpHtml(pg.fhPbpSetModel(s, ctx[s.set]))).join('');
   const classic = sh.sets.map(s => pg.buildPointByPointHtml({ p1: sh.p1, p2: sh.p2 }, sh, s.set)).join('');
+  pg.tone('ma2');   // the Match analysis copy of the sheet (fhSheetPbpHtmlMa2)
+  const ma2 = sh.sets.map(s => pg.fhSheetPbpHtml(pg.fhPbpSetModel(s, ctx[s.set]))).join(''); pg.tone(null);
   const held = pointCount(st.sets);
   assert.ok(held > 300, `fixture too small: ${held}`);
   assert.strictEqual(tokens(sheet), held, 'Match Stats sheet');
+  assert.ok(ma2 !== sheet && /ma2/.test(ma2), 'the ma2 tone draws its own copy');
+  assert.strictEqual(tokens(ma2), held, 'Match analysis (ma2) sheet');
+  assert.ok(!ma2.includes(UNAVAILABLE), 'a dash is drawn (ma2)');
   assert.strictEqual(tokens(classic), held, 'class-based log');
   assert.ok(!sheet.includes(UNAVAILABLE) && !classic.includes(UNAVAILABLE), 'a dash is drawn');
 });

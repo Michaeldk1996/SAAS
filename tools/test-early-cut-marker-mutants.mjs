@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..');
-const FILES = ['bsp-consult-dashboard.html', 'build-database-yield.js', 'settlement.js', 'td-identity.js', 'build-odds-performance.js', 'market-edge-core.js',
+const FILES = ['bsp-consult-dashboard.html', 'match-analysis-v2.js', 'build-database-yield.js', 'settlement.js', 'td-identity.js', 'build-odds-performance.js', 'market-edge-core.js',
   'build-market-edge.js', 'tools/pinarch.py'];
 const MUTANTS = [
   ['tools/pinarch.py', 'the export drops the cut', "            out[-1]['closeCut'] = fc\n", '            pass\n'],
@@ -25,6 +25,9 @@ const MUTANTS = [
   ['bsp-consult-dashboard.html', 'a Market edge early row never reads the join (its own words)', "return (j && j.meta && j.meta.earlyCut && j.meta.earlyCut.hover) || SF_EARLY_HOVER_NO_X;", 'return SF_EARLY_HOVER_NO_X;'],
   ['bsp-consult-dashboard.html', 'the price cell draws only B', "const bm = mark && !dash ? fhPxMark(r) : '';", "const bm = mark && !dash && r && r.book === 'B' ? 'B' : '';"],
   ['bsp-consult-dashboard.html', 'one hMark site left on the B-only rule', 'hTitle: trPxTitle(r), aTitle: trPxTitle(r), hMark: fhPxMark(r),', "hTitle: trPxTitle(r), aTitle: trPxTitle(r), hMark: r.price != null && r.book === 'B' ? 'B' : '',"],
+  ['match-analysis-v2.js', 'the Form row draws only B', "const mark = !wo && typeof fhPxMark === 'function' ? fhPxMark(r) : '';", "const mark = !wo && r.price != null && r.book === 'B' ? 'B' : '';"],
+  ['match-analysis-v2.js', 'the H2H meeting row prints no letter', "(mark ? '<span aria-hidden=\"true\" style=\"position:absolute; top:-3px; right:-8px; font-size:7px; font-weight:700; color:var(--ma2-grey);\">' + mark + '</span>' : '') + '</span>'\n        + '<span title=\"' + esc(fhH2hSrcTitle(r))", "'</span>'\n        + '<span title=\"' + esc(fhH2hSrcTitle(r))"],
+  ['match-analysis-v2.js', 'the Tournament row takes no letter', "wl = r.wo ? 'var(--ma2-quiet)' : r.won ? 'var(--ma2-green)' : 'var(--ma2-red)', mark = typeof fhPxMark === 'function' ? fhPxMark(r) : '';", "wl = r.wo ? 'var(--ma2-quiet)' : r.won ? 'var(--ma2-green)' : 'var(--ma2-red)', mark = '';"],
   ['build-market-edge.js', 'Market edge has no book 9', "  9: ['pinnacle-early', 'Pinnacle (early cut, not a close)'],\n", ''],
 ];
 let caught = 0, bad = 0;

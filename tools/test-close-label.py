@@ -101,8 +101,16 @@ check('our captured Bet365 price: every hover (source title, H2H title, B365 tag
       'cap' in hv and all(x == WANT for x in hv['cap']) and snapshot_ok(WANT), hv)
 check('control: Tennis-Data\'s own Bet365 column keeps its words (outside the rule until ruled)',
       'td' in hv and hv['td'] == ['Bet365 close · Tennis-Data', 'Bet365 closing odds, Pinnacle not available'], hv)
-check('the Overview pop-up and the Head to Head page route a captured Bet365 price to the same line',
-      "priceTip: r.book === 'B' ? (fhB365Approx(r) ? (r.src === 'atb' ? FH_B365_AT_HOVER : r.src === 'teb' ? FH_B365_TE_HOVER : FH_B365_APPROX_HOVER)" in html and "fhB365Approx(r) ? (r.src === 'atb' ? FH_B365_AT_HOVER : r.src === 'teb' ? FH_B365_TE_HOVER : FH_B365_APPROX_HOVER) : FH_B365_HOVER) : " in html)
+check('the Head to Head page routes a captured Bet365 price to the same line',
+      "fhB365Approx(r) ? (r.src === 'atb' ? FH_B365_AT_HOVER : r.src === 'teb' ? FH_B365_TE_HOVER : FH_B365_APPROX_HOVER) : FH_B365_HOVER) : " in html)
+# Match analysis rebuild 2026-11-23: the Overview pop-up is maOvPopV2 (match-analysis-v2.js). Its price hover is
+# fhSrcTitle(r) — the line above — and a Bet365 row gets " (no Pinnacle close for this match)" appended. For a captured /
+# snapshot Bet365 (fhB365Approx) that turns the ruled exact line into another one (founder 2026-10-18: every hover on it
+# reads exactly WANT). RENDERER GAP while it fails.
+v2 = open(os.path.join(ROOT, 'match-analysis-v2.js'), encoding='utf8').read()
+ovp = v2[v2.index('function maOvPopV2('):]; ovp = ovp[:ovp.index('\n  root.maOverviewV2')]
+check('renderer gap: the Overview pop-up hovers a captured Bet365 price with the exact line (nothing appended)',
+      "fhSrcTitle(r) + ' (no Pinnacle close" not in ovp or "fhB365Approx(r)" in ovp, ovp[ovp.find('fhSrcTitle'):][:200])
 WANT_AT = 'Bet365 (approx.) · Bet365 snapshot from api-tennis, no timestamp, not a confirmed close'
 check('api-tennis\'s Bet365 snapshot (book 7, founder brief 2026-10-19): every hover names its source and says "not a confirmed close"',
       'atb' in hv and all(x == WANT_AT for x in hv['atb']) and snapshot_ok(WANT_AT), hv)

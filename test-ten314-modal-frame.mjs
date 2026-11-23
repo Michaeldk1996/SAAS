@@ -73,25 +73,23 @@ test('frame: overlay, modal, header, body grid and menu carry the design FILE va
 // TEN-380 (founder step 3, README §1): the order is Key factors · Odds · Market edge · Form · H2H · Playing style ·
 // Progression · Tournament · Weather · News · Overview · Match Stats; the icons stay the file's (TABS, DF L5306), as the
 // reference rail draws them.
+// 2026-11-23 design (founder lock; STEP1-REPORT "Head to head" label): the H2H item reads "Head to head", same icon, same place.
 const TEN380_ORDER = ['Key factors', 'Odds', 'Market edge', 'Form', 'H2H', 'Playing style', 'Progression', 'Tournament', 'Weather', 'News', 'Overview', 'Match Stats'];
 test('left menu: the 12 tabs in the README §1 order with the file\'s icon paths (TABS, DF L5306)', () => {
   const tabsSrc = DF.slice(DF.indexOf('  const TABS = ['), DF.indexOf('];', DF.indexOf('  const TABS = [')));
   const icon = Object.fromEntries([...tabsSrc.matchAll(/\['([^']+)', '([^']+)'\]/g)].map(x => [x[1], x[2]]));
   assert.equal(Object.keys(icon).length, 12);
-  const df = TEN380_ORDER.map(n => [n, icon[n]]);
+  const df = TEN380_ORDER.map(n => [n === 'H2H' ? 'Head to head' : n, icon[n]]);
   const rail = HTML.slice(HTML.indexOf('<div class="asidenav" id="aTabs">'), HTML.indexOf('asidenav-download', HTML.indexOf('<div class="asidenav" id="aTabs">')));
   const ours = [...rail.matchAll(/<path d="([^"]+)" stroke="currentColor" stroke-width="1\.7"[^>]*><\/path><\/svg><\/span>([^<]+)<\/div>/g)].map(x => [x[2], x[1]]);
   assert.deepEqual(ours, df);
 });
 
-// Mutation: drop the item's onclick, or drop `window.print()` from printAnalysisReport (founder 2026-09-28: D7 reversed —
-// the item keeps the print, in the design's menu style).
-test('Download report: the design\'s menu item calls printAnalysisReport, which prints', () => {
-  const at = HTML.indexOf('<span class="asidenav-download"');
-  assert.ok(at > 0, 'rendered');
-  const tag = HTML.slice(at, HTML.indexOf('</span>', at));
-  assert.ok(tag.includes('onclick="printAnalysisReport()"'), 'the item calls the report');
-  assert.ok(tag.includes('<path d="M12 4v10m0 0l-4-4m4 4l4-4M5 19h14"'), 'the file\'s icon (DF L119)');
+// Mutation: drop `window.print()` from printAnalysisReport (founder 2026-09-28: D7 — the report prints).
+// DROPPED (founder 2026-11-23, design README L21 "Download report was removed from the side list on purpose"; feasibility.md
+// L28): the rail item and its onclick / icon. The report function stays and still prints.
+test('Download report: printAnalysisReport prints; the rail item is gone (founder 2026-11-23)', () => {
+  assert.ok(!HTML.includes('<span class="asidenav-download"'), 'no Download report item in the side list');
   assert.ok(/\n    window\.print\(\);\n/.test(slice('printAnalysisReport')), 'the report prints');
 });
 
@@ -184,6 +182,7 @@ function modalVM(opts = {}) {
     buildOddsSection: () => { log.push('build:odds'); return ''; }, renderOddsSection: () => {}, renderNewsSection: () => log.push('build:news'),
     ensureFormRows: rec('load:form-shards'), fhEnsureH2hData: rec('load:h2h-data'), fhEnsureFormData: rec('load:form-data'), ensureOddsMovement: rec('load:odds-shard'), ensurePsMatrix: rec('load:matrix'),
     ensureOverviewProfiles: rec('load:profiles'), kfEnsureWeather: rec('load:weather-kf'), trHoldLoad: rec('load:event-hold'),
+    _newsTicker: null, loadNewsTicker: rec('load:news-ticker'),   // 2026-11-23: the News tab reads the ticker too
     ensureStyleMeetings: rec('load:style-meetings'), ensureMatchDna: rec('load:dna'), ensureNewsData: rec('load:news'),
     tourxFetchMarket: rec('load:tournament-market'), pgEnsureData: rec('load:progression'), kfEnsureNews: rec('load:news-kf'), kfEnsureMarketEdge: rec('load:market-edge-kf'),
     syncAnalysisLiveBar: () => {}, fhCloseSheet: () => {}, aHeaderOdds: () => ({ p1: '1.54', p2: '2.62' }), aAvatarHtml: () => '', profileLinkAttrs: () => '', openPlayerProfileFromMatch: () => {},

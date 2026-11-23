@@ -13,6 +13,9 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const html = readFileSync(process.env.TEN314_HTML || join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
 const DF = readFileSync(join(HERE, 'design/handoff-ten312-match-analysis/Match Analysis Progression v1.dc.html'), 'utf8').split('\n');
 const README = readFileSync(join(HERE, 'design/handoff-ten312-match-analysis/README.md'), 'utf8');
+// 2026-11-23 rebuild: the tabs draw with match-analysis-v2.js's shared parts (switch track, opened-box shell)
+const v2 = readFileSync(process.env.TEN314_V2 || join(HERE, 'match-analysis-v2.js'), 'utf8');
+const MA2 = (() => { const w = {}; new Function('window', 'escapeHtml', v2)(w, s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')); return w.MA2; })();
 function slice(name) {
   const start = html.indexOf(`\nfunction ${name}(`);
   assert.ok(start > 0, `${name} not found`);
@@ -29,8 +32,8 @@ function constSrc(name) {
 }
 const S = new Function('document', `
   ${['MA_SEG', 'MA_POP', 'MA_ROW_COLS', 'MA_ROW_GAP', 'MA_ROW_CELLS', 'ME_C'].map(constSrc).join('\n')}
-  ${['escapeHtml', 'fhEsc', 'maSeg', 'maPopFrame', 'maPopEscKey', 'maPopNoReplay', 'maMatchRowsHtml', 'maTipHtml', 'fhSheetSeg', 'meSegHtml', 'mePopShell'].map(slice).join('\n')}
-  return { maSeg, maPopFrame, maPopEscKey, maPopNoReplay, maMatchRowsHtml, maTipHtml, fhSheetSeg, meSegHtml, mePopShell };
+  ${['escapeHtml', 'fhEsc', 'maSeg', 'maPopFrame', 'maPopEscKey', 'maPopNoReplay', 'maMatchRowsHtml', 'maTipHtml', 'fhSheetSeg', 'mePopShell'].map(slice).join('\n')}
+  return { maSeg, maPopFrame, maPopEscKey, maPopNoReplay, maMatchRowsHtml, maTipHtml, fhSheetSeg, mePopShell };
 `);
 const api = doc => S(doc || { querySelectorAll: () => [] });
 const U = api();
@@ -86,7 +89,9 @@ test('adopted: the stats sheet scope + point-by-point tabs and Market edge\'s vi
   assert.match(U.fhSheetSeg([{ label: 'Match', on: true, onclick: 'a()' }]), /class="ma-seg" data-ma-seg="sheet" style="display:flex; width:max-content; margin:0 auto;/);
   assert.match(U.fhSheetSeg([{ label: 'Set 1', on: true, onclick: 'a()' }], 'pbp'), /data-ma-seg="pbp"/);
   assert.match(slice('fhSheetRender'), /fhSheetPbpSet\(\$\{n\},'\$\{S\.slot \|\| 'pop'\}'\)` \}\)\), 'pbp'\)/, 'the pbp set tabs ask for the pbp geometry');
-  assert.match(U.meSegHtml([{ label: 'Career', on: true, onclick: 'b()' }]), /data-ma-seg="me"/);
+  // 2026-11-23 rebuild: Market edge's view / scope segs are the design's one switch track (MA2.track), meSegHtml is gone
+  assert.ok(!/\nfunction meSegHtml\(/.test(html), 'no Market edge seg markup of its own');
+  assert.match(v2, /const scopeTrack = S => track\(SCOPES\.map/, 'Market edge scope = the shared track');
   assert.ok(U.fhSheetSeg([{ label: '<b>', on: false, onclick: 'a()' }]).includes('&lt;b&gt;'), 'sheet labels stay escaped');
 });
 
@@ -247,7 +252,8 @@ test('match rows: the Form geometry = options on the same renderer', () => {
   assert.deepEqual([pad(f, 'ma-rows-head'), pad(f, 'ma-rows-group')], ['8px 14px 7px', '11px 14px 5px']);
   assert.match(f, /style="transition:opacity \.12s; padding:0 8px;"><div class="seg ma-row"/);
   assert.ok(!/padding:0 8px;/.test(t), 'the Tournament rows are not wrapped');
-  assert.match(html, /maMatchRowsHtml\(groups, \{ headPad: '10px 14px 8px', groupPad: '11px 14px 5px', inset: 8,/, 'the Form tab passes the reference Form geometry (TEN-380: head 10px 14px 8px)');
+  // DROPPED (2026-11-23 locked design, notes.md "Form"; commit a04e3c264 removed Form's old renderers): the Form tab no
+  // longer draws maMatchRowsHtml rows, so "the Form tab passes the reference Form geometry" has no caller to check.
 });
 
 // DF L1706: the sheet's caption strip keeps its 1px border box. TEN-380 (step 3 reference): the band is --inner with no
@@ -260,15 +266,8 @@ test('sheet caption strip: --inner band, a 1px transparent border (no edge); the
   assert.match(f[0], /font-family:var\(--font-words\); font-size:10\.5px; font-weight:800; letter-spacing:0\.10em; text-transform:uppercase; color:var\(--text-label\);/);
 });
 
-// Review 2026-09-29 (merge onto TEN-330): the Form list's sticky header and its card are one shade, as DF L1101–1102
-// draw them (#0a0d14 both). Mutation: the card back to var(--surface) (the header draws as a lighter band in Night).
-test('Form list: the sticky header and its card share the design shade', () => {
-  const card = /<div class="fh-fcard" style="([^"]*)"/.exec(html);
-  assert.ok(card, 'the Form card');
-  const head = /class="ma-rows-head" style="[^"]*background:\$\{o\.bg \|\| '([^']+)'\}/.exec(html);
-  assert.ok(head, 'the rows header default');
-  assert.equal(decl(card[1]).background, head[1]);
-});
+// DROPPED (2026-11-23 locked design: Form rebuilt in match-analysis-v2.js on the --ma2-* tokens, commit a04e3c264): the
+// "Form list: the sticky header and its card share the design shade" check — .fh-fcard and its sticky head are gone.
 
 // DoD item 8 (founder 2026-09-29): the modal draws ONE tooltip component, the design's `.elotip-pop` (DF L950). The
 // positioned mode (data-aotip: Odds, Weather, Market edge, News counts) creates the same class and carries no styling
@@ -289,6 +288,52 @@ test('one tooltip component: the positioned mode is the shared .elotip-pop, and 
   assert.match(slice('aOddsTipShow'), /\/\^\\s\*<\/\.test\(body\) \? body : `<span style="font-family:'IBM Plex Mono',monospace; font-size:11px;">\$\{body\}<\/span>`/);
   // News arms the shared listener itself (only News opened) — mutation: drop the call from A_TAB_BUILD.news
   assert.match(html, /  news\(m\)\{[\s\S]{0,400}?if \(typeof initAOddsTips === 'function'\) initAOddsTips\(\);/);
-  assert.match(html, /<span class="anews-gcount" tabindex="0" data-aotip="/);
-  assert.ok(!/class="anews-gcount" title=/.test(html));
+  // DROPPED (2026-11-21 locked News tab, notes.md "News"): the per-player group count (.anews-gcount) is gone with the
+  // group headers; the tab's tiles carry no count tooltip.
+});
+
+// ---- 2026-11-23 rebuild: the design's shared parts in match-analysis-v2.js ----
+// Mutation: the picked item loses its lifted tile / edge, or an idle item takes the white text.
+test('MA2.track: the one switch track — picked = lifted + edge, white 700; idle grey 600 on no fill; labels escaped', () => {
+  const h = MA2.track([{ label: 'A', on: true, onclick: 'x()' }, { label: '<b>', on: false, onclick: 'y()' }]);
+  const [tr, on, off] = styles(h);
+  assert.deepEqual([tr.background, tr['border-radius'], tr.padding], ['var(--ma2-track)', '10px', '3px']);
+  assert.deepEqual([on['font-weight'], on.color, on.background, on.border], ['700', 'var(--ma2-text)', 'var(--ma2-lifted)', '1px solid color-mix(in srgb, var(--ma2-white) 14%, transparent)']);
+  assert.deepEqual([off['font-weight'], off.color, off.background, off.border], ['600', 'var(--ma2-grey)', 'transparent', '1px solid transparent']);
+  assert.ok(h.includes('onclick="x()"') && h.includes('&lt;b&gt;'));
+  assert.ok(!/blue/.test(h), 'selection is lift, never blue (foundation)');
+});
+
+// Mutation: the outside-click guard dropped, Close loses its handler, or the box covers the sidebar.
+test('MA2.popShell: the one opened-box shell — outside click closes, an inner click does not; Close closes; starts at the rail', () => {
+  let closed = 0; const close = () => { closed++; };
+  const h = MA2.popShell({ title: 'J. Sinner · priced 1.01 – 1.20', sub: 's', body: '<i>b</i>', onClose: 'close()' });
+  const over = new Function('event', 'close', /class="ma2-pop-ov" onclick="([^"]*)"/.exec(h)[1]);
+  const el = {};
+  over.call(el, { target: el }, close); assert.equal(closed, 1, 'a click on the scrim closes');
+  over.call(el, { target: {} }, close); assert.equal(closed, 1, 'a click inside the box does not');
+  new Function('close', /class="seg ma2-btn"[^>]*onclick="([^"]*)"/.exec(h)[1])(close); assert.equal(closed, 2, 'Close closes');
+  const [o, box] = styles(h);
+  assert.equal(o.inset, '0 0 0 var(--sf-side, 0px)', 'the sidebar is never dimmed (founder R6.5)');
+  assert.equal(o.background, 'var(--ma2-scrim-2)');
+  assert.deepEqual([box.background, box['box-shadow']], ['var(--ma2-card)', 'var(--ma2-shadow-pop)']);
+  assert.ok(h.includes('J. Sinner · priced 1.01 – 1.20') && h.includes('<i>b</i>'));
+});
+
+// DoD item 8 (one pop-up frame): every opened box in the rebuilt tabs is popShell's; no tab draws a scrim of its own.
+// Mutation: a tab builds its own `ma2-pop-ov` overlay.
+test('one opened-box frame: every pop-up in match-analysis-v2.js goes through popShell', () => {
+  assert.equal((v2.match(/ma2-pop-ov/g) || []).length, 1, 'only popShell writes the overlay');
+  assert.ok((v2.match(/return popShell\(\{/g) || []).length >= 5, 'price movement, band, line, Overview matches (+ its loading state)');
+});
+
+// RENDERER GAP (ESC brief 2026-10-21: one Esc closes the topmost layer — an opened box before the modal under it). The
+// 'ma-pop' Esc layer only sees the old `.ma-pop-overlay .ma-pop-x`; popShell draws `.ma2-pop-ov` + `.ma2-btn`, and no
+// layer is registered for it, so Esc on an opened box closes the whole modal. Mutation: (fails until a layer sees it).
+test('Esc: an opened box (popShell) is an Esc layer above the modal', () => {
+  const layers = [...(html + '\n' + v2).matchAll(/\.push\(\{ id: '([^']+)', z: (\d+), isOpen: ([^\n]*)/g)].map(m => ({ id: m[1], z: +m[2], src: m[3] }));
+  const modal = layers.find(l => l.id === 'analysis-modal');
+  const pop = layers.find(l => /ma2-pop/.test(l.src));
+  assert.ok(pop, 'an Esc layer whose isOpen sees .ma2-pop-ov');
+  assert.ok(pop.z > modal.z, 'ranked above the modal');
 });

@@ -409,11 +409,16 @@ test('one style per player: the Blanch pair on Match analysis / Head to Head (pp
   assert.ok(checkOneStyle(mut("|| (prof && prof.name) || null;", '|| null;')), 'mutant: no profile-name stand-in before the standings load');
   assert.ok(checkOneStyle(mut('.some(t => g.startsWith(t) || t.startsWith(g));', '.slice(0, 1).some(t => g.startsWith(t) || t.startsWith(g));')), 'mutant: the key name compared on its first word only (scrambled names)');
   // every caller that holds a key passes it
+  // Match analysis rebuild 2026-11-23: the Playing style tab's own s1 / s2 lookup is gone (the tab reads ps2Record, which
+  // keeps its keyed call); the Progression road box's styleOf moved to match-analysis-v2.js (pgRoadBox) — still keyed.
+  const V2 = readFileSync(join(HERE, 'match-analysis-v2.js'), 'utf8');
   for (const c of ['ppStyleFor(other, idx ? m.p1Key : m.p2Key)', 'ppStyleFor(name, side ? m.p2Key : m.p1Key), opp = ppStyleFor(other, side ? m.p1Key : m.p2Key)',
-    'ppStyleFor(m.p1, m.p1Key), s2 = ppStyleFor(m.p2, m.p2Key)', 'ppStyleFor(p && p.name, p && p.key)', 'styleOf(r.opp, r.oppKey)',
-    'styleOf(opp, k ? m.p1Key : m.p2Key)', 'ppStyleFor(p.full, p.key)', 'pgArchetypeFor(p.name, p.key)'])
+    'ppStyleFor(p && p.name, p && p.key)', 'ppStyleFor(p.full, p.key)', 'pgArchetypeFor(p.name, p.key)'])
     assert.ok(HTML.includes(c), 'a caller lost its key: ' + c);
+  for (const c of ['styleOf(r.opp, r.oppKey)', 'styleOf(opp, k ? m.p1Key : m.p2Key)', 'const styleOf = (name, key) => { const s = ppStyleFor(name, key);'])
+    assert.ok(V2.includes(c), 'a match-analysis-v2.js caller lost its key: ' + c);
   assert.equal((HTML.match(/ppStyleFor\((?![^)]*[Kk]ey)[^)]*\)/g) || []).filter(x => !/ppStyleFor\(name, key\)/.test(x)).length, 0, 'a ppStyleFor call without the key');
+  assert.equal((V2.match(/ppStyleFor\((?![^)]*[Kk]ey)[^)]*\)/g) || []).filter(x => !/ppStyleFor\(name, key\)/.test(x)).length, 0, 'a match-analysis-v2.js ppStyleFor call without the key');
   // this page: Darwin is not counted (checkCounts asserts it on the real fixtures) and the note carries the residual sentence
   const M = model(P, REAL());
   // Founder answer 3 (TEN-408): the residual-bucket sentence only if the classifier still drops misfits into Solid
