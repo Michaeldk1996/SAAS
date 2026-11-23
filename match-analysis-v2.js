@@ -927,6 +927,193 @@
   }
   root.maH2HV2 = maH2HV2;
 
+  // ===================================================================================================
+  // PLAYING STYLE (LOCKED 2026-11-21): Playing style card (radar 1a + comparison list) → Record against each style
+  // (Filters panel: six groups; two player boxes; two match lists). Data: the DNA file (dna-apitennis-ratings.json,
+  // via mdnaRadarFor + its raw nodes), the style-meetings shards (ps2Record), the Database join's prices; filter
+  // attributes: event tier / indoor (psTourMeta), our court-speed class (COURT_CONDITIONS → courtSpeedCategory),
+  // opponent rank + best-of from the Tennis Abstract per-match file (splits-matches, joined on date + opponent + result).
+  const PS_FILT = { rw: 'career', rs: 'all', sp: 'all', lv: 'all', rk: 'all', fm: 'all' };
+  const psPlural = l => /(er|ist|ner)$/i.test(l) ? l + 's' : l + ' players';
+  function psSt(m) { const S = ps2StateFor(m); Object.keys(PS_FILT).forEach(k => { if (S[k] === undefined) S[k] = PS_FILT[k]; }); return S; }
+  function psNode(key, surface, scope) { const rec = typeof _mdna !== 'undefined' && _mdna && _mdna.byKey ? _mdna.byKey[String(key)] : null; const sf = rec && rec.surfaces && rec.surfaces[surface]; return sf ? (sf[scope] || null) : null; }
+  function psDnaCard(m, S) {
+    const D = ps2DnaModel(m, S), surf = D.surface || 'All', WIN = D.W;
+    const tr = track(Object.keys(PS2_WIN).map(k => ({ label: PS2_WIN[k].label, on: S.win === k, onclick: "ps2Set({win:'" + k + "'})" })), { gap: 3, pad: '6px 14px' });
+    const help0 = 'Blue line: ' + m.p1 + '. White line: ' + m.p2 + '. The shape shows where each player stands against the tour on five ratings (percentile). The rows give the raw figures: the line leans toward the better player and the number on it is the difference.';
+    const head = '<div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;"><span style="display:flex; align-items:center; gap:6px 12px; flex-wrap:wrap;"><span style="font-size:18px; font-weight:800; letter-spacing:-0.01em; color:var(--ma2-text);">Playing style</span>'
+      + '<span style="font-size:12.5px; color:var(--ma2-grey); white-space:nowrap;">' + esc((surf === 'All' ? 'All surfaces' : surf) + ' · ' + WIN.label) + '</span>' + tr + '</span>' + help(help0) + '</div>';
+    if (D.loading) return fcard(head + '<span style="font-size:13px; color:var(--ma2-grey);">Loading the playing style ratings…</span>');
+    const CX = 210, CY = 150, RR = 105, ang = i => (-90 + i * 72) * Math.PI / 180;
+    const pt = (i, v) => (CX + RR * v * Math.cos(ang(i))).toFixed(1) + ',' + (CY + RR * v * Math.sin(ang(i))).toFixed(1);
+    const fmtR = (v, dp) => v == null ? DASH : Number(v).toFixed(dp);
+    const shapeA = D.a.d.ok, shapeB = D.b.d.ok;
+    const axes = PS2_AXES.map((ax, i) => { const c = Math.cos(ang(i)), sn = Math.sin(ang(i)), side = i === 1 || i === 4;
+      const lp = (((side ? (c > 0 ? 365 : 55) : CX + (RR + 12) * c) - 55) / 310 * 100).toFixed(2) + '%', tp = ((side ? 52 : CY + (RR + 12) * sn + (sn < -0.9 ? -4 : sn > 0.5 ? 6 : 0)) / 270 * 100).toFixed(2) + '%';
+      const tx = 'translate(' + (Math.abs(c) < 0.2 ? '-50%' : (c > 0) !== side ? '0' : '-100%') + ', ' + (sn < -0.9 ? '-80%' : '-50%') + ')', al = Math.abs(c) < 0.2 ? 'center' : (c > 0) !== side ? 'flex-start' : 'flex-end';
+      const up = ps2UpDashed(WIN, ax), tip = up ? PS2_UP_SINCE_TIP : typeof ps2AxisTip === 'function' ? ps2AxisTip(D, i) : '';
+      return '<span' + (tip ? ' title="' + esc(tip) + '"' : '') + ' style="position:absolute; left:' + lp + '; top:' + tp + '; transform:' + tx + '; display:flex; flex-direction:column; align-items:' + al + '; gap:3px;">'
+        + '<span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey); white-space:nowrap;">' + esc(ax.short || ax.label) + '</span><span style="' + MONO + ' font-size:11.5px; font-weight:700; white-space:nowrap;"><span style="color:var(--ma2-blue);">' + fmtR(D.a.vals[i].raw, ax.dp) + '</span><span style="color:var(--ma2-grey); font-weight:400;"> · </span><span style="color:var(--ma2-text);">' + fmtR(D.b.vals[i].raw, ax.dp) + '</span></span></span>'; }).join('');
+    const poly = (P, ok) => ok ? PS2_AXES.map((ax, i) => pt(i, P.vals[i].pct == null ? 0 : P.vals[i].pct / 100)).join(' ') : null;
+    const dots = (P, ok, a) => ok ? PS2_AXES.map((ax, i) => P.vals[i].pct == null ? '' : (q => '<circle cx="' + q[0] + '" cy="' + q[1] + '" r="3.5" ' + (a ? 'fill="var(--ma2-blue)"' : 'fill="var(--ma2-card)" stroke="var(--ma2-text)" stroke-width="1.5"') + '></circle>')(pt(i, P.vals[i].pct / 100).split(','))).join('') : '';
+    const pA = poly(D.a, shapeA), pB = poly(D.b, shapeB);
+    const svg = '<svg viewBox="55 0 310 270" style="display:block; width:100%; height:auto; overflow:visible;">'
+      + '<circle cx="210" cy="150" r="105" fill="' + W(1.5) + '" stroke="' + W(10) + '" stroke-width="1"></circle>' + [78.75, 52.5, 26.25].map(r => '<circle cx="210" cy="150" r="' + r + '" fill="none" stroke="' + W(6) + '" stroke-width="1" stroke-dasharray="2 4"></circle>').join('')
+      + PS2_AXES.map((ax, i) => '<line x1="210" y1="150" x2="' + (CX + RR * Math.cos(ang(i))).toFixed(1) + '" y2="' + (CY + RR * Math.sin(ang(i))).toFixed(1) + '" stroke="' + W(6) + '" stroke-width="1"></line>').join('')
+      + (pB ? '<polygon points="' + pB + '" fill="color-mix(in srgb, var(--ma2-text) 7%, transparent)" stroke="var(--ma2-text)" stroke-width="1.5" stroke-linejoin="round"></polygon>' : '')
+      + (pA ? '<polygon points="' + pA + '" fill="color-mix(in srgb, var(--ma2-blue) 16%, transparent)" stroke="var(--ma2-blue)" stroke-width="2" stroke-linejoin="round"></polygon>' : '')
+      + dots(D.b, shapeB, false) + dots(D.a, shapeA, true) + '</svg>';
+    const why = [[D.a, shapeA], [D.b, shapeB]].filter(x => !x[1]).map(x => fhSurname(x[0].name) + ': ' + (x[0].d.inPool === false ? 'no rating on file' : 'fewer than ' + MDNA_FLOOR + ' matches ' + WIN.lc + ' on ' + (surf === 'All' ? 'all surfaces' : surf.toLowerCase()) + (x[0].d.matches != null ? ' (' + x[0].d.matches + ')' : '')));
+    // the comparison list: the DNA file's raw figures (rating nodes + their components), same surface and window
+    const nA = psNode(m.p1Key, surf, WIN.scope), nB = psNode(m.p2Key, surf, WIN.scope);
+    const g = (n, path) => { let v = n; for (const k of path) v = v == null ? null : v[k]; return v == null ? null : +v; };
+    const rows = [
+      ['Ratings', 'Elo on ' + (surf === 'All' ? 'all surfaces' : surf.toLowerCase()), D.a.vals[4].raw, D.b.vals[4].raw, 0],
+      ['', 'Dominance ratio', D.a.vals[3].raw, D.b.vals[3].raw, 2], ['', 'Serve rating', D.a.vals[0].raw, D.b.vals[0].raw, 0], ['', 'Return rating', D.a.vals[1].raw, D.b.vals[1].raw, 1],
+      ['', 'Under pressure', D.a.vals[2].raw, D.b.vals[2].raw, 1],
+      ['Serve', '1st serve in', g(nA, ['serve', 'firstInPct']), g(nB, ['serve', 'firstInPct']), 3], ['', '1st serve points won', g(nA, ['serve', 'firstWonPct']), g(nB, ['serve', 'firstWonPct']), 3],
+      ['', '2nd serve points won', g(nA, ['serve', 'secondWonPct']), g(nB, ['serve', 'secondWonPct']), 3], ['', 'Service games held', g(nA, ['serve', 'holdPct']), g(nB, ['serve', 'holdPct']), 3],
+      ['Return', 'Return games won', g(nA, ['return', 'returnGamesWonPct']), g(nB, ['return', 'returnGamesWonPct']), 3]];
+    const fmtC = (v, k) => v == null ? DASH : k === 0 ? String(Math.round(v)) : k === 2 ? v.toFixed(2) : k === 3 ? v.toFixed(1) + '%' : v.toFixed(1);
+    const cmp = rows.map(r => { const x = r[2], y = r[3], both = x != null && y != null, ld = !both || x === y ? 0 : x > y ? 1 : -1, d = both ? Math.abs(x - y) : 0, w = ld ? Math.min(46, 14 + d / Math.max(x, y) * 400) : 0;
+      const lc = ld > 0 ? 'var(--ma2-blue)' : ld < 0 ? 'var(--ma2-text)' : 'var(--ma2-grey)', gap = !both ? DASH : ld ? (r[4] === 0 ? String(Math.round(d)) : r[4] === 2 ? d.toFixed(2) : d.toFixed(1)) : 'Level';
+      const col = (v, me) => v == null ? 'var(--ma2-quiet)' : ld === me ? 'var(--ma2-text)' : 'var(--ma2-grey)';
+      return '<div>' + (r[0] ? '<div style="padding:12px 0 6px; font-size:11.5px; font-weight:600; color:var(--ma2-grey); text-align:center;">' + r[0] + '</div>' : '')
+        + '<div style="display:grid; grid-template-columns:66px minmax(0,1fr) 66px; align-items:center; gap:16px; padding:10px 0; border-top:1px solid ' + W(6) + ';">'
+        + '<span style="' + MONO + ' font-size:16px; font-weight:' + (ld > 0 ? 800 : 500) + '; color:' + col(x, 1) + ';">' + fmtC(x, r[4]) + '</span>'
+        + '<div style="display:flex; flex-direction:column; align-items:center; gap:7px; min-width:0;"><span style="font-size:12.5px; font-weight:600; color:var(--ma2-soft); white-space:nowrap;">' + esc(r[1]) + '</span>'
+        + '<div style="position:relative; width:100%; height:4px; border-radius:2px; background:' + W(7) + ';"><span style="position:absolute; top:0; height:4px; border-radius:2px; left:' + (ld > 0 ? 50 - w : 50) + '%; width:' + w + '%; background:' + lc + ';"></span>'
+        + '<span style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); ' + MONO + ' font-size:10.5px; font-weight:700; color:' + lc + '; background:var(--ma2-lifted); box-shadow:0 0 0 1px ' + W(14) + '; border-radius:6px; padding:0 6px; white-space:nowrap;">' + gap + '</span></div></div>'
+        + '<span style="text-align:right; ' + MONO + ' font-size:16px; font-weight:' + (ld < 0 ? 800 : 500) + '; color:' + col(y, -1) + ';">' + fmtC(y, r[4]) + '</span></div></div>'; }).join('');
+    const names = '<div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:12px; padding:2px 2px 14px;">'
+      + '<div style="display:flex; align-items:center; gap:10px; min-width:0;">' + av(m.p1, m.p1Key, 40, RING_A(2), 11.5) + '<span style="font-size:15px; font-weight:800; letter-spacing:-0.01em; color:var(--ma2-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(m.p1) + '</span></div>'
+      + '<span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey);">vs</span>'
+      + '<div style="display:flex; align-items:center; justify-content:flex-end; gap:10px; min-width:0;"><span style="font-size:15px; font-weight:800; letter-spacing:-0.01em; color:var(--ma2-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(m.p2) + '</span>' + av(m.p2, m.p2Key, 40, RING_B(2), 11.5) + '</div></div>';
+    return fcard(head + '<div style="display:flex; flex-wrap:wrap; gap:18px 32px; align-items:center;">'
+      + '<div style="flex:1 1 340px; min-width:0; max-width:500px; margin:0 auto;"><div style="box-sizing:border-box; padding:8px 10px;"><div style="position:relative; width:100%;">' + axes + svg + '</div></div>'
+      + (why.length ? '<span style="display:block; font-size:11.5px; color:var(--ma2-grey); text-align:center; padding-top:6px;">No shape · ' + esc(why.join(' · ')) + '</span>' : '') + '</div>'
+      + '<div style="flex:1.05 1 330px; min-width:0;">' + names + cmp + '</div></div>');
+  }
+  // one row's filter attributes (cached on the row)
+  function psAttrs(r, tm) {
+    if (r._psA && (r._psA.tm || !tm)) return r._psA;   // recomputed once the Tennis Abstract file lands
+    const meta = typeof psTourMeta === 'function' ? psTourMeta(r.tournament) : null, surf = String(r.surface || '').toLowerCase();
+    const rk = typeof sfEventKey === 'function' ? sfEventKey(r.tournament) : null, cc = rk && typeof COURT_CONDITIONS !== 'undefined' ? COURT_CONDITIONS[rk] : null;
+    const tier = meta && /^(Grand Slam|Masters 1000|ATP 500|ATP 250)$/.test(meta.tier) ? meta.tier : null;
+    const d0 = fhDayNum(r.date), opp = String(r.opponent || '').toLowerCase();
+    const ta = tm ? tm.find(x => String(x.o || '').toLowerCase() === opp && (x.wl === 'W') === !!r.won && (d => d0 != null && d0 - d >= -1 && d0 - d <= 16)(fhDayNum(String(x.d).slice(0, 4) + '-' + String(x.d).slice(4, 6) + '-' + String(x.d).slice(6, 8)))) : null;
+    return (r._psA = { day: d0, surf: surf === 'hard' ? (meta ? (meta.indoor ? 'Indoor hard' : 'Hard') : null) : surf ? surf.charAt(0).toUpperCase() + surf.slice(1) : null,
+      speed: cc && typeof courtSpeedCategory === 'function' ? courtSpeedCategory(cc.speed) : null, tier, rank: ta && ta.orank != null ? +ta.orank : null,
+      bo: ta && ta.bo ? +ta.bo : tier === 'Grand Slam' ? 5 : tier ? 3 : null, joined: !!ta, tm: !!tm });
+  }
+  function psFilter(rows, S, ref, tm) {
+    let miss = 0;
+    const out = rows.filter(r => { const a = psAttrs(r, tm);
+      if (S.rw === 'w52' && !(a.day != null && ref - a.day >= 0 && ref - a.day <= 364)) return false;
+      const need = [[S.rs !== 'all', a.surf, v => v === S.rs], [S.sp !== 'all', a.speed, v => v === S.sp], [S.lv !== 'all', a.tier, v => v === S.lv],
+        [S.rk !== 'all', a.rank, v => v <= +S.rk], [S.fm !== 'all', a.bo, v => v === +S.fm]];
+      for (const [on, v, ok] of need) { if (!on) continue; if (v == null) { miss++; return false; } if (!ok(v)) return false; }
+      return true; });
+    out.miss = miss; return out;
+  }
+  function psRecordCard(m, S) {
+    const ref = fhRefDay(m), tms = [m.p1Key, m.p2Key].map(k => (typeof _splitsMatchesShards !== 'undefined' && _splitsMatchesShards[String(k)]) ? (_splitsMatchesShards[String(k)].matches || null) : null);
+    [m.p1Key, m.p2Key].forEach((k, i) => { if (k != null && typeof loadSplitsMatches === 'function' && !(typeof _splitsMatchesShards !== 'undefined' && String(k) in _splitsMatchesShards)) loadSplitsMatches(k).then(() => ps2Set({})); });
+    const RR = [ps2Record(m, 0), ps2Record(m, 1)];
+    const nF = Object.keys(PS_FILT).filter(k => S[k] !== PS_FILT[k]).length;
+    const grp = (label, key, opts) => '<div style="display:flex; flex-direction:column; align-items:flex-start; gap:8px; min-width:0;"><span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey);">' + label + '</span>'
+      + track(opts.map(o => ({ label: o[1], on: S[key] === o[0], onclick: 'ps2Set({' + key + ":'" + o[0] + "',moreA:false,moreB:false})" })), { gap: 3 }) + '</div>';
+    let missAll = 0;
+    const boxes = [], lists = [];
+    RR.forEach((R, i) => {
+      const name = i ? m.p2 : m.p1, key = i ? m.p2Key : m.p1Key, ring = i ? RING_B(2) : RING_A(2), vs = R.oppLab ? psPlural(R.oppLab) : 'his opponent’s style';
+      const headP = '<div style="display:flex; align-items:center; justify-content:center; gap:12px; min-width:0;">' + av(name, key, 40, ring, 11.5) + '<div style="min-width:0; display:flex; flex-direction:column; gap:2px;"><span style="font-size:15px; font-weight:800; letter-spacing:-0.01em; color:var(--ma2-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(name) + '</span><span style="font-size:12.5px; color:var(--ma2-grey); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">against ' + esc(vs) + '</span></div></div>';
+      const tileP = (l, v, c) => '<div style="display:flex; flex-direction:column; align-items:center; text-align:center; gap:7px; background:var(--ma2-inner); border:1px solid ' + W(6) + '; border-radius:11px; padding:13px 6px 12px;"><span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey);">' + l + '</span><span style="' + MONO + ' font-size:20px; font-weight:700; line-height:1; white-space:nowrap; color:' + (c || 'var(--ma2-white)') + ';">' + v + '</span></div>';
+      let rec = DASH, rate = DASH, rateC = 'var(--ma2-quiet)', od = DASH, oc = 'var(--ma2-grey)', gL = 50, gW = 0, avgTxt, list = [];
+      if (R.state !== 'ready') avgTxt = R.state === 'loading' ? 'Loading career meetings…' : R.self ? fhSurname(name) + '’s playing style is not classified' : 'Playing style not classified';
+      else {
+        const all = psFilter(R.listRows || R.rows, S, ref, tms[i]); missAll += all.miss; list = all;
+        const pl = all.filter(r => !ps2IsWalkover(r)), w = pl.filter(r => r.won).length, n = pl.length;
+        const others = []; const vsAll = (i ? m.p2StyleMeetings : m.p1StyleMeetings) || {};
+        Object.keys(vsAll).forEach(l => { if (l !== R.oppLab) psFilter(vsAll[l] || [], S, ref, tms[i]).forEach(r => { if (!ps2IsWalkover(r)) others.push(r); }); });
+        const ow = others.filter(r => r.won).length, on = others.length;
+        if (!n) avgTxt = 'No matches for these filters';
+        else {
+          rec = w + '–' + (n - w); const g = maGate(n).mode, og = maGate(on).mode;
+          rate = g === 'nopct' ? DASH : Math.round(w / n * 100) + '%'; rateC = g === 'full' ? 'var(--ma2-white)' : 'var(--ma2-grey)';
+          const oR = og === 'nopct' ? null : Math.round(ow / on * 100);
+          if (g !== 'nopct' && oR != null) { const dd = Math.round(w / n * 100) - oR, gw = Math.min(46, Math.abs(dd) / 40 * 46);
+            od = dd === 0 ? '0 pts' : (dd > 0 ? '+' : '−') + Math.abs(dd) + ' pts'; oc = dd > 0 ? 'var(--ma2-green)' : dd < 0 ? 'var(--ma2-red)' : 'var(--ma2-grey)'; gL = dd >= 0 ? 50 : 50 - gw; gW = gw; }
+          avgTxt = oR == null ? (on ? 'Only ' + on + ' matches against other styles' : 'No matches against other styles') : 'He wins ' + oR + '% against all other styles';
+        }
+      }
+      boxes.push('<div style="background:var(--ma2-card); border:1px solid ' + W(6) + '; border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:16px; min-width:0;">' + headP
+        + '<div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.2fr); gap:8px;">' + tileP('Record', rec, rec === DASH ? 'var(--ma2-quiet)' : null) + tileP('Win rate', rate, rateC) + tileP('Vs other styles', od, od === DASH ? 'var(--ma2-quiet)' : oc) + '</div>'
+        + '<div style="display:flex; flex-direction:column; gap:9px;"><span style="position:relative; display:block; height:14px;"><span style="position:absolute; left:0; right:0; top:4px; height:6px; border-radius:3px; background:' + W(7) + ';"></span>'
+        + '<span style="position:absolute; top:4px; height:6px; border-radius:3px; background:' + oc + '; left:' + gL.toFixed(1) + '%; width:' + gW.toFixed(1) + '%;"></span><span style="position:absolute; left:50%; top:0; width:1.5px; margin-left:-0.75px; height:14px; background:var(--ma2-soft);"></span></span>'
+        + '<span style="font-size:12.5px; color:var(--ma2-grey); text-align:center;">' + esc(avgTxt) + '</span></div></div>');
+      lists.push(psList(m, i, R, list, S, vs));
+    });
+    const scope = [S.rw === 'w52' ? 'Last 52 weeks' : 'Career', S.rs === 'all' ? 'all surfaces' : S.rs, S.sp === 'all' ? 'all court speeds' : S.sp.toLowerCase() + ' courts', S.lv === 'all' ? '' : S.lv, S.rk === 'all' ? '' : 'opponents in the top ' + S.rk, S.fm === 'all' ? '' : 'best of ' + S.fm].filter(Boolean).join(' · ');
+    const lines = '<span style="display:flex; flex-direction:column; align-items:center; gap:3px;"><span style="width:14px; height:1.5px; border-radius:1px; background:var(--ma2-soft);"></span><span style="width:10px; height:1.5px; border-radius:1px; background:var(--ma2-soft);"></span><span style="width:6px; height:1.5px; border-radius:1px; background:var(--ma2-soft);"></span></span>';
+    const fbtn = '<span class="seg ma2-btn2" role="button" tabindex="0" onclick="ps2Set({filt:' + !S.filt + '})" title="Filters" style="flex:none; margin-left:auto; display:flex; align-items:center; gap:9px; height:34px; box-sizing:border-box; padding:0 13px; border-radius:9px; border:1px solid ' + W(S.filt ? 22 : 14) + '; background:var(--ma2-lifted); font-size:12.5px; font-weight:600; color:var(--ma2-white); cursor:pointer;">' + lines + 'Filters'
+      + (nF ? '<span style="' + MONO + ' font-size:10.5px; font-weight:700; color:var(--ma2-ground); background:var(--ma2-text); border-radius:6px; padding:1px 6px;">' + nF + '</span>' : '') + '</span>';
+    const sum = (nF ? nF + (nF === 1 ? ' filter set' : ' filters set') + ' · applies to both players' : 'No filters set · every career match') + (missAll ? ' · ' + missAll + (missAll === 1 ? ' match' : ' matches') + ' with no data for a filter left out' : '');
+    const panel = S.filt ? '<div style="display:flex; flex-direction:column; background:var(--ma2-inner); border:1px solid ' + W(6) + '; border-radius:12px;"><div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(400px,100%),1fr)); gap:16px 28px; padding:18px;">'
+      + grp('Window', 'rw', [['w52', 'Last 52 weeks'], ['career', 'Career']]) + grp('Surface', 'rs', [['all', 'All'], ['Hard', 'Hard'], ['Indoor hard', 'Indoor hard'], ['Clay', 'Clay'], ['Grass', 'Grass']])
+      + grp('Court speed', 'sp', [['all', 'All'], ['Slow', 'Slow'], ['Medium', 'Medium'], ['Fast', 'Fast']]) + grp('Tournament level', 'lv', [['all', 'All'], ['Grand Slam', 'Grand Slam'], ['Masters 1000', 'Masters 1000'], ['ATP 500', 'ATP 500'], ['ATP 250', 'ATP 250']])
+      + grp('Opponent ranking', 'rk', [['all', 'All'], ['10', 'Top 10'], ['50', 'Top 50'], ['100', 'Top 100']]) + grp('Format', 'fm', [['all', 'All'], ['3', 'Best of 3'], ['5', 'Best of 5']]) + '</div>'
+      + '<div style="display:flex; align-items:center; flex-wrap:wrap; gap:10px 12px; padding:12px 18px 14px; border-top:1px solid ' + W(6) + ';"><span style="font-size:12.5px; color:var(--ma2-grey);">' + esc(sum) + '</span><span style="margin-left:auto; display:flex; align-items:center; gap:8px;">'
+      + btn('Reset filters', nF ? "ps2Set({rw:'career',rs:'all',sp:'all',lv:'all',rk:'all',fm:'all',moreA:false,moreB:false})" : '', { color: nF ? 'var(--ma2-white)' : 'var(--ma2-grey)' }) + btn('Done', 'ps2Set({filt:false})', { color: 'var(--ma2-white)' }) + '</span></div></div>' : '';
+    return fcard('<div style="display:flex; align-items:center; flex-wrap:wrap; gap:6px 12px;"><span style="font-size:18px; font-weight:800; letter-spacing:-0.01em; color:var(--ma2-text); white-space:nowrap;">Record against each style</span><span style="font-size:12.5px; color:var(--ma2-grey);">' + esc(scope) + '</span>' + fbtn + '</div>'
+      + panel + '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr)); gap:14px; align-items:stretch;">' + boxes.join('') + '</div>'
+      + '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(440px,100%),1fr)); gap:14px; align-items:stretch;">' + lists.join('') + '</div>');
+  }
+  const PS_G = 'display:grid; grid-template-columns:44px minmax(0,0.8fr) minmax(0,1.7fr) 46px 34px 34px 8px; gap:0 8px; align-items:center; padding:9px 20px;';
+  function psList(m, i, R, rows, S, vs) {
+    const name = i ? m.p2 : m.p1, key = i ? m.p2Key : m.p1Key, more = !!S[i ? 'moreB' : 'moreA'];
+    const ready = R.state === 'ready', total = rows.length, vis = more ? rows : rows.slice(0, PS2_ROWS_SHOWN), rest = total - PS2_ROWS_SHOWN;
+    const jst = typeof _sfDbJoinSt !== 'undefined' ? _sfDbJoinSt : null;
+    if (jst == null && typeof sfDbPxLoad === 'function') sfDbPxLoad().then(() => ps2Set({})).catch(() => {});
+    const px = jst === 'ready' && typeof sfDbPxRows === 'function' ? sfDbPxRows(key, name, vis.map(r => ({ date: ps2IsWalkover(r) ? null : r.date, won: !!r.won, round: psRoundAbbr(r.round) || null, opp: r.opponent }))) : vis.map(() => null);
+    const cell = (k, s2) => { if (jst !== 'ready' && jst !== 'failed') return ''; const d = px[k]; return d ? fhOdd(s2 ? d.oppPrice : d.price) : DASH; };
+    let body = '';
+    psGroupMeetings(vis).forEach(gp => {
+      const meta = psTourMeta(gp.tournament), surf = gp.rows[0].surface, sd = surf ? surf.charAt(0).toUpperCase() + surf.slice(1) : '';
+      body += '<div style="display:flex; align-items:baseline; gap:9px; padding:13px 20px 6px; border-top:1px solid ' + W(6) + '; min-width:0;"><span style="font-size:12.5px; font-weight:700; color:var(--ma2-white); white-space:nowrap;">' + esc(gp.tournament) + '</span><span style="font-size:11.5px; color:var(--ma2-grey); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc([gp.year, sd, meta && meta.tier].filter(Boolean).join(' · ')) + '</span></div>';
+      gp.rows.forEach(r => { const k = vis.indexOf(r), wo = ps2IsWalkover(r), x = wo ? null : ps2Meeting(r), c = r.won ? 'var(--ma2-green)' : 'var(--ma2-red)';
+        const opp = typeof fhOppFmt === 'function' ? (n => { const p = String(n || '').trim().split(/\s+/); return p.length > 1 ? p[0][0] + '. ' + p.slice(1).join(' ') : n; })(r.opponent) : r.opponent;
+        const click = wo ? '' : maRowOnclick({ key, name, ek: null, date: r.date, opp: r.opponent, fallback: { date: r.date, tourn: r.tournament, surface: sd || null, round: psRoundAbbr(r.round) || null, won: !!r.won, sets: x.gs.length ? x.gs : null, ret: x.ret,
+          price: px[k] ? px[k].price : null, oppPrice: px[k] ? px[k].oppPrice : null } });
+        body += '<div class="seg ma2-row"' + click + (wo ? '' : ' title="Open the match statistics"') + ' style="' + PS_G + ' cursor:' + (wo ? 'default' : 'pointer') + ';">'
+          + '<span style="' + MONO + ' font-size:11.5px; color:var(--ma2-grey);">' + esc(psFmtMeetDate(r.date)) + (wo ? '<span title="Walkover: not a match played, counted in no record" style="display:block; font-size:10px; font-weight:700;">WO</span>' : '') + '</span>'
+          + '<span title="' + esc(r.opponent) + '" style="font-size:12.5px; font-weight:600; color:var(--ma2-text); overflow-wrap:anywhere; min-width:0;">' + esc(opp) + '</span>'
+          + '<span title="' + esc(wo ? 'Walkover' : x.scores + (x.ret ? ' ret.' : '')) + '" style="' + MONO + ' font-size:11.5px; color:var(--ma2-soft); line-height:1.35;">' + (wo ? '–' : x.scores.split(', ').map((t, j, a) => '<span style="white-space:nowrap;">' + esc(t) + (j < a.length - 1 ? ',' : '') + '</span>').join(' ') + (x.ret ? ' ret.' : '')) + '</span>'
+          + '<span style="justify-self:center; ' + MONO + ' font-size:11.5px; font-weight:700; color:' + (wo ? 'var(--ma2-quiet)' : c) + '; background:var(--ma2-lifted); border:1px solid ' + W(14) + '; border-radius:6px; padding:1px 7px; white-space:nowrap;">' + (wo ? '–' : x.pS + '–' + x.oS) + '</span>'
+          + '<span' + (!wo && px[k] && typeof fhSrcTitle === 'function' ? ' title="' + esc(fhSrcTitle(px[k])) + '"' : '') + ' style="' + MONO + ' font-size:11.5px; color:var(--ma2-text); text-align:right;">' + (wo ? DASH : cell(k, false)) + '</span>'
+          + '<span style="' + MONO + ' font-size:11.5px; color:var(--ma2-grey); text-align:right;">' + (wo ? DASH : cell(k, true)) + '</span>'
+          + '<span style="color:var(--ma2-quiet); font-size:14px; font-weight:700;">' + (wo ? '' : '›') + '</span></div>'; });
+    });
+    const woN = rows.filter(ps2IsWalkover).length;
+    const chipT = !ready ? '' : 'Showing ' + vis.length + ' of ' + total + (woN ? ' · ' + woN + ' w/o' : '');
+    const hd2 = '<div style="' + PS_G + ' border-top:1px solid ' + W(6) + '; font-size:11.5px; font-weight:600; color:var(--ma2-grey);"><span>Date</span><span>Opponent</span><span>Score</span><span style="text-align:center;">Sets</span><span title="His closing price" style="text-align:right;">Price</span><span title="The opponent\'s closing price" style="text-align:right;">Opp.</span><span></span></div>';
+    const empty = !ready ? '<div style="padding:26px 20px; text-align:center; font-size:12.5px; color:var(--ma2-grey); border-top:1px solid ' + W(6) + ';">' + esc(R.state === 'loading' ? 'Loading career meetings…' : 'Playing style not classified') + '</div>'
+      : !total ? '<div style="padding:26px 20px; text-align:center; font-size:12.5px; color:var(--ma2-grey); border-top:1px solid ' + W(6) + ';">No matches for these filters.</div>' : '';
+    const ml = rest > 0 ? (more ? 'Show fewer' : 'Show ' + rest + ' more matches') : 'All matches shown';
+    return '<div style="background:var(--ma2-card); border:1px solid ' + W(6) + '; border-radius:12px; overflow:hidden; display:flex; flex-direction:column; min-width:0;">'
+      + '<div style="display:flex; align-items:center; gap:12px; padding:18px 20px 16px; min-width:0;">' + av(name, key, 40, i ? RING_B(2) : RING_A(2), 11.5)
+      + '<div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;"><span style="font-size:15px; font-weight:800; letter-spacing:-0.01em; color:var(--ma2-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(name) + '</span><span style="font-size:12.5px; color:var(--ma2-grey); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc((S.rw === 'w52' ? 'Last 52 weeks' : 'Career') + ' matches against ' + vs) + '</span></div>'
+      + (chipT ? '<span style="flex:none; font-size:11.5px; font-weight:600; color:var(--ma2-soft); background:var(--ma2-lifted); border:1px solid ' + W(14) + '; border-radius:8px; padding:4px 10px; white-space:nowrap;">' + esc(chipT) + '</span>' : '') + '</div>'
+      + hd2 + '<div style="display:flex; flex-direction:column;">' + body + '</div>' + empty
+      + '<div style="margin-top:auto; display:flex; justify-content:center; padding:12px 20px 16px; border-top:1px solid ' + W(6) + ';">' + btn(ml, rest > 0 ? 'ps2Set({' + (i ? 'moreB' : 'moreA') + ':' + !more + '})' : '', { color: rest > 0 ? 'var(--ma2-white)' : 'var(--ma2-grey)' }) + '</div></div>';
+  }
+  function maStyleV2(m) {
+    const S = psSt(m);
+    if (!m._ps2Loaded && !Object.keys((typeof playerStyles !== 'undefined' && playerStyles && playerStyles.byKey) || {}).length) return '<div class="acomingsoon">Loading playing styles…</div>';
+    return '<div style="display:flex; flex-direction:column; gap:14px; max-width:1040px; margin:0 auto; font-size:14px; line-height:normal; color:var(--ma2-text);">' + psDnaCard(m, S) + psRecordCard(m, S) + '</div>';
+  }
+  root.maStyleV2 = maStyleV2;
+
   root.MA2 = { av, SH_A, SH_B, avIni, ini, help, cardHead, card, track, chip, tile, popShell, signed, RING_A, RING_B, W, MONO, DASH, esc };
   root.maOddsV2 = oddsBuild;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -19950,18 +19950,6 @@ function ps2Meeting(r){
   return { pS: p, oS: o, sets: p + o ? p + ' - ' + o : FH_DASHC, scores: sets.map(s => s.txt).join(', '), ret,
     gs: sets.map(s => [s.a, s.b]) };
 }
-// The matchup cell in p1's direction. kind: loading · unclassified · mirror · thin (below the matrix floor) · cell.
-function ps2Edge(s1, s2){
-  const l1 = s1 && s1.archetype_label, l2 = s2 && s2.archetype_label;
-  if (!l1 || !l2) return { kind: 'unclassified', l1, l2 };
-  if (!psMatrixData) return { kind: 'loading', l1, l2 };
-  const i1 = psArchIndex(l1), i2 = psArchIndex(l2);
-  if (i1 < 0 || i2 < 0) return { kind: 'unclassified', l1: i1 < 0 ? null : l1, l2: i2 < 0 ? null : l2 };
-  if (i1 === i2) return { kind: 'mirror', a: 50, b: 50, n: psMirrorN(i1), l1, l2, i1, i2 };
-  const c = psCellFor(i1, i2);
-  if (!c || c.pct == null) return { kind: 'thin', n: c ? c.n : 0, l1, l2, i1, i2 };
-  return { kind: 'cell', a: c.pct, b: 100 - c.pct, n: c.n, l1, l2, i1, i2 };
-}
 // One player's career record vs the OPPONENT's archetype (side 0 = p1), from the meetings shard, walkovers out (N2).
 // avg = the matrix cell in this player's direction (a mirror = 50%, the diagonal's "coin flip on style").
 function ps2Record(m, side){
@@ -19991,122 +19979,7 @@ function ps2Pop(scope, surface, key){
   return { n, words: p.population || '' };
 }
 
-// ---- blocks ----
-// 3 · Style matchup (TEN-380: the reference's order DNA → record → matchup; collapsed by default behind
-// "Leans … · Show matchup ▾", the head carrying the headline and the compact bar). DESIGN GAP G5 (mirror: 50/50, "neither
-// player an edge", no surface tiles), G17 (an unclassified player, or a matrix cell below its floor: the file draws only a
-// rated cross-archetype pairing). Bars: README §7 — A's share --pos, B's --neg, tick --text.
-function ps2MatchupCard(m, s1, s2, open){
-  const C = PS2_C, E = ps2Edge(s1, s2), M = FH_MONO;
-  const side = (name, st, right) => {
-    const lab = st && st.archetype_label;
-    const chip = st && st.variety ? `<span style="${right ? '' : 'align-self:flex-start; '}${M} font-size:10.5px; color:${C.t2}; border:1px solid ${C.line}; border-radius:999px; padding:2px 10px;">+ Variety Player</span>` : '';
-    return `<div style="display:flex; flex-direction:column;${right ? ' align-items:flex-end; text-align:right;' : ''} gap:6px; min-width:0;">
-      <span style="font-size:13px; font-weight:600; color:${C.t3};">${fhEsc(name)}</span>
-      <span class="ps2-arch" style="font-size:22px; font-weight:800; letter-spacing:-0.01em; color:${lab ? C.text : C.t3};">${fhEsc(lab || 'Not yet classified')}</span>${chip}</div>`;
-  };
-  const archHead = `<div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:start; gap:18px;">${side(m.p1, s1, false)}<span style="${M} font-size:11px; color:${C.t4}; padding-top:26px;">vs</span>${side(m.p2, s2, true)}</div>
-    <div style="height:1px; background:${C.edge};"></div>`;
-  const pill = t => `<span class="ps2-lean" style="align-self:center; ${M} font-size:11px; font-weight:700; color:${C.text}; background:${C.pillBg}; border:1px solid ${C.pillLine}; border-radius:999px; padding:4px 12px;">${fhEsc(t)}</span>`;
-  const titleRow = (t, n) => `<div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap;"><span class="ps2-edge-title" style="font-size:14px; font-weight:700; color:${C.text};">${fhEsc(t)}</span><span class="ps2-edge-n" style="${M} font-size:10.5px; color:${C.t3};">${fhEsc(n)}</span></div>`;
-  const bar = (a, h, gap, r, tick) => `<div class="ps2-mbar" style="position:relative; height:${h}px; display:flex; gap:${gap}px;"><span style="width:${a}%; background:${C.up}; border-radius:${r}px 0 0 ${r}px;"></span><span style="flex:1; background:${C.dn}; border-radius:0 ${r}px ${r}px 0;"></span><span style="position:absolute; left:50%; top:-${tick}px; bottom:-${tick}px; width:1.5px; margin-left:-0.75px; background:${C.text};"></span></div>`;
-  let edge, headline, lean = '', compact = '';
-  if (E.kind === 'loading'){ headline = ''; edge = `<span style="font-size:12.5px; color:${C.t3};">Loading the style matrix…</span>`; lean = 'Loading the style matrix…'; }   // DESIGN GAP G17: the tabs' one-line loading pattern
-  else if (E.kind === 'unclassified'){
-    const who = [!E.l1 ? fhSurname(m.p1) : null, !E.l2 ? fhSurname(m.p2) : null].filter(Boolean);
-    headline = 'No style matchup';
-    lean = `${who.join(' and ')} ${who.length > 1 ? 'are' : 'is'} not yet classified`;
-    edge = titleRow('No style matchup', '') + pill(lean);   // DESIGN GAP G17
-  } else if (E.kind === 'thin'){
-    const floor = (psMatrixData && psMatrixData.minSampleN) || 20;
-    headline = `${ps2Plural(E.l1)} vs ${ps2Plural(E.l2)}`;
-    lean = `Below the ${floor}-meeting floor: no win rate quoted`;
-    edge = titleRow(headline, `n=${E.n.toLocaleString('en-US')} tour meetings`) + pill(lean);   // DESIGN GAP G17
-  } else {
-    const mirror = E.kind === 'mirror';
-    const lead = E.a >= E.b ? E.l1 : E.l2, other = E.a >= E.b ? E.l2 : E.l1, pts = Math.abs(E.a - 50);
-    const title = mirror ? `Mirror matchup: both play as ${ps2Plural(E.l1)}` : E.a === E.b ? `${ps2Plural(E.l1)} vs ${ps2Plural(E.l2)}` : `${ps2Plural(lead)} beat ${ps2Plural(other)}`;
-    lean = mirror ? 'Style gives neither player an edge' : pts < 2 ? 'Effectively a coin-flip on style alone' : `Leans +${pts} pts to the ${lead.toLowerCase()}`;
-    headline = title;
-    const nTxt = `n=${E.n.toLocaleString('en-US')} tour meetings${mirror ? ' · same archetype' : ''}`;
-    compact = `<div style="width:100%; max-width:420px; display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:12px;">
-          <span class="ps2-mu-a" style="${M} font-size:14px; font-weight:800; color:${C.text};">${E.a}%</span>${bar(E.a, 6, 2, 3, 4)}<span class="ps2-mu-b" style="${M} font-size:14px; font-weight:800; color:${C.t3};">${E.b}%</span></div>
-        <div style="width:100%; max-width:420px; display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:10px; font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${C.t3};"><span data-aotip="${fhEsc(E.l1)}" style="text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${fhEsc(E.l1)}</span><span style="white-space:nowrap;">${fhEsc(nTxt)}</span><span data-aotip="${fhEsc(E.l2)}" style="text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${fhEsc(E.l2)}</span></div>`;
-    edge = titleRow(title, nTxt)
-      + `<div style="display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:16px;">
-          <span class="ps2-edge-a" style="${M} font-size:30px; font-weight:800; line-height:1; color:${C.text};">${E.a}%</span>
-          ${bar(E.a, 8, 3, 4, 5)}
-          <span class="ps2-edge-b" style="${M} font-size:30px; font-weight:800; line-height:1; color:${C.t3};">${E.b}%</span>
-        </div>
-        <div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:12px; ${M} font-size:10px; letter-spacing:0.06em; color:${C.t3};"><span>${fhEsc(E.l1)}</span><span>50% coin-flip</span><span style="text-align:right;">${fhEsc(E.l2)}</span></div>`
-      + pill(lean);
-  }
-  // Surface tiles (DF L533–540): the style matrix's split on each surface, n = that surface's meetings; below the floor "—".
-  let tiles = '';
-  if (E.kind === 'cell' || E.kind === 'thin'){
-    // today's surface only when the match states one (hard / indoor → Hard); an unknown or carpet surface tags no tile
-    const sk = String(m.surface || '').toLowerCase(), today = /clay/.test(sk) ? 'Clay' : /grass/.test(sk) ? 'Grass' : /hard|indoor/.test(sk) ? 'Hard' : null;
-    tiles = `<div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px;">` + ['Clay', 'Hard', 'Grass'].map(sf => {
-      const c = psSurfaceCellFor(sf.toLowerCase(), E.i1, E.i2), on = sf === today;
-      const a = c && c.pct != null ? c.pct + '%' : FH_DASHC, b = c && c.pct != null ? (100 - c.pct) + '%' : FH_DASHC;
-      return `<div class="ps2-tile" data-ps2-surface="${sf}" style="background:${on ? C.tBg : C.card}; border:1px solid ${on ? C.tBd : C.edge}; border-radius:11px; padding:11px 14px; display:flex; flex-direction:column; gap:6px; min-width:0;">
-        <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px;"><span style="font-size:12.5px; font-weight:700; color:${C.text};">${sf}</span><span style="${M} font-size:9.5px; color:${C.t3};">n=${(c ? c.n : 0).toLocaleString('en-US')}</span></div>
-        <span style="${M} font-size:16px; font-weight:700; color:${C.text}; white-space:nowrap;">${a} <span style="color:${C.t4};">–</span> <span style="color:${C.t3};">${b}</span></span>
-        <span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${C.link};">${on ? "Today's surface" : '&nbsp;'}</span></div>`;
-    }).join('') + '</div>';
-  }
-  const can = E.kind !== 'loading';
-  const toggle = can ? ` <span style="color:${C.t3};">·</span> <span class="ps2-mu-toggle" style="display:inline-flex; align-items:center; gap:6px;">${open ? 'Hide matchup' : 'Show matchup'}<span style="display:inline-block; transform:${open ? 'rotate(180deg)' : 'none'}; font-size:10px; transition:transform .16s;">▾</span></span>` : '';
-  const head = `<div class="${can ? 'seg ' : ''}ps2-mu-head"${can ? ' onclick="ps2Set({mu: !_ps2.mu})"' : ''} style="padding:16px 22px 12px; display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center;${can ? ' cursor:pointer;' : ''}">
-      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center;"><span style="${PS2_CAP}">Style matchup</span>${headline ? `<span class="ps2-mu-title" style="font-size:13px; font-weight:700; color:${C.text};">${fhEsc(headline)}</span>` : ''}</div>
-      ${compact}
-      <span class="ps2-mu-lean" style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; justify-content:center; font-size:12px; font-weight:600; color:${C.text};">${fhEsc(lean)}${toggle}</span></div>`;
-  const body = open && can ? `<div class="ps2-mu-body" style="display:flex; flex-direction:column; gap:16px; padding:16px 22px 20px; border-top:1px solid ${C.line};">${archHead}<div style="display:flex; flex-direction:column; gap:10px;">${edge}</div>${tiles}</div>` : '';
-  return `<div class="ps2-card ps2-matchup" style="background:${C.card}; border:1px solid ${C.edge}; border-radius:16px; display:flex; flex-direction:column; min-width:0;">${head}${body}</div>`;
-}
 
-// 2 · Personal record vs this style (DF L543–574, variant F; TEN-380 the reference): one column per player — the record
-// box, then that player's career meetings vs this style under it, always shown. Panels --card + 1px --edge-6, no blue.
-function ps2PersonalBox(m, side, R){
-  const C = PS2_C, M = FH_MONO, sur = fhSurname(R.name);
-  const title = R.oppLab ? `${sur} vs ${ps2Plural(R.oppLab)}` : `${sur} vs ${fhSurname(R.other)}'s style`;
-  const ready = R.state === 'ready', n = ready ? R.n : 0;
-  const g = maGate(n).mode, shown = g === 'full' || g === 'small', small = g === 'small';
-  const rate = ready && n ? maRateHtml(R.w, n, { nopct: '', note: false, color: C.t2, style: `${M} font-size:12px;` }) : '';
-  const wl = ready && n ? `W${R.w}–L${R.l}` : FH_DASHC;
-  // the tug: a bar whose length is a rate, so it follows the gate (none / 1–4 no fill, 5–9 grey); README §7 wins --pos,
-  // losses --neg, the centre tick --text
-  const tw = ready && shown && R.w > R.l ? (R.w - R.l) / n * 50 : 0, tl = ready && shown && R.l > R.w ? (R.l - R.w) / n * 50 : 0;
-  const tugTxt = !ready || !n ? FH_DASHC : R.w === R.l ? 'Level' : R.w > R.l ? `+${R.w - R.l} ${R.w - R.l === 1 ? 'win' : 'wins'}` : `+${R.l - R.w} ${R.l - R.w === 1 ? 'loss' : 'losses'}`;
-  const tugC = !ready || !n || R.w === R.l ? C.t2 : C.text;
-  const pct = ready && shown ? Math.round(R.w / n * 100) : null;
-  const d = pct != null && R.avg != null ? pct - R.avg : null;
-  const dTxt = d == null ? '' : d === 0 ? '±0' : (d > 0 ? '+' : '−') + Math.abs(d);
-  const dC = d == null ? C.t2 : small ? MA_GREY : d > 0 ? C.up : d < 0 ? C.dn : C.t2;
-  return `<div class="ps2-box" data-ps2-side="${side ? 'b' : 'a'}" style="background:${C.card}; border:1px solid ${C.edge}; border-radius:11px; padding:14px 16px; display:flex; flex-direction:column; gap:10px; min-width:0;">
-      <span style="font-size:13px; font-weight:700; color:${C.text};">${fhEsc(title)}</span>
-      <div style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;"><span class="ps2-wl" style="${M} font-size:23px; font-weight:800; line-height:1; color:${ready && n ? C.text : C.t3};">${wl}</span>${rate}<span class="ps2-n" data-aotip="n counts classified opponents only" style="${M} font-size:10.5px; color:${C.t3};">${ready ? 'n=' + n : ''}</span></div>
-      <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
-        <div style="position:relative; width:100%; height:8px; background:${C.line}; border-radius:4px;">
-          <span style="position:absolute; right:50%; top:0; bottom:0; width:${tw}%; background:${small ? MA_GREY : C.up}; border-radius:4px 0 0 4px;"></span>
-          <span style="position:absolute; left:50%; top:0; bottom:0; width:${tl}%; background:${small ? MA_GREY : C.dn}; border-radius:0 4px 4px 0;"></span>
-          <span style="position:absolute; left:50%; top:-4px; bottom:-4px; width:1.5px; margin-left:-0.75px; background:${C.text};"></span>
-        </div>
-        <div style="width:100%; display:grid; grid-template-columns:1fr auto 1fr; align-items:center; font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${C.t4};"><span>WINS</span><span class="ps2-tug" style="font-size:10.5px; font-weight:700; letter-spacing:0; color:${tugC};">${tugTxt}</span><span style="text-align:right;">LOSSES</span></div>
-      </div>
-      <div style="display:flex; align-items:baseline; gap:8px; ${M} font-size:10.5px; color:${C.t3};"><span class="ps2-avg">Matrix avg ${ready && R.avg != null ? R.avg + '%' : FH_DASHC}</span><span class="ps2-delta" style="font-weight:700; color:${dC};">${dTxt}</span><span style="margin-left:auto;">All surfaces · career</span></div>
-    </div>`;
-}
-// Each column (record box + its career meetings) is as tall as its own content (align-items:start): with the columns
-// stretched, expanding one player's list stretched the other card and pinned its "Show N more" control to the stretched
-// bottom, so that card's extra rows rendered far above the control, off-screen — its click looked dead. Each side's
-// expanded state is its own (moreA / moreB).
-function ps2PersonalCard(m, RR, S){
-  const cols = [0, 1].map(i => `<div class="ps2-col" style="display:flex; flex-direction:column; gap:10px; min-width:0;">${ps2PersonalBox(m, i, RR[i])}${ps2MeetCard(m, i, RR[i], i ? S.moreB : S.moreA)}</div>`).join('');
-  const smallNote = [0, 1].some(i => RR[i].state === 'ready' && maGate(RR[i].n).mode === 'small') ? `<span style="font-size:11px; color:${PS2_C.t4};">Grey = small sample (5–9 meetings).</span>` : '';
-  return `<div class="ps2-card ps2-personal" style="${PS2_CARD}"><span style="${PS2_CAP}">Personal record vs this style</span>
-    <div class="ps2-personal-grid" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr)); gap:14px; align-items:start;">${cols}</div>${smallNote}</div>`;
-}
 
 // Career meetings vs this style (DF L578–617; TEN-380: under each player's record box, always shown): the player's rows,
 // grouped by tournament edition, through the shared rows (DoD item 8). Every row opens the shared sheet (maRowOnclick:
@@ -20114,47 +19987,6 @@ function ps2PersonalCard(m, RR, S){
 // (accepted, Q15). A box with no list (loading, unclassified, no meetings) says why in one line.
 const PS2_MEET_COLS = ['date', 'sq', 'opp', 'rd', 'sets', 'scores', 'h', 'oppPrice'];
 const PS2_MEET_GRID = '42px 10px minmax(0,1fr) 34px 36px minmax(0,1.15fr) 36px 36px';
-function ps2MeetCard(m, side, R, more){
-  const C = PS2_C, M = FH_MONO, key = side ? m.p2Key : m.p1Key;
-  const box = (right, inner) => `<div class="ps2-meet" data-ps2-side="${side ? 'b' : 'a'}" style="background:${C.card}; border:1px solid ${C.edge}; border-radius:11px; padding:14px 18px 8px; display:flex; flex-direction:column; gap:12px; min-width:0;">
-      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;"><span style="${PS2_CAP}">Career meetings</span>${right}</div>${inner}</div>`;
-  if (R.state !== 'ready' || !R.n){
-    const sur = fhSurname(R.name);
-    const hint = R.state === 'loading' ? 'Loading career meetings…' : R.state === 'unclassified' ? (R.self ? `${sur}'s playing style is not classified` : 'Playing style not classified') : 'No career meetings on record';
-    return box('', `<span class="ps2-meet-empty" style="padding:6px 0 10px; font-size:12px; color:${C.t3};">${fhEsc(hint)}</span>`);
-  }
-  const all = R.listRows || R.rows, list = more ? all : all.slice(0, PS2_ROWS_SHOWN);
-  const od = v => (v == null ? FH_DASHC : Number(v).toFixed(2));
-  // founder ruling 2026-10-17 (ruling 5): each meeting's H / A = the master's join (sfDbPxRows: Pinnacle closing, else
-  // Bet365 closing, per match, the hover's source with it) — never the shard's oddsSelf / oddsOpp. Join still loading = a
-  // blank cell (no price yet, never another); failed or no row = a dash (fix 4).
-  const jst = typeof _sfDbJoinSt !== 'undefined' ? _sfDbJoinSt : null;
-  const px = jst === 'ready' && typeof sfDbPxRows === 'function'
-    ? sfDbPxRows(key, R.name, list.map(r => ({ date: ps2IsWalkover(r) ? null : r.date, won: !!r.won, round: psRoundAbbr(r.round) || null, opp: r.opponent }))) : list.map(() => null);
-  const pxOf = new Map(list.map((r, i) => [r, px[i]]));
-  const cell = (r, side2) => { if (jst !== 'ready' && jst !== 'failed') return ''; const d = pxOf.get(r); return d ? od(side2 ? d.oppPrice : d.price) : FH_DASHC; };
-  const groups = psGroupMeetings(list).map(g => {
-    const meta = psTourMeta(g.tournament), surf = g.rows[0].surface;
-    const sd = surf ? surf.charAt(0).toUpperCase() + surf.slice(1) : '';
-    return { title: g.tournament, meta: [sd, meta && meta.tier].filter(Boolean).join(' · '), rows: g.rows.map(r => {
-      if (ps2IsWalkover(r)) return { date: psFmtMeetDate(r.date), dateSub: 'WO', dateSubTitle: 'Walkover: not a match played, counted in no record',
-        won: !!r.won, opp: r.opponent, rd: psRoundAbbr(r.round) || FH_DASHC, sets: FH_DASHC, setsColor: 'var(--text-label)', scores: FH_DASHC,
-        scoresColor: 'var(--text-label)', h: FH_DASHC, oppPrice: FH_DASHC, attrs: ` data-ps2-row="${side ? 'b' : 'a'}" data-ps2-wo="1"` };
-      const x = ps2Meeting(r);
-      return { date: psFmtMeetDate(r.date), won: !!r.won, opp: r.opponent, rd: psRoundAbbr(r.round) || FH_DASHC, sets: x.sets, scores: x.scores, scoresTitle: x.scores + (x.ret ? ' ret.' : ''), ret: x.ret, scoresColor: 'var(--text-label)',
-        h: cell(r, false), oppPrice: cell(r, true), hTitle: pxOf.get(r) && typeof fhSrcTitle === 'function' ? fhSrcTitle(pxOf.get(r)) : undefined, attrs: ` data-ps2-row="${side ? 'b' : 'a'}"`,
-        click: maRowOnclick({ key, name: R.name, ek: null, date: r.date, opp: r.opponent,
-          fallback: { date: r.date, tourn: r.tournament, surface: sd || null, round: psRoundAbbr(r.round) || null, won: !!r.won, sets: x.gs.length ? x.gs : null, ret: x.ret,
-            price: pxOf.get(r) ? pxOf.get(r).price : null, oppPrice: pxOf.get(r) ? pxOf.get(r).oppPrice : null } }) };
-    }) };
-  });
-  const rest = all.length - PS2_ROWS_SHOWN;
-  const moreCtl = rest > 0 ? `<span class="seg ps2-more" onclick="ps2Set({${side ? 'moreB' : 'moreA'}: !_ps2.${side ? 'moreB' : 'moreA'}})" style="align-self:center; font-size:12px; font-weight:600; color:${C.text}; cursor:pointer; padding:4px 0 2px;">${more ? 'Show fewer' : `Show ${rest} more ${rest === 1 ? 'match' : 'matches'}`}</span>` : '';   // DESIGN GAP G18
-  const woN = all.filter(ps2IsWalkover).length;
-  return box(`<span class="ps2-showing" style="${M} font-size:10px; color:${C.t3}; white-space:nowrap;">Showing ${list.length} of ${all.length}${woN ? ` · ${woN} walkover${woN === 1 ? '' : 's'}, not counted` : ''}</span>`,
-    `<div style="margin:0 -18px;">${maMatchRowsHtml(groups, { cols: PS2_MEET_COLS, grid: PS2_MEET_GRID, labels: ['Date', '', 'Opponent', 'Rd', 'Sets', 'Scores', 'H', 'A'],
-        headPad: '7px 24px 6px', groupPad: '10px 24px 4px', rowPad: '0 18px', cellPad: '5px 6px', rowLine: false })}</div>${moreCtl}`);
-}
 
 // 4 · Playing style DNA (DF L618–664): seg Last 52 weeks | Since Mar 2024 (D6), the overlaid five-axis radar (true
 // percentiles on the match's surface), the "Show player profile" drop-down. The population and n of every percentile
@@ -20188,88 +20020,8 @@ function ps2AxisTip(D, i){
   const popTxt = pop ? `Rank among ${pop.n} ${pop.words}.` : 'Population not on file.';
   return [head, line(D.a), line(D.b), popTxt].map(fhEsc).join('<br>');
 }
-function ps2DnaCard(m, S){
-  const C = PS2_C, M = FH_MONO, D = ps2DnaModel(m, S);
-  const seg = maSeg('me', Object.keys(PS2_WIN).map(k => ({ label: PS2_WIN[k].label, on: S.win === k, onclick: `ps2Set({win:'${k}'})` })));
-  const CX = 210, CY = 150, RR = 105, ang = i => (-90 + i * 72) * Math.PI / 180;
-  const pt = (i, v) => (CX + RR * v * Math.cos(ang(i))).toFixed(1) + ',' + (CY + RR * v * Math.sin(ang(i))).toFixed(1);
-  // a missing axis is not a zero: its vertex is left out (never a false centre point)
-  const poly = s => (s.d.ok ? s.vals.map((v, i) => (v.pct == null ? null : pt(i, Math.max(0, Math.min(100, v.pct)) / 100))).filter(Boolean).join(' ') : '');
-  const rings = [0.25, 0.5, 0.75, 1].map(r => `<polygon points="${PS2_AXES.map((_, i) => pt(i, r)).join(' ')}" fill="none" stroke="${C.ring}" stroke-width="1"></polygon>`).join('');
-  const spokes = PS2_AXES.map((_, i) => `<line x1="${CX}" y1="${CY}" x2="${(CX + RR * Math.cos(ang(i))).toFixed(1)}" y2="${(CY + RR * Math.sin(ang(i))).toFixed(1)}" stroke="${C.ring}" stroke-width="1"></line>`).join('');
-  const aP = poly(D.a), bP = poly(D.b);
-  const labels = PS2_AXES.map((ax, i) => {
-    const c = Math.cos(ang(i)), sn = Math.sin(ang(i)), mid = Math.abs(c) < 0.2;
-    const lp = ((CX + (RR + 16) * c) / 420 * 100).toFixed(2), tp = ((CY + (RR + 16) * sn + (sn < -0.9 ? -4 : sn > 0.5 ? 6 : 0)) / 300 * 100).toFixed(2);
-    const tx = `translate(${mid ? '-50%' : c > 0 ? '0' : '-100%'}, ${sn < -0.9 ? '-80%' : '-50%'})`;
-    const av = _mdnaFmt(D.a.vals[i].raw, ax.dp), bv = _mdnaFmt(D.b.vals[i].raw, ax.dp);
-    return `<span class="ps2-axis" data-ps2-axis="${ax.key}" tabindex="0" data-aotip="${escapeHtml(ps2AxisTip(D, i))}" style="position:absolute; left:${lp}%; top:${tp}%; transform:${tx}; display:flex; flex-direction:column; align-items:${mid ? 'center' : c > 0 ? 'flex-start' : 'flex-end'}; gap:2px; white-space:nowrap; cursor:default;"><span style="${M} font-size:11px; color:${C.t3};">${fhEsc(ax.label)}</span><span style="${M} font-size:11.5px; font-weight:700; color:${C.A};">${av} <span style="color:${C.t4}; font-weight:400;">·</span> <span style="color:${C.B};">${bv}</span></span></span>`;
-  }).join('');
-  const center = D.loading ? 'Loading DNA…' : !aP && !bP ? 'No shape at the 10-match floor' : '';   // DESIGN GAP G19
-  const svg = `<svg viewBox="0 0 420 300" style="display:block; width:100%; height:auto; overflow:visible;">${rings}${spokes}`
-    + (aP ? `<polygon class="ps2-poly-a" points="${aP}" fill="${C.aFill}" stroke="${C.A}" stroke-width="1.75" stroke-linejoin="round"></polygon>` : '')
-    + (bP ? `<polygon class="ps2-poly-b" points="${bP}" fill="none" stroke="${C.bDash}" stroke-width="1.5" stroke-dasharray="4 3" stroke-linejoin="round"></polygon>` : '')
-    + (center ? `<text x="${CX}" y="${CY + 4}" text-anchor="middle" fill="${C.t3}" font-size="11" font-family="IBM Plex Mono, monospace">${center}</text>` : '') + '</svg>';
-  // DESIGN GAP G19: a player with no shape at the floor (or no rating) — one line under the file's foot.
-  const why = s => (D.loading ? '' : !s.d.inPool ? `${fhSurname(s.name)}: no api-tennis rating on record.` : !s.d.ok ? `${fhSurname(s.name)}: ${s.d.matches || 0} ${D.surface} ${s.d.matches === 1 ? 'match' : 'matches'} ${D.W.lc}, below the ${MDNA_FLOOR}-match floor; not drawn.` : '');
-  const notes = [why(D.a), why(D.b)].filter(Boolean).join(' ');
-  const foot = `<span class="ps2-dna-foot" style="font-size:11px; color:${C.t4}; text-align:center;">Five-axis profile, overlaid · percentile vs the api-tennis field · ${D.W.lc}</span>`
-    + (notes ? `<span class="ps2-dna-note" style="font-size:11px; color:${C.t4}; text-align:center;">${fhEsc(notes)}</span>` : '');
-  let prof = '';
-  if (S.prof){
-    const dl = (v, dp) => (v == null ? { t: '', c: C.t2 } : v === 0 ? { t: '±0', c: C.t2 } : { t: (v > 0 ? '▴' : '▾') + '\u2002' + Math.abs(v).toFixed(dp), c: v > 0 ? C.up : C.dn });
-    const rows = PS2_AXES.map((ax, i) => {
-      const a = D.a.vals[i], b = D.b.vals[i], cur = { t: 'current', c: C.t3 };
-      const x = ax.key === 'elo' ? cur : dl(a.delta, ax.dp), y = ax.key === 'elo' ? cur : dl(b.delta, ax.dp);
-      const w = v => (v.pct == null ? 0 : Math.max(0, Math.min(100, v.pct)));
-      // founder ruling 8 (TEN-380 Q3): the bars split leader / trailer — the higher percentile solid --white-bar, the other
-      // --white-bar-2 (45%), a tie both solid; the figures stay white for both (colour never marks the better stat).
-      const fill = (v, o) => (v.pct != null && o.pct != null && v.pct < o.pct ? 'var(--white-bar-2)' : 'var(--white-bar)');
-      return `<div class="ps2-prow" data-ps2-axis="${ax.key}" style="display:grid; grid-template-columns:minmax(0,1fr) 128px minmax(0,1fr); align-items:center; gap:14px; padding:10px 0; border-top:1px solid ${C.line};">
-        <div style="display:flex; align-items:center; gap:12px; min-width:0;">
-          <span style="display:flex; align-items:baseline; gap:6px; flex:none; min-width:92px; justify-content:flex-end;"><span style="${M} font-size:10px; color:${x.c};">${x.t}</span><span style="${M} font-size:14px; font-weight:700; color:${a.raw == null ? C.t3 : C.A};">${_mdnaFmt(a.raw, ax.dp)}</span></span>
-          <span style="flex:1; height:6px; background:${C.line}; border-radius:3px; display:flex; justify-content:flex-end;"><span class="ps2-bar-a" style="width:${w(a)}%; background:${fill(a, b)}; border-radius:3px;"></span></span>
-        </div>
-        <span tabindex="0" data-aotip="${escapeHtml(ps2AxisTip(D, i))}" style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${C.t3}; text-align:center; cursor:default;">${fhEsc(ax.short || ax.label)}</span>
-        <div style="display:flex; align-items:center; gap:12px; min-width:0;">
-          <span style="flex:1; height:6px; background:${C.line}; border-radius:3px; display:flex;"><span class="ps2-bar-b" style="width:${w(b)}%; background:${fill(b, a)}; border-radius:3px;"></span></span>
-          <span style="display:flex; align-items:baseline; gap:6px; flex:none; min-width:92px;"><span style="${M} font-size:14px; font-weight:700; color:${b.raw == null ? C.t3 : C.B};">${_mdnaFmt(b.raw, ax.dp)}</span><span style="${M} font-size:10px; color:${y.c};">${y.t}</span></span>
-        </div></div>`;
-    }).join('');
-    const note = (D.W.scope === 'last52' ? 'Raw rating with Δ vs 2024–now average' : 'Since Mar 2024 raw rating') + ` · bars = percentile vs the api-tennis field · ${D.W.lc} · ${D.surface.toLowerCase()}`;
-    prof = `<div class="ps2-prof" style="display:flex; flex-direction:column; gap:16px;">
-      <div style="display:grid; grid-template-columns:minmax(0,1fr) 128px minmax(0,1fr); align-items:center; gap:14px;"><span style="font-size:13px; font-weight:700; color:${C.text}; text-align:right;">${fhEsc(m.p1)}</span><span></span><span style="font-size:13px; font-weight:700; color:${C.text};">${fhEsc(m.p2)}</span></div>
-      <div style="display:flex; flex-direction:column;">${rows}</div>
-      <span style="font-size:11px; color:${C.t4}; text-align:center;">${fhEsc(note)}</span></div>`;
-  }
-  return `<div class="ps2-card ps2-dna" style="${PS2_CARD}">
-    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-      <span style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;"><span style="${PS2_CAP}">Playing style DNA</span>${seg}</span>
-      <span style="display:flex; align-items:center; gap:16px; font-size:12px; font-weight:600; color:${C.text};">
-        <span style="display:flex; align-items:center; gap:7px;"><span style="width:14px; height:8px; border-radius:2px; background:${C.aFill}; border:1.5px solid ${C.A};"></span>${fhEsc(m.p1)}</span>
-        <span style="display:flex; align-items:center; gap:7px;"><span style="width:14px; height:0; border-top:1.5px dashed ${C.bDash};"></span>${fhEsc(m.p2)}</span>
-      </span>
-    </div>
-    <div style="display:flex; justify-content:center;"><div style="position:relative; width:100%; max-width:520px;">${labels}${svg}</div></div>
-    ${foot}
-    <div style="height:1px; background:${C.edge}; margin:0 -22px;"></div>
-    <span class="seg ps2-prof-toggle" onclick="ps2Set({prof: !_ps2.prof})" style="align-self:center; display:flex; align-items:center; gap:7px; font-size:12.5px; font-weight:600; color:${C.text}; cursor:pointer; padding:2px 8px;">${S.prof ? 'Hide player profile' : 'Show player profile'}<span style="display:inline-block; transform:${S.prof ? 'rotate(180deg)' : 'none'}; font-size:10px;">▾</span></span>
-    ${prof}</div>`;
-}
 
-function buildStyleSection(m){
-  const S = ps2StateFor(m);
-  // DESIGN GAP G17: the file draws no loading state — the tabs' one-line loading pattern (Form, News G8, Progression)
-  // until the archetypes are in memory (a failed load then reads as "not yet classified", never as loading forever).
-  if (!m._ps2Loaded && !Object.keys((playerStyles && playerStyles.byKey) || {}).length) return `<div class="acomingsoon">Loading playing styles…</div>`;
-  const s1 = ppStyleFor(m.p1, m.p1Key), s2 = ppStyleFor(m.p2, m.p2Key);
-  const RR = [ps2Record(m, 0), ps2Record(m, 1)];
-  initAOddsTips();
-  // TEN-380: the reference's order — DNA, then the personal records with each player's career meetings under them,
-  // then the style matchup collapsed behind "Leans … · Show matchup ▾"; cards 22px apart.
-  return `<div class="ps2-wrap" style="display:flex; flex-direction:column; gap:22px; max-width:1040px; margin:0 auto; line-height:normal; font-family:'Hanken Grotesk',system-ui,sans-serif; color:${PS2_C.text};">
-    ${ps2DnaCard(m, S)}${ps2PersonalCard(m, RR, S)}${ps2MatchupCard(m, s1, s2, !!S.mu)}</div>`;
-}
+function buildStyleSection(m){ return maStyleV2(m); }
 
 // The modal header's two price pills, exactly as printed: an upcoming match shows m.bestOdds' two prices;
 // completed, suspended and live matches show none. Also the Market edge tab's "today's price" (TEN-310:
