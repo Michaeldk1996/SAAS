@@ -116,7 +116,13 @@
    *  before it. `day` is a UTC day number. */
   function inScope(r, scope, refDay) {
     if (r.day == null || !(r.day < refDay)) return false;
+    if (scope === 'l24') return r.day >= l24Start(refDay);
     return scope === 'l52' ? r.day >= refDay - 364 : true;
+  }
+  /** Last 24 months = from the same calendar day two years back (the site's 24-month window, Player Profile). */
+  function l24Start(refDay) {
+    const d = new Date(refDay * 86400000); d.setUTCFullYear(d.getUTCFullYear() - 2);
+    return Math.round(d.getTime() / 86400000);
   }
 
   // ---- aggregates --------------------------------------------------------------------------
@@ -236,8 +242,9 @@
     // Last 52 weeks: the month. A label always names the date that sits under it.
     const ticks = [0, 1, 2, 3, 4, 5].map((i) => {
       const day = d0 + span * i / 5, dt = new Date(Math.round(day) * 86400000);
-      const label = scope === 'l52' ? MON[dt.getUTCMonth()] : String(dt.getUTCFullYear());
-      return { f: i / 5, x: i / 5 * 1000, label, key: dt.getUTCFullYear() * 12 + (scope === 'l52' ? dt.getUTCMonth() : 0) };
+      const mon = scope === 'l52' || scope === 'l24';
+      const label = scope === 'l52' ? MON[dt.getUTCMonth()] : scope === 'l24' ? MON[dt.getUTCMonth()] + ' ' + String(dt.getUTCFullYear()).slice(2) : String(dt.getUTCFullYear());
+      return { f: i / 5, x: i / 5 * 1000, label, key: dt.getUTCFullYear() * 12 + (mon ? dt.getUTCMonth() : 0) };
     });
     // a short range would name the same year (or the same month of the same year) twice: repeats stay blank
     ticks.forEach((t, i) => { if (i && ticks.slice(0, i).some((u) => u.key === t.key)) t.label = ''; });
