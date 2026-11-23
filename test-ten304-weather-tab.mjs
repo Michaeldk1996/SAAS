@@ -125,7 +125,7 @@ test('Chengdu match viewed with TZ=Asia/Shanghai vs TZ=UTC: badge (venue time) a
   assert.equal(out['UTC'].header, 'Chengdu · Quarter-finals · 08:00');
   for (const tz of ['Asia/Shanghai', 'UTC']) {
     assert.equal(out[tz].badge, 'Match 16:00', tz);
-    assert.match(out[tz].athead, /^Sun Sep 27 · 16:00 · /, tz);
+    assert.match(out[tz].athead, /^Sun Sep 27 · 16:00(?: · |$)/, tz);
     assert.equal(out[tz].start, Date.parse('2026-09-27T08:00:00Z'), tz);
   }
   const hm = s => s.slice(-5), at = (hhmm, offH) => Date.parse('2026-09-27T' + hhmm + ':00Z') - offH * 3600e3;
@@ -178,7 +178,7 @@ test('thresholds come from config: changing one flips severity in the render', (
 test('missing match time → badge "MATCH · TBC", header "… · time TBC", dashed tiles', () => {
   const html = render(file(() => ({})), {}, Object.assign({}, M, { time: null }));
   assert.equal(badge(html), 'Match time TBC');
-  assert.match(mscope(html), /^Sun Sep 27 · time TBC · /);
+  assert.match(mscope(html), /^Sun Sep 27 · time TBC(?: · |$)/);
   assert.ok(matchBoxes(html).filter(b => b.name !== 'Court speed').every(b => b.fig === '—'));
 });
 
@@ -227,19 +227,21 @@ test('the ONE shared tooltip: 250 ms delay, hover and keyboard focus, no second 
   }
 });
 
-// RENDERER GAP (founder Q22, modal-weather.md "Each day card keeps its hover tooltip: the shared tooltip, data-aotip"):
-// maWeatherV2's day cards carry no tooltip (the old card's data-aotip listed the day's Max values, the window and the
-// source — wxDayTip / aOddsTipHtml in buildWeatherSection), and the "+N" flag count uses a native title (it was data-aotip).
+// Founder Q22 (modal-weather.md "Each day card keeps its hover tooltip: the shared tooltip, data-aotip"): every day card and
+// the "+N" flag count are keyboard-focusable shared-tooltip targets; the day's hover lists its Max values, window and source.
+// Mutations: the day card's tooltip dropped; "+N" back on a native title.
 test('Weather day cards and "+N" use the ONE shared tooltip (data-aotip + tabindex), listing the day\'s Max values', () => {
   const html = render(file((d, h) => d === '2026-09-27' && h === 16 ? { gusts: 40, feels: 36 } : {})), D = days(html);
   assert.equal(D.length, 7);
   const more = D.find(d => />\+1</.test(d));
   assert.ok(more, 'two flags at the match hour → "+1"');
   for (const d of D) {
-    assert.match(d, /data-aotip="[^"]{20,}"/, 'every day card carries a shared-tooltip body (Q22)');
+    assert.match(d, /^<div [^>]*data-aotip="[^"]{20,}"[^>]* tabindex="0"/, 'every day card carries a shared-tooltip body (Q22) and is focusable');
+    assert.match(d, /data-aotip="[^"]*Hours[^"]*10:00–23:00 venue time[^"]*Open-Meteo/, 'window and source on the hover');
     assert.match(d, /data-aotip="[^"]*Max gusts/, 'its hover lists the day\'s Max values');
   }
   assert.ok(!/<span title="[^"]*"[^>]*>\+1</.test(more), '"+N" on the shared tooltip, not a native title');
+  assert.match(more, /<span tabindex="0" data-aotip="[^"]*Heat — high[^"]*"[^>]*>\+1</, '"+N" names the other flag on the shared tooltip');
 });
 
 // ── review fold-in (TEN-304 Wave B) ─────────────────────────────────────────────────────────────────
@@ -368,9 +370,8 @@ test('completed match: the archived pre-start forecast shows, labelled "forecast
   }
 });
 
-// RENDERER GAP (modal-weather.md "A completed match shows OUR archived pre-start forecast": each archived day says when ITS
-// forecast was fetched — the old day card's tooltip, TP.fetched + wxStamp(d.fetchedMs)). maWeatherV2's day cards and opened
-// day carry no per-day fetch time. Mutation: the match row's fetch time printed for every day.
+// modal-weather.md "A completed match shows OUR archived pre-start forecast": each archived day card's hover says when ITS
+// forecast was fetched (wxStamp(d.fetchedMs)) and labels the values as archived. Mutation: the match row's fetch time on every day.
 test('completed match: each archived day card says when ITS forecast was fetched', () => {
   const f = t => makeFile({ from: '2026-09-25', fetchedAt: t });
   const mk = [{ key: '12166157', startMs: Date.parse('2026-09-27T08:00:00Z') }];
@@ -379,16 +380,16 @@ test('completed match: each archived day card says when ITS forecast was fetched
   assert.match(mscope(html), /Archived forecast · fetched Sep 27, 12:00 · Open-Meteo$/);
   assert.ok(dayOf(html, '2026-09-27').includes('Sep 27, 09:00'), 'the 27th: fetched 01:00Z (before its window)');
   assert.ok(dayOf(html, '2026-09-28').includes('Sep 27, 12:00'), 'the 28th: the later pre-window fetch');
+  assert.ok(dayOf(html, '2026-09-27').includes('archived forecast, not observed'), 'the day hover labels the archive');
 });
 
-// RENDERER GAP (modal-weather.md "Partial read wording: 'No weather concern in the values we have. Missing: {factor list}.'"):
-// maWeatherV2 prints only the chip "No concern in the values we have"; vm.verdict (WX_COPY.verdictPartial with the list) is
-// never rendered (the old verdict line printed it). Mutation: the list loses an unavailable factor / gains an available one.
+// modal-weather.md "Partial read wording: 'No weather concern in the values we have. Missing: {factor list}.'" — the head chip
+// prints vm.verdict on a partial read. Mutation: the list loses an unavailable factor / gains an available one.
 test('partial read: "No weather concern in the values we have. Missing: rain."', () => {
   const html = render(file((d, h) => d === '2026-09-27' && h === 16 ? { rainChance: null } : {}));
-  assert.ok(textOf(html).includes('No weather concern in the values we have. Missing: rain.'), chip(html));
+  assert.equal(chip(html), 'No weather concern in the values we have. Missing: rain.');
   const h2 = render(file((d, h) => d === '2026-09-27' && h === 16 ? { rainChance: null, gusts: null } : {}));
-  assert.ok(textOf(h2).includes('No weather concern in the values we have. Missing: wind, rain.'));
+  assert.equal(chip(h2), 'No weather concern in the values we have. Missing: wind, rain.');
 });
 
 // Mutation: the zone ignores the index entry's tz (falls back to the viewer's zone with no forecast file).
@@ -504,10 +505,9 @@ test('a 6–24 h old forecast keeps its staleness line', () => {
   assert.match(mscope(render(file(() => ({}), { fetchedAt: '2026-09-26T20:00:00Z' }))), / · Forecast updated 8h ago · Open-Meteo$/);
 });
 
-// RENDERER GAP (modal-weather.md "No legend row and no 'Forecast updated' stamp (TEN-380, README §9). A fresh forecast
-// prints no freshness line"): maWeatherV2 prints vm.fresh.text in the At-match-time scope on every forecast, fresh ones too
-// (the old renderer printed wx-fresh only for unavailable / archived / tone 'amber'). Dropped (superseded by the 2026-11-23
-// design, notes.md Weather): the TEN-380 lead-box / tile / FROM TOURNAMENT styling asserts.
+// TEN-380 (README §9): no legend row and no "Forecast updated" stamp on a fresh forecast (only unavailable, archived and
+// 6–24 h stale keep a freshness line). Dropped (superseded by the 2026-11-23 design, notes.md Weather): the TEN-380
+// lead-box / tile / FROM TOURNAMENT styling asserts. Mutation: the fresh stamp printed on every forecast.
 test('TEN-380: no legend row, no "Forecast updated" stamp on a fresh forecast', () => {
   const html = render(file((d, h) => d === '2026-09-27' && h === 16 ? { gusts: 40, wind: 22 } : {}));
   assert.ok(!/legend/.test(JSON.stringify(build({}).WX_COPY || {})), 'the legend copy is deleted, not hidden');
@@ -515,12 +515,17 @@ test('TEN-380: no legend row, no "Forecast updated" stamp on a fresh forecast', 
   assert.ok(!/Forecast updated/.test(textOf(html)), 'no fresh stamp on a 2 h old forecast');
 });
 
-// RENDERER GAP (TEN-380 review item 2, founder 2026-10-04: "Status lines are text only — no dots"; notes.md Weather: the
+// (was a renderer gap: TEN-380 review item 2 "no dots" — now on the founder conflict list, design kept; see below)
 // design's dots are drawn in the grey tones pending founder question 4, which has not superseded the ruling): maWeatherV2
 // draws an 8px round dot in the head chip (chipDot), on every day card's status line and in the opened day's chip.
-test('TEN-380 review: no status dots anywhere on the tab', () => {
+// TEN-380 review item 2 ("no status dots") is on the founder conflict list: the founder's 2026-11-23 design draws them and
+// is kept meanwhile (coordinator 2026-11-23). What still holds is R4: a dot carries no hue — only the grey severity ladder.
+test('status dots as the 2026-11-23 design draws them, in the R4 grey ladder only (never red / amber / green / blue)', () => {
+  const LADDER = new Set(['var(--ma2-text)', 'var(--ma2-soft)', 'var(--ma2-grey)', 'var(--ma2-quiet)']);
+  let n = 0;
   for (const h of [render(file((d, h) => d === '2026-09-27' && h === 16 ? { gusts: 40, wind: 22 } : {})), render(file(() => ({})))])
-    assert.ok(!/width:8px; height:8px; border-radius:50%/.test(h), 'no round status dot on the tab');
+    for (const m of h.matchAll(/width:8px; height:8px; border-radius:50%; background:([^;"]+);/g)) { n++; assert.ok(LADDER.has(m[1].trim()), 'dot colour ' + m[1]); }
+  assert.ok(n > 0, 'the design draws the dots');
 });
 
 // TEN-380 review item 3 + founder review 2 (2026-10-04): the court pace never says "usual"; calm rain and heat → "PLAYS AT
