@@ -1518,6 +1518,113 @@
   }
   root.maWeatherV2 = maWeatherV2;
 
+  // ===================================================================================================
+  // OVERVIEW (LOCKED 2026-11-23): "Level" track → per player: Career card · This season card · Record by season card →
+  // the matches box. Counts = the player profile's own Career record (PlayerProfileV2._internals: careerTierCells,
+  // tierGridCells, rateText, drillScope — founder 2026-10-21); Indoors is its own surface; "Surface not known" shows only
+  // for a player with matches that have no surface on record (founder 2026-11-23).
+  const OV_S = [['clay', 'Clay'], ['hard', 'Hard'], ['indoors', 'Indoors'], ['grass', 'Grass']];
+  const OVL = 'display:grid; grid-template-columns:64px minmax(60px,1fr) 76px 48px 10px; gap:12px; align-items:center;';
+  const enRec = c => c && (c.won + c.lost) ? c.won + '–' + c.lost : DASH;
+  function ovList(i, cells, api, o) {
+    o = o || {}; const barC = i ? 'var(--ma2-text)' : 'var(--ma2-blue)';
+    const rows = o.surfs.map(([k, l]) => { const c = cells ? cells[k] : null, n = c ? c.won + c.lost : 0, g = maGate(n).mode;
+      const pct = n && g !== 'nopct' ? api.rateText(c.won, c.lost) : DASH, w = n && g !== 'nopct' ? Math.max(0, Math.min(100, c.won / n * 100)) : 0;
+      const tick = o.tick && o.tick[k] != null ? '<span title="Career win rate ' + o.tick[k].toFixed(1) + '%" style="position:absolute; left:' + o.tick[k].toFixed(1) + '%; top:-4px; bottom:-4px; width:1px; background:var(--ma2-grey);"></span>' : '';
+      const cid = o.cid ? o.cid(k) : null, can = cid && n > 0 && o.can;
+      return '<div class="' + (o.cid ? 'seg ma2-row' : '') + '"' + (can ? ' role="button" tabindex="0" onclick="ovOpenCell(\'' + cid + '\')"' : '') + (g === 'small' ? ' title="small sample · n=' + n + '"' : '') + ' style="' + OVL + ' padding:8px 10px; margin:0 8px;' + (o.cid ? ' border-radius:8px; background:' + (can && _ov.cell === cid ? 'var(--ma2-lifted)' : 'transparent') + '; cursor:' + (can ? 'pointer' : 'default') + ';' : '') + '">'
+        + '<span style="font-size:12.5px; font-weight:600; color:var(--ma2-text); white-space:nowrap;">' + l + '</span>'
+        + '<span style="position:relative; height:6px; border-radius:3px; background:' + W(7) + ';"><span style="position:absolute; left:0; top:0; bottom:0; border-radius:3px; width:' + w.toFixed(1) + '%; background:' + (g === 'small' ? 'var(--ma2-grey)' : barC) + ';"></span>' + tick + '</span>'
+        + '<span style="' + MONO + ' font-size:12px; color:var(--ma2-grey); white-space:nowrap; text-align:right;">' + enRec(c) + '</span>'
+        + '<span style="' + MONO + ' font-size:12.5px; font-weight:700; color:' + (!n || g === 'nopct' ? 'var(--ma2-quiet)' : g === 'small' ? 'var(--ma2-grey)' : 'var(--ma2-text)') + '; text-align:right;">' + pct + '</span>'
+        + '<span style="font-size:13px; color:var(--ma2-grey); text-align:center;">' + (can ? '›' : '') + '</span></div>'; }).join('');
+    return '<div style="display:flex; flex-direction:column; border-radius:12px; background:var(--ma2-inner); border:1px solid ' + W(6) + '; padding-bottom:8px;">'
+      + '<div style="' + OVL + ' padding:9px 18px; border-bottom:1px solid ' + W(6) + '; margin-bottom:8px; font-size:11.5px; font-weight:600; color:var(--ma2-grey);"><span>Surface</span><span>Win rate</span><span style="text-align:right;">Record</span><span style="text-align:right;">Won</span><span></span></div>' + rows + '</div>';
+  }
+  function ovCol(i, name, pk, rows, real, tier, api) {
+    const cc = real.length ? api.careerTierCells({ careerByYear: real }, tier) : null, cr = cc ? cc.total : null, cn = cr ? cr.won + cr.lost : 0;
+    const resid = cr ? OV_S.reduce((t, [s]) => t - (cc[s] ? cc[s].won + cc[s].lost : 0), cn) : 0;
+    const unk = cc && cc.unknown && cc.unknown.won + cc.unknown.lost > 0 || resid > 0;
+    const surfs = OV_S.concat(unk ? [['unknown', 'Not known']] : []);
+    const g = maGate(cn).mode, pct = cn && g !== 'nopct' ? api.rateText(cr.won, cr.lost) : DASH;
+    const tierW = tier === 'atp' ? 'ATP' : tier === 'chitf' ? 'Challenger & ITF' : 'All levels';
+    const recPair = (rec, rate, big) => '<span style="display:flex; align-items:baseline; gap:10px; ' + MONO + '"><span style="font-size:' + (big ? 26 : 20) + 'px; font-weight:700; line-height:1; color:' + (rec === DASH ? 'var(--ma2-quiet)' : 'var(--ma2-text)') + '; white-space:nowrap;">' + rec + '</span><span style="font-size:' + (big ? 14 : 13) + 'px; color:var(--ma2-grey);">' + rate + '</span></span>';
+    const titleBlock = (t, tip, sub) => '<span style="display:flex; flex-direction:column; gap:5px;"><span style="display:flex; align-items:center; gap:8px;"><span style="font-size:18px; font-weight:800; letter-spacing:-0.01em;">' + t + '</span>' + help(tip) + '</span><span style="font-size:12.5px; color:var(--ma2-grey);">' + esc(sub) + '</span></span>';
+    const row = (l, r) => '<div style="display:flex; align-items:center; justify-content:space-between; gap:12px 16px; flex-wrap:wrap;">' + l + (r || '') + '</div>';
+    const career = fcard(row('<span style="display:flex; align-items:center; gap:12px; min-width:0;">' + av(name, pk, 40, i ? RING_B(1.5) : RING_A(1.5), 12.5)
+      + '<span style="display:flex; flex-direction:column; gap:3px; min-width:0;"><span style="font-size:15px; font-weight:800; color:var(--ma2-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(name) + '</span><span style="font-size:12.5px; color:var(--ma2-grey);">' + esc('Career · ' + cn + (cn === 1 ? ' match' : ' matches')) + '</span></span></span>', recPair(enRec(cr), pct, true))
+      + ovList(i, cc, api, { surfs }));
+    const yr = String(new Date().getFullYear()), sr = real.find(r => String(r.year) === yr) || null, sg = sr ? api.tierGridCells(sr, tier) : null;
+    const st = sg ? sg.total : null, sn = st ? st.won + st.lost : 0, sgm = maGate(sn).mode;
+    const tick = {}; surfs.forEach(([k]) => { const c = cc && cc[k], n = c ? c.won + c.lost : 0; if (n && maGate(n).mode !== 'nopct') tick[k] = c.won / n * 100; });
+    const season = fcard(row(titleBlock('This season', 'Bar = ' + yr + ' win rate. Tick = career win rate on that surface. Pick a surface to open its matches.', yr + ' against his career win rate'), recPair(enRec(st), sn && sgm !== 'nopct' ? api.rateText(st.won, st.lost) : DASH, false))
+      + ovList(i, sg, api, { surfs, tick, cid: k => i + '|season|' + k, can: pk != null && ovListable(sr) }));
+    const cols = [['total', 'Total']].concat(surfs.map(x => [x[0], x[1]]));
+    const G = 'display:grid; grid-template-columns:minmax(72px,1.1fr) repeat(' + (cols.length) + ',minmax(0,1fr)); gap:0 12px; align-items:center;';
+    const cell = (r, k, gcells, bold) => { const c = gcells[k] || null, n = c ? c.won + c.lost : 0, cid = i + '|' + r.year + '|' + k, can = n > 0 && pk != null && ovListable(r), on = can && _ov.cell === cid;
+      const why = n > 0 && pk == null ? OV_NO_KEY : n > 0 && !ovListable(r) ? OV_NO_LIST : !n && tier !== 'all' && r.allTier === false && !r[tier] ? OV_NO_SPLIT : '';
+      return '<span class="' + (can ? 'seg ma2-row' : '') + '"' + (can ? ' role="button" tabindex="0" onclick="ovOpenCell(\'' + cid + '\')"' : '') + (why ? ' title="' + esc(why) + '"' : '') + ' style="' + MONO + ' font-size:12.5px; width:fit-content; border-radius:8px; padding:5px 8px; margin-left:-8px; white-space:nowrap; font-weight:' + (bold ? 700 : 400) + '; color:' + (n || bold ? 'var(--ma2-text)' : 'var(--ma2-quiet)') + '; background:' + (on ? 'var(--ma2-lifted)' : 'transparent') + '; cursor:' + (can ? 'pointer' : 'default') + ';">' + enRec(c) + '</span>'; };
+    const body = rows.length ? rows.map(r => {
+      if (r._placeholder) return '<div style="' + G + ' padding:8px 18px;"><span style="' + MONO + ' font-size:12.5px; color:var(--ma2-quiet);">' + esc(r.year) + '</span><span style="grid-column:2 / -1; font-size:12.5px; color:var(--ma2-quiet);">' + (r._placeholder === 'future' ? 'No matches yet' : 'Not yet on tour') + '</span></div>';
+      const gc = api.tierGridCells(r, tier), atp = r.allTier === false && r.atp ? '<span title="Only ATP-level records are available for this season" style="font-family:\'Hanken Grotesk\',sans-serif; font-size:10.5px; font-weight:700; color:var(--ma2-soft); background:var(--ma2-lifted); border:1px solid ' + W(14) + '; border-radius:5px; padding:0 5px;">ATP</span>' : '';
+      return '<div style="' + G + ' padding:2px 18px;"><span style="' + MONO + ' font-size:12.5px; font-weight:700; color:var(--ma2-text); display:flex; align-items:center; gap:6px;">' + esc(r.year) + atp + '</span>' + cols.map(([k]) => cell(r, k, gc, k === 'total')).join('') + '</div>'; }).join('')
+      : '<div style="padding:8px 18px; font-size:12.5px; color:var(--ma2-quiet);">No career record on file for this player.</div>';
+    const foot = '<div style="' + G + ' padding:12px 18px; margin-top:6px; border-top:1px solid ' + W(12) + ';"><span style="font-size:12.5px; font-weight:700; color:var(--ma2-text);">Career</span>' + cols.map(([k]) => '<span style="' + MONO + ' font-size:12.5px; font-weight:700; color:' + (cc && cc[k] && cc[k].won + cc[k].lost ? 'var(--ma2-text)' : 'var(--ma2-quiet)') + ';">' + enRec(cc ? cc[k] : null) + '</span>').join('') + '</div>';
+    const table = fcard(titleBlock('Record by season', 'Pick a figure to open its matches. Recent seasons include ATP, Challenger and ITF; ATP marks older seasons where only ATP-level records are available.' + (unk ? ' Not known = matches with no surface on record, so every season sums to its total.' : ''), tierW + ' · wins and losses')
+      + '<div style="display:flex; flex-direction:column; border-radius:12px; background:var(--ma2-inner); border:1px solid ' + W(6) + '; overflow:hidden;"><div style="overflow-x:auto;"><div style="min-width:' + (90 + cols.length * 64) + 'px;">'
+      + '<div style="' + G + ' padding:9px 18px; border-bottom:1px solid ' + W(6) + '; margin-bottom:6px; font-size:11.5px; font-weight:600; color:var(--ma2-grey);"><span>Year</span>' + cols.map(c => '<span>' + c[1] + '</span>').join('') + '</div>' + body + foot + '</div></div></div>');
+    return '<div style="display:flex; flex-direction:column; gap:14px; min-width:0;">' + career + season + table + '</div>';
+  }
+  function maOverviewV2(m) {
+    const S = ovStateFor(m), y1 = ovCareerByYear(m.p1Key), y2 = ovCareerByYear(m.p2Key);
+    if ([[m.p1Key, y1], [m.p2Key, y2]].some(([k, y]) => !y && k != null && !_ovProfileSettled.has(String(k)))) return '<div class="acomingsoon">Loading career records…</div>';
+    if (!y1 && !y2) return '<div class="acomingsoon">Year-by-year records need the stats source — not connected for this match.</div>';
+    const api = ovRecApi(); if (!api) return '<div class="acomingsoon">Career records come from the player profile, which is switched off on this page.</div>';
+    const [r1, r2] = alignYearlyPair(y1 || [], y2 || []);
+    [m.p1Key, m.p2Key].forEach(k => { if (k != null) { loadCareerHistory(k); fhLoadCloses(k); } });
+    if (typeof sfDbPxLoad === 'function') sfDbPxLoad();
+    const lvl = '<div style="display:flex; align-items:center; gap:8px 12px; flex-wrap:wrap;"><span style="font-size:12.5px; font-weight:600; color:var(--ma2-grey);">Level</span>' + track(OV_TIERS.map(([t, l]) => ({ label: l, on: S.tier === t, onclick: "setOverviewTier('" + t + "')" })), { gap: 2, pad: '5px 12px' }) + '</div>';
+    return '<div class="ov-pane" style="display:flex; flex-direction:column; gap:14px; width:100%; max-width:1240px; margin:0 auto; font-size:14px; line-height:normal; color:var(--ma2-text);">' + lvl
+      + '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr)); gap:14px; align-items:start;">' + ovCol(0, m.p1, m.p1Key, y1 ? r1 : [], y1 || [], S.tier, api) + ovCol(1, m.p2, m.p2Key, y2 ? r2 : [], y2 || [], S.tier, api) + '</div></div>';
+  }
+  const OVP = '58px 8px minmax(0,1.2fr) minmax(0,1fr) 34px 44px minmax(0,1.1fr) 46px 42px';
+  function maOvPopV2(M) {
+    const surfLbl = M.surf === 'total' ? 'All surfaces' : M.surf === 'unknown' ? 'Surface not known' : (OV_S.find(x => x[0] === M.surf) || [0, M.surf])[1];
+    const tierLbl = M.tier === 'atp' ? 'ATP' : M.tier === 'chitf' ? 'Challenger & ITF' : 'All levels', title = M.name + ' · ' + surfLbl + ' · ' + M.year;
+    const avatar = av(M.name, M.key, 40, M.i ? SH_B() : SH_A(), 12);
+    const helpT = 'Every match behind this record, newest first. Price = his closing price, Opp = the opponent\'s. Click a match for its stats.';
+    if (M.state !== 'ready') return popShell({ onClose: 'ovCloseCell()', title, help: helpT, sub: tierLbl, avatar, body: '<div style="padding:28px 16px; text-align:center; font-size:12.5px; color:var(--ma2-grey);">' + (M.state === 'loading' ? 'Loading matches…' : 'The match list did not load. Close this and open the count again.') + '</div>' });
+    const rows = M.rows, n = rows.length, w = rows.filter(r => r.won).length, C4 = window.MarketEdgeCore;
+    const priced = rows.filter(r => r.price != null && !(C4 && C4.retSettlement && ['void', 'no-sets'].indexOf(C4.retSettlement(r)) >= 0)), np = priced.length;
+    const pl = priced.reduce((a, r) => a + (r.won ? r.price - 1 : -1), 0), avg = np ? priced.reduce((a, r) => a + r.price, 0) / np : null, g = maGate(n).mode, gp = maGate(np).mode;
+    const tiles = '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr)); gap:8px;">'
+      + tile('Record', n ? w + '–' + (n - w) : DASH, n + (n === 1 ? ' match' : ' matches'), { left: true, bg: 'var(--ma2-inner)' })
+      + tile('Win rate', n && g !== 'nopct' ? (w / n * 100).toFixed(1) + '%' : DASH, g === 'small' ? 'small sample · n=' + n : 'Of ' + n, { left: true, bg: 'var(--ma2-inner)', color: g === 'small' ? 'var(--ma2-grey)' : null })
+      + tile('Average price', avg == null ? DASH : avg.toFixed(2), np + ' of ' + n + ' priced', { left: true, bg: 'var(--ma2-inner)' })
+      + '<span title="' + esc('Flat 1% stake at the closing price on ' + np + ' priced of ' + n + ' matches.' + (np ? ' Prices: ' + fhSourceNote(priced) + '.' : '') + ' ' + (C4 ? C4.RET_SETTLE_NOTE : '')) + '" style="display:flex;">'
+      + tile('At flat 1% stake', np && gp !== 'nopct' ? signed(pl, 1) + '%' : DASH, 'Total return', { left: true, bg: 'var(--ma2-inner)', color: !np || gp === 'nopct' ? null : gp === 'small' ? 'var(--ma2-grey)' : pl > 0 ? 'var(--ma2-green)' : pl < 0 ? 'var(--ma2-red)' : null }).replace('<div style="', '<div style="flex:1; ') + '</span></div>';
+    const listed = (M.listed || []).map(d => ({ wo: !!d.wo, unconf: !!d.unconf, date: d.date, opp: d.opp, tourn: d.event, round: d.round, surface: d.surface }));
+    const all = rows.map(r => ({ r })).concat(listed.map(d => ({ d }))).sort((a, b) => String((b.r || b.d).date || '').localeCompare(String((a.r || a.d).date || '')));
+    _ov.rows = {}; rows.forEach(r => { _ov.rows[r.mid] = r; });
+    const GR = 'display:grid; grid-template-columns:' + OVP + '; gap:0 10px; align-items:center;';
+    const body = all.map(x => { if (x.d) { const d = x.d;
+        return '<div style="' + GR + ' padding:8px 18px; border-top:1px solid ' + W(6) + ';"><span style="' + MONO + ' font-size:11.5px; color:var(--ma2-grey);">' + esc(fhDDMM(d.date) + '.') + (d.wo ? '<span style="display:block; font-size:10px; font-weight:700;" title="Walkover: not a match played, counted in no record">WO</span>' : '') + '</span><span></span><span style="font-size:12.5px; font-weight:600; color:var(--ma2-text);">' + esc(d.opp || DASH) + '</span><span style="font-size:12px; color:var(--ma2-grey);">' + esc(d.tourn || DASH) + '</span><span style="' + MONO + ' font-size:11px; color:var(--ma2-grey);">' + esc(d.round || DASH) + '</span><span style="color:var(--ma2-quiet);">–</span><span style="' + MONO + ' font-size:11.5px; color:var(--ma2-grey);">' + (d.unconf ? 'unconfirmed, not counted' : '–') + '</span><span style="text-align:right; color:var(--ma2-quiet);">' + DASH + '</span><span style="text-align:right; color:var(--ma2-quiet);">' + DASH + '</span></div>'; }
+      const r = x.r, c = r.won ? 'var(--ma2-green)' : 'var(--ma2-red)', sc = r.sets ? r.sets.map(q => q[0] + '-' + q[1]).join(', ') + (r.ret ? ' ret.' : '') : DASH;
+      return '<div class="seg ma2-row" role="button" tabindex="0" onclick="ovOpenRow(\'' + r.mid + '\')" title="Open the match stats" style="' + GR + ' padding:8px 18px; border-top:1px solid ' + W(6) + '; background:' + (_ov.sel === r.mid ? 'var(--ma2-lifted)' : 'transparent') + '; cursor:pointer;">'
+        + '<span style="' + MONO + ' font-size:11.5px; color:var(--ma2-grey);">' + esc(fhDDMM(r.date) + '.' + String(r.date).slice(2, 4)) + '</span><span style="width:8px; height:8px; border-radius:50%; background:' + c + ';"></span>'
+        + '<span style="font-size:12.5px; font-weight:600; color:var(--ma2-text); overflow-wrap:anywhere;">' + esc(r.opp || DASH) + '</span><span style="font-size:12px; color:var(--ma2-grey); overflow-wrap:anywhere;">' + esc((r.tourn || DASH) + (M.surf === 'total' && r.surface ? ' · ' + r.surface : '')) + '</span>'
+        + '<span style="' + MONO + ' font-size:11px; color:var(--ma2-grey);">' + esc(r.round || DASH) + '</span>'
+        + '<span style="justify-self:start; ' + MONO + ' font-size:11.5px; font-weight:700; color:' + c + '; background:var(--ma2-lifted); border:1px solid ' + W(14) + '; border-radius:6px; padding:1px 6px; white-space:nowrap;">' + (r.pS != null ? r.pS + '–' + r.oS : DASH) + '</span>'
+        + '<span style="' + MONO + ' font-size:11.5px; color:var(--ma2-soft); line-height:1.35;">' + esc(sc) + '</span>'
+        + '<span title="' + esc(r.book === 'B' ? fhSrcTitle(r) + ' (no Pinnacle close for this match)' : fhSrcTitle(r)) + '" style="' + MONO + ' font-size:12px; font-weight:700; color:' + (r.price == null ? 'var(--ma2-quiet)' : 'var(--ma2-text)') + '; text-align:right;">' + (r.price == null ? DASH : fhOdd(r.price)) + '</span>'
+        + '<span style="' + MONO + ' font-size:12px; color:' + (r.oppPrice == null ? 'var(--ma2-quiet)' : 'var(--ma2-grey)') + '; text-align:right;">' + (r.oppPrice == null ? DASH : fhOdd(r.oppPrice)) + '</span></div>'; }).join('');
+    const list = '<div style="background:var(--ma2-inner); border:1px solid ' + W(6) + '; border-radius:12px; overflow:hidden;"><div style="' + GR + ' padding:9px 18px; font-size:11.5px; font-weight:600; color:var(--ma2-grey);"><span>Date</span><span></span><span>Opponent</span><span>Event</span><span>Rd</span><span>Sets</span><span>Score</span><span style="text-align:right;">Price</span><span style="text-align:right;">Opp</span></div>'
+      + (all.length ? body : '<div style="padding:28px 16px; text-align:center; font-size:12.5px; color:var(--ma2-grey); border-top:1px solid ' + W(6) + ';">No matches on file for this selection.</div>') + '</div>';
+    return popShell({ onClose: 'ovCloseCell()', title, help: helpT, sub: tierLbl + ' · ' + n + (n === 1 ? ' match' : ' matches') + ', newest first', avatar, body: tiles + list });
+  }
+  root.maOverviewV2 = maOverviewV2;
+  root.maOvPopV2 = maOvPopV2;
+
   root.MA2 = { av, SH_A, SH_B, avIni, ini, help, cardHead, card, track, chip, tile, popShell, signed, RING_A, RING_B, W, MONO, DASH, esc };
   root.maOddsV2 = oddsBuild;
 })(typeof window !== 'undefined' ? window : globalThis);
