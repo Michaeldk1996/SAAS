@@ -121,19 +121,24 @@ test('Market edge band row: Won + win bar through the gate — 0 / 3 dash + neut
   assert.match(units(row(7)), /data-ma-gate="small"[^>]*color:var\(--text-label\);">\+1\.2%</);
 });
 
-// RENDERER GAP (D2: n 5–9 greyed + a "small sample" note; the old band pop-up's meRateBox printed .ma-small-note). The
-// 2026-11-23 band box (meBandPopV2) greys Won / Edge / stake at 5–9 but prints no note on its tiles.
-test('Market edge band box: Won / Edge / stake greyed at 5–9 WITH the small-sample note; full at 12, no note', () => {
+// D2 (modal-analysis.md: n 5–9 greyed + a "small sample" note) on the 2026-11-23 band box (meBandPopV2): Won / Edge /
+// stake greyed at 5–9 with the box's "small sample" note under the tiles; full colours and no note at 12; dashes under 5.
+// Mutations: the note dropped; the note at every n; the tiles keep their colour at 5–9.
+test('Market edge band box: Won / Edge / stake greyed at 5–9 with the small-sample note; full at 12, no note', () => {
   const W2 = ma2VM(html, v2, { seeds: ['maRateHtml', 'maRate', 'meSg', 'escapeHtml', 'meBookNote', 'fhOdd', 'fhSrcTitle'], stubs: ['document'], params: { document: DOC },
     win: { MarketEdgeCore: { RET_SETTLE_NOTE: 'x', plCents: () => 0 } }, expose: ['meBandPopV2'] });
   const pop = n => W2.__meBandPopV2({ m: { p1: 'J. Sinner', p2: 'C. Alcaraz', p1Key: 1, p2Key: 2 }, S: { meBand: 'a0', meScope: 'career' } },
     [{ state: 'ready', tb: -1, bands: [{ i: 0, gk: 'fav', label: '1.01 – 1.20', n, w: WINS[n], l: n - WINS[n], won: WINS[n] / n, needs: 0.8, units: 1.2, yield: 0.1, rows: [] }] }, { state: 'ready', bands: [] }]);
   const tile = (h, l) => { const i = h.indexOf('>' + l + '</span>'); return h.slice(i, h.indexOf('</div>', i)); };
+  const tiles = h => h.slice(h.indexOf('>Record</span>'), h.indexOf('>Date</span>'));
+  const figC = (h, l) => /color:([^;"]*)[^>]*>[^<]*<\/span>/.exec(tile(h, l).slice(tile(h, l).indexOf('</span>') + 7))[1];   // the figure, after the label
   for (const l of ['Won', 'Edge', 'At flat 1% stake']) {
-    assert.match(tile(pop(7), l), /color:var\(--ma2-grey\)/, `${l}: greyed at n 7`);
-    assert.match(tile(pop(7), l), /small sample/, `${l}: the small-sample note at n 7`);
-    assert.ok(!/small sample/.test(tile(pop(12), l)), `${l}: no note at n 12`);
+    assert.equal(figC(pop(7), l), 'var(--ma2-grey)', `${l}: greyed at n 7`);
+    assert.notEqual(figC(pop(12), l), 'var(--ma2-grey)', `${l}: full colour at n 12`);
   }
+  assert.match(tiles(pop(7)), /small sample[^<]*n=7/, 'n 7: the small-sample note under the tiles');
+  assert.ok(!/small sample/.test(tiles(pop(12))), 'n 12: no note');
+  assert.ok(!/small sample/.test(tiles(pop(3))) && tile(pop(3), 'Won').includes('—'), 'n 3: no rate, no note');
 });
 
 // The Tournament tab's rates (W–L %, sets won, vs market) go through the same gate: test-ten332-tournament.mjs (TEN-332).

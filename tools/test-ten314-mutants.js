@@ -13,10 +13,7 @@ const css = fs.readFileSync(path.join(ROOT, 'tokens.css'), 'utf8');
 const V2 = path.join(ROOT, 'match-analysis-v2.js'), v2 = fs.readFileSync(V2, 'utf8');
 // Checks that lock a still-valid rule the rebuilt renderer breaks (renderer gaps, reported): red on the unmutated page.
 // They are allowed red at baseline and judge no mutant; every OTHER check must be green at baseline.
-const KNOWN_GAPS = [
-  'Esc: an opened box (popShell) is an Esc layer above the modal',
-  'Market edge band box: Won / Edge / stake greyed at 5–9 WITH the small-sample note; full at 12, no note',
-];
+const KNOWN_GAPS = [];   // G8 (Esc on an opened box) and G9 (band box note) fixed in ma-v2 49127571f
 const MUTANTS = [
   ['frame: README max-width 1200', 'font-family:var(--mx-font-ui); max-width:1500px;', 'font-family:var(--mx-font-ui); max-width:1200px;'],
   ['frame: height a max, not fixed', 'max-width:1500px; width:100%; height:88vh;', 'max-width:1500px; width:100%; max-height:88vh;'],
@@ -31,7 +28,7 @@ const MUTANTS = [
   ['menu: the old stroke-2 icon on Form', '<path d="M3 16l5-5 3 3 6-7" stroke="currentColor" stroke-width="1.7"', '<path d="M3 16l5-5 3 3 6-7" stroke="currentColor" stroke-width="2"'],
   // founder 2026-11-23: the Download report item is removed from the side list (design README L21)
   ['report: the Download item put back in the side list', '<div class="asidenav" id="aTabs">', '<div class="asidenav" id="aTabs"><span class="asidenav-download" onclick="printAnalysisReport()"></span>'],
-  ['report: printAnalysisReport no longer prints', '    window.print();\n  });\n}', '  });\n}'],
+  // (D7 2026-11-23: printAnalysisReport is no longer reachable from the box — its print mutant is dropped with the check)
   ['report: unopened tabs are not built first', "    if (t === 'marketedge' || _aBuilt.has(t)) return;", "    return;"],
   ['report: prints without building the unopened tabs', "  const built = typeof aBuildForReport === 'function' ? aBuildForReport() : null;", "  const built = null;"],
   ['report: does not wait for the tab loads', "  const wx = Promise.all([typeof openWeatherTab === 'function' ? openWeatherTab() : null, built]);", "  const wx = Promise.all([typeof openWeatherTab === 'function' ? openWeatherTab() : null]);"],
@@ -102,6 +99,11 @@ const MUTANTS = [
   ['track: the picked item loses its lift', "background:' + (t.on ? 'var(--ma2-lifted)' : 'transparent') + '; ' + (o.inset", "background:transparent; ' + (o.inset", 'v2'],
   ['popShell: every inner click closes', "onclick=\"if(event.target===this){' + o.onClose + '}\"", "onclick=\"' + o.onClose + '\"", 'v2'],
   ['popShell: the box covers the sidebar', "inset:0 0 0 var(--sf-side, 0px); z-index:90; background:var(--ma2-scrim-2)", "inset:0; z-index:90; background:var(--ma2-scrim-2)", 'v2'],
+  ['popShell: loses ma-pop-overlay (the Esc layer cannot see the box)', "class=\"ma2-pop-ov ma-pop-overlay\"", "class=\"ma2-pop-ov\"", 'v2'],
+  ['popShell: Close loses ma-pop-x (Esc cannot close the box)', "class=\"seg ma2-btn ma-pop-x\"", "class=\"seg ma2-btn\"", 'v2'],
+  ['band box: the small-sample note dropped', "(maRate(b.w, b.n, {}).mode === 'small' ?", "(false ?", 'v2'],
+  ['band box: the small-sample note at every n', "(maRate(b.w, b.n, {}).mode === 'small' ?", "(b.n ?", 'v2'],
+  ['band box: the tiles keep their colour at 5–9', "return { t: R.txt, c: R.mode === 'full' ? col : meGrey }; };", "return { t: R.txt, c: col }; };", 'v2'],
   ['popShell: a tab draws its own overlay', "  function maOvPopV2(M) {", "  const OWN_POP = '<div class=\"ma2-pop-ov\">';\n  function maOvPopV2(M) {", 'v2'],
   ['pop: radius 12', "box: 'border-radius:14px; padding:20px 22px 14px; display:flex; flex-direction:column; gap:16px;',", "box: 'border-radius:12px; padding:20px 22px 14px; display:flex; flex-direction:column; gap:16px;',"],
   ['pop: z-index 50', "scrim: 'var(--backdrop)', z: 85,", "scrim: 'var(--backdrop)', z: 50,"],

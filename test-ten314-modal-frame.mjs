@@ -85,12 +85,12 @@ test('left menu: the 12 tabs in the README §1 order with the file\'s icon paths
   assert.deepEqual(ours, df);
 });
 
-// Mutation: drop `window.print()` from printAnalysisReport (founder 2026-09-28: D7 — the report prints).
-// DROPPED (founder 2026-11-23, design README L21 "Download report was removed from the side list on purpose"; feasibility.md
-// L28): the rail item and its onclick / icon. The report function stays and still prints.
-test('Download report: printAnalysisReport prints; the rail item is gone (founder 2026-11-23)', () => {
-  assert.ok(!HTML.includes('<span class="asidenav-download"'), 'no Download report item in the side list');
-  assert.ok(/\n    window\.print\(\);\n/.test(slice('printAnalysisReport')), 'the report prints');
+// D7 (modal-analysis.md, founder 2026-11-23): Download report is REMOVED — the side list has no "Download report" item.
+// DROPPED with it: "printAnalysisReport prints" (D7: no longer reachable from the box). Mutation: the item put back.
+test('Download report: the side list has no Download report item (D7, founder 2026-11-23)', () => {
+  const rail = HTML.slice(HTML.indexOf('<div class="asidenav" id="aTabs">'), HTML.indexOf('</div>\n', HTML.indexOf('<div class="asidenav" id="aTabs">') + 40));
+  assert.ok(!HTML.includes('<span class="asidenav-download"'), 'no Download report item');
+  assert.ok(!/Download report/.test(rail), 'no Download report words in the side list');
 });
 
 // Mutation: aBuildForReport skips unopened tabs (the report prints empty sections), or builds Market edge.

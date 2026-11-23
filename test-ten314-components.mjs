@@ -308,11 +308,11 @@ test('MA2.track: the one switch track — picked = lifted + edge, white 700; idl
 test('MA2.popShell: the one opened-box shell — outside click closes, an inner click does not; Close closes; starts at the rail', () => {
   let closed = 0; const close = () => { closed++; };
   const h = MA2.popShell({ title: 'J. Sinner · priced 1.01 – 1.20', sub: 's', body: '<i>b</i>', onClose: 'close()' });
-  const over = new Function('event', 'close', /class="ma2-pop-ov" onclick="([^"]*)"/.exec(h)[1]);
+  const over = new Function('event', 'close', /class="ma2-pop-ov ma-pop-overlay" onclick="([^"]*)"/.exec(h)[1]);
   const el = {};
   over.call(el, { target: el }, close); assert.equal(closed, 1, 'a click on the scrim closes');
   over.call(el, { target: {} }, close); assert.equal(closed, 1, 'a click inside the box does not');
-  new Function('close', /class="seg ma2-btn"[^>]*onclick="([^"]*)"/.exec(h)[1])(close); assert.equal(closed, 2, 'Close closes');
+  new Function('close', /class="seg ma2-btn ma-pop-x"[^>]*onclick="([^"]*)"/.exec(h)[1])(close); assert.equal(closed, 2, 'Close closes');
   const [o, box] = styles(h);
   assert.equal(o.inset, '0 0 0 var(--sf-side, 0px)', 'the sidebar is never dimmed (founder R6.5)');
   assert.equal(o.background, 'var(--ma2-scrim-2)');
@@ -320,20 +320,36 @@ test('MA2.popShell: the one opened-box shell — outside click closes, an inner 
   assert.ok(h.includes('J. Sinner · priced 1.01 – 1.20') && h.includes('<i>b</i>'));
 });
 
-// DoD item 8 (one pop-up frame): every opened box in the rebuilt tabs is popShell's; no tab draws a scrim of its own.
-// Mutation: a tab builds its own `ma2-pop-ov` overlay.
-test('one opened-box frame: every pop-up in match-analysis-v2.js goes through popShell', () => {
+// DoD item 8 (modal-analysis.md, 2026-11-23 rewrite): ONE shell for every opened box — popShell (match-analysis-v2.js,
+// `ma-pop-overlay` + `ma-pop-x`); no tab draws a scrim of its own; no tab-local pop-up frame left in the dashboard.
+// Mutations: a tab builds its own overlay; popShell loses ma-pop-overlay / ma-pop-x.
+test('DoD item 8: every opened box is the one shell popShell (ma-pop-overlay + ma-pop-x)', () => {
   assert.equal((v2.match(/ma2-pop-ov/g) || []).length, 1, 'only popShell writes the overlay');
   assert.ok((v2.match(/return popShell\(\{/g) || []).length >= 5, 'price movement, band, line, Overview matches (+ its loading state)');
+  const h = MA2.popShell({ title: 't', sub: 's', body: '', onClose: 'c()' });
+  assert.match(h, /^<div class="ma2-pop-ov ma-pop-overlay"/, 'the overlay carries the shared class');
+  assert.equal((h.match(/class="[^"]*\bma-pop-x\b[^"]*"/g) || []).length, 1, 'exactly one close control carries ma-pop-x');
+  assert.ok(!/\nfunction mePopShell\(|\nfunction maPopFrame\(/.test(html) || !/(mePopShell|maPopFrame)\(/.test(v2), 'no tab in the rebuild draws through the old frame');
 });
 
-// RENDERER GAP (ESC brief 2026-10-21: one Esc closes the topmost layer — an opened box before the modal under it). The
-// 'ma-pop' Esc layer only sees the old `.ma-pop-overlay .ma-pop-x`; popShell draws `.ma2-pop-ov` + `.ma2-btn`, and no
-// layer is registered for it, so Esc on an opened box closes the whole modal. Mutation: (fails until a layer sees it).
-test('Esc: an opened box (popShell) is an Esc layer above the modal', () => {
-  const layers = [...(html + '\n' + v2).matchAll(/\.push\(\{ id: '([^']+)', z: (\d+), isOpen: ([^\n]*)/g)].map(m => ({ id: m[1], z: +m[2], src: m[3] }));
-  const modal = layers.find(l => l.id === 'analysis-modal');
-  const pop = layers.find(l => /ma2-pop/.test(l.src));
-  assert.ok(pop, 'an Esc layer whose isOpen sees .ma2-pop-ov');
-  assert.ok(pop.z > modal.z, 'ranked above the modal');
+// DoD item 8 / ESC brief 2026-10-21: Esc on an opened box closes that box, never the modal under it. The 'ma-pop' layer
+// (above 'analysis-modal') sees a popShell box through its own isOpen selector and closes it through maPopEscKey → the
+// topmost box's .ma-pop-x. Executed: the layer's real isOpen and maPopEscKey over a document holding two popShell boxes.
+// Mutations: popShell loses ma-pop-overlay / ma-pop-x; the layer ranked below the modal.
+test('Esc: an opened box (popShell) is the ma-pop layer above the modal; Esc closes the topmost box only', () => {
+  const H = html + '\n' + v2;
+  const layer = /\.push\(\{ id: 'ma-pop', z: (\d+), isOpen: \(\) => !!document\.querySelector\('([^']+)'\)/.exec(H);
+  const modal = /\.push\(\{ id: 'analysis-modal', z: (\d+),/.exec(H);
+  assert.ok(layer && modal, 'both Esc layers registered');
+  assert.ok(+layer[1] > +modal[1], `ma-pop ${layer[1]} above the modal ${modal[1]}`);
+  const [ovSel, xSel] = layer[2].split(/\s+/).map(x => x.replace(/^\./, ''));
+  const box = MA2.popShell({ title: 't', sub: 's', body: '', onClose: 'c()' });
+  const ovCls = /^<div class="([^"]*)"/.exec(box)[1].split(' '), xCls = [...box.matchAll(/class="([^"]*)"/g)].map(m => m[1].split(' ')).filter(c => c.includes(xSel));
+  assert.ok(ovCls.includes(ovSel), `the box overlay matches .${ovSel}`);
+  assert.equal(xCls.length, 1, `the box's Close matches .${xSel}`);
+  const log = [];
+  const frame = id => ({ querySelector: s => (s === '.' + xSel ? { click: () => log.push(id) } : null) });
+  U.maPopEscKey.call(null, { key: 'Escape' });   // nothing open: no throw
+  api({ querySelectorAll: s => (s === '.' + ovSel ? [frame('under'), frame('top')] : []) }).maPopEscKey({ key: 'Escape' });
+  assert.deepEqual(log, ['top'], 'the topmost box closes; the modal stays');
 });
