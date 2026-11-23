@@ -1,19 +1,19 @@
 {
- "generatedAt": "2026-11-23T09:54:08.048Z",
+ "generatedAt": "2026-11-23T11:13:37.263Z",
  "tournaments": [
   {
    "key": "2794",
    "season": "2026",
    "name": "Finals - Turin",
    "file": "news-ticker/2794-2026.json",
-   "items": 365,
+   "items": 366,
    "byType": {
-    "quote": 311,
+    "quote": 312,
     "report": 15,
     "digest": 39
    },
-   "latestTimestamp": "2026-11-23T09:17:02.000Z",
-   "updatedAt": "2026-11-23T09:54:08.048Z"
+   "latestTimestamp": "2026-11-23T10:30:00.000Z",
+   "updatedAt": "2026-11-23T11:13:37.263Z"
   },
   {
    "key": "tour",
@@ -56,6 +56,36 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-1001214de604d7",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": "2382",
+   "player": "A. Zverev",
+   "opponent": "C. Alcaraz",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-23T10:30:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after losing to C. Alcaraz",
+   "eventKey": "12181958",
+   "won": false,
+   "text": "You feel burnt out? You had a four-month vacation, … I know, but you have to speak out sometimes, … I played 98 matches since you were gone,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "TennisUpToDate",
+   "sourceUrl": "https://tennisuptodate.com/atp/zverevs-prior-comments-directed-at-alcaraz-come-back-to-haunt-him-according-to-stubbs-he-wasnt-on-vacation-he-was-injured",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "sourceHash": "c5fbb5a13cd34ae5",
+   "publishedAt": "2026-11-23T11:13:37.263Z",
+   "file": "news-ticker/2794-2026.json"
+  },
   {
    "id": "quote-e96872fc68c010",
    "type": "quote",
@@ -1410,36 +1440,6 @@
    "publishedAt": "2026-11-22T22:15:00.651Z",
    "revisedAt": "2026-11-23T06:15:57.589Z",
    "revision": 1,
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-0bb6832f6ad5c1",
-   "type": "quote",
-   "playerId": "1980",
-   "opponentId": null,
-   "player": "A. Zverev",
-   "opponent": null,
-   "tournament": "Finals",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-22T00:00:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "His serve plus one is absolutely amazing, … But the matches that we've played were always very difficult and I look forward to another difficult one. And hopefully it's going to be entertaining.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "ATP Tour",
-   "sourceUrl": "https://www.atptour.com/en/news/zverev-alcaraz-infosys-atp-beyond-the-numbers-nitto-atp-finals-2026",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "sourceHash": "4c2fcf9abd1bc623",
-   "publishedAt": "2026-11-22T01:54:16.697Z",
    "file": "news-ticker/2794-2026.json"
   }
  ]
