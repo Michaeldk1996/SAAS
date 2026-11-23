@@ -1431,6 +1431,93 @@
   }
   root.maTournamentV2 = maTournamentV2;
 
+  // One court-speed figure for every tab (Tournament, Weather, Key factors): the page's court-conditions row, its latest
+  // Tennis Abstract reading from court-speed-history.json (the Tournaments page's number), our 3-band class (N4);
+  // else the match's pipeline copy.
+  function ma2CourtSpeed(m) {
+    cshLoad();
+    const key = typeof trKeyOf === 'function' ? trKeyOf(m) : null, cc = key && typeof COURT_CONDITIONS !== 'undefined' ? COURT_CONDITIONS[key] : null;
+    if (cc) { const ta = CSH.d && CSH.d.ta[key], ys = ta ? Object.keys(ta).filter(y => ta[y] != null && +y >= 2020).sort() : [];
+      return { v: ys.length ? +ta[ys[ys.length - 1]] : cc.abstractSpeed != null ? +cc.abstractSpeed : null, label: courtSpeedCategory(cc.speed), key }; }
+    const cs = m && m.courtSpeed; return cs ? { v: cs.abstractSpeed != null ? +cs.abstractSpeed : null, label: cs.category || '', key } : null;
+  }
+  root.ma2CourtSpeed = ma2CourtSpeed;
+  // ===================================================================================================
+  // WEATHER (LOCKED 2026-11-23): At match time (factor boxes Wind · Heat · Rain by severity, then Court speed) →
+  // Tournament week (day boxes; a picked day opens inside the card). Data = wxModel (Open-Meteo files, venue time, archive
+  // for started matches, WX_CONFIG cut-offs). Severity stays the grey ladder (R4) until the founder rules on the design's red.
+  const WX_SEV = { r: ['Concern', 'var(--ma2-text)'], a: ['Watch', 'var(--ma2-soft)'], n: ['No concern', 'var(--ma2-grey)'], u: ['Unavailable', 'var(--ma2-quiet)'] };
+  root.ma2WxPick = i => { if (typeof _aWx !== 'undefined' && _aWx) { _aWx.sel = i; renderWeatherSection(); } };
+  function wxBox(f, lead, o) {
+    o = o || {}; const S = WX_SEV[f.sev] || WX_SEV.u;
+    return '<div class="' + (o.click ? 'seg ma2-tile' : '') + '"' + (o.click ? ' role="button" tabindex="0" onclick="' + o.click + '"' : '') + (o.tip ? ' title="' + esc(o.tip) + '"' : '') + ' style="display:flex; flex-direction:column; gap:14px; padding:' + (o.small ? '16px' : '18px') + '; border-radius:' + (o.small ? 11 : 12) + 'px; background:' + (lead ? 'var(--ma2-lifted)' : 'var(--ma2-inner)') + '; border:1px solid ' + W(lead ? 14 : 6) + '; cursor:' + (o.click ? 'pointer' : 'default') + '; min-width:0;">'
+      + '<div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px;"><span style="font-size:14px; font-weight:700; color:var(--ma2-text);">' + esc(f.name) + '</span><span style="font-size:11.5px; font-weight:700; color:' + (f.statC || S[1]) + '; white-space:nowrap;">' + esc(f.stat != null ? f.stat : S[0]) + '</span></div>'
+      + (o.small ? '<span style="display:flex; align-items:baseline; gap:7px; flex-wrap:wrap;"><span style="' + MONO + ' font-size:22px; font-weight:700; line-height:1; color:' + (f.fig === DASH ? 'var(--ma2-quiet)' : 'var(--ma2-text)') + ';">' + esc(f.fig) + '</span><span style="font-size:12.5px; color:var(--ma2-grey);">' + esc(f.unit || '') + '</span></span>'
+        : '<div style="display:flex; flex-direction:column; gap:6px;"><span style="display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;"><span style="' + MONO + ' font-size:26px; font-weight:700; line-height:1; letter-spacing:-0.02em; color:' + (f.fig === DASH ? 'var(--ma2-quiet)' : 'var(--ma2-text)') + ';">' + esc(f.fig) + '</span><span style="font-size:12.5px; color:var(--ma2-grey);">' + esc(f.unit || '') + '</span></span>'
+          + '<span style="font-size:11.5px; line-height:1.35; color:var(--ma2-grey); min-height:31px;">' + esc(f.detail || '') + '</span></div>')
+      + '<span style="flex:1; padding-top:14px; border-top:1px solid ' + W(6) + '; font-size:12.5px; line-height:1.5; color:var(--ma2-grey); text-wrap:pretty;">' + esc(f.effect || '') + '</span></div>';
+  }
+  function maWeatherV2(m, entry, file, nowMs, arch) {
+    const CP = WX_COPY, vm = wxModel(m, entry, file, nowMs, wxForced(), arch);
+    const wrap = inner => '<div class="wx-tab" style="max-width:1040px; margin:0 auto; display:flex; flex-direction:column; gap:14px; font-size:14px; line-height:normal; color:var(--ma2-text);">' + inner + '</div>';
+    const hq = (t, tip, scope, right) => '<div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px 16px; flex-wrap:wrap;"><div style="display:flex; flex-direction:column; gap:5px; min-width:0;"><span style="display:flex; align-items:center; gap:8px;"><span style="font-size:18px; font-weight:800; letter-spacing:-0.01em;">' + t + '</span>' + help(tip) + '</span>'
+      + '<span style="display:flex; align-items:baseline; gap:4px 8px; flex-wrap:wrap; font-size:12.5px; color:var(--ma2-grey);">' + scope + '</span></div>' + (right || '') + '</div>';
+    const chipDot = (txt, c) => '<span style="display:inline-flex; align-items:center; gap:8px; height:30px; padding:0 12px; border-radius:8px; background:var(--ma2-lifted); border:1px solid ' + W(14) + '; font-size:12.5px; font-weight:600; color:var(--ma2-text); white-space:nowrap;"><span style="flex:none; width:8px; height:8px; border-radius:50%; background:' + c + ';"></span>' + esc(txt) + '</span>';
+    if (vm.indoor) return wrap('<div style="background:var(--ma2-card); border:1px solid ' + W(6) + '; border-radius:16px; padding:56px 24px; display:flex; flex-direction:column; gap:10px; align-items:center; text-align:center;">'
+      + '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="var(--ma2-grey)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>'
+      + '<span style="font-size:18px; font-weight:800;">Indoor event, weather is not a factor</span><span style="font-size:12.5px; color:var(--ma2-grey);">' + esc(CP.indoorSub) + '</span></div>');
+    const lead = vm.lead, cs = ma2CourtSpeed(m);
+    const short = vm.unavail || vm.verdictSev === 'u' ? 'Forecast unavailable' : lead ? lead.name + ' is the main factor' : /Missing/.test(vm.verdict) ? 'No concern in the values we have' : 'No weather concern';
+    const fresh = vm.unavail ? vm.fresh.text : vm.archived ? vm.fresh.text : vm.fresh.text;
+    const scope = '<span style="white-space:nowrap;">' + esc(vm.atHead) + '</span><span style="color:var(--ma2-quiet);">·</span><span style="white-space:nowrap;">' + esc(fresh) + '</span>' + (vm.mayStartLater ? '<span style="color:var(--ma2-quiet);">·</span><span>' + esc(CP.mayStartLater) + '</span>' : '');
+    const facts = vm.factors.map(f => ({ name: f.name, sev: f.sev, fig: f.big, unit: f.unit, detail: f.detail === '—' ? '' : f.detail, effect: f.effect, id: f.id }));
+    const P = vm.pace, sp = cs && cs.v != null ? cs.v.toFixed(2) : DASH;
+    const paceF = { name: 'Court speed', stat: P.sevL ? P.sevL.charAt(0) + P.sevL.slice(1).toLowerCase() : '', statC: 'var(--ma2-text)', fig: vm.unavail ? DASH : sp, unit: cs && cs.label ? cs.label : '', detail: P.detail, effect: P.effect };
+    const match = '<div data-wxcard="match" style="background:var(--ma2-card); border:1px solid ' + W(6) + '; border-radius:16px; padding:24px; display:flex; flex-direction:column; gap:18px;">'
+      + hq('At match time', 'Forecast for the hour the match starts. Factors are ordered by how much they should affect play. Court speed comes from the Tournament tab.', scope, chipDot(short, lead ? WX_SEV[lead.sev][1] : 'var(--ma2-grey)'))
+      + '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%,210px), 1fr)); gap:12px;">' + facts.map(f => wxBox(f, lead && f.id === lead.id)).join('')
+      + wxBox(paceF, false, { click: "aGoTab('tournament')", tip: 'Open the Tournament tab' }) + '</div></div>';
+    const unav = vm.unavail ? '<div style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; padding:14px 18px; border-radius:12px; background:var(--ma2-inner); border:1px solid ' + W(6) + '; font-size:12.5px; color:var(--ma2-grey);"><span style="font-weight:700; color:var(--ma2-text);">Forecast unavailable</span><span>' + esc(CP.banner) + '</span></div>' : '';
+    const sel = typeof _aWx !== 'undefined' && _aWx && _aWx.sel != null && _aWx.sel < vm.days.length ? _aWx.sel : null;
+    const day = (d, i) => { const top = d.flags && d.flags[0], v = d.unavail || d.reason === 'u' ? 'u' : top ? top.sev : 'n';
+      const reason = d.unavail || d.reason === 'u' ? 'Unavailable' : top ? top.text : 'No concern';
+      const deg = x => x == null ? DASH : x + '°', picked = sel === i;
+      const icon = d.icon ? wIcon(d.icon, 26, 'var(--ma2-grey)') : '<span style="' + MONO + ' font-size:18px; color:var(--ma2-quiet); height:26px; line-height:26px;">' + DASH + '</span>';
+      const tag = d.isMatch ? (vm.badge.replace(/^MATCH · /, 'Match ').replace('TBC', 'time TBC')) : d.lowConf ? 'Low confidence' : '';
+      return '<div class="seg ma2-row" data-wxday="" data-date="' + d.date + '" role="button" tabindex="0" onclick="ma2WxPick(' + (picked ? 'null' : i) + ')" style="display:flex; flex-direction:column; align-items:center; gap:10px; padding:14px 8px 12px; border-radius:12px; background:' + (picked ? 'var(--ma2-lifted)' : 'var(--ma2-inner)') + '; border:1px solid ' + W(picked || d.isMatch ? 14 : 6) + '; min-width:0; cursor:pointer;">'
+        + '<span style="display:flex; align-items:baseline; gap:6px;"><span style="font-size:12.5px; font-weight:700; color:var(--ma2-text);">' + d.dow + '</span><span style="' + MONO + ' font-size:11.5px; color:var(--ma2-grey);">' + d.label + '</span></span>' + icon
+        + '<span style="display:flex; align-items:baseline; gap:6px; ' + MONO + '"><span style="font-size:15px; font-weight:700; color:var(--ma2-text);">' + deg(d.hi) + '</span><span style="font-size:12px; color:var(--ma2-grey);">' + deg(d.lo) + '</span></span>'
+        + '<div style="width:100%; padding-top:10px; border-top:1px solid ' + W(6) + '; display:flex; align-items:center; justify-content:center; gap:6px; min-height:42px; box-sizing:border-box;"><span style="flex:none; width:8px; height:8px; border-radius:50%; background:' + WX_SEV[v][1] + ';"></span>'
+        + '<span style="font-size:11.5px; line-height:1.35; font-weight:' + (top ? 700 : 500) + '; color:' + (top ? 'var(--ma2-text)' : 'var(--ma2-grey)') + '; text-align:center;">' + esc(reason) + '</span>'
+        + (d.flags && d.flags.length > 1 ? '<span title="' + esc(d.flags.slice(1).map(x => x.text).join(' · ')) + '" style="flex:none; ' + MONO + ' font-size:10.5px; font-weight:700; color:var(--ma2-soft); padding:1px 5px; border-radius:6px; background:var(--ma2-lifted); border:1px solid ' + W(14) + ';">+' + (d.flags.length - 1) + '</span>' : '') + '</div>'
+        + '<span style="font-size:11.5px; font-weight:600; line-height:15px; color:' + (d.isMatch ? 'var(--ma2-text)' : 'var(--ma2-quiet)') + '; min-height:15px; white-space:nowrap;">' + esc(tag) + '</span></div>'; };
+    let open = '';
+    if (sel != null) {
+      const d = vm.days[sel], a = d.agg || {}, sevOf = (k, v) => d.unavail ? 'u' : wxSev(k, v);
+      const ef = (id, sv) => sv === 'u' ? '' : (sv === 'r' || sv === 'a') ? CP.effect[id].hot : CP.effect[id].calm;
+      const F = [{ id: 'wind', name: 'Wind', sev: sevOf('gusts', a.gusts), fig: a.gusts == null ? DASH : String(a.gusts), unit: 'km/h gusts' },
+        { id: 'heat', name: 'Heat', sev: sevOf('feels', a.feels), fig: a.feels == null ? DASH : a.feels + '°', unit: 'feels like' },
+        { id: 'rain', name: 'Rain', sev: sevOf('rain', a.rain), fig: a.rain == null ? DASH : a.rain + '%', unit: 'chance' }].map(f => Object.assign(f, { effect: ef(f.id, f.sev) }))
+        .sort((x, y) => wxRank(y.sev) - wxRank(x.sev));
+      // no humidity cut-offs are ruled (WX_CONFIG has none): the figure only, no status, no effect sentence
+      const hum = { name: 'Humidity', stat: '', fig: a.hum == null ? DASH : a.hum + '%', unit: 'average', effect: '' };
+      const dl = F[0] && wxRank(F[0].sev) > 0 ? F[0] : null;
+      const nav = (to, dir) => '<span class="seg" role="button" tabindex="0"' + (to == null ? '' : ' onclick="ma2WxPick(' + to + ')"') + ' title="' + (to == null ? '' : dir === 'p' ? 'Previous day' : 'Next day') + '" style="flex:none; width:30px; height:30px; box-sizing:border-box; border-radius:8px; background:var(--ma2-lifted); border:1px solid ' + W(14) + '; display:inline-flex; align-items:center; justify-content:center; color:' + (to == null ? 'var(--ma2-quiet)' : 'var(--ma2-text)') + '; cursor:' + (to == null ? 'default' : 'pointer') + ';"><svg width="10" height="10" viewBox="0 0 10 10"><path d="' + (dir === 'p' ? 'M6.5 2 3.5 5 6.5 8' : 'M3.5 2 6.5 5 3.5 8') + '" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"></path></svg></span>';
+      const sub = (d.isMatch ? 'Match day · ' : '') + 'Hours ' + String(WX_CONFIG.window.fromHour).padStart(2, '0') + ':00–' + String(WX_CONFIG.window.toHour).padStart(2, '0') + ':00 venue time' + (d.lowConf ? ' · low confidence' : '') + (d.past || vm.archived ? ' · forecast, not observed' : '');
+      open = '<div data-wxcard="day" style="display:flex; flex-direction:column; gap:16px; padding:18px; border-radius:12px; background:var(--ma2-inner); border:1px solid ' + W(6) + ';">'
+        + '<div style="display:flex; align-items:center; justify-content:space-between; gap:12px 16px; flex-wrap:wrap;"><span style="display:flex; align-items:center; gap:12px; min-width:0;">' + (d.icon ? wIcon(d.icon, 30, 'var(--ma2-grey)') : '') + '<span style="display:flex; flex-direction:column; gap:3px;"><span style="font-size:15px; font-weight:800; color:var(--ma2-text);">' + esc(d.dow + ' ' + d.label) + '</span><span style="font-size:12.5px; color:var(--ma2-grey);">' + esc(sub) + '</span></span></span>'
+        + '<span style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">' + chipDot(d.unavail ? 'Forecast unavailable' : dl ? dl.name + ' is the main factor' : 'No weather concern', dl ? WX_SEV[dl.sev][1] : 'var(--ma2-grey)')
+        + '<span style="display:flex; align-items:center; gap:4px;">' + nav(sel > 0 ? sel - 1 : null, 'p') + nav(sel < vm.days.length - 1 ? sel + 1 : null, 'n') + '</span>'
+        + '<span class="seg ma2-btn2" role="button" tabindex="0" onclick="ma2WxPick(null)" style="height:30px; padding:0 12px; display:inline-flex; align-items:center; border-radius:8px; background:var(--ma2-lifted); border:1px solid ' + W(14) + '; font-size:12.5px; font-weight:600; color:var(--ma2-text); cursor:pointer;">Close</span></span></div>'
+        + '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap:12px;">' + F.map(f => wxBox(f, dl && f.id === dl.id, { small: true })).join('') + wxBox(hum, false, { small: true }) + '</div></div>';
+    }
+    const week = '<div data-wxcard="week" style="background:var(--ma2-card); border:1px solid ' + W(6) + '; border-radius:16px; padding:24px; display:flex; flex-direction:column; gap:18px;">'
+      + hq('Tournament week', 'Pick a day to open its forecast. Days ' + WX_CONFIG.lowConfFromOffset + ' or more ahead carry a lower confidence. Times are ' + (vm.venueZone ? 'venue local time' : 'your time zone') + '.', esc(vm.range + ' · ' + (vm.venueZone ? CP.venueTimeNote : CP.viewerTimeNote)))
+      + '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(116px, 1fr)); gap:8px;">' + vm.days.map(day).join('') + '</div>' + open + '</div>';
+    return wrap(unav + match + week);
+  }
+  root.maWeatherV2 = maWeatherV2;
+
   root.MA2 = { av, SH_A, SH_B, avIni, ini, help, cardHead, card, track, chip, tile, popShell, signed, RING_A, RING_B, W, MONO, DASH, esc };
   root.maOddsV2 = oddsBuild;
 })(typeof window !== 'undefined' ? window : globalThis);
