@@ -1114,6 +1114,133 @@
   }
   root.maStyleV2 = maStyleV2;
 
+  // ===================================================================================================
+  // PROGRESSION (LOCKED 2026-11-22): "Facing" round track → Road to the <round> (one box per player, three tiles, rows,
+  // this match last) → Round by round (round track, measures menu, summary box, metric boxes two per line).
+  // Data = pgModel (career-history at this event, main draw only, this match excluded; box scores through the house
+  // formulas; pooled averages; draw average from tournament-progression.json). The design's "Sample" chip never ships.
+  const PG_SH = { dominance: 'Dominance', serveRating: 'Serve rating', returnRating: 'Return rating', firstServe: '1st serve %', firstServeWon: '1st serve won', secondServeWon: '2nd serve won', wue: 'W / UE', winners: 'Winners', pressure: 'Pressure points' };
+  root.ma2PgPick = i => { if (typeof _pg !== 'undefined' && _pg) { _pg.hi = i; pgRender(); } };
+  root.ma2PgMenu = () => { if (typeof _pg !== 'undefined' && _pg) { _pg.menu = !_pg.menu; pgRender(); } };
+  function pgFacing(P, hi) {
+    if (!P.facing) return '';
+    const opp = c => (c.r ? fhSurname(c.r.opp) || c.r.opp : DASH);
+    const what = (p, c) => p.short + (c.r ? (c.r.wo ? ' walkover v ' : c.r.won ? ' beat ' : ' lost to ') + c.r.opp : ' no result on record for this round');
+    const items = (P.isEmpty ? [] : P.labels.map((l, j) => ({ label: l + ' · ' + opp(P.roads[0].cells[j]) + ' / ' + opp(P.roads[1].cells[j]), on: hi === j,
+      title: l + ': ' + what(P.roads[0], P.roads[0].cells[j]) + ' · ' + what(P.roads[1], P.roads[1].cells[j]), onclick: 'pgHi(' + j + ')' })))
+      .concat([{ label: P.facing, on: hi == null, title: P.facing + ' · this match', onclick: hi == null ? '' : 'ma2PgPick(null)' }]);
+    return '<div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px 12px;"><span style="font-size:12.5px; font-weight:600; color:var(--ma2-grey);">Facing</span>' + track(items, { gap: 3 }) + '</div>';
+  }
+  const PG_RG = 'display:grid; grid-template-columns:34px minmax(0,1.5fr) minmax(80px,1fr) 44px 44px 40px; gap:10px; align-items:center;';
+  function pgRoadBox(m, P, p, k, hi) {
+    const ring = k ? SH_B() : SH_A(), aHead = aHeaderOdds(m);
+    const ok = v => Number.isFinite(+v) && +v >= 1.01 ? +v : null, today = ok(k ? aHead.p2 : aHead.p1), oth = ok(k ? aHead.p1 : aHead.p2);
+    const styleOf = (name, key) => { const s = ppStyleFor(name, key); return s && s.archetype_label ? s.archetype_label : null; };
+    const real = p.cells.filter(c => c.r && !c.r.wo), sw = real.reduce((a, c) => a + (c.r.pS || 0), 0), sl = real.reduce((a, c) => a + (c.r.oS || 0), 0);
+    const dr = pgPool(real.map(c => c.r.pg ? c.r.pg.dominance : null), { key: 'dominance', kind: 'ratio' });
+    const priced = real.filter(c => c.r.price != null), avgP = priced.length ? priced.reduce((a, c) => a + c.r.price, 0) / priced.length : null;
+    const tl = (l, v, n) => '<div style="background:var(--ma2-card); border:1px solid ' + W(6) + '; border-radius:11px; padding:13px 6px 12px; display:flex; flex-direction:column; align-items:center; gap:3px; text-align:center; min-width:0;"><span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey);">' + l + '</span><span style="' + MONO + ' font-size:20px; font-weight:700; line-height:1.15; color:' + (v === DASH ? 'var(--ma2-quiet)' : 'var(--ma2-text)') + ';">' + v + '</span><span style="font-size:11.5px; color:var(--ma2-grey);">' + esc(n) + '</span></div>';
+    const fav = (own, opp) => own != null && opp != null ? own <= opp : null;
+    const prc = (v, isFav) => '<span style="text-align:right; ' + MONO + ' font-size:12px; font-weight:' + (isFav ? 700 : 500) + '; color:' + (v == null ? 'var(--ma2-quiet)' : isFav ? 'var(--ma2-text)' : 'var(--ma2-grey)') + ';">' + (v == null ? DASH : fhOdd(v)) + '</span>';
+    const rows = p.cells.map((c, i) => {
+      const lifted = hi === i;
+      if (c.bye || c.missing) return '<div title="' + esc(c.rd + (c.bye ? ' · bye' : ' · no match on record for ' + p.name + ' in this round')) + '" style="' + PG_RG + ' margin:0 8px; padding:8px 10px; border:1px solid transparent; border-radius:8px; background:' + (lifted ? 'var(--ma2-lifted)' : 'transparent') + ';">'
+        + '<span style="' + MONO + ' font-size:11.5px; color:var(--ma2-quiet);">' + c.rd + '</span><span style="display:flex; flex-direction:column; gap:1px;"><span style="font-size:12.5px; font-weight:600; color:var(--ma2-quiet);">' + (c.bye ? 'Bye' : DASH) + '</span><span style="font-size:11.5px; color:var(--ma2-quiet);">' + (c.bye ? 'No match played' : 'No record of this round') + '</span></span>'
+        + '<span style="' + MONO + ' font-size:11.5px; color:var(--ma2-quiet);">' + DASH + '</span><span></span><span></span><span></span></div>';
+      const r = c.r, sty = styleOf(r.opp, r.oppKey), f = fav(r.price, r.oppPrice), d = r.pg && r.pg.dominance && r.pg.dominance.v != null ? r.pg.dominance.v.toFixed(2) : DASH;
+      const sc = r.wo ? 'w/o' : r.sets ? r.sets.map(x => x[0] + '-' + x[1]).join(', ') + (r.ret ? ' ret.' : '') : DASH;
+      const click = maRowOnclick({ key: p.key, name: p.name, opp: r.opp, ek: r.ek, date: r.date, round: c.rd, fallback: { date: r.date, tourn: r.tourn, surface: r.surface, round: r.round, won: r.won, result: r.result, sets: r.sets, wo: r.wo, ret: r.ret } });
+      return '<div class="seg ma2-row"' + click + ' title="' + esc(c.rd + ' · ' + (r.wo ? 'walkover v' : r.won ? 'beat' : 'lost to') + ' ' + r.opp + (r.wo ? '' : ' ' + sc) + ' · click for match stats') + '" style="' + PG_RG + ' margin:0 8px; padding:8px 10px; border-radius:8px; border:1px solid transparent; background:' + (lifted ? 'var(--ma2-lifted)' : 'transparent') + '; cursor:pointer;">'
+        + '<span style="' + MONO + ' font-size:11.5px; color:var(--ma2-grey);">' + c.rd + '</span>'
+        + '<span style="min-width:0; display:flex; flex-direction:column; gap:1px;"><span style="font-size:12.5px; font-weight:600; color:var(--ma2-text); overflow-wrap:anywhere;">' + esc(r.opp) + '</span><span style="font-size:11.5px; color:var(--ma2-grey); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"' + (sty ? '' : ' title="No playing style on file"') + '>' + esc(sty || DASH) + '</span></span>'
+        + '<span style="' + MONO + ' font-size:11.5px; color:var(--ma2-soft); line-height:1.35;">' + esc(sc) + '</span>'
+        + (r.wo ? '<span style="text-align:right; color:var(--ma2-quiet);">' + DASH + '</span><span style="text-align:right; color:var(--ma2-quiet);">' + DASH + '</span>' : prc(r.price, f === true) + prc(r.oppPrice, f === false))
+        + '<span style="text-align:right; ' + MONO + ' font-size:12.5px; font-weight:700; color:' + (d === DASH ? 'var(--ma2-quiet)' : 'var(--ma2-text)') + ';">' + d + '</span></div>';
+    }).join('');
+    const opp = k ? m.p1 : m.p2, osty = styleOf(opp, k ? m.p1Key : m.p2Key), nf = fav(today, oth);
+    const now = '<div data-pgnow="true" title="' + esc(P.facing + ' · this match') + '" style="' + PG_RG + ' margin:0 8px; padding:8px 10px; border-radius:8px; background:var(--ma2-lifted); border:1px solid ' + W(14) + ';">'
+      + '<span style="' + MONO + ' font-size:11.5px; font-weight:700; color:var(--ma2-text);">' + P.facing + '</span>'
+      + '<span style="min-width:0; display:flex; flex-direction:column; gap:1px;"><span style="font-size:12.5px; font-weight:700; color:var(--ma2-text); overflow-wrap:anywhere;">' + esc(opp) + '</span><span style="font-size:11.5px; color:var(--ma2-grey); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(osty || DASH) + '</span></span>'
+      + '<span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey);">This match</span>' + prc(today, nf === true) + prc(oth, nf === false)
+      + '<span style="text-align:right; ' + MONO + ' font-size:12px; color:var(--ma2-quiet);">' + DASH + '</span></div>';
+    return '<div style="background:var(--ma2-inner); border:1px solid ' + W(6) + '; border-radius:12px; padding-bottom:8px; display:flex; flex-direction:column; min-width:0;">'
+      + '<div style="display:flex; align-items:center; gap:12px; min-width:0; padding:18px 18px 16px;">' + av(p.name, p.key, 40, ring, 12)
+      + '<div style="min-width:0; display:flex; flex-direction:column; gap:2px;"><span style="font-size:15px; font-weight:800; color:var(--ma2-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(p.name) + '</span><span style="font-size:12.5px; color:var(--ma2-grey);">' + esc(p.rec) + '</span></div>'
+      + '<div style="flex:none; margin-left:auto; display:flex; flex-direction:column; align-items:flex-end; gap:1px;"><span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey);">Today</span><span style="' + MONO + ' font-size:20px; font-weight:700; line-height:1.1; color:' + (today == null ? 'var(--ma2-quiet)' : 'var(--ma2-text)') + ';">' + (today == null ? DASH : today.toFixed(2)) + '</span></div></div>'
+      + '<div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; padding:0 18px 16px;">'
+      + tl('Sets dropped', real.length ? String(sl) : DASH, 'of ' + (sw + sl) + ' played') + tl('Average DR', dr.v == null ? DASH : dr.v.toFixed(2), dr.n + (dr.n === 1 ? ' match' : ' matches'))
+      + tl('Average price', avgP == null ? DASH : avgP.toFixed(2), priced.length < real.length ? priced.length + ' of ' + real.length + ' priced' : 'Closing price') + '</div>'
+      + '<div style="' + PG_RG + ' padding:9px 18px; border-top:1px solid ' + W(6) + '; border-bottom:1px solid ' + W(6) + '; margin-bottom:6px; font-size:11.5px; font-weight:600; color:var(--ma2-grey);"><span>Rd</span><span>Opponent</span><span>Score</span><span style="text-align:right;">Price</span><span style="text-align:right;">Opp</span><span style="text-align:right;" title="Dominance ratio">DR</span></div>'
+      + rows + now + '</div>';
+  }
+  function maProgressionV2(m) {
+    const st = pgState(m);
+    if (!m._pg) { pgEnsureData(m).then(() => { if (_pg && _pg.m === m) pgRender(); }); return '<div class="acomingsoon">Loading tournament progression…</div>'; }
+    const P = pgModel(m), ev = typeof sfEventName === 'function' ? sfEventName(P.tourn) : P.tourn;
+    const wrap = inner => '<div style="display:flex; flex-direction:column; gap:14px; width:100%; max-width:1040px; margin:0 auto; font-size:14px; line-height:normal; color:var(--ma2-text);">' + inner + '</div>';
+    if (P.isEmpty) return wrap(pgFacing(P, null) + '<div style="background:var(--ma2-card); border:1px solid ' + W(6) + '; border-radius:16px; padding:56px 24px; display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center;">'
+      + '<span style="font-size:18px; font-weight:800; color:var(--ma2-text);">' + esc(P.emptyTitle) + '</span><span style="font-size:12.5px; color:var(--ma2-grey); max-width:460px; line-height:1.6; text-wrap:pretty;">' + esc(P.emptyBody) + '</span></div>');
+    const n = P.n, hi = st.hi != null && st.hi < n ? st.hi : null;
+    const road = fcard('<div style="display:flex; flex-direction:column; gap:4px;"><div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;"><span style="font-size:18px; font-weight:800; letter-spacing:-0.01em; color:var(--ma2-text);">Road to the ' + esc(P.long) + '</span>'
+      + help('Every match each player played at this tournament on the way to this one, with the closing prices and his dominance ratio. Click a match for its match stats.') + '</div><span style="font-size:12.5px; color:var(--ma2-grey);">' + esc(ev + ' · ' + P.sub) + '</span></div>'
+      + '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(400px,100%),1fr)); gap:10px;">' + P.roads.map((p, k) => pgRoadBox(m, P, p, k, hi)).join('') + '</div>');
+    // round by round
+    const sel = st.met, shown = P.metrics.filter(x => !sel || sel[x.mt.key]);
+    const fmtD = (d, mt) => mt.kind === 'num' ? String(Math.round(d)) : mt.kind === 'ratio' ? d.toFixed(2) : d.toFixed(1) + ' pts';
+    const leadOf = x => { const a = hi != null ? (x.series[0][hi] || {}).v : x.avg[0].v, b = hi != null ? (x.series[1][hi] || {}).v : x.avg[1].v;
+      if (a == null || b == null) return { s: 0, txt: 'No comparison', who: '' };
+      const d = a - b; return d === 0 ? { s: 0, txt: 'level', who: 'Both' } : { s: d > 0 ? 1 : -1, txt: 'leads by ' + fmtD(Math.abs(d), x.mt), who: d > 0 ? P.aS : P.bS }; };
+    const leads = shown.map(leadOf), sa = leads.filter(l => l.s > 0).length, sb = leads.filter(l => l.s < 0).length;
+    const cols = '132px repeat(' + n + ',minmax(44px,1fr)) 60px', minW = 192 + n * 44 + (n + 1) * 6;
+    const roundTr = track([{ label: 'All rounds', on: hi == null, onclick: 'ma2PgPick(null)' }].concat(P.labels.map((l, i) => ({ label: l, on: hi === i, onclick: 'ma2PgPick(' + i + ')' }))), { gap: 3 });
+    const menu = st.menu ? '<div onclick="ma2PgMenu()" style="position:fixed; inset:0; z-index:40;"></div><div style="position:absolute; top:40px; right:0; z-index:41; min-width:230px; background:var(--ma2-lifted); border:1px solid ' + W(14) + '; border-radius:12px; padding:6px; display:flex; flex-direction:column; box-shadow:0 12px 32px color-mix(in srgb, var(--ma2-ground) 55%, transparent);">'
+      + PG_METRICS.map(mt => { const on = !sel || !!sel[mt.key];
+        return '<span class="seg ma2-row" role="button" tabindex="0" onclick="pgMet(\'' + mt.key + '\')" style="display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:8px; font-size:12.5px; font-weight:' + (on ? 700 : 600) + '; color:' + (on ? 'var(--ma2-text)' : 'var(--ma2-grey)') + '; cursor:pointer; white-space:nowrap;">'
+          + '<span style="flex:none; width:16px; height:16px; border-radius:5px; box-sizing:border-box; background:' + (on ? 'var(--ma2-lifted)' : 'var(--ma2-track)') + '; border:1px solid ' + W(on ? 22 : 14) + '; display:flex; align-items:center; justify-content:center;"><svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="var(--ma2-white)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="opacity:' + (on ? 1 : 0) + ';"><path d="M2 5.2l2 2 4-4.4"></path></svg></span>' + esc(mt.name) + '</span>'; }).join('')
+      + (sel ? '<span class="seg ma2-quietlink" role="button" tabindex="0" onclick="pgMetReset()" style="margin-top:4px; padding:10px 10px 6px; border-top:1px solid ' + W(6) + '; font-size:12.5px; font-weight:600; color:var(--ma2-grey); cursor:pointer;">Show all measures</span>' : '') + '</div>' : '';
+    const metBtn = '<div style="position:relative; margin-left:auto; flex:none;"><span class="seg ma2-btn2" role="button" tabindex="0" onclick="ma2PgMenu()" style="height:34px; display:inline-flex; align-items:center; gap:8px; padding:0 12px 0 14px; border-radius:9px; background:var(--ma2-lifted); border:1px solid ' + W(14) + '; font-size:12.5px; font-weight:600; color:var(--ma2-text); white-space:nowrap; cursor:pointer;">'
+      + (sel ? Object.keys(sel).length + ' of ' + PG_METRICS.length + ' measures' : 'All ' + PG_METRICS.length + ' measures') + '<svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="var(--ma2-grey)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3.5l3 3 3-3"></path></svg></span>' + menu + '</div>';
+    const sumBox = '<div style="background:var(--ma2-inner); border:1px solid ' + W(6) + '; border-radius:12px; padding:18px 20px; display:flex; flex-direction:column; gap:16px; min-width:0;"><div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:16px;">'
+      + '<div style="display:flex; align-items:center; gap:10px; min-width:0;">' + av(m.p1, m.p1Key, 32, SH_A(), 10.5) + '<span style="font-size:14px; font-weight:700; color:var(--ma2-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;">' + esc(P.aS) + '</span></div>'
+      + '<div style="display:flex; flex-direction:column; align-items:center; gap:2px; text-align:center;"><span style="display:flex; align-items:baseline; gap:10px; ' + MONO + ' font-size:26px; font-weight:700; line-height:1.1;"><span style="color:' + (sa >= sb ? 'var(--ma2-text)' : 'var(--ma2-grey)') + ';">' + sa + '</span><span style="color:var(--ma2-quiet);">–</span><span style="color:' + (sb >= sa ? 'var(--ma2-text)' : 'var(--ma2-grey)') + ';">' + sb + '</span></span>'
+      + '<span style="font-size:11.5px; color:var(--ma2-grey);">' + esc('Better figure in ' + shown.length + (shown.length === 1 ? ' measure' : ' measures') + (hi == null ? ' · average of all rounds' : ' · ' + P.labels[hi] + ' only')) + '</span></div>'
+      + '<div style="display:flex; align-items:center; justify-content:flex-end; gap:10px; min-width:0;"><span style="font-size:14px; font-weight:700; color:var(--ma2-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;">' + esc(P.bS) + '</span>' + av(m.p2, m.p2Key, 32, SH_B(), 10.5) + '</div></div>'
+      + '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(92px,1fr)); gap:10px 6px;">' + shown.map((x, i) => '<div title="' + esc(x.mt.name + ' · ' + (leads[i].who ? leads[i].who + ' ' : '') + leads[i].txt) + '" style="display:flex; flex-direction:column; gap:7px; min-width:0;"><span style="height:6px; border-radius:3px; background:' + (leads[i].s > 0 ? 'var(--ma2-blue)' : leads[i].s < 0 ? 'var(--ma2-text)' : W(7)) + ';"></span><span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey); text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(PG_SH[x.mt.key] || x.mt.name) + '</span></div>').join('') + '</div></div>';
+    const boxes = shown.map((x, xi) => {
+      const L = leads[xi], mt = x.mt;
+      const head = '<div style="display:grid; grid-template-columns:' + cols + '; gap:6px; align-items:center; padding:9px 18px; border-top:1px solid ' + W(6) + '; border-bottom:1px solid ' + W(6) + '; margin-bottom:8px; font-size:11.5px; font-weight:600; color:var(--ma2-grey);"><span>Player</span>'
+        + P.labels.map((l, i) => '<span class="seg ma2-seg" role="button" tabindex="0" onclick="ma2PgPick(' + (hi === i ? 'null' : i) + ')" title="Pick out this round" style="text-align:center; color:' + (hi === i ? 'var(--ma2-text)' : 'var(--ma2-grey)') + '; cursor:pointer;">' + l + '</span>').join('')
+        + '<span style="text-align:right; padding-left:10px; border-left:1px solid ' + W(6) + ';">Avg</span></div>';
+      const prow = (k) => { const p = P.roads[k], ser = x.series[k], oth = x.series[1 - k];
+        const cells = ser.map((v, i) => { const f = pgFig(v, mt), c = p.cells[i];
+          if (f.none) return '<span title="' + esc(c && c.r ? (c.r.pg ? 'No figure in this match’s box score' : 'No box score on file for this match') : c && c.bye ? 'Bye' : 'No record of this round') + '" style="display:flex; align-items:center; justify-content:center; height:30px; border-radius:7px; ' + MONO + ' font-size:12px; color:var(--ma2-quiet);">' + DASH + '</span>';
+          const o = oth[i], lead = !o || o.v == null || v.v >= o.v, dim = hi != null && hi !== i;
+          const r = c.r, click = maRowOnclick({ key: p.key, name: p.name, opp: r.opp, ek: r.ek, date: r.date, round: c.rd, fallback: { date: r.date, tourn: r.tourn, surface: r.surface, round: r.round, won: r.won, result: r.result, sets: r.sets, wo: r.wo, ret: r.ret } });
+          const sc = r.sets ? r.sets.map(q => q[0] + '-' + q[1]).join(' ') : '';
+          return '<span class="seg ma2-fbar"' + click + (f.small ? ' title="small sample' + (f.count ? f.count : '') + '"' : f.count ? ' title="' + esc(f.count.trim()) + '"' : '') + ' style="position:relative; display:flex; align-items:center; justify-content:center; height:30px; box-sizing:border-box; border-radius:7px; background:' + (lead && !dim ? 'var(--ma2-lifted)' : 'transparent') + '; border:1px solid ' + (lead && !dim ? W(14) : 'transparent') + '; ' + MONO + ' font-size:12px; font-weight:' + (lead ? 700 : 400) + '; color:' + (f.small ? 'var(--ma2-grey)' : dim ? (lead ? 'var(--ma2-grey)' : 'var(--ma2-quiet)') : lead ? 'var(--ma2-text)' : 'var(--ma2-grey)') + '; cursor:pointer;">' + esc(f.t)
+            + '<span class="ma2-ftip" style="position:absolute; bottom:32px; left:50%; transform:translateX(-50%); z-index:30; align-items:baseline; gap:8px; padding:6px 10px; border-radius:8px; background:var(--ma2-lifted); border:1px solid ' + W(14) + '; box-shadow:0 12px 32px color-mix(in srgb, var(--ma2-ground) 55%, transparent); white-space:nowrap; font-family:\'Hanken Grotesk\',sans-serif; font-size:12.5px; font-weight:600; color:var(--ma2-text);">v ' + esc(r.opp) + '<span style="' + MONO + ' font-size:11.5px; font-weight:400; color:var(--ma2-grey);">' + esc(sc) + '</span></span></span>'; }).join('');
+        const af = pgFig(x.avg[k], mt), nV = ser.filter(v => v && v.v != null).length, isLead = L.s === 0 ? true : (k === 0 ? L.s > 0 : L.s < 0);
+        return '<div style="display:grid; grid-template-columns:' + cols + '; gap:6px; align-items:center; padding:4px 18px;"><span style="display:flex; align-items:center; gap:8px; min-width:0;">' + av(p.name, p.key, 22, k ? 'sh 1.5px var(--ma2-text)' : 'sh 1.5px var(--ma2-blue)', 8.5)
+          + '<span style="font-size:12.5px; font-weight:600; color:var(--ma2-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(p.short) + '</span></span>' + cells
+          + '<span style="display:flex; align-items:center; justify-content:flex-end; gap:2px; height:30px; padding-left:10px; border-left:1px solid ' + W(6) + '; white-space:nowrap;"><span style="' + MONO + ' font-size:12.5px; font-weight:700; color:' + (af.none ? 'var(--ma2-quiet)' : af.small || !isLead ? 'var(--ma2-grey)' : 'var(--ma2-text)') + ';">' + esc(af.t) + '</span>'
+          + (nV < n ? '<span style="' + MONO + ' font-size:10px; color:var(--ma2-grey);">(' + nV + ')</span>' : '') + '</span></div>'; };
+      const fc = x.f.map(d => { const f = mt.noDraw ? { t: DASH } : pgDrawFig(d, mt); return '<span title="' + esc(mt.noDraw ? PG_DRAW_PRESSURE_TIP : P.draw ? '' : PG_NO_DRAW) + '" style="text-align:center; ' + MONO + ' font-size:11.5px; color:var(--ma2-grey); white-space:nowrap;">' + esc(f.t) + '</span>'; }).join('');
+      const fa = mt.noDraw || !x.fAvg ? { t: DASH } : pgDrawFig(x.fAvg, mt);
+      return '<div data-pgcard="metric" style="background:var(--ma2-inner); border:1px solid ' + W(6) + '; border-radius:12px; padding-bottom:10px; min-width:0; display:flex; flex-direction:column;">'
+        + '<div style="display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:2px 10px; padding:14px 18px 12px;"><span style="font-size:14px; font-weight:700; color:var(--ma2-text);">' + esc(mt.name) + '</span><span title="' + esc(mt.kind === 'pct' ? 'Percentage points' : mt.kind === 'ratio' ? 'Ratio' : 'Rating points') + '" style="font-size:11.5px; color:var(--ma2-grey); white-space:nowrap;"><span style="font-weight:600; color:var(--ma2-soft);">' + esc(L.who) + '</span> ' + esc(L.txt) + '</span></div>'
+        + '<div style="overflow-x:auto;"><div style="min-width:' + minW + 'px;">' + head + prow(0) + prow(1)
+        + '<div style="display:grid; grid-template-columns:' + cols + '; gap:6px; align-items:center; margin-top:8px; padding:10px 18px 0; border-top:1px solid ' + W(6) + ';"><span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey); white-space:nowrap;">Draw average</span>' + fc
+        + '<span title="' + esc(mt.noDraw ? PG_DRAW_PRESSURE_TIP : '') + '" style="text-align:right; padding-left:10px; border-left:1px solid ' + W(6) + '; ' + MONO + ' font-size:11.5px; color:var(--ma2-grey); white-space:nowrap;">' + esc(fa.t) + '</span></div></div></div></div>';
+    }).join('');
+    const rbr = fcard('<div style="display:flex; flex-direction:column; gap:4px;"><div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;"><span style="font-size:18px; font-weight:800; letter-spacing:-0.01em; color:var(--ma2-text);">Round by round</span>'
+      + help('The lifted figure is the better of the two players in that round. Draw average = every player still in the draw at that round. Hover a figure to see the opponent, click it for the match stats. Pick a round to compare that round only.') + '</div>'
+      + '<span style="font-size:12.5px; color:var(--ma2-grey);">Each player\'s figures in every round played here, against the draw average</span></div>'
+      + '<div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px 12px;">' + roundTr + metBtn + '</div>' + sumBox
+      + '<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr)); gap:10px;">' + boxes + '</div>');
+    return wrap(pgFacing(P, hi) + road + rbr);
+  }
+  root.maProgressionV2 = maProgressionV2;
+
   root.MA2 = { av, SH_A, SH_B, avIni, ini, help, cardHead, card, track, chip, tile, popShell, signed, RING_A, RING_B, W, MONO, DASH, esc };
   root.maOddsV2 = oddsBuild;
 })(typeof window !== 'undefined' ? window : globalThis);
