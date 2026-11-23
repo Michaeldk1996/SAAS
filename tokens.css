@@ -373,6 +373,8 @@
   --do2-scrim:     rgba(3, 4, 7, 0.62);
   --do2-shadow-menu: 0 16px 36px rgba(0, 0, 0, 0.5);
   --do2-shadow-box:  0 30px 80px rgba(0, 0, 0, 0.55);
+}
+
 /* Match analysis rebuild (handoff design_handoff_match_analysis_2026-11-23, founder 2026-11-23 "pixel for pixel"):
    the export's own values, named apart from the foundation tokens. match-analysis-v2.css reads them inside
    #analysisModal (and the Match Stats sheet wherever it opens); nothing else reads them. Night only. */
