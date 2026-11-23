@@ -40,9 +40,14 @@
 /* ---- shared parts ---- */
 .ma2-av{ display:inline-flex; flex:none; }
 .ma2-av img, .ma2-av .avatar-fallback{ width:var(--s); height:var(--s); flex:none; box-sizing:border-box; border-radius:50%; background:var(--ma2-lifted);
-  border:var(--ring); object-fit:cover; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono', monospace;
+  border:var(--ring); box-shadow:var(--rsh, none); object-fit:cover; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono', monospace;
   font-size:var(--fs); font-weight:700; color:var(--ma2-text); }
 #analysisModal .ma2-seg:hover, .ma2-pop .ma2-seg:hover{ color:var(--ma2-text) !important; }
 #analysisModal .ma2-row:hover, .ma2-pop .ma2-row:hover{ background:var(--ma2-hover) !important; }
 .ma2-pop .ma2-btn:hover{ border-color:color-mix(in srgb, var(--ma2-white) 22%, transparent) !important; }
 #aSectionOdds{ font-size:14px; line-height:normal; color:var(--ma2-text); }
+
+/* ---- Form: bar hover box, lifted buttons ---- */
+#analysisModal .ma2-ftip{ display:none; }
+#analysisModal .ma2-fbar:hover .ma2-ftip{ display:flex; }
+#analysisModal .ma2-btn2[onclick]:hover{ background:var(--ma2-hover) !important; }

@@ -46,7 +46,9 @@ found at restore time are marked inline.
   calculation (`player-profile-v2.js` `tierGridCells` / `careerTierCells` / `rateText`, called through
   `PlayerProfileV2._internals`, never copied), and the pop-up behind a count lists the rows the profile's drill places in
   that cell (`drillScope`). So Indoors is its own surface (carved out of Hard / Clay / Grass), the year table carries a
-  **Surface not known** column (total less the other four, every row sums to its total), the card footnote counts
+  **Surface not known** column (total less the other four, every row sums to its total) — **shown only when the player
+  has at least one match with no surface on record** (founder 2026-11-23, match analysis rebuild: keep Indoors and this
+  column although the 2026-11-23 design drops them; a player with none gets no column), the card footnote counts
   "N matches with no surface on record", and every rate prints to one decimal by the profile's formula. The W–L
   separator stays the Overview's "22-30" (the profile's is "22/30") until ruled. With the profile module off (`?pp2=0`)
   the tab says so rather than computing a second record.
