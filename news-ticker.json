@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-23T07:16:26.227Z",
+ "generatedAt": "2026-11-23T08:52:20.976Z",
  "tournaments": [
   {
    "key": "2794",
@@ -12,8 +12,8 @@
     "report": 15,
     "digest": 39
    },
-   "latestTimestamp": "2026-11-23T06:08:20.153Z",
-   "updatedAt": "2026-11-23T07:16:26.227Z"
+   "latestTimestamp": "2026-11-23T08:06:22.000Z",
+   "updatedAt": "2026-11-23T08:52:20.976Z"
   },
   {
    "key": "tour",
@@ -56,6 +56,38 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-0ba58c7f293f30",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": "1980",
+   "player": "C. Alcaraz",
+   "opponent": "A. Zverev",
+   "tournament": "Finals - Turin",
+   "tournamentKey": "2794",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-23T08:06:22.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating A. Zverev",
+   "eventKey": "12181958",
+   "won": true,
+   "text": "This one is special. This one means the world to me, to my team, to my family,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "The Standard",
+   "sourceUrl": "https://www.thestandard.com.hk/sports-updates/article/349338/Alcaraz-answers-doubts-with-career-defining-year",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "sourceHash": "848fba60df117fd3",
+   "publishedAt": "2026-11-23T01:44:06.986Z",
+   "revisedAt": "2026-11-23T08:52:20.976Z",
+   "revision": 1,
+   "file": "news-ticker/2794-2026.json"
+  },
   {
    "id": "quote-1c0e74f96521ce",
    "type": "quote",
@@ -204,36 +236,6 @@
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "2b09751ceafdc596",
    "publishedAt": "2026-11-23T06:56:04.662Z",
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-0ba58c7f293f30",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": null,
-   "player": "C. Alcaraz",
-   "opponent": null,
-   "tournament": "Finals",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-23T00:48:44.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "This one is special. This one means the world to me, to my team, to my family,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "Gulf News",
-   "sourceUrl": "https://gulfnews.com/sport/tennis/making-history-at-atp-finals-a-privilege-alcaraz-1.500757377",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "e3cfded96b0f1f13",
-   "publishedAt": "2026-11-23T01:44:06.986Z",
    "file": "news-ticker/2794-2026.json"
   },
   {
