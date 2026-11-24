@@ -415,7 +415,10 @@ test('the account accepts the field: auth.js updateProfile + publicUser carry fa
   // written only by the Whop webhook) — so favouriteMatches still saves with no field whitelist to extend
   const rules = readFileSync(join(HERE, 'firestore.rules'), 'utf8');
   assert.match(rules, /match \/users\/\{uid\} \{\s*allow read, delete: if request\.auth != null && request\.auth\.uid == uid;/);
-  assert.match(rules, /allow update: if request\.auth != null && request\.auth\.uid == uid\s*&& !request\.resource\.data\.diff\(resource\.data\)\.affectedKeys\(\)\.hasAny\(\['plan'\]\);/);
+  // Whop subscription (2026-11-24): the lock also covers the subscription fields, never the member's own settings
+  const locked = (/allow update: if request\.auth != null && request\.auth\.uid == uid\s*&& !request\.resource\.data\.diff\(resource\.data\)\.affectedKeys\(\)\s*\.hasAny\(\[([^\]]*)\]\);/.exec(rules) || [])[1];
+  assert.ok(locked && locked.includes("'plan'"), 'users update must refuse a plan change');
+  assert.ok(!/favouriteMatches|watchPlayers|notifications/.test(locked), 'member settings must stay writable');
 });
 
 // ── Review fold-in (clean-context review, 2026-10-09): the wiring the helper tests above did not reach ─────────────
