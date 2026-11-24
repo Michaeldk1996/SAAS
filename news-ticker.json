@@ -1,6 +1,19 @@
 {
- "generatedAt": "2026-11-24T00:57:38.236Z",
+ "generatedAt": "2026-11-24T02:32:04.524Z",
  "tournaments": [
+  {
+   "key": "tour",
+   "season": "2026",
+   "name": "ATP Tour",
+   "file": "news-ticker/tour-2026.json",
+   "items": 137,
+   "byType": {
+    "quote": 117,
+    "digest": 20
+   },
+   "latestTimestamp": "2026-11-24T01:30:00.000Z",
+   "updatedAt": "2026-11-24T02:32:04.524Z"
+  },
   {
    "key": "2794",
    "season": "2026",
@@ -14,19 +27,6 @@
    },
    "latestTimestamp": "2026-11-23T17:23:23.000Z",
    "updatedAt": "2026-11-24T00:15:29.668Z"
-  },
-  {
-   "key": "tour",
-   "season": "2026",
-   "name": "ATP Tour",
-   "file": "news-ticker/tour-2026.json",
-   "items": 135,
-   "byType": {
-    "quote": 115,
-    "digest": 20
-   },
-   "latestTimestamp": "2026-11-22T13:41:10.000Z",
-   "updatedAt": "2026-11-24T00:57:38.236Z"
   },
   {
    "key": "1681",
@@ -56,6 +56,66 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-199f3a50138064",
+   "type": "quote",
+   "playerId": "2844",
+   "opponentId": null,
+   "player": "M. Berrettini",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-24T01:30:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "When the call-ups were announced, I knew I had to be ready. I continued training and playing because the captain had told us all that the official selections would come later. So I kept preparing as I had in previous years, to be ready to join the team,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "TennisUpToDate",
+   "sourceUrl": "https://tennisuptodate.com/atp/musetti-and-berrettini-are-finally-reunited-but-the-davis-cup-hasnt-broken-the-ice",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "sourceHash": "108c530966fc714c",
+   "publishedAt": "2026-11-24T02:32:04.524Z",
+   "file": "news-ticker/tour-2026.json"
+  },
+  {
+   "id": "quote-2a9ed9472b6c86",
+   "type": "quote",
+   "playerId": "2844",
+   "opponentId": null,
+   "player": "M. Berrettini",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-24T01:30:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "For me, it is always a great honour and pleasure. Since I was a child, representing the national team and playing in the Davis Cup has been the biggest dream a player can have. I am happy to be here for another year.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "TennisUpToDate",
+   "sourceUrl": "https://tennisuptodate.com/atp/musetti-and-berrettini-are-finally-reunited-but-the-davis-cup-hasnt-broken-the-ice",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "sourceHash": "163b31af2a07a2e3",
+   "publishedAt": "2026-11-24T02:32:04.524Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-165a70c6576c5a",
    "type": "quote",
@@ -1198,233 +1258,6 @@
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "c9eb97016daa21f9",
    "publishedAt": "2026-11-22T20:05:02.925Z",
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-b21ee1d610880a",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": "2973",
-   "player": "C. Alcaraz",
-   "opponent": "B. Shelton",
-   "tournament": "Finals",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-22T19:25:45.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Quotes",
-   "context": "after beating B. Shelton",
-   "eventKey": "12181584",
-   "won": true,
-   "text": "All week there have been problems, there have been difficulties, we have been through very difficult moments, … Together with my team, with people from home, friends, a lot of family who came, they have all contributed. … I’m truly proud and I’m really happy with everything.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "Tennis Majors",
-   "sourceUrl": "https://www.tennismajors.com/atp/nitto-atp-finals-atp/alcaraz-saves-three-set-points-holds-off-zverev-and-finally-conquers-the-atp-finals-867708.html",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "8bdcedb3ae8b7b80",
-   "publishedAt": "2026-11-22T20:05:02.925Z",
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "report-12181958",
-   "type": "report",
-   "playerId": "2382",
-   "opponentId": "1980",
-   "player": "C. Alcaraz",
-   "opponent": "A. Zverev",
-   "tournament": "Finals",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "stage": "main draw",
-   "round": "final",
-   "eventKey": "12181958",
-   "timestamp": "2026-11-22T19:17:08.448Z",
-   "timestampKind": "observed",
-   "observed": {
-    "endedAt": "2026-11-22T19:17:08.448Z",
-    "startedAt": "2026-11-22T17:16:13.842Z",
-    "minutes": 121
-   },
-   "category": "Statistics",
-   "text": "Alcaraz beat Zverev for the 8th time in 14 meetings, 6-2, 7-6 in the final. Set 2 went to a tiebreak, won by Alcaraz. Zverev saved 3 break points in the opening game. Alcaraz won 4 games in a row from 0-1 down in the first set. Alcaraz landed 59% of his first serves, compared with his 68% average on hard over the last 52 weeks and won 71% of his first-serve points (31 of 44). Alcaraz won 46% of the points against the first serve (23 of 50), compared with his usual 34%. Zverev struggled on his second serve, winning only 42% of the points (8 of 19), compared with his 56% average on hard over the last 52 weeks and made 31 unforced errors against 12 winners.\n\nAlcaraz: W: 28 / UE: 25 | DR: 1.27\n\nZverev: W: 12 / UE: 31 | DR: 0.78",
-   "ms": {
-    "a": "C. Alcaraz",
-    "b": "A. Zverev",
-    "sets": [
-     [
-      6,
-      2
-     ],
-     [
-      7,
-      6
-     ]
-    ],
-    "rows": [
-     [
-      "Dominance ratio",
-      1.27,
-      0.78,
-      "dr"
-     ],
-     [
-      "1st serve in",
-      59,
-      72,
-      "%"
-     ],
-     [
-      "1st serve points won",
-      71,
-      54,
-      "%"
-     ],
-     [
-      "2nd serve points won",
-      48,
-      42,
-      "%"
-     ],
-     [
-      "Ratio W/UE",
-      1.12,
-      0.39,
-      "2"
-     ],
-     [
-      "Winners / point",
-      0.19,
-      0.08,
-      "2"
-     ],
-     [
-      "Unforced / point",
-      0.17,
-      0.22,
-      "2",
-      1
-     ]
-    ]
-   },
-   "baseText": "Alcaraz beat Zverev for the 8th time in 14 meetings, 6-2, 7-6 in the final. Set 2 went to a tiebreak, won by Alcaraz. Zverev saved 3 break points in the opening game. Alcaraz won 4 games in a row from 0-1 down in the first set. Alcaraz landed 59% of his first serves, compared with his 68% average on hard over the last 52 weeks and won 71% of his first-serve points (31 of 44). Alcaraz won 46% of the points against the first serve (23 of 50), compared with his usual 34%. Zverev struggled on his second serve, winning only 42% of the points (8 of 19), compared with his 56% average on hard over the last 52 weeks and made 31 unforced errors against 12 winners.",
-   "rating": [
-    "Alcaraz: W: 28 / UE: 25 | DR: 1.27",
-    "Zverev: W: 12 / UE: 31 | DR: 0.78"
-   ],
-   "fields": {
-    "score": "6-2, 7-6",
-    "round": "final",
-    "retired": false,
-    "h2h": {
-     "a": 8,
-     "b": 6,
-     "n": 14
-    },
-    "durationMinutes": 121,
-    "facts": {
-     "tiebreakSets": [
-      {
-       "set": 2,
-       "winner": "p2"
-      }
-     ],
-     "openingGame": {
-      "side": "p1",
-      "saved": 3
-     },
-     "longestRun": {
-      "side": "p2",
-      "n": 4,
-      "set": 1,
-      "from": {
-       "me": 0,
-       "opp": 1
-      },
-      "afterBeingBroken": false,
-      "toTheEnd": false
-     }
-    },
-    "standouts": [
-     {
-      "player": "winner",
-      "tone": "bad",
-      "metric": "firstIn",
-      "value": 59,
-      "baseline": 68,
-      "scope": "last52",
-      "surface": "Hard",
-      "n": 46
-     },
-     {
-      "player": "winner",
-      "tone": "bad",
-      "metric": "firstWon",
-      "value": 71,
-      "won": 31,
-      "total": 44
-     },
-     {
-      "player": "winner",
-      "tone": "good",
-      "metric": "ret1Won",
-      "value": 46,
-      "won": 23,
-      "total": 50,
-      "baseline": 34,
-      "scope": "last52",
-      "surface": "Hard",
-      "n": 46
-     },
-     {
-      "player": "loser",
-      "tone": "bad",
-      "metric": "secondWon",
-      "value": 42,
-      "won": 8,
-      "total": 19,
-      "baseline": 56,
-      "scope": "last52",
-      "surface": "Hard",
-      "n": 51
-     },
-     {
-      "player": "loser",
-      "tone": "bad",
-      "metric": "winnersErrors",
-      "winners": 12,
-      "unforcedErrors": 31
-     }
-    ],
-    "winner": {
-     "aces": 7,
-     "winners": 28,
-     "unforcedErrors": 25,
-     "breakPointsSaved": 3,
-     "breakPointsFaced": 5,
-     "breakPointsSource": "box score"
-    },
-    "loser": {
-     "aces": 4,
-     "winners": 12,
-     "unforcedErrors": 31,
-     "breakPointsSaved": 3,
-     "breakPointsFaced": 7,
-     "breakPointsSource": "box score"
-    }
-   },
-   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
-   "sourceUrl": "pbp/12181958.json",
-   "language": "en",
-   "translated": false,
-   "sourceHash": "102d1150c03033c2",
-   "publishedAt": "2026-11-22T19:42:27.176Z",
-   "revisedAt": "2026-11-24T00:15:29.668Z",
-   "revision": 4,
    "file": "news-ticker/2794-2026.json"
   }
  ]
