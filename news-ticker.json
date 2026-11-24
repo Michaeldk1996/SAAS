@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-24T19:29:46.405Z",
+ "generatedAt": "2026-11-24T19:52:04.463Z",
  "tournaments": [
   {
    "key": "tour",
@@ -11,8 +11,8 @@
     "quote": 144,
     "digest": 20
    },
-   "latestTimestamp": "2026-11-24T18:36:11.000Z",
-   "updatedAt": "2026-11-24T19:29:46.405Z"
+   "latestTimestamp": "2026-11-24T19:17:03.000Z",
+   "updatedAt": "2026-11-24T19:52:04.463Z"
   },
   {
    "key": "3120",
@@ -69,6 +69,38 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-9f26375b77790f",
+   "type": "quote",
+   "playerId": "2072",
+   "opponentId": null,
+   "player": "J. Sinner",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-24T19:17:03.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "I have to respect the protocols at the moment because if we rush things we could have more serious problems,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Gulf News",
+   "sourceUrl": "https://gulfnews.com/sport/tennis/jannik-sinner-undergoes-knee-surgery-australian-open-return-uncertain-1.500759767",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "sourceHash": "ad522c3735c50bd3",
+   "publishedAt": "2026-11-24T18:26:35.901Z",
+   "revisedAt": "2026-11-24T19:52:04.463Z",
+   "revision": 1,
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-64a9642ea4ec54",
    "type": "quote",
@@ -216,36 +248,6 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "7985beb8fbb513a8",
-   "publishedAt": "2026-11-24T18:26:35.901Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-9f26375b77790f",
-   "type": "quote",
-   "playerId": "2072",
-   "opponentId": null,
-   "player": "J. Sinner",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-24T17:56:55.212Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "I have to respect the protocols at the moment because if we rush things we could have more serious problems,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "TSN",
-   "sourceUrl": "https://www.tsn.ca/tennis/article/sinner-undergoes-minor-surgery-on-his-troublesome-right-knee/",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "5074a3c45b7a7016",
    "publishedAt": "2026-11-24T18:26:35.901Z",
    "file": "news-ticker/tour-2026.json"
   },
