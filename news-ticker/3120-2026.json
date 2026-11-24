@@ -2,8 +2,132 @@
  "tournament": "Davis Cup - World Group",
  "tournamentKey": "3120",
  "season": "2026",
- "updatedAt": "2026-11-24T15:32:58.361Z",
+ "updatedAt": "2026-11-24T17:47:32.132Z",
  "items": [
+  {
+   "id": "report-12182495",
+   "type": "report",
+   "playerId": "2981",
+   "opponentId": "3696",
+   "player": "T. Machac",
+   "opponent": "L. Draxl",
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "stage": "main draw",
+   "round": null,
+   "eventKey": "12182495",
+   "timestamp": "2026-11-24T17:15:27.467Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-24T17:15:27.467Z"
+   },
+   "category": "Statistics",
+   "text": "Machac beat Draxl in their first meeting, 6-2, 3-6, 6-2.\n\nMachac: DR: 1.44\n\nDraxl: DR: 0.69",
+   "ms": {
+    "a": "T. Machac",
+    "b": "L. Draxl",
+    "sets": [
+     [
+      6,
+      2
+     ],
+     [
+      3,
+      6
+     ],
+     [
+      6,
+      2
+     ]
+    ],
+    "rows": [
+     [
+      "Dominance ratio",
+      1.44,
+      0.69,
+      "dr"
+     ],
+     [
+      "1st serve in",
+      67,
+      82,
+      "%"
+     ],
+     [
+      "1st serve points won",
+      77,
+      64,
+      "%"
+     ],
+     [
+      "2nd serve points won",
+      57,
+      25,
+      "%"
+     ]
+    ]
+   },
+   "baseText": "Machac beat Draxl in their first meeting, 6-2, 3-6, 6-2.",
+   "rating": [
+    "Machac: DR: 1.44",
+    "Draxl: DR: 0.69"
+   ],
+   "fields": {
+    "score": "6-2, 3-6, 6-2",
+    "round": null,
+    "retired": false,
+    "h2h": {
+     "a": 1,
+     "b": 0,
+     "n": 1
+    },
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "ret1Won",
+      "value": 37,
+      "won": 27,
+      "total": 74,
+      "baseline": 28,
+      "scope": "career",
+      "surface": "Hard",
+      "n": 121
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "ret2Won",
+      "value": 75,
+      "won": 12,
+      "total": 16,
+      "baseline": 49,
+      "scope": "career",
+      "surface": "Hard",
+      "n": 121
+     }
+    ],
+    "winner": {
+     "aces": 9,
+     "breakPointsSaved": 2,
+     "breakPointsFaced": 3,
+     "breakPointsSource": "box score"
+    },
+    "loser": {
+     "aces": 6,
+     "breakPointsSaved": 5,
+     "breakPointsFaced": 9,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12182495.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "55ac6ca2d1583717",
+   "publishedAt": "2026-11-24T17:47:32.132Z"
+  },
   {
    "id": "quote-23b0add5e54b6d",
    "type": "quote",

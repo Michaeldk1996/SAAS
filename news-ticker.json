@@ -1,6 +1,19 @@
 {
- "generatedAt": "2026-11-24T17:27:45.318Z",
+ "generatedAt": "2026-11-24T17:47:32.132Z",
  "tournaments": [
+  {
+   "key": "3120",
+   "season": "2026",
+   "name": "Davis Cup - World Group",
+   "file": "news-ticker/3120-2026.json",
+   "items": 3,
+   "byType": {
+    "report": 1,
+    "quote": 2
+   },
+   "latestTimestamp": "2026-11-24T17:15:27.467Z",
+   "updatedAt": "2026-11-24T17:47:32.132Z"
+  },
   {
    "key": "tour",
    "season": "2026",
@@ -13,18 +26,6 @@
    },
    "latestTimestamp": "2026-11-24T17:00:00.000Z",
    "updatedAt": "2026-11-24T17:27:45.318Z"
-  },
-  {
-   "key": "3120",
-   "season": "2026",
-   "name": "Davis Cup - World Group",
-   "file": "news-ticker/3120-2026.json",
-   "items": 2,
-   "byType": {
-    "quote": 2
-   },
-   "latestTimestamp": "2026-11-24T03:30:00.000Z",
-   "updatedAt": "2026-11-24T15:32:58.361Z"
   },
   {
    "key": "2794",
@@ -68,6 +69,131 @@
   }
  ],
  "latest": [
+  {
+   "id": "report-12182495",
+   "type": "report",
+   "playerId": "2981",
+   "opponentId": "3696",
+   "player": "T. Machac",
+   "opponent": "L. Draxl",
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "stage": "main draw",
+   "round": null,
+   "eventKey": "12182495",
+   "timestamp": "2026-11-24T17:15:27.467Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-24T17:15:27.467Z"
+   },
+   "category": "Statistics",
+   "text": "Machac beat Draxl in their first meeting, 6-2, 3-6, 6-2.\n\nMachac: DR: 1.44\n\nDraxl: DR: 0.69",
+   "ms": {
+    "a": "T. Machac",
+    "b": "L. Draxl",
+    "sets": [
+     [
+      6,
+      2
+     ],
+     [
+      3,
+      6
+     ],
+     [
+      6,
+      2
+     ]
+    ],
+    "rows": [
+     [
+      "Dominance ratio",
+      1.44,
+      0.69,
+      "dr"
+     ],
+     [
+      "1st serve in",
+      67,
+      82,
+      "%"
+     ],
+     [
+      "1st serve points won",
+      77,
+      64,
+      "%"
+     ],
+     [
+      "2nd serve points won",
+      57,
+      25,
+      "%"
+     ]
+    ]
+   },
+   "baseText": "Machac beat Draxl in their first meeting, 6-2, 3-6, 6-2.",
+   "rating": [
+    "Machac: DR: 1.44",
+    "Draxl: DR: 0.69"
+   ],
+   "fields": {
+    "score": "6-2, 3-6, 6-2",
+    "round": null,
+    "retired": false,
+    "h2h": {
+     "a": 1,
+     "b": 0,
+     "n": 1
+    },
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "ret1Won",
+      "value": 37,
+      "won": 27,
+      "total": 74,
+      "baseline": 28,
+      "scope": "career",
+      "surface": "Hard",
+      "n": 121
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "ret2Won",
+      "value": 75,
+      "won": 12,
+      "total": 16,
+      "baseline": 49,
+      "scope": "career",
+      "surface": "Hard",
+      "n": 121
+     }
+    ],
+    "winner": {
+     "aces": 9,
+     "breakPointsSaved": 2,
+     "breakPointsFaced": 3,
+     "breakPointsSource": "box score"
+    },
+    "loser": {
+     "aces": 6,
+     "breakPointsSaved": 5,
+     "breakPointsFaced": 9,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12182495.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "55ac6ca2d1583717",
+   "publishedAt": "2026-11-24T17:47:32.132Z",
+   "file": "news-ticker/3120-2026.json"
+  },
   {
    "id": "quote-5a05fd64bc0e5a",
    "type": "quote",
@@ -1242,38 +1368,6 @@
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "eb9f34cafa8cd68a",
    "publishedAt": "2026-11-23T01:44:06.986Z",
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-640ca92f13725c",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": "2973",
-   "player": "C. Alcaraz",
-   "opponent": "B. Shelton",
-   "tournament": "Finals",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-22T23:49:07.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Quotes",
-   "context": "after beating B. Shelton",
-   "eventKey": "12181584",
-   "won": true,
-   "text": "It's been an amazing week. I couldn't finish the week in a better way, so I'm really proud,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "RTHK",
-   "sourceUrl": "https://news.rthk.hk/rthk/en/component/k2/1878874-20261123.htm",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "d03251a95285d209",
-   "publishedAt": "2026-11-22T20:49:33.486Z",
-   "revisedAt": "2026-11-23T00:45:05.253Z",
-   "revision": 2,
    "file": "news-ticker/2794-2026.json"
   }
  ]
