@@ -1,15 +1,16 @@
 name: Deploy Whop Webhook (Firebase Functions)
 
 # Manual, one-click deploy of the whopWebhook Cloud Function.
-# No terminal needed: set the four repository secrets (below), then run this
+# No terminal needed: set the repository secrets (below), then run this
 # workflow from the GitHub Actions tab -> "Run workflow".
 #
 # Required repository secrets (Settings -> Secrets and variables -> Actions):
 #   FIREBASE_SERVICE_ACCOUNT  - full JSON of a service-account key with deploy
 #                               rights on project tennis-edge-75cd9
 #   WHOP_WEBHOOK_SECRET       - the whsec_... value from the Whop webhook
-#   WHOP_PLAN_BASIC           - Whop plan_id / product_id for the Edge (€49) tier
-#   WHOP_PLAN_PRO             - Whop plan_id / product_id for the Pro (€99) tier
+#   WHOP_API_KEY              - (recommended) Whop API key that can read
+#                               memberships and member emails
+# The Sharp / Sharp+ product ids are in functions/index.js (PRODUCT_TIER).
 
 on:
   workflow_dispatch:
@@ -51,26 +52,23 @@ jobs:
           fi
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$GOOGLE_APPLICATION_CREDENTIALS"
 
-      - name: Write plan params (functions/.env)
+      - name: Write function params (functions/.env)
         env:
-          WHOP_PLAN_BASIC: ${{ secrets.WHOP_PLAN_BASIC }}
-          WHOP_PLAN_PRO: ${{ secrets.WHOP_PLAN_PRO }}
-        run: |
-          if [ -z "$WHOP_PLAN_BASIC" ] || [ -z "$WHOP_PLAN_PRO" ]; then
-            echo "::error::Missing WHOP_PLAN_BASIC and/or WHOP_PLAN_PRO"; exit 1
-          fi
-          printf 'WHOP_PLAN_BASIC=%s\nWHOP_PLAN_PRO=%s\n' "$WHOP_PLAN_BASIC" "$WHOP_PLAN_PRO" > functions/.env
-
-      - name: Store webhook secret in Secret Manager
-        env:
+          WHOP_API_KEY: ${{ secrets.WHOP_API_KEY }}
           WHOP_WEBHOOK_SECRET: ${{ secrets.WHOP_WEBHOOK_SECRET }}
         run: |
           if [ -z "$WHOP_WEBHOOK_SECRET" ]; then
             echo "::error::Missing repository secret WHOP_WEBHOOK_SECRET"; exit 1
           fi
-          printf '%s' "$WHOP_WEBHOOK_SECRET" \
-            | firebase functions:secrets:set WHOP_WEBHOOK_SECRET \
-                --data-file=- --project "$FIREBASE_PROJECT"
+          if [ -z "$WHOP_API_KEY" ]; then
+            echo "::warning::No WHOP_API_KEY: buyers are matched only when the webhook carries their email"
+          fi
+          # Written from GitHub secrets at deploy time, never committed. The
+          # function reads both with defineString (no Secret Manager IAM needed).
+          printf 'WHOP_WEBHOOK_SECRET=%s\nWHOP_API_KEY=%s\n' "$WHOP_WEBHOOK_SECRET" "$WHOP_API_KEY" > functions/.env
+
+      - name: Self-check the access logic
+        run: node functions/test/access.test.js
 
       - name: Deploy whopWebhook
         run: |

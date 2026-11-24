@@ -26,7 +26,8 @@ function problems(rules, store, auth) {
   const users = block(rules, 'match /users/{uid}');
   if (!users) p.push('no users block');
   if (/allow\s+(read,\s*)?write\s*:/.test(users)) p.push('users: a blanket write is back (plan becomes client-writable)');
-  if (!/allow update:[^;]*!request\.resource\.data\.diff\(resource\.data\)\.affectedKeys\(\)\.hasAny\(\['plan'\]\)/.test(users)) p.push('users: update does not refuse a plan change');
+  const locked = (/allow update:[^;]*!request\.resource\.data\.diff\(resource\.data\)\.affectedKeys\(\)\s*\.hasAny\(\[([^\]]*)\]\)/.exec(users) || [])[1] || '';
+  ['plan', 'accessUntil', 'billing'].forEach(k => { if (!locked.includes(`'${k}'`)) p.push(`users: update does not refuse a ${k} change`); });
   if (!/allow create:[^;]*request\.resource\.data\.plan == 'free'/.test(users)) p.push('users: create does not pin plan to free');
   if (/updates\.plan\s*=/.test(auth)) p.push('auth.js still writes plan from the browser');
 
@@ -40,7 +41,10 @@ function problems(rules, store, auth) {
   if (!/allow create: if isAdmin\(\) && newPickOk/.test(picks)) p.push('picks create: not admin-only');
   if (!/allow update: if isAdmin\(\) && editOk\(\)/.test(picks)) p.push('picks update: not admin-only');
   if (!/allow delete: if isAdmin\(\);/.test(picks)) p.push('picks: delete is not admin-only');
-  if (!/get\(\/databases\/\$\(database\)\/documents\/users\/\$\(request\.auth\.uid\)\)\.data\.plan == 'pro'/.test(fnBody(rules, 'isPro'))) p.push('isPro does not read users/{uid}.plan == pro');
+  if (!/hasPaidAccess\(get\(\/databases\/\$\(database\)\/documents\/users\/\$\(request\.auth\.uid\)\)\.data\)/.test(fnBody(rules, 'isPro'))) p.push('isPro does not check users/{uid} with hasPaidAccess');
+  const paid = fnBody(rules, 'hasPaidAccess');
+  if (!/u\.get\('plan', 'free'\) in \['edge', 'pro'\]/.test(paid)) p.push('hasPaidAccess: paid tiers are not exactly Sharp (edge) + Sharp+ (pro)');
+  if (!/u\.accessUntil > request\.time/.test(paid)) p.push('hasPaidAccess: the end date (accessUntil) is not checked');
 
   const client = listOf(rules, 'pickClientKeys');
   if (client.length < 20) p.push('pickClientKeys not found');
@@ -78,7 +82,10 @@ else console.log('  PASS  firestore.rules: plan locked, picks read per role, adm
 
 const MUTANTS = [
   ['blanket users write', r => r.replace(/allow create: if request\.auth != null && request\.auth\.uid == uid/, 'allow write: if request.auth != null && request.auth.uid == uid; allow create: if false')],
-  ['plan lock dropped', r => r.replace("!request.resource.data.diff(resource.data).affectedKeys().hasAny(['plan'])", 'true')],
+  ['plan lock dropped', r => r.replace(/!request\.resource\.data\.diff\(resource\.data\)\.affectedKeys\(\)\s*\.hasAny\(\[[^\]]*\]\)/, 'true')],
+  ['accessUntil client-writable', r => r.replace("'plan', 'accessUntil', ", "'plan', ")],
+  ['end date ignored', r => r.replace("(!('accessUntil' in u) || u.accessUntil > request.time)", 'true')],
+  ['free counts as paid', r => r.replace("in ['edge', 'pro']", "in ['free', 'edge', 'pro']")],
   ['open picks readable by any member', r => r.replace("(resource.data.status in ['posted', 'live'] && isPro())", "(resource.data.status in ['posted', 'live'] && signedIn())")],
   ['drafts readable', r => r.replace("resource.data.status in ['won', 'lost', 'void'])", "resource.data.status in ['won', 'lost', 'void', 'draft'])")],
   ['any member writes picks', r => r.replace('allow create: if isAdmin() && newPickOk', 'allow create: if signedIn() && newPickOk')],

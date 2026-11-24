@@ -27,7 +27,8 @@ service cloud.firestore {
       allow create: if request.auth != null && request.auth.uid == uid
                     && (!('plan' in request.resource.data) || request.resource.data.plan == 'free');
       allow update: if request.auth != null && request.auth.uid == uid
-                    && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['plan']);
+                    && !request.resource.data.diff(resource.data).affectedKeys()
+                          .hasAny(['plan', 'accessUntil', 'billing', 'whopMembershipId', 'whopStatus', 'paymentIssue', 'planSource']);
     }
 
     // ---- Affiliate bookmaker-click events (batch item 7) --------------------
@@ -86,8 +87,13 @@ service cloud.firestore {
     // reason, or delete it (with its teaser) at any time — no 10-minute window, no freeze. The note has no length cap
     // (Firestore's own 1 MiB document limit is the only bound). Server-written fields stay server-only.
     function signedIn() { return request.auth != null; }
+    // Whop subscription (founder 2026-11-24): Sharp ('edge') and Sharp+ ('pro') both see everything for now, until
+    // accessUntil (end of the paid 3-month / 1-year period + grace, written by the webhook). No accessUntil = manual grant.
     function isPro() {
-      return signedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.plan == 'pro';
+      return signedIn() && hasPaidAccess(get(/databases/$(database)/documents/users/$(request.auth.uid)).data);
+    }
+    function hasPaidAccess(u) {
+      return u.get('plan', 'free') in ['edge', 'pro'] && (!('accessUntil' in u) || u.accessUntil > request.time);
     }
     function pickClientKeys() {
       return ['kind', 'event', 'market_text', 'settles_at', 'date', 'tournament', 'round', 'scheduled_at', 'surface',

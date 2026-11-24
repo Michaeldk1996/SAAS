@@ -614,8 +614,8 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
 
   var PLAN_META = {
     free: { label:'Free plan', desc:'Live odds and completed results. Upgrade to Pro for the daily value picks, sharp-money alerts and the full Tennis Edge model.' },
-    edge: { label:'Edge plan', desc:'Board access with the Market Signal strip and completed-match analysis.' },
-    pro:  { label:'Pro plan',  desc:'The full value engine — daily value picks, sharp-money alerts and the complete Tennis Edge model.' }
+    edge: { label:'Sharp',  desc:'Full access to Stennisfy: daily value picks, sharp-money alerts and the complete Stennisfy model.' },
+    pro:  { label:'Sharp+', desc:'Full access to Stennisfy: daily value picks, sharp-money alerts and the complete Stennisfy model.' }
   };
 
   var NOTIF_DEFS = [
@@ -645,7 +645,7 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
     var display = user.name || (user.email ? String(user.email).split('@')[0] : 'Account');
     $('acctAvatar').textContent = initials(user.name, user.email) || 'A';
     $('acctLabel').textContent = display;
-    var pm = PLAN_META[user.plan] || PLAN_META.free;
+    var pm = PLAN_META[user.tier || user.plan] || PLAN_META.free;
     $('acctPlan').textContent = pm.label;
   }
 
@@ -672,9 +672,10 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
 
   /* ---------- plan ---------- */
   function renderPlan(){
-    var pm = PLAN_META[user.plan] || PLAN_META.free;
+    var pm = PLAN_META[user.tier || user.plan] || PLAN_META.free;
     $('planName').textContent = pm.label;
-    $('planDesc').textContent = pm.desc;
+    var until = user.plan === 'pro' && user.accessUntil ? new Date(user.accessUntil).toLocaleDateString(undefined, { day:'numeric', month:'long', year:'numeric' }) : '';
+    $('planDesc').textContent = pm.desc + (until ? ' Access until ' + until + (user.billing ? ' (' + user.billing + ' plan).' : '.') : '');
     var up = $('upgradeBtn');
     if (user.plan === 'pro'){ up.style.display='none'; }
     else { up.style.display=''; up.textContent = 'Upgrade to Pro'; }

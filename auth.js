@@ -224,8 +224,20 @@
     return out.length > 500 ? out.slice(out.length - 500) : out;
   }
 
+  // Whop subscription (functions/index.js): plan 'edge' (Sharp) or 'pro' (Sharp+) with accessUntil = end of the paid
+  // 3-month / 1-year period + 3 days grace. Founder 2026-11-24: both paid plans see everything for now, so an active
+  // paid tier reads as plan 'pro' to every gate; `tier` keeps what was bought for labels. No accessUntil = manual grant.
+  function paidUntil(v) { return v && typeof v.toMillis === 'function' ? v.toMillis() : (v ? +new Date(v) : null); }
+  function effectivePlan(data) {
+    var tier = data.plan === 'edge' || data.plan === 'pro' ? data.plan : 'free';
+    var until = paidUntil(data.accessUntil);
+    if (tier === 'free' || (until && until <= Date.now())) return { plan: 'free', tier: 'free', until: null };
+    return { plan: 'pro', tier: tier, until: until };
+  }
+
   function publicUser(fbUser, data) {
     data = data || {};
+    var paid = effectivePlan(data);
     var notif = Object.assign(defaultNotif(), data.notifications || {});
     // Timezone (Flashscore model): expose an IANA id + an explicit auto/manual
     // flag. A stored IANA id with mode 'manual' is a real override; anything
@@ -241,7 +253,10 @@
       name: data.fullName || fbUser.displayName || '',
       email: data.email || fbUser.email || '',
       emailVerified: !!fbUser.emailVerified,
-      plan: data.plan || 'free',
+      plan: paid.plan,
+      tier: paid.tier,               // 'free' | 'edge' (Sharp) | 'pro' (Sharp+)
+      accessUntil: paid.until,       // ms, or null
+      billing: data.billing || null, // 'quarterly' | 'yearly'
       oddsFormat: data.oddsFormat || 'decimal',
       timezone: tzMode === 'manual' ? tzId : '',
       timezoneMode: tzMode,

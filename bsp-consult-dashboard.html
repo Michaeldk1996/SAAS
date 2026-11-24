@@ -2713,7 +2713,7 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
         if (avatar){ avatar.textContent = initials || 'A'; avatar.style.display = ''; }
         if (plan) plan.style.display = '';
         // the plan line reads the account's own plan (auth.js: free | edge | pro), never a fixed "Free plan"
-        if (plan) plan.textContent = ({ free:'Free plan', edge:'Edge plan', pro:'Pro plan' })[u.plan] || 'Free plan';
+        if (plan) plan.textContent = ({ free:'Free plan', edge:'Sharp', pro:'Sharp+' })[u.tier || u.plan] || 'Free plan';
         if (label) label.textContent = display;
         if (signout) signout.style.display = '';
         if (main) main.href = 'account.html';

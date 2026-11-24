@@ -18,6 +18,7 @@ const PROJECT = process.env.FIREBASE_PROJECT || 'tennis-edge-75cd9';
 const API = 'https://firebaserules.googleapis.com/v1';
 const SOURCE = fs.readFileSync(path.join(ROOT, 'firestore.rules'), 'utf8');
 const ADMIN = 'dqniZkontSPLBwseOTBzmfCBUQG3', MEMBER = 'member-uid-test', PRO = 'pro-uid-test';
+const SHARP = 'sharp-uid-test', SHARP_MANUAL = 'sharp-manual-uid-test', EXPIRED = 'expired-uid-test';
 const DOC = p => `/databases/(default)/documents/${p}`;
 
 async function token() {
@@ -34,8 +35,11 @@ async function call(method, url, body) {
 const files = () => ({ files: [{ name: 'firestore.rules', content: SOURCE }] });
 
 // the plan of a user, as the rules' get() of users/{uid} returns it
-const planMock = (uid, plan) => ({ function: 'get', args: [{ exactValue: DOC(`users/${uid}`) }], result: { value: { data: { plan } } } });
-const mocks = [planMock(MEMBER, 'free'), planMock(PRO, 'pro'), planMock(ADMIN, 'free')];
+const planMock = (uid, plan, extra) => ({ function: 'get', args: [{ exactValue: DOC(`users/${uid}`) }], result: { value: { data: Object.assign({ plan }, extra || {}) } } });
+// Whop subscription (2026-11-24): Sharp ('edge') and Sharp+ ('pro') both read open picks until accessUntil
+const mocks = [planMock(MEMBER, 'free'), planMock(PRO, 'pro'), planMock(ADMIN, 'free'),
+  planMock(SHARP, 'edge', { accessUntil: '2027-02-25T00:00:00Z' }), planMock(SHARP_MANUAL, 'edge'),
+  planMock(EXPIRED, 'pro', { accessUntil: '2026-10-01T00:00:00Z' })];
 const auth = uid => ({ uid, token: { email: uid + '@example.test' } });
 const NOW = '2026-10-28T10:00:00Z';
 const pick = o => Object.assign({ kind: 'match', date: '2026-10-28', status: 'posted', posted_price: 2.1, stake: 1, note: 'n', created_by: ADMIN }, o || {});
@@ -49,6 +53,10 @@ const CASES = [
   ['a member reads a settled pick', 'ALLOW', req(MEMBER, 'get', 'picks/s1', null, pick({ status: 'won' }))],
   ['a member cannot read an open pick', 'DENY', req(MEMBER, 'get', 'picks/p1', null, pick())],
   ['a Pro member reads an open pick', 'ALLOW', req(PRO, 'get', 'picks/p1', null, pick({ status: 'live' }))],
+  ['a Sharp member inside the paid period reads an open pick', 'ALLOW', req(SHARP, 'get', 'picks/p1', null, pick())],
+  ['a Sharp member without an end date (manual grant) reads an open pick', 'ALLOW', req(SHARP_MANUAL, 'get', 'picks/p1', null, pick())],
+  ['an expired Sharp+ member cannot read an open pick', 'DENY', req(EXPIRED, 'get', 'picks/p1', null, pick())],
+  ['a member cannot extend their own access', 'DENY', req(SHARP, 'update', `users/${SHARP}`, { plan: 'edge', accessUntil: '2030-01-01T00:00:00Z' }, { plan: 'edge' })],
   ['a Pro member cannot read a draft', 'DENY', req(PRO, 'get', 'picks/d1', null, pick({ status: 'draft' }))],
   ['the admin reads a draft', 'ALLOW', req(ADMIN, 'get', 'picks/d1', null, pick({ status: 'draft' }))],
   ['signed out reads nothing', 'DENY', req(null, 'get', 'picks/s1', null, pick({ status: 'won' }))],
