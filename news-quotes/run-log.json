@@ -1,116 +1,6 @@
 {
  "runs": [
   {
-   "at": "2026-11-16T04:32:52.255Z",
-   "activeTournaments": [
-    "Finals - Turin"
-   ],
-   "tournaments": [
-    {
-     "name": "Finals - Turin",
-     "key": "2794",
-     "sources": [],
-     "fromOutlets": 0,
-     "counts": {
-      "candidates": 0,
-      "droppedNotVerbatim": 0,
-      "droppedNoPlayer": 0,
-      "droppedAmbiguous": 0,
-      "notTranslatedNoKey": 0,
-      "notTranslatedApiError": 0,
-      "droppedTranslationCheck": 0,
-      "droppedEnglishExists": 0,
-      "mergedSameQuote": 0,
-      "alreadyHeld": 0,
-      "items": 0,
-      "tokens": {
-       "input": 0,
-       "output": 0
-      },
-      "modelError": null,
-      "retryUrls": 0
-     },
-     "added": 0,
-     "held": 2,
-     "byCategory": {
-      "Quotes": 2
-     },
-     "finishedMatches": 2,
-     "matchesWithWinnerQuote": 0
-    },
-    {
-     "name": "ATP Tour",
-     "key": "tour",
-     "sources": [],
-     "fromOutlets": 20,
-     "counts": {
-      "candidates": 20,
-      "droppedNotVerbatim": 0,
-      "droppedNoPlayer": 0,
-      "droppedAmbiguous": 0,
-      "notTranslatedNoKey": 0,
-      "notTranslatedApiError": 0,
-      "droppedTranslationCheck": 0,
-      "droppedEnglishExists": 0,
-      "mergedSameQuote": 0,
-      "alreadyHeld": 0,
-      "items": 20,
-      "tokens": {
-       "input": 0,
-       "output": 0
-      },
-      "modelError": null,
-      "retryUrls": 0
-     },
-     "added": 0,
-     "held": 100,
-     "byCategory": {
-      "Interviews": 93,
-      "Injuries": 7
-     },
-     "finishedMatches": 0,
-     "matchesWithWinnerQuote": 0
-    }
-   ],
-   "newItems": 0,
-   "tokens": {
-    "input": 0,
-    "output": 0
-   },
-   "press": {
-    "matchesLookedUp": 0,
-    "answers": 0
-   },
-   "ttvInbox": {
-    "held": 62,
-    "routed": 16
-   },
-   "atpInbox": {
-    "held": 16,
-    "routed": 4
-   },
-   "outlets": {
-    "read": 131,
-    "withCandidates": 0,
-    "blocked": [
-     "Fox Sports Australia: the site refuses a plain request",
-     "El Deber: the site refuses a plain request",
-     "Tenniskafe: the site refuses a plain request",
-     "TenisovySvet.cz: the site refuses a plain request",
-     "The Indian Express: the site refuses a plain request",
-     "ESPN México (Tenis): unexpected answer",
-     "Aftonbladet: unexpected answer",
-     "ESPN: unexpected answer",
-     "LTA: server error"
-    ],
-    "articlesFetched": 0,
-    "paywalled": 0,
-    "unnamed": 0,
-    "byOutlet": []
-   },
-   "alerts": []
-  },
-  {
    "at": "2026-11-16T05:03:01.800Z",
    "activeTournaments": [
     "Finals - Turin"
@@ -67965,6 +67855,363 @@
       "language": "pt",
       "fetched": 3,
       "candidates": 1
+     }
+    ]
+   },
+   "rehomed": 0,
+   "alerts": []
+  },
+  {
+   "at": "2026-11-24T15:02:42.201Z",
+   "activeTournaments": [
+    "Davis Cup - World Group"
+   ],
+   "tournaments": [
+    {
+     "name": "Davis Cup - World Group",
+     "key": "3120",
+     "sources": [],
+     "fromOutlets": 3,
+     "counts": {
+      "candidates": 3,
+      "droppedNotVerbatim": 0,
+      "droppedNoPlayer": 0,
+      "droppedAmbiguous": 0,
+      "notTranslatedNoKey": 0,
+      "notTranslatedApiError": 1,
+      "droppedTranslationCheck": 0,
+      "droppedEnglishExists": 0,
+      "mergedSameQuote": 0,
+      "alreadyHeld": 0,
+      "items": 2,
+      "tokens": {
+       "input": 0,
+       "output": 0
+      },
+      "modelError": {
+       "http": 400,
+       "detail": "HTTP 400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.\"},\""
+      },
+      "retryUrls": 1
+     },
+     "digests": {
+      "cards": 1,
+      "kept": 0,
+      "made": 0,
+      "failed": 0,
+      "waiting": 1,
+      "single": 0
+     },
+     "added": 2,
+     "held": 2,
+     "byCategory": {
+      "Interviews": 2
+     },
+     "finishedMatches": 0,
+     "matchesWithWinnerQuote": 0
+    },
+    {
+     "name": "ATP Tour",
+     "key": "tour",
+     "sources": [],
+     "fromOutlets": 25,
+     "counts": {
+      "candidates": 25,
+      "droppedNotVerbatim": 0,
+      "droppedNoPlayer": 0,
+      "droppedAmbiguous": 0,
+      "notTranslatedNoKey": 0,
+      "notTranslatedApiError": 3,
+      "droppedTranslationCheck": 0,
+      "droppedEnglishExists": 0,
+      "mergedSameQuote": 2,
+      "alreadyHeld": 0,
+      "items": 20,
+      "tokens": {
+       "input": 0,
+       "output": 0
+      },
+      "modelError": {
+       "http": 400,
+       "detail": "HTTP 400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.\"},\""
+      },
+      "retryUrls": 3
+     },
+     "digests": {
+      "cards": 67,
+      "kept": 20,
+      "made": 0,
+      "failed": 0,
+      "waiting": 11,
+      "single": 36
+     },
+     "added": 0,
+     "held": 148,
+     "byCategory": {
+      "Injuries": 10,
+      "Interviews": 118,
+      "Quotes": 20
+     },
+     "finishedMatches": 0,
+     "matchesWithWinnerQuote": 0
+    }
+   ],
+   "newItems": 2,
+   "tokens": {
+    "input": 0,
+    "output": 0
+   },
+   "press": {
+    "matchesLookedUp": 0,
+    "answers": 0
+   },
+   "ttvInbox": {
+    "held": 106,
+    "routed": 9
+   },
+   "atpInbox": {
+    "held": 58,
+    "routed": 13
+   },
+   "outlets": {
+    "read": 131,
+    "withCandidates": 5,
+    "blocked": [
+     "El Deber: the site refuses a plain request",
+     "Sport1.ba (Oslobodjenje): the site refuses a plain request",
+     "Tenniskafe: the site refuses a plain request",
+     "TenisovySvet.cz: the site refuses a plain request",
+     "Israel Tennis Association: unexpected answer",
+     "AS (Diario AS): the site refuses a plain request",
+     "Aftonbladet: unexpected answer"
+    ],
+    "articlesFetched": 67,
+    "paywalled": 10,
+    "unnamed": 91,
+    "byOutlet": [
+     {
+      "outlet": "Olé",
+      "country": "Argentina",
+      "language": "es",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "LAOLA1",
+      "country": "Austria",
+      "language": "de",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Sporza (VRT)",
+      "country": "Belgium",
+      "language": "nl",
+      "fetched": 2,
+      "candidates": 0
+     },
+     {
+      "outlet": "tennisnet.com",
+      "country": "Austria",
+      "language": "de",
+      "fetched": 2,
+      "candidates": 1
+     },
+     {
+      "outlet": "Tennis Canada",
+      "country": "Canada",
+      "language": "en",
+      "fetched": 5,
+      "candidates": 0
+     },
+     {
+      "outlet": "CT sport",
+      "country": "Czech Republic",
+      "language": "cs",
+      "fetched": 3,
+      "candidates": 1
+     },
+     {
+      "outlet": "Ilta-Sanomat",
+      "country": "Finland",
+      "language": "fi",
+      "fetched": 3,
+      "candidates": 0
+     },
+     {
+      "outlet": "Sport.cz",
+      "country": "Czech Republic",
+      "language": "cs",
+      "fetched": 3,
+      "candidates": 0
+     },
+     {
+      "outlet": "We Love Tennis",
+      "country": "France",
+      "language": "fr",
+      "fetched": 2,
+      "candidates": 1
+     },
+     {
+      "outlet": "Sport1",
+      "country": "Germany",
+      "language": "de",
+      "fetched": 2,
+      "candidates": 0
+     },
+     {
+      "outlet": "Sportschau (ARD)",
+      "country": "Germany",
+      "language": "de",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Gazzetta",
+      "country": "Greece",
+      "language": "el",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "iSport.cz",
+      "country": "Czech Republic",
+      "language": "cs",
+      "fetched": 6,
+      "candidates": 0
+     },
+     {
+      "outlet": "Tennisnews.gr",
+      "country": "Greece",
+      "language": "el",
+      "fetched": 2,
+      "candidates": 0
+     },
+     {
+      "outlet": "Tennis365",
+      "country": "INT",
+      "language": "en",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Tennishead",
+      "country": "INT",
+      "language": "en",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Corriere dello Sport",
+      "country": "Italy",
+      "language": "it",
+      "fetched": 2,
+      "candidates": 0
+     },
+     {
+      "outlet": "SuperTennis (FITP)",
+      "country": "Italy",
+      "language": "it",
+      "fetched": 2,
+      "candidates": 0
+     },
+     {
+      "outlet": "The Indian Express",
+      "country": "India",
+      "language": "en",
+      "fetched": 6,
+      "candidates": 0
+     },
+     {
+      "outlet": "TennisUpToDate",
+      "country": "INT",
+      "language": "en",
+      "fetched": 3,
+      "candidates": 2
+     },
+     {
+      "outlet": "ESPN México (Tenis)",
+      "country": "Mexico",
+      "language": "es",
+      "fetched": 3,
+      "candidates": 0
+     },
+     {
+      "outlet": "Bola Amarela",
+      "country": "Portugal",
+      "language": "pt",
+      "fetched": 1,
+      "candidates": 1
+     },
+     {
+      "outlet": "Gulf Times",
+      "country": "Qatar",
+      "language": "en",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Tennis New Zealand",
+      "country": "New Zealand",
+      "language": "en",
+      "fetched": 3,
+      "candidates": 0
+     },
+     {
+      "outlet": "Sport Klub",
+      "country": "Serbia",
+      "language": "sr",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Sport Aktuality",
+      "country": "Slovakia",
+      "language": "sk",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "The Guardian",
+      "country": "United Kingdom",
+      "language": "en",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Sky Sports",
+      "country": "United Kingdom",
+      "language": "en",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Expressen",
+      "country": "Sweden",
+      "language": "sv",
+      "fetched": 2,
+      "candidates": 0
+     },
+     {
+      "outlet": "Hoy",
+      "country": "Paraguay",
+      "language": "es",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Thanh Nien",
+      "country": "Vietnam",
+      "language": "vi",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "LTA",
+      "country": "United Kingdom",
+      "language": "en",
+      "fetched": 2,
+      "candidates": 0
      }
     ]
    },
