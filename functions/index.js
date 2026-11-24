@@ -62,7 +62,9 @@ const DAY_MS = 86400000;
 // Whop sends: webhook-id, webhook-timestamp, webhook-signature ("v1,<b64hmac>")
 // signed content = `${id}.${timestamp}.${rawBody}`
 // ---------------------------------------------------------------------------
-const WEBHOOK_TOLERANCE_SECONDS = 5 * 60;
+// Whop retries keep the original timestamp, so allow retries for 3 days; a replay is harmless because every
+// event re-reads the membership's current state.
+const WEBHOOK_TOLERANCE_SECONDS = 3 * 24 * 3600;
 
 function verifyWhopSignature(rawBody, headers, secret) {
   const id = headers['webhook-id'];
@@ -79,8 +81,9 @@ function verifyWhopSignature(rawBody, headers, secret) {
     return { ok: false, reason: 'timestamp outside tolerance' };
   }
 
-  // The secret is base64, usually prefixed "whsec_".
-  const secretBytes = Buffer.from(secret.replace(/^whsec_/, ''), 'base64');
+  // Whop's ws_ secret is the literal HMAC key (docs.whop.com/developer/guides/webhooks); a generic Standard
+  // Webhooks whsec_ secret is base64.
+  const secretBytes = secret.startsWith('whsec_') ? Buffer.from(secret.slice(6), 'base64') : Buffer.from(secret, 'utf8');
   const signedContent = `${id}.${timestamp}.${rawBody}`;
   const expected = crypto
     .createHmac('sha256', secretBytes)
@@ -225,6 +228,7 @@ async function handleEvent(action, data) {
 }
 
 exports.accessFor = accessFor;
+exports.verifyWhopSignature = verifyWhopSignature;
 
 exports.whopWebhook = onRequest(
   { region: 'us-central1', cors: false },

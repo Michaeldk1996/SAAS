@@ -35,3 +35,14 @@ assert.strictEqual(accessFor({ product_id: 'prod_yREkGisM3eFbI', status: 'past_d
 // Unknown product (e.g. the old hidden USD ones) -> never a paid tier
 assert.strictEqual(accessFor({ product_id: 'prod_other', status: 'active' }, now).tier, null);
 console.log('access.test.js: 8 checks passed');
+
+// Signature: Whop's ws_ secret is the literal HMAC key
+const crypto = require('crypto');
+const { verifyWhopSignature } = require('../index.js');
+const secret = 'ws_0123456789abcdef', body = '{"type":"membership.activated"}', ts = String(Math.floor(Date.now() / 1000));
+const sig = crypto.createHmac('sha256', secret).update(`msg_1.${ts}.${body}`).digest('base64');
+const h = { 'webhook-id': 'msg_1', 'webhook-timestamp': ts, 'webhook-signature': `v1,${sig}` };
+assert.ok(verifyWhopSignature(body, h, secret).ok);
+assert.ok(!verifyWhopSignature(body + ' ', h, secret).ok);
+assert.ok(!verifyWhopSignature(body, h, 'ws_other').ok);
+console.log('signature: 3 checks passed');
