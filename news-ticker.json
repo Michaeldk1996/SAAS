@@ -1,6 +1,19 @@
 {
- "generatedAt": "2026-11-24T19:52:04.463Z",
+ "generatedAt": "2026-11-24T20:11:23.195Z",
  "tournaments": [
+  {
+   "key": "3120",
+   "season": "2026",
+   "name": "Davis Cup - World Group",
+   "file": "news-ticker/3120-2026.json",
+   "items": 4,
+   "byType": {
+    "report": 2,
+    "quote": 2
+   },
+   "latestTimestamp": "2026-11-24T19:42:09.527Z",
+   "updatedAt": "2026-11-24T20:11:23.195Z"
+  },
   {
    "key": "tour",
    "season": "2026",
@@ -13,19 +26,6 @@
    },
    "latestTimestamp": "2026-11-24T19:17:03.000Z",
    "updatedAt": "2026-11-24T19:52:04.463Z"
-  },
-  {
-   "key": "3120",
-   "season": "2026",
-   "name": "Davis Cup - World Group",
-   "file": "news-ticker/3120-2026.json",
-   "items": 3,
-   "byType": {
-    "report": 1,
-    "quote": 2
-   },
-   "latestTimestamp": "2026-11-24T17:15:27.467Z",
-   "updatedAt": "2026-11-24T17:47:32.132Z"
   },
   {
    "key": "2794",
@@ -69,6 +69,189 @@
   }
  ],
  "latest": [
+  {
+   "id": "report-12182496",
+   "type": "report",
+   "playerId": "2959",
+   "opponentId": "2073",
+   "player": "J. Lehecka",
+   "opponent": "F. Auger-Aliassime",
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "stage": "main draw",
+   "round": null,
+   "eventKey": "12182496",
+   "timestamp": "2026-11-24T19:42:09.527Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-24T19:42:09.527Z"
+   },
+   "category": "Statistics",
+   "text": "Lehecka beat Auger-Aliassime for the 2nd time in 5 meetings, 7-6, 6-2.\n\nLehecka: DR: 1.28\n\nAuger-Aliassime: DR: 0.78",
+   "ms": {
+    "a": "J. Lehecka",
+    "b": "F. Auger-Aliassime",
+    "sets": [
+     [
+      7,
+      6
+     ],
+     [
+      6,
+      2
+     ]
+    ],
+    "rows": [
+     [
+      "Dominance ratio",
+      1.28,
+      0.78,
+      "dr"
+     ],
+     [
+      "1st serve in",
+      80,
+      82,
+      "%"
+     ],
+     [
+      "1st serve points won",
+      73,
+      62,
+      "%"
+     ],
+     [
+      "2nd serve points won",
+      44,
+      38,
+      "%"
+     ]
+    ]
+   },
+   "baseText": "Lehecka beat Auger-Aliassime for the 2nd time in 5 meetings, 7-6, 6-2.",
+   "rating": [
+    "Lehecka: DR: 1.28",
+    "Auger-Aliassime: DR: 0.78"
+   ],
+   "fields": {
+    "score": "7-6, 6-2",
+    "round": null,
+    "retired": false,
+    "h2h": {
+     "a": 2,
+     "b": 3,
+     "n": 5
+    },
+    "facts": {
+     "tiebreakSets": [
+      {
+       "set": 1,
+       "winner": "p1"
+      }
+     ],
+     "longestRun": {
+      "side": "p1",
+      "n": 5,
+      "set": 1,
+      "from": {
+       "me": 5,
+       "opp": 6
+      },
+      "afterBeingBroken": false,
+      "toTheEnd": false
+     }
+    },
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": null,
+      "metric": "firstIn",
+      "value": 80,
+      "baseline": 63,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 41
+     },
+     {
+      "player": "winner",
+      "tone": null,
+      "metric": "firstWon",
+      "value": 73,
+      "won": 48,
+      "total": 66
+     },
+     {
+      "player": "winner",
+      "tone": null,
+      "metric": "secondWon",
+      "value": 44,
+      "won": 7,
+      "total": 16,
+      "baseline": 54,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 41
+     },
+     {
+      "player": "winner",
+      "tone": "bad",
+      "metric": "watch",
+      "of": "secondWon"
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "ret1Won",
+      "value": 38,
+      "won": 28,
+      "total": 74,
+      "baseline": 29,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 41
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "ret2Won",
+      "value": 63,
+      "won": 10,
+      "total": 16,
+      "baseline": 49,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 41
+     },
+     {
+      "player": "winner",
+      "tone": "good",
+      "metric": "breakPoints",
+      "saved": 9,
+      "faced": 9
+     }
+    ],
+    "winner": {
+     "aces": 5,
+     "breakPointsSaved": 9,
+     "breakPointsFaced": 9,
+     "breakPointsSource": "box score"
+    },
+    "loser": {
+     "aces": 8,
+     "breakPointsSaved": 9,
+     "breakPointsFaced": 11,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12182496.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "a5435a5484f213e0",
+   "publishedAt": "2026-11-24T20:11:23.195Z",
+   "file": "news-ticker/3120-2026.json"
+  },
   {
    "id": "quote-9f26375b77790f",
    "type": "quote",
@@ -1340,36 +1523,6 @@
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "74da2934ebd24e14",
    "publishedAt": "2026-11-23T13:55:03.865Z",
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-1001214de604d7",
-   "type": "quote",
-   "playerId": "1980",
-   "opponentId": "2382",
-   "player": "A. Zverev",
-   "opponent": "C. Alcaraz",
-   "tournament": "Finals - Turin",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-23T10:30:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Quotes",
-   "context": "after losing to C. Alcaraz",
-   "eventKey": "12181958",
-   "won": false,
-   "text": "You feel burnt out? You had a four-month vacation, … I know, but you have to speak out sometimes, … I played 98 matches since you were gone,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "TennisUpToDate",
-   "sourceUrl": "https://tennisuptodate.com/atp/zverevs-prior-comments-directed-at-alcaraz-come-back-to-haunt-him-according-to-stubbs-he-wasnt-on-vacation-he-was-injured",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "c5fbb5a13cd34ae5",
-   "publishedAt": "2026-11-23T11:13:37.263Z",
    "file": "news-ticker/2794-2026.json"
   }
  ]
