@@ -110,12 +110,11 @@ test('r2.2 search: "Cincinnati Open" and "Cincinnati" both find it; the city, th
 // tourxEventName"): the two r2.4 checks — the old Reports picker printing sfEventName + a monogram, and the old
 // match-stats sheet header / empty lines printing the event name — locked the deleted renderTourxReports /
 // tourxMatchSheetHtml. The rebuilt Reports (tournaments-reports.js) prints the city key as the design does:
-test('r2.4 Reports (rebuild): the tournament pill and the sheet meta print the city key, as the design does', () => {
+test('r2.4 Reports (rebuild): the tournament pill prints the city key, as the design does (the sheet is Match analysis since 2026-11-24)', () => {
   const tt = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'tournaments-reports.js'), 'utf8');
   // 2026-11-20 handoff rebuild: the pill prints the entry's city (`display` = the key's city, "Finals - Turin" → "Turin").
   assert.match(tt, /data-act="tour" data-v="\$\{esc\(t\.key\)\}">\$\{esc\(t\.display\)\} <span class="tt-rp-pfig">/);
   assert.match(tt, /const displayOf = key => String\(key\)\.split\(' - '\)\.pop\(\);/);
-  assert.match(tt, /const meta = \[M\.display \+ \(M\.year/);
   assert.doesNotMatch(tt, /tourxEventName|sfEventName/, 'the rebuilt Reports never renames the event');
 });
 

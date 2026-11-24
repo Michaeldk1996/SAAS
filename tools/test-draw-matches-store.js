@@ -83,7 +83,8 @@ check('control: no store and no board row → nothing clickable', !/role="button
 // ── the page: one lookup (board first, then the store), the model fallback, the loader ──
 const html = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
 const fnSrc = (name) => { const i = html.indexOf(`function ${name}(`); if (i < 0) return null; let d = 0, j = html.indexOf('{', i); for (; j < html.length; j++) { if (html[j] === '{') d++; else if (html[j] === '}' && --d === 0) break; } return html.slice(i, j + 1); };
-const matchById = new Function('matches', '_drawMatchStore', fnSrc('matchById') + '\nreturn matchById;');
+// drawStoreFresh (founder 2026-11-24) re-reads court figures from the page table; no court key here, so the row passes as is
+const matchById = new Function('matches', '_drawMatchStore', 'const COURT_CONDITIONS = {}; const trKeyOf = () => null;\n' + fnSrc('drawStoreFresh') + '\n' + fnSrc('matchById') + '\nreturn matchById;');
 const brd = [{ id: 'past-1', tag: 'board', finalScore: {} }];
 const st = { matches: { 'past-1': { match: { id: 'past-1', tag: 'store', finalScore: {} } }, 'past-2': { match: { id: 'past-2', tag: 'store', finalScore: {} } }, 'past-3': { match: { id: 'past-3' } } } };
 const look = matchById(brd, st);
