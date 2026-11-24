@@ -829,7 +829,7 @@ def apitennis_fixture_fetcher(key, workers=16):
     return prefetch
 
 
-LEDGER_SITE = 'https://michaeldk1996.github.io/SAAS'
+LEDGER_SITE = 'https://app.stennisfy.com'
 
 
 def ledger_rows(series, cut, outcome):

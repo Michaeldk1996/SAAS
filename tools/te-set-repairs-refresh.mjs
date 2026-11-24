@@ -34,7 +34,7 @@ import { STORE_DIR, INDEX } from './te-history-guard.mjs';
 
 export const REPAIRS = 'set-repairs.json';
 export const REPAIRS_LOG = 'set-repairs-log.jsonl';
-export const SITE = 'https://michaeldk1996.github.io/SAAS/';
+export const SITE = 'https://app.stennisfy.com/';
 
 const fold = (s) => String(s || '').normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z]/g, '');
 

@@ -51,7 +51,7 @@ import urllib.request
 from datetime import datetime, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-LIVE_MATCHES_URL = 'https://michaeldk1996.github.io/SAAS/matches.json'
+LIVE_MATCHES_URL = 'https://app.stennisfy.com/matches.json'
 STATE_FILE = os.path.join(HERE, 'odds-now-staleness.json')
 
 # The founder's number. Env override exists so TEN-187 can re-derive it against a day of

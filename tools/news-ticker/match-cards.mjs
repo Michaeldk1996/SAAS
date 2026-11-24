@@ -168,7 +168,7 @@ const wr = (f, o) => { const t = f + '.tmp'; fs.writeFileSync(t, JSON.stringify(
 
 async function main() {
   const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
-  const nowIso = arg('now', new Date().toISOString()), DIR = path.resolve(arg('dir', ROOT)), BASE = arg('base', 'https://michaeldk1996.github.io/SAAS').replace(/\/$/, '');
+  const nowIso = arg('now', new Date().toISOString()), DIR = path.resolve(arg('dir', ROOT)), BASE = arg('base', 'https://app.stennisfy.com').replace(/\/$/, '');
   const stateFile = path.join(DIR, 'news-quotes/match-cards-state.json'), outFile = path.join(DIR, 'news-quotes/match-cards.json');
   const state = rd(stateFile, null), tok = process.env.X_BEARER_TOKEN;
   if (!state || !state.lastSeenId) { console.error('match cards: no lastSeenId in the state file — refusing to read the whole timeline'); process.exit(1); }

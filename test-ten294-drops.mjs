@@ -90,8 +90,8 @@ test('B′: every drops page fetches only from the drops app (skips OUT LOUD unt
 });
 
 test('CORS allows exactly the Pages origin (origins carry no path)', () => {
-  assert.deepEqual(DEFAULT_ORIGINS, ['https://michaeldk1996.github.io']);
-  assert.match(read('stennisfy-drops/fly.toml'), /ALLOWED_ORIGINS = "https:\/\/michaeldk1996\.github\.io"/);
+  assert.deepEqual(DEFAULT_ORIGINS, ['https://app.stennisfy.com', 'https://michaeldk1996.github.io']);
+  assert.match(read('stennisfy-drops/fly.toml'), /ALLOWED_ORIGINS = "https:\/\/app\.stennisfy\.com,https:\/\/michaeldk1996\.github\.io"/);
 });
 
 // ---- Ruling 2: one read fanned out to every viewer ----
@@ -240,6 +240,7 @@ test('ETag: unchanged rows answer 304; a new alert changes the ETag; gzip on req
 test('CORS: the Pages origin is echoed; any other origin gets no allow header', async () => {
   const h = harness();
   await h.svc.readOnce();
+  assert.equal(call(h.svc, '/status.json', { origin: 'https://app.stennisfy.com' }).headers['Access-Control-Allow-Origin'], 'https://app.stennisfy.com');
   assert.equal(call(h.svc, '/status.json', { origin: 'https://michaeldk1996.github.io' }).headers['Access-Control-Allow-Origin'], 'https://michaeldk1996.github.io');
   assert.equal(call(h.svc, '/status.json', { origin: 'https://evil.example' }).headers['Access-Control-Allow-Origin'], undefined);
   assert.equal(call(h.svc, '/drops.json', {}, 'POST').status, 405);

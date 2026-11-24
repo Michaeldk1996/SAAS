@@ -28,7 +28,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
       - name: Our roster (the deployed site — our own file)
-        run: curl -sf -o player-index.json "https://michaeldk1996.github.io/SAAS/player-index.json?_=$(date +%s)"
+        run: curl -sfL -o player-index.json "https://app.stennisfy.com/player-index.json?_=$(date +%s)"
       - name: Build points-to-defend.json
         env:
           API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}

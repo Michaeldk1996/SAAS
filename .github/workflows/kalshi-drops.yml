@@ -60,7 +60,7 @@ jobs:
         env:
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
         run: |
-          curl -sfL --retry 2 --max-time 60 -o board.json "https://michaeldk1996.github.io/SAAS/matches.json?cb=$(date +%s)"
+          curl -sfL --retry 2 --max-time 60 -o board.json "https://app.stennisfy.com/matches.json?cb=$(date +%s)"
           node tools/kalshi-volume.mjs board.json kalshi.json
       - name: Schedule the bot + startup message
         if: inputs.mode == 'install'

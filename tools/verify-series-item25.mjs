@@ -33,8 +33,8 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '..');
-const PAGE = 'https://michaeldk1996.github.io/SAAS/bsp-consult-dashboard.html?series=1';
-const DATA = 'https://michaeldk1996.github.io/SAAS/series.json';
+const PAGE = 'https://app.stennisfy.com/bsp-consult-dashboard.html?series=1';
+const DATA = 'https://app.stennisfy.com/series.json';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const argv = process.argv.slice(2);
@@ -405,8 +405,8 @@ ok('C7 the total-games family still carries "(best-of-N)" at this floor',
  * runs the page as published today — no candidate swap — over the same artifact and
  * the same 3+ floor, so the two card sets are comparable line for line.
  */
-const liveJs = await (await fetch('https://michaeldk1996.github.io/SAAS/series.js', { cache: 'no-store' })).text();
-const liveCss = await (await fetch('https://michaeldk1996.github.io/SAAS/series.css', { cache: 'no-store' })).text();
+const liveJs = await (await fetch('https://app.stennisfy.com/series.js', { cache: 'no-store' })).text();
+const liveCss = await (await fetch('https://app.stennisfy.com/series.css', { cache: 'no-store' })).text();
 const D = await drive(withRefRaw, async (ev) => {
   await ev(`(function(){var s=document.querySelector('[data-page="series"] .sr-seg[data-seg="minLen"]');
     s.querySelector('.sr-segbtn[data-val="3"]').click();})()`);

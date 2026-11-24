@@ -105,7 +105,7 @@ export function carryPreStart(byEvent, prev, board, startOf, nowMs = Date.now())
   return out;
 }
 export async function fetchPublished(file) {
-  try { const r = await fetch(`https://michaeldk1996.github.io/SAAS/${file}?cb=${Date.now()}`, { signal: AbortSignal.timeout(60e3) }); return r.ok ? await r.json() : null; }
+  try { const r = await fetch(`https://app.stennisfy.com/${file}?cb=${Date.now()}`, { signal: AbortSignal.timeout(60e3) }); return r.ok ? await r.json() : null; }
   catch { return null; }
 }
 

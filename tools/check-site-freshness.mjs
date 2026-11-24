@@ -91,7 +91,7 @@ async function gh(url, token) {
 async function main() {
   const repo = process.env.GITHUB_REPOSITORY || 'michaeldk1996/SAAS';
   const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN;
-  const site = process.env.SITE_URL || 'https://michaeldk1996.github.io/SAAS';
+  const site = process.env.SITE_URL || 'https://app.stennisfy.com';
   if (!token) { console.log('::error::check-site-freshness: no GH_TOKEN'); process.exit(1); }
   let out;
   try {

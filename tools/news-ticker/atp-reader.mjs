@@ -51,7 +51,7 @@ export function appendRun(prev, row) {
 async function main() {
   const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
   const ROOT = path.resolve(arg('repo', path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..')));
-  const BASE = arg('base', 'https://michaeldk1996.github.io/SAAS').replace(/\/$/, ''), nowIso = new Date().toISOString();
+  const BASE = arg('base', 'https://app.stennisfy.com').replace(/\/$/, ''), nowIso = new Date().toISOString();
   const CHROME = process.env.CHROME_BIN || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const rd = (p) => { try { return JSON.parse(fs.readFileSync(path.join(ROOT, p), 'utf8')); } catch (e) { return null; } };

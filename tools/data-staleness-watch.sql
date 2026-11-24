@@ -22,7 +22,7 @@ revoke all on schema stale_watch from public, anon, authenticated;
 
 create table if not exists stale_watch.config (
     id           boolean primary key default true check (id),
-    url          text     not null default 'https://michaeldk1996.github.io/SAAS/build-info.json',
+    url          text     not null default 'https://app.stennisfy.com/build-info.json',
     stale_after  interval not null default interval '60 minutes',
     repeat_every interval not null default interval '60 minutes',
     unread_n     integer  not null default 2

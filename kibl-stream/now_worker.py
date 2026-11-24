@@ -50,7 +50,7 @@ try:
 except Exception as _e:  # noqa: BLE001
     LE, LE_IMPORT_ERROR = None, f"{type(_e).__name__}: {_e}"
 
-BOARD_URL = "https://michaeldk1996.github.io/SAAS/matches.json"
+BOARD_URL = "https://app.stennisfy.com/matches.json"
 TABLE_NOW = "kibl_now_price"
 TABLE_HIST = "kibl_now_history"
 TABLE_CARD = "kibl_now_card"   # ONE row per card, both sides: the only Realtime-published table

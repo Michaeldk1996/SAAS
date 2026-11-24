@@ -11,7 +11,7 @@
 import { htmlToParagraphs } from './quote-sources.mjs';
 import { foldText } from './news-core.mjs';
 
-export const UA = 'stennisfy-news/1.0 (+https://michaeldk1996.github.io/SAAS/; quote collector; plain client)';
+export const UA = 'stennisfy-news/1.0 (+https://app.stennisfy.com/; quote collector; plain client)';
 export const MAX_ARTICLES_PER_OUTLET = 6;
 
 const fold = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();

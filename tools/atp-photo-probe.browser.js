@@ -9,7 +9,7 @@
 // (/en/-/www/players/hero/<code>) -> name, birth date, nationality. A read-only probe, 25 codes at a time; nothing is
 // written anywhere but the console.
 (async () => {
-  const ALIASES_URL = 'https://michaeldk1996.github.io/SAAS/player-atp-aliases.json';
+  const ALIASES_URL = 'https://app.stennisfy.com/player-atp-aliases.json';
   const PLACEHOLDERS = [{ sha1_16: 'd027bd09f6529734', bytes: 4729, what: "ATP's grey silhouette (served with HTTP 200 for H346 and TA12)" }];
   const aliases = await (await fetch(ALIASES_URL, { cache: 'no-store' })).json();
   const codes = [...new Set(Object.values(aliases))].sort();

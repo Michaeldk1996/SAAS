@@ -52,7 +52,7 @@ const https = require('https');
 
 const ROOT = path.join(__dirname, '..');
 const PROFILES = path.join(ROOT, 'player-profiles.json');
-const SITE = 'https://michaeldk1996.github.io/SAAS/';
+const SITE = 'https://app.stennisfy.com/';
 const ALIASES = path.join(ROOT, 'player-atp-aliases.json');
 // TEN-391: one file per player + the small tour file (see the header).
 const SPLITS_DIR = path.join(ROOT, 'career-splits');

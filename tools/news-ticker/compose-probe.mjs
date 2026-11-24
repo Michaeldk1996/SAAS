@@ -8,7 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
-const BASE = arg('base', 'https://michaeldk1996.github.io/SAAS').replace(/\/$/, ''), only = arg('only', null);
+const BASE = arg('base', 'https://app.stennisfy.com').replace(/\/$/, ''), only = arg('only', null);
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'compose-probe-'));
 const get = async (p) => { const r = await fetch(`${BASE}/${p}`, { signal: AbortSignal.timeout(90000) }); if (!r.ok) return null; const f = path.join(dir, p); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, Buffer.from(await r.arrayBuffer())); return f; };
 for (const f of ['matches.json', 'draw-matches.json', 'mto-matches.json', 'surface-ratings.json', 'player-index.json', 'tournament-progression.json', 'news-ticker.json', 'playing-styles.json']) await get(f);

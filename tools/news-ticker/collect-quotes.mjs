@@ -214,7 +214,7 @@ async function main() {
       'TEST — News ticker alert 3 of 3: a model call failing on credit or key. (Triggered by hand; nothing is wrong.)']) { const r = await sendTelegram(text); console.log('test alert: ' + (r.ok ? 'sent' : 'NOT sent ' + r.why)); }
     return;
   }
-  const BASE = arg('base', 'https://michaeldk1996.github.io/SAAS').replace(/\/$/, '');
+  const BASE = arg('base', 'https://app.stennisfy.com').replace(/\/$/, '');
   const DIR = path.resolve(arg('dir', ROOT)), nowIso = arg('now', new Date().toISOString());
   const rd = (p) => { try { return JSON.parse(fs.readFileSync(path.join(DIR, p), 'utf8')); } catch (e) { return null; } };
   const wr = (p, o) => { const f = path.join(DIR, p); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f + '.tmp', JSON.stringify(o, null, 1) + '\n'); fs.renameSync(f + '.tmp', f); };

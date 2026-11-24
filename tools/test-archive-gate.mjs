@@ -107,7 +107,7 @@ const ex = step("Export the archive's Pinnacle closes (fail-closed)"), ap = step
 ok(ex && ap && fd && al, 'the four steps exist');
 ok(![ex, ap, fd].some(s => /\|\| true|\|\| rc=\$\?|step-check\.mjs/.test(s)), 'none of the archive steps tolerates a failure (no || true, no || rc=$?, no best-effort step-check)');
 ok(/pinarch\.py export[^\n]*exit 1/.test(ex) && /approx-feed[^\n]*exit 1/.test(ap) && /td-feed[^\n]*exit 1/.test(fd) && /build-database-yield\.js[^\n]*exit 1/.test(fd), 'export, snapshot export, feed and build each exit 1 on failure');
-ok(/node tools\/archive-gate\.mjs --dir \. --baseline-url https:\/\/michaeldk1996\.github\.io\/SAAS\/database-yield-master-meta\.json/.test(fd), 'the gate runs after the build against the published counts');
+ok(/node tools\/archive-gate\.mjs --dir \. --baseline-url https:\/\/app\.stennisfy\.com\/database-yield-master-meta\.json/.test(fd), 'the gate runs after the build against the published counts');
 ok(/if: failure\(\) && hashFiles\('\.archive-failed'\) != ''/.test(al) && /api\.telegram\.org/.test(al) && /TELEGRAM_BOT_TOKEN/.test(al), 'a failure sends the Telegram alert');
 const up = y.indexOf('name: site-data');
 ok(up < 0 || y.indexOf("- name: Feed the archive's Pinnacle closes") < up, 'the gate runs before the site-data upload');

@@ -303,7 +303,7 @@ const CH_DRIFT = (() => {
   if (BUILT) {
     live = (DEPLOYED.fetchJson('career-history-index.json') || {}).players || null;
   } else try {
-    const base = process.env.TEN206_DATA_BASE || 'https://michaeldk1996.github.io/SAAS';
+    const base = process.env.TEN206_DATA_BASE || 'https://app.stennisfy.com';
     const out = require('child_process').execFileSync('curl',
       ['-sS', '--max-time', '20', `${base}/career-history-index.json`], { maxBuffer: 64 << 20 }).toString();
     live = (JSON.parse(out) || {}).players || null;

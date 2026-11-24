@@ -121,7 +121,7 @@ async function sql(q) {
 }
 
 async function main() {
-  const now = Date.now(), repo = process.env.GITHUB_REPOSITORY, site = process.env.SITE_URL || 'https://michaeldk1996.github.io/SAAS';
+  const now = Date.now(), repo = process.env.GITHUB_REPOSITORY, site = process.env.SITE_URL || 'https://app.stennisfy.com';
   const jobs = [], feeds = [], pg = [];
   for (const w of watchedWorkflows()) {
     try {

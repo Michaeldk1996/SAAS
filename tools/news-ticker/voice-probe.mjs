@@ -6,7 +6,7 @@ import { humaniseReport } from './humanise.mjs';
 import { reportText } from './news-core.mjs';
 import { scoreFacts, pbpFacts } from './pbp-facts.mjs';
 import { baselineFor } from './standouts.mjs';
-const i = process.argv.indexOf('--base'), BASE = (i > 0 ? process.argv[i + 1] : 'https://michaeldk1996.github.io/SAAS').replace(/\/$/, '');
+const i = process.argv.indexOf('--base'), BASE = (i > 0 ? process.argv[i + 1] : 'https://app.stennisfy.com').replace(/\/$/, '');
 const get = async (p) => (await fetch(`${BASE}/${p}`, { signal: AbortSignal.timeout(90000) })).json();
 const lc = (x) => String(x).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const [board, ratings, pi, ix] = await Promise.all([get('matches.json'), get('surface-ratings.json'), get('player-index.json'), get('news-ticker.json')]);

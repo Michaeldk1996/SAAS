@@ -34,7 +34,7 @@ export const STALE_AFTER_S = {
   'superbet-bot': 120,       // 30 s pg_cron
 };
 
-export const DEFAULT_ORIGINS = ['https://michaeldk1996.github.io'];
+export const DEFAULT_ORIGINS = ['https://app.stennisfy.com', 'https://michaeldk1996.github.io'];
 
 // Supabase's own root CA (public; https://supabase-downloads.s3-ap-southeast-1.amazonaws.com/prod/ssl/
 // prod-ca-2021.crt). The pooler's chain does NOT verify against the public roots (measured 2026-09-26:

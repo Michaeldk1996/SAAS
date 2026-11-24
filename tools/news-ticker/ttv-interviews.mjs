@@ -248,7 +248,7 @@ const wr = (f, o) => { const t = f + '.tmp'; fs.writeFileSync(t, JSON.stringify(
 async function main() {
   const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
   const mode = process.argv[2], nowIso = arg('now', new Date().toISOString());
-  const DIR = path.resolve(arg('dir', ROOT)), BASE = arg('base', 'https://michaeldk1996.github.io/SAAS').replace(/\/$/, '');
+  const DIR = path.resolve(arg('dir', ROOT)), BASE = arg('base', 'https://app.stennisfy.com').replace(/\/$/, '');
   const stateFile = path.join(DIR, 'news-quotes/ttv-state.json'), inboxFile = path.join(DIR, 'news-quotes/inbox-ttv.json');
   const state = rd(stateFile, { clips: {} });
   if (mode === 'list') {

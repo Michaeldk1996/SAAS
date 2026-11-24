@@ -60,7 +60,7 @@ if [ "$archive" = 1 ]; then
   gate "lower-level closes (pinarch.py lower-closes)" python3 tools/pinarch.py lower-closes pinnacle-closes.json pinnacle-lower-closes.csv
   gate "started evidence" node tools/started-evidence.js --root . --out started-evidence.json
   gate "Database build (build-database-yield.js)" node build-database-yield.js
-  gate "archive gate (counts vs the published master)" node tools/archive-gate.mjs --dir . --baseline-url https://michaeldk1996.github.io/SAAS/database-yield-master-meta.json
+  gate "archive gate (counts vs the published master)" node tools/archive-gate.mjs --dir . --baseline-url https://app.stennisfy.com/database-yield-master-meta.json
   # the reconcile suite below reads the Database files this code just built, as the pipeline's does
   for f in database-yield.json database-yield-players.json database-yield-x.json tour-baselines.json; do [ -f "$f" ] && cp "$f" "$SITE/$f"; done
   gate "market performance shards (build-odds-performance.js)" node build-odds-performance.js

@@ -762,7 +762,7 @@ def run(out_dir, frm, to, td_path=None, measure_to=None, write=False, digest_in=
 
 
 # ── audit (founder rulings 2026-10-26, REPORT ONLY): the Bet365 rows outside Jan–Apr 2026 and the start − 10 rows ──────────
-SITE = 'https://michaeldk1996.github.io/SAAS'
+SITE = 'https://app.stennisfy.com'
 B365_FROM, B365_TO = 20260101, 20260430
 ODDSPAPI_FROM = '2026-03-21'        # the oldest Oddspapi fixture we hold (.ten225-fixture-index.json.gz): no history before it
 

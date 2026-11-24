@@ -94,7 +94,7 @@ function writeState(file, state) {
 export async function run(env, { now = Date.now(), fetchImpl, sleep, log = console.log } = {}) {
   const stateFile = env.STATE_FILE || '.data-staleness-alert/state.json';
   const gapMs = env.FETCH_GAP_MS !== undefined ? Number(env.FETCH_GAP_MS) : FETCH_GAP_MS;
-  const read = await readBuildInfo(env.SITE_URL || 'https://michaeldk1996.github.io/SAAS', { now, gapMs, ...(fetchImpl && { fetchImpl }), ...(sleep && { sleep }) });
+  const read = await readBuildInfo(env.SITE_URL || 'https://app.stennisfy.com', { now, gapMs, ...(fetchImpl && { fetchImpl }), ...(sleep && { sleep }) });
   const d = decide({ now, read, prev: readState(stateFile) });
   if (!d.alert) { log(`data-staleness: no message (${d.why})`); return { sent: false, save: false, d }; }
   const r = await sendTelegram(d.text, env);

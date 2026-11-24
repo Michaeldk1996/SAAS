@@ -24,7 +24,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const H2HCore = createRequire(import.meta.url)(path.join(ROOT, 'h2h-core.js'));
 const GOLDEN = path.join(ROOT, 'tools/fixtures/ten437/h2h-golden-pairs.json');
-const PREVIOUS_URL = 'https://michaeldk1996.github.io/SAAS/h2h-reconcile.json';
+const PREVIOUS_URL = 'https://app.stennisfy.com/h2h-reconcile.json';
 
 // Pure: the verdict over one run. `shard(key)` → rows (or null when the store has no file for him); `names` → roster.
 export function goldenHash(golden) { return crypto.createHash('sha256').update(JSON.stringify(golden.pairs.map(p => [p.a.key, p.b.key, p.atp, !!p.knownGap]))).digest('hex').slice(0, 16); }

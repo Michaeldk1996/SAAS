@@ -593,7 +593,7 @@ def cmd_daily(closes_json):
     print('### daily', json.dumps({'day': day, 'originalsAdded': n_orig}))
 
 
-def cmd_verify_export(ops, site='https://michaeldk1996.github.io/SAAS'):
+def cmd_verify_export(ops, site='https://app.stennisfy.com'):
     """Item 4's checks on the newest export: (a) per year, the rows priced on Tennis-Data Pinnacle / Bet365 equal the
     archive's current rows of that source; (b) no export file is reachable from the deployed site (a request per name,
     at the site root and at its ops path, must not answer 200); (c) every file matches its manifest sha256."""

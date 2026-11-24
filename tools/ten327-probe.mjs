@@ -8,7 +8,7 @@
 // Tournament Report check vacuous).
 // Probe only: writes nothing; nothing regenerates it.
 import { spawn } from 'node:child_process'; import fs from 'node:fs'; import os from 'node:os'; import path from 'node:path';
-const BASE = (process.argv[2] || 'https://michaeldk1996.github.io/SAAS/').replace(/\/?$/, '/');
+const BASE = (process.argv[2] || 'https://app.stennisfy.com/').replace(/\/?$/, '/');
 const FIX = JSON.parse(fs.readFileSync(new URL('./fixtures/ten327-boxscores.json', import.meta.url), 'utf8')).matches;
 const ch = spawn('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', ['--headless=new', '--remote-debugging-port=0', '--no-first-run',
   '--disable-gpu', '--window-size=1500,1100', '--user-data-dir=' + fs.mkdtempSync(path.join(os.tmpdir(), 'ten327-')), 'about:blank'], { stdio: ['ignore', 'pipe', 'pipe'] });

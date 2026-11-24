@@ -8,7 +8,7 @@ import { coverageDropped } from './photo-index.mjs';
 
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
 const INDEX = arg('index', 'player-photos/index.json');
-const PREV = arg('prev', 'https://michaeldk1996.github.io/SAAS/player-photos/index.json');
+const PREV = arg('prev', 'https://app.stennisfy.com/player-photos/index.json');
 const read = async (src) => {
   if (/^https?:/.test(src)) { const r = await fetch(src + (src.includes('?') ? '&' : '?') + 'cb=' + Date.now(), { signal: AbortSignal.timeout(20000) }); return r.ok ? r.json() : null; }
   return JSON.parse(fs.readFileSync(src, 'utf8'));

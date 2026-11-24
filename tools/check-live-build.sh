@@ -24,10 +24,10 @@
 # ─────────────────────────────────────────────────────────────────────────────
 set -uo pipefail
 
-SITE="${SITE_URL:-https://michaeldk1996.github.io/SAAS}"
+SITE="${SITE_URL:-https://app.stennisfy.com}"
 EXPECTED="${1:-}"
 
-RAW=$(curl -fsS --max-time 20 "$SITE/build-info.json" 2>/dev/null)
+RAW=$(curl -fsSL --max-time 20 "$SITE/build-info.json" 2>/dev/null)
 if [ -z "$RAW" ]; then
   echo "UNDETERMINED: could not fetch $SITE/build-info.json"
   echo "  Treat every probe result against this site as unverified. This is a dash, not a pass."

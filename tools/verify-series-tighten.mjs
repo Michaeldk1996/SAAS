@@ -23,8 +23,8 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '..');
-const PAGE = 'https://michaeldk1996.github.io/SAAS/bsp-consult-dashboard.html?series=1';
-const DATA = 'https://michaeldk1996.github.io/SAAS/series.json';
+const PAGE = 'https://app.stennisfy.com/bsp-consult-dashboard.html?series=1';
+const DATA = 'https://app.stennisfy.com/series.json';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const argv = process.argv.slice(2);

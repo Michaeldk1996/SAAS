@@ -188,7 +188,7 @@ function mergeStores(a, b) {
 
 // The URL the guard in pipeline.yml compares against. Same constant, same
 // question: "is anything we have already served about to disappear?"
-const LIVE_URL = 'https://michaeldk1996.github.io/SAAS/historical-match-stats.json';
+const LIVE_URL = 'https://app.stennisfy.com/historical-match-stats.json';
 
 /**
  * The DEPLOYED store, or null if it cannot be read.

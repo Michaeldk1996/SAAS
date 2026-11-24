@@ -55,7 +55,7 @@ jobs:
       - name: Published data older than 60 min (Telegram)
         id: alert
         env:
-          SITE_URL: https://michaeldk1996.github.io/SAAS
+          SITE_URL: https://app.stennisfy.com
           STATE_FILE: .data-staleness-alert/state.json
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_PIPELINE_CHAT_ID || secrets.TELEGRAM_CHAT_ID }}

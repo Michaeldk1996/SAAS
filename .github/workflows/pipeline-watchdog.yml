@@ -88,7 +88,7 @@ env:
   # the budget would cry wolf on every run that legitimately runs long.
   WEDGE_GRACE_MIN: '5'
   STALE_AFTER_MIN: '60'
-  SITE_URL: https://michaeldk1996.github.io/SAAS
+  SITE_URL: https://app.stennisfy.com
 
 jobs:
   watch:

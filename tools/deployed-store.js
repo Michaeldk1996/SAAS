@@ -29,7 +29,7 @@ const { execFileSync } = require('child_process');
 
 const ROOT = path.join(__dirname, '..');
 const CACHE_DIR = path.join(ROOT, '.deployed-cache');
-const BASE = (process.env.TEN206_DATA_BASE || 'https://michaeldk1996.github.io/SAAS').replace(/\/+$/, '');
+const BASE = (process.env.TEN206_DATA_BASE || 'https://app.stennisfy.com').replace(/\/+$/, '');
 // TEN-329: a directory holding the store THIS RUN BUILT (the pipeline's assembled _site/),
 // read in place of Pages. The pre-build gate reads the deployed store, so a break caused by
 // REBUILT data (TEN-313's walkover rule, runs 5203-5207) published first and went red after.

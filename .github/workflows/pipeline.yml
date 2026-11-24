@@ -245,7 +245,7 @@ jobs:
       - name: Does the point-by-point store still need the previous version?
         id: pbpneed
         run: |
-          curl -4 -s -f --max-time 60 -o .pbp-ledger.json "https://michaeldk1996.github.io/SAAS/pbp-repairs.json?cb=$GITHUB_RUN_ID" || rm -f .pbp-ledger.json
+          curl -4 -s -f -L --max-time 60 -o .pbp-ledger.json "https://app.stennisfy.com/pbp-repairs.json?cb=$GITHUB_RUN_ID" || rm -f .pbp-ledger.json
           node -e '
             let f = null; try { f = JSON.parse(require("fs").readFileSync(".pbp-ledger.json", "utf8")).fallback || null; } catch (e) {}
             const t = f && Number.isInteger(f.target) ? f.target : null, cur = f && Number.isInteger(f.storeBeforeMerge) ? f.storeBeforeMerge : null;
@@ -447,7 +447,7 @@ jobs:
             draw-matches-v1-
       - name: Fetch the published draw matches store
         run: |
-          if curl -sfL --retry 2 --max-time 60 -o draw-matches.published.json "https://michaeldk1996.github.io/SAAS/draw-matches.json?cb=$(date +%s)"; then
+          if curl -sfL --retry 2 --max-time 60 -o draw-matches.published.json "https://app.stennisfy.com/draw-matches.json?cb=$(date +%s)"; then
             echo "published draw-matches.json: $(wc -c < draw-matches.published.json) bytes"
           else
             rm -f draw-matches.published.json; echo "::warning::no published draw-matches.json — the store carries the cache snapshot only"
@@ -457,7 +457,7 @@ jobs:
       # Fail-open: no copy = the store and the cache snapshot only, said in the step log.
       - name: Fetch the published model output (pre-match freeze source)
         run: |
-          if curl -sfL --retry 2 --max-time 60 -o model-output.published.json "https://michaeldk1996.github.io/SAAS/model-output.json?cb=$(date +%s)"; then
+          if curl -sfL --retry 2 --max-time 60 -o model-output.published.json "https://app.stennisfy.com/model-output.json?cb=$(date +%s)"; then
             echo "published model-output.json: $(wc -c < model-output.published.json) bytes"
           else
             rm -f model-output.published.json; echo "::warning::no published model-output.json — started matches freeze from the cache snapshot only"
@@ -663,7 +663,7 @@ jobs:
           python3 tools/pinarch.py lower-closes pinnacle-closes.json pinnacle-lower-closes.csv || { echo "pinarch lower-closes failed" > .archive-failed; exit 1; }
           node tools/started-evidence.js --root . --out started-evidence.json || { echo "started-evidence failed" > .archive-failed; exit 1; }
           node build-database-yield.js || { echo "build-database-yield failed" > .archive-failed; exit 1; }
-          node tools/archive-gate.mjs --dir . --baseline-url https://michaeldk1996.github.io/SAAS/database-yield-master-meta.json
+          node tools/archive-gate.mjs --dir . --baseline-url https://app.stennisfy.com/database-yield-master-meta.json
 
       # Round 2 item 1.2 (founder 2026-10-25): a finished board card's Pinnacle close is the archive's close when the
       # archive holds one, else the captured close stays. READ-ONLY toward the archive — it reads this run's export
@@ -1517,7 +1517,7 @@ jobs:
             const fs = require("fs");
             const { sideDepths } = require("./tools/match-stats-store.js");
             const site = JSON.parse(fs.readFileSync("_site/historical-match-stats.json","utf8"));
-            const url = "https://michaeldk1996.github.io/SAAS/historical-match-stats.json";
+            const url = "https://app.stennisfy.com/historical-match-stats.json";
             const fail = (m) => { console.error(m); process.exitCode = 1; };
             // A hung Pages request must not keep a "never block the deploy" step alive
             // forever; 30s then treat it as unreachable, which is the fail-OPEN path.
@@ -1741,7 +1741,7 @@ jobs:
         run: |
           CHROME_BIN=google-chrome node tools/price-guard-run.mjs --site _site --root . --alert-out .price-alert.txt --run-label "pipeline run ${{ github.run_number }}" --guard-args "--coverage-out _site/price-coverage.json"
           # founder ruling 2026-10-18 (item 5): coverage per level, compared with the published report (the alert is sent after the upload)
-          node tools/price-coverage-alert.mjs --cur _site/price-coverage.json --baseline-url https://michaeldk1996.github.io/SAAS/price-coverage.json --out .coverage-alert.txt --run-label "pipeline run ${{ github.run_number }}"
+          node tools/price-coverage-alert.mjs --cur _site/price-coverage.json --baseline-url https://app.stennisfy.com/price-coverage.json --out .coverage-alert.txt --run-label "pipeline run ${{ github.run_number }}"
 
       # Architecture program stage 1 (2026-11-01): yesterday's Completed cards with a card-book close, from the page's own
       # _mcCardCloseOf over the site this run built, with each dash's reason. The data-alarms watch (pg_cron) reads the
@@ -1749,7 +1749,7 @@ jobs:
       # missing report — and never stops the publish (an alarm, not a gate).
       - name: Close coverage report (yesterday's Completed cards)
         run: |
-          if CHROME_BIN=google-chrome node tools/close-coverage.mjs --site _site --out _site/close-coverage.json --prev https://michaeldk1996.github.io/SAAS/close-coverage.json; then
+          if CHROME_BIN=google-chrome node tools/close-coverage.mjs --site _site --out _site/close-coverage.json --prev https://app.stennisfy.com/close-coverage.json; then
             echo "close-coverage: written"
           else
             echo "::error title=Close coverage report did not run::tools/close-coverage.mjs exited non-zero; no _site/close-coverage.json this run (the data-alarms watch reports the missing file)"
@@ -1783,7 +1783,7 @@ jobs:
       #      is no way to tell from the live URL whether a green run's bytes actually
       #      arrived — which is the exact failure class this issue exists to close.
       #      build-info.json makes it a one-line check against the deployed site:
-      #        curl -s https://michaeldk1996.github.io/SAAS/build-info.json
+      #        curl -s https://app.stennisfy.com/build-info.json
       #
       # A tip that has moved on since checkout is reported loudly but does NOT fail the
       # run: data commits land on main every few minutes, so failing on that would fail

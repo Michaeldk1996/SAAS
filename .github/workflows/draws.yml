@@ -50,10 +50,10 @@ jobs:
       - name: Our roster + board (the deployed site — our own files)
         if: steps.gate.outputs.go == '1'
         run: |
-          curl -sf -o player-index.json "https://michaeldk1996.github.io/SAAS/player-index.json?_=$(date +%s)"
-          curl -sf -o board.json "https://michaeldk1996.github.io/SAAS/matches.json?_=$(date +%s)"
+          curl -sfL -o player-index.json "https://app.stennisfy.com/player-index.json?_=$(date +%s)"
+          curl -sfL -o board.json "https://app.stennisfy.com/matches.json?_=$(date +%s)"
           # finished results for the archive (founder 2026-11-15); unreadable → no file → nothing archived, nothing pruned
-          curl -sf -o progression.json "https://michaeldk1996.github.io/SAAS/tournament-progression.json?_=$(date +%s)" || rm -f progression.json
+          curl -sfL -o progression.json "https://app.stennisfy.com/tournament-progression.json?_=$(date +%s)" || rm -f progression.json
       - name: Build draws.json (fail-closed parser)
         id: build
         if: steps.gate.outputs.go == '1'

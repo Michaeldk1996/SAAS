@@ -59,10 +59,10 @@ create table if not exists data_alarms.sources (
     url   text not null
 );
 insert into data_alarms.sources (name, url) values
-  ('build_info', 'https://michaeldk1996.github.io/SAAS/build-info.json'),
-  ('card_state', 'https://michaeldk1996.github.io/SAAS/odds-card-state.json'),
-  ('matches',    'https://michaeldk1996.github.io/SAAS/matches.json'),
-  ('coverage',   'https://michaeldk1996.github.io/SAAS/close-coverage.json')
+  ('build_info', 'https://app.stennisfy.com/build-info.json'),
+  ('card_state', 'https://app.stennisfy.com/odds-card-state.json'),
+  ('matches',    'https://app.stennisfy.com/matches.json'),
+  ('coverage',   'https://app.stennisfy.com/close-coverage.json')
 on conflict (name) do nothing;
 
 create table if not exists data_alarms.expected_jobs (jobname text primary key);

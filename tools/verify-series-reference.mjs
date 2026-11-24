@@ -40,7 +40,7 @@ const { conditionHeld, orderedRecords, streakReference, loadStyleMap, MAX_GAP_DA
 const argv = process.argv.slice(2);
 const MAX = argv.includes('--max') ? +argv[argv.indexOf('--max') + 1] : Infinity;
 const OUT = argv.includes('--out') ? argv[argv.indexOf('--out') + 1] : null;
-const BASE = 'https://michaeldk1996.github.io/SAAS/';
+const BASE = 'https://app.stennisfy.com/';
 const DAY = 86400000;
 
 const get = async (f) => (await fetch(BASE + f, { cache: 'no-store' })).json();

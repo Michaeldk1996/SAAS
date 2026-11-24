@@ -82,7 +82,7 @@ function allRuns(st, recs) {
 }
 
 async function main() {
-  const doc = await (await fetch('https://michaeldk1996.github.io/SAAS/series.json', { cache: 'no-store' })).json();
+  const doc = await (await fetch('https://app.stennisfy.com/series.json', { cache: 'no-store' })).json();
   const surfaceMap = loadSurfaceMap();
   const styleMap = loadStyleMap();
   console.log(`board: ${doc.players.length} players, ${doc.players.reduce((n, p) => n + p.streaks.length, 0)} streaks, generatedAt ${doc.generatedAt}`);

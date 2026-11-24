@@ -31,7 +31,7 @@ const ROOT = path.resolve(HERE, '..', '..');
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
 const flag = (k) => process.argv.includes('--' + k);
 
-const BASE = arg('base', 'https://michaeldk1996.github.io/SAAS').replace(/\/$/, '');
+const BASE = arg('base', 'https://app.stennisfy.com').replace(/\/$/, '');
 const TOUR = arg('tournament', 'Stockholm');
 const OUT = arg('out', path.join(ROOT, 'news-sample.json'));
 

@@ -272,7 +272,7 @@ PLACEHOLDER_BLOCK_MIN = 5
 # and publishes it to Pages without ever committing it. Left alone the capture
 # freezes on whatever fixtures were last committed by hand and reports success
 # forever while capturing nothing. So take the live board as the fixture list.
-LIVE_MATCHES_URL = 'https://michaeldk1996.github.io/SAAS/matches.json'
+LIVE_MATCHES_URL = 'https://app.stennisfy.com/matches.json'
 RETAIN_DAYS = 3        # keep committed-only matches this recent so nothing in flight is dropped
 
 

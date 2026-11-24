@@ -45,7 +45,7 @@ jobs:
 
       - name: Use the LIVE deployed board (fresh main-draw, not the lagging commit)
         run: |
-          curl -sSf https://michaeldk1996.github.io/SAAS/matches.json -o matches.json
+          curl -sSfL https://app.stennisfy.com/matches.json -o matches.json
           node -e 'const m=require("./matches.json");console.log("Live board:",m.length,"matches; dates",[...new Set(m.map(x=>x.date))].sort().join(","));'
 
       - name: Scrape + extract readiness signal

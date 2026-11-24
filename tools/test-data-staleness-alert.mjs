@@ -111,7 +111,7 @@ ok(/if: github\.ref == 'refs\/heads\/main'/.test(y) && /ref: main/.test(y), 'run
 ok(/cancel-in-progress: false/.test(y), 'one pass at a time, never cut off (so each pass restores the last save)');
 ok(/node tools\/data-staleness-alert\.mjs/.test(y) && /TELEGRAM_BOT_TOKEN: \$\{\{ secrets\.TELEGRAM_BOT_TOKEN \}\}/.test(y) && /TELEGRAM_CHAT_ID: \$\{\{ secrets\.TELEGRAM_PIPELINE_CHAT_ID \|\| secrets\.TELEGRAM_CHAT_ID \}\}/.test(y),
   'the existing Telegram secrets');
-ok(/SITE_URL: https:\/\/michaeldk1996\.github\.io\/SAAS\n/.test(y), 'reads the live site');
+ok(/SITE_URL: https:\/\/app\.stennisfy\.com\n/.test(y), 'reads the live site');
 const restore = y.slice(y.indexOf('actions/cache/restore@v4')), save = y.slice(y.indexOf('actions/cache/save@v4'));
 ok(/restore-keys: data-staleness-alert-\n/.test(restore) && /path: \.data-staleness-alert\n/.test(restore) && /STATE_FILE: \.data-staleness-alert\/state\.json/.test(y),
   'state restored by prefix into the path the script reads');

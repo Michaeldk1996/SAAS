@@ -256,7 +256,7 @@ test('workflow: rides workflow_run on the two pg_cron-dispatched workflows by th
   assert.match(g, /LOG_TOKEN: \$\{\{ secrets\.WORKFLOW_PAT \}\}/);
   assert.match(g, /STALL_GUARD_LOG_REPO: \$\{\{ vars\.STALL_GUARD_LOG_REPO \|\| 'Michaeldk1996\/stennisfy-ops' \}\}/);
   assert.match(g, /run: node tools\/pipeline-stall-guard\.mjs/);
-  assert.match(g, /SITE_URL: https:\/\/michaeldk1996\.github\.io\/SAAS/, 'the stale-site alarm needs SITE_URL');
+  assert.match(g, /SITE_URL: https:\/\/app\.stennisfy\.com/, 'the stale-site alarm needs SITE_URL');
   assert.match(wf('oddspapi-postmatch.yml'), /workflow_dispatch/);
 });
 

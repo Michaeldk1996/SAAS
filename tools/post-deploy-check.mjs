@@ -35,7 +35,7 @@ export const GLOBALS = { renderTourxOverview: 'function', tourxOverviewEvents: '
 export const VIEW_ROOT = '#matchlist';
 // renderMatches' own text for an empty `matches` array: drawn once before the fixtures arrive, so it is not "rendered"
 export const NO_DATA = /No data loaded yet/;
-export const DEFAULT_BASE = 'https://michaeldk1996.github.io/SAAS';
+export const DEFAULT_BASE = 'https://app.stennisfy.com';
 export const DEFAULT_PAGE = 'bsp-consult-dashboard.html';
 const SHA_RE = /<meta name="build-sha" content="([0-9a-f]{40})">/g;
 

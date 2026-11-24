@@ -3,7 +3,7 @@
 //
 // Each pair = ATP's OFFICIAL head-to-head (the `Record` fields of atptour.com's H2H endpoint
 // /en/-/www/h2h/{codeA}/{codeB}, read on CHECKED_ON) + the career-history rows the site's ONE join reads for that pair,
-// copied from the LIVE shards (https://michaeldk1996.github.io/SAAS/career-history/{key}.json — gitignored stores, so
+// copied from the LIVE shards (https://app.stennisfy.com/career-history/{key}.json — gitignored stores, so
 // the gate carries its own copy) + the live roster's namesake count for the two names (player-profiles.json).
 // The gate then runs the production H2HCore.joinMeetings on those rows and fails on any pair that differs from ATP.
 //
@@ -21,7 +21,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const H2HCore = createRequire(import.meta.url)(path.join(ROOT, 'h2h-core.js'));
-const SITE = 'https://michaeldk1996.github.io/SAAS';
+const SITE = 'https://app.stennisfy.com';
 const OUT = path.join(ROOT, 'tools/fixtures/ten437/h2h-golden-pairs.json');
 const CHECKED_ON = '2026-10-14';
 

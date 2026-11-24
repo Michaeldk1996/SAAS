@@ -50,7 +50,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const SITE = 'https://michaeldk1996.github.io/SAAS/';
+const SITE = 'https://app.stennisfy.com/';
 const SOURCE = 'Open-Meteo';
 const REFRESH_HOURS = 3;
 const HOURLY = ['temperature_2m', 'relative_humidity_2m', 'apparent_temperature', 'precipitation_probability',

@@ -82,7 +82,7 @@ jobs:
         if: always()
         env:
           CHROME_BIN: google-chrome
-          PROBE_BASE_URL: https://michaeldk1996.github.io/SAAS
+          PROBE_BASE_URL: https://app.stennisfy.com
         run: node probe-ten243-lines-peak.mjs
 
       # The embedded Database inside the Tournaments ROI overlay. Its failure
@@ -93,5 +93,5 @@ jobs:
         if: always()
         env:
           CHROME_BIN: google-chrome
-          PROBE_BASE_URL: https://michaeldk1996.github.io/SAAS
+          PROBE_BASE_URL: https://app.stennisfy.com
         run: node probe-ten242-roi-overlay.mjs

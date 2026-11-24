@@ -29,7 +29,7 @@ const OUT = path.resolve(opt('--out', path.join(os.tmpdir(), 'stage6-probe-out')
 const MIRROR = path.resolve(opt('--mirror', path.join(os.homedir(), '.stennisfy', 'stage6-mirror')));
 const MUTATE = args.includes('--mutate');
 const ONLY = opt('--only') ? new Set(opt('--only').split(',')) : null;
-const LIVE = 'https://michaeldk1996.github.io/SAAS/';
+const LIVE = 'https://app.stennisfy.com/';
 const CHROME = process.env.CHROME_BIN || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 if (!OLD || !NEW) { console.error('usage: --old <tree> --new <tree>'); process.exit(2); }
 fs.mkdirSync(OUT, { recursive: true }); fs.mkdirSync(MIRROR, { recursive: true });
