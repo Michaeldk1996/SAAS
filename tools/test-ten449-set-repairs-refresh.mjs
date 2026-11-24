@@ -226,7 +226,7 @@ for (const [name, edit] of [
   process.env.SET_REPAIRS_RETRY_MS = '1';
   const realFetch = globalThis.fetch;
   const serve = (w, status) => { let n = 0; globalThis.fetch = async (u) => {
-    const rel = new URL(String(u)).pathname.replace(/^\/SAAS\//, '');
+    const rel = new URL(String(u)).pathname.replace(/^\/(SAAS\/)?/, '');
     if (status[rel] && (status[rel].times === undefined || n++ < status[rel].times)) return { status: status[rel].code, json: async () => ({}) };
     const f = path.join(w.site, rel); if (!fs.existsSync(f)) return { status: 404, json: async () => ({}) };
     return { status: 200, json: async () => JSON.parse(fs.readFileSync(f, 'utf8')) };
