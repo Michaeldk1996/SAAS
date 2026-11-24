@@ -36,8 +36,10 @@ tab-wide rulings (design wins, colours via `--tt-*`, every figure ours or a dash
   one line leaning from the centre toward the better player (blue = player one, `--text` = player two). **Test:** "exactly
   one blue (best of round) bar per RC card", "quarters run 1 → 4", "the rank restarts at 1", "heat Avg never prints (n)",
   "% heat cells drop the %", "H2H default pair".
-- **Match sheet** (a bar or a heat cell): "Player v Opponent", meta "City year · round · surface · …", the ten stats for both
-  players, a missing figure "—". **Test:** "sheet".
+- **A bar or heat cell opens the ONE Match analysis on Match Stats** (founder 2026-11-24, replacing the Reports' own ten-stat
+  sheet), as the Draw does: the match the board or the draw store holds for both players' api-tennis keys, this event and
+  this round (`sfFinishedMatchId`; a group round RR1… = the pair's round-robin match; two candidates → none). No such match →
+  the cell is not clickable. **Test:** `tools/test-tt-reports.mjs` "a played bar opens Match analysis", `tools/test-match-lookups.mjs`.
 
 ## Data
 - **Source:** `tournament-progression.json` through `tourxBuildTournament` (per-round metrics, opponents, results) plus its
@@ -76,7 +78,7 @@ tab-wide rulings (design wins, colours via `--tt-*`, every figure ours or a dash
   no approximation). The tournament figure's hover states its n. Footer "These figures cover {City} {Year} only" + "Open
   the full head to head ›" (`sfGoToH2H` + `stn_h2h_pair`, `tournaments.md`). **Test:** "52 wk hover", "the hover states n",
   "footer + button carry both api-tennis keys", "no visible 52-week line".
-- **City key, not the event name:** the tournament pills and the sheet meta print the city key as the design does.
+- **City key, not the event name:** the tournament pills print the city key as the design does.
   **Test:** `test-ten402-r2n.mjs` r2.4.
 - `tourxRating` (Database → Ratings Elo) stays for the Head to Head page; Reports prints no Elo. **Test:**
   `tools/test-ten386-round-comparison.js` "tourxRating".

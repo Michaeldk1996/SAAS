@@ -41,6 +41,11 @@ Applies to the Progression tab of the Match analysis modal (`buildMatchProgressi
   cell reads "—" with that tooltip on every round; mutation: computing it again shows 50.0%.
 
 ## Road
+- **A round-robin event reads its group** (founder 2026-11-24; ATP / Next Gen Finals, `pgIsRR`): the ladder is RR1 · RR2 ·
+  RR3 · SF · F. The feed sends the group rows with no round, so they are numbered by date (RR1 the first); a group match
+  faces the next group slot. The event matches through its city suffix ("Finals - Turin" on the group rows = "ATP Finals" on
+  the knockout rows, `pgSameEvent`). No bye at a round-robin event. **Test:** `test-ten339-progression.mjs` "a round-robin
+  event" (Zverev v Alcaraz, ATP Finals 2026 F; fails on the pre-fix page) + two mutants.
 - A round with no row is a **bye only at the draw's first round**, only from a history that loaded, never where the active
   draw's own file shows the player in that round or its bye arithmetic fails (`progressionByesCredible`). Any other hole is
   "no record of this round" (DESIGN GAP G13). **Test:** bye check.

@@ -219,6 +219,9 @@ Rationale: `BUILD-NOTES.md` "2026-11-15 — Tournaments tab rebuild".
 - **Finished draw matches stay openable elsewhere:** `draw-matches.json` keeps every finished main-draw match's board row +
   model entry 16 days from the match date (refreshed while on the board, frozen once off; the board's copy wins); read by
   `matchById`. **Test:** `tools/test-draw-matches-store.js`.
+  A stored match's court figures are re-read from the page's court table when it opens (`drawStoreFresh`, founder
+  2026-11-24): the copy carried the table as it stood the day the match left the board (Paris Masters 55 · Medium against
+  today's 100 · Fast). **Test:** `tools/test-match-lookups.mjs`.
 - **The W/UE sheet bar lives on the Draw view only**, under the progress line (`tourxWueBarHtml`: "Download W/UE sheet",
   one "Copy {round}" per round, the round status). Reports does not carry it. An archived draw carries it too (founder
   2026-11-16): its rows are the archive's final results (`draws-archive.json` `results`; `WueSheet.fetchLatest` falls back

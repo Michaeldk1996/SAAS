@@ -445,30 +445,26 @@ test('the Head to Head sheet is drawn by player: A\'s figure and bar --h2h-blue,
   assert.deepEqual(['Double faults', 'Unforced errors', 'Unforced errors / total points', 'Winners / unforced errors', 'Aces', 'Dominance ratio'].map(low), [true, true, true, false, false, false]);
 });
 
-test('the sheet\'s tone is set only for a sheet opened from this page; the page sheet = the design overlay + 9% edge, no set chips; closers registered', () => {
-  assert.match(slice('fhSheetRender'), /_fhSheetToneNow = \(slot !== 'tab' && _fh && _fh\.m && _fh\.m\.h2hPage\) \? 'h2h'/);
-  // Match analysis rebuild (2026-11-23): a third tone, 'ma2' (the locked sheet), after the H2H and profile branches —
-  // a sheet opened from this page or the profile keeps its own tone; every other host is the rebuild's
-  assert.match(slice('fhSheetRender'), /: \(slot !== 'tab' && _fh && _fh\.sheet && _fh\.sheet === _fhPp2Mid\) \? 'pp2'\s*\/\/[^\n]*\n\s*: \(slot === 'tab' \|\| \(_fh && _fh\.ma2\)\) \? 'ma2' : null;/);
+// Founder 2026-11-24 ("fix it"): the Head to Head page's sheet is the ONE Match analysis sheet — the locked frame and the
+// 'ma2' tone wherever it opens. Only the profile's hand-off keeps its own locked design ('pp2'). Closers stay registered.
+test('the H2H page sheet is the Match analysis sheet: the ma2 frame and tone everywhere but the profile; closers registered', () => {
+  assert.doesNotMatch(slice('fhSheetRender'), /'h2h'/, 'no H2H tone any more');
+  assert.match(slice('fhSheetRender'), /_fhSheetToneNow = \(slot !== 'tab' && _fh && _fh\.sheet && _fh\.sheet === _fhPp2Mid\) \? 'pp2'\s*\/\/[^\n]*\n\s*: \(slot === 'tab' \|\| \(_fh && _fh\.ma2\)\) \? 'ma2' : null;/);
   assert.match(slice('fhSheetRender'), /host\.innerHTML = fhSheetSeg\(tabs\) \+ body;\n  _fhSheetToneNow = null;/, 'reset after the paint');
   const os = slice('fhOpenSheet');
-  assert.match(os, /const h2hx = !!\(_fh\.m && _fh\.m\.h2hPage\);/);
-  assert.match(os, /background:\$\{h2hx \? 'var\(--h2h-overlay\)' : 'var\(--backdrop\)'\};\$\{h2hx \? '' : ' backdrop-filter:blur\(3px\);'\}/, 'the design\'s overlay on this page only');
+  assert.match(os, /const ma2 = mid !== _fhPp2Mid;/, 'every sheet but the profile\'s is the locked one, wherever it mounts');
   assert.match(os, /inset:0 0 0 var\(--sf-side, 0px\); z-index:110;/, 'scrim over the content area only');
-  assert.match(os, /fhSheetHeadHtml\(e, r, mid === _fhPp2Mid \|\| h2hx \? \{ noChips: true \} : undefined\)/, 'the profile and this page drop the set chips');
-  assert.match(os, /host\.classList\.toggle\('h2hx', !!\(_fh\.m && _fh\.m\.h2hPage\)\);/, 'the host class scopes the design CSS (#fhSheet.h2hx)');
   assert.match(html, /pm: \{ h2hPage: true, p1: a\.short, p2: b\.short, p1Key: a\.key, p2Key: b\.key \}/, 'the page\'s pseudo match carries the flag');
   assert.match(html, /\(window\.sfOverlayClosers = window\.sfOverlayClosers \|\| \[\]\)\.push\(\(\) => \{ if \(typeof _fh !== 'undefined' && _fh && _fh\.m && _fh\.m\.h2hPage && _fh\.sheet\) fhCloseSheet\(\); \}\);/);
-  const css = readFileSync(process.env.TEN402_CSS || join(HERE, 'h2h-page.css'), 'utf8');
-  assert.match(css, /#h2hRoot, #fhSheet\.h2hx, \.h2hx-pop \{[^}]*--card: var\(--h2h-card\);/, 'the page tokens reach the sheet only through #fhSheet.h2hx');
-  assert.doesNotMatch(css, /(^|[\s,}])#fhSheet(?!\.h2hx)[\s{.:]/m, 'no unscoped #fhSheet rule');
 });
 
 // The H2H-only branch of the shared sheet must leave Match analysis byte-identical. The outputs below were computed from
 // origin/main BEFORE the rebuild (bsp-consult-dashboard.html at 7bd4e930c = the merge base 40b31f1f8, unchanged) on the
 // same inputs: tone null (Match analysis, Match Stats tab) and 'pp2' (the profile) — sha256 prefix : length.
 const MA_FROZEN = { 'row|null': '2d6497f50f495bb1:6423', 'seg|null': 'baad2201a13f5e45:2880', 'dr|null': '40f154e2dddb0589:717',
-  'row|pp2': '6d0ff9a59d0c66c6:6424', 'seg|pp2': 'baad2201a13f5e45:2880', 'dr|pp2': '40f154e2dddb0589:717', head: '7ea58da2eeb468c1:13766', frame: '1db5b3ce03ec62eb:1494' };
+  'row|pp2': '6d0ff9a59d0c66c6:6424', 'seg|pp2': 'baad2201a13f5e45:2880', 'dr|pp2': '40f154e2dddb0589:717', head: '7ea58da2eeb468c1:13766',
+  // founder 2026-11-24: a sheet opened outside the modal ('x', on the body) is the locked Match analysis sheet now; the profile's is unchanged
+  frame: '64c313f7c0377c6e:1624' };
 function maOutputs(src) {
   const sl = name => { const start = src.indexOf(`function ${name}(`); assert.ok(start > 0, name); let d = 0, i = src.indexOf('{', start); for (; i < src.length; i++) { if (src[i] === '{') d++; else if (src[i] === '}' && --d === 0) break; } return src.slice(start, i + 1); };
   const cst = name => { const a = src.indexOf(`\nconst ${name} = `) + 1; assert.ok(a > 0, name); let d = 0, i = a; for (; i < src.length; i++) { const c = src[i]; if ('{[('.includes(c)) d++; else if ('}])'.includes(c)) d--; else if (c === ';' && d === 0) break; } return src.slice(a, i + 1); };
@@ -501,7 +497,7 @@ function maOutputs(src) {
   out.head = M.fhSheetHeadHtml(e, r) + M.fhSheetHeadHtml(e, Object.assign({}, r, { book: 'P', won: true })) + M.fhSheetHeadHtml(e, r, { inline: true }) + M.fhSheetHeadHtml(e, r, { noChips: true });
   out.frame = new Function(`
     let _fh = null, _fhPp2Mid = 'pp2mid';
-    const host = { innerHTML: '', parentNode: null, id: '', classList: { add() {}, toggle() {} }, remove() {} };
+    const host = { innerHTML: '', parentNode: null, id: '', classList: { add() {}, toggle() {}, remove() {} }, remove() {} };
     const document = { getElementById: id => (id === 'fhSheet' && host.parentNode ? host : null), querySelector: () => null, createElement: () => host,
       body: { appendChild: h => { h.parentNode = document.body; } } };
     function fhEnsureStyles() {} function fhMarkRow() {} function fhSheetInit() {}
@@ -515,6 +511,7 @@ const sha = s => createHash('sha256').update(s).digest('hex').slice(0, 16) + ':'
 test('rule 4: Match analysis is unchanged by the H2H sheet branch — with the tone null (and the profile\'s pp2), the rows, the sheet head, maSeg(\'sheet\' | \'pbp\'), the Dominance card and the frame equal origin/main\'s', () => {
   const got = Object.fromEntries(Object.entries(maOutputs(html)).map(([k, v]) => [k, sha(v)]));
   assert.deepEqual(got, MA_FROZEN);
+  const fr = maOutputs(html).frame; assert.equal((fr.match(/class="ma2-sheet"/g) || []).length, 1, 'the body sheet is the locked one, the profile\'s is not');
   // control: the same generator sees the H2H branch — with the tone on 'h2h' the rows differ from the frozen ones
   const h2hRows = new Function('fhSheetTone', `${LOWER_SRC}; const FH_MONO = '', MA_GREY = '', FH_DASH = '', FH_BAR_CAP = 90; const fhEsc = s => String(s); ${slice('fhStatBarWidth')}; ${slice('fhSheetBetter')}; ${slice('fhSheetRowHtml')}; return fhSheetRowHtml;`)(() => 'h2h');
   assert.notEqual(h2hRows({ label: 'Aces', kind: 'count', k: 30, a: cell(9), b: cell(3) }), new Function('fhSheetTone', `${LOWER_SRC}; const FH_MONO = '', MA_GREY = '', FH_DASH = '', FH_BAR_CAP = 90; const fhEsc = s => String(s); ${slice('fhStatBarWidth')}; ${slice('fhSheetBetter')}; ${slice('fhSheetRowHtml')}; return fhSheetRowHtml;`)(() => null)({ label: 'Aces', kind: 'count', k: 30, a: cell(9), b: cell(3) }));
@@ -527,16 +524,16 @@ test('review 2 item 2: an H2H sheet opened and closed, then a profile recent-for
   const at = html.indexOf('window.pp2OpenMatchSheet = function(x){');
   let d = 0, i = html.indexOf('{', at); for (; i < html.length; i++) { if (html[i] === '{') d++; else if (html[i] === '}' && --d === 0) break; }
   const opener = html.slice(at, i + 1);
-  const toneLine = /_fhSheetToneNow = (\([^\n]*?\)) \? 'h2h'/.exec(slice('fhSheetRender'))[1];
+  const toneLine = /_fhSheetToneNow = (\([^\n]*?\)) \? 'pp2'/.exec(slice('fhSheetRender'))[1];
   const run = new Function(`
     let _fh = null, _fhSheetToneNow = null, painted = null, _fhPp2Mid = null;
-    const host = { innerHTML: '', parentNode: null, classList: { add() {}, toggle() {} }, isConnected: true, remove() {} };
+    const host = { innerHTML: '', parentNode: null, classList: { add() {}, toggle() {}, remove() {} }, isConnected: true, remove() {} };
     const document = { getElementById: id => (id === 'fhSheet' && host.parentNode ? host : null), querySelector: () => null,
       createElement: () => host, body: { appendChild: h => { h.parentNode = document.body; } }, querySelectorAll: () => [] };
     const window = {}; function MutationObserver() { return { observe() {}, disconnect() {} }; }
     function fhEnsureStyles() {} function fhSheetHeadHtml() { return ''; } function fhMarkRow() {} function fhSafeId(x) { return x; }
     function fhRowFromForm(row) { return { won: true }; } function fhSurfName(x) { return x; }
-    function fhSheetInit(e, r, slot) { _fhSheetToneNow = ${toneLine} ? 'h2h' : null; painted = { tone: _fhSheetToneNow, frame: host.innerHTML }; }
+    function fhSheetInit(e, r, slot) { _fhSheetToneNow = ${toneLine} ? 'pp2' : (_fh && _fh.ma2) ? 'ma2' : null; painted = { tone: _fhSheetToneNow, frame: host.innerHTML }; }
     ${slice('fhStateFor')}
     ${slice('fhOpenSheet')}
     ${slice('fhCloseSheet')}
@@ -546,13 +543,13 @@ test('review 2 item 2: an H2H sheet opened and closed, then a profile recent-for
       modal(m) { fhStateFor(m); } };`);
   const P = run(), pm = { h2hPage: true, p1: 'J. Sinner', p2: 'C. Alcaraz' };
   const h = P.h2h(pm);
-  assert.equal(h.tone, 'h2h', 'control: the H2H page\'s own sheet takes its tone');
-  assert.match(h.frame, /background:var\(--h2h-overlay\)/);
+  assert.equal(h.tone, 'ma2', 'the H2H page\'s sheet is the Match analysis sheet (founder 2026-11-24)');
+  assert.match(h.frame, /class="ma2-sheet"/);
   P.close();
   const p = P.profile();
-  assert.equal(p.tone, null, 'the profile sheet: no H2H colours');
-  assert.doesNotMatch(p.frame, /--h2h-overlay|--h2h-white/);
-  const P2 = run(); P2.modal({ p1: 'A', p2: 'B' }); assert.equal(P2.profile().tone, null);
+  assert.equal(p.tone, 'pp2', 'the profile sheet keeps its own design after an H2H sheet');
+  assert.doesNotMatch(p.frame, /ma2-sheet/);
+  const P2 = run(); P2.modal({ p1: 'A', p2: 'B' }); assert.equal(P2.profile().tone, 'pp2');
   assert.match(html, /const st = _fh && !\(_fh\.m && _fh\.m\.h2hPage\) \? _fh : fhStateFor\(\{ pp2: true, key: x\.subjectKey \}\);/);
 });
 

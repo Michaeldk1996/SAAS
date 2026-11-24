@@ -354,3 +354,30 @@ test('F5: the highlighted round is the Facing row\'s selected segment', () => {
   assert.deepEqual(segs.map(x => /font-weight:700/.test(x[0])), [true, false, false], 'R1 selected, QF idle');
   assert.match(facingOf(h), /onclick="ma2PgPick\(null\)"[^>]*>QF</, 'the idle current round clears the highlight');
 });
+
+// Founder 2026-11-24: Progression reads a round-robin event. The ATP Finals 2026 final, Zverev v Alcaraz (past-12181958), on
+// the real career-history rows: the three group matches carry no round (api-tennis sends '') and the event as "Finals -
+// Turin", while the board's knockout rows say "ATP Finals". Before: no row matched, the tab read "No progression yet".
+test('a round-robin event (ATP Finals): group matches numbered RR1–RR3 by date, then SF, facing the F', () => {
+  const fr = (date, rd, opp, won, ek) => ({ year: '2026', surface: 'hard', level: 'atp', date, tournament: 'Finals - Turin', round: rd, opponent: opp,
+    result: won ? '2 - 0' : '0 - 2', won, eventKey: ek, src: 'fixtures', sets: won ? W : [{ p: 4, o: 6 }, { p: 3, o: 6 }] });
+  const zv = [fr('2026-11-22', 'Final', 'C. Alcaraz', false, 12181958), fr('2026-11-21', 'Semi-finals', 'D. Medvedev', true, 12181753),
+    fr('2026-11-19', '', 'A. Fils', true, 12179706), fr('2026-11-17', '', 'B. Shelton', true, 12179705), fr('2026-11-15', '', 'R. Jodar', true, 12179707),
+    fr('2025-11-14', '', 'F. Auger-Aliassime', false, 12086402)];   // last year's group: out of the 20-day window
+  const ca = [fr('2026-11-21', 'Semi-finals', 'B. Shelton', true, 12181584), fr('2026-11-20', '', 'F. Cobolli', true, 12179697),
+    fr('2026-11-18', '', 'D. Medvedev', true, 12179696), fr('2026-11-16', '', 'F. Tiafoe', true, 12179698)];
+  const m = match('F', zv, ca, { id: 'past-12181958', p1: 'A. Zverev', p2: 'C. Alcaraz', p1Key: '1980', p2Key: '2382', date: '2026-11-22',
+    tour: 'ATP Finals', tournamentRound: 'ATP Finals - Turin - Final' });
+  const P = S.pgModel(m);
+  assert.equal(P.isEmpty, false);
+  assert.deepEqual(P.labels, ['RR1', 'RR2', 'RR3', 'SF']);
+  assert.equal(P.facing, 'F');
+  assert.deepEqual(P.roads[0].cells.map(c => c.r && c.r.opp), ['R. Jodar', 'B. Shelton', 'A. Fils', 'D. Medvedev'], 'by date, this match out');
+  assert.deepEqual(P.roads[1].cells.map(c => c.r && c.r.opp), ['F. Tiafoe', 'D. Medvedev', 'F. Cobolli', 'B. Shelton']);
+  assert.ok(P.roads.every(p => p.cells.every(c => !c.bye)), 'no bye at a round-robin event');
+  // a group match faces the next group slot: Zverev v Fils (his third) after two group rows
+  const g = match('', zv.slice(3), [], { id: 'past-12179706', p1: 'A. Zverev', p2: 'A. Fils', p1Key: '1980', p2Key: '9', date: '2026-11-19',
+    tour: 'ATP Finals - Turin', tournamentRound: null });
+  const G = S.pgModel(g);
+  assert.equal(G.facing, 'RR3'); assert.deepEqual(G.labels, ['RR1', 'RR2']);
+});

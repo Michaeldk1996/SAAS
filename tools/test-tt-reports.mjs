@@ -33,7 +33,7 @@ function load(src) {
   box.globalThis = box;
   vm.createContext(box);
   vm.runInContext(src, box);
-  return box.TTReports._internals;
+  const I = box.TTReports._internals; I.box = box; return I;
 }
 const surname = n => { const w = n.trim().split(/\s+/); let i = 0; while (i < w.length - 1 && /\.$/.test(w[i])) i++; return i ? w.slice(i).join(' ') : w[w.length - 1]; };
 const strip = h => h.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
@@ -175,12 +175,16 @@ function run(src) {
   ok('footer + lifted button carry both api-tennis keys', /These figures cover Stockholm 2026 only/.test(h2) && /data-act="full-h2h" data-a="\d+" data-b="\d+">Open the full head to head <span class="tt-rp-arr">›<\/span>/.test(h2));
   ok('no visible 52-week line in the card', !/52 wk/.test(strip(h2)));
 
-  // ---------- match sheet ----------
-  const p0 = M0.players.find(p => p.played[qfIdx]);
-  I.reset(); Object.assign(I.state, { view: 'round', sheet: { player: p0.name, i: qfIdx } }); I.setModel(M0);
+  // ---------- a match opens the one Match analysis on Match Stats (founder 2026-11-24): no sheet of its own ----------
+  const asked = [];
+  I.box.sfFinishedMatchId = (a, b, ev, rd) => { asked.push([a, b, ev, rd]); return 'past-1'; };
+  I.reset(); Object.assign(I.state, { view: 'round', rcRound: qfIdx }); I.setModel(M0);
   const sh = I.viewHtml(M0, AV);
-  ok('sheet: "Player v Opp", meta "Stockholm 2026 · QF · hard · …", ten rows, no demo footer',
-    sh.includes('tt-rp-stitle">' + p0.name) && /tt-rp-smeta">Stockholm 2026 · QF · hard · /.test(sh) && (sh.match(/tt-rp-srow/g) || []).length === 10 && !/Demo data/.test(sh));
+  ok('a played bar opens Match analysis on its match (both keys, the event, the round code); no Reports sheet',
+    /data-act="ma" data-id="past-1"/.test(sh) && !/tt-rp-s(heet|row|title)/.test(sh) && asked.some(c => c[0] && c[1] && c[2] === M0.name && c[3] === M0.rounds[qfIdx]), asked.slice(0, 2));
+  I.box.sfFinishedMatchId = () => null;
+  ok('no match on file → the bar opens nothing', !/data-act="ma"/.test(I.viewHtml(M0, AV)));
+  delete I.box.sfFinishedMatchId;
 
   // ---------- season finals: RR1–RR3, no quarters, W/L per match ----------
   const MF = I.build({ T: finalsT(), raw: {}, quarterOf: () => null, setsToWin: 2, year: '2026', surface: 'hard', display: 'Turin', roundOutcome: pageBox.o, playerScore: pageBox.s });

@@ -20,7 +20,7 @@ live calculation (Data below).
   hairlines (6%) only. `--h2h-layer` only where the reference keeps it: the opened news item, the edge chip on a line, the
   sheet's price chips, the style record figure box, the Suggested matchups chips. `--h2h-inner` is a WELL only (switch
   tracks, inputs). **Test:** is any caps strip or tile `--h2h-layer`, or any box `--h2h-inner`? Then it is wrong. The match
-  sheet takes the same rule when opened from this page only (`#fhSheet.h2hx`).
+  sheet is the Match analysis sheet (founder 2026-11-24), not this page's tones.
 - **Page ground = the website's background, always** (founder ruling 4, 2026-11-18, replacing "only with no pair"; the
   design's 18 Nov §1 ground): the tab and the page are transparent, so the shell's `--page-bg` (page tone + glow) shows
   whether or not players are picked; the sticky band behind the picker fades from `--page` to transparent **and paints the
@@ -34,8 +34,8 @@ live calculation (Data below).
   only the picker is sticky.
 - **Switches, one size everywhere** (design change 2026-11-18 §8; 20 Nov §8): track `--h2h-track` + 10% edge, r10, pad 3,
   gap 3; tabs 6/14, r7, 13px, on = raised + 14% (`xSw` 'lg' / 'fill' as an inset ring; 'lgb' as a 1px border — Playing style window, Latest news
-  kind); the match sheet's scope and set switches take the same size on this page only (`maSeg` while
-  `fhSheetTone()` is 'h2h'). **Test:** no switch on the page or its sheet has a 2px pad or 11–12px tabs.
+  kind); the match sheet is the Match analysis sheet and keeps its own switches (founder 2026-11-24). **Test:** no switch on the
+  page has a 2px pad or 11–12px tabs.
 - **Section cards:** padding 24, inner gap 16, 1px 6% edge, r16 — all seven (20 Nov §8). Every card edge and divider is 1px
   at 6% white. **No uppercase label anywhere** (20 Nov §8): every small label (column heads, group heads, tile labels, "vs",
   "Change", country chips) is Hanken 11.5 / 600 `--h2h-grey`, normal case, no letter-spacing (`X_CAP`, `.x-cap`). Small grey
@@ -186,12 +186,10 @@ live calculation (Data below).
   (the MTO bot's file, the one the profile's MTO badge reads), joined on the player's surname + first initial, "<X> took a
   medical time-out against <Y>" with the score from his side, how long it took and the final score. No item → the design's sentence. An open item (2026-11-18 §7): layer tone + 12% ring, headline
   700, the body under a hairline aligned with the headline (60px), then the kind pill, "source · time" and "Close".
-- **Match sheet:** the shared sheet, drawn by player only when this page opens it (`fhSheetTone()` 'h2h', host
-  `#fhSheet.h2hx`): A's figures and bars blue, B's white, the scope and set switches the page's one size (2026-11-18 §8),
-  the price chips under the avatars on the layer tone, the meta line without letter-spacing, LOST SERVE (Plex 10.5/700)
-  and BP (10/700) round red pills (r999), no per-set chips. Match analysis, the Match Stats tab and the profile are unchanged. **Test:** the H2H suites + the
-  Match analysis sheet suites (`test-ten314-sheet.mjs`, `test-ten338-match-stats.mjs`).
-
+- **Match sheet = the Match analysis sheet** (founder 2026-11-24, replacing the page's own sheet tone of 2026-11-16/18): a row
+  opens the ONE locked Match Stats sheet, exactly as inside Match analysis (`fhOpenSheet`: `ma2` frame and tone wherever it
+  mounts; only the profile's hand-off keeps its own design). **Test:** `test-ten402-b.mjs` "the H2H page sheet is the Match
+  analysis sheet" + rule 4's frame.
 - **One short name per player (founder, TEN-408 card 78054b1c):** `shortOf` keeps a given name that is already
   abbreviated ("C. Alcaraz", "Dar. Blanch", "J-L. Struff"), so the picker, the Tournament card, the DNA line and every
   sentence print the same name; re-cutting "Dar." to "D." printed Darwin under his brother Dali's spelling.
@@ -323,14 +321,9 @@ live calculation (Data below).
 - **The page never re-enters its own loaders:** `triggerLoads` runs at most once per `H2H_RELOAD_MS` (60 s).
   `loadMatches` ends by calling `H2HPage.ensureInit()`, which used to restart the loaders and repaint the pair ~17×/s.
   **Test:** `test-ten402-lead.mjs` (runs the page's own `triggerLoads`; its control removes the guard and goes red).
-- **Match sheet** from any row on this page: the design's overlay (`--h2h-overlay`, no blur) over the content area; Esc,
-  ✕ and an outside click close it; on `window.sfOverlayClosers`. Drawn by player (Sections → Match sheet): no
-  better-figure emphasis and no better-bar rule on this page any more (the 2026-10 Dominance / lower-is-better emphasis is
-  replaced by the design, founder 2026-11-16).
-- **The H2H tone belongs only to a sheet opened from this page.** The profile's hand-off (`window.pp2OpenMatchSheet`)
-  never reuses a state whose pseudo match carries `h2hPage` (it used to: open + close an H2H sheet, then Players →
-  Zverev → the "Djokovic N." chip drew the page's tone). **Test:** `test-ten402-b.mjs` "review 2 item 2" (the real opener,
-  `fhStateFor`, `fhOpenSheet`).
+- **Match sheet** from any row on this page: the Match analysis sheet (above); Esc, ✕ and an outside click close it; on
+  `window.sfOverlayClosers`. The profile's hand-off never takes a sheet state this page left (its pseudo match carries
+  `h2hPage`). **Test:** `test-ten402-b.mjs` "review 2 item 2".
 - **Hot lines "Show all lines (N)"**: N = the lines with an eligible meeting in the CURRENT scope (Sections → Hot lines).
   No line prices on this page (it is tied to no match).
 

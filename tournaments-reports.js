@@ -4,7 +4,7 @@
 //
 // One filter card (Tournament + "?" · Report · Quarter · Reached · Round / Rounds through · Players · Metrics; on
 // Head-to-head: Tournament · Report · two pickers + Swap), then Round comparison (metric cards ranked per quarter),
-// Player progression (leader strip + heat matrix per measure) or the Head-to-head card, and the match sheet.
+// Player progression (leader strip + heat matrix per measure) or the Head-to-head card; a match opens Match analysis.
 //
 // Data — every figure is ours or a dash:
 //   · Every event with a report: the page's tourxReportEntries = this week's `tournaments` + the finished `drawResults`
@@ -158,7 +158,7 @@
   // ---------------------------------------------------------------------------------------------- state
   const S = { tour: null, view: 'round', qSel: null, rcRound: null, rcSel: null, rcMetricSel: null, rcAddOpen: false, rcQ: '',
     ppMin: 0, ppRound: null, ppSel: null, ppFocus: null, ppMetricSel: null, ppAddOpen: false, ppQ: '',
-    h2hA: null, h2hB: null, h2hOpen: null, sheet: null, dna: null };
+    h2hA: null, h2hB: null, h2hOpen: null, dna: null };
   let host = null, model = null;
   const LEAD_MIN = 2;                                   // matches with the measure before a player can own a leader strip
   const QORDER = q => (q == null ? 5 : q);
@@ -240,7 +240,7 @@
       const body = groups.map(g => `<div class="tt-rp-qblock">${g.head ? `<div class="tt-rp-qhead">${esc(g.head)}</div>` : ''}${g.rs.map(r => {
         const bar = r.v == null ? '' : `<div class="tt-rp-rbar" style="width:${pct(r.v)}%;background:${r.lead ? 'var(--tt-blue)' : 'var(--tt-past)'};"></div>`;
         const avgL = r.v == null ? '' : `<div class="tt-rp-ravg" style="left:${pct(r.oAvg)}%;"></div>`;
-        const open = r.v == null ? '' : ` data-act="sheet" data-p="${esc(r.e.p.name)}" data-i="${rIdx}"`;
+        const open = r.v == null ? '' : maAttr(M, r.e.p, rIdx);
         const valC = r.best ? 'var(--tt-white)' : r.lead ? 'var(--tt-text)' : 'var(--tt-soft)';
         return `<div class="tt-rp-rrow"><span class="tt-rp-rrank">${r.rank}</span>${avatar(r.e.p, 22, 10, 8)}`
           + `<a class="tt-rp-plink tt-rp-rname" ${profAttrs(r.e.p)} title="${esc(r.e.p.name)}" style="font-weight:${r.lead ? 700 : 600};">${esc(r.e.p.last)}</a>`
@@ -296,7 +296,7 @@
         + r.vals.map((v, c) => {
           if (v == null) return `<div><div class="tt-rp-hcell none" style="opacity:${dim ? 0.26 : 1};">${DASH}</div></div>`;
           const t = fmtCell(v, m.kind, many), lead = best[c] != null && t === best[c], i = shownIdx[c];
-          return `<div><div class="tt-rp-hcell live${lead ? ' lead' : ''}" data-act="sheet" data-p="${esc(r.p.name)}" data-i="${i}" data-meta="${esc(tipOf(M, r.p, i))}" title="Open match stats" style="opacity:${dim ? 0.26 : 1};">${t}</div></div>`;
+          return `<div><div class="tt-rp-hcell live${lead ? ' lead' : ''}" ${maAttr(M, r.p, i)} data-meta="${esc(tipOf(M, r.p, i))}" style="opacity:${dim ? 0.26 : 1};">${t}</div></div>`;
         }).join('')
         + `<div><div class="tt-rp-havg" style="opacity:${dim ? 0.26 : 1};">${r.avg == null ? `<span class="tt-rp-hdash">${DASH}</span>` : `<span>${fmtAvg(r.avg, m.kind, many)}</span>`}</div></div></div>`;
     });
@@ -354,24 +354,12 @@
         + `${fig(fb, bLead, true, tip(b, B))}</div>` };
   }
 
-  function sheetHtml(M) {
-    const sh = S.sheet; if (!sh) return '';
-    const p = M.players.find(x => x.name === sh.player); if (!p) return '';
-    const i = sh.i, oppName = p.opponents[i] || null, o = oppName ? M.players.find(x => x.name === oppName) : null;
-    const won = p.outcome(i), sc = p.score(i);
-    const meta = [M.display + (M.year ? ' ' + M.year : ''), M.labels[i], M.surface, won == null ? '' : p.last + ' ' + (won ? 'won' : 'lost') + (sc ? ' ' + sc : '')].filter(Boolean).join(' · ');
-    const rows = METRICS.map(m => {
-      const a = p.vals[m.key][i], b = o ? o.vals[m.key][i] : null, fa = fmt(a, m.kind), fb = fmt(b, m.kind);
-      const differ = a != null && b != null && fa !== fb;
-      const aW = differ && (m.lower ? a < b : a > b), bW = differ && !aW;
-      const cell = (t, w) => `<span class="tt-rp-sv${w ? ' better' : ''}">${t}</span>`;
-      return `<div class="tt-rp-srow"><span class="tt-rp-slabel">${esc(m.label)}</span>${cell(fa, aW)}${cell(fb, bW)}</div>`;
-    }).join('');
-    return `<div class="tt-rp-scrim" data-act="sheet-close-scrim"><div class="tt-rp-sheet" role="dialog" aria-modal="true" aria-label="Match stats: ${esc(p.name)} v ${esc(oppName || DASH)}">`
-      + `<div class="tt-rp-shead"><span style="flex:1;min-width:0;"><span class="tt-rp-stitle">${esc(p.name)} <span class="tt-rp-sv-v">v</span> ${esc(oppName || DASH)}</span><span class="tt-rp-smeta">${esc(meta)}</span></span>`
-      + `<span class="tt-rp-sclose" data-act="sheet-close" title="Close" aria-label="Close">✕</span></div>`
-      + `<div class="tt-rp-scols"><span class="tt-rp-scap">Metric</span><span class="tt-rp-scap r">${esc(p.last)}</span><span class="tt-rp-scap r">${esc(oppName ? surname(oppName) : DASH)}</span></div>`
-      + `<div class="tt-rp-sbody">${rows}</div></div></div>`;
+  // A bar or heat cell opens the ONE Match analysis on Match Stats (founder 2026-11-24, as the Draw): the match the board or
+  // the draw store holds for both players' keys at this event and round (the page's sfFinishedMatchId). None → not clickable.
+  function maAttr(M, p, i) {
+    const o = p.opponents[i] ? M.players.find(x => x.name === p.opponents[i]) : null;
+    const id = p.key && o && o.key && typeof root.sfFinishedMatchId === 'function' ? root.sfFinishedMatchId(p.key, o.key, M.name, M.rounds[i]) : null;
+    return id ? ` data-act="ma" data-id="${esc(id)}" title="Open match stats"` : '';
   }
 
   const ROW = (label, inner, opts) => `<div class="tt-rp-frow${opts && opts.start ? ' start' : ''}"><span class="tt-rp-flabel">${label}</span><div class="tt-rp-fval"${opts && opts.gap ? ` style="gap:${opts.gap};"` : ''}>${inner}</div></div>`;
@@ -468,7 +456,7 @@
           + `<a class="tt-rp-full" href="#" data-act="full-h2h" data-a="${esc(pa.key || '')}" data-b="${esc(pb.key || '')}">Open the full head to head <span class="tt-rp-arr">›</span></a></div></div></div>`;
       }
     }
-    return `<div class="tt-rp-wrap"><div class="tt-rp-filter">${filter}</div>${body}${sheetHtml(M)}</div>`;
+    return `<div class="tt-rp-wrap"><div class="tt-rp-filter">${filter}</div>${body}</div>`;
   }
 
   // ---------------------------------------------------------------------------------------------- environment
@@ -494,7 +482,7 @@
       year: yearOf(e), surface: cat && cat.surface ? String(cat.surface).toLowerCase() : '',
       roundOutcome: typeof tourxRoundOutcome === 'function' ? tourxRoundOutcome : null, playerScore: typeof tourxPlayerScore === 'function' ? tourxPlayerScore : null };
   }
-  let drawsAsked = false, dnaAsked = false;
+  let drawsAsked = false, dnaAsked = false, storeAsked = false;
   const EMPTY = '<div class="tt-rp-wrap"><div class="tt-rp-empty">No tournament reports available yet. Round-by-round data is published here as events complete.</div></div>';
   function render(el) {
     host = el || host; if (!host) return;
@@ -508,6 +496,7 @@
     if (!S.tour || !keys.includes(S.tour)) S.tour = keys[0];
     if (ts) { ts.tour = S.tour; ts.view = S.view; }
     if (!drawsAsked && typeof WueSheet !== 'undefined' && WueSheet.prefetchDraws) { drawsAsked = true; WueSheet.prefetchDraws().then(() => rerender()); }
+    if (!storeAsked && typeof loadDrawMatchStore === 'function') { storeAsked = true; loadDrawMatchStore().then(() => rerender()); }   // the finished matches a cell opens
     if (!dnaAsked && typeof ensureMatchDna === 'function') { dnaAsked = true; ensureMatchDna().then(d => { S.dna = d; if (S.view === 'h2h') rerender(); }); }
     const env = liveEnv(list[keys.indexOf(S.tour)]);
     if (!env) { host.innerHTML = EMPTY; return; }
@@ -517,7 +506,7 @@
     if (inp) { inp.focus(); const v = inp.value; inp.setSelectionRange(v.length, v.length); }
   }
   function rerender() { if (host && host.isConnected && host.offsetParent !== null) render(host); }
-  function resetPicks() { Object.assign(S, { qSel: null, rcRound: null, rcSel: null, rcAddOpen: false, rcQ: '', ppMin: 0, ppRound: null, ppSel: null, ppFocus: null, ppAddOpen: false, ppQ: '', h2hA: null, h2hB: null, h2hOpen: null, sheet: null }); }
+  function resetPicks() { Object.assign(S, { qSel: null, rcRound: null, rcSel: null, rcAddOpen: false, rcQ: '', ppMin: 0, ppRound: null, ppSel: null, ppFocus: null, ppAddOpen: false, ppQ: '', h2hA: null, h2hB: null, h2hOpen: null }); }
 
   // ---------------------------------------------------------------------------------------------- events
   // act(a, data) applies one click to the state (exported for the test); returns false when nothing changed.
@@ -550,8 +539,6 @@
       case 'h2htoggle': S.h2hOpen = S.h2hOpen === d.w ? null : d.w; return true;
       case 'h2hpick': { const [A, B] = h2hPair(M); if (d.w === 'A') { S.h2hA = d.p; S.h2hB = B; } else { S.h2hA = A; S.h2hB = d.p; } S.h2hOpen = null; return true; }
       case 'swap': { const [A, B] = h2hPair(M); S.h2hA = B; S.h2hB = A; S.h2hOpen = null; return true; }
-      case 'sheet': S.sheet = { player: d.p, i: +d.i }; return true;
-      case 'sheet-close': case 'sheet-close-scrim': S.sheet = null; return true;
       default: return false;
     }
   }
@@ -568,10 +555,9 @@
     el.addEventListener('click', e => {
       const t = e.target.closest && e.target.closest('[data-act]'); if (!t || !el.contains(t)) return;
       const a = t.dataset.act;
-      if (a === 'sheet-close-scrim' && e.target !== t) return;
       if (a === 'profile') { e.preventDefault(); const k = t.dataset.key; if (k && typeof psOpenProfile === 'function') psOpenProfile(k); return; }
       if (a === 'full-h2h') { e.preventDefault(); goFullH2H(t.dataset.a, t.dataset.b); return; }
-      if (a === 'sheet') hideTip();
+      if (a === 'ma') { hideTip(); if (typeof root.openAnalysisModal === 'function') root.openAnalysisModal(t.dataset.id, 'matchstats'); return; }
       if (act(a, t.dataset)) render(el);
     });
     el.addEventListener('input', e => {
@@ -591,10 +577,7 @@
       if (S.h2hOpen && !inside('.tt-rp-pick')) { S.h2hOpen = null; changed = true; }
       if (changed) render(host);
     });
-    (root.sfEscLayers = root.sfEscLayers || []).push({ id: 'tt-reports-sheet', z: 90, isOpen: () => !!S.sheet, close: closeSheet });
-    (root.sfOverlayClosers = root.sfOverlayClosers || []).push(closeSheet);
   }
-  function closeSheet() { if (!S.sheet) return; S.sheet = null; if (host) render(host); }
   function showTip(cell) {
     const meta = cell.getAttribute('data-meta'); if (!meta) return;
     if (!tipEl) { tipEl = document.createElement('span'); tipEl.className = 'tt-rp-ftip'; }
@@ -770,22 +753,6 @@ ${P} .tt-rp-h2hnote{ font-size:12.5px; color:var(--tt-muted); margin-top:4px; li
 ${P} .tt-rp-full{ flex:none; display:inline-flex; align-items:center; gap:8px; height:34px; padding:0 14px; border-radius:9px; ${lifted} color:var(--tt-white); font-size:12.5px; font-weight:700; white-space:nowrap; text-decoration:none; }
 ${P} .tt-rp-full:hover{ background:var(--tt-hover); color:var(--tt-white); }
 ${P} .tt-rp-arr{ color:var(--tt-blue); }
-${P} .tt-rp-scrim{ position:fixed; inset:0; z-index:90; background:var(--tt-scrim); display:flex; align-items:flex-start; justify-content:center; overflow-y:auto; padding:40px 22px 60px; }
-${P} .tt-rp-sheet{ width:100%; max-width:640px; background:var(--tt-card); border:1px solid ${W(12)}; border-radius:16px; box-shadow:var(--tt-shadow-overlay); overflow:hidden; }
-${P} .tt-rp-shead{ display:flex; align-items:flex-start; gap:14px; padding:24px 24px 18px; border-bottom:1px solid ${W(6)}; }
-${P} .tt-rp-stitle{ display:block; font-size:18px; font-weight:800; color:var(--tt-white); }
-${P} .tt-rp-sv-v{ color:var(--tt-muted); }
-${P} .tt-rp-smeta{ display:block; margin-top:7px; font-size:13px; color:var(--tt-muted); }
-${P} .tt-rp-sclose{ flex:none; display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:9px; ${lifted} color:var(--tt-soft); cursor:pointer; font-family:${MONO}; font-size:13px; }
-${P} .tt-rp-sclose:hover{ background:var(--tt-hover); color:var(--tt-white); }
-${P} .tt-rp-scols{ display:grid; grid-template-columns:minmax(0,1fr) 88px 88px; gap:12px; padding:14px 24px 10px; border-bottom:1px solid ${W(6)}; }
-${P} .tt-rp-scap{ font-family:'Hanken Grotesk',sans-serif; ${lbl} }
-${P} .tt-rp-scap.r{ text-align:right; }
-${P} .tt-rp-sbody{ padding:2px 24px 22px; }
-${P} .tt-rp-srow{ display:grid; grid-template-columns:minmax(0,1fr) 88px 88px; gap:12px; padding:11px 0; border-bottom:1px solid ${W(6)}; }
-${P} .tt-rp-slabel{ font-size:13px; font-weight:600; color:var(--tt-soft); }
-${P} .tt-rp-sv{ text-align:right; font-family:${MONO}; font-size:13.5px; font-weight:500; font-variant-numeric:tabular-nums; color:var(--tt-muted); }
-${P} .tt-rp-sv.better{ font-weight:700; color:var(--tt-white); }
 `;
 
   root.TTReports = { render, _internals: { build, act, viewHtml: (M, av) => viewHtml(M, av), setModel: M => { model = M; }, state: S, reset: resetPicks,

@@ -16010,8 +16010,9 @@ function fhOpenSheet(mid){
   const card = document.querySelector('#analysisModal.open .modal-analysis') || document.body;
   if (!host || host.parentNode !== card){ if (host) host.remove(); host = document.createElement('div'); host.id = 'fhSheet'; card.appendChild(host); }
   const h2hx = !!(_fh.m && _fh.m.h2hPage);
-  // Match analysis rebuild (2026-11-23): a sheet opened inside the open modal is the locked Match Stats sheet + a 30px Close
-  const ma2 = card !== document.body && !h2hx && mid !== _fhPp2Mid;
+  // Match analysis rebuild (2026-11-23): every match sheet is the locked Match Stats sheet + a 30px Close — inside the open
+  // modal and on the Head to Head page alike (founder 2026-11-24). The profile's sheet keeps its own locked design.
+  const ma2 = mid !== _fhPp2Mid;
   if (ma2){
     host.innerHTML = `<div class="ma2-sheet-ov" style="position:fixed; inset:0 0 0 var(--sf-side, 0px); z-index:110; background:var(--ma2-scrim); backdrop-filter:blur(3px); display:flex; align-items:flex-start; justify-content:center; padding:40px 24px; overflow-y:auto; font-family:'Hanken Grotesk',sans-serif; color:var(--ma2-text); line-height:normal;">
       <div onclick="fhCloseSheet()" style="position:absolute; inset:0;"></div>
@@ -16369,8 +16370,7 @@ function fhSheetBodyOf(slot){ return slot === 'tab' ? _maMsSheet : (_fh && _fh.s
 function fhSheetRender(slot){
   const S = fhSheetBodyOf(slot), host = document.getElementById(slot === 'tab' ? 'maMsSheetBody' : 'fhSheetBody');
   if (!S || !host) return;
-  _fhSheetToneNow = (slot !== 'tab' && _fh && _fh.m && _fh.m.h2hPage) ? 'h2h'   // TEN-402: the Head to Head page's tone
-    : (slot !== 'tab' && _fh && _fh.sheet && _fh.sheet === _fhPp2Mid) ? 'pp2'   // profile v2: by player
+  _fhSheetToneNow = (slot !== 'tab' && _fh && _fh.sheet && _fh.sheet === _fhPp2Mid) ? 'pp2'   // profile v2: by player
     : (slot === 'tab' || (_fh && _fh.ma2)) ? 'ma2' : null;   // Match analysis rebuild 2026-11-23: the locked sheet
   const tabs = fhSheetTabs(S);
   let body;
@@ -19092,11 +19092,36 @@ function maSetTheme(mode){ return window.sfTheme ? window.sfTheme.set(mode) : 'n
 // memory (founder Q26, 2026-09-30). Nothing else is built first.
 // The match a Match Analysis opens: the board's row, else the draw store's copy of a finished draw match the board has
 // dropped (round 3, founder 2026-10-21). null → nothing opens.
+// The draw store keeps a finished match's row as it stood when the match left the board, court figures included, so a
+// row frozen before the court table moved carries the old reading (Paris Masters 55 · Medium against today's 100 · Fast).
+// The court figures are the page's own table, the one the pipeline copies onto every board row: read them from it now.
+function drawStoreFresh(m){
+  if (m._ccFresh) return m;
+  m._ccFresh = true;
+  const key = typeof trKeyOf === 'function' ? trKeyOf(m) : null, cc = key && COURT_CONDITIONS[key];
+  if (cc) m.courtSpeed = Object.assign({}, cc, { category: courtSpeedCategory(cc.speed) });
+  return m;
+}
+// A finished match by both players' keys, its event and its round code (Tournaments → Reports opens it in Match analysis,
+// founder 2026-11-24): the board's row or the draw store's. A group round (RR1…) is any round-robin match of the pair;
+// the Finals can pair two players twice (group and final), so a round decides. Two candidates → none.
+function sfFinishedMatchId(k1, k2, event, rd){
+  const ks = [String(k1), String(k2)].sort().join('|'), rr = /^RR/.test(String(rd || ''));
+  const store = Object.values((_drawMatchStore && _drawMatchStore.matches) || {}).map(e => e && e.match);
+  const ids = new Set();
+  matches.concat(store).forEach(m => {
+    if (!m || !m.finalScore || m.p1Key == null || m.p2Key == null) return;
+    if ([String(m.p1Key), String(m.p2Key)].sort().join('|') !== ks || !pgSameEvent(pgTourName(m), event)) return;
+    const c = psRoundAbbr(h2hRoundLabel(m.tournamentRound) || m.tournamentRound || '');
+    if (rr ? !PG_RDS.includes(c) : c === rd) ids.add(m.id);
+  });
+  return ids.size === 1 ? [...ids][0] : null;
+}
 function matchById(id){
   const b = matches.find(x => x.id === id);
   if (b) return b;
   const e = typeof _drawMatchStore !== 'undefined' && _drawMatchStore && _drawMatchStore.matches && _drawMatchStore.matches[id];
-  if (e && e.match && e.match.finalScore) return e.match;
+  if (e && e.match && e.match.finalScore) return drawStoreFresh(e.match);
   // Past both (an archived draw, a match the store aged out): the Draw tab's row from the draw's published result
   // (tournaments-draw.js resultRow — players, keys, set scores, date, round; founder 2026-11-16).
   const d = typeof window !== 'undefined' && window.TTDraw && window.TTDraw.rowById ? window.TTDraw.rowById(id) : null;
@@ -23810,7 +23835,8 @@ function progressionRoundState(m){
 const PG_RDS = ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'];
 const PG_QF = 4;                      // PG_RDS index of the quarter-final; every round before it is an "Rn"
 const PG_ATP_FIRST = 2;               // an ATP main draw holds ≥ 28 players: its first round is 1/16-finals (R32) or earlier
-const PG_LONG = { R1: 'first round', R2: 'second round', R3: 'third round', R4: 'fourth round', QF: 'quarter-final', SF: 'semi-final', F: 'final' };
+const PG_RR_RDS = ['RR1', 'RR2', 'RR3', 'SF', 'F'];   // a round-robin event (ATP / Next Gen Finals): three group matches, then SF, F
+const PG_LONG = { RR1: 'first group match', RR2: 'second group match', RR3: 'third group match', R1: 'first round', R2: 'second round', R3: 'third round', R4: 'fourth round', QF: 'quarter-final', SF: 'semi-final', F: 'final' };
 const PG_WINDOW_DAYS = 20;            // an event's rounds sit inside this many days before the analysed match
 // DF L3967–3977: order, names and kinds (num = a rating, whole number · ratio = 2 dp · pct = 1 dp)
 const PG_METRICS = [
@@ -23831,6 +23857,15 @@ let _pg = null, _pgStylesP = null;
 
 function pgTourName(m){ return fhTournClean(String(m.tour || '').replace(/^(ATP|WTA|Challenger)\s+/i, '').trim()); }
 function pgRoundIdx(raw){ const c = psRoundAbbr(h2hRoundLabel(raw) || raw); return PG_RDS.indexOf(c); }
+// The Finals play groups first: their group rows carry no round (api-tennis sends ''), so they are numbered by date.
+function pgIsRR(m){ return /\bfinals\b/i.test(String((m && m.tour) || '')) && !/davis/i.test(String(m.tour)); }
+// One event under two feed names ("ATP Finals" on the knockout rows, "Finals - Turin" on the group rows): the registry key decides.
+function pgSameEvent(a, b){
+  const n = x => psNormTour(x).replace(/\s+-\s+[^-]+$/, '');   // "Finals - Turin" = "Finals": the feed's city suffix
+  if (n(a) === n(b)) return true;
+  const k = typeof sfEventKey === 'function' ? sfEventKey : null, ka = k && k(a);
+  return !!ka && ka === k(b);
+}
 function pgMatchEk(m){ const k = eventKeyOfMatch(m); return /^\d+$/.test(k) ? k : null; }   // a hash id (live cards) carries no event key
 
 // One whole-match box side (matchStatsFromShard → { own, opp }) → the nine figures, own player's side. Every rate
@@ -23935,23 +23970,25 @@ function pgDrawFig(x, mt){
 // One player's rows at this event, before this match (main draw only; this match excluded).
 function pgSide(m, idx, hist, closes){
   const key = idx ? m.p2Key : m.p1Key, name = idx ? m.p2 : m.p1, oppName = idx ? m.p1 : m.p2;
-  const tn = psNormTour(pgTourName(m)), ref = fhDayNum(m.date), ek = pgMatchEk(m);
+  const tn = pgTourName(m), ref = fhDayNum(m.date), ek = pgMatchEk(m), rr = pgIsRR(m);
   const list = Array.isArray(hist) ? hist : [];
   const rows = [];
   list.forEach((x, i) => {
-    if (psNormTour(fhTournClean(x.tournament)) !== tn) return;
+    if (!pgSameEvent(fhTournClean(x.tournament), tn)) return;
     const d = fhDayNum(x.date);
     if (ref == null || d == null || d > ref || d < ref - PG_WINDOW_DAYS) return;
     if (x.qualifying || /^qualif/i.test(String(x.round || ''))) return;                  // N7: main draw only
     // this match: by event key when both carry one; else the opponent's name on the same day (a surname alone would drop
     // an earlier round against a namesake — J. M. Cerundolo in R1, F. Cerundolo today)
     if (ek && x.eventKey != null ? String(x.eventKey) === ek : (maSameOpp(x.opponent, oppName) && Math.abs(d - ref) <= 1)) return;
-    const ri = pgRoundIdx(x.round);
-    if (ri < 0) return;
+    let ri = pgRoundIdx(x.round);
+    if (rr) ri = ri === 5 ? 3 : ri === 6 ? 4 : (!String(x.round || '').trim() || /round.?robin|group/i.test(x.round)) ? -2 : -1;   // -2: a group match, numbered below
+    if (ri === -1) return;
     const r = meRowFromCareer(x, closes, String(key), name, i);
     r.ri = ri;
     rows.push(r);
   });
+  if (rr) rows.filter(r => r.ri === -2).sort((a, b) => (fhDayNum(a.date) || 0) - (fhDayNum(b.date) || 0)).forEach((r, i) => { r.ri = Math.min(i, 2); });
   const k = key == null ? null : String(key);
   return { key: k, name, rows, loaded: Array.isArray(hist) && k != null && k in _careerHistoryShards };
 }
@@ -23983,16 +24020,19 @@ function pgModel(m){
   const D = m._pg, tourn = pgTourName(m), last = n => fhSurname(n);
   const aS = last(m.p1), bS = last(m.p2);
   const t = (tournamentProgression && tournamentProgression.tournaments || {})[tourn] || null;
+  const rr = pgIsRR(m), RDS = rr ? PG_RR_RDS : PG_RDS;
   let fi = pgRoundIdx(m.tournamentRound);
   const seen = D.sides.flatMap(s => s.rows.map(r => r.ri));
+  // a group match is the next group slot of the player further through the group (one with a hole still faces it)
+  if (rr) fi = fi === 5 ? 3 : fi === 6 ? 4 : Math.min(2, Math.max(0, ...D.sides.map(s => s.rows.filter(r => r.ri < 3).length)));
   if (fi < 0) fi = seen.length ? Math.min(PG_RDS.length - 1, Math.max(...seen) + 1) : -1;
   // the draw's first round: the earliest round either player's history shows, never later than an ATP draw's R32,
   // and as early as the active draw's own "Rn" rounds (tournament-progression.json) say.
   const tpPre = t ? (t.rounds || []).filter(r => /^R\d/.test(r)).length : 0;
-  const start = fi < 0 ? 0 : Math.min(fi, FH_SLAMS.has(psNormTour(tourn)) ? 0 : PG_ATP_FIRST, PG_QF - tpPre, ...seen);   // a Slam is a 128 draw
-  const label = i => (i < PG_QF ? 'R' + (i - start + 1) : PG_RDS[i]);
+  const start = rr || fi < 0 ? 0 : Math.min(fi, FH_SLAMS.has(psNormTour(tourn)) ? 0 : PG_ATP_FIRST, PG_QF - tpPre, ...seen);   // a Slam is a 128 draw
+  const label = i => (rr ? RDS[i] : i < PG_QF ? 'R' + (i - start + 1) : PG_RDS[i]);
   const played = [], future = [];
-  for (let i = start; i < PG_RDS.length; i++){ if (fi >= 0 && i < fi) played.push(i); else if (i > fi) future.push(i); }
+  for (let i = start; i < RDS.length; i++){ if (fi >= 0 && i < fi) played.push(i); else if (i > fi) future.push(i); }
   const facing = fi >= 0 ? label(fi) : null, n = played.length;
   const base = { tourn, aS, bS, n, facing };
   if (!n) return Object.assign(base, { isEmpty: true,
@@ -24010,7 +24050,7 @@ function pgModel(m){
     const cells = played.map((ri, j) => {
       const r = s.rows.find(x => x.ri === ri) || null;
       if (r) return { r, rd: labels[j] };
-      const bye = j === 0 && s.loaded && byeOk && !(tpP && (tpP.rounds || []).some(y => y.round === labels[j]));
+      const bye = !rr && j === 0 && s.loaded && byeOk && !(tpP && (tpP.rounds || []).some(y => y.round === labels[j]));
       return { bye, missing: !bye, rd: labels[j] };
     });
     const real = cells.filter(c => c.r && !c.r.wo);
