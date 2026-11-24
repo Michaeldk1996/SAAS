@@ -263,6 +263,28 @@
 
   function normEmail(email) { return String(email || '').trim().toLowerCase(); }
 
+  // 6-digit email codes: stennisfy-auth Worker at auth.stennisfy.com (source outside this repo).
+  var CODE_API = 'https://auth.stennisfy.com/';
+  var CODE_ERRORS = {
+    bad_email: 'Please enter a valid email address.',
+    too_many_requests: 'Too many codes sent. Wait 10 minutes and try again.',
+    wrong_code: 'That code isn’t right. Check the email and try again.',
+    too_many_tries: 'Too many wrong tries. Request a new code.',
+    expired: 'That code has expired. Request a new code.'
+  };
+  function codeApi(path, body) {
+    return global.fetch(CODE_API + path, {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body)
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (d) {
+        if (r.ok) return d;
+        var err = new Error(CODE_ERRORS[d.error] || 'Something went wrong. Please try again.');
+        err.code = d.error || 'server_error';
+        throw err;
+      });
+    }, function () { throw new Error('No connection. Check your internet and try again.'); });
+  }
+
   function isValidEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim());
   }
@@ -377,6 +399,40 @@
         if (typeof global.teTrack === 'function') global.teTrack('login', { method: 'password' });
         return u;
       }).catch(function (err) { throw mapAuthError(err); });
+    },
+
+    // sendCode(email) -> Promise. Emails a 6-digit sign-in code from noreply@stennisfy.com.
+    sendCode: function (email) {
+      var e = normEmail(email);
+      if (!isValidEmail(e)) return Promise.reject(new Error('Please enter a valid email address.'));
+      return codeApi('send', { email: e });
+    },
+
+    // signInWithCode(email, code) -> Promise<publicUser>. Same email = same account as a
+    // password sign-up; a first-time email gets a new account with a 'free' profile.
+    signInWithCode: function (email, code) {
+      var e = normEmail(email);
+      var isNew = false;
+      return codeApi('verify', { email: e, code: String(code || '') }).then(function (res) {
+        return ensureInit().then(function () { return _auth.signInWithCustomToken(res.token); });
+      }).then(function (cred) {
+        isNew = !!(cred.additionalUserInfo && cred.additionalUserInfo.isNewUser);
+        var ref = _db.collection('users').doc(cred.user.uid);
+        return ref.get().then(function (snap) {
+          if (snap.exists) return cred.user;
+          return ref.set({
+            fullName: '', email: e, plan: 'free', oddsFormat: 'decimal', favouriteBookmakers: [],
+            timezone: '', timezoneMode: 'auto', notifications: defaultNotif(),
+            createdAt: global.firebase.firestore.FieldValue.serverTimestamp()
+          }).then(function () { return cred.user; });
+        });
+      }).then(function (user) {
+        return loadProfile(user);
+      }).then(function (u) {
+        _cachedUser = u;
+        if (typeof global.teTrack === 'function') global.teTrack(isNew ? 'sign_up' : 'login', { method: 'email_code' });
+        return u;
+      });
     },
 
     // signOut() -> Promise (resolves once the session is cleared).

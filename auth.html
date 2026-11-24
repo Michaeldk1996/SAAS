@@ -13,27 +13,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700;800&display=block" rel="stylesheet">
 <!--
-  OTP-BACKEND DECISION  (surfaced for founder — a real 6-digit code is a backend call, not a front-end guess)
-  ----------------------------------------------------------------------------------------------------------
-  DESIGN  : passwordless 6-digit email OTP ("We'll send you a code you can use to log in").
-  BACKEND : auth.js is Firebase email+PASSWORD. There is NO 6-digit-OTP issue/verify function,
-            and Firebase email-link (magic-link) sign-in is NOT usable without a console/config
-            change (enable "Email link" provider + actionCodeSettings url + authorized domain).
-  WIRED   :
-    - "Continue with email" validates via BSP.isValidEmail and advances (client-side) to the
-      code step. NO code is actually emailed — nothing on the backend can send one yet.
-    - "Verify" calls verifyCode(), which does NOT fake a login. It shows an inline note that
-      6-digit sign-in isn't enabled and routes the user to the real, working password sign-in
-      (email prefilled). It never pretends the code succeeded.
-    - "Resend code" is honest: it states no code was sent because the OTP backend isn't wired.
-  FALLBACK: a fully-working Firebase email+password sign-in / sign-up path is always reachable
-            ("Use a password instead" on the email step, and from the Verify note). Real users
-            are never locked out.
-  NEEDS FOUNDER DECISION: to make the designed 6-digit code real, pick ONE:
-      (a) enable Firebase email-link passwordless sign-in (console change; still a link, not a
-          typed 6-digit code — the "6 boxes" become decorative or get replaced), or
-      (b) add a Cloud Function that issues + verifies a 6-digit code (true to the design).
-    Until then the OTP step is a faithful visual shell over the password fallback.
+  6-DIGIT EMAIL CODE (founder 2026-11-24: option (b), a real typed code)
+  "Continue with email" -> BSP.sendCode emails a code from noreply@stennisfy.com (stennisfy-auth
+  Worker at auth.stennisfy.com, SendGrid). "Verify" -> BSP.signInWithCode signs in with a Firebase
+  custom token; same email = same account as a password sign-up; a new email gets a 'free' profile.
+  The password sign-in / sign-up stays reachable ("Use a password instead").
 -->
 <style>
   :root{
@@ -442,18 +426,18 @@
         return;
       }
       currentEmail = v;
-      // loading state: disabled + 60% opacity + label, NO spinner. No code is actually
-      // sent (no OTP backend) — this only drives the design's step transition.
+      // loading state: disabled + 60% opacity + label, NO spinner.
       var btn = document.getElementById('continueBtn');
       btn.disabled = true; btn.classList.add('loading');
       document.getElementById('continueLbl').textContent = 'Sending code…';
       document.getElementById('continueArrow').style.display = 'none';
-      setTimeout(function(){
+      function reset(){
         btn.classList.remove('loading'); btn.disabled = false;
         document.getElementById('continueLbl').textContent = 'Continue with email';
         document.getElementById('continueArrow').style.display = '';
-        goStep('code');
-      }, 450);
+      }
+      BSP.sendCode(v).then(function(){ reset(); clearCodes(); goStep('code'); })
+        .catch(function(err){ reset(); document.getElementById('emailErr').textContent = err.message; el.classList.add('err'); });
     }
 
     function socialStub(what){ alert((what||'This') + ' is coming soon.'); }
@@ -499,24 +483,33 @@
       });
     })();
 
-    // HONEST: there is no 6-digit verifier on the backend. Do NOT pretend this logs in.
-    // Route the user to the real, working password sign-in with their email prefilled.
     function verifyCode(){
       var code = codeValue();
+      var note = document.getElementById('otpNote');
       if (code.length < 6){
         codeInputs().forEach(function(i){ if(!i.value) i.classList.add('err'); });
-        document.getElementById('otpNote').textContent = 'Enter all six digits.';
+        note.textContent = 'Enter all six digits.';
         return;
       }
-      document.getElementById('otpNote').textContent =
-        '6-digit code sign-in isn’t enabled yet — continue with your password instead.';
-      setTimeout(function(){ goStep('password'); }, 900);
+      var btn = document.getElementById('verifyBtn');
+      if (btn.disabled && btn.classList.contains('loading')) return; // Enter pressed while verifying
+      btn.disabled = true; btn.classList.add('loading');
+      note.style.color = ''; note.textContent = '';
+      BSP.signInWithCode(currentEmail, code)
+        .then(function(){ location.href = 'bsp-consult-dashboard.html'; })
+        .catch(function(err){
+          btn.classList.remove('loading'); updateVerify();
+          codeInputs().forEach(function(i){ i.classList.add('err'); });
+          note.textContent = err.message;
+        });
     }
 
     function resendCode(){
-      // Honest: nothing was emailed because the OTP backend isn't wired.
-      document.getElementById('otpNote').textContent =
-        'No code was sent — 6-digit sign-in isn’t enabled yet. Use your password below.';
+      var note = document.getElementById('otpNote');
+      note.style.color = ''; note.textContent = 'Sending a new code…';
+      BSP.sendCode(currentEmail)
+        .then(function(){ clearCodes(); updateVerify(); note.style.color = 'var(--pos)'; note.textContent = 'New code sent to ' + currentEmail + '.'; })
+        .catch(function(err){ note.style.color = ''; note.textContent = err.message; });
     }
 
     /* ---------------- password fallback (real Firebase auth) ---------------- */
