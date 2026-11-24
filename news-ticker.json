@@ -1,18 +1,18 @@
 {
- "generatedAt": "2026-11-24T17:04:44.698Z",
+ "generatedAt": "2026-11-24T17:27:45.318Z",
  "tournaments": [
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 155,
+   "items": 156,
    "byType": {
-    "quote": 135,
+    "quote": 136,
     "digest": 20
    },
-   "latestTimestamp": "2026-11-24T15:30:00.000Z",
-   "updatedAt": "2026-11-24T17:04:44.698Z"
+   "latestTimestamp": "2026-11-24T17:00:00.000Z",
+   "updatedAt": "2026-11-24T17:27:45.318Z"
   },
   {
    "key": "3120",
@@ -68,6 +68,36 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-5a05fd64bc0e5a",
+   "type": "quote",
+   "playerId": "2973",
+   "opponentId": null,
+   "player": "B. Shelton",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-24T17:00:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "I think what a lot of people don't see is when we actually do have time or a couple of days off, we're so exhausted that it's tough to do anything. It is tough to make time.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "TennisUpToDate",
+   "sourceUrl": "https://tennisuptodate.com/atp/ben-shelton-warned-of-relationship-struggles-just-weeks-before-reported-trinity-rodman-breakup",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "sourceHash": "09e7d98482977724",
+   "publishedAt": "2026-11-24T17:27:45.318Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-154b51d19041e6",
    "type": "quote",
@@ -1244,36 +1274,6 @@
    "publishedAt": "2026-11-22T20:49:33.486Z",
    "revisedAt": "2026-11-23T00:45:05.253Z",
    "revision": 2,
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-ee4d1e34c80ab4",
-   "type": "quote",
-   "playerId": "1980",
-   "opponentId": null,
-   "player": "A. Zverev",
-   "opponent": null,
-   "tournament": "Finals",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-22T22:41:22.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "It’s a thing I have to deal with all the time, but it’s not a thing that is bothering me all the time, … It comes once every two months, once every two and a half months, and then it’s a problem for myself.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "Tennis Majors",
-   "sourceUrl": "https://www.tennismajors.com/atp/nitto-atp-finals-atp/it-comes-once-every-two-months-zverev-explains-his-ankle-says-the-davis-cup-is-not-in-danger-867755.html",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "207cf63ad06fcf1c",
-   "publishedAt": "2026-11-22T23:18:47.132Z",
    "file": "news-ticker/2794-2026.json"
   }
  ]
