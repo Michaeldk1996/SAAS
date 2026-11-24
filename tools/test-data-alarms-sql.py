@@ -145,6 +145,11 @@ def suite(tag, src=SRC):
     check(f'{tag}card_state config: a pre-stage-3 install (60 / 45) is moved to 15 / 12 on re-install',
           q("select threshold || '|' || recover_below from data_alarms.config where name = 'card_state'").strip() == '00:15:00|00:12:00',
           q("select threshold || '|' || recover_below from data_alarms.config where name = 'card_state'"))
+    q("update data_alarms.sources set url = 'https://michaeldk1996.github.io/SAAS/matches.json' where name = 'matches'")
+    q(src)                                          # re-install after the domain move (2026-11-24)
+    check(f'{tag}domain move: an old Pages address moves to app.stennisfy.com on re-install',
+          q("select url from data_alarms.sources where name = 'matches'").strip() == 'https://app.stennisfy.com/matches.json',
+          q("select url from data_alarms.sources where name = 'matches'"))
 
     # stage 3: card prices from the database doc — a fresh card_state_doc keeps the row good though the file is old
     q("create table if not exists public.card_state_doc (id smallint primary key, generated_at timestamptz, doc jsonb)")

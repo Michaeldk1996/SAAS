@@ -44,6 +44,10 @@ try:
     for i in (1, 2):
         rc, err = pg.file(SQL)
         check(f'installs (pass {i}: idempotent)', rc == 0, err)
+    q("update stale_watch.config set url = 'https://michaeldk1996.github.io/SAAS/build-info.json'")
+    rc, err = pg.file(SQL)                          # re-install after the domain move (2026-11-24)
+    check('domain move: an old Pages address moves to app.stennisfy.com on re-install',
+          rc == 0 and q('select url from stale_watch.config').strip() == 'https://app.stennisfy.com/build-info.json', q('select url from stale_watch.config'))
 
     # ── the rule, fake clock: the same cases as tools/test-data-staleness-alert.mjs ──
     T0 = "timestamptz '2026-10-25 00:13:05+00'"

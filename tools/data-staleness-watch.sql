@@ -28,6 +28,9 @@ create table if not exists stale_watch.config (
     unread_n     integer  not null default 2
 );
 insert into stale_watch.config (id) values (true) on conflict (id) do nothing;
+-- domain move (2026-11-24): a config installed with the old Pages address moves to the new one; any other value stays.
+update stale_watch.config set url = replace(url, 'https://michaeldk1996.github.io/SAAS', 'https://app.stennisfy.com')
+ where url like 'https://michaeldk1996.github.io/SAAS/%';
 
 create table if not exists stale_watch.checks (
     id           bigint primary key,                 -- the pg_net request id

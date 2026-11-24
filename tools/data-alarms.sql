@@ -64,6 +64,9 @@ insert into data_alarms.sources (name, url) values
   ('matches',    'https://app.stennisfy.com/matches.json'),
   ('coverage',   'https://app.stennisfy.com/close-coverage.json')
 on conflict (name) do nothing;
+-- domain move (2026-11-24): rows installed with the old Pages address move to the new one; any other value stays.
+update data_alarms.sources set url = replace(url, 'https://michaeldk1996.github.io/SAAS', 'https://app.stennisfy.com')
+ where url like 'https://michaeldk1996.github.io/SAAS/%';
 
 create table if not exists data_alarms.expected_jobs (jobname text primary key);
 insert into data_alarms.expected_jobs (jobname) values
