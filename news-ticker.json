@@ -1,6 +1,19 @@
 {
- "generatedAt": "2026-11-24T23:32:01.388Z",
+ "generatedAt": "2026-11-25T00:35:44.719Z",
  "tournaments": [
+  {
+   "key": "tour",
+   "season": "2026",
+   "name": "ATP Tour",
+   "file": "news-ticker/tour-2026.json",
+   "items": 167,
+   "byType": {
+    "quote": 147,
+    "digest": 20
+   },
+   "latestTimestamp": "2026-11-24T23:44:03.000Z",
+   "updatedAt": "2026-11-25T00:35:44.719Z"
+  },
   {
    "key": "3120",
    "season": "2026",
@@ -13,19 +26,6 @@
    },
    "latestTimestamp": "2026-11-24T20:30:00.000Z",
    "updatedAt": "2026-11-24T22:05:56.886Z"
-  },
-  {
-   "key": "tour",
-   "season": "2026",
-   "name": "ATP Tour",
-   "file": "news-ticker/tour-2026.json",
-   "items": 167,
-   "byType": {
-    "quote": 147,
-    "digest": 20
-   },
-   "latestTimestamp": "2026-11-24T19:17:03.000Z",
-   "updatedAt": "2026-11-24T23:32:01.388Z"
   },
   {
    "key": "2794",
@@ -69,6 +69,38 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-154b51d19041e6",
+   "type": "quote",
+   "playerId": "2072",
+   "opponentId": null,
+   "player": "J. Sinner",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-24T23:44:03.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Injuries",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "The worst part of this injury for me is that I can't compete, I can't play tennis,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "RTHK",
+   "sourceUrl": "https://news.rthk.hk/rthk/en/component/k2/1879154-20261125.htm",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "sourceHash": "42d68cec973375e9",
+   "publishedAt": "2026-11-24T16:41:02.730Z",
+   "revisedAt": "2026-11-25T00:35:44.719Z",
+   "revision": 2,
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-145fe7bfedc7d3",
    "type": "quote",
@@ -683,38 +715,6 @@
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "fbd192807a8902b8",
    "publishedAt": "2026-11-24T20:36:24.011Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-154b51d19041e6",
-   "type": "quote",
-   "playerId": "2072",
-   "opponentId": null,
-   "player": "J. Sinner",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-24T15:30:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Injuries",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "The worst part of this injury for me is that I can't compete, I can't play tennis,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "SuperSport",
-   "sourceUrl": "https://supersport.com/tennis/news/cfa3675a-b903-4cdd-8c88-d3f6770b2743/sinner-doubt-for-australian-open-after-knee-surgery",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "9a1a3cfc8026da2e",
-   "publishedAt": "2026-11-24T16:41:02.730Z",
-   "revisedAt": "2026-11-24T17:04:44.698Z",
-   "revision": 1,
    "file": "news-ticker/tour-2026.json"
   },
   {
