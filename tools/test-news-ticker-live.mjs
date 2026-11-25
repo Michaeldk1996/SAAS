@@ -57,7 +57,10 @@ await ok('duration: only when the start AND the end were observed', () => {
 });
 
 // ---- the pipeline build on a fixture board ----
-const stats = (aces, w, ue, bp) => ({ 'Service:Aces': aces, 'Points:Winners': w, 'Points:Unforced errors': ue, raw: bp ? { 'Service:Break Points Saved': bp } : {} });
+// a full api-tennis box (the report rule of 2026-11-26 needs one): the rates carry no counts, so they print nothing
+const FULL_BOX = { 'Service:Double Faults': 2, 'Service:1st serve percentage': 62, 'Service:1st serve points won': 70, 'Service:2nd serve points won': 52, 'Return:1st return points won': 30,
+  'Return:2nd return points won': 48, 'Points:Total Points Won': 51, 'Points:Service Points Won': 63, 'Points:Return Points Won': 37, 'Games:Service games won': 80, 'Games:Return games won': 20 };
+const stats = (aces, w, ue, bp) => ({ ...FULL_BOX, 'Service:Aces': aces, 'Points:Winners': w, 'Points:Unforced errors': ue, raw: bp ? { 'Service:Break Points Saved': bp } : {} });
 const card = (o) => ({ tourBadge: 'ATP', tour: 'ATP Testville', tournamentKey: 77, date: '2026-11-10', time: '13:00', tournamentRound: 'ATP Testville - 1/8-finals', qualifying: false,
   retired: false, walkover: false, p1: 'A. One', p2: 'B. Two', p1Key: 1, p2Key: 2, finalScore: { sets: [{ p1: 6, p2: 0 }, { p1: 6, p2: 0 }], winner: 'p1' },
   matchStats: { p1: stats(2, 19, 7, null), p2: stats(0, 5, 20, { won: 4, total: 10 }) }, ...o });
@@ -82,7 +85,7 @@ await ok('build: one report per finished match; a walkover gets a status item an
   assert.equal(s.reports, 1); const it = itemsOf(d);
   assert.deepEqual(it.map((x) => x.id).sort(), ['report-100', 'status-wo-101']);
   assert.ok(!it.some((x) => /faced no break points/.test(x.text) && x.id !== 'report-100'));
-  assert.match(it.find((x) => x.id === 'report-100').text, /^One beat Two 6-0, 6-0 in the round of 16\. One won the last 12 games of the match\. One faced no break points\.\n\nOne: W: 19 \/ UE: 7\n\nTwo: W: 5 \/ UE: 20$/, 'what stood out; nothing about the loser when nothing of his was bad enough; then one closing line per player, winner first');
+  assert.match(it.find((x) => x.id === 'report-100').text, /^One beat Two 6-0, 6-0 in the round of 16\. One won the last 12 games of the match\. One faced no break points\.\n\nOne: W: 19 \/ UE: 7 \| DR: 1\.00\n\nTwo: W: 5 \/ UE: 20 \| DR: 1\.00$/, 'what stood out; nothing about the loser when nothing of his was bad enough; then one closing line per player, winner first');
   assert.ok(!/break point/.test(it.find((x) => x.id === 'status-wo-101').text));
 });
 // founder 2026-11-13 ("Yes, rewrite them"): a published report follows the current rules while its match data is on file
@@ -97,7 +100,7 @@ await ok('build: a report whose match left the board is rebuilt from the draw st
   const s = JSON.parse(runBuild(d, '2026-11-13T10:00:00.000Z')), it = itemsOf(d), by = (id) => it.find((x) => x.id === id);
   assert.deepEqual(it.map((x) => x.id).sort(), ['report-100', 'report-200', 'report-900'], 'report-201 was never published and report-300 has no tournament file: the store adds neither');
   assert.ok(!fs.existsSync(path.join(d, 'news-ticker', '88-2026.json')));
-  assert.match(by('report-200').text, /^Three beat Four 6-0, 6-0 in the round of 16\..*\n\nThree: W: 19 \/ UE: 7\n\nFour: W: 5 \/ UE: 20$/s, 'rebuilt in full from the frozen board row');
+  assert.match(by('report-200').text, /^Three beat Four 6-0, 6-0 in the round of 16\..*\n\nThree: W: 19 \/ UE: 7 \| DR: 1\.00\n\nFour: W: 5 \/ UE: 20 \| DR: 1\.00$/s, 'rebuilt in full from the frozen board row');
   assert.deepEqual([by('report-200').publishedAt, by('report-200').revision], ['T0', 1]);
   assert.equal(by('report-900').text, 'Nine beat Ten 6-4, 6-4 in the final round of qualifying. Nine: 3 aces.', 'no data left: the names only, every fact as published');
   assert.deepEqual([by('report-900').publishedAt, by('report-900').revision, s.namesOnly], ['T0', 1, 1]);
@@ -134,6 +137,22 @@ await ok('build: reports are main draw only — a qualifying, doubles or non-ATP
     { id: 'report-91', type: 'report', stage: 'main draw', tournamentKey: '77', season: '2026', timestamp: '2026-11-09T10:00:00.000Z', text: 'old main draw report' }] }));
   runBuild(d, '2026-11-10T15:00:00.000Z');
   assert.deepEqual(itemsOf(d).filter((x) => x.type === 'report').map((x) => x.id).sort(), ['report-101', 'report-91']);
+});
+// founder 2026-11-26 — mutants: the rule off (report-101 is written); a stored thin report kept; a card with no box at all dropping its old report
+await ok('build: no report without the api-tennis box score (95% of its stats) — a Davis Cup style box writes none and its stored report leaves the feed', async () => {
+  const { statsCoverage, REPORT_STATS, REPORT_STATS_MIN } = await import('./news-ticker/news-core.mjs');
+  const full = card({}).matchStats, noWue = { p1: { ...full.p1, 'Points:Winners': null, 'Points:Unforced errors': null }, p2: { ...full.p2, 'Points:Winners': null, 'Points:Unforced errors': null } };
+  assert.equal(REPORT_STATS.length, 14); assert.equal(statsCoverage(full), 1);
+  assert.ok(statsCoverage(noWue) < REPORT_STATS_MIN, 'no winners / unforced errors: 12 of 14');
+  assert.ok(statsCoverage({ p1: full.p1, p2: { ...full.p2, 'Service:Double Faults': null } }) < REPORT_STATS_MIN, 'one stat missing on one side is already under 95%');
+  assert.equal(statsCoverage(null), 0);
+  const d = fixture([card({ id: 'past-100' }), card({ id: 'past-101', matchStats: noWue }), card({ id: 'past-102', matchStats: noWue }), card({ id: 'past-103', matchStats: null }), card({ id: 'past-104', matchStats: null })]);
+  fs.mkdirSync(path.join(d, 'news-ticker'), { recursive: true });
+  fs.writeFileSync(path.join(d, 'news-ticker', '77-2026.json'), JSON.stringify({ tournament: 'Testville', tournamentKey: '77', season: '2026', items: [
+    { id: 'report-102', type: 'report', stage: 'main draw', player: 'A. One', opponent: 'B. Two', tournamentKey: '77', season: '2026', timestamp: '2026-11-10T10:00:00.000Z', text: 'a stored report on a thin box' },
+    { id: 'report-104', type: 'report', stage: 'main draw', player: 'A. One', opponent: 'B. Two', tournamentKey: '77', season: '2026', timestamp: '2026-11-10T10:00:00.000Z', text: 'a stored report whose row holds no box' }] }));
+  runBuild(d, '2026-11-10T15:00:00.000Z');
+  assert.deepEqual(itemsOf(d).filter((x) => x.type === 'report').map((x) => x.id).sort(), ['report-100', 'report-104'], 'thin: none written (101), the stored one gone (102); no box at all: none written (103), a stored one kept (104)');
 });
 await ok('build: the collector\'s quotes are folded into the same tournament file', () => {
   const q = { id: 'quote-abc', type: 'quote', playerId: '1', tournament: 'Testville', tournamentKey: '77', season: '2026', timestamp: '2026-11-10T14:00:00.000Z', timestampKind: 'observed', category: 'Quotes', text: 'I played well.', language: 'en', translated: false, sourceName: 'S', sourceUrl: 'https://s/x' };
@@ -459,6 +478,38 @@ await ok('a press quote gets a topic label, asked once; a label that is not "On 
   assert.equal(calls, 1, 'a held quote keeps its label: the model is not asked again');
   const none = await processTournament({ t, got: { candidates: [q] }, topicOf: async () => ({ status: 'failed-check', topic: null }) });
   assert.ok(!('topic' in none.items[0]), 'control: no label, no topic field');
+  // where he said it (founder 2026-11-26) — mutants: a name the article does not carry kept; the outlet named; a held quote never asked
+  const { settingOk, topicQuote } = await import('./news-ticker/translate.mjs');
+  const art = 'Speaking in Bologna before the Davis Cup Finals, Rune was asked about Copenhagen.';
+  assert.ok(settingOk('in his press conference before the Davis Cup Finals in Bologna', art));
+  assert.ok(!settingOk('in his press conference in Turin', art), 'a place the article does not name');
+  assert.ok(!settingOk('unknown', art) && !settingOk('He spoke in Bologna', art) && !settingOk('in "Bologna"', art));
+  const reply = (text) => async () => ({ ok: true, json: async () => ({ content: [{ type: 'text', text }], usage: { input_tokens: 1, output_tokens: 1 } }) });
+  const tq = await topicQuote('x', art, 'k', reply('On Copenhagen\nWhere: in his press conference before the Davis Cup Finals in Bologna.'));
+  assert.deepEqual([tq.topic, tq.setting], ['On Copenhagen', 'in his press conference before the Davis Cup Finals in Bologna']);
+  assert.equal((await topicQuote('x', art, 'k', reply('On Copenhagen\nWhere: unknown'))).setting, null);
+  assert.equal((await topicQuote('x', art, 'k', reply('On Copenhagen\nWhere: in Madrid'))).setting, null, 'not in the article: no setting, the label stays');
+  let asked = 0;
+  const withSetting = async () => { asked++; return { status: 'ok', topic: 'On Copenhagen', setting: 'in his press conference in Bologna' }; };
+  const s1 = await processTournament({ t, got: { candidates: [q] }, topicOf: withSetting });
+  assert.equal(s1.items[0].setting, 'in his press conference in Bologna');
+  const heldNoSetting = [{ ...r.items[0], settingTried: undefined }];
+  const s2 = await processTournament({ t, got: { candidates: [q] }, known: heldNoSetting, topicOf: withSetting });
+  assert.deepEqual([s2.items[0].topic, s2.items[0].setting], ['On an ATP tournament in Copenhagen', 'in his press conference in Bologna'], 'a held quote read again gets its setting and keeps its label');
+  await processTournament({ t, got: { candidates: [q] }, known: s2.items, topicOf: withSetting });
+  assert.equal(asked, 2, 'a quote that has its setting is not asked again');
+  const named = await processTournament({ t, got: { candidates: [q] }, topicOf: async () => ({ status: 'ok', topic: 'On Copenhagen', setting: 'in an interview with B.T. in Bologna' }) });
+  assert.ok(!named.items[0].setting && named.items[0].settingTried, 'a setting that names the outlet is not used');
+  // somebody else with the surname (Leon Smith, the Davis Cup captain, was published as K. Smith)
+  const { otherBearer } = await import('./news-ticker/outlet-reader.mjs');
+  const { notHisWords } = await import('./news-ticker/collect-quotes.mjs');
+  const smith = { key: '9', surname: 'smith', initial: 'k' };
+  assert.ok(otherBearer('Great Britain captain Leon Smith looked back. "It has given me a lot," Smith said.', smith));
+  assert.ok(!otherBearer('But Smith said so. Then Keegan Smith left.', smith) && !otherBearer('Smith said so.', smith) && !otherBearer('The captain Leon Smith and the player Keegan Smith.', smith));
+  const html = '<p>Great Britain captain Leon Smith looked back on the tie.</p><p>"Since then it has given me a lot of memories and amazing times," Smith said.</p>';
+  assert.equal(candidatesFromOutletArticle({ url: 'https://x/a', html, outlet: 'LTA', language: 'en', players: [smith] }).candidates.length, 0, 'the captain is not the player');
+  assert.equal(candidatesFromOutletArticle({ url: 'https://x/a', html: html.replace('Leon', 'Keegan'), outlet: 'LTA', language: 'en', players: [smith] }).candidates.length, 1, 'control: his own given name');
+  assert.ok(notHisWords('https://www.lta.org.uk/fan-zone/davis-cup/news/leon-smith-reflects-on-career-as-davis-cup-captain') && !notHisWords('https://www.lta.org.uk/news/keegan-smith-wins'));
   const { addContext } = await import('./news-ticker/quote-sources.mjs');
   const main = [{ id: 'past-1', date: '2026-11-11', p1: 'M. Kecmanovic', p2: 'H. Rune', finalScore: { winner: 'p2' } }, { id: 'past-2', date: '2026-11-12', p1: 'T. Fritz', p2: 'H. Rune', walkover: true, finalScore: { winner: 'p1' } }];
   const c = { speaker: 'H. Rune', day: '2026-11-12' }; addContext(c, main);

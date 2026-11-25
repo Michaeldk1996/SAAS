@@ -21,11 +21,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
-import { reportText, statusItems, h2hAfter, roundWords, breakPoints, mtoSentences, ratingLines, msRows, msFromStore } from './news-core.mjs';
+import { reportText, statusItems, h2hAfter, roundWords, breakPoints, mtoSentences, ratingLines, msRows, msFromStore, statsCoverage, REPORT_STATS_MIN } from './news-core.mjs';
 import { shotSentences } from './match-cards.mjs';
 import { pbpFacts, scoreFacts } from './pbp-facts.mjs';
 import { mergeItems, buildIndex, fileOf, observedTimes, tourKeep } from './ticker-core.mjs';
-import { factSheet, composeReport, assemble, pathLines, physicalParagraph, matchQuotes, roundCode, milestoneLines, occasionLines, COMPOSE_VERSION, MAX_COMPOSE_RUNS, COMPOSE_FRESH_HOURS, COMPOSE_WAIT_MIN, COMPOSE_WAIT_MAX_MIN, COMPOSE_WAIT_QUOTE_MIN, COMPOSE_UPGRADE_HOURS } from './compose.mjs';
+import { factSheet, composeReport, assemble, pathLines, physicalParagraph, matchQuotes, roundCode, milestoneLines, occasionLines, COMPOSE_VERSION, MAX_COMPOSE_RUNS, COMPOSE_FRESH_HOURS, COMPOSE_WAIT_MIN, COMPOSE_WAIT_MAX_MIN, COMPOSE_WAIT_QUOTE_MIN, COMPOSE_UPGRADE_HOURS, COMPOSE_LATE_HOURS } from './compose.mjs';
 
 const require = createRequire(import.meta.url);
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -141,10 +141,14 @@ export async function build({ nowIso, times, rewrite = null, writer = null, apiK
     const rwOf = (m) => (m.qualifying ? `${roundWords(m.tournamentRound) === 'final' ? 'final round' : roundWords(m.tournamentRound)} of qualifying` : (pageRound(m, m.finalScore && m.finalScore.winner ? m.finalScore.winner : 'p1') || pageRound(m, 'p2') || pageRound(m, 'p1') || feedRound.get(String(m.tournamentRound)) || roundWords(m.tournamentRound) || groupStage(m)));
     const allCards = g.cards.concat(g.offBoard || []);
     const fresh = [];
+    const thin = new Set();   // reports refused for a thin box score
     const done = g.cards.filter((m) => m.finalScore && m.finalScore.winner).concat(g.offBoard || []);
     for (const m of done) {
       if (m.walkover) continue;
       if (m.qualifying) continue;   // founder 2026-11-15: match reports are main draw only
+      // founder 2026-11-26: no report without the api-tennis box score (95% of its stats); a stored one leaves the feed.
+      // A card with no box score at all keeps a report it already has (an old row whose stats were not frozen).
+      { const cov = statsCoverage(m.matchStats); if (cov < REPORT_STATS_MIN && (cov > 0 || !old.has(`report-${ek(m)}`))) { thin.add(`report-${ek(m)}`); summary.thinStats = (summary.thinStats || 0) + 1; continue; } }
       summary.finished++;
       try {
         const w = m.finalScore.winner, l = w === 'p1' ? 'p2' : 'p1', id = `report-${ek(m)}`;
@@ -220,7 +224,7 @@ export async function build({ nowIso, times, rewrite = null, writer = null, apiK
             : quoteCameLater ? false
             : pc ? (pc.status === 'ok' && !pc.keptAfterFailedRewrite) || pc.sheetHash === sheet.hash || (pc.runs || 0) >= MAX_COMPOSE_RUNS || !(ageH <= COMPOSE_FRESH_HOURS)
               : oldC ? oldC.upgradeFailed === COMPOSE_VERSION || !(ageH <= COMPOSE_UPGRADE_HOURS)
-                : !ready || !(ageH <= COMPOSE_UPGRADE_HOURS);   // an old match with no written report keeps what it shows: no call is spent on it
+                : !ready || !(ageH <= COMPOSE_LATE_HOURS);   // never written (the model was not reachable): written when it is, while the match is at most two weeks old
           if (frozen && oldC) keepOld = true;
           if (!pc && !oldC && !onlyEk && !ready) waiting = true;
           if (frozen) composed = pc;
@@ -261,7 +265,7 @@ export async function build({ nowIso, times, rewrite = null, writer = null, apiK
     // names follow the surname rule; every fact and word stays as published
     { const built = new Set(fresh.map((x) => x.id));
       for (const x of (existing && existing.items) || []) {
-        if (x.type !== 'report' || built.has(x.id) || !x.player || !x.opponent) continue;
+        if (x.type !== 'report' || built.has(x.id) || thin.has(x.id) || !x.player || !x.opponent) continue;
         const t = plainNames(String(x.text), [{ card: x.player }, { card: x.opponent }]);
         const ms = x.ms || (x.eventKey ? msFromStore(readJson(`setstats/${x.eventKey}.json`), x, cardsByMatch[x.eventKey]) : null);
         if (t === x.text && ms === (x.ms || null)) continue;
@@ -278,7 +282,7 @@ export async function build({ nowIso, times, rewrite = null, writer = null, apiK
     const qf = readJson(`news-quotes/${g.key}-${g.season}.json`);
     for (const q of (qf && qf.items) || []) { if (hidden(q)) continue; fresh.push(q.type === 'quote' ? { ...q, text: decodeEntities(q.text) } : q); summary.quotes++; }
 
-    const kept = ((existing && existing.items) || []).filter((x) => !hidden(x) && !(x.type === 'report' && x.stage === 'qualifying')), dropped = ((existing && existing.items) || []).length - kept.length;
+    const kept = ((existing && existing.items) || []).filter((x) => !hidden(x) && !(x.type === 'report' && (x.stage === 'qualifying' || thin.has(x.id)))), dropped = ((existing && existing.items) || []).length - kept.length;
     summary.hiddenByOffSwitch += dropped;
     const merged = mergeItems(kept, fresh, nowIso);
     summary.added += merged.added; summary.revised += merged.revised; summary.unchanged += merged.unchanged; summary.tournaments++;

@@ -66,9 +66,9 @@
 .nx-opt:hover { background: var(--news-hover); }
 .nx-opt.on { background: var(--news-on); }
 .nx-tick { color: var(--news-text); font-size: 12px; }
-.nx-post { display: inline-flex; align-items: center; gap: 9px; padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 700; color: var(--news-text); background: var(--news-lifted); border: 1px solid transparent; white-space: nowrap; }
+.nx-post { display: inline-flex; align-items: center; gap: 9px; padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 700; color: var(--news-text); background: var(--news-lifted); border: 1px solid color-mix(in srgb, var(--news-white) 34%, transparent); white-space: nowrap; }
 .nx-post:hover { background: var(--news-hover); }
-.nx-post.open { border-color: var(--nx-e16); }
+.nx-post.open { border-color: var(--news-text); }
 .nx-post-n { font-family: var(--nx-mono); font-size: 11px; font-weight: 600; color: var(--news-grey); }
 .nx-reset { margin-left: auto; display: inline-flex; align-items: center; height: 34px; box-sizing: border-box; padding: 0 14px; border-radius: 10px; font-size: 13px; font-weight: 600; color: var(--news-text); background: var(--news-lifted); border: 1px solid var(--nx-e14); white-space: nowrap; }
 .nx-reset:hover { background: var(--news-hover); }

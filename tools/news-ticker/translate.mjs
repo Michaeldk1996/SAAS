@@ -59,18 +59,29 @@ export async function translateQuote(text, language, apiKey = process.env.ANTHRO
 // not read the article understands it. Ours, never the player's words: it is shown outside the quotation marks. Built
 // from the quote and the article text around it; "On …", at most 60 characters, or no label at all.
 export const topicOk = (t) => /^On [\p{L}0-9' ,.-]{2,57}$/u.test(String(t || '')) && !/["“”?]/.test(String(t));
+// Where and when he said it ("in his press conference before the Davis Cup Finals in Bologna"), founder 2026-11-26:
+// "it's always important to mention where this interview has been taken and about what". Ours, shown outside the
+// quotation marks. Kept only when it starts with a preposition, is short, and every name in it is in the article text
+// it was written from: nothing invented. No outlet is ever named (the caller drops a setting that carries its source).
+export const settingOk = (s, around) => {
+  const t = String(s || '');
+  if (!/^(in|at|on|after|before|during|ahead of|following|while) [\p{L}0-9' ,.-]{4,90}$/iu.test(t) || /["“”?]/.test(t)) return false;
+  const hay = String(around || '').toLowerCase();
+  return (t.slice(1).match(/\b\p{Lu}[\p{L}'-]+/gu) || []).every((w) => hay.includes(w.toLowerCase()));
+};
 export async function topicQuote(text, around, apiKey = process.env.ANTHROPIC_API_KEY, fetchFn = fetch) {
   if (!apiKey) return { status: 'no-key', topic: null };
   const body = { model: MODEL, max_tokens: 200, output_config: { effort: 'low' },
-    system: 'You label one quotation by a tennis player for a news feed. Reply with ONLY the label: it starts with "On ", is at most 8 plain English words, and says what the player is talking about, specific enough that a reader who has not seen the article understands the quote (for example "On a possible ATP tournament in Copenhagen", "On his hamstring injury", "On the first set"). Use only what the quote and the surrounding text say. No quotation marks, no full stop.',
-    messages: [{ role: 'user', content: `Quote:\n${text}\n\nText around it in the article:\n${String(around || '').slice(0, 1500)}` }] };
+    system: 'You label one quotation by a tennis player for a news feed. Reply with exactly two lines.\nLine 1, the label: it starts with "On ", is at most 8 plain English words, and says what the player is talking about, specific enough that a reader who has not seen the article understands the quote (for example "On a possible ATP tournament in Copenhagen", "On his hamstring injury", "On the first set"). No quotation marks, no full stop.\nLine 2 starts with "Where: " and says where and when he said it, in at most 12 plain words that start with a preposition (for example "Where: in his press conference before the Davis Cup Finals in Bologna", "Where: in a statement after being charged with refusing a doping test", "Where: after his win over Fils at the ATP Finals"). Never name a newspaper, website, broadcaster or journalist. When the surrounding text does not say where or when he said it, write "Where: unknown".\nUse only what the quote and the surrounding text say.',
+    messages: [{ role: 'user', content: `Quote:\n${text}\n\nText around it in the article:\n${String(around || '').slice(0, 2200)}` }] };
   let res;
   try { res = await fetchFn(API_URL, { method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' }, body: JSON.stringify(body) }); }
   catch (e) { return { status: 'api-error', topic: null }; }
   if (!res.ok) return { status: 'api-error', topic: null, http: res.status };
   const data = await res.json();
   const block = (data.content || []).find((b) => b.type === 'text');
-  const t = block ? String(block.text).trim().replace(/[.:]+$/, '') : '';
+  const lines = (block ? String(block.text) : '').split('\n').map((x) => x.trim()).filter(Boolean);
+  const t = (lines[0] || '').replace(/[.:]+$/, ''), w = ((lines.find((x) => /^Where:/i.test(x)) || '').replace(/^Where:\s*/i, '')).replace(/[.]+$/, '');
   const usage = data.usage ? { input: data.usage.input_tokens || 0, output: data.usage.output_tokens || 0 } : null;
-  return topicOk(t) ? { status: 'ok', topic: t, usage } : { status: 'failed-check', topic: null, usage };
+  return topicOk(t) ? { status: 'ok', topic: t, setting: settingOk(w, around) ? w : null, usage } : { status: 'failed-check', topic: null, usage };
 }

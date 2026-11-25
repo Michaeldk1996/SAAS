@@ -105,6 +105,18 @@ export function wueUsable(ms) {
   const same = ['Points:Winners', 'Points:Unforced errors'].every((k) => num(ms && ms.p1 && ms.p1[k]) != null && num(ms.p1[k]) === num(ms && ms.p2 && ms.p2[k]));
   return tot > 0 && !same;
 }
+// A match report needs the api-tennis box score (founder 2026-11-26: "only if you have 95% of the stats of api tennis",
+// after the Davis Cup reports, whose feed sends no winners or unforced errors). The stats a full box always carries for
+// both players; break points and net points are left out of the count because the feed omits them when there were none.
+export const REPORT_STATS = ['Service:Aces', 'Service:Double Faults', 'Service:1st serve percentage', 'Service:1st serve points won', 'Service:2nd serve points won',
+  'Return:1st return points won', 'Return:2nd return points won', 'Points:Winners', 'Points:Unforced errors', 'Points:Total Points Won',
+  'Points:Service Points Won', 'Points:Return Points Won', 'Games:Service games won', 'Games:Return games won'];
+export const REPORT_STATS_MIN = 0.95;
+export function statsCoverage(ms) {
+  const wue = wueUsable(ms);
+  const has = (k) => (/Winners|Unforced/.test(k) ? wue : true) && ['p1', 'p2'].every((s) => num(ms && ms[s] && ms[s][k]) != null);
+  return REPORT_STATS.filter(has).length / REPORT_STATS.length;
+}
 // Dominance ratio from our own box score: return points won % ÷ (100 − service points won %). null when a part is missing.
 export function dominanceRatio(st) {
   const r = num(st && st['Points:Return Points Won']), s = num(st && st['Points:Service Points Won']);

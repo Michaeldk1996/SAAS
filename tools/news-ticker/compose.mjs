@@ -34,6 +34,9 @@ export const COMPOSE_WAIT_MIN = 45, COMPOSE_WAIT_MAX_MIN = 75;
 // quote arrives later (within COMPOSE_UPGRADE_HOURS).
 export const COMPOSE_WAIT_QUOTE_MIN = 300;
 export const COMPOSE_UPGRADE_HOURS = 72; // a report of an older version is written again once, only this long after its match
+// a report that never got its written version (the model could not be reached: the credit ran out on 21–25 Nov 2026 and the
+// ATP Finals final went out as the plain template) is written when the model answers again, while its match data is on file
+export const COMPOSE_LATE_HOURS = 14 * 24;
 export const MAX_QUOTES = 6, QUOTE_MAX_CHARS = 520, QUOTES_IN_TEXT = 2;
 export const WORDS_LONG_MAX = 330;   // a five-setter or a match that went the distance with a turning point: up to about 250 words with the quotes (founder 2026-11-15)
 export const WORDS_MIN = 70, WORDS_MAX = 250;   // founder 2026-11-15: 150 to 180 words with the quotes; this counts the words outside quotations, with room so a first try a little over is not paid twice

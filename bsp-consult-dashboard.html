@@ -5361,7 +5361,10 @@ let _newsTourKey = '';     // selected event ('' = all tournaments) = newsTourKe
 const NEWS_CATEGORIES = ['Match Reports', 'Quotes', 'Withdrawals & Injuries', 'Tour News'];
 let _newsRangeHours = 168;  // Last 7 days (the reference's default)
 let _newsSearch = '';       // the query as typed; matched trimmed + lower case
-let _newsCats = [];         // single select (News v2): [] = All, else [one category]
+// The page opens on our own reports and the players' words, both on at once (founder 2026-11-26); the categories are
+// multi-select again: a click turns one on or off, All clears them.
+const NEWS_DEFAULT_CATS = ['Match Reports', 'Quotes'];
+let _newsCats = NEWS_DEFAULT_CATS.slice();   // [] = All
 // Reading / Compact, persisted to localStorage['stennisfy.newsView'].
 let _newsView = 'reading';
 let _composerOpen = false;
@@ -5751,16 +5754,15 @@ function newsRangeDd(){
   host.innerHTML = newsMenuHtml('newsRange', cur[1], NEWS_WINDOWS.map(([value, label]) => ({ value, label })), _newsRangeHours, 'r');
   newsMenuSync();
 }
-// Categories are single select (News v2): a click replaces the active one; a click on the active one returns to All.
 function newsToggleCat(cat){
-  _newsCats = !cat || _newsCats[0] === cat ? [] : [cat];
+  _newsCats = !cat ? [] : _newsCats.indexOf(cat) >= 0 ? _newsCats.filter(c => c !== cat) : _newsCats.concat(cat);
   renderNews();
 }
 const newsTabHtml = (label, on, onclick, attrs) => `<button type="button" class="nx-tab nx-seg${on ? ' on' : ''}" aria-pressed="${on}" ${attrs || ''} onclick="${onclick}">${newsEscape(label)}</button>`;
 function renderNewsChips(){
   const wrap = document.getElementById('newsChips');
   if (!wrap) return;
-  wrap.innerHTML = [''].concat(NEWS_CATEGORIES).map(c => newsTabHtml(c || 'All', c ? _newsCats[0] === c : !_newsCats.length, `newsToggleCat('${c.replace(/'/g, "\\'")}')`)).join('');
+  wrap.innerHTML = [''].concat(NEWS_CATEGORIES).map(c => newsTabHtml(c || 'All', c ? _newsCats.indexOf(c) >= 0 : !_newsCats.length, `newsToggleCat('${c.replace(/'/g, "\\'")}')`)).join('');
 }
 
 function newsParseTs(s){
@@ -6094,13 +6096,17 @@ function newsQuoteCards(items){
     const ctx = (g.list.find(q => q.context) || {}).context;
     const tsMax = Math.max.apply(null, g.list.map(q => Date.parse(q.timestamp)).filter(isFinite));
     const tour = first.tournament && first.tournamentKey !== 'tour' ? (typeof sfEventName === 'function' ? sfEventName(first.tournament) : String(first.tournament)) : '';
+    // founder 2026-11-26: a card always says where he spoke and about what — the match it followed, else where the
+    // quote job read it was said (`setting`), then up to two of its subjects; "in the press" only when we hold neither
+    const where = ctx || (g.list.find(q => q.setting) || {}).setting || '';
+    const subjects = (g.digest ? g.digest.blocks.map(b => b.label) : kept.map(k => k.q.topic)).map(t => /^on /i.test(String(t || '')) ? String(t).slice(3).trim() : '').filter((t, i, a) => t && a.indexOf(t) === i).slice(0, 2);
     out.push({ kind: 'ticker', id: 't' + first.id, ts: isFinite(tsMax) ? tsMax : NaN, tour, tourKey: '', tourFrom: '',
       players: name ? [{ key: String(first.playerId), name }] : [],
-      title: name + (ctx ? ' ' + ctx : (g.inj ? ' on his fitness' : ' in the press')),
+      title: name + ' ' + (where || (g.inj ? 'on his fitness' : subjects.length ? 'on ' + subjects.shift() : 'in the press')) + (subjects.length ? ': ' + subjects.join(', ') : ''),
       // founder 2026-11-18 / News v2 §3a: one topic per subject over his words — no quote marks, no outlet, no translation
       // note; the digest's blocks where the quote job built one, else the quotes as collected
       quotes: (g.digest ? g.digest.blocks.map(b => ({ topic: newsCap(b.label), text: newsDecode(b.text).trim() })) : kept.map(k => ({ topic: newsCap(k.q.topic || ''), text: newsDecode(k.q.text).trim() }))),
-      cat: g.inj ? 'Withdrawals & Injuries' : 'Quotes', source: 'Stennisfy' });
+      where, cat: g.inj ? 'Withdrawals & Injuries' : 'Quotes', source: 'Stennisfy' });
     const last = out[out.length - 1]; last.bodyParas = last.quotes.map(q => (q.topic ? q.topic + ': ' : '') + q.text);
   }
   return out.filter(x => x.players.length);
@@ -6233,7 +6239,7 @@ function renderNews(){
     .sort((a, b) => (isFinite(b.ts) ? b.ts : -Infinity) - (isFinite(a.ts) ? a.ts : -Infinity));
   newsRenderHeaderStats(list);
   const reset = document.getElementById('newsResetHost');
-  if (reset) reset.innerHTML = (_newsCats.length || _newsTourKey || _newsSearch || _newsRangeHours !== 168)
+  if (reset) reset.innerHTML = (_newsCats.slice().sort().join('|') !== NEWS_DEFAULT_CATS.slice().sort().join('|') || _newsTourKey || _newsSearch || _newsRangeHours !== 168)
     ? '<button type="button" class="nx-reset nx-seg" onclick="newsResetFilters()">Reset filters</button>' : '';
 
   if (!list.length){
@@ -6263,7 +6269,7 @@ function renderNews(){
   }).join('');
 }
 function newsResetFilters(){
-  _newsCats = []; _newsTourKey = ''; _newsSearch = ''; _newsRangeHours = 168;
+  _newsCats = NEWS_DEFAULT_CATS.slice(); _newsTourKey = ''; _newsSearch = ''; _newsRangeHours = 168;
   const i = document.getElementById('newsSearch'); if (i) i.value = '';
   renderNews();
 }
@@ -6338,7 +6344,7 @@ const newsMeta = it => it.quotes ? it.quotes.length + (it.quotes.length === 1 ? 
 function newsReadingCard(it, admin){
   const idA = newsAttr(it.id), hp = newsHeadPlayers(it), names = newsEscape(hp.map(p => p.name).join(' · '));
   if (it.quotes){
-    const s = newsQuotesShown(it), sub = [newsTimeOf(it), newsMeta(it), it.tour].filter(Boolean).join(' · ');
+    const s = newsQuotesShown(it), sub = [newsTimeOf(it), it.where, newsMeta(it), it.tour].filter(Boolean).join(' · ');
     return `<article class="nx-card nx-art" data-id="${idA}"><div class="nx-ahead q">${newsAvsHtml(hp)}<div class="nx-names"><span class="nx-nl"${newsTipAttr(it)}>${names}</span><span class="nx-sl">${newsEscape(sub)}</span></div></div>`
       + `<div class="nx-qs">${newsQuotesHtml(s.quotes)}${s.has ? newsMoreBtn(it, s.more) : ''}</div></article>`;
   }

@@ -36,7 +36,8 @@ const ROOT = path.resolve(HERE, '..', '..');
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
 const flag = (k) => process.argv.includes('--' + k);
 export const SILENT_HOURS = 24;
-export const RETRY_MAX = 6;   // re-reads of one article while the translation call is failing
+export const SETTING_REREADS = 4;
+const RETRY_MAX = 6;   // re-reads of one article while the translation call is failing
 export const MIN_GAP_MIN = 25;
 export const TOPIC_BACKFILL = 12;   // held quotes labelled per tournament per run
 export const tooSoon = (lastMs, nowIso) => Number.isFinite(lastMs) && Date.parse(nowIso) - lastMs >= 0 && Date.parse(nowIso) - lastMs < MIN_GAP_MIN * 60000;
@@ -107,6 +108,10 @@ export function eventAliases(name) {
 }
 // An article from another sport's section is never a tennis quote (measured 18 Nov: an NHL and two FIFA articles).
 export const notTennis = (url) => OTHER_SPORT_PATH.test(String(url || ''));
+// Held quotes that turned out to be somebody else's (hand-reviewed, a reason per entry); new ones are refused where the
+// article is read (outlet-reader.mjs otherBearer).
+export const HELD_EXCLUDE = [[/\/leon-smith-reflects-on-career/, 'Leon Smith, the Davis Cup captain, is not K. Smith']];
+export const notHisWords = (url) => HELD_EXCLUDE.some(([re]) => re.test(String(url || '')));
 // The aliases of the tournaments a URL names in its own slug ("…/zverev-wins-to-reach-atp-finals-last-four").
 export function urlMentions(url, tournaments) {
   let u = String(url || ''); try { u = decodeURIComponent(u); } catch (e) { /* keep the raw URL */ }
@@ -171,19 +176,24 @@ export async function processTournament({ t, got, translate = translateQuote, kn
       if (out.some((e) => e.language === 'en' && sameQuote(e, { playerId: key, text }))) { c.droppedEnglishExists++; continue; }
     }
     // what the quote is about, for a reader who has not seen the article: asked once per quote (a held item keeps its label)
-    let topic = q.topic || (heldById.get(id) || {}).topic || null;
-    if (!topic) {
-      const at = q.sourceText ? q.sourceText.indexOf((q.spans || [q.text])[0]) : -1;
-      const tp = await topicOf(q.text, at >= 0 ? q.sourceText.slice(Math.max(0, at - 700), at + q.text.length + 300) : '');
+    // and where he said it (founder 2026-11-26), asked with the article text only: a held quote gets it when its article is read again
+    const heldQ = heldById.get(id) || q.heldItem || {};
+    let topic = q.topic || heldQ.topic || null, setting = heldQ.setting || null, settingTried = !!heldQ.settingTried;
+    const at = q.sourceText ? q.sourceText.indexOf((q.spans || [q.text])[0]) : -1;
+    if (!topic || (!setting && !settingTried && !q.interview && at >= 0)) {
+      const tp = await topicOf(q.text, at >= 0 ? `${q.sourceText.slice(0, 500)}\n…\n${q.sourceText.slice(Math.max(0, at - 700), at + q.text.length + 300)}` : '');
       if (tp.usage) { c.tokens.input += tp.usage.input; c.tokens.output += tp.usage.output; }
-      if (tp.status === 'ok') { topic = tp.topic; c.topicsAdded = (c.topicsAdded || 0) + 1; }
+      if (tp.status === 'ok') {
+        if (!topic) { topic = tp.topic; c.topicsAdded = (c.topicsAdded || 0) + 1; }
+        if (at >= 0) { if (tp.setting && !String(tp.setting).toLowerCase().includes(String(q.sourceName || '\u0000').toLowerCase())) setting = tp.setting; else settingTried = true; }
+      }
     }
     out.push({ id, type: 'quote', playerId: key, opponentId: opp, player: entrants.get(key), opponent: opp ? entrants.get(opp) : null,
       tournament: t.name, tournamentKey: t.key, season: t.season, round: null, timestamp: q.timestamp, timestampKind: q.timestampKind,
       category: 'Quotes', context: q.context || null, eventKey: q.matchId ? String(q.matchId).split('-').slice(1).join('-') : null, won: q.matchId ? !!q.won : null,
       text: decodeEntities(text), originalText: original == null ? null : decodeEntities(original), language: q.language, translated, translationModel: model,
       sourceName: q.sourceName, sourceUrl: q.sourceUrl, verbatimCheck: 'passed', verbatimCheckedOn: q.checkedOn || (q.preVerified ? 'the fetched ATP page, by the ATP reader' : 'the original-language text of the fetched page'),
-      ...(q.interview ? { interview: q.interview } : {}), ...(topic ? { topic: String(topic).slice(0, 60) } : {}) });
+      ...(q.interview ? { interview: q.interview } : {}), ...(topic ? { topic: String(topic).slice(0, 60) } : {}), ...(setting ? { setting } : settingTried ? { settingTried: true } : {}) });
   }
   const deduped = dedupeQuotes(out);
   deduped.forEach((x) => { x.category = quoteCategory(x); });
@@ -315,7 +325,7 @@ async function main() {
     got.candidates.push(...extra);
     const file = `news-quotes/${t.key}-${t.season}.json`, held = rd(file);
     const heldItems = ((held && held.items) || []).filter((x) => !off.has(x.sourceName)
-      && !(t.key === TOUR_KEY && (movedIds.has(x.id) || inTournaments.has(x.id) || toTournaments.has(x.id) || notTennis(x.sourceUrl))));
+      && !(t.key === TOUR_KEY && (movedIds.has(x.id) || inTournaments.has(x.id) || toTournaments.has(x.id) || notTennis(x.sourceUrl) || notHisWords(x.sourceUrl))));
     const res = await processTournament({ t, got, known: heldItems });
     if (res.counts.modelError) modelError = res.counts.modelError;
     // a quote the model could not translate is not lost: its article is read again on a later run (at most RETRY_MAX times)
@@ -338,6 +348,16 @@ async function main() {
       if (tp.usage) { run.tokens.input += tp.usage.input; run.tokens.output += tp.usage.output; }
       if (tp.status === 'ok') x.topic = tp.topic; else x.topicTried = true;
       labelled++;
+    }
+    // a press quote of the last 3 days that does not say where it was said: its article is read once more (next run), so
+    // the label can be written from the article text. Only while the model answers, at most SETTING_REREADS articles a run.
+    if (!modelError && run.tokens.input > 0) {
+      for (const x of merged.items) {
+        const e = fetched[x.sourceUrl];
+        if (run.settingRereads >= SETTING_REREADS) break;
+        if (x.type !== 'quote' || x.setting || x.settingTried || x.context || x.interview || !e || e.settingAsked || e.retranslate || !(Date.parse(nowIso) - Date.parse(x.timestamp) < 3 * 86400000)) continue;
+        e.settingAsked = true; e.retranslate = true; run.settingRereads = (run.settingRereads || 0) + 1;
+      }
     }
     // the digest of each card (one player, one match): rebuilt only when its quotes changed (quote-digest.mjs)
     const dg = await buildDigests(merged.items, { held: heldDigests, nowIso });

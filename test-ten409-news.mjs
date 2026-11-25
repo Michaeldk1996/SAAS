@@ -45,6 +45,7 @@ function load(opts = {}) {
     function escapeHtml(s){ return String(s); }
     function newsPlayerFor(){ throw new Error('the News page read a headline for a name'); }
     ${BLOCK}
+    if (!opts.defaults) { NEWS_DEFAULT_CATS.length = 0; _newsCats = []; }   // the older checks read the page with every category on
     _intelNotes = opts.intel || [];
     return { set data(v) { _newsData = v; }, set state(v) { _newsState = v; }, set cats(v) { _newsCats = v; }, set tour(v) { _newsTourKey = v; },
       set ticker(v) { _newsTicker = v; }, set hours(v) { _newsRangeHours = v; }, set q(v) { _newsSearch = v; }, set view(v) { _newsView = v; },
@@ -129,16 +130,24 @@ test('Empty state: names the filter, widens only when a wider window has results
   assert.match(page({}, { hours: 6, cats: ['Match Reports'] }).get('newsList'), /class="nx-card nx-empty"/, 'the empty state is a section card');
 });
 
-// v2 §2 categories — mutation: multi-select back; Draws & Schedules back; a click on the active one not returning to All.
-test('Four categories, single select; Draws & Schedules arrives as Tour News', () => {
+// categories (founder 2026-11-26) — mutation: single select back; the page opening on All; Reset going to All.
+test('Four categories, multi-select; the page opens on Match Reports + Quotes; Draws & Schedules arrives as Tour News', () => {
   const P = page();
   assert.deepEqual([...P.get('newsChips').matchAll(/>([^<]+)<\/button>/g)].map(m => m[1].replace('&amp;', '&')), ['All', 'Match Reports', 'Quotes', 'Withdrawals & Injuries', 'Tour News']);
   P.api.newsToggleCat('Withdrawals & Injuries'); P.api.newsToggleCat('Tour News');
-  assert.deepEqual(P.api.cats, ['Tour News'], 'a click replaces the category');
-  assert.equal((P.get('newsChips').match(/nx-tab nx-seg on/g) || []).length, 1);
-  P.api.newsToggleCat('Tour News'); assert.deepEqual(P.api.cats, [], 'a click on the active one returns to All');
+  assert.deepEqual(P.api.cats, ['Withdrawals & Injuries', 'Tour News'], 'a click adds a category');
+  assert.equal((P.get('newsChips').match(/nx-tab nx-seg on/g) || []).length, 2);
+  P.api.newsToggleCat('Withdrawals & Injuries'); assert.deepEqual(P.api.cats, ['Tour News'], 'a click on an active one turns it off');
   assert.match(card(P.get('newsList'), 'w4'), /Tour News/, 'a draw article reads Tour News');
   assert.ok(!/Draws &amp; Schedules|Draws & Schedules/.test(P.get('newsList') + P.get('newsChips')));
+  P.api.newsToggleCat(''); assert.deepEqual(P.api.cats, [], 'All clears them');
+  const D = page({ defaults: true });
+  assert.deepEqual(D.api.cats, ['Match Reports', 'Quotes'], 'the page opens on our reports and the quotes');
+  assert.equal((D.get('newsChips').match(/nx-tab nx-seg on/g) || []).length, 2);
+  assert.equal(D.get('newsResetHost'), '', 'the default is not a filter to reset');
+  D.api.newsToggleCat('Quotes'); assert.match(D.get('newsResetHost'), /Reset filters/);
+  D.api.newsResetFilters(); assert.deepEqual(D.api.cats, ['Match Reports', 'Quotes'], 'Reset returns to the default');
+  assert.match(CSS, /\.nx-post \{[^}]*border: 1px solid color-mix\(in srgb, var\(--news-white\) 34%, transparent\)/, 'Post intel is outlined');
 });
 
 // v2 §2 menus + Reset — mutation: every event listed; Reset shown with no filter on; Reset not clearing.
@@ -198,7 +207,7 @@ const QCARD = (n) => Array.from({ length: n }, (_, i) => ({ id: 'q' + i, type: '
   eventKey: '77', timestamp: new Date(Date.now() - H).toISOString(), context: 'after beating D. Medvedev', text: ['I served well today and won.', 'The crowd here carried me through.', 'My thigh felt tight after the break.', 'Medvedev returns everything back deep.', 'Next I play Cobolli on Friday.'][i], topic: 'on topic ' + i }));
 test('Quotes card: no headline, topic over quote, 3 shown, "n topics", the digest replaces the raw quotes', () => {
   const P = page({}, { ticker: QCARD(5) }), c = card(P.get('newsList'), 'tq0');
-  assert.match(c, /<span class="nx-sl">\d\d:\d\d · 5 topics · Finals - Turin<\/span>/);
+  assert.match(c, /<span class="nx-sl">\d\d:\d\d · after beating D\. Medvedev · 5 topics · Finals - Turin<\/span>/);
   assert.ok(!/nx-title/.test(c), 'a headline on a quote card');
   assert.equal((c.match(/class="nx-qt"/g) || []).length, 3);
   assert.match(c, /<span class="nx-qt">On topic 0<\/span><div class="nx-qx">I served well today and won\.<\/div>/);
@@ -209,6 +218,18 @@ test('Quotes card: no headline, topic over quote, 3 shown, "n topics", the diges
   const d = card(page({}, { ticker: D }).get('newsList'), 'tq0');
   assert.match(d, /2 topics/); assert.match(d, /<span class="nx-qt">After his win over Medvedev<\/span><div class="nx-qx">I didn't want to push\.<\/div>/);
   assert.ok(!/tdigest/.test(page({}, { ticker: D }).get('newsList')), 'a digest is never a card of its own');
+});
+
+// founder 2026-11-26 — mutation: "in the press" with a setting or a topic on file; the setting missing from the Reading sub line.
+test('A quotes card says where he spoke and about what: the match, else the setting, then its subjects', () => {
+  const press = (o) => [Object.assign({ id: 'p1', type: 'quote', playerId: '1980', player: 'A. Zverev', tournament: 'ATP Tour', tournamentKey: 'tour', timestamp: new Date(Date.now() - H).toISOString(), text: 'I was much healthier this year than I was last year.' }, o),
+    { id: 'p2', type: 'quote', playerId: '1980', player: 'A. Zverev', tournament: 'ATP Tour', tournamentKey: 'tour', timestamp: new Date(Date.now() - H).toISOString(), text: 'It is an unfair comment about the painkillers we take.', topic: 'On the painkiller comment' }];
+  const title = (t) => { const P = page({}, { ticker: t }); P.api.newsSetView('compact'); return (/class="nx-wh"[^>]*>([^<]+)</.exec(P.get('newsList')) || [])[1]; };
+  assert.equal(title(press({ topic: 'On his health this season', setting: 'in his press conference before the Davis Cup Finals in Bologna' })), 'A. Zverev in his press conference before the Davis Cup Finals in Bologna: his health this season, the painkiller comment');
+  assert.equal(title(press({ topic: 'On his health this season' })), 'A. Zverev on his health this season: the painkiller comment');
+  assert.equal(title([press({})[0]]), 'A. Zverev in the press', 'nothing on file: the old words');
+  assert.match(card(page({}, { ticker: press({ setting: 'in his press conference in Bologna' }) }).get('newsList'), 'tp1'), /<span class="nx-sl">\d\d:\d\d · in his press conference in Bologna · 2 topics<\/span>/);
+  assert.match(card(page({}, { ticker: QCARD(2) }).get('newsList'), 'tq0'), /· after beating D\. Medvedev · 2 topics · Finals - Turin</);
 });
 
 // v2 §4 — the stats box. Mutations: the box without both figures; the leader by the higher figure on unforced errors;

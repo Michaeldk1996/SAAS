@@ -40,12 +40,14 @@ Compact row (54) and the opened report (535, box 540×450) equal to the pixel; a
     drop-down entry. Search still covers the body.
   - Measured 9 Oct 13:00Z feed: 29 of 38 keep one (25 title, 4 first paragraph).
   **Test:** "Tournament: exactly one event named …". Follow-up TEN-413: the builder attaches the article's own event.
-- **Four categories, single select** (v2 §2): Match Reports · Quotes · Withdrawals & Injuries · Tour News; the switch reads
-  "All" + these four; a click replaces the active one, a click on it returns to All. There is no Draws & Schedules: what
+- **Four categories, multi-select; the page opens on Match Reports + Quotes** (founder 2026-11-26, replaces v2 §2's single
+  select): Match Reports · Quotes · Withdrawals & Injuries · Tour News; the switch reads "All" + these four; a click turns
+  one on or off, All clears them; Reset filters returns to the two defaults (`NEWS_DEFAULT_CATS`), which are not a filter
+  to reset. There is no Draws & Schedules: what
   `newsClassify` (title keywords) used to file there, and a ticker status item about a qualifier or lucky loser, is Tour
   News. **Match Reports holds only the reports we write** (founder 2026-11-20): an outlet article that reads like a result
   and a posted note are Tour News (`newsOwnCat`); the composer offers Quotes · Withdrawals & Injuries · Tour News. An intel
-  post takes the group chosen in the composer (an older note: Tour News); there is no Stennisfy Intel category. **Test:** "Four categories, single select".
+  post takes the group chosen in the composer (an older note: Tour News); there is no Stennisfy Intel category. **Test:** "Four categories, multi-select".
 - **Header stats** (v3 §2, the Today's Matches / Players style): caps label 10.5/700 over a mono 15/700 value, right
   aligned, gap 30, no boxes. Articles = the list after every filter; Players = distinct players across it (by key); Updated =
   `generatedAt` of `news-feed.json` (HH:MM, member zone; hover = full date-time), **never the clock** (the reference's clock
@@ -64,6 +66,11 @@ Compact row (54) and the opened report (535, box 540×450) equal to the pixel; a
   publish time; then the time column comes back. **Test:** "No time on an article …".
   Unsourced = grey "—", never 0. A feed older than `NEWS_STALE_HOURS` (24) adds the stale line above the list.
 - **Time zone:** `stennisfy.tz` (Account settings), else the browser zone — day groups, the "Added to feed" hover and the header's Updated (hover: date + time with seconds).
+- **A quotes card says where he spoke and about what** (founder 2026-11-26: "always add context"): its title (the Compact
+  row) = the player + the match it followed ("after beating L. Draxl"), else where the quote job read it was said (the
+  item's `setting`), else its first subject, then up to two more subjects after a colon; "in the press" only when the feed
+  holds none of them. The Reading card carries the same where in its sub line. **Test:** "A quotes card says where he spoke".
+- **The Post intel button is outlined** (founder 2026-11-26): a 34% white edge, white while the composer is open.
 - **Post intel** (v2 §6): founder only (`isBspAdmin`, re-enforced by `firestore.rules`); notes live in Firestore
   `intel_notes` (`text`, `player`, `playerKey`, `cat`, `tour`). **A player picked from the player search is required**
   (`intelPlayerHits`: this week's standings + every player on the page, up to 8 hits, with his tournament = his newest

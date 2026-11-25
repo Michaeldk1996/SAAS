@@ -368,8 +368,12 @@ await ok('a report of the older version is written again once while its match is
   yes(run(d, '2026-11-14T19:00:00.000Z', 'good').calls >= 1, 'one day later: written again under the new version');
   eq(item(d, '12179838').composed.version, COMPOSE_VERSION); yes(item(d, '12179838').text.startsWith('Fritz beat Musetti'));
   age(COMPOSE_VERSION - 1, 'OLD TEXT as published');
-  eq(run(d, '2026-11-20T19:00:00.000Z', 'good').calls, 0, 'a week later: nothing is written, not this report and not the ones that failed before');
-  eq(item(d, '12179838').text, 'OLD TEXT as published', 'and the published text stays');
+  // a week later the older-version report keeps its text; only reports that were NEVER written (the model was not reachable) are still written
+  const late = run(d, '2026-11-20T19:00:00.000Z', 'good').calls;
+  yes(late > 0 && late <= 4, 'a report that never got its written version is written within two weeks, at most 4 a run');
+  eq(item(d, '12179838').text, 'OLD TEXT as published', 'and the published text of the older version stays');
+  age(COMPOSE_VERSION - 1, 'OLD TEXT as published');
+  eq(run(d, '2026-12-05T19:00:00.000Z', 'good').calls, 0, 'after two weeks nothing is written any more');
 });
 await ok('a run writes at most NEWS_COMPOSE_MAX_CALLS reports and keeps 2 of them for fresh matches (the rest wait for the next run)', () => {
   const d = mk();

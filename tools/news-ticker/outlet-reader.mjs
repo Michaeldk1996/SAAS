@@ -125,6 +125,21 @@ export function speechOf(par) {
   return { spans, outside };
 }
 
+// Somebody else with the same surname (founder 2026-11-26: Leon Smith, the Davis Cup captain, was published as K. Smith):
+// the article gives the surname a given name that does not start with the player's initial and never one that does.
+// A capitalised word at the start of a sentence is not read as a given name ("But Smith said").
+export function otherBearer(text, p) {
+  if (!p || !p.initial) return false;
+  const kc = keepCase(text), re = new RegExp(`(\\S+)\\s+${esc(p.surname)}(?![\\w'’])`, 'gi');
+  let m, own = 0, other = 0;
+  while ((m = re.exec(kc))) {
+    const w = m[1].replace(/^["“(]+/, ''), prev = kc.slice(0, m.index).trim().slice(-1);
+    if (!/^[A-Z][a-z]/.test(w) || !prev || /[.!?¶"”]/.test(prev)) continue;
+    if (w[0].toLowerCase() === p.initial) own++; else other++;
+  }
+  return other > 0 && own === 0;
+}
+
 // One article -> candidates. players: [{ key, surname }]. No candidate carries more than the quoted words.
 export function candidatesFromOutletArticle({ url, html, outlet, language, players, published }) {
   const pars = htmlToParagraphs(html), sourceText = pars.join('\n');
@@ -138,6 +153,7 @@ export function candidatesFromOutletArticle({ url, html, outlet, language, playe
     // a paragraph that is ONLY a quotation right after an attributed one continues the same speaker
     if (!key && last && !fold(sp.outside).replace(/[¶\s.,;:!?–—-]/g, '')) key = last;
     if (!key) { unnamed++; return; }
+    if (otherBearer(sourceText, players.find((p) => p.key === key))) { unnamed++; return; }
     last = key;
     out.push({ id: `${outlet}-${i}`, speakerKey: key, spans: sp.spans, text: sp.spans.join(' … '), sourceText, sourceName: outlet, sourceUrl: url,
       day: ts ? ts.slice(0, 10) : null, timestamp: ts, timestampKind: ts ? 'observed (the outlet\'s own publication time)' : null, language });
@@ -184,7 +200,7 @@ export async function readOutlet({ outlet, players, tournamentName, tournamentNa
     await sleep(1000);
     const a = await get(l.url, fetchFn);
     stats.fetched++;
-    cache[l.url] = { at: nowIso, http: a.status, ...(prev && prev.tries ? { tries: prev.tries } : {}) };
+    cache[l.url] = { at: nowIso, http: a.status, ...(prev && prev.tries ? { tries: prev.tries } : {}), ...(prev && prev.settingAsked ? { settingAsked: true } : {}) };
     if (technicalBlock(a.status, a.body)) { cache[l.url].note = 'blocked'; continue; }
     if (paywalled(a.body)) { stats.paywalled++; cache[l.url].note = 'paywall'; continue; }
     const text = fold(a.body.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' '));
