@@ -18,7 +18,7 @@ All values below are exact. The verbatim markup and logic are at the end.
 - Text colours: primary #E7E9EE · secondary #AAB3C8 · muted #8B96B5 · dim #5B6880 · faint #4B5672.
 - Card surface #0E1019, border 1.25px rgba(255,255,255,0.06). Lead tile surface #131623.
 - **Severity scale (the only colours carrying meaning):** neutral #5B6880 · amber (WATCH) #E8A84E · red (CONCERN) #E0616F. Labels: NO CONCERN / WATCH / CONCERN / UNAVAILABLE.
-- **Cut-offs are not decided.** Every severity in the mock is a placeholder; the "THRESHOLDS TBD — MICHAEL" chip must stay until they are.
+- **Cut-offs are not decided.** Every severity in the mock is a placeholder; the "THRESHOLDS TBD — FOUNDER" chip must stay until they are.
 - Match-time accent: #6AAEFF (MATCH badge, match-day card border, "Mon Jul 20 · 18:00" header).
 - On the website the 12a runtime recolour applies on top (Soft ink palette, 1.25px hairlines).
 
@@ -26,7 +26,7 @@ All values below are exact. The verbatim markup and logic are at the end.
 Row, gap 8px, wrap, margin-bottom 18px.
 - "STATE" label: mono 9.5px/600, letter-spacing .14em, #5B6880.
 - Five pills "a · Calm week", "b · One problem day", "c · Match day red", "d · Indoor", "e · Unavailable": padding 5px 10px, radius 6px, 12px, nowrap. Selected 700 #E7E9EE, bg rgba(91,155,255,0.14), border 1px rgba(91,155,255,0.45). Unselected 500 #8B96B5, transparent, border rgba(255,255,255,0.1).
-- Right: "THRESHOLDS TBD — MICHAEL" chip, mono 9.5px/600 .14em #E8A84E, padding 4px 8px, radius 6px, border 1px dashed rgba(232,168,78,0.45); tooltip "Severity cut-offs are not decided yet. Neutral / amber / red states here are placeholders."
+- Right: "THRESHOLDS TBD — FOUNDER" chip, mono 9.5px/600 .14em #E8A84E, padding 4px 8px, radius 6px, border 1px dashed rgba(232,168,78,0.45); tooltip "Severity cut-offs are not decided yet. Neutral / amber / red states here are placeholders."
 - In production the switcher is removed; the state comes from the data. The chip stays until thresholds are set.
 
 ## 1 · Week strip header
@@ -114,7 +114,7 @@ State b: Sat rain 21/15 [red "Rain 72%", amber "Gusts 31 km/h"]; match time all 
             <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:18px;">
               <span style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:600; letter-spacing:0.14em; color:#5b6880;">STATE</span>
               <sc-for list="{{ wx.states }}" as="st" hint-placeholder-count="5"><span class="seg" onClick="{{ st.onClick }}" style="padding:5px 10px; border-radius:6px; cursor:pointer; font-size:12px; white-space:nowrap; font-weight:{{ st.w }}; color:{{ st.c }}; background:{{ st.bg }}; border:1px solid {{ st.bd }};">{{ st.label }}</span></sc-for>
-              <span title="Severity cut-offs are not decided yet. Neutral / amber / red states here are placeholders." style="margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:600; letter-spacing:0.14em; color:#e8a84e; padding:4px 8px; border-radius:6px; border:1px dashed rgba(232,168,78,0.45); white-space:nowrap;">THRESHOLDS TBD — MICHAEL</span>
+              <span title="Severity cut-offs are not decided yet. Neutral / amber / red states here are placeholders." style="margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:600; letter-spacing:0.14em; color:#e8a84e; padding:4px 8px; border-radius:6px; border:1px dashed rgba(232,168,78,0.45); white-space:nowrap;">THRESHOLDS TBD — FOUNDER</span>
             </div>
 
             <sc-if value="{{ wx.indoor }}" hint-placeholder-val="{{ false }}">

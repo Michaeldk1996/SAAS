@@ -74,10 +74,10 @@ it was, the match in playing order, the numbers that explain it, one or two quot
 The sections below describe the older report (template + sentence-by-sentence voice). It is what a report falls back to
 when the full report could not be written or did not pass its check.
 
-## Match reports — the template is the facts; the wording is Michael's voice, checked sentence by sentence (founder 2026-11-12)
+## Match reports — the template is the facts; the wording is the founder's voice, checked sentence by sentence (founder 2026-11-12)
 - **The template report stays the source of truth** (`reportText`: one sentence per stored fact group). A model rewrites
   the sentences one for one in the founder's voice (`humanise.mjs`, pipeline only, key from Actions secrets); this
-  replaces "template fill only, no model wording". Voice guide: Michael's PDF (never committed, never published).
+  replaces "template fill only, no model wording". Voice guide: the founder's PDF (never committed, never published).
 - **Every rewritten sentence is checked against the template sentence it replaces** (`checkSentence`, a whitelist):
   every number, score, ordinal and "X of Y" is in that sentence with the same word after it, scores in the same order;
   only that sentence's players, in the same order; "He" only for the one player the sentence is about; every other word
@@ -138,9 +138,9 @@ when the full report could not be written or did not pass its check.
 ## Quotes
 - **A quote is verbatim from its source or it is not published.** The check runs on the original-language text of the
   fetched page; a failing item is dropped and counted, never repaired.
-- **Outlet ruling (Michael, 11 Nov 2026, risk accepted):** the collector may read any outlet page served publicly to a
+- **Outlet ruling (founder, 11 Nov 2026, risk accepted):** the collector may read any outlet page served publicly to a
   plain request, whatever its robots.txt or terms say. `data/news-outlets.json` keeps each outlet's clause and records
-  "allowed by Michael's ruling, 11 Nov 2026". Limits, each a test in `test-news-ticker-live.mjs`:
+  "allowed by the founder's ruling, 11 Nov 2026". Limits, each a test in `test-news-ticker-live.mjs`:
   - **No bypassing a technical block:** 401 / 403 / 429, a CAPTCHA or bot-check page, a login or a paywall keeps the
     page out. One honest user agent; no proxy, no browser disguise, no headless browser.
   - **Only the quoted words, the speaker and the labelling context are kept.** Article text is never stored or
@@ -171,7 +171,7 @@ when the full report could not be written or did not pass its check.
   Checks: same sentence count, every name and number present in the original. If the same quote exists in English, the
   English one is published only. Second-hand renderings (a Swedish print of English speech) are published, marked
   translated. The same quote from two outlets is one item (`alsoReportedBy`).
-- ATP report text is published on Michael's word that ATP's written permission is being obtained (2026-11-11).
+- ATP report text is published on the founder's word that ATP's written permission is being obtained (2026-11-11).
 - No X API (founder 2026-11-11); X commentary will be manual in a later task.
 
 ## Tour-wide quotes: press interviews and injuries (founder 2026-11-12)

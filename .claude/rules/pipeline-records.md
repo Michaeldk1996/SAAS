@@ -122,7 +122,7 @@ Where this file conflicts with `modal-analysis.md` (TEN-312, 2026-09-28), that f
     `PROVISIONAL` (provisional counting, above; acts only inside the TE merge, off = the record without it) are the
     repository variables `vars.TE_INGEST` / `vars.SET_REPAIR` / `vars.PROVISIONAL` (`.github/workflows/pipeline.yml`,
     passed through `env:`); the first two read
-    from the private store repo `michaeldk1996/stennisfy-te-store` (`te-history/`, `set-repairs.json`), never from
+    from the private store repo `stennisfy-te-store` (`te-history/`, `set-repairs.json`), never from
     this public repo, and a run with a switch on and its input missing stops. A run with `TE_INGEST` off publishes
     no `career-record` file.
   - **Record by season's hover** (founder TEN-449, 2026-10-19), only on a player whose record is TE's: "Counted as

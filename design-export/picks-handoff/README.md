@@ -19,9 +19,9 @@ Principle: nothing a member sees is typed except the pick itself, the stake and 
 | field | type | source | notes |
 |---|---|---|---|
 | id | string | server | stable key |
-| kind | match · outright | Michael | outright rows (tournament winners, Race / year-end qualification and other long-term lines) have no `player_b`, no `round`, no `scheduled_at`; `event` + `settles_at` instead; CLV stays a dash (no Pinnacle close) until a closing-line rule is agreed |
-| event | string \| null | Michael (select) | e.g. "Nitto ATP Finals · Turin", "ATP Race · year-end" |
-| market_text | string \| null | Michael (select) | outright only: "To win the tournament", "To qualify for the Nitto ATP Finals" |
+| kind | match · outright | Founder | outright rows (tournament winners, Race / year-end qualification and other long-term lines) have no `player_b`, no `round`, no `scheduled_at`; `event` + `settles_at` instead; CLV stays a dash (no Pinnacle close) until a closing-line rule is agreed |
+| event | string \| null | Founder (select) | e.g. "Nitto ATP Finals · Turin", "ATP Race · year-end" |
+| market_text | string \| null | Founder (select) | outright only: "To win the tournament", "To qualify for the Nitto ATP Finals" |
 | settles_at | ISO date \| null | event calendar | footer "settles 16 Nov" |
 | date | ISO date | server | match day (local, Europe/Brussels) |
 | tournament | string | slate (canonical name) | as on Today's Matches |
@@ -30,8 +30,8 @@ Principle: nothing a member sees is typed except the pick itself, the stake and 
 | surface | Hard · Clay · Grass | slate | header colour |
 | player_a | { id, name, initials } | slate | card order = slate order |
 | player_b | { id, name, initials } | slate | |
-| selection | `a` \| `b` | Michael (click) | accent bar + name weight |
-| market | Match winner · Games handicap · Total games | Michael (segment) | |
+| selection | `a` \| `b` | Founder (click) | accent bar + name weight |
+| market | Match winner · Games handicap · Total games | Founder (segment) | |
 | line | string \| null | Kibl current line at post | `+2.5`, `Over 22.5`; null for Match winner; never typed |
 | open_price | number \| null | bet105 first sighting | trail OPEN |
 | posted_price | number | bet105 at post | trail POSTED; locked forever |
@@ -40,11 +40,11 @@ Principle: nothing a member sees is typed except the pick itself, the stake and 
 | opp_now_price | number \| null | bet105 live, other side | FAV badge |
 | close_price | number \| null | Pinnacle close (bet365 where ruled) | trail CLOSE; null until live → dash |
 | opp_close_price | number \| null | Pinnacle close, other side | needed for margin removal |
-| stake | 0.5 · 1 · 1.5 · 2 · 3 (% of bankroll) | Michael (chip) | editable 10 min; the site speaks in %, never units |
-| note | string ≤ 2,000 | Michael | editable 10 min; the drawer counter reads `n / 2,000`, amber past 1,900 |
+| stake | 0.5 · 1 · 1.5 · 2 · 3 (% of bankroll) | Founder (chip) | editable 10 min; the site speaks in %, never units |
+| note | string ≤ 2,000 | Founder | editable 10 min; the drawer counter reads `n / 2,000`, amber past 1,900 |
 | model_pct | number \| null | Stennisfy model, picked side | blurred for non-Pro; dash if no run |
-| status | draft · posted · live · won · lost · void | server | draft = Michael only, never counted |
-| void_reason | string \| null | Michael | required when voiding |
+| status | draft · posted · live · won · lost · void | server | draft = the founder only, never counted |
+| void_reason | string \| null | Founder | required when voiding |
 | result | { sets: [{a, b, tb?, tb_side?}], retired?: bool } \| null | results feed | set cells; void rule = retirement before set 1 completes |
 | clv | number \| null | **computed** | `posted × fair(close, opp_close) − 1`, fair = (1/close)/((1/close)+(1/opp_close)) |
 | pl_pct | number \| null | **computed** | profit in % of bankroll: won → stake × (posted − 1) · lost → −stake · void → 0 |
@@ -78,4 +78,4 @@ Role `admin` only: "+ Pick" on every Upcoming match card footer and in the analy
 All players, prices, results and the 112-row ledger in the reference are demo (seeded). Headshots: the site rule is initials avatars; swap for ATP headshots only if the asset pipeline exists.
 
 ## Open / handoff
-Bets settled tile (reuses the Record strip) · ledger export · picks nav position (Analyse group, after Matches) · drafts list for Michael.
+Bets settled tile (reuses the Record strip) · ledger export · picks nav position (Analyse group, after Matches) · drafts list for the founder.

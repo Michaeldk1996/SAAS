@@ -1613,7 +1613,7 @@ authorship across all seven bundles + the Match Analysis modal:
   when the visual-diff harness runs. Before anyone chases a 1px text-metrics delta as a
   harness bug or an implementation error: it is very likely THIS — a real, authored half-
   pixel size in the export itself. Real design value, real rendering risk; a decision to
-  keep or round is Michael's, not a bug to silently "correct". These half-pixels are kept in
+  keep or round is the founder's, not a bug to silently "correct". These half-pixels are kept in
   the raw `tokens-observed.json` and excluded only from the readable `tokens-design.json`
   (integer-px ≤80 filter). See [[extract-export-styles]] / design-export token files.
 
@@ -2253,7 +2253,7 @@ SF, 6-2 3-0 ret.); the set scores are already from the player's side, so the cor
 - **Why:** measured 24 Oct, ATP's headshot CDN sits behind a Cloudflare challenge. A browser without Cloudflare's
   clearance cookie (any private window; any browser that has not passed atptour.com's check recently) got 403
   `cf-mitigated: challenge` for 24 of 24 headshots on Today's Matches, so avatars fell back to initials; cleared, the
-  same page took ~2.2 s for 849 KB of 300 px PNGs. Michael has an agreement with ATP covering stored copies.
+  same page took ~2.2 s for 849 KB of 300 px PNGs. The founder has an agreement with ATP covering stored copies.
 - **Why a visible Chrome on the Mac:** curl, GitHub runners and headless Chrome are all challenged; a normal Chrome
   window clears it in under a second. Cloudflare re-challenges after ~25 rapid requests, so the job paces (0.7 s) and
   re-opens a headshot page on any 403. 182 photos take ~3 min.
@@ -2292,7 +2292,7 @@ SF, 6-2 3-0 ret.); the set scores are already from the player's side, so the cor
 
 - **State:** `atp-entry-harvest.yml` is disabled in GitHub Actions (`state: disabled_manually`, 2026-10-31 02:32:44Z), paused by the founder: "Just pause this for now, we don't need it for now." The workflow file is unchanged.
 - **Why:** every run since 16 Oct failed on `X API 402 — credits depleted`; the harvest has no other source.
-- **Re-enable:** the Actions UI ("Enable workflow"), or `PUT /repos/michaeldk1996/SAAS/actions/workflows/atp-entry-harvest.yml/enable` — after the X API balance is topped up.
+- **Re-enable:** the Actions UI ("Enable workflow"), or `PUT /repos/{owner}/SAAS/actions/workflows/atp-entry-harvest.yml/enable` — after the X API balance is topped up.
 - **Left as they are (founder, same day: "for the rest don't change anything"):** live-probes, odds-archive-staleness and bet365-archive stay red or stopped as they are.
 
 ## 2026-11-06 — Series v2 (design_handoff_series_v2 + four founder rules)
@@ -2313,7 +2313,7 @@ priced 1.01–1.50 win 1.3–2.6 points more than their no-vig price (yield ≈ 
 plus resolution cuts keeping ~10% of matches per band (a 568-match career gets ~40–80 per band instead of 17–25).
 
 ## 2026-11-15 — Tournaments tab rebuild (design_handoff_tournaments_tab; founder rulings)
-- **Why the design wins here:** Michael designed the whole tab (Overview · Entry list · Draw · Reports) in Claude Design and
+- **Why the design wins here:** The founder designed the whole tab (Overview · Entry list · Draw · Reports) in Claude Design and
   locked it as one handoff. Ten weeks of per-item rulings (TEN-401 styling, the darker track, Ring-blue Reports bars, the
   site event name on this tab, the rail reveal) had drifted the page away from any one design; restyling would not converge,
   so the tab was rebuilt to the export and the contradicting rulings were retired by name (`tournaments.md` "The design is the

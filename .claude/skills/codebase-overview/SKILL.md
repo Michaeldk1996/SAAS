@@ -11,7 +11,7 @@ Read this instead of exploring. If something here is wrong or missing, fix this 
 
 | Thing | Where | Notes |
 |---|---|---|
-| Frontend | `bsp-consult-dashboard.html` + the scripts it loads (`player-profile-v2.js` = the player profile, `live-tab.js`, …) | `tools/site-code.sh` copies it to the site as `index.html`, so it IS the served app. The repo-root `index.html` is an unused redirect. Served live at `michaeldk1996.github.io/SAAS/` |
+| Frontend | `bsp-consult-dashboard.html` + the scripts it loads (`player-profile-v2.js` = the player profile, `live-tab.js`, …) | `tools/site-code.sh` copies it to the site as `index.html`, so it IS the served app. The repo-root `index.html` is an unused redirect. Served live at `app.stennisfy.com/` |
 | Data pipeline | `bsp-pipeline.js` | Node. Runs every 15 min via GitHub Actions |
 | Pipeline config | `.github/workflows/` | Cron `*/15 * * * *` |
 | Design source | `design-export/` | Canonical. See the `design-handoff` skill |

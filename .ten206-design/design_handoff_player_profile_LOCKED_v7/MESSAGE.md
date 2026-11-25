@@ -34,4 +34,4 @@ They are design references written in HTML, not production code to lift. Recreat
 **Open items** are listed at the end of the README — mostly unwired filters and generated prices. Anything ambiguous, ask before choosing; I'd rather answer than have it guessed.
 
 Thanks —
-Michael
+The founder

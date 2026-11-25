@@ -17,7 +17,7 @@ yet (founder: tiers or marks on the match card / Model page come later, once the
   the latest api-tennis Pinnacle read + its time, the bet105 match-winner price from `line_prices_current` + its Kibl insert
   time (live only while the worker heartbeat is ≤ 3 min old; otherwise null with the reason), edge vs bet105 and vs
   Pinnacle. A missing price is null with its reason, never another book.
-- **Edge = model probability × the NO-VIG bet105 price − 1** (Michael 2026-11-01: "use the bet105 prices devigged";
+- **Edge = model probability × the NO-VIG bet105 price − 1** (founder 2026-11-01: "use the bet105 prices devigged";
   `value-ledger-config.js` `edgeBasis: 'b105-novig'`, both sides of the pair needed, else no edge; `'b105'` = as quoted).
   Profit is always at the price as quoted. The value tier is NEVER stored: the export works the edge from the stored
   prices and reads it through `tiers` (Value 2–5% · Strong value 5–10% · Max value (+++) 10%+, below 2% untagged), so a
@@ -41,9 +41,9 @@ yet (founder: tiers or marks on the match card / Model page come later, once the
 ## Not the Model page's "value" (report, don't resolve)
 The Model page's chip reads `h2h-model/config.js` `value.sharpEdge` 0.03 ("Sharp Value": fair prob − Pinnacle vig-free prob
 ≥ 3pp) and `value.softEdge` 0.05 ("Soft Book Value": fair prob − 1/best soft price ≥ 5pp) — probability gaps, not the
-ledger's expected-value edge vs bet105. Which applies on screen is Michael's call.
+ledger's expected-value edge vs bet105. Which applies on screen is the founder's call.
 
-## Historical backtest — reconstructed from records, never in the ledger (Michael 2026-11-01)
+## Historical backtest — reconstructed from records, never in the ledger (founder 2026-11-01)
 `tools/value-backtest.mjs --out FILE.csv` (run by hand; reads the board's git history, so not a pipeline step). One row per
 side of every match the model priced at full model since 23 Jul 2026, frozen at its first full-model read (`admin-log.json`
 `valueSnapshot`, never recomputed). Entry price: bet105 at that moment (the Kibl archive, last price per side at or before
@@ -54,7 +54,7 @@ Pinnacle no-vig (no margin: not bettable, flatters the result) are never pooled 
 `value.sharpEdge`, the Model page's flag) and by month; under 30 bets the counts only. The file says "RECONSTRUCTED FROM
 RECORDS" on its first line and goes to the private ops repo `value-ledger/backtest/`. **Test:** `tools/test-value-backtest.mjs`.
 
-## Edge cap, bet rule, model calibration (Michael 2026-11-02, after the backtest)
+## Edge cap, bet rule, model calibration (founder 2026-11-02, after the backtest)
 - **Edge cap:** an edge of `edgeCap` (15%) or more is "Capped (likely model error)" — its own group, never a tier; Max
   value is 10–15%. **Bet rule:** `betRule` 2–5% — the backtest's "Followed the bet rule" line. Both in `value-ledger-config.js`.
   **Test:** `tools/test-value-ledger.mjs`, `tools/test-value-backtest.mjs`.
@@ -65,7 +65,7 @@ RECORDS" on its first line and goes to the private ops repo `value-ledger/backte
   rollback = `enabled: false`, one commit. Frozen pre-match prices of started matches never change. **Test:** `h2h-model/test-h2h.js`
   "Stage 3 calibration".
 
-## bet105 open and close (Michael 2026-11-02: "the bet105 timestamp should help … results on the opening and closing price")
+## bet105 open and close (founder 2026-11-02: "the bet105 timestamp should help … results on the opening and closing price")
 - **Each settlement stores bet105's open and close for its side** (`detail.b105`): the worker's open (`line_prices_current`
   `open_price`, Kibl time) and its live-flip close (`close_price`, both sides), else the Kibl archive's first price and last
   pre-match price before the verified start (`price_history`). Each names its source and time; none → a dash.
@@ -74,7 +74,7 @@ RECORDS" on its first line and goes to the private ops repo `value-ledger/backte
   rule). The backtest carries the same block. **Test:** `tools/test-value-ledger.mjs` "bet105 open / close",
   `tools/test-value-backtest.mjs`.
 
-## Weekly model review (Michael 2026-11-03: "is the model getting better")
+## Weekly model review (founder 2026-11-03: "is the model getting better")
 - **Every snapshot stores each applied layer's contribution** (`detail.layers` = [id, deltaP1]) and the stage-2 probability
   (`detail.adjustedP1`), so the layer analysis has data from 3 Nov 2026 on (earlier snapshots hold only the count).
 - **The export's "Model review" section** (`modelReview`), match-level on the last snapshot before the verified start (side

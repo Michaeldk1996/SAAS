@@ -18,7 +18,7 @@ file we hold is irreplaceable.
     new row whose `supersedes` names the old one.
   - `historical_odds_export` — one row per private CSV export (name, sha256, rows, per-year counts, its private path).
   - `historical_archive_count` — one row per job run: the publish guard's baseline.
-- **Private repo `Michaeldk1996/stennisfy-ops`:** `tennis-data/files/<sha256>__<name>` (each original, never replaced) and
+- **Private repo `stennisfy-ops`:** `tennis-data/files/<sha256>__<name>` (each original, never replaced) and
   `tennis-data/manifests/<day>.json`; `closes-export/<day>/` (the CSV export + manifest); `historical-archive/<day>/`
   (the daily dated backup of the four tables).
 

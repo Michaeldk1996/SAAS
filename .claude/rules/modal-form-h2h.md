@@ -406,7 +406,7 @@ results mode, 3+ ranked). **Test:** `test-h2h-1117.mjs` "ruling 3" (2 meetings r
   2026-08-29 house rule (TEN-103); the Match Stats tab reads the popup's function (`msheetHouseRatings`),
   so the same match shows the same number. Any component missing or sent without its count → `—`;
   0 break-point chances → no Return rating (also in `surface-ratings.js`).
-- **Pressure points (Michael's definition, as TEN-243):** break points saved + converted ÷ all break
+- **Pressure points (the founder's definition, as TEN-243):** break points saved + converted ÷ all break
   points the player played, shown `58.3% (7/12)`; 0 played → `—`. **Test:** its numerator and
   denominator are the sums of the Break points saved and converted rows.
 - **Point by point follows the header** (player A on the left): the feed's order is flipped when A is

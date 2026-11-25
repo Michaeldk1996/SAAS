@@ -6,8 +6,8 @@ Stennisfy is a tennis betting analytics SaaS dashboard for serious ATP bettors, 
 
 **Brand:** **Stennisfy** is the product name rendered throughout the UI. Legacy `bsp-*` names survive in the source tree for historical reasons — leave them alone unless a task says otherwise.
 
-- **Repo:** `michaeldk1996/SAAS`
-- **Live:** `michaeldk1996.github.io/SAAS/`
+- **Repo:** `SAAS` on GitHub (owner: see `git remote -v`)
+- **Live:** `app.stennisfy.com/`
 - **App domain (future):** `stennisfy.com`
 
 ---
@@ -16,7 +16,7 @@ Stennisfy is a tennis betting analytics SaaS dashboard for serious ATP bettors, 
 
 | Layer | Detail |
 |---|---|
-| Frontend | `bsp-consult-dashboard.html` is the live dashboard frontend, plus the scripts it loads (`player-profile-v2.js`, `esc-nav.js`, `live-tab.js`, …). `tools/site-code.sh` publishes it as the site's `index.html` at `michaeldk1996.github.io/SAAS/` |
+| Frontend | `bsp-consult-dashboard.html` is the live dashboard frontend, plus the scripts it loads (`player-profile-v2.js`, `esc-nav.js`, `live-tab.js`, …). `tools/site-code.sh` publishes it as the site's `index.html` at `app.stennisfy.com/` |
 | Pipeline | `bsp-pipeline.js` (Node.js) — GitHub Actions cron `*/15 * * * *` |
 | Data files | `matches.json`, `tournament-profiles.json`, `tournament-progression.json`, `player-profiles.json` |
 | Odds | OddsAPI + Oddsapi (250s, broader coverage) + kibl + bet105 (The Odds API retired 2026-10-16) |
@@ -78,7 +78,7 @@ For current build state, open build state — do not rely on a snapshot in this 
 
 **Model R&D mode (founder ruling TEN-8).** The h2h-model — every Stage-2 adjustment layer and the Layer #8 MCP archetype baseline — runs in internal R&D mode. The Sackmann CC BY-NC-SA non-commercial restriction gates **commercial serving to paying members**, not internal R&D. Do **not** flag the licence as a blocker on R&D builds — nor, since the agreement below, at commercial deployment.
 
-**Tennis Abstract licence (founder ruling 2026-11-18).** Michael has an agreement with Tennis Abstract (Jeff Sackmann's
+**Tennis Abstract licence (founder ruling 2026-11-18).** The founder has an agreement with Tennis Abstract (Jeff Sackmann's
 tennis_atp / TML / MatchChartingProject). Since 26 Oct 2026 their files say commercial or prediction-model use needs
 written permission; that permission exists, so the licence is **never a blocker** — not for R&D, not for the model, not
 for a member-facing surface. **Test:** a task that would park or dash a figure because it reads Sackmann / TML data is
@@ -99,7 +99,7 @@ wrong.
 
 ## Design system — the export is canonical
 
-**The design is the specification, not a reference.** Michael designs in Claude Design; the export **is** what he designed. Reproduce it — do not interpret, improve or substitute an equivalent.
+**The design is the specification, not a reference.** The founder designs in Claude Design; the export **is** what he designed. Reproduce it — do not interpret, improve or substitute an equivalent.
 
 **Sources, in priority order:**
 1. **Per-tab specs** — `design-export/specs/*.md` — authoritative inside their tab's scope.
@@ -204,7 +204,7 @@ Full source detail, book ladder, card and close rules: `.claude/rules/odds.md`.
 - The proprietary `value %` (W/UE ratio, surface form weighting, fatigue scoring) — `null` everywhere in the data, not built.
 - The rendered value verdict ("SHARP VALUE" / "NO VALUE") — built, derived from a no-vig best-price margin `ppGap = (1/fair − 1/price) × 100`, with soft-book price inputs the README flags as authored placeholders.
 
-Do **not** wire the proprietary methodology behind the rendered verdict, and do not ship the placeholder inputs as if they were the model, until Michael confirms which is intended.
+Do **not** wire the proprietary methodology behind the rendered verdict, and do not ship the placeholder inputs as if they were the model, until the founder confirms which is intended.
 
 ---
 

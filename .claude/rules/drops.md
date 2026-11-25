@@ -175,7 +175,7 @@ answers on card 37612d3d (TEN-294 doc `design`). Suite: `test-ten294-drops.mjs`.
   **Test:** it alerts when the endpoint is unreachable 3 times in a row, when data is more than 5 min old, or when any source is past its limit. An alert counts as delivered only once confirmed *sent*.
 
 - **Access is open while the product is in search and development** (founder, card 37612d3d).
-  CORS allows exactly `https://michaeldk1996.github.io`. CORS is not access control.
+  CORS allows exactly `https://app.stennisfy.com`. CORS is not access control.
   *Revisit before members:* the gate would verify the Firebase ID token on the Fly app, which needs no database read.
 
 ## The Dropping Odds page — v2, sharp vs soft (handoff `design_handoff_dropping_odds_v2`, founder brief 2026-11-23)

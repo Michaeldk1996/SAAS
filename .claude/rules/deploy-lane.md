@@ -304,7 +304,7 @@ group, and every tick behind it is cancelled. On 6–7 Oct this froze the site f
 - **Never** cancel a run whose status, or any of whose jobs or steps, is `in_progress`.
 - **No recorded state, no dispatch.** The intent is written to the log before cancel and
   dispatch. If the log can't be read or written, the guard takes no action, goes red and alerts.
-- **The log is private.** It is an issue in `Michaeldk1996/stennisfy-ops`
+- **The log is private.** It is an issue in `stennisfy-ops`
   (`STALL_GUARD_LOG_REPO`), written with `WORKFLOW_PAT`. It is never on the public SAAS repo,
   and there is no fallback to it. Comment and Telegram text is `run <id> · <state> · <UTC time>`
   only, with nothing about data sources, counts, step names or errors.

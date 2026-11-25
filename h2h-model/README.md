@@ -62,7 +62,7 @@ reference = best available book price. Flags:
 | 5 | Recent form | 🟢 | player-profiles:recentForm | last-5, incl. Challenger/ITF |
 | ~~6~~ | ~~Round / stage~~ | ⛔ removed | — | **removed in Model v2.0 Step 1** (id retired, not reused) |
 | 7 | Quality-adjusted form | 🟢 | recentForm + rank | **see Adjustment 7** |
-| 8 | Winner / UE ratio | 🔴 gated | manual-inputs.json | inert until Michael supplies W/UE |
+| 8 | Winner / UE ratio | 🔴 gated | manual-inputs.json | inert until the founder supplies W/UE |
 | 9 | Serve strength | 🟢 | style-radar → career fallback | radar only when `ok:true` |
 | 10 | Return / pressure | 🟢 | style-radar → career fallback | radar only when `ok:true` |
 | 11 | Fatigue (14d load) | 🟢 | recentForm dates | sets played in window |
@@ -77,7 +77,7 @@ reference = best available book price. Flags:
 unreliable (`ok:false`, thin charting) · 🔴 gated (data not usable yet).
 
 **Every magnitude in `config.js` is a labelled CALIBRATION PLACEHOLDER**, not a
-tuned secret sauce. They are centralised so Michael can backtest and tune them.
+tuned secret sauce. They are centralised so the founder can backtest and tune them.
 
 ---
 

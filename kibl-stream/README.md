@@ -1,7 +1,7 @@
 # The Kibl / Bet105 RabbitMQ consumer
 
 **Status: BUILT, TESTED OFFLINE, NOT DEPLOYED.** Founder 2026-09-23 (TEN-253):
-*"Do not deploy the always-on worker. Launch waits for Michael's go after he
+*"Do not deploy the always-on worker. Launch waits for the founder's go after he
 reads the report."* Nothing here runs anywhere. `python3 kibl-stream/consumer.py`
 with no `KIBL_RMQ_*` in the environment prints what it would have done and exits 0.
 

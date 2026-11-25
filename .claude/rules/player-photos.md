@@ -16,7 +16,7 @@ Applies to any task that renders a player avatar, headshot or monogram. Rational
   the transparent PNG), `loading="lazy"`, `alt` = the player's name, sizes from each surface's own tokens. A failed load
   removes the photo and the monogram shows — never a broken-image icon. The Player Profile hero keeps its own markup
   (the reference) on the same resolver.
-- **Hosting (founder 2026-10-24; Michael has an agreement with ATP):** self-hosted. **No page requests ATP's servers.**
+- **Hosting (founder 2026-10-24; the founder has an agreement with ATP):** self-hosted. **No page requests ATP's servers.**
   ATP's CDN challenges every non-browser client (Cloudflare `cf-mitigated: challenge`, 403 to curl, GitHub runners and
   headless Chrome), so `tools/photos/fetch-headshots.mjs` drives a visible Chrome on the Mac and writes both WebP
   sizes in the browser. **Test:** `tools/test-player-photos.js` — every index entry has both files at 96 / 256 px with

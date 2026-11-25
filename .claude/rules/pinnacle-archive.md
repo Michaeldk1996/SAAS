@@ -11,7 +11,7 @@ Applies to `supabase/migrations/20261014120000_pinnacle_archive.sql`, `tools/pin
   - `pinnacle_archive_close`: every derived Pinnacle close — `source`, `label` (`captured` | `from Pinnacle history`),
     `close_ts`, `start_ts`, `start_source`, `gap_to_start_s`, the original record in `detail`.
   - `pinnacle_archive_count`: one row per archive job run with the counts it saw (the publish guard's baseline).
-- **Backup: the private repo `Michaeldk1996/stennisfy-ops`, folder `pinnacle-archive/YYYY-MM-DD/`** (GitHub, a separate
+- **Backup: the private repo `stennisfy-ops`, folder `pinnacle-archive/YYYY-MM-DD/`** (GitHub, a separate
   provider from Supabase). One dated folder per day: `raw-NNNN.jsonl.gz` (the raw rows added since the previous day,
   every column), `close-full.jsonl.gz` and `count-full.jsonl.gz` (full snapshots), `manifest.json` (ids, row counts,
   sha256 of every file, the previous day). A day is never replaced: the writer refuses an existing folder and only ever
