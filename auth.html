@@ -11,7 +11,7 @@
 <script src="analytics.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700;800&display=block" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,600&display=block" rel="stylesheet">
 <!--
   6-DIGIT EMAIL CODE (founder 2026-11-24: option (b), a real typed code)
   "Continue with email" -> BSP.sendCode emails a code from noreply@stennisfy.com (stennisfy-auth
@@ -206,11 +206,36 @@
   .dots i{ width:26px; height:4px; border-radius:3px; background:var(--edge-16); display:block; }
   .dots i.on{ background:var(--bar); }
 
+  /* ============ CODE SCREEN in the look of the stennisfy.com sign-in page (founder 2026-11-25) ============
+     People land here straight from stennisfy.com/signin, so this step reads as the same page: one centred column,
+     no side panel, the serif headline, a pill button (text colour on page colour, so it follows night and day),
+     quiet links, the 18+ line. Colours are tokens only. Only the code step changes; the other steps keep the export look. */
+  .wrap.is-code{ grid-template-columns:1fr; }
+  .wrap.is-code .panel{ display:none; }
+  .wrap.is-code .left{ max-width:none; justify-content:flex-start; align-items:center; padding:5vh 24px 32px; }
+  .wrap.is-code .brand{ margin-bottom:28px; }
+  .wrap.is-code .otp{ width:100%; max-width:380px; }
+  .wrap.is-code .mailglyph{ display:none; }
+  .wrap.is-code .otp .h1{ font-family:'Source Serif 4',serif; font-size:40px; font-weight:600; line-height:44px; letter-spacing:0; }
+  .wrap.is-code .otp .sub{ margin-top:12px; font-size:14px; line-height:20px; }
+  .wrap.is-code .codes{ gap:8px; margin:24px 0 20px; }
+  .wrap.is-code .code{ width:48px; height:56px; border-radius:12px; font-size:24px; font-weight:500; }
+  .wrap.is-code .btn-solid{ height:48px; margin-top:4px; border-radius:999px; background:var(--text); color:var(--page); font-size:16px; font-weight:500; }
+  .wrap.is-code .resend{ margin-top:28px; padding-top:24px; border-top:1px solid var(--line); font-size:14px; }
+  .wrap.is-code .resend a{ color:var(--text); font-weight:500; text-decoration:underline; text-decoration-color:var(--edge-24); text-underline-offset:4px; }
+  .wrap.is-code .backlink{ margin-top:12px; font-size:14px; }
+  .legal18{ display:none; margin:28px 0 0; font-size:12px; line-height:16px; color:var(--text-label); }
+  .wrap.is-code .legal18{ display:block; }
+
   @media (max-width:1000px){
     .wrap{ grid-template-columns:1fr; row-gap:32px; padding:32px 24px; }
     .panel{ min-height:0; order:2; }
     .panel-top{ margin-top:0; }
     .brand{ margin-bottom:36px; }
+  }
+  @media (max-width:480px){   /* code screen on a phone: the column uses the full width and the six boxes share it */
+    .wrap.is-code .left{ padding:16px 0 32px; }
+    .wrap.is-code .code{ flex:1 1 0; width:auto; min-width:0; max-width:48px; }
   }
 </style>
 </head>
@@ -285,6 +310,7 @@
 
         <p class="resend">Didn't get it? <a onclick="resendCode()">Resend code</a></p>
         <a class="backlink" onclick="goStep('email')">&lsaquo;&nbsp; Use a different email</a>
+        <p class="legal18">18+ only. Bet responsibly.</p>
       </section>
 
       <!-- ---- STEP: password fallback (real working Firebase login) ---- -->
@@ -391,6 +417,7 @@
       ['stepEmail','stepCode','stepPassword'].forEach(function(id){
         document.getElementById(id).classList.toggle('hidden', id !== 'step'+cap(step));
       });
+      document.querySelector('.wrap').classList.toggle('is-code', step === 'code');   // the code step wears the sign-in page look
       if (step === 'code'){
         document.getElementById('codeEmail').textContent = currentEmail || 'your email';
         clearCodes();
