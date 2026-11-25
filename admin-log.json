@@ -1,16 +1,7 @@
 {
  "schema": 1,
- "updated": "2026-11-25T14:36:15.783Z",
+ "updated": "2026-11-25T14:54:54.710Z",
  "runs": [
-  {
-   "ts": "2026-10-18T23:02:51.025Z",
-   "run": "39173935024",
-   "priced": 39,
-   "logged": 1320,
-   "flagged": 9,
-   "newlyLogged": 0,
-   "newlyFrozen": 0
-  },
   {
    "ts": "2026-10-18T23:14:40.742Z",
    "run": "39174675777",
@@ -18000,6 +17991,15 @@
    "logged": 1577,
    "flagged": 2,
    "newlyLogged": 0,
+   "newlyFrozen": 0
+  },
+  {
+   "ts": "2026-11-25T14:54:54.710Z",
+   "run": "45634712972",
+   "priced": 4,
+   "logged": 1578,
+   "flagged": 2,
+   "newlyLogged": 1,
    "newlyFrozen": 0
   }
  ],
@@ -40982,7 +40982,7 @@
    "status": "finished",
    "finalScore": "2-6, 6-7(7)",
    "modelFairLast": 0.3647,
-   "lastSeen": "2026-11-25T14:36:15.783Z"
+   "lastSeen": "2026-11-25T14:54:54.710Z"
   },
   "12182495": {
    "key": "12182495",
@@ -40997,7 +40997,7 @@
    "status": "finished",
    "finalScore": "6-2, 3-6, 6-2",
    "modelFairLast": 0.7189,
-   "lastSeen": "2026-11-25T14:36:15.783Z"
+   "lastSeen": "2026-11-25T14:54:54.710Z"
   },
   "12182496": {
    "key": "12182496",
@@ -41018,7 +41018,22 @@
    "status": "finished",
    "finalScore": "7-6(4), 6-2",
    "modelFairLast": 0.4928,
-   "lastSeen": "2026-11-25T14:36:15.783Z"
+   "lastSeen": "2026-11-25T14:54:54.710Z"
+  },
+  "12182774": {
+   "key": "12182774",
+   "date": "2026-11-25",
+   "p1": "F. Cobolli",
+   "p2": "S. Kwon",
+   "surface": "hard",
+   "tour": "ATP Davis Cup - World Group",
+   "modelFairEntry": 0.6045,
+   "valueSnapshot": null,
+   "firstSeen": "2026-11-25T14:54:54.710Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.6045,
+   "lastSeen": "2026-11-25T14:54:54.710Z"
   },
   "e81136d8af2867898952ce896f71662f": {
    "key": "e81136d8af2867898952ce896f71662f",
