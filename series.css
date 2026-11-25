@@ -5,7 +5,7 @@
  * Scoped under [data-page="series"]; the pop-up is a body-level layer scoped by .sr-ov*.
  */
 
-[data-page="series"] { background: transparent; min-height: 100vh; }
+[data-page="series"] { background: transparent; min-height: calc(100vh / var(--sf-z, 1)); }
 [data-page="series"] .sr-wrap {
   max-width: 1360px; margin: 0 auto; padding: 30px 40px 70px;
   font-family: var(--font-words); color: var(--text);
@@ -136,7 +136,7 @@
 .sr-ov-back[hidden] { display: none; }
 body.sr-ov-open { overflow: hidden; }
 .sr-ov {
-  width: 100%; max-width: 880px; max-height: 86vh; box-sizing: content-box;   /* the reference's boxes keep their 1px ring outside */
+  width: 100%; max-width: 880px; max-height: calc(86vh / var(--sf-z, 1)); box-sizing: content-box;   /* the reference's boxes keep their 1px ring outside */
   background: var(--card); border: 1px solid var(--edge-10); border-radius: 20px; box-shadow: var(--shadow-modal);
   display: flex; flex-direction: column; overflow: hidden; line-height: normal;
 }

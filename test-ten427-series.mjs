@@ -925,7 +925,7 @@ test('Colour (series-v2): no blue in the sheet; links only on Clear; green / red
   assert.match(rule('[data-page="series"] .sr-tile'), /background: var\(--inner\)/);
   assert.ok(!/sr-footnote|sr-mpl|sr-ov-total/.test(CSS), 'removed blocks keep no style');
   const ov = rule('.sr-ov');
-  assert.match(ov, /max-width: 880px; max-height: 86vh; box-sizing: content-box;/);
+  assert.match(ov, /max-width: 880px; max-height: calc\(86vh \/ var\(--sf-z, 1\)\); box-sizing: content-box;/);
   assert.match(ov, /border: 1px solid var\(--edge-10\); border-radius: 20px; box-shadow: var\(--shadow-modal\);/);
   assert.match(rule('.sr-ov-back'), /background: var\(--backdrop\); backdrop-filter: blur\(3px\);/);
   assert.match(rule('.sr-ov .sr-mhead, .sr-ov .sr-mrow'), /grid-template-columns: 14px 90px minmax\(0,1\.2fr\) minmax\(0,1fr\) var\(--sr-score, 112px\) 72px 84px; gap: 0 16px;/);

@@ -1503,7 +1503,7 @@ window.sfEarlyFetch = function (u, init) {
      down mid-open. Closed = fully off-canvas to the right + scrim faded out. */
   #ppSplitDrawer{ position:fixed; inset:0 0 0 var(--sf-side, 0px); z-index:1200; visibility:hidden; }
   #ppSplitDrawer .ppsd-scrim{ position:absolute; inset:0; background:var(--backdrop); backdrop-filter:blur(3px); opacity:0; transition:opacity .22s ease; }
-  #ppSplitDrawer .ppsd-panel{ position:absolute; top:0; right:0; height:100%; width:min(440px,92vw); border-left:1px solid var(--line); 
+  #ppSplitDrawer .ppsd-panel{ position:absolute; top:0; right:0; height:100%; width:min(440px,calc(92vw / var(--sf-z, 1))); border-left:1px solid var(--line); 
     transform:translateX(100%); transition:transform .26s cubic-bezier(.22,.61,.36,1); display:flex; flex-direction:column;
     font-family:'Hanken Grotesk',sans-serif; }
   #ppSplitDrawer.open{ visibility:visible; }
@@ -1530,7 +1530,7 @@ window.sfEarlyFetch = function (u, init) {
      blur 3px · padding 32; modal max 1500 · height 88vh FIXED · radius 20; header grid 1fr auto 1fr; menu 238px.
      Colours are in the design-verbatim-analysis block at the foot of the file. */
   #analysisModal{ z-index:80; padding:32px; -webkit-backdrop-filter:blur(3px); }
-  .modal-analysis{ --mx-font-ui:'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; --mx-font-mono:'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace; font-family:var(--mx-font-ui); max-width:1500px; width:100%; height:88vh; text-align:left; padding:0; border-width:1px; border-style:solid; border-radius:20px; display:flex; flex-direction:column; overflow:hidden; -webkit-font-smoothing:antialiased; }
+  .modal-analysis{ --mx-font-ui:'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; --mx-font-mono:'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace; font-family:var(--mx-font-ui); max-width:1500px; width:100%; height:calc(88vh / var(--sf-z, 1)); text-align:left; padding:0; border-width:1px; border-style:solid; border-radius:20px; display:flex; flex-direction:column; overflow:hidden; -webkit-font-smoothing:antialiased; }
 
   /* ---- Header (DF L87–109) ---- */
   .modal-analysis .ahead2{ display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:20px; padding:20px 24px; border-bottom:1px solid; flex:none; }
@@ -4815,7 +4815,7 @@ window.EntryListsTab = (function(){
      Reference: reference/Stennisfy Model.dc.html (its inline styles are the spec); colours = the export's own values,
      named --sm-* in tokens.css. Night only. Rules: .claude/rules/stennisfy-model.md. ── */
   [data-page="edge"]{ background:transparent; font-family:'Hanken Grotesk', sans-serif; color:var(--sm-text); -webkit-font-smoothing:antialiased; }
-  [data-page="edge"].active{ min-height:100vh; }
+  [data-page="edge"].active{ min-height:calc(100vh / var(--sf-z, 1)); }
   [data-page="edge"] .sm-page, [data-page="edge"] .sm-page *, .sm-pop, .sm-pop *{ box-sizing:border-box; }
   .sm-page{ max-width:1360px; font-size:16px; padding:30px 40px 70px; display:flex; flex-direction:column; gap:18px; line-height:normal; font-family:'Hanken Grotesk', sans-serif; color:var(--sm-text); }
   .sm-page a{ color:var(--sm-blue); text-decoration:none; } .sm-page a:hover{ color:var(--sm-blue-hov); }
@@ -4836,7 +4836,7 @@ window.EntryListsTab = (function(){
   .sm-main{ flex:1; min-width:0; display:flex; flex-direction:column; gap:14px; }
 
   /* matches rail */
-  .sm-rail{ width:244px; flex:none; position:sticky; top:16px; background:var(--sm-card); border:1.25px solid color-mix(in srgb, var(--sm-white) 6%, transparent); border-radius:14px; padding:18px 12px 12px; display:flex; flex-direction:column; gap:12px; max-height:calc(100vh - 32px); }
+  .sm-rail{ width:244px; flex:none; position:sticky; top:16px; background:var(--sm-card); border:1.25px solid color-mix(in srgb, var(--sm-white) 6%, transparent); border-radius:14px; padding:18px 12px 12px; display:flex; flex-direction:column; gap:12px; max-height:calc(calc(100vh / var(--sf-z, 1)) - 32px); }
   .sm-rail-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:0 4px; }
   .sm-rail-head > span{ display:flex; flex-direction:column; gap:3px; min-width:0; }
   .sm-rail-t{ font-size:15px; font-weight:800; color:var(--sm-text); }
@@ -6383,9 +6383,10 @@ const newsTip = { hide: () => {} };
   const show = (t, e) => {
     if (!tip){ tip = document.createElement('div'); tip.className = 'news-tip'; tip.setAttribute('role', 'tooltip'); document.body.appendChild(tip); }
     tip.textContent = t; tip.style.opacity = '1';
-    let x = e.clientX + 14, y = e.clientY + 16;
-    if (x + tip.offsetWidth > window.innerWidth - 8) x = e.clientX - tip.offsetWidth - 14;
-    if (y + tip.offsetHeight > window.innerHeight - 8) y = e.clientY - tip.offsetHeight - 16;
+    const z = (typeof sfZ === 'function' ? sfZ() : 1), cx = e.clientX / z, cy = e.clientY / z;
+    let x = cx + 14, y = cy + 16;
+    if (x + tip.offsetWidth > (typeof sfVW === 'function' ? sfVW() : window.innerWidth) - 8) x = cx - tip.offsetWidth - 14;
+    if (y + tip.offsetHeight > (typeof sfVH === 'function' ? sfVH() : window.innerHeight) - 8) y = cy - tip.offsetHeight - 16;
     tip.style.left = Math.max(8, x) + 'px'; tip.style.top = Math.max(8, y) + 'px';
   };
   document.addEventListener('mousemove', e => {
@@ -12070,7 +12071,7 @@ function edgeJumpLayer(key){
   renderEdgeModel(edgeCurrentId);
   const el = document.getElementById('emLayer-' + key); if (!el) return;
   const r = el.getBoundingClientRect(), top = r.top - window.innerHeight / 2 + r.height / 2, sc = edgeScroller(el);
-  (sc === window ? window : sc).scrollBy({ top, behavior: 'smooth' });
+  (sc === window ? window : sc).scrollBy({ top: sc === window ? top : top / (typeof sfZ === 'function' ? sfZ() : 1), behavior: 'smooth' }); // element scroll = CSS px
   clearTimeout(edgeFlashTimer);
   edgeFlashTimer = setTimeout(() => { edgeLayerFlash = null; document.querySelectorAll('[data-page="edge"] .flash').forEach(x => x.classList.remove('flash')); }, 1600);
 }
@@ -12258,7 +12259,7 @@ function edgePopEl(){
 function edgeB105Out(){ clearTimeout(edgePopTimer); edgePopTimer = setTimeout(edgeB105Hide, 160); }
 function edgeB105Hide(){ const p = document.getElementById('edgeB105Pop'); if (p) p.hidden = true; edgePopToken = null; document.querySelectorAll('.sm-b105.on').forEach(x => x.classList.remove('on')); }
 function edgeB105Place(el){
-  const p = edgePopEl(), r = el.getBoundingClientRect(), vh = window.innerHeight, vw = window.innerWidth;
+  const p = edgePopEl(), r = (typeof sfCssRect === 'function' ? sfCssRect(el) : el.getBoundingClientRect()), vh = (typeof sfVH === 'function' ? sfVH() : window.innerHeight), vw = (typeof sfVW === 'function' ? sfVW() : window.innerWidth);
   const up = r.bottom + 400 > vh && r.top > 400;
   p.style.left = Math.max(8, Math.min(vw - 320, r.left + r.width / 2 - 156)) + 'px';
   p.style.top = up ? 'auto' : (r.bottom + 8) + 'px';
@@ -14454,7 +14455,7 @@ const MA_POP = {
     xCls: 'seg ma-pop-x', x: 'width:30px; height:30px; flex:none; border-radius:8px; border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:13px; color:var(--text-label); cursor:pointer;' },
   mv: { ov: 'align-items:center; justify-content:center; padding:24px;',
     scrim: 'var(--backdrop)', z: 60, w: 1080, bg: 'var(--card)', line: 'var(--edge-10)',
-    boxPre: '', box: 'border-radius:18px; box-shadow:var(--shadow-pop); padding:20px 22px 16px; display:flex; flex-direction:column; gap:14px; max-height:calc(100vh - 48px); overflow-y:auto; box-sizing:border-box;',
+    boxPre: '', box: 'border-radius:18px; box-shadow:var(--shadow-pop); padding:20px 22px 16px; display:flex; flex-direction:column; gap:14px; max-height:calc(calc(100vh / var(--sf-z, 1)) - 48px); overflow-y:auto; box-sizing:border-box;',
     col: 'display:flex; flex-direction:column; gap:5px;', trow: 'display:flex; align-items:baseline; gap:10px;',
     title: 'font-size:18px; font-weight:800;', sub: 'font-size:12px; color:var(--text-label);',
     xCls: 'ma-pop-x', x: 'width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:8px; border:1px solid var(--line); color:var(--text-label); cursor:pointer; font-size:14px; flex-shrink:0;' },
@@ -18343,11 +18344,12 @@ function aOddsTipShow(el){
   t.style.display = 'block'; t.style.left = '0px'; t.style.top = '0px';
   // at left/top 0 the tip sits on its containing block's origin: #analysisModal (backdrop-filter) starts at --sf-side,
   // not at the viewport's 0, so viewport x/y are taken back by that origin (R6.5)
-  const o = t.getBoundingClientRect();
-  const r = el.getBoundingClientRect(), w = t.offsetWidth, h = t.offsetHeight;
+  const o = (typeof sfCssRect === 'function' ? sfCssRect(t) : t.getBoundingClientRect());
+  const r = (typeof sfCssRect === 'function' ? sfCssRect(el) : el.getBoundingClientRect()), w = t.offsetWidth, h = t.offsetHeight;
   const box = el.closest('.modal-analysis');
-  const b = box ? box.getBoundingClientRect() : { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight };
-  const L = Math.max(0, b.left), T = Math.max(0, b.top), R = Math.min(window.innerWidth, b.right), B = Math.min(window.innerHeight, b.bottom);
+  const vw = (typeof sfVW === 'function' ? sfVW() : window.innerWidth), vh = (typeof sfVH === 'function' ? sfVH() : window.innerHeight);
+  const b = box ? (typeof sfCssRect === 'function' ? sfCssRect(box) : box.getBoundingClientRect()) : { left: 0, top: 0, right: vw, bottom: vh };
+  const L = Math.max(0, b.left), T = Math.max(0, b.top), R = Math.min(vw, b.right), B = Math.min(vh, b.bottom);
   let x = r.left, y = r.bottom + 6;
   if (y + h > B && r.top - 6 - h >= T) y = r.top - 6 - h;
   if (x + w > R) x = Math.max(L, r.right - w);
@@ -21235,9 +21237,10 @@ function initPpSplitTips(){
   };
   const place = (e) => {
     const tip = ensure();
-    let x = e.clientX + 15, y = e.clientY + 18;
-    if (x + tip.offsetWidth > window.innerWidth - 8) x = e.clientX - tip.offsetWidth - 15;
-    if (y + tip.offsetHeight > window.innerHeight - 8) y = e.clientY - tip.offsetHeight - 18;
+    const z = (typeof sfZ === 'function' ? sfZ() : 1), cx = e.clientX / z, cy = e.clientY / z;
+    let x = cx + 15, y = cy + 18;
+    if (x + tip.offsetWidth > (typeof sfVW === 'function' ? sfVW() : window.innerWidth) - 8) x = cx - tip.offsetWidth - 15;
+    if (y + tip.offsetHeight > (typeof sfVH === 'function' ? sfVH() : window.innerHeight) - 8) y = cy - tip.offsetHeight - 18;
     tip.style.left = Math.max(8, x) + 'px';
     tip.style.top = Math.max(8, y) + 'px';
   };
@@ -26150,7 +26153,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
   const X_STICK_BG = 'radial-gradient(ellipse 1500px 640px at var(--x-gx, 720px) var(--x-gy, -120px), var(--glow) 0%, color-mix(in srgb, var(--glow) 0%, transparent) 100%) 0 0 / 100% 78% no-repeat, linear-gradient(var(--page) 78%, color-mix(in srgb, var(--page) 0%, transparent))';
   function xGlowSync() {
     const st = document.querySelector('#h2hRoot .x-stick'); if (!st) return;
-    const r = st.getBoundingClientRect(), de = document.documentElement.getBoundingClientRect();
+    const r = (typeof sfCssRect === 'function' ? sfCssRect(st) : st.getBoundingClientRect()), de = (typeof sfCssRect === 'function' ? sfCssRect(document.documentElement) : document.documentElement.getBoundingClientRect());
     st.style.setProperty('--x-gx', (720 - (r.left - de.left)) + 'px');
     st.style.setProperty('--x-gy', (-120 - (r.top - de.top)) + 'px');
     if (!xGlowSync.on) { xGlowSync.on = true; let q = 0;
@@ -26958,8 +26961,8 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
     // Page ground (CHANGES 2026-11-18 §1, founder ruling 4 of 2026-11-18): always the website's background — the design's
     // "embedded" ground is transparent, so the shell's --page-bg (page tone + glow) shows, players picked or not.
     // Title = the header card of Database / Tournaments / Stennisfy Model (§2); it scrolls, only the picker is sticky.
-    return `<div class="x-wrap" style="display:flex; align-items:flex-start; min-height:100vh; background:transparent; font-family:'Hanken Grotesk',sans-serif; color:var(--h2h-text);">
-    <section class="x-page" style="flex:1; min-width:0; max-width:1360px; min-height:100vh; color:var(--h2h-text); font-family:'Hanken Grotesk',sans-serif; display:flex; flex-direction:column; line-height:normal;">
+    return `<div class="x-wrap" style="display:flex; align-items:flex-start; min-height:calc(100vh / var(--sf-z, 1)); background:transparent; font-family:'Hanken Grotesk',sans-serif; color:var(--h2h-text);">
+    <section class="x-page" style="flex:1; min-width:0; max-width:1360px; min-height:calc(100vh / var(--sf-z, 1)); color:var(--h2h-text); font-family:'Hanken Grotesk',sans-serif; display:flex; flex-direction:column; line-height:normal;">
       <div style="padding:30px 40px 6px;">
       <div class="x-hcard" style="display:flex; align-items:center; justify-content:space-between; gap:16px; background:var(--h2h-card); border:1px solid color-mix(in srgb, var(--h2h-white) 6%, transparent); border-radius:12px; padding:18px 26px;">
         <div style="min-width:0; display:flex; flex-direction:column; gap:5px;">
@@ -27075,7 +27078,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
     const m = v.model, G = 'var(--h2h-grey)';
     const box = (p, sd, name, price, base) => `<div style="display:flex; flex-direction:column; align-items:center; gap:14px; border:1px solid color-mix(in srgb, var(--h2h-white) 6%, transparent); background:var(--h2h-card); border-radius:12px; padding:18px 20px;">
       <div style="display:flex; align-items:center; gap:12px;"><span class="x-mav" style="position:relative; overflow:hidden; flex:none; width:34px; height:34px; border-radius:50%; background:var(--h2h-raised); border:1px solid color-mix(in srgb, var(--h2h-white) 6%, transparent); display:inline-flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:var(--h2h-text);">${E(sd === 'b' ? m.bMono : m.aMono)}${xPhotoOver(p, true)}</span><span style="font-size:15px; font-weight:800; color:var(--h2h-text);">${E(name)}</span></div>
-      <div style="display:flex; flex-direction:column; align-items:center; gap:3px;"><span style="${X_CAP}">Likely opening price</span><span style="font-family:'IBM Plex Mono',monospace; font-size:clamp(20px,2.2vw,28px); font-weight:800; color:${state.flash ? 'var(--h2h-blue)' : 'var(--h2h-text)'}; transition:color 260ms ease; line-height:1.05;">${E(price)}</span></div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:3px;"><span style="${X_CAP}">Likely opening price</span><span style="font-family:'IBM Plex Mono',monospace; font-size:clamp(20px,calc(2.2vw / var(--sf-z, 1)),28px); font-weight:800; color:${state.flash ? 'var(--h2h-blue)' : 'var(--h2h-text)'}; transition:color 260ms ease; line-height:1.05;">${E(price)}</span></div>
     </div>`;
     // The explanation (founder ruling 7, 2026-11-18): each player's win chance and the context, then how the price is built,
     // lives in the card head's "?" (the design's model help, DF L220) — never in the card body. Plain text, one line each.
@@ -34160,7 +34163,7 @@ window.DatabaseTab = (function(){
     if (!OV) {
       OV = document.createElement('div'); OV.id = 'lvOverlay'; OV.setAttribute('data-lvback', '');
       OV.style.cssText = `position:fixed; top:0; right:0; bottom:0; left:var(--sf-side, 0px); clip-path:inset(0); z-index:90; background:var(--ma2-scrim); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center; padding:32px; font-family:'Hanken Grotesk',sans-serif; color:${C.text};`;
-      OV.innerHTML = `<div data-mssheet style="width:100%; max-width:940px; max-height:88vh; background:${C.card}; border:1px solid ${wa(10)}; border-radius:16px; box-shadow:var(--ma2-shadow); display:flex; flex-direction:column; overflow-x:hidden; overflow-y:auto; scrollbar-width:thin;">
+      OV.innerHTML = `<div data-mssheet style="width:100%; max-width:940px; max-height:calc(88vh / var(--sf-z, 1)); background:${C.card}; border:1px solid ${wa(10)}; border-radius:16px; box-shadow:var(--ma2-shadow); display:flex; flex-direction:column; overflow-x:hidden; overflow-y:auto; scrollbar-width:thin;">
         <div data-mslot="top" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:18px 22px 0; flex:none;"></div>
         <div data-mslot="head" style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:24px; padding:18px 22px; flex:none;"></div>
         <div style="position:sticky; top:0; z-index:6; background:${C.card}; padding:8px 22px 14px; flex:none;"><div data-mslot="tabs" style="display:flex; align-items:center; gap:8px 12px; flex-wrap:wrap;"></div></div>
@@ -34252,7 +34255,7 @@ window.DatabaseTab = (function(){
     const tipMark = 'Colour is the player: blue ' + A + ', white ' + B + '. A filled dot is a break of serve by that player. A ring is a break point he saved.';
     const tipSec = (t, b) => `<span style="display:flex; flex-direction:column; gap:3px;"><span style="font-size:12.5px; font-weight:700; color:var(--ma2-white);">${t}</span><span style="font-size:12.5px; line-height:1.45; color:${C.soft};">${esc(b)}</span></span>`;
     let h = `<div style="display:flex; align-items:center; justify-content:space-between; gap:10px 12px; flex-wrap:wrap;">
-      <span style="position:relative; display:flex; align-items:center; gap:8px;"><span data-lfmute style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${C.grey};">Momentum</span>${iDot('momtip', {})}${S.momTip ? `<span style="position:absolute; left:0; top:calc(100% + 8px); z-index:20; width:min(340px,76vw); box-sizing:border-box; background:${C.lifted}; border:1px solid ${wa(14)}; border-radius:12px; box-shadow:var(--lv-shadow-menu); padding:16px; display:flex; flex-direction:column; gap:12px;">${tipSec('Dominance', tipRoll)}${tipSec('Points lead', tipRun)}${tipSec('Markers on the line', tipMark)}</span>` : ''}</span>
+      <span style="position:relative; display:flex; align-items:center; gap:8px;"><span data-lfmute style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${C.grey};">Momentum</span>${iDot('momtip', {})}${S.momTip ? `<span style="position:absolute; left:0; top:calc(100% + 8px); z-index:20; width:min(340px,calc(76vw / var(--sf-z, 1))); box-sizing:border-box; background:${C.lifted}; border:1px solid ${wa(14)}; border-radius:12px; box-shadow:var(--lv-shadow-menu); padding:16px; display:flex; flex-direction:column; gap:12px;">${tipSec('Dominance', tipRoll)}${tipSec('Points lead', tipRun)}${tipSec('Markers on the line', tipMark)}</span>` : ''}</span>
       <span style="display:flex; align-items:center; justify-content:flex-end; gap:8px 10px; flex-wrap:wrap;">${track(scopes, { attr: 'data-mscope title="Match or one set. Applies to the chart and the key moments on this tab."', inline: false, wrap: true })}${track(views, { attr: 'data-mview', inline: false })}</span></div>`;
 
     // reading band
@@ -34460,7 +34463,7 @@ window.DatabaseTab = (function(){
       <span style="font-family:'Hanken Grotesk',sans-serif; font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${C.grey}; text-align:center; padding-top:3px;">${esc(r.label)}</span>
       <span style="display:flex; flex-direction:column; gap:3px; min-width:0;"><span style="display:flex; align-items:baseline; justify-content:flex-end; gap:7px; min-width:0;"><span style="${MONO} font-size:10.5px; color:${C.quiet}; white-space:nowrap;">${esc(r.bDen)}</span><span style="${MONO} font-size:15px; font-weight:700; color:${r.bVal === D ? MISS : INK}; text-align:right; min-width:44px; font-variant-numeric:tabular-nums;">${esc(r.bVal)}</span></span>${cmpLine(r.gb, true)}</span></div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:2px; height:6px;"><span style="position:relative; display:block;"><span data-mstrack style="display:flex; height:100%; justify-content:flex-end; background:${wa(7)}; border-radius:3px 0 0 3px; overflow:hidden;"><span style="width:${r.aW}; background:${CA}; border-radius:3px 0 0 3px; transition:width .25s ease;"></span></span>${tickH(r.ticks && r.ticks[0], 0)}</span><span style="position:relative; display:block;"><span data-mstrack style="display:flex; height:100%; justify-content:flex-start; background:${wa(7)}; border-radius:0 3px 3px 0; overflow:hidden;"><span style="width:${r.bW}; background:${CB}; border-radius:0 3px 3px 0; transition:width .25s ease;"></span></span>${tickH(r.ticks && r.ticks[1], 1)}</span></div></div>`;
-    const unBtn = cmp !== 'OFF' && un.length ? `<span data-msun style="position:relative; display:flex;"><span data-act="unusual" class="lv-un" title="Figures far from the player’s own average today" style="display:flex; align-items:center; gap:7px; height:34px; box-sizing:border-box; padding:0 12px; border-radius:10px; background:${S.unOpen ? C.lifted : C.track}; border:1px solid ${S.unOpen ? wa(14) : wa(10)}; font-size:12.5px; font-weight:700; color:${C.text}; cursor:pointer; user-select:none; white-space:nowrap; transition:background .14s, border-color .14s;">Unusual<span style="${MONO} font-size:11px; font-weight:700; color:${C.inner}; background:${C.text}; border-radius:5px; padding:0 5px;">${un.length}</span></span>${S.unOpen ? `<div data-msunbox data-stopm="1" style="position:absolute; top:calc(100% + 8px); right:0; z-index:20; box-sizing:border-box; width:min(400px, calc(100vw - 64px)); background:${C.lifted}; border:1px solid ${wa(14)}; border-radius:10px; box-shadow:var(--lv-shadow-menu); padding:10px 14px 4px; display:flex; flex-direction:column; text-align:left;"><span style="font-size:11.5px; color:${C.grey}; padding-bottom:8px;">Far from his ${esc(tickLbl)} today</span>${un.map(u => `<div data-msut title="${esc(u.name + ' ' + DOT + ' ' + u.stat + ' ' + u.val + ' ' + u.cnt + ' ' + DOT + ' ' + u.tail)}" style="display:grid; grid-template-columns:minmax(0,1fr) auto; gap:2px 12px; align-items:baseline; padding:8px 0; border-top:1px solid ${wa(6)};"><span style="display:flex; align-items:center; gap:7px; min-width:0; font-size:12.5px; font-weight:700; color:${C.text}; white-space:nowrap;"><span style="width:8px; height:8px; flex:none; border-radius:50%; background:${u.col};"></span>${esc(u.name)}</span><span style="${MONO} font-size:12.5px; font-weight:700; color:${C.soft}; text-align:right; white-space:nowrap;">${u.arrow} ${u.g}</span><span style="font-size:11.5px; color:${C.soft}; padding-left:15px;">${esc(u.stat)}</span><span style="${MONO} font-size:11px; color:${C.grey}; text-align:right; white-space:nowrap;">${esc(u.val)} v ${esc(u.avg)}</span></div>`).join('')}</div>` : ''}</span>` : '';
+    const unBtn = cmp !== 'OFF' && un.length ? `<span data-msun style="position:relative; display:flex;"><span data-act="unusual" class="lv-un" title="Figures far from the player’s own average today" style="display:flex; align-items:center; gap:7px; height:34px; box-sizing:border-box; padding:0 12px; border-radius:10px; background:${S.unOpen ? C.lifted : C.track}; border:1px solid ${S.unOpen ? wa(14) : wa(10)}; font-size:12.5px; font-weight:700; color:${C.text}; cursor:pointer; user-select:none; white-space:nowrap; transition:background .14s, border-color .14s;">Unusual<span style="${MONO} font-size:11px; font-weight:700; color:${C.inner}; background:${C.text}; border-radius:5px; padding:0 5px;">${un.length}</span></span>${S.unOpen ? `<div data-msunbox data-stopm="1" style="position:absolute; top:calc(100% + 8px); right:0; z-index:20; box-sizing:border-box; width:min(400px, calc(calc(100vw / var(--sf-z, 1)) - 64px)); background:${C.lifted}; border:1px solid ${wa(14)}; border-radius:10px; box-shadow:var(--lv-shadow-menu); padding:10px 14px 4px; display:flex; flex-direction:column; text-align:left;"><span style="font-size:11.5px; color:${C.grey}; padding-bottom:8px;">Far from his ${esc(tickLbl)} today</span>${un.map(u => `<div data-msut title="${esc(u.name + ' ' + DOT + ' ' + u.stat + ' ' + u.val + ' ' + u.cnt + ' ' + DOT + ' ' + u.tail)}" style="display:grid; grid-template-columns:minmax(0,1fr) auto; gap:2px 12px; align-items:baseline; padding:8px 0; border-top:1px solid ${wa(6)};"><span style="display:flex; align-items:center; gap:7px; min-width:0; font-size:12.5px; font-weight:700; color:${C.text}; white-space:nowrap;"><span style="width:8px; height:8px; flex:none; border-radius:50%; background:${u.col};"></span>${esc(u.name)}</span><span style="${MONO} font-size:12.5px; font-weight:700; color:${C.soft}; text-align:right; white-space:nowrap;">${u.arrow} ${u.g}</span><span style="font-size:11.5px; color:${C.soft}; padding-left:15px;">${esc(u.stat)}</span><span style="${MONO} font-size:11px; color:${C.grey}; text-align:right; white-space:nowrap;">${esc(u.val)} v ${esc(u.avg)}</span></div>`).join('')}</div>` : ''}</span>` : '';
     const drFig = (v, r) => `<span style="${MONO} font-size:24px; font-weight:700; color:${v == null ? C.grey : C.text};${r ? ' text-align:right;' : ''}">${v == null ? D : v.toFixed(2)}</span>`;
     return `<div style="width:100%; max-width:760px; margin:0 auto; padding:6px 0 8px; display:flex; flex-direction:column; gap:18px;">
       <div style="display:flex; align-items:center; justify-content:center; gap:10px 18px; flex-wrap:wrap;">${track(scopeTabs, { inline: false, wrap: true, itemCss: 'padding:6px 13px; border-radius:7px; font-size:12.5px;', css: ' align-items:center; justify-content:center;' })}${unBtn}</div>

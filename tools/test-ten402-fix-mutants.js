@@ -248,8 +248,8 @@ const MUTANTS = [
   // the 18 Nov 2026 snapshot + founder rulings 2–13 (test-h2h-1117.mjs, test-ten402-a/b/c)
   ["ruling 3: hot lines ranked from 3 meetings again", "  const H2H_HOT_MIN_MEETINGS = 2;", "  const H2H_HOT_MIN_MEETINGS = 3;"],
   ["ruling 4: the page filled with the near-black tone again",
-    "<div class=\"x-wrap\" style=\"display:flex; align-items:flex-start; min-height:100vh; background:transparent;",
-    "<div class=\"x-wrap\" style=\"display:flex; align-items:flex-start; min-height:100vh; background:var(--h2h-page);"],
+    "<div class=\"x-wrap\" style=\"display:flex; align-items:flex-start; min-height:calc(100vh / var(--sf-z, 1)); background:transparent;",
+    "<div class=\"x-wrap\" style=\"display:flex; align-items:flex-start; min-height:calc(100vh / var(--sf-z, 1)); background:var(--h2h-page);"],
   ["ruling 4: the sticky band back on --h2h-page",
     "no-repeat, linear-gradient(var(--page) 78%, color-mix(in srgb, var(--page) 0%, transparent))';",
     "no-repeat, linear-gradient(var(--h2h-page) 78%, var(--h2h-page-0))';"],

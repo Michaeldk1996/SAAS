@@ -316,7 +316,7 @@ test('ruling 4: the page, its tab and the sticky band read the website\'s backgr
   const h = HX.load({ html, globals: { SfCountryIoc: { of: () => 'ITA' } } });
   const v = { coverageLine: 'x', aPicked: true, bPicked: true, a: SIN, b: ALC, hAChange: 1, hBChange: 2, hSwap: 3, ctxShow: false, showEmpty: false, showLoading: false, showBody: false, aResults: [], bResults: [] };
   const pg = h.call(h.pageHTML, v);
-  assert.match(pg, /^<div class="x-wrap" style="display:flex; align-items:flex-start; min-height:100vh; background:transparent;/);
+  assert.match(pg, /^<div class="x-wrap" style="display:flex; align-items:flex-start; min-height:calc\(100vh \/ var\(--sf-z, 1\)\); background:transparent;/);
   assert.doesNotMatch(pg, /background:var\(--h2h-page\)|x-wrap--empty/);
   const CSS = readFileSync(process.env.TEN402_CSS || join(HERE, 'h2h-page.css'), 'utf8');
   assert.match(CSS, /\.tabpage\[data-page="h2h"\] \{ background: transparent; \}/);

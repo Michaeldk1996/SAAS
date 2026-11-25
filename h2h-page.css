@@ -30,7 +30,7 @@
 #fhSheet.h2hx [onclick="fhCloseSheet()"] { background: color-mix(in srgb, var(--h2h-white) 5%, transparent) !important; border-color: color-mix(in srgb, var(--h2h-white) 12%, transparent) !important; }
 
 /* ---- frame (DF L25–41) ---- */
-#h2hRoot .x-page { min-height: 100vh; display: flex; flex-direction: column; max-width: 1360px; color: var(--h2h-text);
+#h2hRoot .x-page { min-height: calc(100vh / var(--sf-z, 1)); display: flex; flex-direction: column; max-width: 1360px; color: var(--h2h-text);
   font-family: 'Hanken Grotesk', sans-serif; background: transparent; line-height: normal; }
 #h2hRoot .x-ph { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; padding: 30px 40px 16px; }
 #h2hRoot .x-ph__t { min-width: 0; display: flex; flex-direction: column; gap: 6px; }

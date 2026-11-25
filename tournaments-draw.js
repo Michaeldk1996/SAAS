@@ -785,8 +785,8 @@ function render(el) {
 // the "?" box: fixed under its button, every explanatory line of the page (founder 2026-11-20)
 function toggleHelp(e) {
   if (S.help) { S.help = null; return repaint(); }
-  const t = e && e.currentTarget && e.currentTarget.getBoundingClientRect ? e.currentTarget.getBoundingClientRect() : null;
-  const vh = typeof window !== 'undefined' && window.innerHeight ? window.innerHeight : 800, vw = typeof window !== 'undefined' && window.innerWidth ? window.innerWidth : 1280;
+  const t = e && e.currentTarget && e.currentTarget.getBoundingClientRect ? (typeof sfCssRect === 'function' ? sfCssRect(e.currentTarget) : e.currentTarget.getBoundingClientRect()) : null;
+  const vh = typeof window !== 'undefined' && window.innerHeight ? (typeof sfVH === 'function' ? sfVH() : window.innerHeight) : 800, vw = typeof window !== 'undefined' && window.innerWidth ? (typeof sfVW === 'function' ? sfVW() : window.innerWidth) : 1280;
   S.help = t ? { t: Math.max(16, Math.min(t.bottom + 8, vh - 340)), r: Math.max(16, vw - t.right) } : { t: 80, r: 24 };
   repaint();
 }
@@ -803,7 +803,7 @@ function helpHtml(finished) {
   ];
   const close = on(() => { S.help = null; repaint(); });
   return `<div onclick="${close}" style="position:fixed; inset:0; z-index:29;"></div>
-    <div class="tt-draw-helpbox" style="position:fixed; z-index:30; right:${S.help.r}px; top:${S.help.t}px; width:360px; max-width:calc(100vw - 32px); max-height:calc(100vh - ${S.help.t + 16}px); overflow-y:auto; box-sizing:border-box; background:${C.inset}; border:1px solid ${W(16)}; border-radius:12px; box-shadow:${C.shMenu}; padding:16px 18px 6px;">
+    <div class="tt-draw-helpbox" style="position:fixed; z-index:30; right:${S.help.r}px; top:${S.help.t}px; width:360px; max-width:calc(calc(100vw / var(--sf-z, 1)) - 32px); max-height:calc(calc(100vh / var(--sf-z, 1)) - ${S.help.t + 16}px); overflow-y:auto; box-sizing:border-box; background:${C.inset}; border:1px solid ${W(16)}; border-radius:12px; box-shadow:${C.shMenu}; padding:16px 18px 6px;">
       <span style="font-size:14px; font-weight:700; color:${C.white};">How to read this page</span>
       <div style="margin-top:10px;">${L.map(([k, v]) => `<div style="display:flex; flex-direction:column; gap:4px; padding:10px 0; border-top:1px solid ${W(6)};"><span style="font-size:12.5px; font-weight:700; color:${C.white};">${esc(k)}</span><span style="font-size:12.5px; line-height:1.5; color:${C.soft}; text-wrap:pretty;">${esc(v)}</span></div>`).join('')}</div></div>`;
 }
@@ -891,9 +891,9 @@ function pickName(key, qual, e) {
 // pinned to the card's right edge, 12px under the row (above it near the bottom of the screen), no caret. Fixed layer.
 function popPlace(key, el) {
   const PW = 500, BH = 560;
-  const vh = typeof window !== 'undefined' && window.innerHeight ? window.innerHeight : 800;
+  const vh = typeof window !== 'undefined' && window.innerHeight ? (typeof sfVH === 'function' ? sfVH() : window.innerHeight) : 800;
   if (!el || !el.getBoundingClientRect || !S.el || !S.el.getBoundingClientRect) return { key, x: 24, y: 80, bot: null, side: 'n', ct: 31 };
-  const r = el.getBoundingClientRect(), rr = S.el.getBoundingClientRect();
+  const r = (typeof sfCssRect === 'function' ? sfCssRect(el) : el.getBoundingClientRect()), rr = (typeof sfCssRect === 'function' ? sfCssRect(S.el) : S.el.getBoundingClientRect());
   let x = r.right + 16, y = r.top - 24, side = 'r', bot = null;
   if (x + PW > rr.right - 8) { x = Math.max(rr.left + 8, rr.right - PW - 8); y = r.bottom + 12; side = 'n'; }
   if (side === 'r') y = Math.max(8, Math.min(y, vh - BH - 8));
@@ -926,7 +926,7 @@ function popHtml(ev, M, F, finished) {
     + `</div>` : '';
   const caret = p.side === 'r' ? `<span style="position:absolute; left:-6px; top:${p.ct}px; width:10px; height:10px; transform:rotate(45deg); background:${C.card}; border-left:1px solid ${W(12)}; border-bottom:1px solid ${W(12)};"></span>` : '';
   return `<div onclick="${close}" style="position:fixed; inset:0; z-index:19;"></div>
-    <div class="tt-draw-pop" data-tt="pop" style="position:fixed; z-index:20; left:${p.x}px; ${p.bot != null ? `bottom:${p.bot}px;` : `top:${p.y}px;`} width:500px; max-width:calc(100vw - 16px); max-height:calc(100vh - 16px); overflow-y:auto; box-sizing:border-box; background:${C.card}; border:1px solid ${W(12)}; border-radius:14px; box-shadow:${C.shOverlay};">${caret}
+    <div class="tt-draw-pop" data-tt="pop" style="position:fixed; z-index:20; left:${p.x}px; ${p.bot != null ? `bottom:${p.bot}px;` : `top:${p.y}px;`} width:500px; max-width:calc(calc(100vw / var(--sf-z, 1)) - 16px); max-height:calc(calc(100vh / var(--sf-z, 1)) - 16px); overflow-y:auto; box-sizing:border-box; background:${C.card}; border:1px solid ${W(12)}; border-radius:14px; box-shadow:${C.shOverlay};">${caret}
       <div style="display:flex; align-items:center; gap:12px; padding:16px 16px 14px 18px; border-bottom:1px solid ${W(6)};">
         <span${prof ? ` onclick="${prof}" title="Open his profile"` : ''} style="cursor:${prof ? 'pointer' : 'default'}; flex:none;">${avatar(p.key, nm, 40, W(14), 12, s.ioc || '')}</span>
         <div style="display:flex; flex-direction:column; gap:5px; min-width:0; margin-right:auto;">
@@ -1268,7 +1268,7 @@ function statsHtml(ev, M, st) {
   return h;
 }
 const sheet = (title, sub, onClose, body) => `<div class="tt-draw-ovl" onclick="${onClose}" style="position:fixed; inset:0; z-index:70; background:${C.scrim66}; display:flex; align-items:center; justify-content:center; padding:24px;">
-  <div onclick="event.stopPropagation()" style="width:860px; max-width:100%; max-height:86vh; overflow:auto; box-sizing:border-box; background:${C.card}; border:1px solid ${W(12)}; border-radius:16px; box-shadow:${C.shOverlay}; padding:24px;">
+  <div onclick="event.stopPropagation()" style="width:860px; max-width:100%; max-height:calc(86vh / var(--sf-z, 1)); overflow:auto; box-sizing:border-box; background:${C.card}; border:1px solid ${W(12)}; border-radius:16px; box-shadow:${C.shOverlay}; padding:24px;">
     <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;"><div style="display:flex; flex-direction:column; gap:5px; min-width:0;"><span style="font-size:18px; font-weight:800; color:${C.white};">${esc(title)}</span><span style="font-size:13px; color:${C.muted};">${esc(sub)}</span></div>${closeBtn(onClose)}</div>${body}</div></div>`;
 const tiles4 = list => `<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:8px; margin-top:20px;">${list.map(t => `<div style="background:${C.inset}; border:1px solid ${W(6)}; border-radius:11px; padding:16px 18px 14px; display:flex; flex-direction:column; align-items:flex-start; gap:9px; text-align:left; min-width:0;"><span style="${LBL}">${esc(t.label)}</span><span${t.title ? ` title="${esc(t.title)}"` : ''} style="${MONO} font-size:22px; font-weight:700; line-height:1; color:${t.color || C.white};">${esc(t.fig)}</span><span style="font-size:12px; color:${C.soft}; text-wrap:balance;">${esc(t.sub)}</span></div>`).join('')}</div>`;
 const tHead = (GRID, cells) => `<div style="display:grid; ${GRID} padding-bottom:10px; border-bottom:1px solid ${W(6)}; ${LBL}">${cells}</div>`;

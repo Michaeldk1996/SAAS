@@ -2,7 +2,7 @@
  * (2026-11-23). Every value is the export's inline style, read through the --do2-* tokens (tokens.css). Scoped under
  * [data-page="drops"]; the price move box is a body-level layer scoped by .do2-ov. Rules: .claude/rules/drops.md. */
 
-[data-page="drops"] { background: transparent; min-height: 100vh; }
+[data-page="drops"] { background: transparent; min-height: calc(100vh / var(--sf-z, 1)); }
 [data-page="drops"] .do2-wrap, .do2-ov {
   font-family: 'Hanken Grotesk', sans-serif; font-size: 16px; line-height: normal; color: var(--do2-text);
 }
@@ -262,7 +262,7 @@
 }
 .do2-ov .do2-pbtn.open { background: var(--do2-hover); border-color: var(--do2-edge-22); }
 .do2-ov .do2-pickaway { position: fixed; inset: 0; z-index: 50; }
-.do2-ov .do2-pmenu { z-index: 51; min-width: 230px; max-height: min(300px, 42vh); overflow: auto; scrollbar-width: thin; }
+.do2-ov .do2-pmenu { z-index: 51; min-width: 230px; max-height: min(300px, calc(42vh / var(--sf-z, 1))); overflow: auto; scrollbar-width: thin; }
 .do2-ov .do2-popt { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 8px; font-size: 12.5px; font-weight: 600; cursor: pointer; color: var(--do2-text2); background: transparent; }
 .do2-ov .do2-popt.on, .do2-ov .do2-popt:hover { background: var(--do2-hover); }
 .do2-ov .do2-popt.on { color: var(--do2-text); }

@@ -19,7 +19,7 @@
   a{ color:var(--link); text-decoration:none; } a:hover{ color:var(--link); }
   ::selection{ background:color-mix(in srgb, var(--bar) 35%, transparent); }
 
-  .page{ display:flex; justify-content:center; align-items:center; padding:48px 16px; min-height:100vh; }
+  .page{ display:flex; justify-content:center; align-items:center; padding:48px 16px; min-height:calc(100vh / var(--sf-z, 1)); }
   .card{ width:520px; max-width:100%; border:none; border-radius:20px; overflow:hidden; background:var(--card); box-shadow:var(--shadow-pop); position:relative; }
   .inner{ position:relative; padding:40px 40px 36px; }
 

@@ -1140,7 +1140,7 @@
     }).join('');
     return badge +
       '<div data-pp2="mto-close" style="position:fixed;inset:0;z-index:60;"></div>' +
-      '<div class="pp2-mtopop" role="dialog" aria-label="Medical time-outs" style="position:absolute;top:30px;left:62px;z-index:61;width:420px;max-width:calc(100vw - 48px);' +
+      '<div class="pp2-mtopop" role="dialog" aria-label="Medical time-outs" style="position:absolute;top:30px;left:62px;z-index:61;width:420px;max-width:calc(calc(100vw / var(--sf-z, 1)) - 48px);' +
         'box-sizing:border-box;background:var(--card);border:1px solid var(--pp-x-edge-12);border-radius:14px;' +
         'box-shadow:var(--pp-x-shadow-pop);padding:18px 20px 18px;display:flex;flex-direction:column;gap:16px;text-align:left;">' +
         '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">' +
@@ -3696,7 +3696,7 @@
     return icon +
       '<div data-pp2="info-close" style="position:fixed;inset:0;z-index:70;"></div>' +
       '<div data-pp2="card" data-pp2-infopop="1" style="position:absolute;top:calc(100% + ' + (v4 ? 8 : 10) + 'px);' + (right ? 'right:0;' : 'left:0;') + 'z-index:71;' +
-        'width:' + w + 'px;max-width:calc(100vw - 48px);background:var(--card);border:1px solid ' + (v4 ? 'var(--pp-x-edge-12)' : 'var(--edge-10)') + ';border-radius:14px;' +
+        'width:' + w + 'px;max-width:calc(calc(100vw / var(--sf-z, 1)) - 48px);background:var(--card);border:1px solid ' + (v4 ? 'var(--pp-x-edge-12)' : 'var(--edge-10)') + ';border-radius:14px;' +
         'box-shadow:' + (v4 ? 'var(--pp-x-shadow-pop)' : 'var(--shadow-pop)') + ';padding:' + (spec.pad || (v4 ? '14px 16px 16px' : '16px 18px 18px')) + ';display:flex;flex-direction:column;gap:' + (spec.gap || (v4 ? 8 : 10)) + 'px;text-align:left;' +
         'text-transform:none;letter-spacing:normal;font-family:var(--font-words);font-weight:400;white-space:normal;cursor:default;">' +
         '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">' +
@@ -3770,13 +3770,13 @@
       }).join('') + '</div>';
     }).join('');
     var list = (fb.rows || []).length
-      ? '<div style="max-height:calc(100vh - 380px);overflow-y:auto;padding-right:12px;">' +
+      ? '<div style="max-height:calc(calc(100vh / var(--sf-z, 1)) - 380px);overflow-y:auto;padding-right:12px;">' +
           '<div style="display:grid;grid-template-columns:' + fb.cols + ';gap:0 10px;align-items:start;">' + head + rows + '</div></div>'
       : '<div style="padding:18px 0;font-size:12.5px;color:var(--text-label);">' + esc(fb.empty || 'No matches on record') + '</div>';
     return '<div class="pp2-fb" data-pp2="fb-scrim" style="position:fixed;inset:0 0 0 var(--sf-side, 0px);z-index:64;' +
       'background:var(--pp-x-backdrop);display:flex;align-items:flex-start;justify-content:center;' +
       'padding:40px 24px;overflow-y:auto;clip-path:inset(0);">' +
-      '<div data-pp2="card" style="position:relative;width:100%;max-width:900px;max-height:calc(100vh - 80px);overflow-y:auto;' +
+      '<div data-pp2="card" style="position:relative;width:100%;max-width:900px;max-height:calc(calc(100vh / var(--sf-z, 1)) - 80px);overflow-y:auto;' +
         'background:var(--card);border:1px solid var(--edge-16);border-radius:14px;padding:20px 22px 22px;min-width:0;' +
         'box-shadow:var(--pp-x-shadow-box);box-sizing:border-box;' + (fb.lineNormal ? 'line-height:normal;' : '') + '">' +
         '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px;">' +
@@ -3883,7 +3883,7 @@
     }).join('');
     return '<span style="' + wrapStyle + '">' + trig +
       '<div data-pp2="fm-close" style="position:fixed;inset:0;z-index:70;"></div>' +
-      '<div data-pp2="card" style="position:absolute;top:calc(100% + 8px);' + (alignRight ? 'right:0;' : 'left:0;') + 'z-index:71;width:' + (width || 520) + 'px;max-width:calc(100vw - 48px);' +
+      '<div data-pp2="card" style="position:absolute;top:calc(100% + 8px);' + (alignRight ? 'right:0;' : 'left:0;') + 'z-index:71;width:' + (width || 520) + 'px;max-width:calc(calc(100vw / var(--sf-z, 1)) - 48px);' +
         'background:var(--card);border:1px solid ' + (V5 ? 'var(--pp-x-edge-9)' : v4 || X ? 'var(--pp-x-edge-12)' : 'var(--edge-10)') + ';border-radius:14px;box-shadow:' + (V5 ? 'var(--pp-x-shadow-pop6)' : v4 ? 'var(--pp-x-shadow-pop)' : X ? 'var(--pp-x-shadow-pop6)' : 'var(--shadow-pop)') + ';padding:14px 16px 12px;' +
         'box-sizing:border-box;display:grid;grid-template-columns:repeat(' + (o.cols || 3) + ',minmax(0,1fr));gap:' + (o.gap || (v4 || V5 ? '18px' : '16px 18px')) + ';align-items:start;">' + cols +
         '<div style="grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;border-top:1px solid ' + (V5 ? 'var(--edge-6)' : v4 || X ? EDGE_8 : 'var(--edge-10)') + ';' +
@@ -4853,7 +4853,7 @@
   // founder 2026-11-10 ("clicking a record should open a box, not a dropdown"): the export's drill box
   // (Player Stat Boxes LOCKED 2026-11-09, `modal.drillModal`): a 72% scrim over the page, an 820px card on --edge-16,
   // title 16/800 + sub 12.5 grey, a 32px close, the match list (sticky head, grouped by tournament) under
-  // calc(100vh − 230px), and the note in mono 11 on an 8% rule. Esc, the close and a scrim click close it.
+  // calc(calc(100vh / var(--sf-z, 1)) − 230px), and the note in mono 11 on an 8% rule. Esc, the close and a scrim click close it.
   var DRILL_HA_LEGEND = 'H / A = closing price on him / the opponent';   // the export's drill-box note
   function drillBoxHtml(o) {
     var head = o.head.map(function (h) {
@@ -4880,7 +4880,7 @@
             'style="pointer-events:none;"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg></span>' +
         '</div>' + (o.tiles || '') +
         (o.hasRows
-          ? '<div data-pp2-drill-scroll="1" style="max-height:calc(100vh - ' + (o.tiles ? 330 : 230) + 'px);min-height:200px;overflow-y:auto;padding-right:10px;">' +
+          ? '<div data-pp2-drill-scroll="1" style="max-height:calc(calc(100vh / var(--sf-z, 1)) - ' + (o.tiles ? 330 : 230) + 'px);min-height:200px;overflow-y:auto;padding-right:10px;">' +
               '<div data-pp2-drill-grid="1" style="' + o.grid + '">' + head + o.body + '</div></div>'
           : (o.empty || '<div style="min-height:120px;"></div>')) +
         '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);' +
@@ -6772,7 +6772,7 @@
             'border:0;outline:none;font-family:inherit;font-size:13px;color:var(--text);min-width:0;padding:1px 2px;"></label>' +
       '</div>' +
       head +
-      '<div data-pp2-tourn-list="1" class="pp2-tscroll" style="max-height:calc(100vh - 270px);min-height:420px;overflow-y:auto;display:flex;' +
+      '<div data-pp2-tourn-list="1" class="pp2-tscroll" style="max-height:calc(calc(100vh / var(--sf-z, 1)) - 270px);min-height:420px;overflow-y:auto;display:flex;' +
         'flex-direction:column;scrollbar-gutter:stable;background:var(--card);border:1.25px solid var(--edge-6);border-top:0;' +
         'border-radius:0 0 16px 16px;padding:0 14px 10px;">' +
         (shown.length ? rows : tournHistPending(p) ? '' :
@@ -6999,7 +6999,7 @@
           return '<div style="padding:13px 12px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;' +
             'min-width:0;background:var(--card);border:1px solid var(--pp-x-edge-9);border-radius:11px;">' + c.html + '</div>';
         }).join('') + '</div>' +
-      '<div class="pp2-tscroll" style="max-height:calc(100vh - 330px);min-height:200px;overflow-y:auto;padding-right:10px;scrollbar-gutter:stable;">' +
+      '<div class="pp2-tscroll" style="max-height:calc(calc(100vh / var(--sf-z, 1)) - 330px);min-height:200px;overflow-y:auto;padding-right:10px;scrollbar-gutter:stable;">' +
         '<div style="' + MGRID + '">' + mhead + body + '</div>' +
       '</div>' +
       '<div style="font-size:12px;color:var(--text-label);line-height:1.5;">' + n + ' matches ' + MIDDOT + ' grouped by edition ' + MIDDOT + ' click a match for its stats' +
@@ -8146,7 +8146,7 @@
     return wrap(strip + mismatch +
       '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">' + chips + '</div>' +
       (shown.length
-        ? '<div class="pp2-yscroll" style="max-height:calc(100vh - 460px);min-height:260px;overflow-y:auto;padding-right:12px;min-width:0;">' +
+        ? '<div class="pp2-yscroll" style="max-height:calc(calc(100vh / var(--sf-z, 1)) - 460px);min-height:260px;overflow-y:auto;padding-right:12px;min-width:0;">' +
             '<div data-pp2-draw="list" style="' + ML_GRID + '">' + mlHeadsHtml() + body + '</div></div>'
         : line(filt === 'W' ? 'No wins in this row' : filt === 'L' ? 'No losses in this row' : 'No matches in this row')) +
       pager + foot);
@@ -11629,7 +11629,7 @@
     }).join('');
     return '<div class="pp2-fb" data-pp2="run-scrim" style="position:fixed;inset:0 0 0 var(--sf-side, 0px);z-index:64;' +
       'background:var(--backdrop);display:flex;align-items:flex-start;justify-content:center;padding:40px 24px;overflow-y:auto;clip-path:inset(0);">' +
-      '<div data-pp2="card" style="position:relative;width:100%;max-width:900px;max-height:calc(100vh - 80px);overflow-y:auto;background:var(--card);' +
+      '<div data-pp2="card" style="position:relative;width:100%;max-width:900px;max-height:calc(calc(100vh / var(--sf-z, 1)) - 80px);overflow-y:auto;background:var(--card);' +
         'border:1px solid var(--edge-16);border-radius:14px;padding:20px 22px 22px;min-width:0;box-shadow:var(--shadow-modal);box-sizing:border-box;">' +
         '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px;">' +
           '<div style="display:flex;flex-direction:column;gap:4px;min-width:0;">' +
@@ -14017,7 +14017,7 @@
       '<span style="font-size:12px;color:var(--text-label);">Wins <span style="' + STY_MONO + 'font-weight:700;color:var(--text);">' + t.getAttribute('data-tip-r') + '</span> of their matches' +
       (t.getAttribute('data-tip-e') ? ', <span style="' + STY_MONO + 'font-weight:700;color:' + t.getAttribute('data-tip-c') + ';">' + t.getAttribute('data-tip-e') + '</span>' : ', ') + t.getAttribute('data-tip-t') + '</span>';
     tipEl.style.display = 'flex';
-    var b = t.getBoundingClientRect(), w = tipEl.offsetWidth, right = +c >= 5;
+    var b = (typeof sfCssRect === 'function' ? sfCssRect(t) : t.getBoundingClientRect()), w = tipEl.offsetWidth, right = +c >= 5;
     tipEl.style.left = Math.max(8, right ? b.right - w : b.left + b.width / 2 - w / 2) + 'px';
     tipEl.style.top = (b.top - 24 - tipEl.offsetHeight) + 'px';
   }
@@ -16342,7 +16342,7 @@
     if (open) {
       pop = '<div data-pp2="fm-close" style="position:fixed;inset:0;z-index:8;"></div>' +
         '<div data-pp2="card" data-pp4-pop="' + esc(o.id) + '" style="position:absolute;top:calc(100% + 10px);right:0;z-index:9;width:' + (o.width || 620) + 'px;' +
-          'max-width:calc(100vw - 48px);box-sizing:border-box;background:var(--card);border:1px solid var(--pp-x-edge-9);border-radius:14px;' +
+          'max-width:calc(calc(100vw / var(--sf-z, 1)) - 48px);box-sizing:border-box;background:var(--card);border:1px solid var(--pp-x-edge-9);border-radius:14px;' +
           'box-shadow:var(--pp-x-shadow-pop);padding:20px 22px;display:flex;flex-direction:column;gap:20px;cursor:default;">' +
           o.groups.map(function (g) {
             return '<div style="display:flex;flex-direction:column;gap:10px;"><span style="font-size:10.5px;font-weight:700;letter-spacing:0.10em;' +
@@ -17298,7 +17298,7 @@
     var sp = el.parentElement;
     while (sp && sp.scrollHeight <= sp.clientHeight + 4) sp = sp.parentElement;
     if (!sp || !sp.scrollTo) return;
-    var t = el.getBoundingClientRect().top - sp.getBoundingClientRect().top + sp.scrollTop - 14;
+    var t = (typeof sfCssRect === 'function' ? sfCssRect(el) : el.getBoundingClientRect()).top - (typeof sfCssRect === 'function' ? sfCssRect(sp) : sp.getBoundingClientRect()).top + sp.scrollTop - 14;
     try { sp.scrollTo({ top: t, behavior: 'smooth' }); } catch (err) { sp.scrollTop = t; }
   }
   function cssAttrEscape(s) { return String(s).replace(/["\\]/g, '\\$&'); }

@@ -5,7 +5,7 @@
 /* ---- Frame (template `analysisOpen`) ---- */
 #analysisModal{ background:var(--ma2-scrim); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); }
 #analysisModal .modal-analysis{ --page:var(--ma2-frame); background:var(--ma2-frame); border:1px solid color-mix(in srgb, var(--ma2-white) 9%, transparent);
-  border-radius:20px; box-shadow:var(--ma2-shadow); max-width:1500px; height:88vh; color:var(--ma2-text); }
+  border-radius:20px; box-shadow:var(--ma2-shadow); max-width:1500px; height:calc(88vh / var(--sf-z, 1)); color:var(--ma2-text); }
 #analysisModal .ahead2{ grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:20px; padding:18px 24px;
   border-bottom:1px solid color-mix(in srgb, var(--ma2-white) 6%, transparent); }
 #analysisModal .atitleblock .atitle{ font-size:20px; font-weight:800; letter-spacing:-0.01em; white-space:nowrap; color:var(--ma2-text); }

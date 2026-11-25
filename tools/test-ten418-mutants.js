@@ -40,7 +40,7 @@ const MUTANTS = [
   ['layers: shift pill on both sides', "const sp = s => `<span class=\"sm-sp${lead(s) ? ' on' : ''}\">${lead(s) ? v.shift : ''}</span>`;", "const sp = s => `<span class=\"sm-sp on\">${v.shift}</span>`;"],
   ['layers: both figures white', "const rt = s => `<span class=\"sm-rt${!v.has ? ' na' : lead(s) ? ' lead' : ''}\">", "const rt = s => `<span class=\"sm-rt${!v.has ? ' na' : ' lead'}\">"],
   ['layers: a plain space inside a sub line part', "map(x => edgeEsc(x).replace(/ /g, '\\u00a0').replace(/-/g, '\\u2011')).join('\\u00a0· ')", "map(x => edgeEsc(x)).join('\\u00a0· ')"],
-  ['layers: strip jump uses scrollIntoView', "(sc === window ? window : sc).scrollBy({ top, behavior: 'smooth' });", "el.scrollIntoView({ block: 'center', behavior: 'smooth' });"],
+  ['layers: strip jump uses scrollIntoView', "(sc === window ? window : sc).scrollBy({ top: sc === window ? top : top / (typeof sfZ === 'function' ? sfZ() : 1), behavior: 'smooth' }); // element scroll = CSS px", "el.scrollIntoView({ block: 'center', behavior: 'smooth' });"],
   ['layers: breakdown open on load', "let edgeLayersOpen = false;", "let edgeLayersOpen = true;"],
   ['layers: format split hidden again (13 layers)', "function edgeVisibleAdjs(list){ return (list || []).slice(); }", "function edgeVisibleAdjs(list){ return (list || []).filter(a => !a.hidden); }"],
   ['layers: engine shorthand back in the Why', "    case 'surface':\n      if ((x = /^(\\w+) record", "    case 'surfaceX':\n      if ((x = /^(\\w+) record"],

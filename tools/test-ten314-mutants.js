@@ -16,7 +16,7 @@ const V2 = path.join(ROOT, 'match-analysis-v2.js'), v2 = fs.readFileSync(V2, 'ut
 const KNOWN_GAPS = [];   // G8 (Esc on an opened box) and G9 (band box note) fixed in ma-v2 49127571f
 const MUTANTS = [
   ['frame: README max-width 1200', 'font-family:var(--mx-font-ui); max-width:1500px;', 'font-family:var(--mx-font-ui); max-width:1200px;'],
-  ['frame: height a max, not fixed', 'max-width:1500px; width:100%; height:88vh;', 'max-width:1500px; width:100%; max-height:88vh;'],
+  ['frame: height a max, not fixed', 'max-width:1500px; width:100%; height:calc(88vh / var(--sf-z, 1));', 'max-width:1500px; width:100%; max-height:calc(88vh / var(--sf-z, 1));'],
   ['frame: radius 12', 'border-width:1px; border-style:solid; border-radius:20px;', 'border-width:1px; border-style:solid; border-radius:12px;'],
   // TEN-376: the dead-CSS pass removed the overridden blur from this rule; the live blur is the scrim rule's (own mutant below)
   ['frame: overlay z 100', '#analysisModal{ z-index:80; padding:32px; -webkit-backdrop-filter:blur(3px); }', '#analysisModal{ z-index:100; padding:32px; -webkit-backdrop-filter:blur(3px); }'],
@@ -40,7 +40,7 @@ const MUTANTS = [
   ['lazy: Key factors pre-loads the Overview season rows (no box shows them)', 'kfEnsureNews(m), kfEnsureMarketEdge(m)]', 'kfEnsureNews(m), kfEnsureMarketEdge(m), ensureOverviewProfiles(m)]'],
   ['lazy: a revisit rebuilds', '  if (!_aBuilt.has(tab)) { _aBuilt.add(tab); A_TAB_BUILD[tab](_aM); }', '  if (true) { _aBuilt.add(tab); A_TAB_BUILD[tab](_aM); }'],
   ['lazy: the built set survives a new match', '  _aM = m; _aBuilt.clear();', '  _aM = m;'],
-  ['frame: a LATER rule turns the height back into a max (review: first-rule reads missed it)', '  .modal-analysis{ background:var(--card);', '  .modal-analysis{ height:auto; max-height:88vh; background:var(--page);'],
+  ['frame: a LATER rule turns the height back into a max (review: first-rule reads missed it)', '  .modal-analysis{ background:var(--card);', '  .modal-analysis{ height:auto; max-height:calc(88vh / var(--sf-z, 1)); background:var(--page);'],
   ['lazy: a late shard of the previous match repaints the new one', 'function aBuilt(m, tab){ return _aM === m && _aBuilt.has(tab); }', 'function aBuilt(m, tab){ return _aBuilt.has(tab); }'],
   ['revisit: Weather / Market edge hooks only on the first open', "  else if (A_TAB_REVISIT[tab]) A_TAB_REVISIT[tab]();\n", ''],
   ['direct tab: the completed-card path builds Odds first', "  openAnalysisModal(id, mxLandingTab(matchById(id)));\n}", "  openAnalysisModal(id);\n  aGoTab(mxLandingTab(matchById(id)));\n}"],

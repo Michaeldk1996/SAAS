@@ -33,7 +33,7 @@
   ::selection{ background:color-mix(in srgb, var(--bar) 30%, transparent); }
 
   /* export section: grid 1fr/1fr, gap 24, page-edge padding 24, full viewport (no max-width cap) */
-  .wrap{ min-height:100vh; padding:24px;
+  .wrap{ min-height:calc(100vh / var(--sf-z, 1)); padding:24px;
     display:grid; grid-template-columns:1fr 1fr; gap:24px; }
 
   /* ============ LEFT COLUMN (form half) ============ */
@@ -212,7 +212,7 @@
      quiet links, the 18+ line. Colours are tokens only. Only the code step changes; the other steps keep the export look. */
   .wrap.is-code{ grid-template-columns:1fr; }
   .wrap.is-code .panel{ display:none; }
-  .wrap.is-code .left{ max-width:none; justify-content:flex-start; align-items:center; padding:5vh 24px 32px; }
+  .wrap.is-code .left{ max-width:none; justify-content:flex-start; align-items:center; padding:calc(5vh / var(--sf-z, 1)) 24px 32px; }
   .wrap.is-code .brand{ margin-bottom:28px; }
   .wrap.is-code .otp{ width:100%; max-width:380px; }
   .wrap.is-code .mailglyph{ display:none; }

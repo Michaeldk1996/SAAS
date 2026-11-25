@@ -5840,7 +5840,7 @@ check('item 18-19 · drill rows open the match sheet and reuse the LEDGER\'s pri
   assert(/data-pp2-drilltiles="1"/.test(html), 'the history box lost its four tiles');
   assert(/grid-template-columns:52px 12px minmax\(0,1\.15fr\) 40px 44px minmax\(0,1\.35fr\) 52px 52px/.test(html),
     'the drill grid tracks are not the file\'s');
-  assert(/max-height:calc\(100vh - 330px\);min-height:200px;overflow-y:auto/.test(html), 'the drill list has no viewport scroll cap');
+  assert(/max-height:calc\(calc\(100vh \/ var\(--sf-z, 1\)\) - 330px\);min-height:200px;overflow-y:auto/.test(html), 'the drill list has no viewport scroll cap');
   ['Date', 'Opponent', 'Rd', 'Sets', 'Set scores'].forEach((h) => {
     assert(new RegExp('>' + h + '<').test(html), `the drill head is missing ${h}`);
   });
@@ -6353,7 +6353,7 @@ check('v4 §4 · Record per tournament: band, one card, no header rule, W–L so
 mustFail('[neg] the v4 §4 check would catch the v3 standalone header and --inner band', () => {
   const v3 = '<div data-pp2-band="standalone" style="display:flex;padding:10px 16px;background:var(--inner);border:1.25px solid var(--line);border-radius:12px;">' +
     '<div style="display:grid;padding:0 10px;"><span style="padding-bottom:8px;border-bottom:1px solid var(--edge-10);">Tournament</span></div>' +
-    '<div style="max-height:calc(100vh - 250px);"><span style="font-size:12px;color:var(--text-label);text-align:right;white-space:nowrap;">16–5</span></div>';
+    '<div style="max-height:calc(calc(100vh / var(--sf-z, 1)) - 250px);"><span style="font-size:12px;color:var(--text-label);text-align:right;white-space:nowrap;">16–5</span></div>';
   v4TournChrome(v3);
 });
 check('v4 §0.1 · Record per tournament: the bar is neutral, blue only on the open tournament', () => {
@@ -6414,17 +6414,17 @@ mustFail('[neg] the swing check would catch the pre-fix rule (no country for Mur
 });
 
 check('§5.3 item 20 · both lists scroll under the file\'s caps', () => {
-  assert(T_HTML.indexOf('max-height:calc(100vh - 270px);min-height:420px;overflow-y:auto') > 0,
+  assert(T_HTML.indexOf('max-height:calc(calc(100vh / var(--sf-z, 1)) - 270px);min-height:420px;overflow-y:auto') > 0,
     'the tournament list has no scroll cap');
   I.state.tournOpen = 'Australian Open';
   const open = I.renderTournModal(ZVEREV);
   I.state.tournOpen = null;
-  assert(open.indexOf('max-height:calc(100vh - 330px);min-height:200px;overflow-y:auto') > 0,   // v5 §11.1 history box
+  assert(open.indexOf('max-height:calc(calc(100vh / var(--sf-z, 1)) - 330px);min-height:200px;overflow-y:auto') > 0,   // v5 §11.1 history box
     'the match list has no scroll cap');
 });
 mustFail('[neg] the scroll-cap check would catch the shipped uncapped list', () => {
   const shipped = '<div style="background:var(--surface-inner);padding:13px 15px;">';
-  assert(shipped.indexOf('max-height:calc(100vh - 430px)') > 0, 'the match list has no scroll cap');
+  assert(shipped.indexOf('max-height:calc(calc(100vh / var(--sf-z, 1)) - 430px)') > 0, 'the match list has no scroll cap');
 });
 
 check('§5.3 items 21-22 · rows open the sheet and the row hook toggles', () => {

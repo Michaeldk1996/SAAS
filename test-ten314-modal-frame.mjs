@@ -58,7 +58,7 @@ test('frame: overlay, modal, header, body grid and menu carry the design FILE va
   const nv = dfStyle('<div style="border-right:1px solid rgba(255,255,255,0.07); padding:16px 14px;');
   const o = rule('#analysisModal'), m = rule('.modal-analysis'), h = rule('.modal-analysis .ahead2'), b = rule('.modal-analysis .aanalysis-body-wrap'), n = rule('.modal-analysis .asidenav');
   assert.equal(o['z-index'], ov['z-index']); assert.equal(o.padding, ov.padding); assert.equal(o['backdrop-filter'], ov['backdrop-filter']);
-  assert.equal(m['max-width'], md['max-width']); assert.equal(m.height, md.height); assert.equal(m['border-radius'], md['border-radius']);
+  assert.equal(m['max-width'], md['max-width']); assert.equal(m.height.replace(/^calc\((\d+vh) \/ var\(--sf-z, 1\)\)$/, '$1'), md.height); /* big-screen zoom wrapper (theme.js) */ assert.equal(m['border-radius'], md['border-radius']);
   assert.ok(!('max-height' in m), 'the height is fixed, not a max');
   assert.equal(h['grid-template-columns'], hd['grid-template-columns']); assert.equal(h.gap, hd.gap); assert.equal(h.padding, hd.padding);
   assert.equal(b['grid-template-columns'], bd['grid-template-columns']);

@@ -582,7 +582,7 @@
     const meta = cell.getAttribute('data-meta'); if (!meta) return;
     if (!tipEl) { tipEl = document.createElement('span'); tipEl.className = 'tt-rp-ftip'; }
     cell.appendChild(tipEl);
-    const r = cell.getBoundingClientRect(), vw = window.innerWidth, below = r.top < 74;
+    const r = (typeof sfCssRect === 'function' ? sfCssRect(cell) : cell.getBoundingClientRect()), vw = (typeof sfVW === 'function' ? sfVW() : window.innerWidth), below = r.top < 74;
     tipEl.textContent = meta;
     tipEl.style.left = Math.max(150, Math.min(vw - 150, r.left + r.width / 2)) + 'px';
     tipEl.style.top = (below ? r.bottom + 8 : r.top - 8) + 'px';
@@ -723,7 +723,7 @@ ${P} .tt-rp-hfield{ margin-top:8px; padding-top:8px; border-top:1px solid ${W(6)
 ${P} .tt-rp-hfl{ padding-left:4px; ${lbl} white-space:nowrap; }
 ${P} .tt-rp-hfc{ text-align:center; font-family:${MONO}; font-weight:500; font-size:11px; color:var(--tt-muted); }
 ${P} .tt-rp-hfa{ display:flex; align-items:center; justify-content:flex-end; height:100%; padding-right:4px; padding-left:10px; border-left:1px solid ${W(6)}; font-family:${MONO}; font-weight:500; font-size:11px; color:var(--tt-muted); font-variant-numeric:tabular-nums; }
-${P} .tt-rp-ftip{ position:fixed; z-index:999; max-width:min(320px, 92vw); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; ${lifted} border-radius:8px; padding:6px 10px; font-family:${MONO}; font-size:10.5px; font-weight:600; letter-spacing:0.02em; color:var(--tt-tip-text); box-shadow:var(--tt-shadow-tip); pointer-events:none; }
+${P} .tt-rp-ftip{ position:fixed; z-index:999; max-width:min(320px, calc(92vw / var(--sf-z, 1))); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; ${lifted} border-radius:8px; padding:6px 10px; font-family:${MONO}; font-size:10.5px; font-weight:600; letter-spacing:0.02em; color:var(--tt-tip-text); box-shadow:var(--tt-shadow-tip); pointer-events:none; }
 ${P} .tt-rp-h2hwrap{ margin-top:14px; }
 ${P} .tt-rp-h2h{ background:var(--tt-inset); border:1px solid ${W(6)}; border-radius:16px; padding:24px 28px 22px; }
 ${P} .tt-rp-h2hhead{ display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:20px; align-items:center; padding-bottom:20px; }

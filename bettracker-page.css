@@ -13,7 +13,7 @@
 [data-page="tracker"].tabpage.active { display: block; padding: 0; background: var(--tracker-page); line-height: normal; }
 [data-page="tracker"] #trackerRoot { font-size: 16px; line-height: normal; -webkit-font-smoothing: antialiased; }
 [data-page="tracker"] #trackerRoot *, [data-page="tracker"] #trackerRoot *::before, [data-page="tracker"] #trackerRoot *::after { box-sizing: border-box; }
-[data-page="tracker"] .bt-sec { display: flex; justify-content: center; padding: 32px 40px 60px; background: var(--tracker-page); min-height: 100vh; width: 100%; }
+[data-page="tracker"] .bt-sec { display: flex; justify-content: center; padding: 32px 40px 60px; background: var(--tracker-page); min-height: calc(100vh / var(--sf-z, 1)); width: 100%; }
 [data-page="tracker"] .bt-col { width: 100%; max-width: 1340px; min-width: 960px; display: flex; flex-direction: column; gap: 16px; font-family: var(--font-words); color: var(--tracker-ink); }
 [data-page="tracker"] .bt-stack { display: flex; flex-direction: column; gap: 28px; }
 [data-page="tracker"] .bt-mono { font-family: var(--font-nums); }

@@ -36,6 +36,31 @@
     osIsLight: function () { return !!(mq && mq.matches); } };
   apply();
 
+  // Big screens (founder 2026-11-26): every page is drawn for a 1512px window (the reference). A wider AND taller
+  // window scales every size with it (one CSS zoom on <html>), so a 27" Mac shows the same page bigger instead of a
+  // 1360px column and empty space. Never below 1: smaller windows keep their own layout.
+  // --sf-z lets viewport units undo the zoom (calc(100vh / var(--sf-z, 1))). getBoundingClientRect / clientX are in
+  // zoomed screen px while style.left / scrollTop are CSS px: sfCssRect / sfVW / sfVH / sfZ convert.
+  var DESIGN_W = 1512, DESIGN_H = 860, MAX_Z = 2;
+  function fit() {
+    var z = Math.min(MAX_Z, (window.innerWidth || 0) / DESIGN_W, (window.innerHeight || 0) / DESIGN_H);
+    z = z > 1 ? Math.floor(z * 100) / 100 : 1;
+    var root = document.documentElement;
+    if (!root || !root.style) return;
+    root.style.zoom = z === 1 ? '' : String(z);
+    root.style.setProperty('--sf-z', String(z));
+    window.__sfZ = z;
+  }
+  window.sfZ = function () { return window.__sfZ || 1; };
+  window.sfVW = function () { return window.innerWidth / window.sfZ(); };
+  window.sfVH = function () { return window.innerHeight / window.sfZ(); };
+  window.sfCssRect = function (el) {
+    var r = el.getBoundingClientRect(), z = window.sfZ();
+    return { left: r.left / z, top: r.top / z, right: r.right / z, bottom: r.bottom / z, width: r.width / z, height: r.height / z, x: r.x / z, y: r.y / z };
+  };
+  fit();
+  window.addEventListener('resize', fit);
+
   // README §5.14 — the Night · Day · Auto switch (darker track), in the rail's avatar menu (TEN-403). Markup: <div data-sf-theme-switch></div>.
   // Under it, only while Auto is on, a 10.5px --text-label note "Auto · following the OS (light|dark)".
   // Each option = 14px glyph + word (TEN-403 avatar menu, the shell package's reference: moon / sun / half disc).

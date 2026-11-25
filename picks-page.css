@@ -17,7 +17,7 @@
 
 /* the shared Betting column (SIDEBAR_NAV, CHANGES 10-29 §1): 1420 incl. 40px side padding → 1340 content, padding 32 40 60,
    centred — the Bet Tracker page's column; the page fills the viewport so an empty day shows the whole glow (override 3) */
-[data-page="picks"].tabpage.active { display: block; min-height: 100vh; padding: 0; box-sizing: border-box; line-height: normal; }
+[data-page="picks"].tabpage.active { display: block; min-height: calc(100vh / var(--sf-z, 1)); padding: 0; box-sizing: border-box; line-height: normal; }
 [data-page="picks"] .pk-page { width: 100%; max-width: 1420px; margin: 0 auto; padding: 32px 40px 60px; box-sizing: border-box; display: flex; flex-direction: column; gap: 22px; }
 [data-page="picks"] #picksRoot { color: var(--text); font-family: var(--font-words); font-size: 16px; line-height: normal; -webkit-font-smoothing: antialiased; }
 [data-page="picks"] #picksRoot *, [data-page="picks"] #picksRoot *::before, [data-page="picks"] #picksRoot *::after { box-sizing: border-box; }
@@ -212,7 +212,7 @@
 .pkd-ov { position: fixed; inset: 0; z-index: 90; font-family: var(--font-words); color: var(--text); -webkit-font-smoothing: antialiased; line-height: normal; }
 .pkd-ov *, .pkd-ov *::before, .pkd-ov *::after { box-sizing: border-box; }
 .pkd-back { position: absolute; inset: 0; background: var(--drawer-backdrop); }
-.pkd { position: absolute; top: 0; right: 0; bottom: 0; width: 440px; max-width: 100vw; overflow-y: auto; background: var(--card); box-shadow: var(--shadow-drawer); }
+.pkd { position: absolute; top: 0; right: 0; bottom: 0; width: 440px; max-width: calc(100vw / var(--sf-z, 1)); overflow-y: auto; background: var(--card); box-shadow: var(--shadow-drawer); }
 .pkd-mono { font-family: var(--font-nums); }
 .pkd-caps { font-family: var(--font-words); font-size: 10.5px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-label); }
 .pkd-caps10 { font-size: 10px; flex: none; }

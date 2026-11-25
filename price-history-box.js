@@ -421,9 +421,9 @@
     return { left, top, below };
   }
   function place(target) {
-    const r = target.getBoundingClientRect(), b = ensureBox();
+    const r = (typeof sfCssRect === 'function' ? sfCssRect(target) : target.getBoundingClientRect()), b = ensureBox();
     b.style.visibility = 'hidden'; b.hidden = false;
-    const p = placeAt(r, b.offsetWidth, b.offsetHeight, innerWidth, innerHeight);
+    const p = placeAt(r, b.offsetWidth, b.offsetHeight, (typeof sfVW === 'function' ? sfVW() : window.innerWidth), (typeof sfVH === 'function' ? sfVH() : window.innerHeight));
     b.style.left = p.left + 'px'; b.style.top = p.top + 'px'; b.style.visibility = '';
     b.dataset.at = p.below ? 'below' : 'above';
     if (onCell && onCell !== target) onCell.classList.remove('phb-on');

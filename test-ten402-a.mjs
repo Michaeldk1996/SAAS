@@ -230,7 +230,7 @@ test('Model: any pair gets a price — p from the engine file, plus the margin: 
   const html2 = h.modelCard({ model: v });
   assert.match(html2, /data-h2h-model="priced"/);
   // the design's box (DF §1): caps "Likely opening price" over the price, mono 800 clamp(20px,2.2vw,28px), white
-  assert.match(html2, /Likely opening price<\/span><span style="font-family:'IBM Plex Mono',monospace; font-size:clamp\(20px,2\.2vw,28px\); font-weight:800; color:var\(--h2h-text\);[^"]*">2\.90</);
+  assert.match(html2, /Likely opening price<\/span><span style="font-family:'IBM Plex Mono',monospace; font-size:clamp\(20px,calc\(2\.2vw \/ var\(--sf-z, 1\)\),28px\); font-weight:800; color:var\(--h2h-text\);[^"]*">2\.90</);
   const tip = (/<span class="x-help" title="([^"]*)"/.exec(html2) || [])[1] || '';
   assert.match(tip, /^Win chance A\. One 33% · B\. Two 67% · Hard, best of 3\nElo base 35% for A\. One, moved by 6 of 10 model layers · plus Pinnacle’s typical opening margin, 3\.4% \(n=442\) · model run \d\d:\d\d\nElo alone, no model layer: A\. One 2\.79 · B\. Two 1\.48$/, 'the Elo-only prices are the help\'s last line (founder 2026-11-20)');
   assert.equal((1 / (0.3465 * 1.0339)).toFixed(2), '2.79', 'Elo alone = the engine base (cell[1]) on the same margin');
