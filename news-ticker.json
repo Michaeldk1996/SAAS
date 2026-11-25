@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-25T20:35:12.615Z",
+ "generatedAt": "2026-11-25T20:56:32.553Z",
  "tournaments": [
   {
    "key": "3120",
@@ -12,7 +12,7 @@
     "quote": 8
    },
    "latestTimestamp": "2026-11-25T20:05:41.924Z",
-   "updatedAt": "2026-11-25T20:35:12.615Z"
+   "updatedAt": "2026-11-25T20:56:32.553Z"
   },
   {
    "key": "tour",
@@ -181,7 +181,7 @@
       "player": "winner",
       "tone": "bad",
       "metric": "doubleFaults",
-      "value": 6
+      "value": 8
      },
      {
       "player": "winner",
@@ -198,13 +198,13 @@
      }
     ],
     "winner": {
-     "aces": 6,
+     "aces": 9,
      "breakPointsSaved": 9,
      "breakPointsFaced": 12,
      "breakPointsSource": "box score"
     },
     "loser": {
-     "aces": 8,
+     "aces": 11,
      "breakPointsSaved": 3,
      "breakPointsFaced": 4,
      "breakPointsSource": "box score"
@@ -214,8 +214,10 @@
    "sourceUrl": "pbp/12182774.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "43fa5ede39ae53f0",
+   "sourceHash": "affbcfd1a344b0b5",
    "publishedAt": "2026-11-25T20:35:12.615Z",
+   "revisedAt": "2026-11-25T20:56:32.553Z",
+   "revision": 1,
    "file": "news-ticker/3120-2026.json"
   },
   {
