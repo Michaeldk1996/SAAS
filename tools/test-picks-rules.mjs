@@ -43,7 +43,7 @@ function problems(rules, store, auth) {
   if (!/allow delete: if isAdmin\(\);/.test(picks)) p.push('picks: delete is not admin-only');
   if (!/hasPaidAccess\(get\(\/databases\/\$\(database\)\/documents\/users\/\$\(request\.auth\.uid\)\)\.data\)/.test(fnBody(rules, 'isPro'))) p.push('isPro does not check users/{uid} with hasPaidAccess');
   const paid = fnBody(rules, 'hasPaidAccess');
-  if (!/u\.get\('plan', 'free'\) in \['edge', 'pro'\]/.test(paid)) p.push('hasPaidAccess: paid tiers are not exactly Sharp (edge) + Sharp+ (pro)');
+  if (!/u\.get\('plan', 'free'\) in \['edge', 'pro', 8, 9, '8', '9'\]/.test(paid)) p.push('hasPaidAccess: paid tiers are not exactly Sharp (edge) + Sharp+ (pro)');
   if (!/u\.accessUntil > request\.time/.test(paid)) p.push('hasPaidAccess: the end date (accessUntil) is not checked');
 
   const client = listOf(rules, 'pickClientKeys');
@@ -85,7 +85,7 @@ const MUTANTS = [
   ['plan lock dropped', r => r.replace(/!request\.resource\.data\.diff\(resource\.data\)\.affectedKeys\(\)\s*\.hasAny\(\[[^\]]*\]\)/, 'true')],
   ['accessUntil client-writable', r => r.replace("'plan', 'accessUntil', ", "'plan', ")],
   ['end date ignored', r => r.replace("(!('accessUntil' in u) || u.accessUntil > request.time)", 'true')],
-  ['free counts as paid', r => r.replace("in ['edge', 'pro']", "in ['free', 'edge', 'pro']")],
+  ['free counts as paid', r => r.replace("in ['edge', 'pro', 8, 9, '8', '9']", "in ['free', 'edge', 'pro', 8, 9, '8', '9']")],
   ['open picks readable by any member', r => r.replace("(resource.data.status in ['posted', 'live'] && isPro())", "(resource.data.status in ['posted', 'live'] && signedIn())")],
   ['drafts readable', r => r.replace("resource.data.status in ['won', 'lost', 'void'])", "resource.data.status in ['won', 'lost', 'void', 'draft'])")],
   ['any member writes picks', r => r.replace('allow create: if isAdmin() && newPickOk', 'allow create: if signedIn() && newPickOk')],

@@ -92,8 +92,10 @@ service cloud.firestore {
     function isPro() {
       return signedIn() && hasPaidAccess(get(/databases/$(database)/documents/users/$(request.auth.uid)).data);
     }
+    // plan codes set by hand in the console (founder 2026-11-26): 1 = free, 8 = Sharp (edge), 9 = Sharp+ (pro);
+    // a number or the same digits as text. The Whop webhook writes 'edge' / 'pro'.
     function hasPaidAccess(u) {
-      return u.get('plan', 'free') in ['edge', 'pro'] && (!('accessUntil' in u) || u.accessUntil > request.time);
+      return u.get('plan', 'free') in ['edge', 'pro', 8, 9, '8', '9'] && (!('accessUntil' in u) || u.accessUntil > request.time);
     }
     function pickClientKeys() {
       return ['kind', 'event', 'market_text', 'settles_at', 'date', 'tournament', 'round', 'scheduled_at', 'surface',

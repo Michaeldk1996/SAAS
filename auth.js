@@ -229,7 +229,8 @@
   // paid tier reads as plan 'pro' to every gate; `tier` keeps what was bought for labels. No accessUntil = manual grant.
   function paidUntil(v) { return v && typeof v.toMillis === 'function' ? v.toMillis() : (v ? +new Date(v) : null); }
   function effectivePlan(data) {
-    var tier = data.plan === 'edge' || data.plan === 'pro' ? data.plan : 'free';
+    // plan codes set by hand in the console (founder 2026-11-26): 1 free, 8 Sharp, 9 Sharp+ (number or text), as firestore.rules
+    var tier = ({ edge: 'edge', pro: 'pro', 8: 'edge', 9: 'pro' })[String(data.plan)] || 'free';
     var until = paidUntil(data.accessUntil);
     if (tier === 'free' || (until && until <= Date.now())) return { plan: 'free', tier: 'free', until: null };
     return { plan: 'pro', tier: tier, until: until };
