@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-25T17:20:03.823Z",
+ "generatedAt": "2026-11-25T18:09:36.225Z",
  "tournaments": [
   {
    "key": "3120",
@@ -12,7 +12,7 @@
     "quote": 8
    },
    "latestTimestamp": "2026-11-25T16:51:10.407Z",
-   "updatedAt": "2026-11-25T17:20:03.823Z"
+   "updatedAt": "2026-11-25T18:09:36.225Z"
   },
   {
    "key": "tour",
@@ -88,7 +88,7 @@
     "endedAt": "2026-11-25T16:51:10.407Z"
    },
    "category": "Statistics",
-   "text": "Musetti beat Hong in their first meeting, 6-0, 7-6.\n\nMusetti: DR: 1.52\n\nHong: DR: 0.66",
+   "text": "Musetti beat Hong in their first meeting, 6-0, 7-6.\n\nMusetti: DR: 1.45\n\nHong: DR: 0.69",
    "ms": {
     "a": "L. Musetti",
     "b": "S. C. Hong",
@@ -105,8 +105,8 @@
     "rows": [
      [
       "Dominance ratio",
-      1.52,
-      0.66,
+      1.45,
+      0.69,
       "dr"
      ],
      [
@@ -123,7 +123,7 @@
      ],
      [
       "2nd serve points won",
-      55,
+      59,
       57,
       "%"
      ]
@@ -131,8 +131,8 @@
    },
    "baseText": "Musetti beat Hong in their first meeting, 6-0, 7-6.",
    "rating": [
-    "Musetti: DR: 1.52",
-    "Hong: DR: 0.66"
+    "Musetti: DR: 1.45",
+    "Hong: DR: 0.69"
    ],
    "fields": {
     "score": "6-0, 7-6",
@@ -168,24 +168,12 @@
     "standouts": [
      {
       "player": "winner",
-      "tone": null,
+      "tone": "good",
       "metric": "ret1Won",
       "value": 43,
       "won": 16,
       "total": 37,
       "baseline": 29,
-      "scope": "last52",
-      "surface": "Hard",
-      "n": 35
-     },
-     {
-      "player": "winner",
-      "tone": null,
-      "metric": "ret2Won",
-      "value": 43,
-      "won": 9,
-      "total": 21,
-      "baseline": 55,
       "scope": "last52",
       "surface": "Hard",
       "n": 35
@@ -208,8 +196,10 @@
    "sourceUrl": "pbp/12182773.json",
    "language": "en",
    "translated": false,
-   "sourceHash": "ad1caa7cef54a5d4",
+   "sourceHash": "1b05f4aaa842ea6d",
    "publishedAt": "2026-11-25T17:20:03.823Z",
+   "revisedAt": "2026-11-25T18:09:36.225Z",
+   "revision": 1,
    "file": "news-ticker/3120-2026.json"
   },
   {
