@@ -235,15 +235,17 @@ exports.whopWebhook = onRequest(
   async (req, res) => {
     if (req.method !== 'POST') { res.status(405).send('Method Not Allowed'); return; }
 
-    const secret = WHOP_WEBHOOK_SECRET.value();
+    const secret = (WHOP_WEBHOOK_SECRET.value() || '').trim();
     if (!secret) { logger.error('WHOP_WEBHOOK_SECRET not configured'); res.status(500).send('not configured'); return; }
 
     // req.rawBody is the exact bytes Whop signed — do NOT use the parsed body.
     const rawBody = req.rawBody ? req.rawBody.toString('utf8') : JSON.stringify(req.body || {});
     const check = verifyWhopSignature(rawBody, req.headers, secret);
     if (!check.ok) {
-      logger.warn('Rejected unverified Whop webhook', { reason: check.reason });
-      res.status(401).send('invalid signature');
+      // The reason (never the secret) tells a failed Whop test apart: a wrong secret vs a stale timestamp.
+      const shape = /^ws_[0-9a-f]{32,}$/i.test(secret) || secret.startsWith('whsec_') ? 'ok' : 'unexpected (re-copy the ws_ secret)';
+      logger.warn('Rejected unverified Whop webhook', { reason: check.reason, secretShape: shape });
+      res.status(401).send(`invalid signature: ${check.reason}; secret format ${shape}`);
       return;
     }
 
