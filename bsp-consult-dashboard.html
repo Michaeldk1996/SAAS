@@ -2834,7 +2834,7 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
 <!-- LIVE TAB (TEN-107 Slice 4) — standalone live board fed by the Supabase live
      proxy (live_snapshot ← get_livescore poller). Own page; Matches untouched.
      Rendering + polling owned entirely by live-tab.js, gated on FEATURE_LIVE_PROXY. -->
-<div class="tabpage" data-page="live" id="lvTab" style="padding:24px 0;">
+<div class="tabpage" data-page="live" id="lvTab" style="padding:30px 40px 70px 24px;">
   <!-- populated by lvInit() -->
 </div>
 
@@ -33546,1032 +33546,942 @@ window.DatabaseTab = (function(){
 
 
 <style>
-  /* TEN-190 D4 (founder ruling 2026-09-11: "Override box-sizing inside Live —
-     match the export"). The dashboard sets a global `*{box-sizing:border-box}`
-     (L44). Live.dc.html declares box-sizing NOWHERE, so every box in the export
-     is the CSS-initial `content-box`. Scoped to #lvTab descendants ONLY: the
-     handoff's values are Live-scoped and must not reach the shell or any other page. */
-  #lvTab * { box-sizing: content-box; }
-
-  .lvseg { cursor:pointer; transition:background .14s ease, color .14s ease, border-color .14s ease; }
-  /* TEN-417 step 11 (founder, 2026-10-10): the whole card is the click target and its hover is a 16% white edge. This
-     SUPERSEDES TEN-190 D1's dead hover: the card's 1px edge lives in this class (no inline border), so the hover fires. */
-  .lvcard { cursor:pointer; border:1px solid transparent; transition:border-color 120ms ease; }
-  .lvcard:hover { border-color:var(--edge-16); }
+  /* Live page (design_handoff_live_final, locked 2026-11-25; rendered by live-page.js). The prototype declares
+     box-sizing nowhere, so its boxes are content-box, and its text sits at line-height normal: scoped to the page
+     and its match modal only. */
+  #lvTab *, #lvOverlay * { box-sizing: content-box; }
+  #lvRoot, #lvOverlay { line-height: normal; font-size: 16px; }
+  #lvTab .sf-ph, #lvOverlay .sf-ph { box-sizing: border-box; }
+  .lvcard { cursor:pointer; transition:border-color .14s ease, background .14s ease; }
+  .lvcard:hover { background:var(--lv-card-hover) !important; border-color:color-mix(in srgb, var(--ma2-white) 14%, transparent) !important; }
+  .lvseg:hover, .lv-more:hover, .lv-cmp:hover { color:var(--ma2-white) !important; }
+  .lvq::placeholder { color:var(--ma2-quiet); }
+  .lvq:hover { border-color:color-mix(in srgb, var(--ma2-white) 14%, transparent) !important; }
+  .lvq:focus { border-color:color-mix(in srgb, var(--ma2-white) 22%, transparent) !important; }
+  .lv-clear:hover { color:var(--ma2-white) !important; background:var(--ma2-lifted); }
+  .lv-mbtn:hover { color:var(--ma2-white) !important; background:var(--ma2-lifted) !important; }
+  .lv-mrow:hover, .lv-opt:hover { background:var(--ma2-hover) !important; }
+  .lv-close:hover { background:var(--ma2-hover) !important; }
+  .lv-un:hover { border-color:color-mix(in srgb, var(--ma2-white) 28%, transparent) !important; }
+  [data-mwi]:hover { color:var(--ma2-white) !important; border-color:color-mix(in srgb, var(--ma2-white) 50%, transparent) !important; }
+  [data-msdri]:hover, [data-hov="momtip"]:hover { color:var(--ma2-white) !important; border-color:color-mix(in srgb, var(--ma2-white) 40%, transparent) !important; }
   @keyframes lvpulse { 0%,100% { opacity:1; } 50% { opacity:0.35; } }
   .lvtip { position:relative; }
   .lvtip .lvtipbox { display:none; }
   .lvtip:hover .lvtipbox { display:block; }
-  .hbcell { transition:transform .14s ease, box-shadow .14s ease; cursor:default; }
-  .hbcell:hover { transform:translateY(-1px); box-shadow:0 0 0 1px color-mix(in srgb, var(--text) 20%, transparent); z-index:20; }
+  .hbcell { transition:filter .14s ease, transform .14s ease, box-shadow .14s ease; cursor:default; }
+  .hbcell:hover { box-shadow:0 0 0 1px color-mix(in srgb, var(--ma2-white) 28%, transparent); z-index:20; }
   .hbcell .hbtip { display:none; }
   .hbcell:hover .hbtip { display:block; }
 </style>
-
 <script>
-(function(){
-'use strict';
+// live-page.js — the Live page and its match modal (founder brief 2026-11-25, design_handoff_live_final/Live.dc.html,
+// locked 2026-11-25). Rules: .claude/rules/live.md. Renderer only: live-tab.js owns the transport (live_snapshot by
+// Realtime, every 10 s; live_pbp on demand). Every figure comes from the feed or a published site file; a figure with
+// no source is a dash. Geometry, type and colour are the prototype's inline styles, read off the file, colours through
+// tokens.css (--ma2-* family + --lv-*). The prototype's generators (sim(), heatFor(), SEED) are not ported.
+(function () {
+  'use strict';
 
-// ── feed adapter (TEN-190, redesigned TEN-417 step 11) ───────────────────────
-// Every figure on this page comes from the live feed (live_snapshot + live_pbp) or
-// from our archive (holdbreak.json). live-tab.js owns the transport (Supabase
-// Realtime push, 25s re-sync, 30s PostgREST fallback) and the ATP-singles +
-// underway gate; this block is the renderer and does not generate a single value.
-// A figure the feed has not reported renders as an em dash — never a zero, never a
-// plausible default. A zero in a tennis score means zero points.
-const LF = () => window.LiveFeed || null;
-
-// Last payload from live-tab.js. ready=false means "no snapshot yet", which is
-// NOT the same as "nothing in play" and must not render as the empty state.
-let FEED = { ready:false, live:[], isStale:false, ageMs:0, updatedAt:null, connected:false };
-let LIVE = [];   // one view model per live match, rebuilt on every snapshot
-
-// The hold/break engine lives in holdbreak-heatmap.js (TEN-206 founder ruling 7:
-// one engine, shared by this tab and the Player Profile's Playing-profile modal).
-const HBE = () => window.HoldBreakHeatmap || null;
-
-const SLAM_RE = /australian open|roland garros|french open|wimbledon|us open/i;
-const INTERRUPTED_RE = /interrupt|suspend/i;
-
-// "ATP Shanghai - 1/64-finals" → "1/64-finals". The round is prefixed with a
-// tournament label that is not always an exact match of tournament_name, so
-// strip to the last " - " rather than to the name.
-function shortRound(fix){
-  const r = String(fix.tournament_round || '');
-  const i = r.lastIndexOf(' - ');
-  return i >= 0 ? r.slice(i + 3) : r;
-}
-// TEN-417 Data 3: the event is the site's ONE event name (sfEventName: the canonical event table — official name, no
-// level suffix, "Shanghai" → Shanghai Masters) + the feed's round words, "Shanghai Masters · 1/64-finals".
-function lvEventLabel(fix){
-  const raw = String(fix.tournament_name || '');
-  const ev = (typeof sfEventName === 'function' ? sfEventName(raw) : raw) || raw;
-  const round = shortRound(fix);
-  return round ? ev + ' · ' + round : ev;
-}
-// TEN-417 Data 3: a player reads as on Player Profile, Head to Head, Match analysis and News — the shared formatter
-// (newsPlayerName: the profile name of his key, else the feed's own api-tennis spelling).
-function lvName(key, feedName){
-  return typeof newsPlayerName === 'function' ? newsPlayerName(key, feedName) : String(feedName || '');
-}
-// Initials avatar (TEN-417 override: no photos on Live) — the Match analysis monogram, first + last initial.
-function lvIni(name){ return typeof fhIni === 'function' ? fhIni(name) : String(name || '?').slice(0, 2).toUpperCase(); }
-
-// A completed tiebreak set arrives encoded "<games>.<tiebreakPoints>" per side —
-// 7-6(1) is score_first "7.7" / score_second "6.1" — NOT a decimal game count.
-// The set cell prints the GAMES won; the Points tab renders the tiebreak in full.
-function gamesOf(raw){
-  if(raw == null) return null;
-  const s = String(raw).trim();
-  if(s === '') return null;
-  const dot = s.indexOf('.');
-  const n = parseInt(dot < 0 ? s : s.slice(0, dot), 10);
-  return Number.isFinite(n) ? n : null;
-}
-
-// The feed carries no best-of field. ATP main-draw Slams are best-of-5, every
-// other ATP singles event best-of-3. Used to dim sets that cannot exist in the
-// format, to call a tiebreak set point a match point, and to size a final-set
-// tiebreak — never to print a figure.
-// Slam qualifying is best-of-three (review: event_qualification "True").
-function bestOf(fix){ return SLAM_RE.test(String(fix.tournament_name || '')) && String(fix.event_qualification).toLowerCase() !== 'true' ? 5 : 3; }
-
-function viewModel(fix){
-  const scores = Array.isArray(fix.scores) ? fix.scores : [];
-  const sets = scores
-    .map(sc => [gamesOf(sc.score_first), gamesOf(sc.score_second)])
-    .filter(p => p[0] !== null && p[1] !== null);
-  const statusRaw = String(fix.event_status || '');
-  // One predicate for the page header and the rail badge (TEN-417 R1 fix 1): live-tab.js isInterrupted.
-  const interrupted = (LF() && typeof LF().isInterrupted === 'function') ? LF().isInterrupted(fix) : INTERRUPTED_RE.test(statusRaw);
-  const rawPt = String(fix.event_game_result || '').trim();
-  const parts = (rawPt === '' || rawPt === '-') ? [] : rawPt.split('-').map(x => x.trim());
-  const serveStr = String(fix.event_serve || '');
-  const serving = /first/i.test(serveStr) ? 0 : (/second/i.test(serveStr) ? 1 : null);
-  const event = lvEventLabel(fix);
-  return {
-    ek: String(fix.event_key || ''),
-    fix,
-    event,
-    title: 'ATP · ' + event,
-    status: interrupted ? 'INTERRUPTED' : statusRaw.toUpperCase(),
-    interrupted,
-    bo: bestOf(fix),
-    slam: SLAM_RE.test(String(fix.tournament_name || '')),
-    serving,
-    sets,
-    point: [parts[0] || '—', parts[1] || '—'],
-    names: [lvName(fix.first_player_key, fix.event_first_player), lvName(fix.second_player_key, fix.event_second_player)],
-    keys: [fix.first_player_key, fix.second_player_key],
-  };
-}
-
-// ── state ─────────────────────────────────────────────────────────────────────
-// sel is an event_key, NOT a board index: the live board reorders and resizes
-// between ticks, so an index would silently repoint the open sheet at a
-// different match the moment one started or finished. scope = 'MATCH' or a set number.
-let ST = { sel:null, tab:'Ratings', scope:'MATCH', pset:1, hb:'HOLD' };
-let lvInited = false;
-
-function setState(patch){ ST = Object.assign({}, ST, patch); render(); }
-
-// ── style helpers ─────────────────────────────────────────────────────────────
-// TEN-417 "What changes 3": every segmented control (tabs, scope, set, HOLD / BREAK) is the site Darker track as the
-// design file draws it — track --inner, padding 3; selected = --selected + a 16% white edge, white 700; idle grey 600.
-function seg(on){ return { color: on?'var(--text)':'var(--text-label)', bg: on?'var(--selected)':'transparent', bd: on?'var(--edge-16)':'transparent', wt: on?700:600 }; }
-const TRACK = 'display:inline-flex;gap:3px;background:var(--inner);border:1px solid transparent;border-radius:9px;padding:3px;';
-// A segment label: words are Hanken caps 10.5 / 0.10em (MATCH, HOLD, BREAK); a label with a digit (SET 1) is mono 10 /
-// 0.12em — the reference's computed type for the same control.
-function segLabelCss(label, on){
-  return /\d/.test(label)
-    ? `font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:${on?700:600};letter-spacing:0.12em;`
-    : `font-family:var(--font-words);font-size:10.5px;font-weight:${on?800:700};letter-spacing:0.10em;text-transform:uppercase;`;
-}
-function segHtml(attr, val, label, on){
-  const sg = seg(on);
-  return `<span class="lvseg" ${attr}="${val}" style="padding:5px 12px;border-radius:7px;${segLabelCss(label,on)}color:${sg.color};background:${sg.bg};border:1px solid ${sg.bd};white-space:nowrap;">${e(label)}</span>`;
-}
-
-// ── heatmap data ──────────────────────────────────────────────────────────────
-// Real source: holdbreak.json, the nightly 24-month rollup (build-holdbreak.js),
-// all surfaces. If the engine has not loaded, this returns an empty model and the
-// grid dashes — never a locally-defined copy of the maths.
-function heatFor(pkey, metric, bo){
-  const E = HBE();
-  const HB = LF() ? LF().holdbreak() : null;
-  if(!E) return { rows: [], globalLabel: metric+' —' };
-  return E.heatFor(HB, pkey, metric, bo);
-}
-
-const setNoOf = gm => { const x=String(gm.set_number||'').match(/(\d+)/); return x?+x[1]:null; };
-const isTiebreakRow = gm => /tiebreak/i.test(String(gm.set_number||''));
-// The feed closes a tiebreak set with one more "Set N" game row: score "7 - 6" (or "6 - 7"), one blank point (" - ") and
-// serve_lost stamped on whoever lost the tiebreak. A set only reaches 7–6 through its tiebreak, so that row is the
-// tiebreak, never a game and never a break (measured: Zhou v Musetti, Shanghai, 9 Oct, set 1 game 13). It is not plotted
-// and never shows LOST SERVE; the tiebreak's own point rows tell it.
-const isTbGame = gm => /^\s*(7\s*-\s*6|6\s*-\s*7)\s*$/.test(String(gm.score||''));
-// A point entry with no score (" - ") is not a point.
-const ptScored = pt => /[0-9A]/i.test(String(pt && pt.score || ''));
-// The feed's point lists are garbled: after the real sequence it repeats a tail of it (40:15 → 30:15 → 40:15 …, A:40 →
-// 40:15). TEN-417 R1 fix 7: a chip shows only if the score is REACHABLE from the chip before it (one point to either
-// side: 0→15→30→40, 40:40 → A:40 / 40:A, an advantage back to 40:40; the game starts at 0:0). The kept list is the longest
-// reachable prefix; when that does not end on the WINNER's game point (he is on A, or on 40 with the other below 40), the
-// rest of the list is walked keeping only reachable chips until it does. Measured on 749 decided games (Shanghai 8–9
-// Oct): the prefix alone ends on the winner's game point in 731, the walk in 16 more, 2 never do (shown, nothing lifted).
-// winnerA: true / false for a decided game, null in progress (prefix only).
-const PT_V = { '0':0, '15':1, '30':2, '40':3, 'A':4, 'AD':4 };
-function ptState(pt){ const p=String(pt&&pt.score||'').split('-').map(x=>PT_V[x.trim().toUpperCase()]); return (p.length===2&&p[0]!=null&&p[1]!=null)?p:null; }
-function ptReach(a,b){
-  if(!a||!b) return false;
-  for(const s of [0,1]){
-    const me=a[s],op=a[1-s],n=[a[0],a[1]];
-    if(me<=2&&op<=3) n[s]=me+1; else if(me===3&&op===3) n[s]=4; else if(me===3&&op===4) n[1-s]=3; else continue;
-    if(n[0]===b[0]&&n[1]===b[1]) return true;
-  }
-  return false;
-}
-const ptGamePoint=(st,winnerA)=>{ if(!st) return false; const me=winnerA?st[0]:st[1],op=winnerA?st[1]:st[0]; return me===4||(me===3&&op<=2); };
-function lvDecodePoints(points, winnerA){
-  const pts=(Array.isArray(points)?points:[]).filter(ptScored);
-  const kept=[]; let prev=[0,0], i=0;
-  // A log that joins mid-game (its first score is not one point from 0:0) starts from that first readable score (review).
-  if(pts.length&&ptState(pts[0])&&!ptReach(prev,ptState(pts[0]))){ prev=ptState(pts[0]); kept.push(pts[0]); i=1; }
-  while(i<pts.length&&ptReach(prev,ptState(pts[i]))){ prev=ptState(pts[i]); kept.push(pts[i]); i++; }
-  if(winnerA==null||ptGamePoint(prev,winnerA)) return kept;
-  for(;i<pts.length&&!ptGamePoint(prev,winnerA);i++){ const st=ptState(pts[i]); if(ptReach(prev,st)){ prev=st; kept.push(pts[i]); } }
-  return kept;
-}
-
-// ── momentum from the point log ───────────────────────────────────────────────
-// TEN-417 Ratings: one column per set, sized by the games played; one bar per DECIDED game. Bar height = the game's
-// margin read off its last point (the score the game was won from) — 40-0 → 4, 40-15 → 3, 40-30 → 2, deuce/AD → 1;
-// up for player A, down for player B (who really won it: player_served + serve_lost); a break = the feed's serve_lost
-// flag, drawn as a red outline. The label is that score from the server's side ("40-15", a break "15-40", "AD").
-//
-// Tiebreak pseudo-sets carry one row per POINT rather than a game, and the
-// ladder has no defined rung for a tiebreak margin, so they are not plotted —
-// inventing one would put a fabricated swing next to real ones.
-const MOM_RUNG = { '0':4, '15':3, '30':2, '40':1, 'A':1, 'AD':1 };
-// A game in progress arrives with EVERY field null — score, player_served,
-// serve_winner and serve_lost. It is a row, not a result. Only a DECIDED game
-// can be plotted: one of serve_winner / serve_lost is stamped the moment the
-// game ends. Without this gate an undecided game reads as a completed game won
-// by player B, which puts an invented swing on the chart.
-const momDecided = gm => gm.serve_winner != null || gm.serve_lost != null;
-function momentumSets(pbpGames, m){
-  return m.sets.map((st,si)=>{
-    const n=si+1;
-    const rows=pbpGames.filter(gm=>setNoOf(gm)===n && !isTiebreakRow(gm) && !isTbGame(gm) && momDecided(gm))
-                       .sort((a,b)=>(+a.number_game||0)-(+b.number_game||0));
-    const games=rows.map(gm=>{
-      // serve_winner / serve_lost both name the SERVER, so fall back to them
-      // when player_served has not been stamped on the row.
-      const aServ=/first/i.test(String(gm.player_served||gm.serve_winner||gm.serve_lost||''));
-      const lost=gm.serve_lost!=null;
-      const aWon=aServ?!lost:lost;            // server lost ⇒ the returner won it
-      const pts=lvDecodePoints(gm.points,aWon);
-      const last=pts.length?String(pts[pts.length-1].score||''):'';
-      const sp=x=>String(x&&x.score||'').split('-').map(y=>y.trim().toUpperCase());
-      const p=sp({score:last});
-      const winner=aWon?p[0]:p[1],loser=aWon?p[1]:p[0];
-      // The feed's point lists are garbled (scores repeat and step back; a long deuce game can end on "0 - 15"), so the
-      // last entry is read only when it shows the WINNER on 40 / AD. Otherwise it is unreadable: the smallest rung and no
-      // label — the SIGN (who won) is still real; only the magnitude falls back. A game that reached deuce is AD.
-      const readable=/^(40|A|AD)$/.test(winner);
-      const deuce=readable&&(/^A/.test(winner)||/^A/.test(loser)||loser==='40'||pts.some(pt=>{const q=sp(pt);return (q[0]==='40'&&q[1]==='40')||/^A/.test(q[0])||/^A/.test(q[1]);}));
-      const mag=readable&&!deuce?(MOM_RUNG[String(loser)]||1):1;
-      const sv=aServ?[p[0],p[1]]:[p[1],p[0]];
-      const label=!readable?'':(deuce?'AD':sv[0]+'-'+sv[1]);
-      return {m:mag*(aWon?1:-1),brk:lost,label};
-    });
-    return {n,score:st[0]+'–'+st[1],games};
-  }).filter(b=>b.games.length);
-}
-
-// ── tiebreak set / match points ───────────────────────────────────────────────
-// A tiebreak point row after which one player can win the set on the next point: he has at least target − 1 points and
-// leads. target = 10 in a Grand Slam's deciding set (its final-set tiebreak, qualifying included), else 7. SP becomes MP when that
-// set would win him the match (sets won before this one + 1 = sets needed).
-function tbTag(a, b, target, setsBefore, need){
-  const lead = (a >= target - 1 && a > b) ? 0 : ((b >= target - 1 && b > a) ? 1 : -1);
-  if(lead < 0) return ['', ''];
-  if(Math.max(a, b) >= target && Math.abs(a - b) >= 2) return ['', ''];   // the set is over
-  const tag = setsBefore[lead] + 1 >= need ? 'MP' : 'SP';
-  return lead === 0 ? [tag, ''] : ['', tag];
-}
-
-// TEN-417 Data 4: Updated = the feed's last refresh — live_snapshot.updated_at, the poller's own write stamp — as
-// HH:MM:SS in the member's zone (stennisfy.tz, else the browser zone). Never "now", never the clock.
-function updatedLabel(){
-  if(FEED.updatedAt==null) return '—';
-  return typeof newsFmtHMS==='function' ? newsFmtHMS(FEED.updatedAt) : '—';
-}
-
-// ── renderVals ────────────────────────────────────────────────────────────────
-function renderVals(){
-  const S=ST;
-  const DASH='—',MISS='var(--text-label)',INK='var(--text)';
-
-  // ── header strip ──
-  // In play = live now (not interrupted); Interrupted = suspended / rain / medical (amber above 0, grey at 0);
-  // Events = distinct events among the matches on the grid.
-  const inPlay=LIVE.filter(m=>!m.interrupted).length;
-  const itr=LIVE.filter(m=>m.interrupted).length;
-  const evs=LIVE.map(m=>String(m.fix.tournament_name||'')).filter((e,i,a)=>a.indexOf(e)===i).length;
-  // Before the first snapshot every figure is unknown, so every figure dashes.
-  // "0 in play" is a claim about the world and we have not measured it yet.
-  const hdr = FEED.ready
-    ? {inPlayCount:String(inPlay),interruptedCount:String(itr),interruptedColor:itr?'var(--amber)':'var(--text-label)',eventCount:String(evs),updatedLabel:updatedLabel(),updatedTitle:(typeof newsFmtAbs==='function'&&FEED.updatedAt!=null)?newsFmtAbs(FEED.updatedAt):''}
-    : {inPlayCount:DASH,interruptedCount:DASH,interruptedColor:'var(--text-label)',eventCount:DASH,updatedLabel:DASH,updatedTitle:''};
-
-  const m = S.sel==null ? null : (LIVE.find(x=>x.ek===S.sel)||null);
-  if(!m) return Object.assign({},hdr,{isEmpty:FEED.ready&&LIVE.length===0});
-
-  const A=m.names[0],B=m.names[1];
-  const nSets=Math.max(1,m.sets.length);
-  const liveM=!m.interrupted;
-  // Score tile (TEN-417 sheet 2): won set = 8% white fill, white 700 · lost = 2.5%, grey 500 · current = 5% + 18% ring.
-  const scoreCells=side=>m.sets.map((st,i)=>{
-    const done=i<m.sets.length-1,won=st[side]>st[1-side];
-    const kind=!done?'cur':(won?'won':'lost');
-    return {v:String(st[side]),weight:kind==='lost'?500:700,color:kind==='lost'?MISS:INK,
-      bg:kind==='won'?'color-mix(in srgb, var(--text) 8%, transparent)':kind==='cur'?'color-mix(in srgb, var(--text) 5%, transparent)':'color-mix(in srgb, var(--text) 2.5%, transparent)',
-      bd:kind==='cur'?'color-mix(in srgb, var(--text) 18%, transparent)':'transparent'};
+  // ── Named placeholder constants (founder sets the final values) ───────────────────────────────────────────────
+  const LIVE_CONST = Object.freeze({
+    HB_MIN_GAMES: 30,          // Break/Hold: a cell under this many games shows its count only, no rate, no colour
+    U_GAP: 15, U_N: 20,        // Stats "Unusual": 15+ points from the player's own average with 20+ in the count
+    BP_SAVED_MAJOR: 3,         // 3+ break points saved in one game = a major (card) moment
+    DOM_WINDOW_GAMES: 4,       // Dominance: each player's last 4 return games
+    DOM_START_GAMES: 4,        // Dominance (Match scope) starts after the first 4 games
+    BIG_GAP: 15,               // Stats compare: a gap of 15+ points is bold and coloured
+    HEAT_NEUTRAL: 3,           // Heatmap: neutral within ±3 points
+    PRICE_MOVE_NO_BREAK: null, // "Price moved, no break": no threshold ruled — not built
+    CARD_MOMENTS_CAP: 5, TIMELINE_CAP: 6, AVG_MIN_MATCHES: 10,
   });
-  const setsWon=side=>m.sets.slice(0,m.sets.length-1).filter(st=>st[side]>st[1-side]).length;
-  const subOf=side=>{const n=setsWon(side);return n+(n===1?' set':' sets')+(m.serving===side&&liveM?' · serving':'');};
+  window.LIVE_CONST = LIVE_CONST;
 
-  // ── box score ──
-  const lf=LF();
-  const idx=(lf ? lf.indexStats(m.fix).idx : null) || Object.create(null);
-  const pA=m.keys[0],pB=m.keys[1];
-  let per='match';
+  // ── tokens ────────────────────────────────────────────────────────────────────────────────────────────────────
+  const C = {
+    card: 'var(--ma2-card)', inner: 'var(--ma2-inner)', lifted: 'var(--ma2-lifted)', hover: 'var(--ma2-hover)',
+    track: 'var(--ma2-track)', text: 'var(--ma2-text)', soft: 'var(--ma2-soft)', grey: 'var(--ma2-grey)',
+    quiet: 'var(--ma2-quiet)', dim: 'var(--ma2-dim)', blue: 'var(--ma2-blue)', white: 'var(--ma2-white)',
+    green: 'var(--lv-green)', red: 'var(--lv-red)', amber: 'var(--lv-amber)', cardHover: 'var(--lv-card-hover)',
+  };
+  const wa = a => `color-mix(in srgb, var(--ma2-white) ${a}%, transparent)`;
+  const mix = (c, a) => `color-mix(in srgb, ${c} ${a}%, transparent)`;
+  const CA = C.blue, CB = C.text;           // player one / player two
+  const MONO = "font-family:'IBM Plex Mono',monospace;";
+  const D = '—', EN = '–', DOT = '·';
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const px = v => v == null || !isFinite(v) ? D : Number(v).toFixed(2);
+  const pc = (n, d) => Math.round(n / d * 100);
+  const sur = n => String(n || '').split(' ').pop();
+  // the prototype's initials: the last two words' first letters ("J. M. Cerundolo" → MC)
+  const INI = nm => String(nm || '').replace(/\./g, '').split(' ').filter(Boolean).map(w => w[0]).slice(-2).join('').toUpperCase();
+  const LF = () => window.LiveFeed || null;
+  const has = f => typeof window[f] === 'function';
 
-  // api-tennis nulls stat_won/stat_total on some rows (break points at premier
-  // events) and carries the pair only in stat_value as "X/Y". Number(null) is 0,
-  // so reading the counts blindly turns a MISSING row into a zero — parse the
-  // fraction out of stat_value instead, and keep null as null.
-  function cell(pkey,name,p){
-    const r=lf?lf.stat(idx,pkey,p||per,name):null;
-    if(!r) return null;
-    let w=r.won,t=r.total;
-    if(w==null||t==null){
-      const mm=String(r.value==null?'':r.value).match(/^\s*(\d+)\s*\/\s*(\d+)\s*$/);
-      if(mm){ w=+mm[1]; t=+mm[2]; }
+  // ── state ─────────────────────────────────────────────────────────────────────────────────────────────────────
+  const S = { q: '', sort: 'KEY', flt: 'ALL', sel: null, evOpen: {}, tab: 'Momentum', scope: 'MATCH', mScope: 'MATCH', momV: 'DOM',
+    pset: 1, hb: 'HOLD', hbSurf: 'ALL', cmp: null, cmpOpen: false, unOpen: false, drTip: false, momTip: false, waitTip: false,
+    momH: null, momDot: null, momK: null, mlAll: false };
+  let FEED = { ready: false, live: [], updatedAt: null, isStale: false };
+  let LIVE = [];
+  let inited = false;
+
+  // ── side data (published site files, loaded once when the page shows) ──────────────────────────────────────────
+  const SIDE = { surf: null, mto: null };
+  function loadSide() {
+    if (SIDE._started) return; SIDE._started = true;
+    fetch('./tournament-surfaces.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).then(j => { SIDE.surf = j; paint(); }).catch(() => {});
+    fetch('./mto-matches.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).then(j => { SIDE.mto = j && j.matches ? j.matches : null; paint(); }).catch(() => {});
+    if (has('loadOddsCardState') && !(window.OCS && OCS.byKey)) Promise.resolve(loadOddsCardState()).then(paint, () => {});
+    if (has('loadSurfaceRatings') && !(window.surfaceRatings && surfaceRatings.players && surfaceRatings.players.length)) Promise.resolve(loadSurfaceRatings()).then(paint, () => {});
+    if (has('loadHoldbreak') && !window.holdbreak) Promise.resolve(loadHoldbreak()).then(paint, () => {});
+  }
+  const ratingsOf = key => { const R = window.surfaceRatings; return R && Array.isArray(R.players) ? R.players.find(p => String(p.key) === String(key)) || null : null; };
+  const hbData = () => { const H = (LF() && LF().holdbreak()) || window.holdbreak || null; return H && H.players ? H : null; };
+
+  // ── view model, one per live fixture ──────────────────────────────────────────────────────────────────────────
+  const SLAM_RE = /australian open|roland garros|french open|wimbledon|us open/i;
+  const setNo = s => +String(s || '').replace(/[^0-9]/g, '') || 0;
+  function parseSets(f) {
+    const sc = Array.isArray(f.scores) ? f.scores.slice().sort((a, b) => setNo(a.score_set) - setNo(b.score_set)) : [];
+    const g = v => { const m = /^(\d+)/.exec(String(v == null ? '' : v)); return m ? +m[1] : 0; };
+    const sets = sc.map(s => [g(s.score_first), g(s.score_second)]);
+    return sets.length ? sets : [[0, 0]];
+  }
+  function roundOf(f) { const r = String(f.tournament_round || ''); const i = r.lastIndexOf(' - '); return (i >= 0 ? r.slice(i + 3) : r).trim(); }
+  function tourOf(f) {
+    const raw = String(f.tournament_name || '').trim();
+    return has('sfEventName') ? (sfEventName(raw) || raw) : raw;
+  }
+  function vm(f, i) {
+    const nm = (k, n) => has('newsPlayerName') ? newsPlayerName(k, n) || n : n;
+    const A = { key: f.first_player_key, raw: f.event_first_player, name: nm(f.first_player_key, f.event_first_player) };
+    const B = { key: f.second_player_key, raw: f.event_second_player, name: nm(f.second_player_key, f.event_second_player) };
+    const sets = parseSets(f);
+    const gm = /^\s*(\S+)\s*-\s*(\S+)\s*$/.exec(String(f.event_game_result || ''));
+    const sv = String(f.event_serve || '');
+    const isChal = /challenger/i.test(String(f.event_type_type || ''));
+    const qual = /true|1/i.test(String(f.event_qualification || ''));
+    const bo = !isChal && !qual && SLAM_RE.test(String(f.tournament_name || '')) ? 5 : 3;
+    const live = !(LF() && LF().isInterrupted(f));
+    // the feed can keep a finished set as the last entry for a poll or two after it ends (measured: "6–4", status
+    // "Set 1", the point score already in set 2): a decided set is never the set in play, so the next one starts at 0–0
+    const setDone = st => (Math.max(st[0], st[1]) >= 6 && Math.abs(st[0] - st[1]) >= 2) || (Math.max(st[0], st[1]) === 7 && Math.min(st[0], st[1]) >= 5);
+    const wonBy = s => sets.filter(st => setDone(st) && st[s] > st[1 - s]).length, need = bo === 5 ? 3 : 2;
+    if (setDone(sets[sets.length - 1]) && wonBy(0) < need && wonBy(1) < need) sets.push([0, 0]);
+    const m = { f, ek: String(f.event_key), i, A, B, names: [A.name, B.name], sets, nSets: sets.length,
+      point: gm ? [gm[1], gm[2]] : null, serving: /first/i.test(sv) ? 0 : /second/i.test(sv) ? 1 : null, bo, live,
+      tier: isChal ? 'Challenger' : 'ATP', tour: tourOf(f), round: roundOf(f), date: f.event_date, time: String(f.event_time || ''),
+      tKey: f.tournament_key };
+    m.startMs = has('cardStartMs') ? cardStartMs({ date: m.date, time: m.time }) : NaN;
+    m.surface = surfaceOf(m);
+    m.pre = preOf(m);
+    m.mto = mtoOf(m);
+    return m;
+  }
+  function surfaceOf(m) {
+    const s = SIDE.surf, k = String(m.tKey);
+    const surf = s && s.surfaces ? s.surfaces[k] : null, court = s && s.courts ? s.courts[k] : null;
+    return surf ? { s: surf, indoor: court === 'indoor' } : null;
+  }
+  // Pre = the Today's Matches card's price: the card state's one book, its close (last price before the real start),
+  // else its last pre-start Now. Same file and rule as the card, so the price the rest of the site shows.
+  function preOf(m) {
+    if (!has('_ocsOf')) return { v: [null, null] };
+    const o = _ocsOf({ date: m.date, p1: m.A.raw, p2: m.B.raw, id: 'live-' + m.ek });
+    if (!o) return { v: [null, null] };
+    const st = o.startTs ? Date.parse(o.startTs) : m.startMs;
+    const side = s => s.close != null ? { v: s.close, ts: s.closeTs, k: 'close' } : (s.now != null && s.nowTs && isFinite(st) && Date.parse(s.nowTs) < st) ? { v: s.now, ts: s.nowTs, k: 'now' } : null;
+    const a = side(o.p1), b = side(o.p2);
+    if (!a || !b) return { v: [null, null] };
+    const book = has('mxBookLabel') ? mxBookLabel(o.book) : o.book;
+    return { v: [a.v, b.v], tip: 'Pre-match price · ' + book + (a.ts ? ' · ' + timeOf(a.ts) : '') };
+  }
+  function timeOf(ts) { try { return new Date(ts).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: has('newsTz') ? newsTz() || undefined : undefined }); } catch (e) { return ''; } }
+  function mtoOf(m) {
+    const l = SIDE.mto ? SIDE.mto[m.ek] : null;
+    return Array.isArray(l) && l.length ? l : null;
+  }
+
+  // ── play model from the point log (the prototype's sim() shape, built from live_pbp) ───────────────────────────
+  const PT = { '0': 0, '15': 1, '30': 2, '40': 3, 'A': 4, 'AD': 4 };
+  const ptState = s => { const p = String(s || '').split('-').map(x => PT[x.trim().toUpperCase()]); return p.length === 2 && p[0] != null && p[1] != null ? p : null; };
+  // the side a point went to, from one score to the next (0:0 → 15:0 = A; 40:40 → A:40 = A; A:40 → 40:40 = B)
+  function stepWinner(a, b) {
+    for (const s of [0, 1]) {
+      const me = a[s], op = a[1 - s], n = [a[0], a[1]];
+      if (me <= 2 && op <= 3) n[s] = me + 1; else if (me === 3 && op === 3) n[s] = 4; else if (me === 3 && op === 4) n[1 - s] = 3; else continue;
+      if (n[0] === b[0] && n[1] === b[1]) return s;
     }
-    const v=(r.value==null||r.value==='')?NaN:parseFloat(String(r.value));
-    return {won:w==null?null:+w,total:t==null?null:+t,value:Number.isFinite(v)?v:null};
+    return null;
+  }
+  // the receiver is one point from the game (BP rule, live.md): he is on 40 with the server on 30 or less, or on advantage
+  const bpState = (st, srv) => { if (!st) return false; const r = st[1 - srv], s = st[srv]; return r === 4 || (r === 3 && s <= 2); };
+  const side = v => /first/i.test(String(v || '')) ? 0 : /second/i.test(String(v || '')) ? 1 : null;
+  const tbRow = g => /tiebreak/i.test(String(g.set_number || '')) || (!(g.points || []).some(p => /15|30|40|A/.test(String(p.score || ''))) && /^\s*\d+\s*-\s*\d+\s*$/.test(String(g.score || '')) && !(g.points || []).length);
+  const tbSummary = g => /^\s*(7\s*-\s*6|6\s*-\s*7)\s*$/.test(String(g.score || '')) && !(g.points || []).some(p => /15|30|40|A/.test(String(p.score || '')));
+  const decided = g => g.serve_winner != null || g.serve_lost != null;
+
+  const PLAY = Object.create(null);   // ek → { at, play }
+  function playOf(m) {
+    const pe = LF() ? LF().pbpGet(m.ek) : null;
+    if (!pe || !Array.isArray(pe.games) || !pe.games.length) return null;
+    const c = PLAY[m.ek]; if (c && c.at === pe.at && c.ns === m.nSets) return c.play;
+    const play = buildPlay(m, pe.games);
+    PLAY[m.ek] = { at: pe.at, ns: m.nSets, play };
+    return play;
+  }
+  function buildPlay(m, raw) {
+    const P = [], gCells = [], gw = {};
+    const bySet = {};
+    raw.forEach(g => { const n = setNo(g.set_number) || 1; (bySet[n] = bySet[n] || []).push(g); });
+    Object.keys(bySet).map(Number).sort((a, b) => a - b).forEach(n => {
+      const si = n - 1, list = bySet[n].slice().sort((a, b) => (+a.number_game || 0) - (+b.number_game || 0));
+      gw[si] = gw[si] || [0, 0];
+      const games = list.filter(g => !tbRow(g) && !tbSummary(g));
+      const tbs = list.filter(g => tbRow(g)).map(g => ({ g, sc: /^\s*(\d+)\s*-\s*(\d+)\s*$/.exec(String(g.score || '')) })).filter(x => x.sc)
+        .map(x => ({ g: x.g, a: +x.sc[1], b: +x.sc[2] })).sort((x, y) => (x.a + x.b) - (y.a + y.b));
+      games.forEach(g => {
+        const done = decided(g), aServ = side(g.player_served || g.serve_lost || (done ? null : null)) === 0;
+        const srv = side(g.player_served); if (srv == null && done) return;
+        const winner = done ? (g.serve_winner != null ? side(g.serve_winner) : (side(g.serve_lost) === 0 ? 1 : 0)) : null;
+        const chips = (g.points || []).map(p => ({ p, st: ptState(p.score) })).filter(x => x.st);
+        // the feed's garbled tails (live.md): keep the reachable prefix, then walk to the winner's game point
+        const kept = []; let prev = [0, 0], i = 0;
+        if (chips.length && stepWinner(prev, chips[0].st) == null) { prev = chips[0].st; kept.push(chips[0]); i = 1; }
+        while (i < chips.length && stepWinner(prev, chips[i].st) != null) { prev = chips[i].st; kept.push(chips[i]); i++; }
+        const gp = st => { if (winner == null) return true; const me = st[winner], op = st[1 - winner]; return me === 4 || (me === 3 && op <= 2); };
+        for (; i < chips.length && !gp(prev); i++) if (stepWinner(prev, chips[i].st) != null) { prev = chips[i].st; kept.push(chips[i]); }
+        const sIdx = srv == null ? (m.serving == null ? 0 : m.serving) : srv, ga = gw[si][0], gb = gw[si][1], start = P.length;
+        let pre = [0, 0], bp = 0;
+        const pushPt = (w, isBp) => { if (isBp) bp++;
+          const after = done && P.length - start === kept.length ? (ga + (winner === 0 ? 1 : 0)) + EN + (gb + (winner === 1 ? 1 : 0)) : ga + EN + gb;
+          P.push({ g: gCells.length, bp: isBp, sw: w === sIdx, as: sIdx === 0, aWon: w === 0, si, gs: after }); };
+        kept.forEach(x => { const w = stepWinner(pre, x.st); pushPt(w, bpState(pre, sIdx)); pre = x.st; });
+        if (done) pushPt(winner, bpState(pre, sIdx));
+        const cell = { gi: gCells.length, g0: [ga, gb], aServ: sIdx === 0, brk: done ? winner !== sIdx : false, bp, start, end: P.length, si, part: !done };
+        if (done) gw[si][winner]++;
+        cell.gs = gw[si][0] + EN + gw[si][1];
+        gCells.push(cell);
+      });
+      if (tbs.length) {
+        const start = P.length; let prev = [0, 0];
+        tbs.forEach(t => { const w = t.a > prev[0] ? 0 : t.b > prev[1] ? 1 : null; const s = side(t.g.player_served);
+          if (w != null) P.push({ g: gCells.length, bp: false, sw: s == null ? null : w === s, as: s === 0, aWon: w === 0, si, gs: gw[si][0] + EN + gw[si][1], tb: true });
+          prev = [t.a, t.b]; });
+        const last = tbs[tbs.length - 1], over = Math.max(last.a, last.b) >= 7 && Math.abs(last.a - last.b) >= 2;
+        const cell = { gi: gCells.length, g0: gw[si].slice(), aServ: null, brk: false, bp: 0, start, end: P.length, si, tb: true, part: !over };
+        if (over) gw[si][last.a > last.b ? 0 : 1]++;
+        cell.gs = gw[si][0] + EN + gw[si][1];
+        gCells.push(cell);
+      }
+    });
+    return { P, gCells, gw, ml: moments(m, P, gCells) };
+  }
+  // Moments: one line per service game with a break point (the score when that game started, the named player did it),
+  // plus every medical timeout on record. Major (reaches the card) = any break of serve, 3+ break points saved in one
+  // game, a stoppage. (Prototype rule; "Price moved, no break" has no threshold and is not built.)
+  function moments(m, P, gCells) {
+    const NW = ['', 'a break point', 'two break points', 'three break points'], needS = m.bo === 5 ? 3 : 2;
+    const ml = gCells.filter(c => c.bp > 0 && !c.tb).map(c => {
+      const srv = c.aServ ? 0 : 1, ret = 1 - srv, saved = P.slice(c.start, c.end).filter(p => p.bp && p.sw).length;
+      const r1 = c.g0[ret] + 1, s1 = c.g0[srv], won = m.sets.slice(0, c.si).filter(st => st[ret] > st[1 - ret]).length, who = c.brk ? ret : srv;
+      if (c.part && !c.brk && !saved) return null;
+      const t = c.brk ? (r1 >= 6 && r1 - s1 >= 2 ? 'Broke for the set' : r1 >= 5 && r1 > s1 ? (won + 1 >= needS ? 'Broke, serving for match' : 'Broke, serving for set') : 'Broke serve')
+        : 'Saved ' + (NW[saved] || saved + ' break points');
+      return { key: 'g' + c.gi, ord: c.si * 100 + c.g0[0] + c.g0[1], si: c.si, at: 'S' + (c.si + 1) + ' ' + c.g0[0] + EN + c.g0[1], atFull: 'Set ' + (c.si + 1) + ', at ' + c.g0[0] + EN + c.g0[1],
+        t, side: who, tone: null, px: null, brk: c.brk, major: c.brk || saved >= LIVE_CONST.BP_SAVED_MAJOR };
+    }).filter(Boolean);
+    (m.mto || []).forEach((x, k) => {
+      const g = Array.isArray(x.games) ? x.games : null, si = g && g[0] ? Math.max(0, g[0].length - 1) : null;
+      const sc = si == null ? null : [g[0][si] || 0, (g[1] || [])[si] || 0];
+      const sd = x.playerSide === 1 ? 0 : x.playerSide === 2 ? 1 : null;
+      ml.push({ key: 'mto' + k, ord: si == null ? 1e9 : si * 100 + sc[0] + sc[1] + 0.5, si: si == null ? m.nSets - 1 : si,
+        at: si == null ? D : 'S' + (si + 1) + ' ' + sc[0] + EN + sc[1], atFull: si == null ? 'Medical timeout' : 'Set ' + (si + 1) + ', at ' + sc[0] + EN + sc[1],
+        t: 'Medical timeout', side: sd, tone: 'mto', px: null, brk: null, major: true, open: !x.endedAt });
+    });
+    ml.sort((x, y) => y.ord - x.ord);
+    return ml;
   }
 
-  // Bars (founder TEN-417 R1 fix 2, SUPERSEDES TEN-263's fhStatBarWidth on Live): every row — rates, counts, ratings,
-  // ratios — draws each player's SHARE of the pair, A ÷ (A + B) of the half-width, inward from the centre (76% v 66% →
-  // 53.5% / 46.5%; 3 v 2 aces → 60% / 40%). A zero draws no segment (0 v 1 → none / the whole half). A missing side
-  // draws no segment on either side: a pair with one unknown has no share.
-  // Lead (TEN-417): the larger figure leads — white 700 and the solid bar (--bar); the other is --text-soft 500 on the
-  // 45% bar (--bar-2); a tie leads on both sides. A missing figure is a grey dash.
-  const twoSided=(label,aV,bV,aTxt,bTxt,aDen,bDen,kind,key)=>{
-    const aNull=aV===null||aV===undefined,bNull=bV===null||bV===undefined;
-    const tot=(aNull||bNull)?0:aV+bV;
-    const share=v=>(tot<=0||!v)?'0%':(v/tot*100).toFixed(1)+'%';
-    const aW=share(aV), bW=share(bV);
-    const av=aNull?0:aV,bv=bNull?0:bV,tie=av===bv;
-    const aLead=!aNull&&(tie||av>bv),bLead=!bNull&&(tie||bv>av);
-    return {label,aVal:aNull?DASH:aTxt,bVal:bNull?DASH:bTxt,
-      aColor:aNull?MISS:(aLead?INK:'var(--text-soft)'),bColor:bNull?MISS:(bLead?INK:'var(--text-soft)'),aWt:aLead?700:500,bWt:bLead?700:500,
-      aBar:aLead?'var(--bar)':'var(--bar-2)',bBar:bLead?'var(--bar)':'var(--bar-2)',
-      aDen:aNull?'':(aDen||''),bDen:bNull?'':(bDen||''),aW,bW};
-  };
-
-  // A rate over zero attempts does not exist (0 break points faced is not a 0%
-  // save rate) — it dashes. A genuine 0-of-n stays 0%.
-  const rateOf=c=>{
-    if(!c) return null;
-    if(c.total!=null){ if(c.total<=0) return null; if(c.won!=null) return Math.round(c.won/c.total*1000)/10; }
-    return c.value;
-  };
-  const denOf=c=>(c&&c.won!=null&&c.total!=null&&c.total>0)?'('+c.won+'/'+c.total+')':'';
-  // 1st serve percentage (TEN-417 R1 fix 6): the feed sends only the rate; its count is first serves in (the 1st-serve
-  // points played) over all service points played (1st + 2nd), from the same period's rows — so it prints "76% (19/25)"
-  // with one decimal like every rate row. Either total missing → the feed's own figure, no count.
-  const firstIn=(pk,p)=>{
-    const c=cell(pk,'1st serve percentage',p); if(c&&c.won!=null&&c.total!=null) return c;
-    const f=cell(pk,'1st serve points won',p),s=cell(pk,'2nd serve points won',p);
-    return (f&&s&&f.total!=null&&s.total!=null)?{won:f.total,total:f.total+s.total,value:null}:c;
-  };
-  const pctRow=(label,name,p)=>{
-    const one=/^1st serve percentage$/i.test(name);
-    const a=one?firstIn(pA,p):cell(pA,name,p),b=one?firstIn(pB,p):cell(pB,name,p),av=rateOf(a),bv=rateOf(b);
-    return twoSided(label,av,bv,av===null?'':av+'%',bv===null?'':bv+'%',denOf(a),denOf(b),'pct');
-  };
-  const cntOf=c=>(!c)?null:(c.value!=null?c.value:(c.won!=null?c.won:null));
-  // TEN-263 (ruling 2026-09-24): the feed sends an untracked winners/UE count as a literal 0. The
-  // same rule as the pipeline (match-stat-placeholders.js): W and UE all 0 for both players over 10+
-  // points played = not tracked, so both show a dash; under 10 points an all-zero sheet can be real.
-  const wueUntracked=p=>{
-    const v=(pk,n)=>cntOf(cell(pk,n,p));
-    const all=[v(pA,'Winners'),v(pB,'Winners'),v(pA,'Unforced errors'),v(pB,'Unforced errors')];
-    const tp=cell(pA,'Total Points Won',p);
-    return all.every(x=>!x)&&!!tp&&tp.total!=null&&tp.total>=10;
-  };
-  const cntRow=(label,name,p)=>{
-    const wue=/^(winners|unforced errors)$/.test(String(name).toLowerCase())&&wueUntracked(p);
-    const a=wue?null:cntOf(cell(pA,name,p)),b=wue?null:cntOf(cell(pB,name,p));
-    return twoSided(label,a,b,a===null?'':String(a),b===null?'':String(b),'','','count',name);
-  };
-
-  // Ratings are the house Serve / Return ratings (house-ratings.js via live-tab.js, TEN-327) on
-  // this match's box score — the same helper as the Match stats sheet. A missing component dashes.
-  const r0=v=>v==null?null:Math.round(v);
-  const svRat=p=>[r0(lf?lf.serveRating(idx,pA,p||per).rating:null),r0(lf?lf.serveRating(idx,pB,p||per).rating:null)];
-  const rtRat=p=>[r0(lf?lf.returnRating(idx,pA,p||per).rating:null),r0(lf?lf.returnRating(idx,pB,p||per).rating:null)];
-  const drRat=p=>{
-    const raw=[lf?lf.dominance(idx,pA,p||per):null,lf?lf.dominance(idx,pB,p||per):null];
-    return [raw[0]==null?null:+raw[0].toFixed(2),raw[1]==null?null:+raw[1].toFixed(2)];
-  };
-
-  const drRow=(lbl,p)=>{const v=drRat(p);return twoSided(lbl,v[0],v[1],v[0]===null?'':v[0].toFixed(2),v[1]===null?'':v[1].toFixed(2));};
-  const svRow=(lbl,p)=>{const v=svRat(p);return twoSided(lbl,v[0],v[1],v[0]===null?'':String(v[0]),v[1]===null?'':String(v[1]),'','','rating','serve');};
-  const rtRow=(lbl,p)=>{const v=rtRat(p);return twoSided(lbl,v[0],v[1],v[0]===null?'':String(v[0]),v[1]===null?'':String(v[1]),'','','rating','return');};
-
-  // §4 panel order and row lists, with "Pressure points" dropped — the feed has
-  // no such stat and synthesising one would print an invented metric beside real
-  // ones (founder ruling, 2026-09-11).
-  const sectionsAt=p=>[
-    {title:'Dominance',rows:[drRow('Dominance ratio',p)]},
-    {title:'Service',rows:[
-      svRow('Serve rating',p),
-      cntRow('Aces','Aces',p),
-      cntRow('Double faults','Double Faults',p),
-      pctRow('1st serve percentage','1st serve percentage',p),
-      pctRow('1st serve points won','1st serve points won',p),
-      pctRow('2nd serve points won','2nd serve points won',p),
-      pctRow('Break points saved','Break Points Saved',p),
-    ]},
-    {title:'Return',rows:[
-      rtRow('Return rating',p),
-      pctRow('1st return points won','1st return points won',p),
-      pctRow('2nd return points won','2nd return points won',p),
-      pctRow('Break points converted','Break Points Converted',p),
-    ]},
-    {title:'Points won',rows:[
-      cntRow('Winners','Winners',p),
-      cntRow('Unforced errors','Unforced errors',p),
-      pctRow('Net points won','Net points won',p),
-      pctRow('Service points won','Service Points Won',p),
-      pctRow('Return points won','Return Points Won',p),
-      pctRow('Total points won','Total Points Won',p),
-    ]},
-  ];
-  // TEN-210 · Some tournaments publish no box score at all (Davis Cup World Group II: 0 of 86 fixtures). Founder ruling
-  // 2026-09-16: do not explain the absence in a card — REMOVE the card. One rule at both levels: a scope is offered only
-  // if the feed has rows for it, and the Stats tab exists only if some scope is offered. A row that dashes because a
-  // rate does not exist (0 break points faced) is NOT this case, so a scope drops only when EVERY row in EVERY section
-  // is empty for it.
-  const scopeHasRows=p=>sectionsAt(p).some(sec=>sec.rows.some(r=>r.aVal!==DASH||r.bVal!==DASH));
-  // TEN-417 Stats: MATCH · SET 1 … SET n (the feed's own stat_period: match, set1, set2 …).
-  const scopeOpts=[{id:'MATCH',per:'match',label:'MATCH',name:'Match to date'}]
-    .concat(m.sets.map((_,i)=>({id:i+1,per:'set'+(i+1),label:'SET '+(i+1),name:'Set '+(i+1)})))
-    .filter(o=>scopeHasRows(o.per));
-  const statsAbsent=scopeOpts.length===0;
-  const effOpt=scopeOpts.find(o=>o.id===S.scope)||scopeOpts[0]||{id:'MATCH',per:'match',name:'Match to date'};
-  per=effOpt.per;
-
-  const statSections=sectionsAt(per);
-
-  // ── Points tab — the real point log ──
-  const entry=lf?lf.pbpGet(m.ek):null;
-  const pbpGames=(entry&&Array.isArray(entry.games))?entry.games:[];
-  // An open sheet has always asked for its log: no entry yet is loading, not "no games" (review).
-  const pbpLoading=!entry||!!(entry.loading&&!entry.games);
-  const pbpError=!!(entry&&entry.error&&!entry.games);
-
-  const setIdx=Math.min(Math.max(1,S.pset),nSets)-1;
-  const setNum=setIdx+1;
-  const scSet=m.sets[setIdx];
-  const setScoreLabel=scSet?('SET '+setNum+'  '+scSet[0]+'–'+scSet[1]):('SET '+setNum);
-
-  // The export's `Math.max(12, played)` floor is DELETED (founder ruling): a set
-  // renders exactly the games the feed has logged — a short set looks short.
-  // The feed opens a game row the moment a game starts, before anything has
-  // happened in it: score, player_served, serve_winner and serve_lost all null
-  // and no points array. A row shows once it carries a score or at least one point.
-  const hasSubstance = gm => String(gm.score||'').trim()!=='' ||
-                             (Array.isArray(gm.points) && gm.points.length>0);
-  const tbLogged=pbpGames.some(gm=>setNoOf(gm)===setNum&&isTiebreakRow(gm));
-  const games=pbpGames
-    .filter(gm=>setNoOf(gm)===setNum&&!isTiebreakRow(gm)&&hasSubstance(gm)&&!(tbLogged&&isTbGame(gm)))
-    .sort((a,b)=>(+a.number_game||0)-(+b.number_game||0))
-    .map(gm=>{
-      const aServ=/first/i.test(String(gm.player_served||gm.serve_winner||gm.serve_lost||''));
-      const bServ=/second/i.test(String(gm.player_served||gm.serve_winner||gm.serve_lost||''));
-      const parts=String(gm.score||'').split('-').map(x=>x.trim());
-      const decided=momDecided(gm);
-      // The game's winner (the server unless he lost serve) — the lifted chip must show him on 40 / AD (see momentum).
-      const aWonG=aServ?!gm.serve_lost:!!gm.serve_lost;
-      // A 7–6 row is the tiebreak: if its points are listed here (no "Set N TieBreak" rows), they are tiebreak scores —
-      // shown as sent, never decoded as a game (review).
-      const dec=isTbGame(gm)?(Array.isArray(gm.points)?gm.points.filter(ptScored):[]):lvDecodePoints(gm.points,decided?aWonG:null);
-      // TEN-417 R2 fix 4 (reference): every game's sequence opens on a 0:0 chip — not a tiebreak, not a log that joins
-      // mid-game (its first score is not one point from 0:0).
-      const pts=(!isTbGame(gm)&&dec.length&&ptReach([0,0],ptState(dec[0])))?[{score:'0 - 0'}].concat(dec):dec;
-      const winsFrom=pt=>{const q=String(pt&&pt.score||'').split('-').map(y=>y.trim().toUpperCase());return /^(40|A|AD)$/.test(aWonG?q[0]:q[1]);};
-      return {
-        isGame:true,hasPoints:pts.length>0,divider:false,dividerLabel:'',spA:'',spB:'',
-        servesA:aServ,servesB:bServ,
-        // Running games: the server's figure white, the receiver's grey.
-        aGames:parts[0]||'',bGames:parts[1]||'',
-        aColor:aServ?INK:MISS,bColor:bServ?INK:MISS,
-        lost:!!gm.serve_lost&&!isTbGame(gm),
-        points:pts.map((pt,pi)=>({
-          // "15 - 0" → "15:0": the export's typography, the feed's value.
-          v:String(pt.score==null?'':pt.score).replace(/\s*-\s*/,':'),
-          // TEN-417 R2 fix 2: BP follows a score where the RECEIVER is one point from the game — on 40 with the server on
-          // 30 or less, or on advantage (0:40 / 15:40 / 30:40 / 40:A for him, mirrored). Never on 40:40. Read off the
-          // score and the server, not the feed's break_point flag (it lands on the deuce before the advantage).
-          bp:(()=>{ const st=ptState(pt); if(!st||!(aServ||bServ)) return false; const rc=aServ?st[1]:st[0], sv=aServ?st[0]:st[1]; return rc===4||(rc===3&&sv<=2); })(),
-          sep:pi===pts.length-1?'':',',
-          // 1b "Lifted last point": the score a DECIDED game was won from; a game in progress, or a garbled last entry,
-          // lifts nothing.
-          win:decided&&pi===pts.length-1&&winsFrom(pt),
-        })),
-      };
-    });
-
-  // Tiebreak: arrives as its own pseudo-set, "Set N TieBreak", one row per POINT
-  // carrying the running score and the server (the feed's player_served — the
-  // tiebreak serve rotation as played). Rows arrive out of order.
-  const tbRows=pbpGames
-    .filter(gm=>setNoOf(gm)===setNum&&isTiebreakRow(gm)&&String(gm.score||'').trim()!=='')
-    .sort((a,b)=>(+a.number_game||0)-(+b.number_game||0));
-  if(tbRows.length){
-    games.push({isGame:false,hasPoints:false,divider:true,servesA:false,servesB:false,dividerLabel:'Tiebreak · Set '+setNum,aGames:'',bGames:'',aColor:MISS,bColor:MISS,lost:false,points:[],spA:'',spB:''});
-    const need=m.bo===5?3:2;
-    const setsBefore=[0,1].map(side=>m.sets.slice(0,setIdx).filter(st=>st[side]>st[1-side]).length);
-    const target=(m.slam&&setNum===m.bo)?10:7;
-    let prev=[0,0];
-    tbRows.forEach(gm=>{
-      const p=String(gm.score||'').split('-').map(x=>parseInt(x.trim(),10));
-      const a=Number.isFinite(p[0])?p[0]:prev[0],b=Number.isFinite(p[1])?p[1]:prev[1];
-      const aServes=/first/i.test(String(gm.player_served||''));
-      const bServes=/second/i.test(String(gm.player_served||''));
-      // Who won the point: on a tiebreak row serve_lost names the server when he LOST it, so the row says it itself
-      // (a skipped row cannot flip it); a row without its server falls back to the running score.
-      const aWon=(aServes||bServes)?(aServes?gm.serve_lost==null:gm.serve_lost!=null):a>prev[0];
-      const tag=tbTag(a,b,target,setsBefore,need);
-      games.push({isGame:true,hasPoints:false,divider:false,dividerLabel:'',servesA:aServes,servesB:bServes,aGames:String(a),bGames:String(b),aColor:aWon?INK:MISS,bColor:aWon?MISS:INK,lost:aServes?!aWon:aWon,points:[],spA:tag[0],spB:tag[1]});
-      prev=[a,b];
-    });
+  // ── status chip on the card and the modal head ─────────────────────────────────────────────────────────────────
+  const TONE = { key: [C.text, C.lifted, wa(14)], mto: [C.amber, mix(C.amber, 12), mix(C.amber, 32)] };
+  function sigOf(m) {
+    const openMto = (m.mto || []).find(x => !x.endedAt);
+    if (openMto) {
+      const sd = openMto.playerSide === 1 ? 0 : openMto.playerSide === 2 ? 1 : null;
+      const g = openMto.games, si = g && g[0] ? g[0].length : null, gn = g && si ? (g[0][si - 1] || 0) + ((g[1] || [])[si - 1] || 0) + 1 : null;
+      return { has: true, chip: 'Medical timeout', tone: 'mto', who: sd, text: [sd == null ? '' : m.names[sd], si ? 'Set ' + si + ', game ' + gn : ''].filter(Boolean).join(' ' + DOT + ' ') };
+    }
+    if (!m.live || !m.point || m.serving == null) return breakUp(m);
+    const cur = m.sets[m.nSets - 1], need = m.bo === 5 ? 3 : 2, won = s => m.sets.slice(0, m.nSets - 1).filter(st => st[s] > st[1 - s]).length;
+    const tbNow = cur[0] === 6 && cur[1] === 6, srv = m.serving;
+    let pointFor = null;
+    if (tbNow) {
+      const a = +m.point[0], b = +m.point[1], T = (m.bo === 5 && m.nSets === 5) || (m.bo === 3 && m.nSets === 3 && false) ? 10 : 7;
+      if (isFinite(a) && isFinite(b)) pointFor = a >= T - 1 && a > b ? 0 : b >= T - 1 && b > a ? 1 : null;
+    } else {
+      const st = ptState(m.point[0] + '-' + m.point[1]);
+      if (st) pointFor = (st[0] === 4 || (st[0] === 3 && st[1] <= 2)) ? 0 : (st[1] === 4 || (st[1] === 3 && st[0] <= 2)) ? 1 : null;
+    }
+    if (pointFor != null) {
+      const g = cur[pointFor] + 1, o = cur[1 - pointFor];
+      const setPt = tbNow || (g >= 6 && g - o >= 2);
+      if (setPt && won(pointFor) + 1 >= need) return { has: true, chip: 'Match point', tone: 'key', who: pointFor, text: m.names[pointFor] };
+      if (setPt) return { has: true, chip: 'Set point', tone: 'key', who: pointFor, text: m.names[pointFor] };
+      if (!tbNow && pointFor !== srv) return { has: true, chip: 'Break point', tone: 'key', who: pointFor, text: m.names[pointFor] };
+    }
+    return breakUp(m);
   }
+  function breakUp(m) {
+    const play = playOf(m); if (!play) return { has: false };
+    const si = m.nSets - 1, br = [0, 0];
+    play.gCells.filter(c => c.si === si && c.brk && !c.tb).forEach(c => { br[c.aServ ? 1 : 0]++; });
+    const d = br[0] - br[1];
+    return d ? { has: true, chip: 'Break up', tone: 'key', who: d > 0 ? 0 : 1, text: m.names[d > 0 ? 0 : 1] } : { has: false };
+  }
+  const chipHtml = sig => { const t = TONE[sig.tone];
+    return `<span title="${esc(sig.text)}" style="margin-left:auto; flex:none; font-size:11.5px; font-weight:700; color:${t[0]}; background:${t[1]}; border:1px solid ${t[2]}; border-radius:6px; padding:3px 8px; white-space:nowrap; display:flex; align-items:center; gap:6px;">${esc(sig.chip)}</span>`; };
 
-  // ── Ratings tab — always the match to date (the Stats scope does not reach it) ──
-  // Dominance Ratio = returnPtsWon% / (100 − servicePtsWon%), and the opponent's return-points-won% IS 100 − my
-  // service-points-won%, so the printed note is the formula.
-  const ratingRows=[
-    Object.assign(drRow('Dominance ratio','match'),{scaleNote:'return points won ÷ opponent return points won'}),
-    Object.assign(svRow('Serve rating','match'),{scaleNote:'ATP composite · match to date'}),
-    Object.assign(rtRow('Return rating','match'),{scaleNote:'ATP composite · match to date'}),
-  ];
-  const wnA=cntOf(cell(pA,'Winners','match')),wnB=cntOf(cell(pB,'Winners','match'));
-  const ueA=cntOf(cell(pA,'Unforced errors','match')),ueB=cntOf(cell(pB,'Unforced errors','match'));
-  const tpA=cell(pA,'Total Points Won','match'),tpB=cell(pB,'Total Points Won','match');
-  const totalPlayed=(tpA&&tpA.total!=null&&tpA.total>0)?tpA.total:((tpB&&tpB.total!=null&&tpB.total>0)?tpB.total:null);
-  const wueOff=wueUntracked('match');
-  const ratioOf=(w,u)=>(!wueOff&&w!=null&&u!=null&&u>0)?+(w/u).toFixed(2):null;
-  const wue=[ratioOf(wnA,ueA),ratioOf(wnB,ueB)];
-  const perPt=(n,d)=>(n!=null&&d!=null&&d>0)?(n/d).toFixed(2):null;
-  const wueDen=(w,u)=>{const wp=perPt(w,totalPlayed),up=perPt(u,totalPlayed);return(!wueOff&&wp&&up)?'(W/P '+wp+' · UE/P '+up+')':'';};
-  ratingRows.push(Object.assign(twoSided('Ratio W/UE',wue[0],wue[1],wue[0]===null?'':wue[0].toFixed(2),wue[1]===null?'':wue[1].toFixed(2),wueDen(wnA,ueA),wueDen(wnB,ueB)),{scaleNote:'winners ÷ unforced errors · above 1.00 is net-positive ball striking'}));
+  // ── shared pieces ─────────────────────────────────────────────────────────────────────────────────────────────
+  const seg2 = on => ({ c: on ? 'var(--ma2-white)' : C.grey, bg: on ? C.lifted : 'transparent', bd: on ? wa(14) : 'transparent', w: on ? 700 : 600 });
+  // one filter track, every place (the site track): items pad / radius / size per call site
+  function track(items, o) {
+    o = o || {};
+    const it = items.map(x => { const s = seg2(x.on); if (x.on && o.pickC) s.c = o.pickC;
+      return `<span class="lvseg" data-act="${esc(x.act)}"${x.title ? ` title="${esc(x.title)}"` : ''} style="${o.itemCss || 'padding:5px 12px; border-radius:7px; font-size:12.5px;'} font-weight:${s.w}; color:${s.c}; background:${s.bg}; border:1px solid ${s.bd}; cursor:pointer; user-select:none; white-space:nowrap; transition:color .14s, background .14s;">${esc(x.label)}${x.n != null ? `<span style="${MONO} font-size:11px; font-weight:600; color:${C.grey};">${esc(x.n)}</span>` : ''}</span>`; }).join('');
+    const tg = o.tag || 'span';
+    return `<${tg}${o.attr ? ' ' + o.attr : ''} style="display:${o.inline === false ? 'flex' : 'inline-flex'}; ${o.wrap ? 'flex-wrap:wrap; ' : ''}gap:3px; background:${C.track}; border:1px solid ${wa(10)}; border-radius:10px; padding:3px;${o.css || ''}">${it}</${tg}>`;
+  }
+  // one avatar, every place: photo over the initials (player-photos.md), ring when given
+  function ava(p, sz, o) {
+    o = o || {};
+    const photo = has('playerPhotoImg') && p.key != null ? playerPhotoImg(p.key, p.name) : '';
+    const ring = o.ring ? (o.inset ? `box-shadow:inset 0 0 0 2px ${o.ring};` : `border:2px solid ${o.ring};`) : `border:1px solid ${wa(14)};`;
+    return `<span${o.attr ? ' ' + o.attr : ''}${o.title ? ` title="${esc(o.title)}"` : ''} style="position:relative; overflow:hidden; width:${sz}px; height:${sz}px; flex:none; box-sizing:${o.cb ? 'content-box' : 'border-box'}; border-radius:50%; background:${o.bg || C.lifted}; ${ring} display:flex; align-items:center; justify-content:center; font-size:${o.fs}; font-weight:${o.fw || 800}; color:${C.text};${o.css || ''}">${esc(INI(p.name))}${photo}</span>`;
+  }
+  // one "i" box, every place
+  const iDot = (act, o) => `<span data-act="${act}" data-hov="${act}" style="width:${o.sz || 16}px; height:${o.sz || 16}px; flex:none; box-sizing:border-box; border-radius:50%; ${o.bg ? 'background:' + o.bg + '; ' : ''}border:1px solid ${o.bd || wa(22)}; display:flex; align-items:center; justify-content:center; ${o.mono ? MONO : ''}font-size:${o.fs || '10.5px'}; font-weight:700; color:${o.c || C.grey}; cursor:pointer; user-select:none;">i</span>`;
+  const floatBox = (css, inner) => `<span style="position:absolute; ${css} box-sizing:border-box; background:${C.lifted}; border:1px solid ${wa(14)}; border-radius:10px; box-shadow:var(--lv-shadow-menu); ${''}">${inner}</span>`;
+  const mto = (sz, css) => `<span data-mmto style="position:${css.indexOf('absolute') >= 0 ? 'absolute' : 'relative'}; ${css} width:${sz}px; height:${sz}px; flex:none; border-radius:50%; background:var(--ma2-white); box-shadow:0 0 0 2px ${C.inner};"><span style="position:absolute; left:4px; top:6.75px; width:8px; height:2.5px; border-radius:1px; background:${C.red};"></span><span style="position:absolute; left:6.75px; top:4px; width:2.5px; height:8px; border-radius:1px; background:${C.red};"></span></span>`;
 
-  // A tab whose only card has been removed is not a tab: no box score → no Stats tab.
-  const tabs=['Ratings','Stats','Points','Break/Hold'].filter(t=>!(t==='Stats'&&statsAbsent));
-  const effTab=tabs.indexOf(S.tab)>=0?S.tab:tabs[0];
+  // ── page ──────────────────────────────────────────────────────────────────────────────────────────────────────
+  const PRI = ['Match point', 'Set point', 'Break point', 'Medical timeout', 'Break up'];
+  const pri = sig => { const i = sig.has ? PRI.indexOf(sig.chip) : -1; return !sig.has ? 9 : i < 0 ? 6 : i; };
+  function cardsModel() {
+    const all = LIVE.map(m => ({ m, sig: sigOf(m) }));
+    const qq = S.q.trim().toLowerCase();
+    const cards = all.filter(c => S.flt === 'ALL' || (S.flt === 'LIVE') === c.m.live)
+      .filter(c => !qq || (c.m.tour + ' ' + c.m.round + ' ' + c.m.names.join(' ') + ' ' + c.m.A.raw + ' ' + c.m.B.raw).toLowerCase().includes(qq))
+      .sort((a, b) => (S.sort === 'KEY' ? pri(a.sig) - pri(b.sig) : 0) || ordCmp(a.m, b.m));
+    const groups = []; cards.forEach(c => { let g = groups.find(x => x.name === c.m.tour); if (!g) groups.push(g = { name: c.m.tour, cards: [] }); g.cards.push(c); });
+    return { all, cards, groups };
+  }
+  // order of play: the scheduled start, then the feed's own order
+  const ordCmp = (a, b) => ((isFinite(a.startMs) ? a.startMs : 9e15) - (isFinite(b.startMs) ? b.startMs : 9e15)) || (a.i - b.i);
+  function headerHtml(all) {
+    const ip = all.filter(c => c.m.live).length, itr = all.length - ip, evs = new Set(all.map(c => c.m.tour)).size;
+    const ready = FEED.ready;
+    const fig = (l, v, c) => `<div style="display:flex; flex-direction:column; gap:5px;"><span style="font-size:11.5px; font-weight:600; color:${C.grey};">${l}</span><span style="${MONO} font-size:20px; font-weight:700; color:${c || C.text};">${v}</span></div>`;
+    const upd = FEED.updatedAt ? new Date(FEED.updatedAt) : null;
+    const updTxt = !ready || !upd ? D : (FEED.isStale ? timeOfMs(upd) : 'now');
+    return `<div class="lv-head" style="background:${C.card}; border:1px solid ${wa(6)}; border-radius:16px; padding:22px 24px; display:flex; align-items:center; justify-content:space-between; gap:20px 36px; flex-wrap:wrap;">
+    <div style="flex:1; min-width:220px; display:flex; flex-direction:column; gap:6px;"><div style="font-size:24px; font-weight:800; letter-spacing:-0.015em; line-height:1.1;">Live</div><div style="font-size:13px; color:${C.grey}; text-wrap:pretty;">Singles matches in play right now, point by point.</div></div>
+    <div style="display:flex; gap:16px 36px; flex-wrap:wrap;">${fig('In play', ready ? ip : D)}${fig('Interrupted', ready ? itr : D, ready && itr ? C.amber : C.grey)}${fig('Events', ready ? evs : D)}
+      <div style="display:flex; flex-direction:column; gap:5px;"><span style="font-size:11.5px; font-weight:600; color:${C.grey};">Updated</span><span title="${upd ? esc(upd.toISOString().replace('T', ' ').slice(0, 19) + 'Z') : ''}" style="display:inline-flex; align-items:center; gap:8px; ${MONO} font-size:20px; font-weight:700; color:${C.text};">${ready && upd && !FEED.isStale ? `<span style="width:7px; height:7px; border-radius:50%; background:${C.green}; animation:lvpulse 1.6s ease-in-out infinite;"></span>` : ''}${updTxt}</span></div></div></div>`;
+  }
+  function timeOfMs(d) { try { return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: has('newsTz') ? newsTz() || undefined : undefined }); } catch (e) { return ''; } }
+  function toolbarLeft(all) {
+    const nLive = all.filter(c => c.m.live).length;
+    return `<span style="font-size:12.5px; font-weight:600; color:${C.grey};">Show</span>`
+      + track([['All', 'ALL', all.length], ['In play', 'LIVE', nLive], ['Interrupted', 'STOP', all.length - nLive]].map(([l, k, n]) => ({ label: l, act: 'flt:' + k, on: S.flt === k, n: String(n) })),
+        { tag: 'div', pickC: C.text, itemCss: 'display:inline-flex; align-items:baseline; gap:7px; padding:6px 12px; border-radius:8px; font-size:12.5px;' })
+      + `<span style="width:1px; height:20px; background:${wa(8)};"></span><span style="font-size:12.5px; font-weight:600; color:${C.grey};">Sort by</span>`
+      + track([['Key moments first', 'KEY'], ['Order of play', 'ORD']].map(([l, k]) => ({ label: l, act: 'sort:' + k, on: S.sort === k })), { tag: 'div', pickC: C.text, itemCss: 'padding:6px 12px; border-radius:8px; font-size:12.5px;' });
+  }
+  function cardHtml(c) {
+    const m = c.m, sig = c.sig, cur = m.nSets - 1;
+    const sw = s => m.sets.slice(0, cur).filter(st => st[s] > st[1 - s]).length, sc = s => sw(s) * 100 + m.sets[cur][s];
+    const stC = m.live ? C.text : C.amber;
+    const play = playOf(m), mj = play ? play.ml.filter(e => e.major) : null, n = mj ? mj.length : 0, open = !!S.evOpen[m.ek] && n > 0;
+    const head = s => `<span style="width:${s === 'Games' ? 42 : 36}px; flex:none; text-align:center; font-size:11.5px; font-weight:600; color:${C.grey};">${s}</span>`;
+    const div = h => `<span style="width:1px; flex:none; height:${h}px; margin:0 8px 0 6px; background:${wa(8)};"></span>`;
+    const rows = [0, 1].map(s => { const p = s ? m.B : m.A, lead = sc(s) > sc(1 - s), lvl = sc(s) === sc(1 - s);
+      return `<div style="display:flex; align-items:center;"><span style="flex:1; display:flex; align-items:center; gap:8px; min-width:0;">${ava(p, 26, { fs: '9.5px', cb: true })}<span title="${esc(p.name)}" style="font-size:14px; font-weight:${lead ? 700 : lvl ? 600 : 500}; color:${lead || lvl ? C.text : C.soft}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(p.name)}</span><span style="width:7px; height:7px; border-radius:50%; background:${m.live && m.serving === s ? C.text : 'transparent'}; flex:none;"></span></span>
+        <span style="width:36px; flex:none; text-align:center; ${MONO} font-variant-numeric:tabular-nums; font-size:14px; font-weight:500; color:${C.soft};">${esc(m.point ? m.point[s] : D)}</span><span style="width:36px; flex:none; text-align:center; ${MONO} font-variant-numeric:tabular-nums; font-size:14px; font-weight:700; color:${C.text};">${sw(s)}</span><span style="width:42px; flex:none; text-align:center; ${MONO} font-variant-numeric:tabular-nums; font-size:14px; font-weight:500; color:${C.grey};">${m.sets[cur][s]}</span>${div(20)}<span${m.pre.tip ? ` title="${esc(m.pre.tip)}"` : ''} style="width:40px; flex:none; text-align:center; ${MONO} font-variant-numeric:tabular-nums; font-size:13px; color:${C.grey};">${px(m.pre.v[s])}</span></div>`; }).join('');
+    const box = s => `<span style="flex:1; min-width:0; display:flex; align-items:center; justify-content:space-between; height:34px; box-sizing:border-box; padding:0 10px; border-radius:8px; background:${C.card}; border:1px solid ${wa(8)};"><span style="font-size:12.5px; color:${C.grey};">${s + 1}</span><span title="No in-play price feed on this page yet" style="${MONO} font-variant-numeric:tabular-nums; font-size:14px; font-weight:700; color:${C.text};">${D}</span></span>`;
+    const btn = !mj ? '' : n ? `<span data-act="mom:${m.ek}" style="flex:none; display:inline-flex; align-items:center; gap:6px; height:34px; padding:0 8px; border-radius:8px; font-size:12px; font-weight:600; color:${open ? C.text : C.grey}; background:${open ? C.lifted : 'transparent'}; white-space:nowrap; cursor:pointer; transition:color .14s, background .14s;" class="lv-mbtn">${n === 1 ? '1 moment' : n + ' moments'}<span style="font-size:9px; transform:${open ? 'rotate(180deg)' : 'none'}; transition:transform .14s;">▼</span></span>`
+      : `<span style="flex:none; display:inline-flex; align-items:center; height:34px; padding:0 8px; font-size:12px; color:${C.grey}; white-space:nowrap;">No moments</span>`;
+    const list = !open ? '' : `<div data-stop="1" style="margin:0 14px 12px; padding:6px 0; border-radius:10px; background:${C.card}; border:1px solid ${wa(6)}; display:flex; flex-direction:column; gap:1px; cursor:default;">${mj.slice(0, LIVE_CONST.CARD_MOMENTS_CAP).map(e => `<div class="lv-mrow" style="display:flex; align-items:baseline; gap:8px; min-height:26px; box-sizing:border-box; margin:0 4px; padding:5px 8px; border-radius:7px; transition:background .14s;">
+      <span title="${esc(e.atFull)}" style="width:46px; flex:none; ${MONO} font-size:11px; color:${C.grey}; white-space:nowrap;">${esc(e.at)}</span>
+      <span style="flex:1; display:flex; align-items:baseline; gap:7px; min-width:0; white-space:nowrap;"><span title="${esc(e.t)}" style="min-width:0; overflow:hidden; text-overflow:ellipsis; font-size:12px; font-weight:700; color:${e.tone === 'mto' ? C.amber : C.text};">${esc(e.t)}</span><span style="flex:none; white-space:nowrap; font-size:12px; color:${C.grey};">${esc(e.side == null ? '' : m.names[e.side])}</span></span>
+      <span style="flex:none; min-width:70px; display:inline-flex; align-items:baseline; justify-content:flex-end; gap:3px; ${MONO} font-variant-numeric:tabular-nums; font-size:11px; white-space:nowrap;"><span style="color:${C.grey};">${EN}</span></span></div>`).join('')}${n > LIVE_CONST.CARD_MOMENTS_CAP ? `<div style="margin:5px 12px 0; padding:7px 0 2px; border-top:1px solid ${wa(6)}; font-size:11.5px; color:${C.grey};">All moments in match view</div>` : ''}</div>`;
+    return `<div class="lvcard" data-open="${esc(m.ek)}" style="background:${C.inner}; border:1px solid ${wa(6)}; border-radius:12px; overflow:hidden;">
+      <div style="display:flex; flex-direction:column; gap:10px; padding:12px 14px;">
+        <div style="display:flex; align-items:center; gap:10px; min-height:24px;"><span style="font-size:12px; color:${C.grey}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(m.round || D)}</span>${sig.has ? chipHtml(sig) : ''}</div>
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <div style="display:flex; align-items:center;"><span style="flex:1; min-width:0; display:inline-flex; align-items:center; gap:7px; font-size:12.5px; font-weight:700; color:${stC}; white-space:nowrap;"><span style="width:6px; height:6px; border-radius:50%; background:${stC}; animation:${m.live ? 'lvpulse 1.6s ease-in-out infinite' : 'none'};"></span>${m.live ? 'Set ' + m.nSets : 'Interrupted'}</span>${head('Pts')}${head('Sets')}${head('Games')}${div(12)}<span style="width:40px; flex:none; text-align:center; font-size:11.5px; font-weight:600; color:${C.grey};">Pre</span></div>
+          ${rows}
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; padding-top:10px; border-top:1px solid ${wa(6)};">${box(0)}${box(1)}${btn}</div>
+      </div>${list}</div>`;
+  }
+  function pageBodyHtml(model) {
+    if (!FEED.ready) return skeletonHtml();
+    if (!model.all.length) return `<div style="display:flex; flex-direction:column; align-items:center; gap:8px; padding:72px 20px; background:${C.inner}; border:1px solid ${wa(6)}; border-radius:12px;"><div style="font-size:15px; font-weight:700;">Nothing in play</div><div style="font-size:13px; color:${C.grey}; max-width:380px; text-align:center; line-height:1.55;">Matches appear here the moment the first point is played.</div></div>`;
+    if (!model.cards.length) return `<div style="padding:56px 20px; background:${C.inner}; border:1px solid ${wa(6)}; border-radius:12px; text-align:center; font-size:13px; color:${C.grey};">No matches match this filter or search.</div>`;
+    return model.groups.map(g => `<div style="display:flex; flex-direction:column; gap:10px;"><div style="display:flex; align-items:center; gap:10px; padding:6px 2px 0;"><span style="font-size:13.5px; font-weight:700; color:${C.text}; white-space:nowrap;">${esc(g.name)}</span><span style="font-size:12px; color:${C.grey}; white-space:nowrap;">${g.cards.length}${g.cards.length === 1 ? ' match' : ' matches'}</span><span style="flex:1; height:1px; background:${wa(6)};"></span></div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,max(300px,calc((100% - 20px) / 3))),1fr)); align-items:start; gap:10px;">${g.cards.map(cardHtml).join('')}</div></div>`).join('');
+  }
+  // DESIGN GAP (brief point i, for review): loading = skeleton cards in the card's own geometry; no figure, no claim
+  function skeletonHtml() {
+    const bar = (w, h) => `<span style="display:block; width:${w}; height:${h}px; border-radius:5px; background:${wa(5)};"></span>`;
+    const card = `<div style="background:${C.inner}; border:1px solid ${wa(6)}; border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:12px;">${bar('30%', 12)}${bar('70%', 26)}${bar('70%', 26)}<span style="height:1px; background:${wa(6)};"></span>${bar('100%', 34)}</div>`;
+    return `<div data-lvskel style="display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,max(300px,calc((100% - 20px) / 3))),1fr)); gap:10px;">${card}${card}${card}</div>`;
+  }
+  // DESIGN GAP (brief point i, for review): the feed stopped updating — one line with the time of the last update
+  const feedErrHtml = () => !FEED.ready || !FEED.isStale ? '' : `<div data-lverr style="padding:10px 14px; border-radius:10px; background:${C.inner}; border:1px solid ${wa(6)}; font-size:12.5px; color:${C.grey};">Live feed not updating ${DOT} last update ${esc(FEED.updatedAt ? timeOfMs(new Date(FEED.updatedAt)) : D)}</div>`;
 
-  const mom=momentumSets(pbpGames,m);
-  const heatA=heatFor(m.keys[0],S.hb,m.bo),heatB=heatFor(m.keys[1],S.hb,m.bo);
-  const maxSet=m.bo===3?3:5;
-  const setCols=[1,2,3,4,5].map(n=>({label:'S'+n,dim:n>maxSet}));
-
-  return Object.assign({},hdr,{
-    isEmpty:false,
-    modalOpen:true,
-    modal:{
-      title:m.title,aName:A,bName:B,aIni:lvIni(A),bIni:lvIni(B),aKey:m.keys&&m.keys[0],bKey:m.keys&&m.keys[1],
-      aScore:scoreCells(0),bScore:scoreCells(1),aPt:m.point[0],bPt:m.point[1],
-      setHead:m.sets.map((_,i)=>({t:'S'+(i+1),cur:i===m.sets.length-1})),nSets:m.sets.length,
-      aSub:subOf(0),bSub:subOf(1),
-      aServes:m.serving===0&&liveM,bServes:m.serving===1&&liveM,
-      status:(liveM?'Live · Set ':'Interrupted · Set ')+nSets,
-      stColor:liveM?INK:'var(--amber)',
-    },
-    tabs,tab:effTab,
-    scope:effOpt.id,scopeName:effOpt.name,scopeOpts,nSets,
-    statSections,statsAbsent,
-    setTabs:m.sets.map((_,i)=>i+1),pset:setNum,
-    setScoreLabel,games,pbpLoading,pbpError,
-    ratingRows,mom,curSet:m.sets.length,
-    hb:S.hb,
-    heatBaseline:S.hb==='HOLD'
-      ?'Cell colour is the gap to the player’s own global hold rate for that bucket: green above it, red below, neutral within ±3 points. The gap is printed under the rate; hover for the count.'
-      :'Cell colour is the gap to the player’s own global break rate for that bucket: green above it, red below, neutral within ±3 points. The gap is printed under the rate; hover for the count.',
-    heatGates:'n≥10 full size · n 5–9 smaller and greyed · n<5 raw count only, no percentage · n=0 a dash.',
-    heatPlayers:[
-      {name:A,key:m.keys&&m.keys[0],ini:lvIni(A),globalLabel:heatA.globalLabel,rows:heatA.rows,setCols},
-      {name:B,key:m.keys&&m.keys[1],ini:lvIni(B),globalLabel:heatB.globalLabel,rows:heatB.rows,setCols},
-    ],
-  });
-}
-
-
-// ── HTML builders ─────────────────────────────────────────────────────────────
-function e(x){ return String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-const MONO="font-family:'IBM Plex Mono',monospace;";
-const CAPS='font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);';
-
-// The two-sided bar: two 6% tracks 3px apart, each segment drawn inward from the centre.
-function barHtml(r, mt){
-  return `<span style="display:grid;grid-template-columns:1fr 1fr;gap:3px;height:6px;${mt?'margin-top:'+mt+'px;':''}">
-    <span style="display:flex;justify-content:flex-end;background:var(--track);border-radius:3px;overflow:hidden;"><span style="width:${r.aW};background:${r.aBar};border-radius:3px;"></span></span>
-    <span style="display:flex;justify-content:flex-start;background:var(--track);border-radius:3px;overflow:hidden;"><span style="width:${r.bW};background:${r.bBar};border-radius:3px;"></span></span>
-  </span>`;
-}
-
-function statRowHtml(r){
-  return `
-<div>
-  <div style="display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:baseline;gap:12px;">
-    <span style="display:flex;align-items:baseline;gap:7px;min-width:0;">
-      <span style="${MONO}font-size:14px;font-weight:${r.aWt};color:${r.aColor};">${e(r.aVal)}</span>
-      <span style="${MONO}font-size:10.5px;color:var(--text-label);white-space:nowrap;">${e(r.aDen)}</span>
-    </span>
-    <span style="font-size:12.5px;color:var(--text-soft);white-space:nowrap;">${e(r.label)}</span>
-    <span style="display:flex;align-items:baseline;justify-content:flex-end;gap:7px;min-width:0;">
-      <span style="${MONO}font-size:10.5px;color:var(--text-label);white-space:nowrap;">${e(r.bDen)}</span>
-      <span style="${MONO}font-size:14px;font-weight:${r.bWt};color:${r.bColor};">${e(r.bVal)}</span>
-    </span>
-  </div>
-  ${barHtml(r,7)}
-</div>`;
-}
-
-function ratingCardHtml(r){
-  return `
-<div style="background:var(--card);border:1px solid var(--edge-6);border-radius:12px;padding:14px 18px;display:flex;flex-direction:column;gap:10px;min-width:0;">
-  <span style="${CAPS}text-align:center;">${e(r.label)}</span>
-  <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:end;gap:12px;">
-    <span style="display:flex;flex-direction:column;gap:2px;min-width:0;">
-      <span style="${MONO}font-size:24px;line-height:1.1;font-weight:${r.aWt};color:${r.aColor};">${e(r.aVal)}</span>
-      <span style="${MONO}font-size:10px;color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e(r.aDen)}</span>
-    </span>
-    <span style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:0;">
-      <span style="${MONO}font-size:24px;line-height:1.1;font-weight:${r.bWt};color:${r.bColor};">${e(r.bVal)}</span>
-      <span style="${MONO}font-size:10px;color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e(r.bDen)}</span>
-    </span>
-  </div>
-  ${barHtml(r,0)}
-  <div style="text-align:center;font-size:11px;color:var(--text-label);line-height:1.45;text-wrap:pretty;">${e(r.scaleNote)}</div>
-</div>`;
-}
-
-// Momentum (TEN-417): one column per set, its width the games plotted; bars from the centre line.
-function momentumHtml(d){
-  if(!d.mom.length) return `<div style="padding:40px 20px;text-align:center;font-size:13px;color:var(--text-label);">${d.pbpLoading?'Loading the point log…':d.pbpError?'Point log unavailable right now.':'No completed games to plot yet.'}</div>`;
-  const cols=d.mom.map(st=>st.games.length+'fr').join(' ');
-  const setsHtml=d.mom.map(st=>{
-    const bars=st.games.map(g=>{
-      const hp=Math.abs(g.m)/4*36, up=g.m>0;
-      const bottom=up?'50%':(50-hp)+'%';
-      const scoreTop=up?'calc('+(50-hp)+'% - 13px)':'calc('+(50+hp)+'% + 3px)';
-      return `<span style="flex:1;position:relative;height:100%;min-width:0;">
-        <span style="position:absolute;left:0;right:0;bottom:${bottom};height:${hp}%;background:${up?'var(--viz-lead)':'var(--viz-second)'};border-radius:2px;border:1px solid ${g.brk?'var(--neg)':'transparent'};box-sizing:border-box;"></span>
-        <span style="position:absolute;left:50%;top:${scoreTop};transform:translateX(-50%);${MONO}font-size:8.5px;color:${up?'var(--text)':'var(--text-label)'};white-space:nowrap;">${e(g.label)}</span>
-      </span>`;
-    }).join('');
-    return `<div style="display:flex;flex-direction:column;gap:6px;min-width:0;">
-      <div style="position:relative;display:flex;align-items:flex-end;gap:6px;height:104px;">
-        <span style="position:absolute;left:0;right:0;top:50%;height:1px;background:var(--viz-guide);"></span>
-        ${bars}
+  let ROOT = null;
+  function ensureRoot() {
+    const tab = document.getElementById('lvTab'); if (!tab) return null;
+    if (ROOT && tab.contains(ROOT)) return ROOT;
+    tab.innerHTML = `<div id="lvRoot" style="max-width:1360px; display:flex; flex-direction:column; gap:16px; font-family:'Hanken Grotesk',sans-serif; color:${C.text};">
+      <div data-lvslot="head"></div><div data-lvslot="err" style="display:none;"></div>
+      <div style="background:${C.card}; border:1px solid ${wa(6)}; border-radius:16px; padding:18px 20px 20px; display:flex; flex-direction:column; gap:16px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px 20px; flex-wrap:wrap;">
+          <div data-lvslot="tl" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;"></div>
+          <div style="display:flex; align-items:center; gap:14px; flex:1; min-width:240px; justify-content:flex-end;">
+            <span data-lvslot="count" style="font-size:12.5px; color:${C.grey}; white-space:nowrap; font-variant-numeric:tabular-nums;"></span>
+            <span style="position:relative; flex:1; max-width:260px; min-width:0; display:flex;"><input class="lvq" id="lvQ" placeholder="Search player or event" autocomplete="off" style="flex:1; width:100%; min-width:0; height:36px; box-sizing:border-box; padding:0 58px 0 12px; border-radius:10px; background:${C.inner}; border:1px solid ${wa(6)}; color:${C.text}; font-family:inherit; font-size:13px; outline:none; transition:border-color .14s;"><span data-lvslot="clear"></span></span>
+          </div></div>
+        <div data-lvslot="body" style="display:flex; flex-direction:column; gap:16px;"></div>
       </div>
-      <span style="text-align:center;${MONO}font-size:10px;color:${st.n===d.curSet?'var(--text)':'var(--text-label)'};border-top:1px solid var(--line);padding-top:5px;white-space:nowrap;">Set ${st.n} · ${e(st.score)}</span>
-    </div>`;
-  }).join('');
-  return `<div style="display:grid;grid-template-columns:${cols};gap:12px;align-items:stretch;margin-top:14px;">${setsHtml}</div>`;
-}
-
-// Player avatar: initials on --inner, a 10% white edge, white 700, with the player's photo over them
-// (founder 2026-10-22 reverses TEN-417's "no photos on Live": one player, one photo, on every surface).
-function avaHtml(ini, size, fs, key, name){
-  return `<span style="position:relative;overflow:hidden;width:${size}px;height:${size}px;border-radius:50%;background:var(--inner);border:1px solid var(--edge-10);display:flex;align-items:center;justify-content:center;font-size:${fs}px;font-weight:700;letter-spacing:0.02em;color:var(--text);flex:none;">${e(ini)}${key!=null&&typeof playerPhotoImg==='function'?playerPhotoImg(String(key),name):''}</span>`;
-}
-
-function heatPlayerHtml(hp){
-  const head=t=>`text-align:center;${MONO}font-size:9px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:${t?'color-mix(in srgb, var(--text-label) 40%, transparent)':'var(--text-label)'};`;
-  const colsHtml=hp.setCols.map(sc=>`<span style="${head(sc.dim)}">${e(sc.label)}</span>`).join('');
-  const rowsHtml=hp.rows.map(hr=>{
-    const cellsHtml=hr.cells.map(c0=>{
-      let c=c0;
-      // TEN-417 Break/Hold: the signed gap to the bucket's global is printed under the rate ("+6 pts"), so the colour and
-      // the figure can never disagree; n<5 keeps "raw"; a dash cell prints nothing under it.
-      const sub=(c.gap!=null&&HBE())?HBE().gapText(c.gap):c.frac;
-      // TEN-417: the colour band (neutral within ±3 inclusive) and the tooltip word ("at global · −3 pts vs this bucket’s
-      // global 81%") come from the shared engine, holdbreak-heatmap.js — the same rule as Player Profile.
-      const note=c.tipNote;
-      return `
-<span class="hbcell" style="position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:7px 0;border-radius:8px;background:${c.bg};border:1px solid ${c.bd};opacity:${c.opacity};">
-  <span style="${MONO}font-size:${c.size};font-weight:700;color:${c.color};line-height:1.2;">${e(c.pct)}</span>
-  <span style="${MONO}font-size:9px;color:var(--text-label);line-height:1.2;">${e(sub)}</span>
-  <span class="hbtip" style="position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);z-index:50;width:186px;padding:9px 11px;background:var(--card);border:1px solid var(--edge-10);border-radius:9px;box-shadow:var(--shadow-menu);text-align:left;pointer-events:none;">
-    <span style="display:block;${MONO}font-size:9.5px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-label);">${e(c.tipHead)}</span>
-    <span style="display:block;margin-top:4px;${MONO}font-size:12.5px;font-weight:700;color:${c.color};">${e(c.tipRate)}</span>
-    <span style="display:block;margin-top:3px;font-family:var(--font-words);font-size:11.5px;color:var(--text-label);line-height:1.5;">${e(note)}</span>
-  </span>
-</span>`;
-    }).join('');
-    return `
-<div style="display:grid;grid-template-columns:132px 66px 10px repeat(5,minmax(0,1fr));gap:4px;align-items:stretch;margin-top:4px;">
-  <span style="display:flex;flex-direction:column;justify-content:center;gap:1px;">
-    <span style="font-size:11.5px;font-weight:600;color:var(--text-soft);white-space:nowrap;">${e(hr.bucket)}</span>
-    <span style="font-size:9.5px;color:var(--text-label);white-space:nowrap;">${e(hr.sub)}</span>
-  </span>
-  <span style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:7px 0;border-radius:8px;background:var(--inner);border:1px solid transparent;">
-    <span style="${MONO}font-size:15px;font-weight:700;color:${hr.gColor};line-height:1.2;">${e(hr.gPct)}</span>
-    <span style="${MONO}font-size:9px;color:var(--text-label);line-height:1.2;">${e(hr.gFrac)}</span>
-  </span>
-  <span style="align-self:stretch;display:flex;justify-content:center;"><span style="width:1px;background:var(--edge-7);"></span></span>
-  ${cellsHtml}
-</div>`;
-  }).join('');
-  return `
-<div>
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-    ${avaHtml(hp.ini,30,11,hp.key,hp.name)}
-    <span style="font-size:14px;font-weight:700;color:var(--text);">${e(hp.name)}</span>
-    <span style="margin-left:auto;${MONO}font-size:10.5px;font-weight:700;letter-spacing:0.1em;color:var(--text-soft);background:var(--inner);border:1px solid transparent;border-radius:6px;padding:4px 9px;white-space:nowrap;">${e(hp.globalLabel)}</span>
-  </div>
-  <div style="display:grid;grid-template-columns:132px 66px 10px repeat(5,minmax(0,1fr));gap:4px;align-items:end;">
-    <span></span>
-    <span style="text-align:center;${CAPS}">Global</span>
-    <span></span>
-    ${colsHtml}
-  </div>
-  ${rowsHtml}
-</div>`;
-}
-
-// The tennis-ball glyph that marks the server's side of a Points row.
-const BALL=`<span style="width:15px;height:15px;flex:none;border-radius:50%;border:1px solid var(--edge-10);background:color-mix(in srgb, var(--text) 6%, transparent);position:relative;overflow:hidden;"><span style="position:absolute;left:-3px;top:2px;width:19px;height:11px;border-radius:50%;border:1px solid var(--edge-10);border-top:none;border-bottom:none;"></span></span>`;
-// Chips are caps words, so they take the site caps label (Hanken 10.5 / 0.10em, 800 — the reference's computed type).
-const CHIP="font-family:var(--font-words);font-size:10.5px;font-weight:800;letter-spacing:0.10em;text-transform:uppercase;border-radius:5px;padding:3px 7px;white-space:nowrap;";
-const LOST_CHIP=`<span style="${CHIP}color:var(--neg);background:color-mix(in srgb, var(--neg) 12%, transparent);border:1px solid color-mix(in srgb, var(--neg) 32%, transparent);">LOST SERVE</span>`;
-const spChip=t=>t?`<span style="${CHIP}color:var(--text);background:color-mix(in srgb, var(--text) 8%, transparent);border:1px solid color-mix(in srgb, var(--text) 18%, transparent);">${t}</span>`:'';
-
-// ── main render ───────────────────────────────────────────────────────────────
-function render(){
-  const d=renderVals();
-  const S=ST;
-  const tab=document.getElementById('lvTab');
-  if(!tab) return;
-
-  // ── CARDS ──
-  const cardsHtml=LIVE.map(m=>{
-    const live=!m.interrupted;
-    // Status: Live = white with the 1.6s pulse; Interrupted = amber (TEN-417), no pulse.
-    const stColor=live?'var(--text)':'var(--amber)';
-    const heads=m.sets.map((_,i)=>`<span style="width:26px;text-align:center;${MONO}font-size:9px;font-weight:600;letter-spacing:0.1em;color:var(--text-label);">S${i+1}</span>`).join('');
-    const mkSets=side=>m.sets.map((st,i)=>{
-      const done=i<m.sets.length-1,won=st[side]>st[1-side];
-      return `<span style="width:26px;text-align:center;${MONO}font-size:15px;font-weight:${done?(won?700:500):700};color:${done?(won?'var(--text)':'var(--text-label)'):'var(--text)'};">${st[side]}</span>`;
-    }).join('');
-    const playersHtml=[0,1].map(side=>`
-<div style="display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:0 12px;padding:9px 16px 11px;">
-  <span style="display:flex;align-items:center;gap:10px;min-width:0;">
-    ${avaHtml(lvIni(m.names[side]),30,11,m.keys&&m.keys[side],m.names[side])}
-    <span style="font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e(m.names[side])}</span>
-    <span style="width:8px;height:8px;border-radius:50%;background:${m.serving===side&&live?'var(--serve-ball)':'transparent'};flex:none;"></span>
-  </span>
-  <span style="display:flex;align-items:center;gap:0;">
-    ${mkSets(side)}
-    <span style="width:40px;text-align:right;${MONO}font-size:15px;font-weight:700;color:var(--text);">${e(m.point[side])}</span>
-  </span>
-</div>`).join('');
-    return `
-<div class="lvcard" data-open="${e(m.ek)}" style="background:var(--card);border-radius:14px;overflow:hidden;">
-  <div style="display:flex;align-items:center;gap:9px;padding:10px 16px;border-bottom:1px solid var(--line);">
-    <span style="font-size:11.5px;color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e(m.event)}</span>
-    <span style="margin-left:auto;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;flex:none;${live?MONO+'font-size:9.5px;font-weight:700;letter-spacing:0.12em;':'font-family:var(--font-words);font-size:10.5px;font-weight:800;letter-spacing:0.10em;text-transform:uppercase;'}color:${stColor};"><span style="width:5px;height:5px;border-radius:50%;background:${stColor};animation:${live?'lvpulse 1.6s ease-in-out infinite':'none'};"></span>${e(m.status)}</span>
-  </div>
-  <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;padding:6px 16px 0;gap:0 12px;">
-    <span></span>
-    <span style="display:flex;align-items:center;gap:0;">${heads}<span style="width:40px;text-align:right;${CAPS}">PTS</span></span>
-  </div>
-  ${playersHtml}
-</div>`;
-  }).join('');
-
-  // Empty state (TEN-417 Data 7): only once a snapshot has said "nothing underway".
-  const emptyHtml=d.isEmpty?`
-<div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:88px 20px;background:var(--card);border:1px solid transparent;border-radius:14px;">
-  <span style="width:9px;height:9px;border-radius:50%;background:color-mix(in srgb, var(--text-label) 40%, transparent);"></span>
-  <div style="font-size:15px;font-weight:700;color:var(--text);">Nothing in play</div>
-  <div style="font-size:13px;color:var(--text-label);max-width:380px;text-align:center;line-height:1.55;">Matches appear here the moment the first point is played.</div>
-</div>`:'';
-
-  // ── SHEET ──
-  let modalHtml='';
-  if(d.modalOpen){
-    const mm=d.modal;
-    const cols='repeat('+Math.max(1,mm.nSets)+', 26px)';
-    const scoreTile=`
-<div style="display:flex;align-items:stretch;gap:0;padding:8px 4px;border-radius:12px;background:var(--inner);border:1px solid transparent;">
-  <div style="display:grid;grid-template-columns:${cols};row-gap:3px;padding:0 8px;">
-    ${mm.setHead.map(h=>`<span style="text-align:center;${MONO}font-size:9px;font-weight:${h.cur?700:600};letter-spacing:0.08em;color:${h.cur?'var(--text)':'var(--text-label)'};">${h.t}</span>`).join('')}
-    ${mm.aScore.map(s=>`<span style="text-align:center;${MONO}font-size:16px;line-height:1.35;font-weight:${s.weight};color:${s.color};background:${s.bg};box-shadow:inset 0 0 0 1px ${s.bd};border-radius:5px;">${e(s.v)}</span>`).join('')}
-    ${mm.bScore.map(s=>`<span style="text-align:center;${MONO}font-size:16px;line-height:1.35;font-weight:${s.weight};color:${s.color};background:${s.bg};box-shadow:inset 0 0 0 1px ${s.bd};border-radius:5px;">${e(s.v)}</span>`).join('')}
-  </div>
-  <div style="display:grid;grid-template-columns:44px;row-gap:3px;padding:0 6px;border-left:1px solid color-mix(in srgb, var(--text) 8%, transparent);">
-    <span style="text-align:center;${MONO}font-size:9px;font-weight:600;letter-spacing:0.08em;color:var(--text-label);">PTS</span>
-    <span style="text-align:center;${MONO}font-size:16px;line-height:1.35;font-weight:700;color:var(--text);">${e(mm.aPt)}</span>
-    <span style="text-align:center;${MONO}font-size:16px;line-height:1.35;font-weight:700;color:var(--text);">${e(mm.bPt)}</span>
-  </div>
-</div>`;
-    const dot=`<span style="width:8px;height:8px;flex:none;border-radius:50%;background:var(--serve-ball);"></span>`;
-    const subCss=`font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);`;
-
-    const tabsHtml=d.tabs.map(t=>{
-      const sg=seg(d.tab===t);
-      return `<span class="lvseg" data-tab="${t}" style="text-align:center;padding:8px 0;border-radius:8px;font-size:13px;font-weight:${sg.wt};color:${sg.color};background:${sg.bg};border:1px solid ${sg.bd};">${t}</span>`;
-    }).join('');
-
-    let bodyHtml='';
-    // ── Ratings ──
-    if(d.tab==='Ratings'){
-      // Every rating is a function of the box score, so on a fixture with no box score the four cards would be four
-      // pairs of dashes — same ruling as Stats (TEN-210): the cards go. Momentum comes off the point log.
-      const cards=d.statsAbsent?'':`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:10px;">${d.ratingRows.map(ratingCardHtml).join('')}</div>`;
-      const legend=(bg,bd,label)=>`<span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text-soft);"><span style="width:10px;height:10px;border-radius:2px;background:${bg};border:1px solid ${bd};box-sizing:border-box;"></span>${e(label)}</span>`;
-      bodyHtml=`
-${cards}
-<div style="background:var(--card);border:1px solid var(--edge-6);border-radius:12px;padding:16px 20px 14px;">
-  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-    <span style="${CAPS}">Momentum · margin per game</span>
-    <span style="display:inline-flex;align-items:center;gap:14px;">
-      ${legend('var(--viz-lead)','transparent',mm.aName)}${legend('var(--viz-second)','transparent',mm.bName)}${legend('transparent','var(--neg)','break')}
-    </span>
-  </div>
-  ${momentumHtml(d)}
-  <div style="margin-top:10px;font-size:11px;color:var(--text-label);">Bar height is the margin of the game: tall for a love game, short for deuce. Scores read from the server’s side; a red outline is a break.</div>
-</div>`;
-    }
-
-    // ── Stats ──
-    if(d.tab==='Stats'){
-      const scopeTabsHtml=d.scopeOpts.map(o=>segHtml('data-scope',o.id,o.label,d.scope===o.id)).join('');
-      const sectionsHtml=d.statSections.map(sec=>`
-<div style="background:var(--card);border:1px solid var(--edge-6);border-radius:12px;padding:14px 18px 16px;">
-  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:10px;margin-bottom:12px;border-bottom:1px solid var(--edge-6);">
-    <span style="${CAPS}">${e(sec.title)}</span>
-    <span style="${CAPS}">${e(d.scopeName)}</span>
-  </div>
-  <div style="display:flex;flex-direction:column;gap:13px;">${sec.rows.map(statRowHtml).join('')}</div>
-</div>`).join('');
-      bodyHtml=`
-<div style="${TRACK}align-self:center;">${scopeTabsHtml}</div>
-${sectionsHtml}`;
-    }
-
-    // ── Points ──
-    if(d.tab==='Points'){
-      const setTabsHtml=d.setTabs.map(n=>segHtml('data-pset',n,'SET '+n,d.pset===n)).join('');
-      const gamesHtml=d.games.map(g=>{
-        if(g.divider) return `
-<div style="padding:14px 4px;border-top:1px solid var(--edge-6);">
-  <div style="background:var(--inner);border:1px solid var(--edge-7);border-radius:9px;padding:9px 12px;text-align:center;${MONO}font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--text-label);">${e(g.dividerLabel)}</div>
-</div>`;
-        const aMarker=g.servesA?`<span style="display:inline-flex;align-items:center;gap:6px;">${g.lost?LOST_CHIP:''}${BALL}</span>`:'';
-        const bMarker=g.servesB?`<span style="display:inline-flex;align-items:center;gap:6px;">${BALL}${g.lost?LOST_CHIP:''}</span>`:'';
-        // Point chips: every score on a 3.5% white wash, --text-soft 500; the game-winning score lifted (--selected + a
-        // 16% white ring, white 700 — 1b); BP after a break-point score.
-        const ptsHtml=g.hasPoints?`
-<div style="display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:4px 6px;margin-top:9px;">
-  ${g.points.map(pt=>`<span style="display:inline-flex;align-items:center;gap:4px;"><span style="${MONO}font-size:12.5px;font-weight:${pt.win?700:500};color:${pt.win?'var(--text)':'var(--text-soft)'};white-space:nowrap;background:${pt.win?'var(--selected)':'color-mix(in srgb, var(--text) 3.5%, transparent)'};border:1px solid ${pt.win?'var(--edge-16)':'transparent'};border-radius:6px;padding:2px 7px;">${e(pt.v)}</span>${pt.bp?`<span style="font-family:var(--font-words);font-size:10.5px;font-weight:800;letter-spacing:0.10em;text-transform:uppercase;color:var(--neg);background:color-mix(in srgb, var(--neg) 12%, transparent);border:1px solid color-mix(in srgb, var(--neg) 30%, transparent);border-radius:4px;padding:1px 4px;">BP</span>`:''}${pt.sep?`<span style="${MONO}font-size:12.5px;color:var(--text-label);">${pt.sep}</span>`:''}</span>`).join('')}
-</div>`:'';
-        return `
-<div style="padding:14px 4px;border-top:1px solid var(--edge-6);">
-  <div style="display:grid;grid-template-columns:minmax(0,1fr) 96px minmax(0,1fr);align-items:center;gap:10px;">
-    <span style="display:flex;align-items:center;justify-content:flex-end;gap:6px;">${spChip(g.spA)}${aMarker}</span>
-    <span style="display:flex;align-items:center;justify-content:center;gap:10px;">
-      <span style="width:34px;text-align:right;${MONO}font-size:20px;font-weight:700;color:${g.aColor};">${e(g.aGames)}</span>
-      <span style="width:8px;text-align:center;${MONO}font-size:13px;color:var(--text-label);">·</span>
-      <span style="width:34px;text-align:left;${MONO}font-size:20px;font-weight:700;color:${g.bColor};">${e(g.bGames)}</span>
-    </span>
-    <span style="display:flex;align-items:center;justify-content:flex-start;gap:6px;">${bMarker}${spChip(g.spB)}</span>
-  </div>
-  ${ptsHtml}
-</div>`;
-      }).join('');
-      // No games yet is a real state, not an error: the point log is fetched on
-      // demand and a set that has not started has nothing to show. Say which.
-      const note=t=>`<div style="padding:40px 20px;text-align:center;font-size:13px;color:var(--text-label);">${e(t)}</div>`;
-      const gamesBody=gamesHtml ? gamesHtml
-        : d.pbpLoading ? note('Loading the point log…')
-        : d.pbpError   ? note('Point log unavailable right now.')
-        : note('No points logged in this set yet.');
-      bodyHtml=`
-<div style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;">
-  <div style="${TRACK}">${setTabsHtml}</div>
-  <span style="${MONO}font-size:12.5px;font-weight:700;color:var(--text-soft);white-space:pre;">${e(d.setScoreLabel)}</span>
-</div>
-<div>${gamesBody}</div>`;
-    }
-
-    // ── Break/Hold ──
-    if(d.tab==='Break/Hold'){
-      const hbTabsHtml=['HOLD','BREAK'].map(l=>segHtml('data-hb',l,l,S.hb===l)).join('');
-      const playersHtml=d.heatPlayers.map(hp=>heatPlayerHtml(hp)).join('');
-      bodyHtml=`
-<div style="background:var(--card);border:1px solid var(--edge-6);border-radius:12px;padding:18px 20px;">
-  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-    <span style="display:inline-flex;align-items:center;gap:8px;">
-      <span style="font-size:15px;font-weight:700;color:var(--text);">Hold/Break heatmap</span>
-      <span class="lvtip" style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:color-mix(in srgb, var(--text) 6%, transparent);border:1px solid color-mix(in srgb, var(--text) 12%, transparent);font-size:10px;font-weight:700;color:var(--text-label);cursor:default;">i<span class="lvtipbox" style="position:absolute;top:calc(100% + 8px);left:0;z-index:40;width:300px;padding:11px 13px;background:var(--card);border:1px solid var(--edge-10);border-radius:10px;box-shadow:var(--shadow-menu);font-family:var(--font-words);font-size:12px;font-weight:400;color:var(--text-soft);line-height:1.55;text-align:left;">${e(d.heatBaseline)}<span style="display:block;margin-top:7px;color:var(--text-label);">${e(d.heatGates)}</span></span></span>
-    </span>
-    <span style="${TRACK}">${hbTabsHtml}</span>
-  </div>
-  <span style="display:inline-flex;white-space:nowrap;align-items:center;gap:8px;margin-top:12px;${CAPS}background:var(--inner);border:1px solid transparent;border-radius:8px;padding:6px 11px;">All surfaces · last 24m</span>
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(430px,1fr));gap:20px;margin-top:16px;">${playersHtml}</div>
-</div>`;
-    }
-
-    modalHtml=`
-<div id="lvOverlay" data-lvback="1" style="position:fixed; inset:0 0 0 var(--sf-side, 0px);z-index:90;background:var(--backdrop); backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:32px;font-family:'Hanken Grotesk',sans-serif;color:var(--text);line-height:normal;">
-  <div data-mssheet="1" style="width:100%;max-width:940px;max-height:88vh;background:var(--card);border:1px solid var(--edge-10);border-radius:16px;box-shadow:var(--shadow-modal);display:flex;flex-direction:column;overflow:hidden;">
-    <div style="position:relative;flex:none;height:0;">
-      <span class="lvseg" id="lvClose" style="position:absolute;right:14px;top:14px;z-index:2;width:28px;height:28px;border-radius:50%;background:color-mix(in srgb, var(--text) 6%, transparent);border:1px solid color-mix(in srgb, var(--text) 9%, transparent);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--text-label);">✕</span>
-    </div>
-    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:16px 56px 0;flex:none;">
-      <span style="display:inline-flex;align-items:center;gap:7px;font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:${mm.stColor};"><span style="width:6px;height:6px;border-radius:50%;background:currentColor;"></span>${e(mm.status)}</span>
-      <span style="font-size:12px;color:var(--text-label);text-align:center;">${e(mm.title)}</span>
-    </div>
-    <div style="display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:20px;padding:12px 22px 16px;flex:none;">
-      <span style="display:flex;align-items:center;gap:12px;min-width:0;">
-        ${avaHtml(mm.aIni,42,13,mm.aKey,mm.aName)}
-        <span style="display:flex;flex-direction:column;gap:3px;min-width:0;">
-          <span style="display:flex;align-items:center;gap:8px;min-width:0;"><span style="font-size:16px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e(mm.aName)}</span>${mm.aServes?dot:''}</span>
-          <span style="${subCss}">${e(mm.aSub)}</span>
-        </span>
-      </span>
-      ${scoreTile}
-      <span style="display:flex;align-items:center;justify-content:flex-end;gap:12px;min-width:0;">
-        <span style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;min-width:0;">
-          <span style="display:flex;align-items:center;gap:8px;min-width:0;">${mm.bServes?dot:''}<span style="font-size:16px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e(mm.bName)}</span></span>
-          <span style="${subCss}">${e(mm.bSub)}</span>
-        </span>
-        ${avaHtml(mm.bIni,42,13,mm.bKey,mm.bName)}
-      </span>
-    </div>
-    <div style="padding:0 22px 14px;flex:none;"><div style="display:grid;grid-template-columns:repeat(${d.tabs.length},1fr);gap:3px;padding:3px;border-radius:10px;background:var(--inner);">${tabsHtml}</div></div>
-    <div style="flex:1;min-height:0;overflow-y:auto;padding:0 22px 22px;display:flex;flex-direction:column;gap:10px;">${bodyHtml}</div>
-  </div>
-</div>`;
+      <div data-lvslot="foot" style="display:none;"></div></div>`;
+    ROOT = tab.querySelector('#lvRoot');
+    return ROOT;
+  }
+  const slot = n => ROOT && ROOT.querySelector('[data-lvslot="' + n + '"]');
+  function paintPage() {
+    if (!ensureRoot()) return;
+    const model = cardsModel();
+    slot('head').innerHTML = headerHtml(model.all);
+    const er = feedErrHtml(); slot('err').innerHTML = er; slot('err').style.display = er ? '' : 'none';
+    slot('tl').innerHTML = toolbarLeft(model.all);
+    slot('count').textContent = FEED.ready ? model.cards.length + ' of ' + model.all.length + ' matches shown' : '';
+    slot('clear').innerHTML = S.q ? `<span data-act="clearq" class="lv-clear" style="position:absolute; right:6px; top:6px; height:24px; display:inline-flex; align-items:center; padding:0 8px; border-radius:6px; font-size:12px; font-weight:600; color:${C.grey}; cursor:pointer; transition:color .14s, background .14s;">Clear</span>` : '';
+    slot('body').innerHTML = pageBodyHtml(model);
+  }
+  function paint() {
+    if (!inited) return;
+    paintPage();
+    if (S.sel != null) paintModal();
   }
 
-  // ── page ── (no footer: TEN-417 Data 2 — the data is real, the disclaimer is gone)
-  tab.innerHTML=`
-<div style="display:flex;flex-direction:column;gap:22px;font-family:'Hanken Grotesk',sans-serif;color:var(--text);line-height:normal;padding:0 16px;">
-  <!-- TEN-403: the shared 35b page header (.sfh). Values white, the clock --text-soft, a dash grey; Interrupted is amber
-       above 0 and grey at 0 (TEN-417). -->
-  <div class="sfh">
-    <div class="sfh__text">
-      <h1 class="sfh__title">Live</h1>
-      <p class="sfh__sub">Singles matches in play right now, point by point.</p>
-    </div>
-    <div class="sfh__stats">
-      <div class="sfh__stat"><span class="sfh__l">In play</span><span class="sfh__v${d.inPlayCount==='—'?' sfh__v--none':''}">${d.inPlayCount}</span></div>
-      <div class="sfh__stat"><span class="sfh__l">Interrupted</span><span class="sfh__v" style="color:${d.interruptedColor};">${d.interruptedCount}</span></div>
-      <div class="sfh__stat"><span class="sfh__l">Events</span><span class="sfh__v${d.eventCount==='—'?' sfh__v--none':''}">${d.eventCount}</span></div>
-      <div class="sfh__stat"><span class="sfh__l">Updated</span><span class="sfh__v ${d.updatedLabel==='—'?'sfh__v--none':'sfh__v--soft'}"${d.updatedTitle?` title="${e(d.updatedTitle)}"`:''}>${e(d.updatedLabel)}</span></div>
-    </div>
-  </div>
-  ${emptyHtml}
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(430px,1fr));align-items:start;gap:12px;">${cardsHtml}</div>
-</div>
-${modalHtml}`;
-
-  // wire events
-  const overlay=document.getElementById('lvOverlay');
-  if(overlay){
-    overlay.addEventListener('click',ev=>{
-      const t=ev.target;
-      // The backdrop (outside the sheet) and ✕ close the sheet; Esc too (document handler below).
-      if(t===overlay||t.id==='lvClose'||t.closest('#lvClose')) { setState({sel:null}); return; }
-      const tabEl=t.closest('[data-tab]');
-      if(tabEl&&tabEl.dataset.tab&&['Stats','Points','Ratings','Break/Hold'].includes(tabEl.dataset.tab)){setState({tab:tabEl.dataset.tab});return;}
-      const scopeEl=t.closest('[data-scope]');
-      if(scopeEl){const v=scopeEl.dataset.scope;setState({scope:v==='MATCH'?'MATCH':parseInt(v,10)});return;}
-      const psetEl=t.closest('[data-pset]');
-      if(psetEl){setState({pset:parseInt(psetEl.dataset.pset,10)});return;}
-      const hbEl=t.closest('[data-hb]');
-      if(hbEl){setState({hb:hbEl.dataset.hb});return;}
-    });
+  // ════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+  // MODAL
+  // ════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+  let OV = null;
+  function openModal(ek) {
+    Object.assign(S, { sel: ek, tab: 'Momentum', scope: 'MATCH', mScope: 'MATCH', momV: 'DOM', pset: 1, hb: 'HOLD', hbSurf: 'ALL', cmp: null,
+      cmpOpen: false, unOpen: false, drTip: false, momTip: false, waitTip: false, momH: null, momDot: null, momK: null, mlAll: false });
+    if (LF()) LF().pbpLoad(ek, () => { if (S.sel === ek) paint(); });
+    paintModal(true);
   }
-  tab.querySelectorAll('.lvcard[data-open]').forEach(card=>{
-    card.addEventListener('click',()=>{
-      const ek=card.dataset.open;
-      // Every open resets the sheet: Ratings · Match · Set 1 · Hold (TEN-417 keeps this as built).
-      setState({sel:ek,tab:'Ratings',scope:'MATCH',pset:1,hb:'HOLD'});
-      // The point log is deliberately NOT on the pushed snapshot (it is ~43% of
-      // the row); fetch it only now that a sheet is actually open.
-      if(LF()) LF().pbpLoad(ek,()=>{ if(ST.sel===ek) render(); });
+  function closeModal() { S.sel = null; if (OV) { OV.remove(); OV = null; } document.body.style.overflow = ''; paintPage(); }
+  const cur = () => LIVE.find(m => m.ek === S.sel) || null;
+  function paintModal(fresh) {
+    const m = cur(); if (!m) { closeModal(); return; }
+    if (!OV) {
+      OV = document.createElement('div'); OV.id = 'lvOverlay'; OV.setAttribute('data-lvback', '');
+      OV.style.cssText = `position:fixed; top:0; right:0; bottom:0; left:var(--sf-side, 0px); clip-path:inset(0); z-index:90; background:var(--ma2-scrim); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center; padding:32px; font-family:'Hanken Grotesk',sans-serif; color:${C.text};`;
+      OV.innerHTML = `<div data-mssheet style="width:100%; max-width:940px; max-height:88vh; background:${C.card}; border:1px solid ${wa(10)}; border-radius:16px; box-shadow:var(--ma2-shadow); display:flex; flex-direction:column; overflow-x:hidden; overflow-y:auto; scrollbar-width:thin;">
+        <div data-mslot="top" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:18px 22px 0; flex:none;"></div>
+        <div data-mslot="head" style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:24px; padding:18px 22px; flex:none;"></div>
+        <div style="position:sticky; top:0; z-index:6; background:${C.card}; padding:8px 22px 14px; flex:none;"><div data-mslot="tabs" style="display:flex; align-items:center; gap:8px 12px; flex-wrap:wrap;"></div></div>
+        <div data-mslot="body" style="flex:none; padding:0 22px 22px; display:flex; flex-direction:column; gap:10px;"></div></div>`;
+      document.body.appendChild(OV); document.body.style.overflow = 'hidden'; bindModal(OV);
+    }
+    const q = n => OV.querySelector('[data-mslot="' + n + '"]');
+    const sig = sigOf(m);
+    q('top').innerHTML = `<span style="font-size:12.5px; font-weight:600; color:${C.grey};">${esc([m.tier, m.tour, m.round].filter(Boolean).join(' ' + DOT + ' '))}</span>`
+      + (sig.has ? chipHtml(sig).replace('margin-left:auto; flex:none; ', '') + `<span style="font-size:12px; color:${C.grey};">${esc(sig.text)}</span>` : '')
+      + `<span data-act="close" class="lv-close" style="margin-left:auto; height:30px; padding:0 12px; display:inline-flex; align-items:center; border-radius:8px; background:${C.lifted}; border:1px solid ${wa(14)}; font-size:12.5px; font-weight:600; color:${C.text}; cursor:pointer; transition:background .14s;">Close</span>`;
+    q('head').innerHTML = modalHeadHtml(m);
+    q('tabs').innerHTML = `<div style="flex:1 1 420px; min-width:0; display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0,1fr); gap:3px; padding:3px; border-radius:10px; background:${C.track}; border:1px solid ${wa(10)};">${['Momentum', 'Stats', 'Points', 'Break/Hold'].map(t => { const s = seg2(S.tab === t);
+      return `<span class="lvseg" data-act="tab:${t}" style="text-align:center; padding:8px 0; border-radius:8px; font-size:13px; font-weight:${s.w}; color:${s.c}; background:${s.bg}; border:1px solid ${s.bd}; cursor:pointer;">${t}</span>`; }).join('')}</div>`;
+    const body = q('body');
+    body.innerHTML = S.tab === 'Momentum' ? momentumHtml(m) : S.tab === 'Stats' ? statsHtml(m) : S.tab === 'Points' ? pointsHtml(m) : heatHtml(m);
+    if (fresh) OV.querySelector('[data-mssheet]').scrollTop = 0;
+  }
+  function modalHeadHtml(m) {
+    const nS = m.nSets, setsWon = s => m.sets.slice(0, nS - 1).filter(st => st[s] > st[1 - s]).length, aW = setsWon(0), bW = setsWon(1);
+    const cs = m.sets[nS - 1], stC = m.live ? C.text : C.amber;
+    const priceLine = s => {
+      const live = `<span title="No in-play price feed on this page yet" style="${MONO} font-size:13px; font-weight:700; color:${C.text}; font-variant-numeric:tabular-nums;">${D}</span><span style="color:${C.quiet};">${DOT}</span>`;
+      const pre = `<span>Pre</span><span title="${esc(m.pre.tip || 'Pre-match price')}" style="${MONO} font-size:12px; font-weight:500; color:${C.grey}; font-variant-numeric:tabular-nums;">${px(m.pre.v[s])}</span>`;
+      return `<span style="display:flex; align-items:baseline;${s ? ' justify-content:flex-end;' : ''} gap:2px 6px; flex-wrap:wrap; font-size:11.5px; font-weight:600; color:${C.grey}; white-space:nowrap;">${s ? pre + `<span style="color:${C.quiet};">${DOT}</span>` + live.replace(`<span style="color:${C.quiet};">${DOT}</span>`, '') : live + pre}</span>`;
+    };
+    const dot = `<span data-lvdot title="Serving" style="width:8px; height:8px; flex:none; border-radius:50%; background:${C.text};"></span>`;
+    const name = (p) => `<span style="font-size:18px; font-weight:800; letter-spacing:-0.015em; color:${C.text}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(p.name)}</span>`;
+    return `<div style="display:flex; align-items:center; gap:16px; min-width:0;">${ava(m.A, 56, { ring: CA, fs: '15px', attr: 'data-msava' })}<span style="display:flex; flex-direction:column; gap:4px; min-width:0;"><span style="display:flex; align-items:center; gap:8px; min-width:0;">${name(m.A)}${m.live && m.serving === 0 ? dot : ''}</span>${priceLine(0)}</span></div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:8px;"><span style="${MONO} font-size:40px; font-weight:700; line-height:1; letter-spacing:-0.02em; white-space:nowrap;"><span style="color:${aW >= bW ? C.text : C.grey};">${aW}</span><span style="color:${C.quiet};">${EN}</span><span style="color:${bW >= aW ? C.text : C.grey};">${bW}</span></span>
+        <span style="display:inline-flex; align-items:center; gap:8px; height:26px; box-sizing:border-box; padding:0 11px; border-radius:8px; background:${C.lifted}; border:1px solid ${wa(14)}; white-space:nowrap;"><span style="width:6px; height:6px; border-radius:50%; background:${stC};"></span><span style="font-size:12px; font-weight:700; color:${stC};">${m.live ? 'Live' : 'Interrupted'} ${DOT} Set ${nS}</span><span style="${MONO} font-size:12px; font-weight:600; color:${C.soft};">${cs[0]}${EN}${cs[1]} ${DOT} ${m.point ? esc(m.point[0]) + EN + esc(m.point[1]) : D}</span></span>
+        <span style="${MONO} font-size:11.5px; color:${C.grey}; min-height:14px;">${m.sets.slice(0, nS - 1).map(st => st[0] + EN + st[1]).join('  ')}</span></div>
+      <div style="display:flex; align-items:center; justify-content:flex-end; gap:16px; min-width:0;"><span style="display:flex; flex-direction:column; align-items:flex-end; gap:4px; min-width:0;"><span style="display:flex; align-items:center; gap:8px; min-width:0;">${m.live && m.serving === 1 ? dot : ''}${name(m.B)}</span>${priceLine(1)}</span>${ava(m.B, 56, { ring: CB, fs: '15px', attr: 'data-msava' })}</div>`;
+  }
+
+  // ── Momentum tab (prototype renderVals L1155–1285, on the real point log) ─────────────────────────────────────
+  function momentumHtml(m) {
+    const pe = LF() ? LF().pbpGet(m.ek) : null, play = playOf(m);
+    const shell = inner => `<div style="padding:6px 0 0;"><div data-lfcard style="background:${C.inner}; border:1px solid ${wa(6)}; border-radius:12px; padding:16px 18px 16px; display:flex; flex-direction:column; gap:14px;">${inner}</div></div>`;
+    if (!play) return shell(`<div style="padding:34px 12px; text-align:center; font-size:13px; color:${C.grey};">${!pe || pe.loading && !pe.games ? 'Loading point by point' + '…' : 'Point-by-point not available for this match'}</div>`);
+    const A = m.names[0], B = m.names[1], nSets = m.nSets, liveM = m.live;
+    const fSi = S.mScope === 'MATCH' ? null : Math.max(0, Math.min(nSets - 1, S.mScope - 1)), rSet = fSi != null, mSi = rSet ? fSi : nSets - 1, past = mSi < nSets - 1;
+    const SIM = play, P = past ? SIM.P.filter(p => p.si <= mSi) : SIM.P, gCells = past ? SIM.gCells.filter(c => c.si <= mSi) : SIM.gCells, gw = SIM.gw;
+    const mN = P.length, mSpan = liveM || past ? 100 : 88, mDom = S.momV !== 'RUN';
+    const zoom = rSet, zi = P.findIndex(p => p.si === mSi), x0 = !zoom ? 0 : zi < 0 ? P.length : zi, dCells = zoom ? gCells.filter(c => c.si === mSi) : gCells;
+    const mX = i => (i - x0) / ((mN - x0) || 1) * mSpan;
+    const WIN = LIVE_CONST.DOM_WINDOW_GAMES, retG = [dCells.filter(c => c.aServ === false), dCells.filter(c => c.aServ === true)];
+    const domCalc = i => {
+      if (zoom ? i < x0 : dCells.filter(c => c.end <= i && !c.tb).length < LIVE_CONST.DOM_START_GAMES) return null;
+      const q = sd => { const gs = retG[sd].filter(c => c.start < i).slice(-WIN); let w = 0, n = 0;
+        gs.forEach(c => { for (let k = c.start; k < Math.min(c.end, i); k++) { n++; if (!P[k].sw) w++; } }); return [w, n, gs.length]; };
+      const a = q(0), b = q(1); if (!a[1] || !b[1]) return zoom ? { r: 1, pin: null, a, b, sa: 0, sb: 0 } : null;
+      const pin = !a[0] && !b[0] ? 'both' : !b[0] ? 'top' : !a[0] ? 'bot' : null, sa = a[0] / a[1], sb = b[0] / b[1];
+      return { r: pin === 'both' ? 1 : pin === 'top' ? 3 : pin === 'bot' ? 1 / 3 : sa / sb, pin, a, b, sa, sb };
+    };
+    const dom = []; for (let i = 0; i <= mN; i++) dom.push(domCalc(i));
+    const dStart = dom.findIndex(Boolean), gDone = dCells.filter(c => !c.part && !c.tb).length, early = !zoom && gDone < LIVE_CONST.DOM_START_GAMES;
+    const cum = [0]; P.forEach((p, k) => cum.push(cum[k] + (p.aWon ? 1 : -1)));
+    const LG3 = Math.log(3), wait4 = mDom && early, sStart = {}; P.forEach((p, k) => { if (sStart[p.si] == null) sStart[p.si] = k; });
+    const ldBase = i => !rSet || !i ? 0 : sStart[P[i - 1].si], leadAt = i => cum[i] - cum[ldBase(i)];
+    const nowBase = rSet ? (sStart[mSi] != null ? sStart[mSi] : mN) : 0;
+    const runV = cum.map((_, i) => i <= x0 ? 0 : leadAt(i)), rMax = Math.max.apply(null, runV.concat([0])), rMin = Math.min.apply(null, runV.concat([0])), rPad = Math.max(1, (rMax - rMin) * 0.08);
+    let rHi = rMax + rPad, rLo = rMin - rPad; rHi = Math.max(rHi, -rLo * 0.22 / 0.78); rLo = Math.min(rLo, -rHi * 0.22 / 0.78);
+    const lv = mDom ? 50 : rHi / (rHi - rLo) * 100;
+    const runPath = () => { let d = ''; for (let i = x0; i <= mN; i++) { if (i > x0) d += ' L' + (mX(i) * 10).toFixed(1) + ' ' + ((rHi - leadAt(i)) / (rHi - rLo) * 100).toFixed(1); if (i < mN && (i === x0 || (rSet && sStart[P[i].si] === i))) d += ' M' + (mX(i) * 10).toFixed(1) + ' ' + lv.toFixed(1); } return d.trim(); };
+    const rY = r => 50 - Math.log(Math.max(1 / 3, Math.min(3, r))) / LG3 * 50;
+    const mY = i => mDom ? (dom[i] ? rY(dom[i].r) : null) : (rHi - leadAt(i)) / (rHi - rLo) * 100;
+    const ser2 = []; for (let i = wait4 ? mN + 1 : mDom ? (dStart < 0 ? mN + 1 : dStart) : x0; i <= mN; i++) ser2.push([mX(i) * 10, mY(i)]);
+    const mHas = ser2.length >= 2, mPath = !mHas ? '' : mDom ? 'M' + ser2.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L') : runPath();
+    const sgn = c => (c > 0 ? '+' : c < 0 ? '−' : '') + Math.abs(c);
+    const hi = S.momH && S.momH <= mN ? S.momH : null, hp = hi ? P[hi - 1] : null, hx = hi ? mX(hi) : 0;
+    const mSetIdx = P.map(p => p.si).filter((v, i, a) => a.indexOf(v) === i);
+    const waitW = early ? mSpan : mX(dStart < 0 ? mN : dStart);
+    const dVal = d => !d || d.pin ? D : d.r.toFixed(2);
+    const hD = hi ? dom[hi] : null, nowD = dom[mN];
+    const hLead = !hi ? null : mDom ? (!hD || hD.r === 1 ? null : hD.r > 1 ? 0 : 1) : (leadAt(hi) === 0 ? null : leadAt(hi) > 0 ? 0 : 1);
+    const mNum = {}; SIM.ml.filter(e => /^g\d+$/.test(e.key)).sort((x, y) => +x.key.slice(1) - +y.key.slice(1)).forEach((e, k) => { mNum[e.key] = k + 1; });
+    const lastBp = {}; P.forEach((p, k) => { if (p.bp) lastBp[p.g] = k + 1; });
+    const mlAll = SIM.ml.filter(e => !rSet || e.si === mSi);
+    const pxCell = e => ({ pxOn: true, hasPx: !!e.px, noPx: !e.px, pxA: e.px ? px(e.px[0]) : '', pxB: e.px ? px(e.px[1]) : '' });
+    const ws = (a, b) => a === b ? 'last ' + a + ' return game' + (a === 1 ? '' : 's') + ' each' : 'last ' + a + ' and ' + b + ' return games';
+    const P2 = [m.A, m.B];
+
+    // head
+    const scopes = [['Match', 'MATCH']].concat(m.sets.map((_, i) => ['Set ' + (i + 1), i + 1])).map(([l, k]) => ({ label: l, act: 'mscope:' + k, on: k === 'MATCH' ? !rSet : rSet && mSi === k - 1 }));
+    const views = [['Dominance', 'DOM'], ['Points lead', 'RUN']].map(([l, k]) => ({ label: l, act: 'momv:' + k, on: mDom === (k === 'DOM') }));
+    const tipRoll = 'Shows who is winning more points on the other player’s serve. Above the middle line ' + A + ' is on top, below it ' + B + '. The number is ' + sur(A) + '’s share of return points won divided by ' + sur(B) + '’s share: 1.00 is level, 2.00 is twice as good. It looks at each player’s last 4 return games and starts after 4 games. Because it only counts return points, it does not move just because one player is serving.';
+    const tipRun = 'Shows who has won more points so far. The line goes up when ' + A + ' wins a point and down when ' + B + ' wins one. Above the Level line ' + sur(A) + ' is ahead, below it ' + sur(B) + '.';
+    const tipMark = 'Colour is the player: blue ' + A + ', white ' + B + '. A filled dot is a break of serve by that player. A ring is a break point he saved.';
+    const tipSec = (t, b) => `<span style="display:flex; flex-direction:column; gap:3px;"><span style="font-size:12.5px; font-weight:700; color:var(--ma2-white);">${t}</span><span style="font-size:12.5px; line-height:1.45; color:${C.soft};">${esc(b)}</span></span>`;
+    let h = `<div style="display:flex; align-items:center; justify-content:space-between; gap:10px 12px; flex-wrap:wrap;">
+      <span style="position:relative; display:flex; align-items:center; gap:8px;"><span data-lfmute style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${C.grey};">Momentum</span>${iDot('momtip', {})}${S.momTip ? `<span style="position:absolute; left:0; top:calc(100% + 8px); z-index:20; width:min(340px,76vw); box-sizing:border-box; background:${C.lifted}; border:1px solid ${wa(14)}; border-radius:12px; box-shadow:var(--lv-shadow-menu); padding:16px; display:flex; flex-direction:column; gap:12px;">${tipSec('Dominance', tipRoll)}${tipSec('Points lead', tipRun)}${tipSec('Markers on the line', tipMark)}</span>` : ''}</span>
+      <span style="display:flex; align-items:center; justify-content:flex-end; gap:8px 10px; flex-wrap:wrap;">${track(scopes, { attr: 'data-mscope title="Match or one set. Applies to the chart and the key moments on this tab."', inline: false, wrap: true })}${track(views, { attr: 'data-mview', inline: false })}</span></div>`;
+
+    // reading band
+    const nowL = cum[mN] - cum[nowBase], on = mDom ? (!early && !!nowD) : mN > x0;
+    const lead = !on ? null : mDom ? (nowD.r === 1 ? null : nowD.r > 1 ? 0 : 1) : (nowL === 0 ? null : nowL > 0 ? 0 : 1);
+    let band = '';
+    if (on) {
+      const hs = m.sets[mSi] || [0, 0], pcs = (w, n) => (n ? Math.round(w / n * 100) : 0) + '%', of = (w, n) => w + ' of ' + n;
+      const nowC = lead == null ? C.grey : lead ? CB : CA;
+      const left = `<span style="display:flex; align-items:center; gap:12px; min-width:0;">${lead != null ? ava(P2[lead], 36, { ring: lead ? CB : CA, fs: '11px' }) : ''}<span style="display:flex; flex-direction:column; gap:2px; min-width:0;"><span style="font-size:15px; font-weight:800; color:var(--ma2-white);">`;
+      const blk = (l, v, n, c) => `<span style="display:flex; flex-direction:column; gap:1px;"><span style="font-size:11px; color:${C.grey}; white-space:nowrap;">${esc(l)}</span><span style="display:flex; align-items:baseline; gap:6px; white-space:nowrap;"><span style="${MONO} font-size:15px; font-weight:700; color:${c}; font-variant-numeric:tabular-nums;">${esc(v)}</span><span style="${MONO} font-size:11px; color:${C.grey};">${esc(n)}</span></span></span>`;
+      const divd = `<span style="width:1px; height:34px; background:${wa(8)};"></span>`;
+      if (mDom) {
+        band = left + esc(lead == null ? 'Level' : (lead ? B : A) + ' on top') + `</span><span style="font-size:11.5px; color:${C.grey};">${esc('Set ' + (mSi + 1) + (past ? ', ended ' : ', at ') + hs[0] + EN + hs[1] + ' ' + DOT + ' ' + ws(nowD.a[2], nowD.b[2]))}</span></span></span>
+          <span style="display:flex; align-items:center; gap:10px 22px; flex-wrap:wrap;"><span style="display:flex; flex-direction:column; gap:1px;"><span style="font-size:11px; color:${C.grey};">Dominance</span><span style="${MONO} font-size:20px; font-weight:700; line-height:1.15; color:${nowC}; font-variant-numeric:tabular-nums;">${dVal(nowD)}</span></span>${divd}${blk(A + ' on return', pcs(nowD.a[0], nowD.a[1]), of(nowD.a[0], nowD.a[1]), CA)}${blk(B + ' on return', pcs(nowD.b[0], nowD.b[1]), of(nowD.b[0], nowD.b[1]), CB)}</span>`;
+      } else {
+        const n = mN - nowBase, L = Math.abs(nowL);
+        band = left + esc(nowL ? (nowL > 0 ? A : B) + ' leads' : 'Level') + `</span><span style="font-size:11.5px; color:${C.grey};">${esc('Set ' + (mSi + 1) + (past ? ', ended ' : ', at ') + hs[0] + EN + hs[1] + ' ' + DOT + ' ' + (rSet ? (past ? 'the whole set' : 'this set so far') : 'whole match so far'))}</span></span></span>
+          <span style="display:flex; align-items:center; gap:10px 22px; flex-wrap:wrap;"><span data-mlead style="display:flex; flex-direction:column; gap:1px;"><span style="${MONO} font-size:20px; font-weight:700; line-height:1.15; color:${nowC}; font-variant-numeric:tabular-nums; white-space:nowrap;">${(nowL ? '+' : '') + L + (L === 1 ? ' point' : ' points')}</span><span style="font-size:11.5px; color:${C.grey}; white-space:nowrap;">${!n ? 'No points in this set yet' : n + (n === 1 ? ' point played' : ' points played')}</span></span>${divd}<span data-mpts style="display:flex; align-items:center; gap:10px 22px; flex-wrap:wrap;">${blk(A + ' points won', String((n + nowL) / 2), n ? Math.round((n + nowL) / 2 / n * 100) + '%' : '', CA)}${blk(B + ' points won', String((n - nowL) / 2), n ? Math.round((n - nowL) / 2 / n * 100) + '%' : '', CB)}</span></span>`;
+      }
+      band = `<div data-mnow style="display:flex; align-items:center; justify-content:space-between; gap:10px 20px; flex-wrap:wrap; background:${C.card}; border:1px solid ${wa(6)}; border-radius:10px; padding:12px 16px;">${band}</div>`;
+    }
+
+    // chart
+    const lvT = lv.toFixed(2) + '%', lvB = (100 - lv).toFixed(2) + '%';
+    const lp = mHas ? ser2[ser2.length - 1] : null;
+    const marks = (zoom ? [] : mSetIdx.slice(1)).map(si => `<span data-mset style="position:absolute; left:${mX(P.findIndex(p => p.si === si))}%; top:143px; height:7px; width:1px; background:${wa(28)}; z-index:1;"></span>`).join('');
+    const stopped = !liveM && !past;
+    const mtoE = SIM.ml.find(x => x.tone === 'mto' && x.open), mtoOn = !!mtoE && stopped;
+    let plot = '';
+    plot += `<span data-mhalf style="position:absolute; left:0; right:0; top:0; height:${lvT}; border-radius:6px 6px 0 0; background:linear-gradient(to bottom, ${mix(CA, 7)}, ${mix(CA, 0)}); pointer-events:none;"></span><span data-mhalf style="position:absolute; left:0; right:0; bottom:0; height:${lvB}; border-radius:0 0 6px 6px; background:linear-gradient(to top, ${mix(CB, 5)}, ${mix(CB, 0)}); pointer-events:none;"></span><span data-mlevel style="position:absolute; left:0; right:0; top:${lvT}; height:1px; background:${wa(12)};"></span>`;
+    if (!mDom && mN === x0) plot += `<span data-mnopts style="position:absolute; left:0; right:0; top:calc(${lvT} - 26px); text-align:center; font-size:12px; color:${C.grey}; pointer-events:none;">No points yet</span>`;
+    if (mHas) plot += `<div style="position:absolute; left:0; right:0; top:0; height:${lvT}; overflow:hidden;"><svg viewBox="0 0 1000 100" preserveAspectRatio="none" style="position:absolute; left:0; top:0; width:100%; height:${(10000 / lv).toFixed(2)}%;"><path d="${mPath}" fill="none" stroke="${CA}" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path></svg></div><div style="position:absolute; left:0; right:0; top:${lvT}; height:${lvB}; overflow:hidden;"><svg viewBox="0 0 1000 100" preserveAspectRatio="none" style="position:absolute; left:0; top:${(-lv / (100 - lv) * 100).toFixed(2)}%; width:100%; height:${(10000 / (100 - lv)).toFixed(2)}%;"><path d="${mPath}" fill="none" stroke="${CB}" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path></svg></div>`;
+    if (lp && !past) { const below = lp[1] > lv + 0.01; plot += `<span data-mend title="Now" style="position:absolute; left:calc(${lp[0] / 10}% - 5px); top:calc(${lp[1]}% - 5px); width:10px; height:10px; border-radius:50%; background:${below ? CB : CA}; box-shadow:0 0 0 4px ${below ? mix(CB, 18) : mix(CA, 22)}; z-index:3; pointer-events:none;"></span>`; }
+    const waitOn = mDom && (early || waitW > 0);
+    const waitText = (zoom ? 'In this set, momentum is tracked after 4 games' : 'Momentum is tracked after 4 games') + (early ? ' ' + DOT + ' ' + gDone + ' played so far' : '');
+    if (waitOn) plot += `<span data-mwait style="position:absolute; left:0; width:${waitW}%; top:0; bottom:0; z-index:4; box-sizing:border-box; border-radius:6px 0 0 6px; border-right:1px solid ${wa(10)}; background:repeating-linear-gradient(135deg, ${wa(6)} 0 4px, transparent 4px 9px); display:flex; align-items:center; justify-content:center;"><span data-mwi data-act="waittip" data-hov="waittip" style="width:18px; height:18px; flex:none; box-sizing:border-box; border-radius:50%; background:${C.inner}; border:1px solid ${wa(28)}; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:${C.soft}; cursor:pointer; user-select:none; transition:color .14s, border-color .14s;">i</span>${S.waitTip ? `<span data-mwtip style="position:absolute; left:${early ? 'calc(50% - 115px)' : 'calc(50% + 16px)'}; top:${early ? 'calc(50% + 16px)' : '14px'}; z-index:6; pointer-events:none; width:230px; box-sizing:border-box; display:flex; flex-direction:column; gap:3px; text-align:left; background:${C.lifted}; border:1px solid ${wa(14)}; box-shadow:var(--lv-shadow-tip); border-radius:10px; padding:10px 12px;"><span style="font-size:12.5px; font-weight:700; line-height:1.35; color:${C.text};">${esc(waitText)}</span><span style="font-size:11.5px; line-height:1.4; color:${C.grey};">Each player needs return games behind him before the reading means anything.</span></span>` : ''}</span>`;
+    if (stopped) plot += `<span style="position:absolute; left:${mSpan}%; right:0; top:0; bottom:0; display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700; color:${C.amber};">Interrupted</span>`;
+    if (mtoOn) plot += mto(16, `position:absolute; left:calc(${mSpan}% - 8px); top:-8px; z-index:4;`).replace('<span data-mmto', `<span data-mmto title="${esc('Medical timeout' + (mtoE.side != null ? ' ' + DOT + ' ' + m.names[mtoE.side] : '') + ' ' + DOT + ' ' + mtoE.atFull)}"`);
+    // markers: colour = who did it, filled = broke serve, ring = saved a break point
+    P.forEach((p, k) => { const i = k + 1; if (!p.bp || wait4 || i <= x0 || mY(i) == null) return;
+      const w = p.sw ? (p.as ? 0 : 1) : (p.as ? 1 : 0), col = w ? CB : CA, hl = S.momK === 'g' + p.g, big = lastBp[p.g] === i && !!mNum['g' + p.g];
+      plot += `<span data-hov="dot:${i}:${p.g}" data-mnum style="position:absolute; left:calc(${mX(i)}% - ${big ? 8 : 4}px); top:calc(${mY(i)}% - ${big ? 8 : 4}px); width:${big ? 16 : 8}px; height:${big ? 16 : 8}px; box-sizing:border-box; border-radius:50%; background:${p.sw ? C.inner : col}; border:1.5px solid ${col}; box-shadow:${hl ? '0 0 0 4px ' + wa(28) : p.sw ? 'none' : '0 0 0 1.5px ' + C.inner}; z-index:${(hl ? 3 : p.sw ? 1 : 2) + (big ? 1 : 0)}; display:flex; align-items:center; justify-content:center; ${MONO} font-size:9px; font-weight:700; line-height:1; color:${p.sw ? col : C.inner}; transition:box-shadow .14s;">${big ? mNum['g' + p.g] : ''}</span>`; });
+    // marker hover box
+    const dP = S.momDot ? P[S.momDot - 1] : null, dY = dP ? mY(S.momDot) : null, dX = dP ? mX(S.momDot) : 0;
+    if (dP && dY != null && !wait4) {
+      const c = gCells[dP.g], srv = c.aServ ? 0 : 1, saved = P.slice(c.start, c.end).filter(p => p.bp && p.sw).length;
+      const who = dP.sw ? srv : 1 - srv, t = dP.sw ? m.names[srv] + ' saved ' + (saved === 1 ? 'a break point' : saved + ' break points') : m.names[1 - srv] + ' broke serve';
+      const dE = SIM.ml.find(e => e.key === 'g' + dP.g);
+      plot += `<span data-mdt style="position:absolute; left:${dX}%; top:${dY}%; transform:translate(${dX < 35 ? '0' : dX > 65 ? '-100%' : '-50%'},${dY > 50 ? 'calc(-100% - 12px)' : '12px'}); z-index:6; pointer-events:none; width:max-content; min-width:200px; max-width:270px; box-sizing:border-box; display:flex; flex-direction:column; gap:9px; background:${C.lifted}; border:1px solid ${wa(14)}; box-shadow:var(--lv-shadow-tip); border-radius:10px; padding:11px 12px;"><span style="display:flex; align-items:center; gap:10px;">${ava(P2[who], 28, { ring: who ? CB : CA, bg: C.inner, fs: '9.5px' })}<span style="font-size:12.5px; font-weight:700; line-height:1.3; color:var(--ma2-white);">${esc(t)}</span></span><span style="border-top:1px solid ${wa(6)}; padding-top:8px; display:flex; align-items:baseline; justify-content:space-between; gap:14px; font-size:11px; color:${C.grey}; white-space:nowrap;"><span>${esc('Set ' + (c.si + 1) + ', at ' + c.g0[0] + EN + c.g0[1])}</span>${dE ? `<span style="display:flex; align-items:baseline; gap:4px; ${MONO} font-variant-numeric:tabular-nums;">${dE.px ? `<span>${px(dE.px[0])}</span><span style="color:${C.quiet};">→</span><span style="color:${C.soft};">${px(dE.px[1])}</span>` : '<span>' + D + '</span>'}</span>` : ''}</span></span>`;
+    }
+    // line hover box
+    if (hp && !S.momDot && !wait4 && !(mDom && !hD)) {
+      const c = gCells[hp.g], aw = (hi + cum[hi]) / 2;
+      const a = mDom ? [hD.a[0], hD.a[1]] : [aw, hi], b = mDom ? [hD.b[0], hD.b[1]] : [hi - aw, hi], pcq = q => (q[1] ? Math.round(q[0] / q[1] * 100) : 0) + '%', wd = mDom ? ' on return' : ' points won';
+      let who = hLead == null ? 'Level' : (hLead ? B : A) + ' on top', foot = 'Set ' + (hp.si + 1) + ', at ' + c.g0[0] + EN + c.g0[1] + ' ' + DOT + ' ' + (mDom ? ws(hD.a[2], hD.b[2]) : 'whole match so far');
+      if (!mDom) { const v = leadAt(hi), L = Math.abs(v), n = hi - ldBase(hi); who = v ? (v > 0 ? A : B) + ' leads by ' + L + (L === 1 ? ' point' : ' points') : 'Level'; foot = 'Set ' + (hp.si + 1) + ', at ' + c.g0[0] + EN + c.g0[1] + ' ' + DOT + ' ' + (v ? ((n + L) / 2) + ' of ' + n + ' points won' : (n / 2) + ' of ' + n + ' points won each'); }
+      const row = (l, n, p, col) => `<span style="display:flex; align-items:baseline; justify-content:space-between; gap:14px; white-space:nowrap;"><span style="color:${C.soft};">${esc(l)}</span><span style="display:flex; align-items:baseline; gap:7px; ${MONO} font-variant-numeric:tabular-nums;"><span style="font-size:10.5px; color:${C.grey};">${esc(n)}</span><span style="font-weight:700; color:${col};">${p}</span></span></span>`;
+      plot += `<span style="position:absolute; left:${hx}%; top:0; bottom:0; width:1px; background:${wa(28)}; pointer-events:none;"></span><span data-mhov style="position:absolute; left:${hx}%; top:6px; transform:${hx < 35 ? 'translateX(8px)' : hx > 65 ? 'translateX(calc(-100% - 8px))' : 'translateX(-50%)'}; z-index:5; pointer-events:none; width:max-content; min-width:226px; max-width:280px; box-sizing:border-box; display:flex; flex-direction:column; gap:9px; background:${C.lifted}; border:1px solid ${wa(14)}; box-shadow:var(--lv-shadow-tip); border-radius:10px; padding:11px 12px;"><span style="display:flex; align-items:center; gap:10px;">${hLead != null ? ava(P2[hLead], 28, { ring: hLead ? CB : CA, bg: C.inner, fs: '9.5px' }) : ''}<span style="display:flex; flex-direction:column; gap:1px;"><span style="font-size:12.5px; font-weight:700; color:var(--ma2-white);">${esc(who)}</span>${mDom ? `<span style="font-size:11px; color:${C.grey};">Dominance <span style="${MONO} color:${C.soft};">${dVal(hD)}</span></span>` : ''}</span></span>${mDom ? `<span style="display:flex; flex-direction:column; gap:4px; font-size:11.5px;">${row(A + wd, a[0] + ' of ' + a[1], pcq(a), CA)}${row(B + wd, b[0] + ' of ' + b[1], pcq(b), CB)}</span>` : ''}<span style="border-top:1px solid ${wa(6)}; padding-top:8px; font-size:11px; line-height:1.4; color:${C.grey};">${esc(foot)}</span></span>`;
+    }
+    // game ticks (a picked set) and set labels
+    let under = '';
+    if (zoom) {
+      const part = dCells.find(c => c.part); let lastX = -99;
+      const gt = dCells.filter(c => !c.part).map(c => { const x = mX(c.end), show = x - lastX >= 4.5; if (show) lastX = x;
+        return { left: x, sc: show ? c.gs : '', c: c.brk ? C.text : C.grey, w: c.brk ? 700 : 400, tip: 'Game ' + (c.g0[0] + c.g0[1] + 1) + ' ' + DOT + ' ' + c.gs + (c.brk ? ' ' + DOT + ' break of serve' : '') }; });
+      under += `<div data-mgt style="position:relative; height:7px; margin-top:5px;"><span style="position:absolute; left:0; width:${mSpan}%; top:0; height:1px; background:${wa(12)};"></span>${part && part.end > part.start ? `<span data-mgtnow title="Game in play" style="position:absolute; left:${mX(part.start)}%; width:${mSpan - mX(part.start)}%; top:0; height:1px; background:${C.text};"></span>` : ''}${gt.map(g => `<span title="${esc(g.tip)}" style="position:absolute; left:${g.left}%; top:0; width:1px; height:7px; background:${wa(28)};"></span>`).join('')}</div><div style="position:relative; height:14px; margin-top:3px;">${gt.map(g => `<span title="${esc(g.tip)}" style="position:absolute; left:${g.left}%; transform:translateX(-50%); ${MONO} font-size:10px; font-weight:${g.w}; color:${g.c}; white-space:nowrap; font-variant-numeric:tabular-nums;">${esc(g.sc)}</span>`).join('')}</div>`;
+    }
+    const setsLab = mSetIdx.map((si, k) => { const s0 = P.findIndex(p => p.si === si), s1 = k < mSetIdx.length - 1 ? P.findIndex(p => p.si === mSetIdx[k + 1]) : mN, sc2 = m.sets[si] || gw[si] || [0, 0];
+      return { left: mX(s0), w: mX(s1) - mX(s0), t: 'Set ' + (si + 1) + ' ' + DOT + ' ' + sc2[0] + EN + sc2[1], c: si === mSi ? C.text : C.grey, zo: si !== mSi }; }).filter(s => !zoom || !s.zo);
+    under += `<div style="position:relative; height:16px; margin-top:8px;">${setsLab.map(s => `<span style="position:absolute; left:${s.left}%; width:${s.w}%; text-align:center; ${MONO} font-size:10.5px; color:${s.c}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(s.t)}</span>`).join('')}</div>`;
+    const sep = `<span style="width:1px; height:10px; background:${wa(10)};"></span>`;
+    under += `<div data-mleg style="display:flex; align-items:center; gap:4px 16px; flex-wrap:wrap; margin-top:10px; font-size:11px; color:${C.grey};"><span style="display:flex; align-items:center; gap:6px;"><span style="width:8px; height:8px; flex:none; box-sizing:border-box; border-radius:50%; background:${C.grey}; border:1.5px solid ${C.grey};"></span>Broke serve</span><span style="display:flex; align-items:center; gap:6px;"><span style="width:8px; height:8px; flex:none; box-sizing:border-box; border-radius:50%; background:${C.inner}; border:1.5px solid ${C.grey};"></span>Saved a break point</span>${sep}<span data-mnleg style="display:flex; align-items:center; gap:6px;"><span style="width:14px; height:14px; flex:none; box-sizing:border-box; border-radius:50%; border:1.5px solid ${C.grey}; display:flex; align-items:center; justify-content:center; ${MONO} font-size:8.5px; font-weight:700; line-height:1; color:${C.grey};">1</span>Number = its line in key moments</span>${mtoOn ? sep + `<span style="display:flex; align-items:center; gap:7px;">${mto(16, '')}Medical timeout</span>` : ''}${waitOn ? sep + `<span data-mwleg style="display:flex; align-items:center; gap:6px;"><span style="width:14px; height:10px; flex:none; border-radius:2px; border:1px solid ${wa(14)}; box-sizing:border-box; background:repeating-linear-gradient(135deg, ${wa(22)} 0 2px, transparent 2px 5px);"></span>${esc(waitText)}</span>` : ''}</div>`;
+    const yax = `<div data-myax style="position:relative; height:150px;">${ava(m.A, 26, { ring: CA, fs: '9px', title: A, css: ' position:absolute; left:0; top:0;' })}<span style="position:absolute; left:0; top:clamp(32px, calc(${lvT} - 7px), 104px); font-size:10.5px; line-height:14px; color:${C.quiet};">Level</span>${ava(m.B, 26, { ring: CB, fs: '9px', title: B, css: ' position:absolute; left:0; bottom:0;' })}</div>`;
+    const chart = `<div style="display:grid; grid-template-columns:40px minmax(0,1fr);"><div style="display:flex; flex-direction:column;">${yax}</div><div style="position:relative; min-width:0;">${marks}${stopped ? `<span style="position:absolute; left:${mSpan}%; right:0; top:0; bottom:0; box-sizing:border-box; border-left:1px dashed ${mix(C.amber, 50)}; background:repeating-linear-gradient(135deg, ${mix(C.amber, 7)} 0 4px, transparent 4px 9px); border-radius:0 6px 6px 0;"></span>` : ''}<div data-mplot="${x0}:${mN}:${mSpan}" style="position:relative; height:150px;">${plot}</div>${under}</div></div>`;
+
+    // key moments timeline
+    const tlRow = e => { const stop = e.tone === 'mto', c = stop ? C.amber : e.brk ? C.text : C.soft, w = e.brk || stop ? 700 : 500, col = e.side ? CB : CA, hl = S.momK === e.key;
+      const pc2 = pxCell(e), pxH = `<span style="flex:none; display:flex; align-items:baseline; gap:4px; ${MONO} font-size:11.5px; font-variant-numeric:tabular-nums;">${pc2.hasPx ? `<span style="color:${C.grey};">${pc2.pxA}</span><span style="color:${C.quiet};">→</span><span style="color:${C.soft};">${pc2.pxB}</span>` : `<span style="color:${C.grey};">${D}</span>`}</span>`;
+      const lab = `<span title="${esc(e.t)}" style="min-width:0; overflow:hidden; text-overflow:ellipsis; font-size:12.5px; font-weight:${w}; color:${c};">${esc(e.t)}</span>`;
+      const chip = e.at.split(' ')[1] || e.at, mLeft = e.side ? 'calc(100% - 8px)' : '-8px', n = mNum[e.key] ? String(mNum[e.key]) : '';
+      const mBg = stop ? 'transparent' : e.brk ? col : C.inner, mBd = stop ? 'transparent' : col;
+      if (e.side == null) return `<div data-mlrow data-hov="row:${e.key}" style="min-height:34px; box-sizing:border-box; padding:0 8px; border-radius:7px; background:${hl ? C.hover : 'transparent'}; white-space:nowrap; transition:background .14s;"><div style="display:flex; align-items:center; justify-content:center; gap:8px; min-height:34px;">${stop ? mto(16, '') : ''}<span title="${esc(e.atFull)}" style="${MONO} font-size:10.5px; color:${C.grey};">${esc(chip)}</span><span style="font-size:12px; font-weight:700; color:${C.text};">${esc(e.t)}</span></div></div>`;
+      return `<div data-mlrow data-hov="row:${e.key}" style="min-height:34px; box-sizing:border-box; padding:0 8px; border-radius:7px; background:${hl ? C.hover : 'transparent'}; white-space:nowrap; transition:background .14s;"><div style="display:grid; grid-template-columns:minmax(0,1fr) 76px minmax(0,1fr); align-items:center; gap:16px; min-height:34px;">
+        <span data-mlside style="display:flex; align-items:baseline; justify-content:flex-end; gap:8px; min-width:0;">${e.side === 0 ? pxH + lab : ''}</span>
+        <span title="${esc(e.atFull)}" style="position:relative; align-self:stretch; display:flex; align-items:center; justify-content:center;"><span style="position:absolute; left:50%; top:0; bottom:0; width:1px; background:${wa(10)};"></span>${stop ? mto(16, `position:absolute; left:${mLeft}; top:calc(50% - 8px); z-index:1;`) : `<span data-mlnum style="position:absolute; left:${mLeft}; top:calc(50% - 8px); width:16px; height:16px; box-sizing:border-box; border-radius:50%; background:${mBg}; border:1.5px solid ${mBd}; display:flex; align-items:center; justify-content:center; ${MONO} font-size:9px; font-weight:700; line-height:1; color:${e.brk ? C.inner : col};">${n}</span>`}<span style="position:relative; ${MONO} font-size:10.5px; color:${C.grey}; background:${hl ? C.hover : C.inner}; padding:2px 5px; transition:background .14s;">${esc(chip)}</span></span>
+        <span data-mlside style="display:flex; align-items:baseline; justify-content:flex-start; gap:8px; min-width:0;">${e.side === 1 ? lab + pxH : ''}</span></div></div>`; };
+    const mlSum = sd => { const r = mlAll.filter(e => e.side === sd && e.brk != null), br = r.filter(e => e.brk).length, sv = r.length - br; return br + (br === 1 ? ' break' : ' breaks') + ' ' + DOT + ' ' + sv + (sv === 1 ? ' save' : ' saves'); };
+    const list = S.mlAll ? mlAll : mlAll.slice(0, LIVE_CONST.TIMELINE_CAP), rows = [];
+    list.forEach((e, k) => { if (!k || list[k - 1].si !== e.si) { const sc2 = m.sets[e.si] || gw[e.si] || [0, 0], cc = e.si === nSets - 1 ? C.text : C.grey;
+      rows.push(`<div data-mldiv style="display:flex; align-items:center; gap:10px; height:28px; padding:0 8px; white-space:nowrap;"><span style="flex:1; height:1px; background:${wa(8)};"></span><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${cc};">Set ${e.si + 1}</span><span style="${MONO} font-size:11px; font-weight:600; color:${cc};">${sc2[0] + EN + sc2[1]}</span><span style="flex:1; height:1px; background:${wa(8)};"></span></div>`); }
+      rows.push(tlRow(e)); });
+    const headSide = (p, sd) => { const nm = `<span style="display:flex; flex-direction:column; ${sd ? '' : 'align-items:flex-end; '}gap:1px; min-width:0;"><span style="max-width:100%; font-size:12.5px; font-weight:700; color:${C.text}; overflow:hidden; text-overflow:ellipsis;">${esc(p.name)}</span><span style="max-width:100%; font-size:11px; color:${C.grey}; overflow:hidden; text-overflow:ellipsis;">${mlSum(sd)}</span></span>`, av = ava(p, 28, { ring: sd ? CB : CA, fs: '9.5px' });
+      return `<span style="display:flex; align-items:center;${sd ? '' : ' justify-content:flex-end;'} gap:9px; min-width:0;">${sd ? av + nm : nm + av}</span>`; };
+    const tl = `<div style="border-top:1px solid ${wa(6)}; padding-top:14px;"><div style="width:100%; max-width:760px; margin:0 auto; display:flex; flex-direction:column; gap:2px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:0 8px 6px;"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${C.grey};">Key moments</span><span style="font-size:11.5px; color:${C.grey}; font-variant-numeric:tabular-nums;">${mlAll.length ? mlAll.length + (mlAll.length === 1 ? ' moment' : ' moments') + (rSet ? ' ' + DOT + ' set ' + (mSi + 1) : '') : ''}</span></div>
+      ${!mlAll.length ? `<div style="padding:5px 8px; font-size:12px; color:${C.grey}; text-align:center;">${rSet ? (past ? 'No moments in this set.' : 'No moments in this set yet.') : 'No moments in this match yet.'}</div>` : ''}
+      <div data-mlhead style="display:grid; grid-template-columns:minmax(0,1fr) 76px minmax(0,1fr); gap:10px; align-items:center; padding:0 8px 10px; white-space:nowrap;">${headSide(m.A, 0)}<span></span>${headSide(m.B, 1)}</div>
+      ${rows.join('')}${mlAll.length > LIVE_CONST.TIMELINE_CAP ? `<span data-act="mlall" class="lv-more" style="align-self:center; margin:4px 0 0; padding:4px 8px; border-radius:7px; font-size:11.5px; font-weight:600; color:${C.grey}; cursor:pointer; user-select:none; transition:color .14s;">${S.mlAll ? 'Show latest 6' : 'Show all ' + mlAll.length}</span>` : ''}</div></div>`;
+    return shell(h + `<div style="display:flex; flex-direction:column; gap:14px;">${band}${chart}${tl}</div>`);
+  }
+  // chart hover: the plot's x maps to a point index (prototype onMove)
+  function plotMove(pl, e) {
+    const [x0, mN, mSpan] = pl.getAttribute('data-mplot').split(':').map(Number);
+    const r = pl.getBoundingClientRect(), f = (e.clientX - r.left) / r.width * 100 / mSpan;
+    const i = f > 1 || !mN ? null : Math.max(x0 + 1, Math.min(mN, Math.round(x0 + f * (mN - x0))));
+    if (i !== S.momH) set({ momH: i });
+  }
+  // ── Stats tab (prototype L887–1019 + template L316–374, on the feed's box score) ───────────────────────────────
+  const SURF_WORD = { hard: 'Hard', clay: 'Clay', grass: 'Grass' };
+  // the player's own average: surface-ratings.json last 52 weeks, on the match's surface (SURF) or all surfaces (ALL)
+  const AVG_OF = {
+    '1st serve percentage': r => r.serve && r.serve.firstInPct, '1st serve points won': r => r.serve && r.serve.firstWonPct,
+    '2nd serve points won': r => r.serve && r.serve.secondWonPct, 'Break points saved': r => r.underPressure && r.underPressure.bpSavedPct,
+    '1st return points won': r => r.return && r.return.ret1stWonPct, '2nd return points won': r => r.return && r.return.ret2ndWonPct,
+    'Break points converted': r => r.return && r.return.bpConvPct, 'Service points won': r => r.dominance && r.dominance.spwPct,
+    'Return points won': r => r.dominance && r.dominance.rpwPct,
+    'Serve rating': r => r.serve && r.serve.rating, 'Return rating': r => r.return && r.return.rating,
+  };
+  function avgNode(key, cmp, surf) {
+    const p = ratingsOf(key); if (!p || !p.surfaces) return null;
+    const node = p.surfaces[cmp === 'SURF' ? (SURF_WORD[surf] || '') : 'All'];
+    const l = node && node.last52; if (!l) return null;
+    const n = l.sample && l.sample.matches; return n >= LIVE_CONST.AVG_MIN_MATCHES ? { l, n } : null;
+  }
+  function statsHtml(m) {
+    const surf = m.surface ? m.surface.s : null, surfOk = !!SURF_WORD[surf];
+    const cmp = S.cmp || (surfOk ? 'SURF' : 'ALL');
+    const tickLbl = cmp === 'ALL' ? '52-week average' : (surf || '') + '-court average';
+    const per = S.scope === 'MATCH' ? 'match' : 'set' + S.scope;
+    const F = m.f, ix = LF() ? LF().indexStats(F).idx : {}, keys = [F.first_player_key, F.second_player_key];
+    const st = (sd, name) => { const r = LF() ? LF().stat(ix, keys[sd], per, name) : null; return r ? { won: LF().num(r.won), total: LF().num(r.total), value: LF().num(r.value) } : null; };
+    // api-tennis sends some counts only as stat_value "X/Y" with stat_won / stat_total null (Number(null) would read 0)
+    const cnt = (sd, name) => { const r = st(sd, name); if (!r) return null; if (r.won != null && r.total != null) return [r.won, r.total];
+      const raw = LF() ? LF().stat(ix, keys[sd], per, name) : null, xy = raw && /(\d+)\s*\/\s*(\d+)/.exec(String(raw.value || '')); return xy ? [+xy[1], +xy[2]] : null; };
+    const val = (sd, name) => { const r = st(sd, name); return r ? r.value : null; };
+    const DASH = D, MISS = C.grey, INK = C.text;
+    const twoSided = (label, aV, bV, aTxt, bTxt, aDen, bDen) => {
+      const aNull = aV == null, bNull = bV == null, tot = (aNull ? 0 : aV) + (bNull ? 0 : bV);
+      const share = (v, isNull) => (isNull || tot <= 0 || !v) ? '0%' : (v / tot * 100).toFixed(1) + '%';
+      return { label, aVal: aNull ? DASH : aTxt, bVal: bNull ? DASH : bTxt, aDen: aDen || '', bDen: bDen || '', aW: share(aV, aNull), bW: share(bV, bNull), aV, bV };
+    };
+    const den = c => c ? '(' + c[0] + '/' + c[1] + ')' : '';
+    const ratio = c => c && c[1] > 0 ? pc(c[0], c[1]) : null;
+    const baseOf = (sd, label) => { if (cmp === 'OFF' || !AVG_OF[label]) return null; const a = avgNode(keys[sd], cmp, surf); const v = a ? AVG_OF[label](a.l) : null; return v == null ? null : { v: Math.round(v), n: a.n }; };
+    const gapOf = (v, b) => { if (v == null || !b) return { on: false }; const d = Math.round(v - b.v), big = Math.abs(d) >= LIVE_CONST.BIG_GAP;
+      return { on: true, t: (d > 0 ? '↑ ' : d < 0 ? '↓ ' : '') + Math.abs(d), c: !big ? C.grey : d > 0 ? C.green : C.red, w: big ? 700 : 500, avg: b.v + '%', n: b.n }; };
+    const unusual = [];
+    const flag = (sd, label, v, c) => { const b = baseOf(sd, label); if (v == null || !b || !c || c[1] < LIVE_CONST.U_N || Math.abs(v - b.v) < LIVE_CONST.U_GAP) return;
+      const g = Math.abs(v - b.v), up = v > b.v;
+      unusual.push({ g, name: m.names[sd], col: sd ? CB : CA, stat: label, val: v + '%', avg: b.v + '%', cnt: '(' + c[0] + ' of ' + c[1] + ')', arrow: up ? '↑' : '↓', tail: g + (up ? ' above his ' : ' below his ') + tickLbl + ' (' + b.v + '%)' }); };
+    const pctRow = (label, ca, cb) => {
+      const a = ratio(ca), b = ratio(cb), ga = gapOf(a, baseOf(0, label)), gb = gapOf(b, baseOf(1, label)); flag(0, label, a, ca); flag(1, label, b, cb);
+      return Object.assign(twoSided(label, a, b, a + '%', b + '%', den(ca), den(cb)), { ga, gb });
+    };
+    const rating = (label, fn) => { const v = [0, 1].map(sd => { const r = LF() ? LF()[fn](ix, keys[sd], per) : null; return r && r.rating != null ? Math.round(r.rating) : null; });
+      const row = twoSided(label, v[0], v[1], String(v[0]), String(v[1]));
+      const tot = (v[0] || 0) + (v[1] || 0);
+      row.ticks = [0, 1].map(sd => { const b = baseOf(sd, label); if (v[sd] == null || !b || tot <= 0) return null; return { pos: Math.min(100, b.v / tot * 100).toFixed(1) + '%', tip: 'Today ' + v[sd] + ' ' + DOT + ' his ' + tickLbl + ' ' + b.v + ' (' + b.n + ' matches)' }; });
+      return row; };
+    const cnt1 = sd => cnt(sd, '1st serve points won'), cnt2 = sd => cnt(sd, '2nd serve points won');
+    const fsp = sd => { const a = cnt1(sd), b = cnt2(sd); return a && b ? [a[1], a[1] + b[1]] : null; };
+    const play = playOf(m), sgC = play ? play.gCells.filter(c => !c.tb && !c.part && (S.scope === 'MATCH' || c.si === S.scope - 1)) : null;
+    const sgOf = sd => { if (!sgC) return null; const gs = sgC.filter(c => c.aServ === (sd === 0)); return [gs.reduce((x, c) => x + c.end - c.start, 0), gs.length]; };
+    const ppg = sd => { const g = sgOf(sd); return g && g[1] ? g[0] / g[1] : null; };
+    const num = (sd, name) => val(sd, name);
+    const secs = [
+      { title: 'Service', rows: [rating('Serve rating', 'serveRating'),
+        twoSided('Aces', num(0, 'Aces'), num(1, 'Aces'), String(num(0, 'Aces')), String(num(1, 'Aces'))),
+        twoSided('Double faults', num(0, 'Double Faults'), num(1, 'Double Faults'), String(num(0, 'Double Faults')), String(num(1, 'Double Faults'))),
+        pctRow('1st serve percentage', fsp(0), fsp(1)), pctRow('1st serve points won', cnt1(0), cnt1(1)), pctRow('2nd serve points won', cnt2(0), cnt2(1)),
+        pctRow('Break points saved', cnt(0, 'Break Points Saved'), cnt(1, 'Break Points Saved')),
+        twoSided('Points per service game', ppg(0), ppg(1), ppg(0) == null ? '' : ppg(0).toFixed(1), ppg(1) == null ? '' : ppg(1).toFixed(1), sgOf(0) ? '(' + sgOf(0)[0] + '/' + sgOf(0)[1] + ')' : '', sgOf(1) ? '(' + sgOf(1)[0] + '/' + sgOf(1)[1] + ')' : '')] },
+      { title: 'Return', rows: [rating('Return rating', 'returnRating'),
+        pctRow('1st return points won', cnt(0, '1st return points won'), cnt(1, '1st return points won')),
+        pctRow('2nd return points won', cnt(0, '2nd return points won'), cnt(1, '2nd return points won')),
+        pctRow('Break points converted', cnt(0, 'Break Points Converted'), cnt(1, 'Break Points Converted'))] },
+      { title: 'Points won', rows: [twoSided('Winners', null, null), twoSided('Unforced errors', null, null), twoSided('Ratio W/UE', null, null),
+        twoSided('Net points won', null, null),
+        pctRow('Service points won', cnt(0, 'Service Points Won'), cnt(1, 'Service Points Won')), pctRow('Return points won', cnt(0, 'Return Points Won'), cnt(1, 'Return Points Won')),
+        twoSided('Pressure points won on serve', null, null), twoSided('Pressure points won on return', null, null),
+        pctRow('Total points won', cnt(0, 'Total Points Won'), cnt(1, 'Total Points Won'))] },
+    ];
+    const rp = [cnt(0, 'Return Points Won'), cnt(1, 'Return Points Won')];
+    const drv = rp[0] && rp[1] && rp[0][1] > 0 && rp[1][1] > 0 && rp[1][0] > 0 && rp[0][0] > 0 ? [(rp[0][0] / rp[0][1]) / (rp[1][0] / rp[1][1]), (rp[1][0] / rp[1][1]) / (rp[0][0] / rp[0][1])] : [null, null];
+    const un = unusual.sort((x, y) => y.g - x.g).slice(0, 3);
+    const scopeTabs = [['Match', 'MATCH']].concat(m.sets.map((_, i) => ['Set ' + (i + 1), i + 1])).map(([l, k]) => ({ label: l, act: 'scope:' + k, on: S.scope === k }));
+    const cmpLabel = cmp === 'SURF' ? 'Compare: ' + tickLbl : cmp === 'ALL' ? 'Compare: 52-week average' : 'Compare: off';
+    const opts = (surfOk ? [[(SURF_WORD[surf] + '-court average'), 'SURF']] : []).concat([['52-week average', 'ALL'], ['Off', 'OFF']]);
+    const cmpMenu = `<span style="position:absolute; right:10px; top:0; bottom:0; display:flex; align-items:center; font-family:'Hanken Grotesk',sans-serif; letter-spacing:0; text-transform:none;"><span data-act="cmpmenu" class="lv-cmp" title="Shows, after every figure, the gap to the player's own average" style="display:flex; align-items:center; gap:5px; font-size:10.5px; font-weight:600; color:${cmp === 'OFF' ? C.grey : C.text}; cursor:pointer; user-select:none; white-space:nowrap;">${esc(cmpLabel)}<svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" style="color:${C.grey};"><path d="M1.5 3l2.5 2.5L6.5 3"></path></svg></span>${S.cmpOpen ? `<span data-stopm="1" style="position:absolute; top:calc(100% + 6px); right:-6px; z-index:20; min-width:190px; background:${C.inner}; border:1px solid ${wa(16)}; border-radius:10px; box-shadow:var(--lv-shadow-menu); padding:4px; display:flex; flex-direction:column; gap:2px; text-align:left;">${opts.map(([l, k]) => `<span data-act="cmp:${k}" class="lv-opt" style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:7px 9px; border-radius:7px; font-size:12px; font-weight:${cmp === k ? 700 : 600}; color:${cmp === k ? 'var(--ma2-white)' : C.soft}; background:${cmp === k ? C.lifted : 'transparent'}; cursor:pointer; white-space:nowrap;">${esc(l)}<span style="width:5px; height:5px; border-radius:50%; background:${cmp === k ? C.text : 'transparent'};"></span></span>`).join('')}</span>` : ''}</span>`;
+    const secHead = (t, extra) => `<span data-mssec style="position:relative; display:block; text-align:center; font-family:'Hanken Grotesk',sans-serif; font-size:10.5px; font-weight:800; letter-spacing:0.10em; text-transform:uppercase; color:${C.text}; background:${C.card}; border:1px solid ${wa(5)}; border-radius:8px; padding:8px 0;">${esc(t)}${extra || ''}</span>`;
+    const cmpLine = (g, right) => g && g.on ? `<span data-mscmp title="${esc('Average over ' + g.n + ' matches')}" style="font-size:11px; color:${C.grey}; white-space:nowrap;${right ? ' text-align:right;' : ''}"><span style="${MONO} font-weight:${g.w}; color:${g.c};">${esc(g.t)}</span> v his average <span style="${MONO}">${esc(g.avg)}</span></span>` : '';
+    const tickH = (t, sd) => !t ? '' : `<span title="${esc(t.tip)}" style="position:absolute; ${sd ? 'left' : 'right'}:${t.pos}; top:-4px; width:8px; height:14px; margin-${sd ? 'left' : 'right'}:-4px; display:flex; justify-content:center; cursor:default;"><span style="width:2px; height:100%; border-radius:1px; background:${C.grey}; box-shadow:0 0 0 1px ${C.card};"></span></span>`;
+    const rowHtml = r => `<div style="display:flex; flex-direction:column; gap:7px;"><div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:start; gap:12px;">
+      <span style="display:flex; flex-direction:column; gap:3px; min-width:0;"><span style="display:flex; align-items:baseline; gap:7px; min-width:0;"><span style="${MONO} font-size:15px; font-weight:700; color:${r.aVal === D ? MISS : INK}; min-width:44px; font-variant-numeric:tabular-nums;">${esc(r.aVal)}</span><span style="${MONO} font-size:10.5px; color:${C.quiet}; white-space:nowrap;">${esc(r.aDen)}</span></span>${cmpLine(r.ga, false)}</span>
+      <span style="font-family:'Hanken Grotesk',sans-serif; font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${C.grey}; text-align:center; padding-top:3px;">${esc(r.label)}</span>
+      <span style="display:flex; flex-direction:column; gap:3px; min-width:0;"><span style="display:flex; align-items:baseline; justify-content:flex-end; gap:7px; min-width:0;"><span style="${MONO} font-size:10.5px; color:${C.quiet}; white-space:nowrap;">${esc(r.bDen)}</span><span style="${MONO} font-size:15px; font-weight:700; color:${r.bVal === D ? MISS : INK}; text-align:right; min-width:44px; font-variant-numeric:tabular-nums;">${esc(r.bVal)}</span></span>${cmpLine(r.gb, true)}</span></div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:2px; height:6px;"><span style="position:relative; display:block;"><span data-mstrack style="display:flex; height:100%; justify-content:flex-end; background:${wa(7)}; border-radius:3px 0 0 3px; overflow:hidden;"><span style="width:${r.aW}; background:${CA}; border-radius:3px 0 0 3px; transition:width .25s ease;"></span></span>${tickH(r.ticks && r.ticks[0], 0)}</span><span style="position:relative; display:block;"><span data-mstrack style="display:flex; height:100%; justify-content:flex-start; background:${wa(7)}; border-radius:0 3px 3px 0; overflow:hidden;"><span style="width:${r.bW}; background:${CB}; border-radius:0 3px 3px 0; transition:width .25s ease;"></span></span>${tickH(r.ticks && r.ticks[1], 1)}</span></div></div>`;
+    const unBtn = cmp !== 'OFF' && un.length ? `<span data-msun style="position:relative; display:flex;"><span data-act="unusual" class="lv-un" title="Figures far from the player’s own average today" style="display:flex; align-items:center; gap:7px; height:34px; box-sizing:border-box; padding:0 12px; border-radius:10px; background:${S.unOpen ? C.lifted : C.track}; border:1px solid ${S.unOpen ? wa(14) : wa(10)}; font-size:12.5px; font-weight:700; color:${C.text}; cursor:pointer; user-select:none; white-space:nowrap; transition:background .14s, border-color .14s;">Unusual<span style="${MONO} font-size:11px; font-weight:700; color:${C.inner}; background:${C.text}; border-radius:5px; padding:0 5px;">${un.length}</span></span>${S.unOpen ? `<div data-msunbox data-stopm="1" style="position:absolute; top:calc(100% + 8px); right:0; z-index:20; box-sizing:border-box; width:min(400px, calc(100vw - 64px)); background:${C.lifted}; border:1px solid ${wa(14)}; border-radius:10px; box-shadow:var(--lv-shadow-menu); padding:10px 14px 4px; display:flex; flex-direction:column; text-align:left;"><span style="font-size:11.5px; color:${C.grey}; padding-bottom:8px;">Far from his ${esc(tickLbl)} today</span>${un.map(u => `<div data-msut title="${esc(u.name + ' ' + DOT + ' ' + u.stat + ' ' + u.val + ' ' + u.cnt + ' ' + DOT + ' ' + u.tail)}" style="display:grid; grid-template-columns:minmax(0,1fr) auto; gap:2px 12px; align-items:baseline; padding:8px 0; border-top:1px solid ${wa(6)};"><span style="display:flex; align-items:center; gap:7px; min-width:0; font-size:12.5px; font-weight:700; color:${C.text}; white-space:nowrap;"><span style="width:8px; height:8px; flex:none; border-radius:50%; background:${u.col};"></span>${esc(u.name)}</span><span style="${MONO} font-size:12.5px; font-weight:700; color:${C.soft}; text-align:right; white-space:nowrap;">${u.arrow} ${u.g}</span><span style="font-size:11.5px; color:${C.soft}; padding-left:15px;">${esc(u.stat)}</span><span style="${MONO} font-size:11px; color:${C.grey}; text-align:right; white-space:nowrap;">${esc(u.val)} v ${esc(u.avg)}</span></div>`).join('')}</div>` : ''}</span>` : '';
+    const drFig = (v, r) => `<span style="${MONO} font-size:24px; font-weight:700; color:${v == null ? C.grey : C.text};${r ? ' text-align:right;' : ''}">${v == null ? D : v.toFixed(2)}</span>`;
+    return `<div style="width:100%; max-width:760px; margin:0 auto; padding:6px 0 8px; display:flex; flex-direction:column; gap:18px;">
+      <div style="display:flex; align-items:center; justify-content:center; gap:10px 18px; flex-wrap:wrap;">${track(scopeTabs, { inline: false, wrap: true, itemCss: 'padding:6px 13px; border-radius:7px; font-size:12.5px;', css: ' align-items:center; justify-content:center;' })}${unBtn}</div>
+      <div data-msdr style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:14px; background:${C.card}; border:1px solid ${wa(5)}; border-radius:10px; padding:16px 20px;">${drFig(drv[0])}<span style="position:relative; display:flex; align-items:center; gap:8px;"><span style="font-family:'Hanken Grotesk',sans-serif; font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${C.text}; white-space:nowrap;">Dominance ratio</span><span data-msdri data-act="drtip" data-hov="drtip" style="width:16px; height:16px; flex:none; box-sizing:border-box; border-radius:50%; border:1px solid ${wa(28)}; display:flex; align-items:center; justify-content:center; ${MONO} font-size:10px; font-weight:700; color:${C.grey}; cursor:default; user-select:none;">i</span>${S.drTip ? `<span data-msdrtip style="position:absolute; top:calc(100% + 10px); left:50%; transform:translateX(-50%); z-index:20; box-sizing:border-box; width:250px; background:${C.lifted}; border:1px solid ${wa(14)}; border-radius:10px; box-shadow:var(--lv-shadow-menu); padding:10px 12px; font-size:12px; line-height:1.45; color:${C.soft}; text-align:left; text-wrap:pretty;">Who wins more points on the other player’s serve. Above 1.00 is on top.</span>` : ''}</span>${drFig(drv[1], true)}</div>
+      ${secs.map((s, i) => `<div style="display:flex; flex-direction:column; gap:14px;">${secHead(s.title, i === 0 ? cmpMenu : '')}${s.rows.map(rowHtml).join('')}</div>`).join('')}
+      ${cmp !== 'OFF' ? `<span style="text-align:center; font-size:11.5px; font-weight:600; color:${C.grey};">Under each figure: the gap to the player’s own ${esc(tickLbl)}.</span>` : ''}</div>`;
+  }
+  // ── Points tab = the locked Match Stats point by point (Match analysis v2 component, reused) ───────────────────
+  function pointsHtml(m) {
+    const pe = LF() ? LF().pbpGet(m.ek) : null;
+    const side = v => /first/i.test(String(v || '')) ? 'p1' : /second/i.test(String(v || '')) ? 'p2' : null;
+    const bySet = {};
+    (pe && Array.isArray(pe.games) ? pe.games : []).forEach(g => { const n = setNo(g.set_number) || 1;
+      (bySet[n] = bySet[n] || []).push({ g: +g.number_game || null, server: side(g.player_served), winner: side(g.serve_winner), score: g.score || '',
+        points: (g.points || []).map(p => ({ n: +p.number_point || null, s: p.score || '', bp: !!p.break_point })) }); });
+    const sh = { p1: m.A.raw, p2: m.B.raw, sets: Object.keys(bySet).map(Number).sort((a, b) => a - b).map(n => ({ set: n, games: bySet[n].sort((a, b) => (a.g || 0) - (b.g || 0)) })) };
+    const tabs = m.sets.map((_, i) => ({ label: 'Set ' + (i + 1), act: 'pset:' + (i + 1), on: Math.min(S.pset, m.nSets) === i + 1 }));
+    const head = `<div style="display:flex; flex-wrap:wrap; width:max-content; max-width:100%; margin:0 auto; gap:3px; background:${C.track}; border:1px solid ${wa(10)}; border-radius:10px; padding:3px;">${tabs.map(x => { const s = seg2(x.on); return `<span class="lvseg" data-act="${x.act}" style="padding:6px 13px; border-radius:7px; font-size:12.5px; font-weight:${s.w}; color:${s.c}; background:${s.bg}; border:1px solid ${s.bd}; cursor:pointer; white-space:nowrap;">${x.label}</span>`; }).join('')}</div>`;
+    const setN = Math.min(S.pset, m.nSets), st = sh.sets.find(s => s.set === setN);
+    let body;
+    if (!pe || (pe.loading && !pe.games)) body = `<div style="padding:34px 12px; text-align:center; font-size:13px; color:${C.grey};">Loading point by point…</div>`;
+    else if (!st || !has('fhPbpSetModel')) body = `<div style="padding:34px 12px; text-align:center; font-size:13px; color:${C.grey};">${!sh.sets.length ? 'Point-by-point not available for this match' : 'No points in this set yet'}</div>`;
+    else {
+      const M = fhPbpSetModel(st, has('fhPbpMatchCtx') ? fhPbpMatchCtx(sh, m.bo)[st.set] : null);
+      M.label = 'Point by point ' + DOT + ' Set ' + setN;
+      const prev = typeof _fhSheetToneNow !== 'undefined' ? _fhSheetToneNow : null;
+      try { _fhSheetToneNow = 'ma2'; body = fhSheetPbpHtmlMa2(M); } finally { _fhSheetToneNow = prev; }
+    }
+    return `<div data-lvpbp style="display:flex; flex-direction:column; gap:14px;">${head}<div>${body}</div></div>`;
+  }
+
+  // ── Break/Hold tab (prototype heatFor() + template L408–515, on holdbreak.json) ─────────────────────────────────
+  const BUCKETS = [['Game 1-2', '1st svc game'], ['Game 3-4', '2nd svc game'], ['Game 5-6', '3rd svc game'], ['Game 7-8', '4th svc game'], ['Game 9-10', '5th svc game'], ['Game 11-12+', '6th+ svc game']];
+  // holdbreak.json does not split best-of-3 from best-of-5 in sets 1–3 (both formats pool there); the brief forbids
+  // mixing them, so those cells are a dash until the builder writes a format key. Sets 4–5 exist only in best-of-5.
+  const HB_FORMAT_SPLIT = false;
+  function heatFor(key, metric, bo, surf, nowSet, nowBi, marks) {
+    const MIN = LIVE_CONST.HB_MIN_GAMES, nS = bo === 3 ? 3 : 5, H = hbData();
+    const pl = H && key != null ? H.players[String(key)] : null, node = pl ? pl[metric === 'HOLD' ? 'serve' : 'return'] : null;
+    const bySurf = node ? node[surf === 'SURF' ? surf2 : 'all'] : null;
+    const of = (n, d) => n + ' of ' + d;
+    const raw = BUCKETS.map((b, bi) => Array.from({ length: nS }, (_, i) => { const si = i + 1;
+      if (!HB_FORMAT_SPLIT && si <= 3) return { den: 0, num: 0, mixed: true };
+      const c = bySurf && bySurf[String(si)] ? bySurf[String(si)][String(bi + 1)] : null;
+      return c && c.n ? { den: c.n, num: c.won != null ? c.won : Math.round(c.pct / 100 * c.n) } : { den: 0, num: 0 }; }));
+    let tn = 0, td = 0;
+    const NEU = { bg: wa(3), bd: wa(7) };
+    const rows = BUCKETS.map((b, bi) => {
+      const gN = raw[bi].reduce((x, c) => x + c.num, 0), gD = raw[bi].reduce((x, c) => x + c.den, 0), gOk = gD >= MIN; tn += gN; td += gD;
+      const cells = raw[bi].map((c, i) => { const si = i + 1, mk = (marks && marks[bi + '|' + si]) || [];
+        const o = Object.assign({ num: c.num, den: c.den, ring: 'none', now: false, mk, tipToday: mk.length ? 'Today: ' + mk.map(k => k.held ? 'held' : 'broken').join(', ') : '', tipHead: b[0] + ' ' + DOT + ' Set ' + si, full: false, cnt: '', gap: '', gapC: C.grey, d: 0 }, NEU);
+        if (!c.den) return Object.assign(o, { kind: 'none', big: D, size: '13px', color: C.grey, bg: wa(2), bd: wa(5), tipRate: D, tipNote: c.mixed ? 'Best-of-three and best-of-five are not split in our history for sets 1–3 yet' : 'No games on record' });
+        if (c.den < MIN || !gOk) return Object.assign(o, { kind: 'thin', big: of(c.num, c.den), size: '10.5px', color: C.grey, bg: 'transparent', bd: wa(6), tipRate: of(c.num, c.den), tipNote: 'Under ' + MIN + ' games: count only, no rate' });
+        const p = pc(c.num, c.den), d = p - pc(gN, gD), N = LIVE_CONST.HEAT_NEUTRAL, up = d > N, dn = d < -N;
+        return Object.assign(o, { kind: 'full', full: true, d, big: p + '%', size: '14px', cnt: of(c.num, c.den),
+          color: up ? C.green : dn ? C.red : C.text, gapC: up ? C.green : dn ? C.red : C.grey,
+          bg: up ? mix(C.green, 16) : dn ? mix(C.red, 16) : NEU.bg, bd: up ? mix(C.green, 40) : dn ? mix(C.red, 40) : NEU.bd,
+          gap: d === 0 ? 'at avg' : Math.abs(d) + (d > 0 ? ' above avg' : ' below avg'), tipRate: p + '% ' + DOT + ' ' + of(c.num, c.den),
+          tipNote: d === 0 ? 'Level with his all-sets average for this service game' : Math.abs(d) + (d > 0 ? ' above' : ' below') + ' his all-sets average for this service game' }); });
+      return { bucket: b[0], sub: b[1], bucketColor: C.soft, bucketW: 600, gPct: gOk ? pc(gN, gD) + '%' : gD ? of(gN, gD) : D, gSize: gOk ? '15px' : '10.5px', gFrac: gOk ? of(gN, gD) : '', cells };
     });
-  });
-}
+    let nowCell = null;
+    if (nowSet && rows[nowBi] && rows[nowBi].cells[nowSet - 1]) { nowCell = rows[nowBi].cells[nowSet - 1]; nowCell.ring = '1.5px solid ' + C.text; nowCell.now = true; rows[nowBi].bucketColor = 'var(--ma2-white)'; rows[nowBi].bucketW = 700; }
+    return { rows, nowCell, cols: '132px 66px 10px repeat(' + nS + ',minmax(0,1fr))', minW: nS === 3 ? '430px' : '560px',
+      globalLabel: (metric === 'HOLD' ? 'Hold ' : 'Break ') + (td >= MIN ? pc(tn, td) + '% ' + DOT + ' ' + of(tn, td) : td ? of(tn, td) : D) };
+  }
+  let surf2 = 'all';
+  function heatHtml(m) {
+    const A = m.names[0], B = m.names[1], nSets = m.nSets, play = playOf(m);
+    surf2 = m.surface && SURF_WORD[m.surface.s] ? m.surface.s : 'all';
+    const surfLbl = SURF_WORD[surf2] || null;
+    const curSt = m.sets[nSets - 1], gameNo = curSt[0] + curSt[1] + 1, nowBi = Math.min(5, Math.floor((gameNo - 1) / 2));
+    const serving = m.serving == null ? 0 : m.serving, hiSide = S.hb === 'HOLD' ? serving : 1 - serving;
+    const hbo = m.bo, hCols = hbo === 3 ? 3 : 5, hSurf = S.hbSurf === 'SURF' && surfLbl ? 'SURF' : 'ALL', nowSetOk = nSets <= hCols ? nSets : null;
+    let hMarks = 0;
+    const mkFor = sd => { const out = {}, cnt = {}; (play ? play.gCells : []).forEach(c => { if (c.part || c.tb) return;
+      const k = c.si + '|' + c.aServ, n = cnt[k] = (cnt[k] || 0) + 1, srv = c.aServ ? 0 : 1; if ((S.hb === 'HOLD' ? srv : 1 - srv) !== sd || c.si + 1 > hCols) return;
+      const key = Math.min(5, n - 1) + '|' + (c.si + 1), col = srv === 0 ? CA : CB; hMarks++;
+      (out[key] = out[key] || []).push({ held: !c.brk, kind: c.brk ? 'ring' : 'dot', c: col, bg: c.brk ? 'transparent' : col }); }); return out; };
+    const keys = [m.A.key, m.B.key];
+    const heatA = heatFor(keys[0], S.hb, hbo, hSurf, hiSide === 0 ? nowSetOk : null, nowBi, mkFor(0)), heatB = heatFor(keys[1], S.hb, hbo, hSurf, hiSide === 1 ? nowSetOk : null, nowBi, mkFor(1));
+    const nc = (hiSide === 0 ? heatA : heatB).nowCell, oMt = S.hb === 'HOLD' ? 'BREAK' : 'HOLD';
+    const oc = heatFor(keys[1 - hiSide], oMt, hbo, hSurf, nowSetOk, nowBi, null).nowCell;
+    const ps = [0, 1].map(sd => { const c = sd === hiSide ? nc : oc, hold = (sd === hiSide ? S.hb : oMt) === 'HOLD', nm = m.names[sd];
+      const gs = play ? play.gCells.filter(g => !g.tb && g.aServ === (sd === 0)) : [], pts = gs.reduce((x, g) => x + g.end - g.start, 0), v = gs.length ? pts / gs.length : null;
+      return { p: sd ? m.B : m.A, ring: sd ? CB : CA, role: m.serving === sd ? 'serving' : 'returning',
+        spotL: !c || !c.den ? (hold ? 'Holds here' : 'Breaks in this spot') : c.full ? (hold ? 'Holds here' : 'Breaks in this spot') : (hold ? 'Held here' : 'Broken in this spot'),
+        spotV: !c || !c.den ? D : c.full ? c.big : c.num + ' of ' + c.den, spotS: c && c.full ? c.num + ' of ' + c.den : '',
+        ppg: v == null ? D : v.toFixed(1), ppgN: gs.length ? gs.length + (gs.length === 1 ? ' game' : ' games') : '', avg: D }; });
+    const col = (l, v, s, c) => `<span style="display:flex; flex-direction:column; gap:4px; min-width:0;"><span style="font-size:10.5px; color:${C.grey}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(l)}</span><span style="display:flex; align-items:baseline; gap:6px; white-space:nowrap; overflow:hidden;"><span style="${MONO} font-size:16px; font-weight:700; line-height:1.2; color:${c};">${esc(v)}</span>${s != null ? `<span style="${MONO} font-size:10.5px; color:${C.grey};">${esc(s)}</span>` : ''}</span></span>`;
+    const vr = `<span style="background:${wa(8)};"></span>`;
+    const now = !nc ? '' : `<div data-hbnow style="display:flex; flex-direction:column; gap:12px; margin-top:14px; padding:14px 16px; border-radius:12px; background:${C.inner}; border:1px solid ${wa(6)};"><div style="display:flex; align-items:center; gap:6px 10px; flex-wrap:wrap;"><span style="font-size:11.5px; font-weight:700; color:var(--ma2-white); background:${C.lifted}; border:1px solid ${wa(14)}; border-radius:6px; padding:2px 8px; white-space:nowrap;">You are here</span><span style="font-size:12.5px; font-weight:700; color:${C.text};">${esc('Set ' + nSets + ', game ' + gameNo + ' ' + DOT + ' ' + m.names[serving] + ' serving')}</span></div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr)); gap:12px;">${ps.map(p => `<div data-hbnp title="Points per service game: average number of points in his service games. Lower means easier holds." style="display:flex; flex-direction:column; min-width:0; background:${C.card}; border:1px solid ${wa(6)}; border-radius:10px;"><div style="display:flex; align-items:center; gap:9px; padding:10px 14px; border-bottom:1px solid ${wa(8)};">${ava(p.p, 28, { ring: p.ring, inset: true, fs: '10.5px', fw: 700 })}<span style="font-size:13px; font-weight:700; color:${C.text}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(p.p.name)}</span><span style="margin-left:auto; font-size:11px; color:${C.grey}; white-space:nowrap;">${p.role}</span></div><div style="display:grid; grid-template-columns:minmax(0,1fr) 1px minmax(0,1fr) 1px minmax(0,1fr); gap:12px; padding:12px 14px;">${col(p.spotL, p.spotV, p.spotS, C.text)}${vr}${col('Pts per game today', p.ppg, p.ppgN, p.ring)}${vr}${col('52-week average', p.avg, null, C.soft)}</div></div>`).join('')}</div></div>`;
+    const setCols = hiP => Array.from({ length: hCols }, (_, i) => `<span style="text-align:center; font-size:10.5px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; padding-bottom:2px; color:${hiP && i + 1 === nSets ? 'var(--ma2-white)' : C.grey};">S${i + 1}</span>`).join('');
+    const cell = c => `<span class="hbcell" data-hbc="${c.kind}" style="position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; min-height:54px; box-sizing:border-box; padding:7px 0; border-radius:8px; background:${c.bg}; border:1px solid ${c.bd}; outline:${c.ring}; outline-offset:1px;">${c.now ? `<span style="position:absolute; top:-9px; left:50%; transform:translateX(-50%); font-size:9.5px; font-weight:700; color:var(--ma2-white); background:${C.lifted}; border:1px solid ${wa(30)}; border-radius:5px; padding:0 6px; line-height:15px; white-space:nowrap;">Now</span>` : ''}${c.mk.length ? `<span style="position:absolute; top:4px; right:4px; display:flex; gap:2px;">${c.mk.map(k => `<span data-hbmk="${k.kind}" style="width:7px; height:7px; box-sizing:border-box; border-radius:50%; background:${k.bg}; border:1.5px solid ${k.c};"></span>`).join('')}</span>` : ''}<span style="${MONO} font-size:${c.size}; font-weight:700; color:${c.color}; line-height:1.2; white-space:nowrap;">${esc(c.big)}</span>${c.full ? `<span style="${MONO} font-size:9.5px; color:${C.grey}; line-height:1.25; white-space:nowrap;">${c.cnt}</span><span data-hbgap style="font-size:9.5px; font-weight:600; color:${c.gapC}; line-height:1.2; white-space:nowrap;">${c.gap}</span>` : ''}<span class="hbtip" style="position:absolute; bottom:calc(100% + 7px); left:50%; transform:translateX(-50%); z-index:50; width:196px; padding:9px 11px; background:${C.card}; border:1px solid ${wa(10)}; border-radius:9px; box-shadow:var(--lv-shadow-float); text-align:left; pointer-events:none;"><span style="display:block; font-size:11px; font-weight:600; color:${C.grey};">${esc(c.tipHead)}</span><span style="display:block; margin-top:4px; ${MONO} font-size:12.5px; font-weight:700; color:${c.color};">${esc(c.tipRate)}</span><span style="display:block; margin-top:3px; font-family:'Hanken Grotesk',sans-serif; font-size:11.5px; color:${C.grey}; line-height:1.5;">${esc(c.tipNote)}</span>${c.mk.length ? `<span style="display:block; margin-top:3px; font-family:'Hanken Grotesk',sans-serif; font-size:11.5px; color:${C.soft}; line-height:1.5;">${esc(c.tipToday)}</span>` : ''}</span></span>`;
+    const grid = (p, h, ring, hiP) => `<div data-hbgrid style="min-width:0; background:${C.inner}; border:1px solid ${wa(6)}; border-radius:12px; padding:14px 16px 16px;"><div style="display:flex; align-items:center; gap:10px; padding-bottom:12px; margin-bottom:12px; border-bottom:1px solid ${wa(6)};">${ava(p, 30, { ring, inset: true, fs: '11px', fw: 700, attr: 'data-msava' })}<span style="font-size:14px; font-weight:700; color:${C.text}; white-space:nowrap;">${esc(p.name)}</span><span data-lftag style="margin-left:auto; ${MONO} font-size:10.5px; font-weight:700; color:${C.text}; background:${C.lifted}; border:1px solid ${wa(14)}; border-radius:6px; padding:4px 9px; white-space:nowrap;">${esc(h.globalLabel)}</span></div>
+      <div data-hbscroll style="overflow-x:auto; padding:96px 2px 4px; margin-top:-96px; pointer-events:none;"><div style="min-width:${h.minW}; pointer-events:auto;"><div style="display:grid; grid-template-columns:${h.cols}; gap:6px; align-items:end; padding-bottom:4px;"><span></span><span style="text-align:center; font-size:10.5px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; padding-bottom:2px; color:${C.grey};">Global</span><span></span>${setCols(hiP)}</div>
+      ${h.rows.map(r => `<div style="display:grid; grid-template-columns:${h.cols}; gap:6px; align-items:stretch; margin-top:6px;"><span style="display:flex; flex-direction:column; justify-content:center; gap:1px;"><span style="font-size:12.5px; font-weight:${r.bucketW}; color:${r.bucketColor}; white-space:nowrap;">${r.bucket}</span><span style="font-size:10.5px; color:${C.grey}; white-space:nowrap;">${r.sub}</span></span><span data-numtile style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; padding:7px 0; border-radius:8px; background:${C.lifted}; border:1px solid ${wa(10)};"><span style="${MONO} font-size:${r.gSize}; font-weight:700; color:${C.text}; line-height:1.2; white-space:nowrap;">${esc(r.gPct)}</span><span style="${MONO} font-size:9.5px; color:${C.grey}; line-height:1.25; white-space:nowrap;">${esc(r.gFrac)}</span></span><span style="align-self:stretch; display:flex; justify-content:center;"><span style="width:1px; background:${wa(7)};"></span></span>${r.cells.map(cell).join('')}</div>`).join('')}</div></div></div>`;
+    const hsTabs = [['ALL', 'All surfaces', 'Matches on every surface']].concat(surfLbl ? [['SURF', surfLbl, 'Only matches on this match’s surface']] : []).map(([k, l, t]) => ({ label: l, title: t, act: 'hbsurf:' + k, on: hSurf === k }));
+    const hbTabs = [['HOLD', 'Hold', 'How often each player holds his own serve'], ['BREAK', 'Break', 'How often each player breaks the opponent’s serve']].map(([k, l, t]) => ({ label: l, title: t, act: 'hb:' + k, on: S.hb === k }));
+    const sw = (c, b, bg) => `<span style="width:14px; height:10px; box-sizing:border-box; border-radius:3px; background:${bg}; border:1px solid ${b};"></span>`;
+    const leg = !hMarks ? '' : `<div data-hbleg style="display:flex; align-items:center; gap:6px 14px; flex-wrap:wrap; margin-top:14px; padding-top:12px; border-top:1px solid ${wa(6)}; font-size:11.5px; color:${C.grey};"><span style="display:inline-flex; align-items:center; gap:6px;">${sw(0, mix(C.green, 40), mix(C.green, 16))}Above his average</span><span style="display:inline-flex; align-items:center; gap:6px;">${sw(0, mix(C.red, 40), mix(C.red, 16))}Below</span><span style="display:inline-flex; align-items:center; gap:6px;">${sw(0, wa(10), 'transparent')}Count only = under ${LIVE_CONST.HB_MIN_GAMES} games</span><span style="width:1px; height:12px; background:${wa(12)};"></span><span style="display:inline-flex; align-items:center; gap:6px;"><span style="width:7px; height:7px; border-radius:50%; background:${C.grey};"></span>Dot = held today</span><span style="display:inline-flex; align-items:center; gap:6px;"><span style="width:7px; height:7px; box-sizing:border-box; border-radius:50%; border:1.5px solid ${C.grey};"></span>Ring = broken today</span><span>${S.hb === 'HOLD' ? '' : 'Mark = the opponent’s service game, in his colour'}</span></div>`;
+    const loading = !hbData() ? `<div style="margin-top:14px; font-size:12.5px; color:${C.grey};">Loading hold and break history…</div>` : '';
+    return `<div data-lfcard style="background:${C.card}; border:1px solid ${wa(6)}; border-radius:12px; padding:18px 20px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px 12px; flex-wrap:wrap;"><span style="display:flex; align-items:center; gap:6px 12px; flex-wrap:wrap; min-width:0;"><span style="display:inline-flex; align-items:center; gap:8px;"><span style="font-size:15px; font-weight:700;">Hold/Break heatmap</span><span class="lvtip" style="display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:50%; background:${wa(6)}; border:1px solid ${wa(12)}; font-size:10px; font-weight:700; color:${C.grey}; cursor:default;">i<span class="lvtipbox" style="position:absolute; top:calc(100% + 8px); left:0; z-index:40; width:300px; padding:11px 13px; background:${C.card}; border:1px solid ${wa(10)}; border-radius:10px; box-shadow:var(--lv-shadow-float); font-family:'Hanken Grotesk',sans-serif; font-size:12px; font-weight:400; color:${C.soft}; line-height:1.55; text-align:left;">Each cell: the rate, the games it rests on, and the gap to the player’s own all-sets average for that service game. Green above it, red below, neutral within ±${LIVE_CONST.HEAT_NEUTRAL} points.<span style="display:block; margin-top:7px; color:${C.grey};">${LIVE_CONST.HB_MIN_GAMES} or more games: rate, count, gap and colour ${DOT} under ${LIVE_CONST.HB_MIN_GAMES}: count only, no colour ${DOT} no games: a dash.</span></span></span></span><span data-hbscope style="font-size:12px; color:${C.grey};">${hbo === 3 ? 'Best-of-three' : 'Best-of-five'} matches ${DOT} last 24 months</span></span>
+      <span style="display:inline-flex; align-items:center; gap:10px; flex-wrap:wrap;">${track(hsTabs, { attr: 'data-hbsurf' })}${track(hbTabs, { attr: 'data-hbf' })}</span></div>
+      ${now}${loading}<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,560px),1fr)); gap:14px; margin-top:14px;">${grid(m.A, heatA, CA, hiSide === 0)}${grid(m.B, heatB, CB, hiSide === 1)}</div>${leg}</div>`;
+  }
 
-// Esc closes the open sheet (TEN-417).
-(globalThis.sfEscLayers = globalThis.sfEscLayers || []).push({ id: 'live-sheet', z: 76, isOpen: ()=>ST.sel!=null&&!!document.getElementById('lvOverlay'), close: ()=>setState({sel:null}) });   // Esc: esc-nav.js
+  // ── modal actions + hovers ────────────────────────────────────────────────────────────────────────────────────
+  function modalAct(k, v) {
+    if (k === 'mscope') return set({ mScope: v === 'MATCH' ? 'MATCH' : +v, momH: null, momDot: null, momK: null, mlAll: false, waitTip: false });
+    if (k === 'momv') return set({ momV: v, momH: null });
+    if (k === 'momtip') return set({ momTip: !S.momTip });
+    if (k === 'waittip') return set({ waitTip: true, momH: null });
+    if (k === 'mlall') return set({ mlAll: !S.mlAll });
+    if (k === 'scope') return set({ scope: v === 'MATCH' ? 'MATCH' : +v });
+    if (k === 'cmpmenu') return set({ cmpOpen: !S.cmpOpen, unOpen: false });
+    if (k === 'cmp') return set({ cmp: v, cmpOpen: false });
+    if (k === 'unusual') return set({ unOpen: !S.unOpen, cmpOpen: false });
+    if (k === 'drtip') return set({ drTip: !S.drTip });
+    if (k === 'pset') return set({ pset: +v });
+    if (k === 'hb') return set({ hb: v });
+    if (k === 'hbsurf') return set({ hbSurf: v });
+  }
+  function hoverIn(h) {
+    if (h === 'momtip') return set({ momTip: true });
+    if (h === 'waittip') return set({ waitTip: true, momH: null });
+    if (h === 'drtip') return set({ drTip: true });
+    if (h.indexOf('dot:') === 0) { const [, i, g] = h.split(':'); return set({ momK: 'g' + g, momDot: +i }); }
+    if (h.indexOf('row:') === 0) return set({ momK: h.slice(4) });
+  }
+  function hoverOut(h) {
+    if (h === 'momtip') return set({ momTip: false });
+    if (h === 'waittip') return set({ waitTip: false });
+    if (h === 'drtip') return set({ drTip: false });
+    if (h.indexOf('dot:') === 0) return set({ momK: null, momDot: null });
+    if (h.indexOf('row:') === 0) return set({ momK: null });
+  }
 
-// ── init ──────────────────────────────────────────────────────────────────────
-// This is an INLINE script, so it runs during parse — before the deferred
-// live-tab.js has defined window.LiveFeed. Queue the subscriber on the array
-// live-tab.js drains, rather than calling an API that does not exist yet.
-function onFeed(payload){
-  FEED = payload || FEED;
-  LIVE = (Array.isArray(FEED.live) ? FEED.live : []).map(viewModel);
-  // The open match may have finished between ticks: it leaves the grid, and the
-  // sheet pinned to it closes rather than staying on a match that is off the board.
-  if(ST.sel!=null && !LIVE.some(m=>m.ek===ST.sel)) ST.sel=null;
-  // An open sheet wants a fresh point log; the fetch self-throttles.
-  if(ST.sel!=null && LF()) LF().pbpLoad(ST.sel,()=>{ if(ST.sel!=null) render(); });
-  render();
-}
-(window.__LV_SUBS = window.__LV_SUBS || []).push(onFeed);
+  // ── events ────────────────────────────────────────────────────────────────────────────────────────────────────
+  function set(patch) { let ch = false; for (const k in patch) if (S[k] !== patch[k]) { S[k] = patch[k]; ch = true; } if (ch) paint(); }
+  function onAct(act, e) {
+    const [k, v] = [act.split(':')[0], act.slice(act.indexOf(':') + 1)];
+    if (k === 'flt') return set({ flt: v });
+    if (k === 'sort') return set({ sort: v });
+    if (k === 'clearq') { S.q = ''; const i = document.getElementById('lvQ'); if (i) i.value = ''; return paintPage(); }
+    if (k === 'mom') { S.evOpen = Object.assign({}, S.evOpen, { [v]: !S.evOpen[v] }); return paintPage(); }
+    if (k === 'close') return closeModal();
+    if (k === 'tab') return set({ tab: v, cmpOpen: false, unOpen: false });
+    return modalAct(k, v, e);
+  }
+  function bindPage() {
+    const tab = document.getElementById('lvTab'); if (!tab || tab.__lvBound) return; tab.__lvBound = true;
+    tab.addEventListener('click', e => {
+      const a = e.target.closest('[data-act]'); if (a && tab.contains(a)) { e.stopPropagation(); onAct(a.getAttribute('data-act'), e); return; }
+      if (e.target.closest('[data-stop]')) return;
+      const c = e.target.closest('.lvcard[data-open]'); if (c) openModal(c.getAttribute('data-open'));
+    });
+    tab.addEventListener('input', e => { if (e.target && e.target.id === 'lvQ') { S.q = e.target.value; paintPage(); } });
+  }
+  function bindModal(ov) {
+    ov.addEventListener('click', e => {
+      const a = e.target.closest('[data-act]'); if (a) { onAct(a.getAttribute('data-act'), e); return; }
+      if (e.target === ov) return closeModal();
+      if (S.cmpOpen || S.unOpen || S.drTip) set({ cmpOpen: false, unOpen: false, drTip: false });
+    });
+    ov.addEventListener('mouseover', e => { const h = e.target.closest('[data-hov]'); if (h) hoverIn(h.getAttribute('data-hov')); });
+    ov.addEventListener('mouseout', e => { const h = e.target.closest('[data-hov]'); if (h && !h.contains(e.relatedTarget)) hoverOut(h.getAttribute('data-hov')); });
+    ov.addEventListener('mousemove', e => { const pl = e.target.closest('[data-mplot]'); if (pl) plotMove(pl, e); });
+    ov.addEventListener('mouseleave', () => {}, true);
+    ov.addEventListener('mouseout', e => { const pl = e.target.closest('[data-mplot]'); if (pl && !pl.contains(e.relatedTarget)) set({ momH: null }); });
+  }
+  (globalThis.sfEscLayers = globalThis.sfEscLayers || []).push({ id: 'live-sheet', z: 76, isOpen: () => S.sel != null && !!OV, close: closeModal });
+  (window.sfOverlayClosers = window.sfOverlayClosers || []).push(() => { if (S.sel != null) closeModal(); });
 
-// holdbreak.json is fetched lazily by loadHeavyDatasets(). If the Break/Hold tab
-// is opened before it lands, every cell is a dash — so repaint once it arrives.
-function lvAwaitHoldbreak(){
-  let tries=0;
-  const t=setInterval(()=>{
-    const hb=LF()?LF().holdbreak():null;
-    if((hb&&hb.players)||++tries>40){ clearInterval(t); if(hb&&hb.players) render(); }
-  },500);
-}
-
-function lvInit(){
-  if(lvInited) return;
-  lvInited=true;
-  lvAwaitHoldbreak();
-  render();
-}
-
-// init when tab first shown — capture phase so it fires before the generic handler switches pages
-document.querySelector('[data-tab="live"]').addEventListener('click', function onFirst(){
-  lvInit();
-  this.removeEventListener('click', onFirst, true);
-}, true);
-
-// also init if the tab is already active on load
-if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector('.tabpage[data-page="live"]').classList.contains('active')){
-  lvInit();
-}
-
+  // ── feed ──────────────────────────────────────────────────────────────────────────────────────────────────────
+  function onFeed(payload) {
+    FEED = payload || FEED;
+    LIVE = (Array.isArray(FEED.live) ? FEED.live : []).map(vm);
+    if (S.sel != null && !LIVE.some(m => m.ek === S.sel)) { S.sel = null; if (OV) { OV.remove(); OV = null; document.body.style.overflow = ''; } }
+    if (S.sel != null && LF()) LF().pbpLoad(S.sel, () => { if (S.sel != null) paint(); });
+    paint();
+  }
+  (window.__LV_SUBS = window.__LV_SUBS || []).push(onFeed);
+  function init() {
+    if (inited) return; inited = true;
+    bindPage(); loadSide(); paint();
+  }
+  const btn = document.querySelector('[data-tab="live"]');
+  if (btn) btn.addEventListener('click', init, true);
+  const pg = document.querySelector('.tabpage[data-page="live"]');
+  if (pg && pg.classList.contains('active')) init();
+  window.LivePage = { init, LIVE_CONST, _S: S, _vm: vm, _buildPlay: buildPlay, _sig: sigOf, _paint: paint, _open: openModal, _onFeed: onFeed, _side: SIDE,
+    _html: { header: headerHtml, card: cardHtml, momentum: momentumHtml, stats: statsHtml, points: pointsHtml, heat: heatHtml, modalHead: modalHeadHtml, cards: cardsModel } };
 })();
 </script>
 

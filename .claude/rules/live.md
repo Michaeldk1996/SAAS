@@ -1,102 +1,71 @@
-# Live page (founder step 11, TEN-417, 2026-10-10)
+# Live page and match modal (founder brief 2026-11-25, locked design)
 
-Applies to the Live page renderer — the last `<script>` block of `bsp-consult-dashboard.html` (`#lvTab`, `renderVals` /
-`render`, the `.lvcard` / `.hbcell` CSS above it) — and its data layer `live-tab.js` (`window.LiveFeed`). Reference =
-`OFFICIAL VERSION 1.html` → Live, night, 1512px; design file `Live.dc.html` (the 2026-10-08 sheet refresh; its raw hexes
-are legacy, read through `tokens.json → legacyColourMap`). Night only. Header = the shared 35b `.sfh` (`app-shell.md`).
-Where the reference's runtime colour conversion and the design file disagree, the design file + the founder's TEN-417
-text win (point chips, score-tile fills, the inner-tone tracks). **Test:** `test-ten417-live.mjs` executes the shipped
-renderer on the shipped `live-tab.js` with a real-feed fixture (`tools/fixtures/ten417-live.json`);
-`tools/test-ten417-mutants.js` (41 mutants, 0 may survive; the ±3 band and tooltip word are the engine's, locked by `tools/test-holdbreak-engine.js`). `tools/test-live-tab-feed.js` keeps the TEN-190 source guards.
+Applies to the Live page renderer — the last `<script>` block of `bsp-consult-dashboard.html` (`window.LivePage`, the
+`#lvTab` / `#lvOverlay` CSS above it) — and its data layer `live-tab.js` (`window.LiveFeed`). Reference =
+`design_handoff_live_final/Live.dc.html` (locked 2026-11-25; never published) + its `DECISIONS.md` (newest entry wins; the
+HTML wins over both). Night only. Supersedes the TEN-417 build (10 Oct). **Test:** `test-live-page.mjs` runs the shipped
+renderer on the shipped `live-tab.js` with real api-tennis rows and point logs (`tools/fixtures/ten417-live.json`); every
+check also runs on a mutated copy and must go red. `tools/test-live-tab-feed.js` keeps the source guards.
 
-## Data
-- **Feed:** `live_snapshot` (Supabase), written by the `live-poller` Edge Function from api-tennis `get_livescore` every
-  **10 s** (pg_cron; measured 10.0 s between writes, 9 Oct). The page reads it by Realtime push (a push triggers one
-  PostgREST read; 25 s re-sync), falling back to a 30 s poll; only while Live is the open page. The point log
-  (`live_pbp`) is read only while a sheet is open (12 s TTL). Every figure on the card and the sheet comes from these two
-  rows or from `holdbreak.json`; nothing is generated. **No sample / seeded data, no disclaimer footer.**
-- **Who is on the grid:** ATP singles (`event_type_type` /atp/ + /single/) that the vendor flags underway
-  (`event_live = "1"`, no `event_winner`, status not Finished / Retired / Walk Over / Abandoned / Cancelled).
-- **Status:** `event_status` matching /interrupt|suspend/ = **Interrupted** (amber); every other underway status
-  ("Set 1" … "Set 5") = **Live**. A decided match leaves the grid on the next snapshot (≤ 10 s) and an open sheet on it
-  closes; it reaches Matches → Completed through `matches.json` on the next pipeline publish, not through this page.
-- **Header:** In play = live matches (not interrupted); Interrupted = the interrupted ones (`--amber` above 0, grey at
-  0); Events = distinct `tournament_name` on the grid; **Updated = `live_snapshot.updated_at`** (the feed's own last
-  refresh) as HH:MM:SS in the member zone (`stennisfy.tz`, else the browser zone; hover = full date-time), never the
-  clock; before the first snapshot every figure is a grey "—". Nothing in play = the empty state ("Nothing in play" 15 /
-  700 + "Matches appear here the moment the first point is played." 13 grey, card tone, radius 14, 9px grey dot).
-- **Names:** a player = `newsPlayerName(key, feed name)` (the Player Profile / H2H / Match analysis / News name of his
-  key, else the feed's api-tennis spelling). Event = `sfEventName(tournament_name)` (the canonical event table) + " · " +
-  the feed's round words ("Shanghai Masters · 1/32-finals"); the sheet line adds "ATP · ".
-- **Ratings + Stats** come from the feed's own box score (`statistics`, periods `match`, `set1` … — per set as the feed
-  publishes it): Serve / Return rating = `house-ratings.js` on that box score (TEN-327); Dominance ratio = return points
-  won % ÷ (100 − service points won %); Ratio W/UE = winners ÷ unforced errors (match to date), with W/P and UE/P over
-  total points. Ratings always read the match to date. Winners / UE all 0 over 10+ points = not tracked → "—". No
-  Pressure points row (no feed stat). A missing value = grey "—", no bar; a zero = "0", no bar; a rate over 0 attempts
-  = "—". Stats scopes = MATCH + every SET n the feed has rows for; no rows anywhere = no Stats tab and no rating cards.
-- **Break/Hold:** `holdbreak.json` (build-holdbreak.js, nightly): 24-month window, all surfaces (the Live page passes
-  'all'), rows = the server's service-game ordinal within the set (Game 1-2 = his 1st service game … 6th+ folded),
-  sets S1–S5. Cell colour = the sign of the gap to the player's own global for that bucket, **neutral within ±3
-  inclusive** (founder TEN-417 R1: green from +4, red from −4), taken from the same rounded gap that is printed under the
-  rate ("+4 pts", true minus), so colour and figure never disagree. Tooltip: "Game 1-2 · Set 1" / rate · count / "at
-  global · −3 pts vs this bucket's global 84%" — the word follows the SAME band as the colour (founder R2): "at global"
-  within ±3, "above global" from +4, "below global" from −4; "· small sample · n=N" on n 5–9 (the engine's words). n 5–9 smaller + greyed, n < 5 raw "a/b", n = 0 "—", unreachable sets "—" with the S head dimmed.
-  The engine (`holdbreak-heatmap.js`) carries this rule, so Player Profile shows the same boundary and wording (founder TEN-417).
-- **1st serve percentage** has no count in the feed: its count is first serves in (the 1st-serve points played) over all
-  service points (1st + 2nd), same period — "76% (19/25)", "65.5% (19/29)"; one decimal, whole only when exact.
+## Data — every figure has a source, else a dash
+- **Feed:** `live_snapshot` (live-poller, api-tennis `get_livescore`, every 10 s; Realtime push, 30 s poll fallback), read
+  only while Live is the open page. Point log `live_pbp`, fetched for an open match (12 s cache).
+- **Who is on the grid** (brief 2026-11-25): ATP and Challenger men's singles underway (`LiveFeed.isLiveTour`). Never ITF,
+  WTA, doubles or juniors. **Test:** `isLiveTour` keeps `Atp Singles` and `Challenger Men Singles`, drops the rest. The rail
+  badge and the header In play count the same set.
+- **Score / server / status / round:** the snapshot (`scores`, `event_game_result`, `event_serve`, `event_status`
+  /interrupt|suspend/ = Interrupted, `tournament_round` words). Best-of: a Grand Slam main draw = 5, else 3. Surface:
+  `tournament_key` → `tournament-surfaces.json`.
+- **Pre price** = the Today's Matches card's price for the match: `odds-card-state` (`_ocsOf`), the card's one book, its
+  close (last price before the real start), else its last pre-start Now; both sides or neither; the hover names the book and
+  the time. **Test:** Pre = the card state's close, never its open.
+- **Live price:** no in-play price is readable from the browser yet (`kibl_live_ml` is service-key only). The price boxes
+  and every "before → after" read a dash until the source is ruled. Never the pre-match price shown as live.
+- **Medical timeout:** `mto-matches.json` (published every data run, ~10 min behind the detector). An open MTO = the amber
+  "Medical timeout" chip, the moment, the chart sign. **Never a body part or a reason:** the chip's hover is player + where.
+  A rain delay has no source (the feed says only "Interrupted"): no chip, no moment.
+- **Players' averages** (Stats compare, Unusual): `surface-ratings.json` last 52 weeks, on the match's surface or all
+  surfaces, only from 10+ matches (else a dash). The compare label follows the real surface ("clay-court average"); with no
+  surface known it opens on the 52-week average. **Test:** a clay match never reads "hard-court".
+- **No source → a dash:** Winners, Unforced errors, W/UE, Net points won, Pressure points won (serve / return), the 52-week
+  points per service game.
 
-## Point log (the feed's quirks)
-- The feed closes a tiebreak set with an extra "Set N" game row scored **7 – 6** with `serve_lost` on the tiebreak's
-  loser. That row is the tiebreak, never a break: hidden when the tiebreak's point rows are logged, never LOST SERVE,
-  never plotted in Momentum. **Test:** "a 7–6 row with no tiebreak rows logged".
-- Point lists are garbled: after the real sequence the feed repeats a tail of it (40:15 → 30:15 → 40:15, A:40 → 40:15).
-  **Every chip must be reachable from the one before it** (from 0:0; one point to either side; 40:40 → A:40 / 40:A;
-  advantage → 40:40) — founder TEN-417 R1. Kept = the longest reachable prefix; if that does not end on the winner's game
-  point (A, or 40 with the other below 40), the rest is walked keeping only reachable chips until it does (measured, 749
-  decided Shanghai games: 731 by the prefix, 16 by the walk, 2 never — shown, nothing lifted). The **lifted chip**
-  (`--selected` + `--edge-16`, white 700) is the last kept chip = the score before the game-winning point. Momentum reads
-  the same last chip; never a game point → smallest bar, no label; a game that reached deuce → "AD". **Every game opens
-  on a 0:0 chip** (founder R2, the reference; not tiebreak rows, not a log that joins mid-game).
-- **BP** (founder R2): a BP chip follows exactly the scores where the RECEIVER is one point from the game — he is on 40
-  with the server on 30 or less, or on advantage (0:40 / 15:40 / 30:40 / 40:A for him, mirrored). **Never on 40:40.**
-  Read off the chip's score and the row's server, not the feed's `break_point` flag (it lands one score early, on the
-  deuce before the receiver's advantage). **Test:** "R1 fix 7 + R2" walks every decided game of both fixture logs: 0:0
-  first, every chip reachable, BP exactly where the rule says, none on 40:40, lifted chip = the winner's game point.
-- Tiebreak rows: one per point (the feed's `player_served`); the point's winner is the row's own word (`serve_lost` set
-  = the server lost it), so a dropped row cannot flip it; LOST SERVE on a mini-break. **SP / MP** on the leader's side
-  when he has ≥ target − 1 points and leads (target 7; 10 in a Grand Slam's deciding set); MP when that set wins him
-  the match. Best-of: a Grand Slam main draw = 5, everything else (Slam qualifying included) = 3; it only dims sets the
-  format cannot reach, picks MP and the tiebreak target — never a printed figure.
+## Named placeholders (founder sets the final values) — `LIVE_CONST`
+`HB_MIN_GAMES` 30 · `U_GAP` 15 / `U_N` 20 · `BP_SAVED_MAJOR` 3 · `DOM_WINDOW_GAMES` 4 · `DOM_START_GAMES` 4 · `BIG_GAP` 15 ·
+`HEAT_NEUTRAL` 3 · `PRICE_MOVE_NO_BREAK` null (no threshold ruled; "Price moved, no break" is not built).
 
-## Display
-- Grid `repeat(auto-fill, minmax(430px, 1fr))`, gap 12, cards top-aligned. Card = `--card`, no outline (1px transparent
-  edge in `.lvcard`, so the hover `--edge-16` fires — supersedes TEN-190 D1), radius 14. Head 10×16 on `--line`: event
-  11.5 grey; status mono 9.5 / 700 / 0.12em ("SET 3", white, 5px dot pulsing 1.6s) or Hanken caps 10.5 / 800
-  "INTERRUPTED" in `--amber`, no pulse. S1…Sn 26px mono 9 + PTS 40px (caps label). Rows 9×16 / 11: avatar 30 (photo over initials),
-  name 14 / 700, lime serve dot 8 **only while live** (founder R1: none on an interrupted card, as on the sheet); sets
-  mono 15 (won white 700, lost grey 500, current white 700); PTS white 700.
-- **Avatars (founder 2026-10-22, reverses TEN-417's "no photos" override):** the player's photo by the feed's player key (`playerPhotoImg`, `player-photos.md`) over the initials (`fhIni`) — `--inner`, 1px `--edge-10`, white 700 (30 / 42 / 30). **Test:** `test-ten417-live.mjs` Cards + Break/Hold (mutant: photos gone).
-- Sheet: scrim `--backdrop` + blur 3 from `--sf-side`; sheet `--card` + `--edge-10`, radius 16, max-width 940,
-  max-height 88vh, `--shadow-modal`, body scrolls under the fixed head. Backdrop click, ✕ and Esc close it; a rail click
-  closes it (sfOverlayClosers). Opening a card resets to **Ratings · Match · Set 1 · Hold**.
-- Head: caps status 10.5 / 700 + 6px dot ("Live · Set N" white, "Interrupted · Set N" amber) over the event line 12 grey.
-  Players: avatar 42, name 16 / 700, caps sub "N sets · serving" (serving only on the server while live), lime dot.
-  Score tile `--inner`, radius 12: heads mono 9 (current set white 700), cells mono 16 in 26px — won 8% white fill /
-  white 700, lost 2.5% / grey 500, current 5% + 18% ring / white 700; PTS 44px on an 8% white rule.
-- Segmented controls (tabs, scope, set, HOLD / BREAK) = track `--inner`, padding 3; selected `--selected` +
-  `--edge-16`, white; idle grey. Words are Hanken caps (MATCH, HOLD), "SET n" mono 10.
-- Ratings: 4 framed cards (`--card` + `--edge-6`, radius 12) in `auto-fit, minmax(min(100%,340px),1fr)`; figures mono
-  24, lead white 700 / trail `--text-soft` 500; bars two 6% tracks, lead `--bar` / trail `--bar-2`, each drawn inward
-  from the centre at **that player's share of the pair, A ÷ (A + B) of the half** on every row — rates, counts,
-  ratings, ratios (founder TEN-417 R1, SUPERSEDES TEN-263's `fhStatBarWidth` on Live): 76% v 65.5% → 53.7 / 46.3; 3 v 2
-  → 60 / 40; 52 v 102 → 33.8 / 66.2; a zero draws nothing (0 v 1 → none / the whole half); one side missing → no bar on
-  either side. Momentum card: one column per set (width = games plotted), bar height
-  = margin, A up `--viz-lead` / B down `--viz-second`, break = `--neg` outline, set label "Set n · a–b" (current white).
-- Chips: LOST SERVE / BP / SP / MP = Hanken caps 10.5 / 800 (red only for LOST SERVE and BP). Tooltips (ⓘ, heat cells)
-  `--card` + `--edge-10`, radius 10 / 9, `--shadow-menu`.
-- **Colour (founder TEN-417):** blue = bar fills only; green / red = heatmap gap, LOST SERVE, BP, break outline; amber
-  = Interrupted only (header count, card status, sheet status); lime = the serve dot only. No blue text, rings or
-  fills elsewhere; no surface colours. **Test:** "Colour".
-- **Rail badge = header In play** (founder TEN-417 R1): one predicate, `LiveFeed.isInterrupted` (live-tab.js); the
-  payload's `inPlay` feeds both the header and the rail badge (`app-shell.md`), and `LiveFeed.liveCount()` (the
-  off-page read) counts the same. **Test:** "R1 fix 1" through the real live-tab.js fetch → publish path.
+## Moments (card list, modal timeline, chart markers) — one source, the point log
+- One line per service game with a break point; the **named player did the thing** (the breaker, or the server who saved);
+  the set / game score is the score **when that game started**. Labels: Broke serve · Broke, serving for set / match · Broke
+  for the set · Saved a / two / three break points. Plus every medical timeout.
+- **Card = major kinds only:** a break, 3+ break points saved in one game, a medical timeout. One saved break point never
+  reaches the card. Latest 5, then "All moments in match view".
+- A card shows its moments only once that match's point log has loaded (fetching every live match's log is new polling,
+  not built until ruled). **Test:** majors only; the named side; the start-of-game score.
+
+## Status chip and sort
+- Chip priority: Match point · Set point · Break point (named for the player with the point) · Medical timeout (amber) ·
+  Break up (more breaks than the opponent in the current set). "Key moments first" sorts by that priority, then order of
+  play (scheduled start, then feed order).
+
+## Momentum
+- Dominance = player one's share of return points won ÷ player two's, each over his last 4 return games; Match scope starts
+  after the first 4 completed games (hatched start + "i"); a picked set starts at Level at its first point, game ticks under
+  it. Points lead = cumulative points from the first point. Tiebreak points count in Points lead only.
+
+## Break/Hold
+- `holdbreak.json`, last 24 months, all surfaces or the match's surface. A cell under 30 games = count only, no colour; no
+  games = a dash; colour only beyond ±3 of the row's all-sets rate. **Best-of-3 and best-of-5 are never mixed:** the rollup
+  pools both formats in sets 1–3, so those cells are a dash (`HB_FORMAT_SPLIT` false) until `build-holdbreak.js` writes a
+  format key. **Test:** sets 1–3 dash; set 4 under 30 = count only.
+
+## Points
+- The locked Match Stats point by point, reused (`fhPbpSetModel` + `fhSheetPbpHtmlMa2`), fed the live point log as received.
+
+## Look
+- Every value is the prototype's inline style, colours through `tokens.css` (`--ma2-*`, `--lv-*`). One avatar (photo by
+  player key over the prototype's initials), one filter track, one "i", one hover box, one heatmap cell. Only the live
+  status dot pulses. The match modal's scrim starts at `--sf-side` (foundation R6.5), so the sheet centres in the content
+  area. At ≤ 900 px the site rail stacks above the page (app-shell), unlike the prototype's fixed side rail.
+- Loading = skeleton cards in the card geometry; a stale feed = one line "Live feed not updating · last update HH:MM:SS"
+  (both DESIGN GAPs, for review).

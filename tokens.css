@@ -413,3 +413,15 @@
   --ma2-shadow-pop: 0 30px 80px rgba(0, 0, 0, 0.55);
   --ma2-glow:    radial-gradient(ellipse 76px 40px at 26px 50%, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0) 100%);
 }
+
+/* Live page rebuild (handoff design_handoff_live_final, locked 2026-11-25): the export's values the --ma2-* family
+   does not carry. live-page.js reads them on the Live page and its match modal only. Night only. */
+:root {
+  --lv-green:      #5CCB84;   /* above the player's own average / positive */
+  --lv-red:        #E06266;   /* below the player's own average / negative; the medical-timeout cross */
+  --lv-amber:      #E8A84E;   /* Interrupted, medical timeout chip */
+  --lv-card-hover: #0D0F18;   /* a match card under the pointer */
+  --lv-shadow-menu:  0 14px 34px rgba(0, 0, 0, 0.55);
+  --lv-shadow-tip:   0 12px 28px rgba(0, 0, 0, 0.5);
+  --lv-shadow-float: 0 16px 36px -18px rgba(0, 0, 0, 0.85);
+}

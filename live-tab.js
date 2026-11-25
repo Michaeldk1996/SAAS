@@ -375,6 +375,11 @@
     const t = String(fix.event_type_type || '');
     return /atp/i.test(t) && /single/i.test(t);
   }
+  // The Live page grid (founder brief 2026-11-25): ATP tour singles — ATP and Challenger men's singles. Never ITF, WTA,
+  // doubles or juniors.
+  function isLiveTour(fix) {
+    return isAtpSingles(fix) || /^challenger men singles$/i.test(String(fix.event_type_type || '').trim());
+  }
 
   // ─── publish the board to the #lvTab renderer ─────────────────────────────────
   // TEN-190: this module no longer paints the Live page. The renderer is the
@@ -387,7 +392,7 @@
   // every snapshot; what it renders is now a payload, not DOM.
   function render(matches) {
     const all = Array.isArray(matches) ? matches : [];
-    const live = all.filter(isAtpSingles).filter(isUnderway);
+    const live = all.filter(isLiveTour).filter(isUnderway);
     const { isStale, ageMs } = staleness();
     publish({
       ready: true,
@@ -1033,13 +1038,14 @@
     },
     isUnderway,
     isAtpSingles,
+    isLiveTour,
     isInterrupted,
     // TEN-403 rail badge: the Live page header's In play (ATP singles underway, interrupted excluded — TEN-417) from a one-shot snapshot read, for when the
     // Live tab is closed and its poll is stopped (snapshot measured 8.3 KB, 1.3 KB gzipped). Renders nothing.
     async liveCount() {
       const row = await fetchSnapshot();
       const all = Array.isArray(row?.board?.matches) ? row.board.matches : [];
-      return inPlayOf(all.filter(isAtpSingles).filter(isUnderway));
+      return inPlayOf(all.filter(isLiveTour).filter(isUnderway));
     },
     indexStats: Detail.indexStats,
     stat: Detail.stat,

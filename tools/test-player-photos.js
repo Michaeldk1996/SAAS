@@ -102,7 +102,7 @@ const USES = [
   ['Ratings board', 'bsp-consult-dashboard.html', "playerPhotoImg(String(p.key), p.name)"],
   ['Stennisfy Model head', 'bsp-consult-dashboard.html', "playerPhotoImg(key, name) : ''}</span>`;"],
   ['H2H avatars (picker, sections, rows: the one xAv)', 'bsp-consult-dashboard.html', "playerPhotoImg(key, p.full || '')"],
-  ['Live page', 'bsp-consult-dashboard.html', "playerPhotoImg(String(key),name):''}</span>"],
+  ['Live page', 'bsp-consult-dashboard.html', "const photo = has('playerPhotoImg') && p.key != null ? playerPhotoImg(p.key, p.name) : '';"],
   ['Trading Report', 'trading-report.js', 'playerPhotoImg(String(row.key), row.name)'],
   ['Series cards', 'series.js', "playerPhotoImg(String(key), name)"],
   ['Draw view', 'draw-view.js', 'window.playerPhotoUrl(String(s.playerKey))'],

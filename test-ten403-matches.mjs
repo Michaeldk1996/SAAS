@@ -472,7 +472,7 @@ test('avatar menu: hover bridge, above any scrim, Escape refocuses only after a 
 
 test('rail Live badge reads the count itself off the Live tab (review: it froze); live-tab.js exposes liveCount', () => {
   const lt = readFileSync(join(HERE, 'live-tab.js'), 'utf8');
-  assert.match(lt, /async liveCount\(\) \{\n\s+const row = await fetchSnapshot\(\);[\s\S]{0,160}return inPlayOf\(all\.filter\(isAtpSingles\)\.filter\(isUnderway\)\);/);   // TEN-417 R1: In play, interrupted excluded
+  assert.match(lt, /async liveCount\(\) \{\n\s+const row = await fetchSnapshot\(\);[\s\S]{0,160}return inPlayOf\(all\.filter\(isLiveTour\)\.filter\(isUnderway\)\);/);   // TEN-417 R1: In play, interrupted excluded
   assert.match(html, /LiveFeed\.liveCount\(\)\.then\(paint, function \(\) \{\}\);/);
   assert.match(html, /setInterval\(peek, 60000\);/);
   assert.doesNotMatch(html.replace('setInterval(peek, 60000);', ''), /setInterval\(peek, 60000\);/);

@@ -51,58 +51,40 @@ const ok   = (m) => { console.log('  ✓ ' + m); pass++; };
 const bad  = (m) => { console.log('  ✗ ' + m); fail++; };
 const check = (cond, m) => cond ? ok(m) : bad(m);
 
-console.log('=== source guard: founder rulings (TEN-190, 2026-09-11) ===');
+console.log('=== source guard: the locked Live page (founder brief 2026-11-25) ===');
 
-check(!/Pressure points/i.test(LIVE),
-  'Pressure points row is gone (no feed stat; ruled "drop")');
+// The 2026-11-25 design draws "Pressure points won on serve / on return": the feed has no such stat, so both rows are a
+// dash — never a figure synthesised from the point log (the 2026-09-11 reason for dropping the row still holds).
+check(/twoSided\('Pressure points won on serve', null, null\)/.test(LIVE) && /twoSided\('Pressure points won on return', null, null\)/.test(LIVE),
+  'Pressure points rows are a dash (no feed stat; nothing synthesised)');
 
 check(!/Math\.max\(\s*12\s*,/.test(LIVE),
   'the 12-game floor is gone (ruled "delete" — it fabricated games never played)');
 
-check(/\/atp\/i\.test\(t\)\s*&&\s*\/single\/i\.test\(t\)/.test(LIVEJS),
-  'the ATP-singles gate is intact (ruled "stay ATP-singles-only")');
+check(/\/atp\/i\.test\(t\)\s*&&\s*\/single\/i\.test\(t\)/.test(LIVEJS) && /\/\^challenger men singles\$\/i/.test(LIVEJS) && /all\.filter\(isLiveTour\)/.test(LIVEJS),
+  'the grid gate is ATP + Challenger men\'s singles (brief 2026-11-25), never ITF / WTA / doubles');
 
 console.log('=== source guard: no placeholder data ships ===');
 
-check(!/randomuser\.me/.test(LIVE),
-  'the randomuser.me avatar generator is gone — avatars come from the feed');
-
-check(!/placeholder data for design review/.test(LIVE),
-  'the "placeholder data for design review" disclaimer is gone');
-
-check(!/const\s+LIVE_DATA\s*=/.test(LIVE) && !/const\s+NAMES_DATA\s*=/.test(LIVE),
-  'the hardcoded LIVE_DATA / NAMES_DATA match list is gone');
-
-check(!/globalRate\s*=\s*metric\s*===?\s*'HOLD'\s*\?\s*0\.88/.test(LIVE),
-  'the hardcoded 0.88 / 0.24 hold-break constant is gone (pill is the real rate)');
-
-check(/holdbreak\(\)/.test(LIVE),
-  'the heat grid reads the holdbreak.json rollup');
+check(!/randomuser\.me/.test(LIVE), 'the randomuser.me avatar generator is not shipped');
+check(!/sample data for design review/.test(LIVE), 'the prototype\'s sample-data footnote is not shipped');
+check(!/\bSEED\(/.test(LIVE) && !/\bsim\(/.test(LIVE) && !/const\s+LIVE\s*=\s*\[/.test(LIVE), 'no generator, seeded random or sample match list');
+check(!/heatFormat|inPlayPrices/.test(LIVE), 'the design-only switches are not shipped');
+check(/hbData\(\)/.test(LIVE) && /holdbreak\(\)/.test(LIVE), 'the heat grid reads the holdbreak.json rollup');
 
 console.log('=== source guard: never fabricate ===');
 
-// The point log opens a game row the INSTANT a game starts, with score,
-// player_served, serve_winner and serve_lost ALL null. Read naively that reads
-// as a completed game won by player 2 (server "not A", "not broken"), which
-// draws a momentum swing for a game nobody has won. Caught in build.
-check(/serve_winner\s*!=\s*null\s*\|\|\s*gm\.serve_lost\s*!=\s*null/.test(LIVE),
-  'momentum plots only DECIDED games (serve_winner/serve_lost stamped)');
-
-check(/hasSubstance/.test(LIVE),
-  'the Points tab skips an empty placeholder game row (needs a score or a point)');
-
-// A rate over zero attempts does not exist — 0 break points faced is not a 0%
-// save rate. It must dash.
-check(/if\s*\(\s*c\.total\s*<=\s*0\s*\)\s*return null/.test(LIVE),
+// A game row opens with every field null; read naively it is a game won by player 2. Only DECIDED games are results.
+check(/const decided = g => g\.serve_winner != null \|\| g\.serve_lost != null;/.test(LIVE),
+  'only DECIDED games count as results (serve_winner / serve_lost stamped)');
+check(/const ratio = c => c && c\[1\] > 0 \? pc\(c\[0\], c\[1\]\) : null;/.test(LIVE),
   'a rate over zero attempts dashes rather than printing 0%');
-
-// api-tennis nulls stat_won/stat_total on some rows and carries the pair only in
-// stat_value as "X/Y". Number(null) is 0, which silently turns missing into zero.
-check(/\\s\*\\\/\\s\*\(\\d\+\)/.test(LIVE) || /\(\\d\+\)\\s\*\\\/\\s\*\(\\d\+\)/.test(LIVE),
+check(/\(\\d\+\)\\s\*\\\/\\s\*\(\\d\+\)/.test(LIVE),
   'stat_value "X/Y" is parsed when stat_won/stat_total are null (Number(null) is 0)');
-
-check(/FEED\.ready/.test(LIVE) && /inPlayCount:DASH/.test(LIVE),
-  'before the first snapshot the header dashes rather than claiming 0 in play');
+check(/ready \? ip : D/.test(LIVE) && /if \(!FEED\.ready\) return skeletonHtml\(\);/.test(LIVE),
+  'before the first snapshot the header dashes and the grid shows the loading skeleton, never "Nothing in play"');
+check(/No in-play price feed on this page yet/.test(LIVE) && !/kibl_live_ml/.test(LIVE),
+  'no live price is shown until an in-play source is ruled (a dash, never the pre-match price as live)');
 
 console.log('=== source guard: live-tab.js is the data layer, not a renderer ===');
 
