@@ -34464,7 +34464,16 @@ window.DatabaseTab = (function(){
       if (e.target === ov) return closeModal();
       if (S.cmpOpen || S.unOpen || S.drTip) set({ cmpOpen: false, unOpen: false, drTip: false });
     });
-    ov.addEventListener('mouseover', e => { const h = e.target.closest('[data-hov]'); if (h) hoverIn(h.getAttribute('data-hov')); });
+    // a hover re-renders the body, so the hovered element is replaced before its mouseout can fire: whatever the pointer is
+    // over now decides which hover state stays open (every other one closes)
+    ov.addEventListener('mouseover', e => { const h = e.target.closest('[data-hov]'), k = h ? h.getAttribute('data-hov') : '';
+      const patch = {};
+      if (S.momTip && k !== 'momtip') patch.momTip = false;
+      if (S.waitTip && k !== 'waittip') patch.waitTip = false;
+      if (S.drTip && k !== 'drtip') patch.drTip = false;
+      if ((S.momK || S.momDot) && !/^(dot|row):/.test(k)) { patch.momK = null; patch.momDot = null; }
+      if (Object.keys(patch).length) set(patch);
+      if (h) hoverIn(k); });
     ov.addEventListener('mouseout', e => { const h = e.target.closest('[data-hov]'); if (h && !h.contains(e.relatedTarget)) hoverOut(h.getAttribute('data-hov')); });
     ov.addEventListener('mousemove', e => { const pl = e.target.closest('[data-mplot]'); if (pl) plotMove(pl, e); });
     ov.addEventListener('mouseleave', () => {}, true);

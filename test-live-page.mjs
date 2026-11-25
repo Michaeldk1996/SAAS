@@ -239,3 +239,11 @@ test('Stats bars: a side with no figure never hands the other a full bar; untrac
   const h = c.LivePage._html.stats(m), w = h.slice(h.indexOf('>Winners<') - 600, h.indexOf('>Winners<'));
   assert.match(w, />0</, 'under 10 points an all-zero sheet can be real');
 });
+
+test('hover boxes close when the pointer moves anywhere else (the body re-renders under the pointer)', () => {
+  const at = BLOCK.indexOf("ov.addEventListener('mouseover'"), h = BLOCK.slice(at, at + 900);
+  assert.match(h, /if \(S\.waitTip && k !== 'waittip'\) patch\.waitTip = false;/);
+  assert.match(h, /if \(S\.momTip && k !== 'momtip'\) patch\.momTip = false;/);
+  assert.match(h, /if \(S\.drTip && k !== 'drtip'\) patch\.drTip = false;/);
+  assert.match(h, /if \(\(S\.momK \|\| S\.momDot\) && !\/\^\(dot\|row\):\/\.test\(k\)\)/);
+});
