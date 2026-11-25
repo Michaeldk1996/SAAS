@@ -1,18 +1,18 @@
 {
- "generatedAt": "2026-11-25T09:03:52.414Z",
+ "generatedAt": "2026-11-25T12:05:09.908Z",
  "tournaments": [
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 171,
+   "items": 172,
    "byType": {
-    "quote": 151,
+    "quote": 152,
     "digest": 20
    },
-   "latestTimestamp": "2026-11-25T08:29:22.000Z",
-   "updatedAt": "2026-11-25T09:03:52.414Z"
+   "latestTimestamp": "2026-11-25T11:06:00.000Z",
+   "updatedAt": "2026-11-25T12:05:09.908Z"
   },
   {
    "key": "3120",
@@ -69,6 +69,36 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-8295d32f2201b6",
+   "type": "quote",
+   "playerId": "1902",
+   "opponentId": null,
+   "player": "A. Rinderknech",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-25T11:06:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "I have never taken any banned substance and I am proud of my accomplishments in professional tennis, all of which have been achieved through hard work and with integrity always.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "SuperSport",
+   "sourceUrl": "https://supersport.com/tennis/news/a882d80e-553c-4cc0-a66e-b24932e8d0d9/france-s-rinderknech-charged-over-alleged-doping-test-refusal",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "sourceHash": "36f22b7f1452c2cc",
+   "publishedAt": "2026-11-25T12:05:09.908Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-993cfa8aa1a06e",
    "type": "quote",
@@ -1504,38 +1534,6 @@
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "eaf2c0581f8730f3",
    "publishedAt": "2026-11-23T18:21:56.445Z",
-   "file": "news-ticker/2794-2026.json"
-  },
-  {
-   "id": "quote-0ba58c7f293f30",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": "1980",
-   "player": "C. Alcaraz",
-   "opponent": "A. Zverev",
-   "tournament": "Finals - Turin",
-   "tournamentKey": "2794",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-23T15:02:47.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Quotes",
-   "context": "after beating A. Zverev",
-   "eventKey": "12181958",
-   "won": true,
-   "text": "This one is special. This one means the world to me, to my team, to my family,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "Gulf Times",
-   "sourceUrl": "https://www.gulf-times.com/article/738859/sport/tennis/making-history-at-atp-finals-a-privilege-alcaraz",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "2dd6e3fb68f554cd",
-   "publishedAt": "2026-11-23T01:44:06.986Z",
-   "revisedAt": "2026-11-23T18:43:40.457Z",
-   "revision": 3,
    "file": "news-ticker/2794-2026.json"
   }
  ]
