@@ -107,6 +107,11 @@ export function eventAliases(name) {
   return [...out];
 }
 // An article from another sport's section is never a tennis quote (measured 18 Nov: an NHL and two FIFA articles).
+// A tour-wide QUOTE a tournament file also holds leaves the tour file. Never a digest: a player's tour card and his
+// tournament card of the same day share one digest id, so the tour file's digest was thrown away on every read and written
+// again on every run (5 cards, 48 runs a day: about 240 paid calls a day on 19-21 Nov 2026).
+export const tourDuplicate = (key, x, { movedIds, inTournaments, toTournaments }) => key === TOUR_KEY
+  && ((x.type !== 'digest' && (movedIds.has(x.id) || inTournaments.has(x.id) || toTournaments.has(x.id))) || notTennis(x.sourceUrl) || notHisWords(x.sourceUrl));
 export const notTennis = (url) => OTHER_SPORT_PATH.test(String(url || ''));
 // Held quotes that turned out to be somebody else's (hand-reviewed, a reason per entry); new ones are refused where the
 // article is read (outlet-reader.mjs otherBearer).
@@ -325,7 +330,7 @@ async function main() {
     got.candidates.push(...extra);
     const file = `news-quotes/${t.key}-${t.season}.json`, held = rd(file);
     const heldItems = ((held && held.items) || []).filter((x) => !off.has(x.sourceName)
-      && !(t.key === TOUR_KEY && (movedIds.has(x.id) || inTournaments.has(x.id) || toTournaments.has(x.id) || notTennis(x.sourceUrl) || notHisWords(x.sourceUrl))));
+      && !tourDuplicate(t.key, x, { movedIds, inTournaments, toTournaments }));
     const res = await processTournament({ t, got, known: heldItems });
     if (res.counts.modelError) modelError = res.counts.modelError;
     // a quote the model could not translate is not lost: its article is read again on a later run (at most RETRY_MAX times)

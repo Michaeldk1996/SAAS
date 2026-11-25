@@ -500,6 +500,10 @@ await ok('a press quote gets a topic label, asked once; a label that is not "On 
   assert.equal(asked, 2, 'a quote that has its setting is not asked again');
   const named = await processTournament({ t, got: { candidates: [q] }, topicOf: async () => ({ status: 'ok', topic: 'On Copenhagen', setting: 'in an interview with B.T. in Bologna' }) });
   assert.ok(!named.items[0].setting && named.items[0].settingTried, 'a setting that names the outlet is not used');
+  // a held tour digest whose id a tournament file also holds is kept (it was rebuilt every run) — mutant: the digest dropped like a quote
+  const { tourDuplicate } = await import('./news-ticker/collect-quotes.mjs');
+  const sets = { movedIds: new Set(), inTournaments: new Set(['digest-1', 'quote-1']), toTournaments: new Set() };
+  assert.ok(!tourDuplicate('tour', { id: 'digest-1', type: 'digest' }, sets) && tourDuplicate('tour', { id: 'quote-1', type: 'quote' }, sets) && !tourDuplicate('77', { id: 'quote-1', type: 'quote' }, sets));
   // somebody else with the surname (Leon Smith, the Davis Cup captain, was published as K. Smith)
   const { otherBearer } = await import('./news-ticker/outlet-reader.mjs');
   const { notHisWords } = await import('./news-ticker/collect-quotes.mjs');
