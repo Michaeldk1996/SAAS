@@ -1,6 +1,19 @@
 {
- "generatedAt": "2026-11-25T16:56:26.327Z",
+ "generatedAt": "2026-11-25T17:20:03.823Z",
  "tournaments": [
+  {
+   "key": "3120",
+   "season": "2026",
+   "name": "Davis Cup - World Group",
+   "file": "news-ticker/3120-2026.json",
+   "items": 11,
+   "byType": {
+    "report": 3,
+    "quote": 8
+   },
+   "latestTimestamp": "2026-11-25T16:51:10.407Z",
+   "updatedAt": "2026-11-25T17:20:03.823Z"
+  },
   {
    "key": "tour",
    "season": "2026",
@@ -13,19 +26,6 @@
    },
    "latestTimestamp": "2026-11-25T15:21:53.000Z",
    "updatedAt": "2026-11-25T16:16:08.308Z"
-  },
-  {
-   "key": "3120",
-   "season": "2026",
-   "name": "Davis Cup - World Group",
-   "file": "news-ticker/3120-2026.json",
-   "items": 10,
-   "byType": {
-    "quote": 8,
-    "report": 2
-   },
-   "latestTimestamp": "2026-11-24T20:30:00.000Z",
-   "updatedAt": "2026-11-25T16:56:26.327Z"
   },
   {
    "key": "2794",
@@ -69,6 +69,149 @@
   }
  ],
  "latest": [
+  {
+   "id": "report-12182773",
+   "type": "report",
+   "playerId": "2849",
+   "opponentId": "8431",
+   "player": "L. Musetti",
+   "opponent": "S. C. Hong",
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "stage": "main draw",
+   "round": null,
+   "eventKey": "12182773",
+   "timestamp": "2026-11-25T16:51:10.407Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-25T16:51:10.407Z"
+   },
+   "category": "Statistics",
+   "text": "Musetti beat Hong in their first meeting, 6-0, 7-6.\n\nMusetti: DR: 1.52\n\nHong: DR: 0.66",
+   "ms": {
+    "a": "L. Musetti",
+    "b": "S. C. Hong",
+    "sets": [
+     [
+      6,
+      0
+     ],
+     [
+      7,
+      6
+     ]
+    ],
+    "rows": [
+     [
+      "Dominance ratio",
+      1.52,
+      0.66,
+      "dr"
+     ],
+     [
+      "1st serve in",
+      66,
+      64,
+      "%"
+     ],
+     [
+      "1st serve points won",
+      79,
+      57,
+      "%"
+     ],
+     [
+      "2nd serve points won",
+      55,
+      57,
+      "%"
+     ]
+    ]
+   },
+   "baseText": "Musetti beat Hong in their first meeting, 6-0, 7-6.",
+   "rating": [
+    "Musetti: DR: 1.52",
+    "Hong: DR: 0.66"
+   ],
+   "fields": {
+    "score": "6-0, 7-6",
+    "round": null,
+    "retired": false,
+    "h2h": {
+     "a": 1,
+     "b": 0,
+     "n": 1
+    },
+    "facts": {
+     "tiebreakSets": [
+      {
+       "set": 2,
+       "winner": "p1"
+      }
+     ],
+     "brokenFrom400": {
+      "p2": 1
+     },
+     "longestRun": {
+      "side": "p1",
+      "n": 7,
+      "set": 1,
+      "from": {
+       "me": 0,
+       "opp": 0
+      },
+      "afterBeingBroken": false,
+      "toTheEnd": false
+     }
+    },
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": null,
+      "metric": "ret1Won",
+      "value": 43,
+      "won": 16,
+      "total": 37,
+      "baseline": 29,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 35
+     },
+     {
+      "player": "winner",
+      "tone": null,
+      "metric": "ret2Won",
+      "value": 43,
+      "won": 9,
+      "total": 21,
+      "baseline": 55,
+      "scope": "last52",
+      "surface": "Hard",
+      "n": 35
+     }
+    ],
+    "winner": {
+     "aces": 4,
+     "breakPointsSaved": 3,
+     "breakPointsFaced": 4,
+     "breakPointsSource": "box score"
+    },
+    "loser": {
+     "aces": 3,
+     "breakPointsSaved": 1,
+     "breakPointsFaced": 5,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12182773.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "ad1caa7cef54a5d4",
+   "publishedAt": "2026-11-25T17:20:03.823Z",
+   "file": "news-ticker/3120-2026.json"
+  },
   {
    "id": "quote-5c87231ec304cf",
    "type": "quote",
@@ -1503,36 +1646,6 @@
    "sourceHash": "e955d6927599eb41",
    "publishedAt": "2026-11-24T15:32:58.361Z",
    "file": "news-ticker/3120-2026.json"
-  },
-  {
-   "id": "quote-199f3a50138064",
-   "type": "quote",
-   "playerId": "2844",
-   "opponentId": null,
-   "player": "M. Berrettini",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-24T01:30:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "When the call-ups were announced, I knew I had to be ready. I continued training and playing because the captain had told us all that the official selections would come later. So I kept preparing as I had in previous years, to be ready to join the team,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "TennisUpToDate",
-   "sourceUrl": "https://tennisuptodate.com/atp/musetti-and-berrettini-are-finally-reunited-but-the-davis-cup-hasnt-broken-the-ice",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "108c530966fc714c",
-   "publishedAt": "2026-11-24T02:32:04.524Z",
-   "file": "news-ticker/tour-2026.json"
   }
  ]
 }
