@@ -101,6 +101,8 @@ ALLOWED = {
     'bsp-consult-dashboard.html': {
         "// Records without a startTs carry `event_time` in the feed's ACCOUNT zone, which",
         # 2026-10-26: the "(event_time is the match START only)" comment was removed by TEN-314 (0f18fc2ec); pin dropped
+        # 2026-11-25 Live rebuild: the order-of-play sort key on the Live page, never a start
+        "const sched = String(f.event_time || ''); // the scheduled clock: the order-of-play sort key only, never a start",
     },
     'supabase/migrations/20260917100000_live_flip_log.sql': {
         # stored as provenance on live_flip_log; nothing reads it as a time

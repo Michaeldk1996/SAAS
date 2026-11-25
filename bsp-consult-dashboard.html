@@ -33669,11 +33669,12 @@ window.DatabaseTab = (function(){
     const setDone = st => (Math.max(st[0], st[1]) >= 6 && Math.abs(st[0] - st[1]) >= 2) || (Math.max(st[0], st[1]) === 7 && Math.min(st[0], st[1]) >= 5);
     const wonBy = s => sets.filter(st => setDone(st) && st[s] > st[1 - s]).length, need = bo === 5 ? 3 : 2;
     if (setDone(sets[sets.length - 1]) && wonBy(0) < need && wonBy(1) < need) sets.push([0, 0]);
+    const sched = String(f.event_time || ''); // the scheduled clock: the order-of-play sort key only, never a start
     const m = { f, ek: String(f.event_key), i, A, B, names: [A.name, B.name], sets, nSets: sets.length,
       point: gm ? [gm[1], gm[2]] : null, serving: /first/i.test(sv) ? 0 : /second/i.test(sv) ? 1 : null, bo, live,
-      tier: isChal ? 'Challenger' : 'ATP', tour: tourOf(f), round: roundOf(f), date: f.event_date, time: String(f.event_time || ''),
+      tier: isChal ? 'Challenger' : 'ATP', tour: tourOf(f), round: roundOf(f), date: f.event_date, time: sched,
       tKey: f.tournament_key };
-    m.startMs = has('cardStartMs') ? cardStartMs({ date: m.date, time: m.time }) : NaN;
+    m.schedMs = has('cardStartMs') ? cardStartMs({ date: m.date, time: m.time }) : NaN;   // sort key only
     m.surface = surfaceOf(m);
     m.pre = preOf(m);
     m.mto = mtoOf(m);
@@ -33690,7 +33691,7 @@ window.DatabaseTab = (function(){
     if (!has('_ocsOf')) return { v: [null, null] };
     const o = _ocsOf({ date: m.date, p1: m.A.raw, p2: m.B.raw, id: 'live-' + m.ek });
     if (!o) return { v: [null, null] };
-    const st = o.startTs ? Date.parse(o.startTs) : m.startMs;
+    const st = o.startTs ? Date.parse(o.startTs) : NaN;   // the verified start only; a scheduled time never decides a price
     const side = s => s.close != null ? { v: s.close, ts: s.closeTs, k: 'close' } : (s.now != null && s.nowTs && isFinite(st) && Date.parse(s.nowTs) < st) ? { v: s.now, ts: s.nowTs, k: 'now' } : null;
     const a = side(o.p1), b = side(o.p2);
     if (!a || !b) return { v: [null, null] };
@@ -33878,7 +33879,7 @@ window.DatabaseTab = (function(){
     return { all, cards, groups };
   }
   // order of play: the scheduled start, then the feed's own order
-  const ordCmp = (a, b) => ((isFinite(a.startMs) ? a.startMs : 9e15) - (isFinite(b.startMs) ? b.startMs : 9e15)) || (a.i - b.i);
+  const ordCmp = (a, b) => ((isFinite(a.schedMs) ? a.schedMs : 9e15) - (isFinite(b.schedMs) ? b.schedMs : 9e15)) || (a.i - b.i);
   function headerHtml(all) {
     const ip = all.filter(c => c.m.live).length, itr = all.length - ip, evs = new Set(all.map(c => c.m.tour)).size;
     const ready = FEED.ready;
