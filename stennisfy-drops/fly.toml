@@ -13,7 +13,7 @@ primary_region = "lhr"
 
 [env]
   PORT = "8080"
-  ALLOWED_ORIGINS = "https://app.stennisfy.com,https://michaeldk1996.github.io"
+  ALLOWED_ORIGINS = "https://app.stennisfy.com"
 
 # ALWAYS ON. The read loop IS the cache: a machine stopped for lack of traffic would wake to the first
 # viewer with no fresh snapshot. Hence autostop off and one machine always running.
