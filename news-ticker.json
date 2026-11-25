@@ -1,18 +1,18 @@
 {
- "generatedAt": "2026-11-25T19:33:02.345Z",
+ "generatedAt": "2026-11-25T20:35:12.615Z",
  "tournaments": [
   {
    "key": "3120",
    "season": "2026",
    "name": "Davis Cup - World Group",
    "file": "news-ticker/3120-2026.json",
-   "items": 11,
+   "items": 12,
    "byType": {
-    "report": 3,
+    "report": 4,
     "quote": 8
    },
-   "latestTimestamp": "2026-11-25T16:51:10.407Z",
-   "updatedAt": "2026-11-25T19:33:02.345Z"
+   "latestTimestamp": "2026-11-25T20:05:41.924Z",
+   "updatedAt": "2026-11-25T20:35:12.615Z"
   },
   {
    "key": "tour",
@@ -69,6 +69,155 @@
   }
  ],
  "latest": [
+  {
+   "id": "report-12182774",
+   "type": "report",
+   "playerId": "1098",
+   "opponentId": "372",
+   "player": "S. Kwon",
+   "opponent": "F. Cobolli",
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "stage": "main draw",
+   "round": null,
+   "eventKey": "12182774",
+   "timestamp": "2026-11-25T20:05:41.924Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-25T20:05:41.924Z"
+   },
+   "category": "Statistics",
+   "text": "Kwon beat Cobolli in their first meeting, 3-6, 7-6, 7-6.\n\nKwon: DR: 0.90\n\nCobolli: DR: 1.11",
+   "ms": {
+    "a": "S. Kwon",
+    "b": "F. Cobolli",
+    "sets": [
+     [
+      3,
+      6
+     ],
+     [
+      7,
+      6
+     ],
+     [
+      7,
+      6
+     ]
+    ],
+    "rows": [
+     [
+      "Dominance ratio",
+      0.9,
+      1.11,
+      "dr"
+     ],
+     [
+      "1st serve in",
+      57,
+      61,
+      "%"
+     ],
+     [
+      "1st serve points won",
+      69,
+      74,
+      "%"
+     ],
+     [
+      "2nd serve points won",
+      55,
+      54,
+      "%"
+     ]
+    ]
+   },
+   "baseText": "Kwon beat Cobolli in their first meeting, 3-6, 7-6, 7-6.",
+   "rating": [
+    "Kwon: DR: 0.90",
+    "Cobolli: DR: 1.11"
+   ],
+   "fields": {
+    "score": "3-6, 7-6, 7-6",
+    "round": null,
+    "retired": false,
+    "h2h": {
+     "a": 1,
+     "b": 0,
+     "n": 1
+    },
+    "facts": {
+     "fromSetDown": true,
+     "tiebreakSets": [
+      {
+       "set": 2,
+       "winner": "p2"
+      },
+      {
+       "set": 3,
+       "winner": "p2"
+      }
+     ],
+     "brokenForSet": {
+      "p2": 1
+     },
+     "brokenForSetAt": {
+      "p2": [
+       2
+      ]
+     }
+    },
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": "bad",
+      "metric": "firstWon",
+      "value": 69,
+      "won": 51,
+      "total": 74
+     },
+     {
+      "player": "winner",
+      "tone": "bad",
+      "metric": "doubleFaults",
+      "value": 6
+     },
+     {
+      "player": "winner",
+      "tone": "bad",
+      "metric": "watch",
+      "of": "doubleFaults"
+     },
+     {
+      "player": "winner",
+      "tone": null,
+      "metric": "breakPoints",
+      "saved": 9,
+      "faced": 12
+     }
+    ],
+    "winner": {
+     "aces": 6,
+     "breakPointsSaved": 9,
+     "breakPointsFaced": 12,
+     "breakPointsSource": "box score"
+    },
+    "loser": {
+     "aces": 8,
+     "breakPointsSaved": 3,
+     "breakPointsFaced": 4,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12182774.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "43fa5ede39ae53f0",
+   "publishedAt": "2026-11-25T20:35:12.615Z",
+   "file": "news-ticker/3120-2026.json"
+  },
   {
    "id": "report-12182773",
    "type": "report",
@@ -1604,36 +1753,6 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "b6beb88fd53dd8b4",
-   "publishedAt": "2026-11-24T15:32:58.361Z",
-   "file": "news-ticker/3120-2026.json"
-  },
-  {
-   "id": "quote-e8d792a0345fc9",
-   "type": "quote",
-   "playerId": "2959",
-   "opponentId": null,
-   "player": "J. Lehecka",
-   "opponent": null,
-   "tournament": "Davis Cup - World Group",
-   "tournamentKey": "3120",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-24T03:30:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "I think it can be a great advantage for us. There is nobody in the tennis world who knows Felix better than Fred. He grew up with him, developed him as a tennis player and took him into the world's top five,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "TennisUpToDate",
-   "sourceUrl": "https://tennisuptodate.com/atp/felix-auger-aliassimes-former-coach-could-help-plot-his-davis-cup-downfall-and-tomas-berdych-knows-it",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "e955d6927599eb41",
    "publishedAt": "2026-11-24T15:32:58.361Z",
    "file": "news-ticker/3120-2026.json"
   }

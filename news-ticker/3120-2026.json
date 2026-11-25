@@ -2,8 +2,156 @@
  "tournament": "Davis Cup - World Group",
  "tournamentKey": "3120",
  "season": "2026",
- "updatedAt": "2026-11-25T19:33:02.345Z",
+ "updatedAt": "2026-11-25T20:35:12.615Z",
  "items": [
+  {
+   "id": "report-12182774",
+   "type": "report",
+   "playerId": "1098",
+   "opponentId": "372",
+   "player": "S. Kwon",
+   "opponent": "F. Cobolli",
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "stage": "main draw",
+   "round": null,
+   "eventKey": "12182774",
+   "timestamp": "2026-11-25T20:05:41.924Z",
+   "timestampKind": "observed",
+   "observed": {
+    "endedAt": "2026-11-25T20:05:41.924Z"
+   },
+   "category": "Statistics",
+   "text": "Kwon beat Cobolli in their first meeting, 3-6, 7-6, 7-6.\n\nKwon: DR: 0.90\n\nCobolli: DR: 1.11",
+   "ms": {
+    "a": "S. Kwon",
+    "b": "F. Cobolli",
+    "sets": [
+     [
+      3,
+      6
+     ],
+     [
+      7,
+      6
+     ],
+     [
+      7,
+      6
+     ]
+    ],
+    "rows": [
+     [
+      "Dominance ratio",
+      0.9,
+      1.11,
+      "dr"
+     ],
+     [
+      "1st serve in",
+      57,
+      61,
+      "%"
+     ],
+     [
+      "1st serve points won",
+      69,
+      74,
+      "%"
+     ],
+     [
+      "2nd serve points won",
+      55,
+      54,
+      "%"
+     ]
+    ]
+   },
+   "baseText": "Kwon beat Cobolli in their first meeting, 3-6, 7-6, 7-6.",
+   "rating": [
+    "Kwon: DR: 0.90",
+    "Cobolli: DR: 1.11"
+   ],
+   "fields": {
+    "score": "3-6, 7-6, 7-6",
+    "round": null,
+    "retired": false,
+    "h2h": {
+     "a": 1,
+     "b": 0,
+     "n": 1
+    },
+    "facts": {
+     "fromSetDown": true,
+     "tiebreakSets": [
+      {
+       "set": 2,
+       "winner": "p2"
+      },
+      {
+       "set": 3,
+       "winner": "p2"
+      }
+     ],
+     "brokenForSet": {
+      "p2": 1
+     },
+     "brokenForSetAt": {
+      "p2": [
+       2
+      ]
+     }
+    },
+    "standouts": [
+     {
+      "player": "winner",
+      "tone": "bad",
+      "metric": "firstWon",
+      "value": 69,
+      "won": 51,
+      "total": 74
+     },
+     {
+      "player": "winner",
+      "tone": "bad",
+      "metric": "doubleFaults",
+      "value": 6
+     },
+     {
+      "player": "winner",
+      "tone": "bad",
+      "metric": "watch",
+      "of": "doubleFaults"
+     },
+     {
+      "player": "winner",
+      "tone": null,
+      "metric": "breakPoints",
+      "saved": 9,
+      "faced": 12
+     }
+    ],
+    "winner": {
+     "aces": 6,
+     "breakPointsSaved": 9,
+     "breakPointsFaced": 12,
+     "breakPointsSource": "box score"
+    },
+    "loser": {
+     "aces": 8,
+     "breakPointsSaved": 3,
+     "breakPointsFaced": 4,
+     "breakPointsSource": "box score"
+    }
+   },
+   "sourceName": "Stennisfy match data (api-tennis box score and point-by-point)",
+   "sourceUrl": "pbp/12182774.json",
+   "language": "en",
+   "translated": false,
+   "sourceHash": "43fa5ede39ae53f0",
+   "publishedAt": "2026-11-25T20:35:12.615Z"
+  },
   {
    "id": "report-12182773",
    "type": "report",
