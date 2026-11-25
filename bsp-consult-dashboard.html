@@ -2738,6 +2738,13 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
     } else {
       BSP.requireAuth('auth.html?mode=signin');
     }
+    // Founder 2026-11-26: an account without an active Sharp / Sharp+ membership doesn't see the dashboard; it goes
+    // to the plans. auth.js reads any active paid tier as plan 'pro'. Admins pass; a failed profile read is not "free".
+    BSP.whenAuthReady().then(function (u) {
+      if (!u || u.profileLoadFailed || u.plan === 'pro') return;
+      if (window.ADMIN_CONFIG && (window.ADMIN_CONFIG.ADMIN_UIDS || []).indexOf(u.uid) >= 0) return;
+      window.location.replace('https://stennisfy.com/#plans');
+    }).catch(function () {});
   }
 })();
 </script>
