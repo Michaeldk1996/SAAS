@@ -60,7 +60,7 @@ const FILES = [
   'verify_dna_python.py',
   'tools/test-ten327-house-ratings.js',  // TEN-327: builds api-tennis statistics rows for the Live tab
   'tools/ten327-probe.mjs',              // TEN-327: same, in the deployed-page probe
-  'test-ten417-live.mjs',                // TEN-417: drops one feed stat row from the Live fixture
+  'test-live-page.mjs',                  // Live rebuild 2026-11-25: builds api-tennis statistics rows for the Stats tab
   'tools/test-wue-sheet.js',             // W/UE sheet: builds api-tennis statistics rows for progressionSheetMatches
   'tools/test-partial-fetch.js',         // item 5: builds api-tennis statistics rows for buildTournamentProgression
   'tools/test-surface-ratings-tour-fill.js', // builds api-tennis statistics rows for the surface-ratings tour fill

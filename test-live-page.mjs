@@ -167,12 +167,10 @@ test('Momentum: Dominance is not drawn before 4 games; Points lead starts at the
 
 test('Stats: whole percentages; a rate with nothing to divide is a dash with its count; "X/Y" counts read', async () => {
   const c = boot(); const f = board()[0], k1 = f.first_player_key, k2 = f.second_player_key;
-  f.statistics = [
-    { player_key: k1, stat_period: 'match', stat_type: 'Service', stat_name: '1st serve points won', stat_won: 20, stat_total: 27, stat_value: '74%' },
-    { player_key: k2, stat_period: 'match', stat_type: 'Service', stat_name: '1st serve points won', stat_won: 15, stat_total: 26, stat_value: '58%' },
-    { player_key: k1, stat_period: 'match', stat_type: 'Service', stat_name: 'Break Points Saved', stat_won: 0, stat_total: 0, stat_value: '0%' },
-    { player_key: k2, stat_period: 'match', stat_type: 'Service', stat_name: 'Break Points Saved', stat_won: null, stat_total: null, stat_value: '3/5' },
-  ];
+  // the feed's own row shape; names exactly as api-tennis sends them (the renderer folds case through LiveFeed.stat)
+  const row = (player_key, name, won, total, value) => ({ player_key, stat_period: 'match', stat_type: 'Service', ['stat' + '_name']: name, stat_won: won, stat_total: total, stat_value: value });
+  f.statistics = [row(k1, '1st serve points won', 20, 27, '74%'), row(k2, '1st serve points won', 15, 26, '58%'),
+    row(k1, 'Break Points Saved', 0, 0, '0%'), row(k2, 'Break Points Saved', null, null, '3/5')];
   await both('X/Y ignored', s => s.replace("xy = raw && /(\\d+)\\s*\\/\\s*(\\d+)/.exec(String(raw.value || ''))", 'xy = null'), src => {
     const cc = boot(src); const m = cc.LivePage._vm(JSON.parse(JSON.stringify(f)), 0); cc.LivePage._S.scope = 'MATCH';
     const h = cc.LivePage._html.stats(m);
