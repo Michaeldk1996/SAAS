@@ -1,152 +1,6 @@
 {
  "runs": [
   {
-   "at": "2026-11-17T06:30:10.495Z",
-   "activeTournaments": [
-    "Finals - Turin"
-   ],
-   "tournaments": [
-    {
-     "name": "Finals - Turin",
-     "key": "2794",
-     "sources": [],
-     "fromOutlets": 0,
-     "counts": {
-      "candidates": 0,
-      "droppedNotVerbatim": 0,
-      "droppedNoPlayer": 0,
-      "droppedAmbiguous": 0,
-      "notTranslatedNoKey": 0,
-      "notTranslatedApiError": 0,
-      "droppedTranslationCheck": 0,
-      "droppedEnglishExists": 0,
-      "mergedSameQuote": 0,
-      "alreadyHeld": 0,
-      "items": 0,
-      "tokens": {
-       "input": 0,
-       "output": 0
-      },
-      "modelError": null,
-      "retryUrls": 0
-     },
-     "added": 0,
-     "held": 6,
-     "byCategory": {
-      "Quotes": 5,
-      "Injuries": 1
-     },
-     "finishedMatches": 4,
-     "matchesWithWinnerQuote": 2
-    },
-    {
-     "name": "ATP Tour",
-     "key": "tour",
-     "sources": [],
-     "fromOutlets": 22,
-     "counts": {
-      "candidates": 22,
-      "droppedNotVerbatim": 0,
-      "droppedNoPlayer": 0,
-      "droppedAmbiguous": 0,
-      "notTranslatedNoKey": 0,
-      "notTranslatedApiError": 0,
-      "droppedTranslationCheck": 0,
-      "droppedEnglishExists": 0,
-      "mergedSameQuote": 1,
-      "alreadyHeld": 0,
-      "items": 21,
-      "tokens": {
-       "input": 0,
-       "output": 0
-      },
-      "modelError": null,
-      "retryUrls": 0
-     },
-     "added": 0,
-     "held": 136,
-     "byCategory": {
-      "Interviews": 129,
-      "Injuries": 7
-     },
-     "finishedMatches": 0,
-     "matchesWithWinnerQuote": 0
-    }
-   ],
-   "newItems": 0,
-   "tokens": {
-    "input": 0,
-    "output": 0
-   },
-   "press": {
-    "matchesLookedUp": 0,
-    "answers": 0
-   },
-   "ttvInbox": {
-    "held": 69,
-    "routed": 16
-   },
-   "atpInbox": {
-    "held": 18,
-    "routed": 6
-   },
-   "outlets": {
-    "read": 131,
-    "withCandidates": 0,
-    "blocked": [
-     "El Deber: the site refuses a plain request",
-     "Tenniskafe: the site refuses a plain request",
-     "TenisovySvet.cz: the site refuses a plain request",
-     "The Indian Express: the site refuses a plain request",
-     "ESPN México (Tenis): unexpected answer",
-     "AS (Diario AS): the site refuses a plain request",
-     "Aftonbladet: unexpected answer",
-     "ESPN: unexpected answer"
-    ],
-    "articlesFetched": 6,
-    "paywalled": 1,
-    "unnamed": 15,
-    "byOutlet": [
-     {
-      "outlet": "tennisnet.com",
-      "country": "Austria",
-      "language": "de",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "Sportstar (The Hindu)",
-      "country": "India",
-      "language": "en",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "The Times of India",
-      "country": "India",
-      "language": "en",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "Sport Klub",
-      "country": "Serbia",
-      "language": "sr",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "Mundo Deportivo",
-      "country": "Spain",
-      "language": "es",
-      "fetched": 2,
-      "candidates": 0
-     }
-    ]
-   },
-   "alerts": []
-  },
-  {
    "at": "2026-11-17T07:00:32.868Z",
    "activeTournaments": [
     "Finals - Turin"
@@ -69336,6 +69190,230 @@
       "language": "vi",
       "fetched": 1,
       "candidates": 0
+     }
+    ]
+   },
+   "rehomed": 0,
+   "alerts": []
+  },
+  {
+   "at": "2026-11-25T15:40:58.768Z",
+   "activeTournaments": [
+    "Davis Cup - World Group"
+   ],
+   "tournaments": [
+    {
+     "name": "Davis Cup - World Group",
+     "key": "3120",
+     "sources": [],
+     "fromOutlets": 0,
+     "counts": {
+      "candidates": 0,
+      "droppedNotVerbatim": 0,
+      "droppedNoPlayer": 0,
+      "droppedAmbiguous": 0,
+      "notTranslatedNoKey": 0,
+      "notTranslatedApiError": 0,
+      "droppedTranslationCheck": 0,
+      "droppedEnglishExists": 0,
+      "mergedSameQuote": 0,
+      "alreadyHeld": 0,
+      "items": 0,
+      "tokens": {
+       "input": 0,
+       "output": 0
+      },
+      "modelError": null,
+      "retryUrls": 0
+     },
+     "digests": {
+      "cards": 4,
+      "kept": 0,
+      "made": 0,
+      "failed": 0,
+      "waiting": 3,
+      "single": 1
+     },
+     "added": 0,
+     "held": 8,
+     "byCategory": {
+      "Quotes": 6,
+      "Interviews": 2
+     },
+     "finishedMatches": 2,
+     "matchesWithWinnerQuote": 1
+    },
+    {
+     "name": "ATP Tour",
+     "key": "tour",
+     "sources": [],
+     "fromOutlets": 9,
+     "counts": {
+      "candidates": 9,
+      "droppedNotVerbatim": 0,
+      "droppedNoPlayer": 0,
+      "droppedAmbiguous": 0,
+      "notTranslatedNoKey": 0,
+      "notTranslatedApiError": 2,
+      "droppedTranslationCheck": 0,
+      "droppedEnglishExists": 0,
+      "mergedSameQuote": 0,
+      "alreadyHeld": 0,
+      "items": 7,
+      "tokens": {
+       "input": 0,
+       "output": 0
+      },
+      "modelError": {
+       "http": 400,
+       "detail": "HTTP 400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.\"},\""
+      },
+      "retryUrls": 2
+     },
+     "digests": {
+      "cards": 74,
+      "kept": 19,
+      "made": 0,
+      "failed": 0,
+      "waiting": 20,
+      "single": 35
+     },
+     "added": 2,
+     "held": 174,
+     "byCategory": {
+      "Interviews": 137,
+      "Injuries": 17,
+      "Quotes": 20
+     },
+     "finishedMatches": 0,
+     "matchesWithWinnerQuote": 0
+    }
+   ],
+   "newItems": 2,
+   "tokens": {
+    "input": 0,
+    "output": 0
+   },
+   "press": {
+    "matchesLookedUp": 0,
+    "answers": 0
+   },
+   "ttvInbox": {
+    "held": 106,
+    "routed": 0
+   },
+   "atpInbox": {
+    "held": 60,
+    "routed": 3
+   },
+   "outlets": {
+    "read": 131,
+    "withCandidates": 3,
+    "blocked": [
+     "El Deber: the site refuses a plain request",
+     "Tenniskafe: the site refuses a plain request",
+     "TenisovySvet.cz: the site refuses a plain request",
+     "The Indian Express: the site refuses a plain request",
+     "ESPN México (Tenis): unexpected answer",
+     "Monaco Tribune: the site refuses a plain request",
+     "AS (Diario AS): the site refuses a plain request",
+     "Aftonbladet: unexpected answer",
+     "ESPN: unexpected answer"
+    ],
+    "articlesFetched": 22,
+    "paywalled": 1,
+    "unnamed": 28,
+    "byOutlet": [
+     {
+      "outlet": "La Nación",
+      "country": "Argentina",
+      "language": "es",
+      "fetched": 3,
+      "candidates": 0
+     },
+     {
+      "outlet": "TenisBrasil",
+      "country": "Brazil",
+      "language": "pt",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "We Love Tennis",
+      "country": "France",
+      "language": "fr",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Sport1",
+      "country": "Germany",
+      "language": "de",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Tennis Actu",
+      "country": "France",
+      "language": "fr",
+      "fetched": 2,
+      "candidates": 0
+     },
+     {
+      "outlet": "Hong Kong, China Tennis Association",
+      "country": "Hong Kong",
+      "language": "en",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Tennis Majors",
+      "country": "INT",
+      "language": "en",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Ubitennis",
+      "country": "INT",
+      "language": "en",
+      "fetched": 1,
+      "candidates": 4
+     },
+     {
+      "outlet": "South China Morning Post",
+      "country": "Hong Kong",
+      "language": "en",
+      "fetched": 6,
+      "candidates": 0
+     },
+     {
+      "outlet": "SuperTennis (FITP)",
+      "country": "Italy",
+      "language": "it",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Bola Amarela",
+      "country": "Portugal",
+      "language": "pt",
+      "fetched": 2,
+      "candidates": 0
+     },
+     {
+      "outlet": "Marca",
+      "country": "Spain",
+      "language": "es",
+      "fetched": 1,
+      "candidates": 1
+     },
+     {
+      "outlet": "Mundo Deportivo",
+      "country": "Spain",
+      "language": "es",
+      "fetched": 1,
+      "candidates": 1
      }
     ]
    },
