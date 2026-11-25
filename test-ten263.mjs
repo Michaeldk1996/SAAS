@@ -1246,17 +1246,8 @@ test('price range: fewer than 3 priced meetings shows its count as a chip (n=2 l
 });
 // The Tournament Reports half (tourxLineChartSvg's field line) retired with the old Reports head-to-head charts (founder
 // 2026-11-15, "Design wins"); the new Reports dashes are locked in tools/test-tt-reports.mjs.
-test('untracked counts are missing, not 0, downstream: the Live modal bar', () => {
-  const H = readFileSync(join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
-  const ts = /const twoSided=\(label,aV,bV,aTxt,bTxt,aDen,bDen,kind,key\)=>\{[\s\S]*?\n  \};/.exec(H)[0];
-  const two = new Function('fhStatBarWidth', 'msBarFloor', 'msBarScale', 'DASH', 'MISS', 'INK', ts + '; return twoSided;')(
-    (k, v, o, x) => v == null ? null : k === 'pct' ? v : v / Math.max(v, o || 0, x || 0) * 90, () => 15, () => 400, '—', '#333', '#eee');
-  // TEN-417 R1 fix 2 (founder): the Live bars are each player's share of the pair; a pair with one unknown draws nothing.
-  const r = two('Break Points Saved', 50, null, '50%', '', '', '', 'pct');
-  assert.deepEqual([r.aW, r.bW, r.bVal], ['0%', '0%', '—'], 'a dash side never hands the other a full bar');
-  const c = two('Double Faults', 1, 0, '1', '0', '', '', 'count', 'Double Faults');
-  assert.deepEqual([c.aW, c.bW], ['100.0%', '0%'], '1 v 0 double faults: the whole half, a zero draws nothing');
-});
+// moved to test-live-page.mjs with the Live rebuild (2026-11-25)
+
 test('review fixes: pbp never flips on a key that matches neither player; expanded rows orient too; Match Stats pressure = the popup\'s', () => {
   const src = ['fhPbpFlip', 'fhPbpAIsFirst', 'fhPbpForA', 'pbpSplitSet', 'pbpParseScore'].map(slice).join('\n');
   const f = new Function('fhSurname', src + '; return { fhPbpAIsFirst };')(n => String(n).split(' ').pop());
@@ -1267,15 +1258,8 @@ test('review fixes: pbp never flips on a key that matches neither player; expand
   assert.match(slice('formPbpHtml'), /fhPbpForA\(shard, S\)/);
   assert.match(slice('maMsSheetInit'), /fhSheetInit\(e, r, 'tab'\)/, 'Match Stats pressure = the popup\'s: the tab is the same sheet (TEN-338)');
 });
-test('Live modal: untracked winners/UE (all 0 over 10+ points) are dashes, a real early 0-0 stays', () => {
-  const H = readFileSync(join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
-  const g = /const wueUntracked=p=>\{[\s\S]*?\n  \};/.exec(H)[0];
-  const mk = (w, tp) => { const c = { A: { Winners: { value: w }, 'Unforced errors': { value: w }, 'Total Points Won': { won: 5, total: tp } }, B: { Winners: { value: w }, 'Unforced errors': { value: w } } };
-    return new Function('cntOf', 'cell', 'pA', 'pB', g + '; return wueUntracked;')(c => (!c) ? null : c.value, (pk, n) => c[pk][n], 'A', 'B'); };
-  assert.equal(mk(0, 138)(), true, 'all 0 over 138 points: not tracked');
-  assert.equal(mk(0, 6)(), false, 'under 10 points an all-zero sheet can be real');
-  assert.equal(mk(3, 138)(), false, 'real counts');
-});
+// moved to test-live-page.mjs with the Live rebuild (2026-11-25)
+
 
 // Founder brief 2026-10-14: the closing-prices shards are built from the permanent Pinnacle archive's export
 // (pinnacle-closes.json — the current close per match, labelled). The export wins over the committed captured file, and

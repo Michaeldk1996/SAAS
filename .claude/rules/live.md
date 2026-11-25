@@ -27,8 +27,9 @@ check also runs on a mutated copy and must go red. `tools/test-live-tab-feed.js`
 - **Players' averages** (Stats compare, Unusual): `surface-ratings.json` last 52 weeks, on the match's surface or all
   surfaces, only from 10+ matches (else a dash). The compare label follows the real surface ("clay-court average"); with no
   surface known it opens on the 52-week average. **Test:** a clay match never reads "hard-court".
-- **No source → a dash:** Winners, Unforced errors, W/UE, Net points won, Pressure points won (serve / return), the 52-week
-  points per service game.
+- **Winners / Unforced errors / W/UE:** the feed's counts; all 0 on both sides over 10+ points = not tracked → a dash (under
+  10 points an all-zero sheet can be real). A pair with one side unknown draws no bar on either side.
+- **No source → a dash:** Net points won, Pressure points won (serve / return), the 52-week points per service game.
 
 ## Named placeholders (founder sets the final values) — `LIVE_CONST`
 `HB_MIN_GAMES` 30 · `U_GAP` 15 / `U_N` 20 · `BP_SAVED_MAJOR` 3 · `DOM_WINDOW_GAMES` 4 · `DOM_START_GAMES` 4 · `BIG_GAP` 15 ·

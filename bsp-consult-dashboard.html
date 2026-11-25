@@ -34227,7 +34227,8 @@ window.DatabaseTab = (function(){
     const DASH = D, MISS = C.grey, INK = C.text;
     const twoSided = (label, aV, bV, aTxt, bTxt, aDen, bDen) => {
       const aNull = aV == null, bNull = bV == null, tot = (aNull ? 0 : aV) + (bNull ? 0 : bV);
-      const share = (v, isNull) => (isNull || tot <= 0 || !v) ? '0%' : (v / tot * 100).toFixed(1) + '%';
+      // a pair with one side unknown draws no bar on either side (a dash never hands the other a full bar); a zero draws nothing
+      const share = (v, isNull) => (aNull || bNull || tot <= 0 || !v) ? '0%' : (v / tot * 100).toFixed(1) + '%';
       return { label, aVal: aNull ? DASH : aTxt, bVal: bNull ? DASH : bTxt, aDen: aDen || '', bDen: bDen || '', aW: share(aV, aNull), bW: share(bV, bNull), aV, bV };
     };
     const den = c => c ? '(' + c[0] + '/' + c[1] + ')' : '';
@@ -34254,6 +34255,13 @@ window.DatabaseTab = (function(){
     const sgOf = sd => { if (!sgC) return null; const gs = sgC.filter(c => c.aServ === (sd === 0)); return [gs.reduce((x, c) => x + c.end - c.start, 0), gs.length]; };
     const ppg = sd => { const g = sgOf(sd); return g && g[1] ? g[0] / g[1] : null; };
     const num = (sd, name) => val(sd, name);
+    // winners / unforced errors: the feed's counts; all 0 on both sides over 10+ points played = not tracked for this
+    // match (a dash, never a 0); under 10 points an all-zero sheet can be real
+    const tp = [0, 1].map(sd => { const c = cnt(sd, 'Total Points Won'); return c ? c[1] : 0; });
+    const wue = { w: [num(0, 'Winners'), num(1, 'Winners')], u: [num(0, 'Unforced errors'), num(1, 'Unforced errors')] };
+    if ([...wue.w, ...wue.u].every(v => v === 0) && Math.max(tp[0], tp[1]) >= 10) { wue.w = [null, null]; wue.u = [null, null]; }
+    wue.r = sd => wue.w[sd] != null && wue.u[sd] > 0 ? wue.w[sd] / wue.u[sd] : null;
+    wue.d = sd => wue.w[sd] != null && wue.u[sd] != null ? '(' + wue.w[sd] + '/' + wue.u[sd] + ')' : '';
     const secs = [
       { title: 'Service', rows: [rating('Serve rating', 'serveRating'),
         twoSided('Aces', num(0, 'Aces'), num(1, 'Aces'), String(num(0, 'Aces')), String(num(1, 'Aces'))),
@@ -34265,7 +34273,8 @@ window.DatabaseTab = (function(){
         pctRow('1st return points won', cnt(0, '1st return points won'), cnt(1, '1st return points won')),
         pctRow('2nd return points won', cnt(0, '2nd return points won'), cnt(1, '2nd return points won')),
         pctRow('Break points converted', cnt(0, 'Break Points Converted'), cnt(1, 'Break Points Converted'))] },
-      { title: 'Points won', rows: [twoSided('Winners', null, null), twoSided('Unforced errors', null, null), twoSided('Ratio W/UE', null, null),
+      { title: 'Points won', rows: [twoSided('Winners', wue.w[0], wue.w[1], String(wue.w[0]), String(wue.w[1])), twoSided('Unforced errors', wue.u[0], wue.u[1], String(wue.u[0]), String(wue.u[1])),
+        twoSided('Ratio W/UE', wue.r(0), wue.r(1), wue.r(0) == null ? '' : wue.r(0).toFixed(2), wue.r(1) == null ? '' : wue.r(1).toFixed(2), wue.d(0), wue.d(1)),
         twoSided('Net points won', null, null),
         pctRow('Service points won', cnt(0, 'Service Points Won'), cnt(1, 'Service Points Won')), pctRow('Return points won', cnt(0, 'Return Points Won'), cnt(1, 'Return Points Won')),
         twoSided('Pressure points won on serve', null, null), twoSided('Pressure points won on return', null, null),

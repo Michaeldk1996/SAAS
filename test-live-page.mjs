@@ -222,3 +222,20 @@ test('feed lag: a decided set left as the last entry is not the set in play (no 
     assert.notEqual(c.LivePage._sig(m).chip, 'Set point');
   });
 });
+
+test('Stats bars: a side with no figure never hands the other a full bar; untracked winners/UE (all 0 over 10+ points) are dashes', async () => {
+  const f = board()[0], k1 = f.first_player_key, k2 = f.second_player_key;
+  const row = (player_key, name, won, total, value) => ({ player_key, stat_period: 'match', stat_type: 'Service', ['stat' + '_name']: name, stat_won: won, stat_total: total, stat_value: value });
+  const mk = (w, tp) => [row(k1, 'Winners', null, null, String(w)), row(k2, 'Winners', null, null, String(w)), row(k1, 'Unforced errors', null, null, String(w)), row(k2, 'Unforced errors', null, null, String(w)),
+    row(k1, 'Total Points Won', 5, tp, '50%'), row(k2, 'Total Points Won', 5, tp, '50%'), row(k1, 'Break Points Saved', 2, 4, '50%')];
+  await both('one-sided bar', s => s.replace("(aNull || bNull || tot <= 0 || !v) ? '0%'", "(isNull || tot <= 0 || !v) ? '0%'"), src => {
+    const c = boot(src); const m = c.LivePage._vm(Object.assign(JSON.parse(JSON.stringify(f)), { statistics: mk(0, 138) }), 0); c.LivePage._S.scope = 'MATCH';
+    const h = c.LivePage._html.stats(m), bps = h.slice(h.indexOf('Break points saved'), h.indexOf('Points per service game'));
+    assert.ok(!/width:100\.0%/.test(bps), 'Break points saved 2/4 v nothing: no full bar');
+    const w = h.slice(h.indexOf('>Winners<') - 600, h.indexOf('>Winners<'));
+    assert.match(w, />—</, 'all 0 over 138 points: not tracked');
+  });
+  const c = boot(); const m = c.LivePage._vm(Object.assign(JSON.parse(JSON.stringify(f)), { statistics: mk(0, 6) }), 0);
+  const h = c.LivePage._html.stats(m), w = h.slice(h.indexOf('>Winners<') - 600, h.indexOf('>Winners<'));
+  assert.match(w, />0</, 'under 10 points an all-zero sheet can be real');
+});
