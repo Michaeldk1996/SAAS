@@ -1,18 +1,18 @@
 {
- "generatedAt": "2026-11-26T07:13:19.218Z",
+ "generatedAt": "2026-11-26T07:32:08.136Z",
  "tournaments": [
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 215,
+   "items": 212,
    "byType": {
     "digest": 41,
-    "quote": 174
+    "quote": 171
    },
-   "latestTimestamp": "2026-11-26T06:30:18.164Z",
-   "updatedAt": "2026-11-26T07:13:19.218Z"
+   "latestTimestamp": "2026-11-26T06:31:24.617Z",
+   "updatedAt": "2026-11-26T07:32:08.136Z"
   },
   {
    "key": "3120",
@@ -39,7 +39,7 @@
     "digest": 39
    },
    "latestTimestamp": "2026-11-23T17:23:23.000Z",
-   "updatedAt": "2026-11-26T01:48:14.500Z"
+   "updatedAt": "2026-11-26T07:32:08.136Z"
   },
   {
    "key": "1681",
@@ -69,6 +69,85 @@
   }
  ],
  "latest": [
+  {
+   "id": "digest-ca1f408b1165eb",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2072",
+   "player": "J. Sinner",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-26T06:31:24.617Z",
+   "members": [
+    "quote-18b69e30cb96c6",
+    "quote-df5f58cea4026d"
+   ],
+   "memberHash": "db911f32068023c4",
+   "digestedAt": "2026-11-26T07:08:11.520Z",
+   "blocks": [
+    {
+     "label": "on recovering from his right knee surgery",
+     "text": "I have to respect the protocols at the moment, because if we rush things we could have more serious problems.",
+     "from": [
+      "quote-18b69e30cb96c6"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "3d3eaa826104b033",
+   "publishedAt": "2026-11-26T07:32:08.136Z",
+   "file": "news-ticker/tour-2026.json"
+  },
+  {
+   "id": "quote-df5f58cea4026d",
+   "type": "quote",
+   "playerId": "2072",
+   "opponentId": null,
+   "player": "J. Sinner",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-26T06:31:24.617Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "I have to follow the established procedures, because if we push things too hard, we could face more serious problems,",
+   "originalText": "Musím dodržiavať stanovené postupy, pretože ak budeme na veci príliš tlačiť, mohli by sme čeliť vážnejším problémom,",
+   "language": "sk",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "Sportnet (SME)",
+   "sourceUrl": "https://sportnet.sme.sk/spravy/tenis-jannik-sinner-operacia-kolena-vynechanie-australian-open-2027/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On recovering from his knee surgery",
+   "settingTried": true,
+   "alsoReportedBy": [
+    {
+     "sourceName": "Sport.sk",
+     "sourceUrl": "https://sport.aktuality.sk/tenis/clanok/jannik-sinner-vynecha-australian-open-operacia-kolena-2026112606430649544",
+     "language": "sk"
+    },
+    {
+     "sourceName": "Sport Aktuality",
+     "sourceUrl": "https://sport.aktuality.sk/tenis/clanok/jannik-sinner-vynecha-australian-open-operacia-kolena-2026112606430649544",
+     "language": "sk"
+    }
+   ],
+   "sourceHash": "d487eb92ef42f13c",
+   "publishedAt": "2026-11-26T07:32:08.136Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "digest-8c342461fe77c1",
    "type": "digest",
@@ -1483,107 +1562,6 @@
    "publishedAt": "2026-11-26T00:04:01.813Z",
    "revisedAt": "2026-11-26T02:48:24.212Z",
    "revision": 1,
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-deb5eceee7b44c",
-   "type": "quote",
-   "playerId": "39864",
-   "opponentId": null,
-   "player": "M. Landaluce",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-25T00:00:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "I've had a lot of opportunities since I was 16 and I've played really big tournaments on really big stages from a young age, so I'm really well adapted, … I have no pressure right now because I've handled it over the years. Now I can enjoy it. I'm enjoying myself on and off the court, and that's really important. I think it's the key and that really good things are going to happen in the near future.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "ATP Tour",
-   "sourceUrl": "https://www.atptour.com/en/news/landaluce-meet-the-next-gen-2026",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "topic": "On handling pressure on big stages since sixteen",
-   "sourceHash": "ee0d3caece28e39e",
-   "publishedAt": "2026-11-26T00:04:01.813Z",
-   "revisedAt": "2026-11-26T02:48:24.212Z",
-   "revision": 1,
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "digest-614aab8329f898",
-   "type": "digest",
-   "version": 1,
-   "playerId": "2072",
-   "player": "J. Sinner",
-   "opponentId": null,
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "eventKey": null,
-   "context": null,
-   "category": "Quotes",
-   "timestamp": "2026-11-24T23:44:03.000Z",
-   "members": [
-    "quote-009f73c624dd2b",
-    "quote-0dd111a4c2b22d",
-    "quote-154b51d19041e6",
-    "quote-25cc3c4ae15565",
-    "quote-3df7ed26bb8b09",
-    "quote-5d6a8ef4cb8ee0",
-    "quote-64a9642ea4ec54",
-    "quote-80a8d3cd9921ea",
-    "quote-9f26375b77790f",
-    "quote-a28aa374c90e43",
-    "quote-aaca58458cbd9d",
-    "quote-bf5398d6e15566"
-   ],
-   "memberHash": "8adbb818f5016f0b",
-   "digestedAt": "2026-11-26T02:06:51.017Z",
-   "blocks": [
-    {
-     "label": "on undergoing knee surgery",
-     "text": "Over the past few months, together with my team, we've tried everything to treat my injury without surgery. After some very encouraging progress early on, my knee unfortunately didn't respond as we had all hoped, that's why today I underwent a minor surgery to improve the condition of my iliotibial band. I really miss being on court and will now begin my recovery process together with my team. Thank you for all your support. See you soon!",
-     "from": [
-      "quote-64a9642ea4ec54",
-      "quote-0dd111a4c2b22d",
-      "quote-3df7ed26bb8b09",
-      "quote-5d6a8ef4cb8ee0",
-      "quote-009f73c624dd2b",
-      "quote-80a8d3cd9921ea",
-      "quote-aaca58458cbd9d"
-     ]
-    },
-    {
-     "label": "on the hardest part of being injured",
-     "text": "The worst part of this injury for me is that I can't compete, I can't play tennis. Even my life outside tennis is a bit more limited, for the simple reason that I can't do the things I really love, because I want to protect my knee as much as possible.",
-     "from": [
-      "quote-a28aa374c90e43",
-      "quote-154b51d19041e6",
-      "quote-bf5398d6e15566",
-      "quote-25cc3c4ae15565"
-     ]
-    },
-    {
-     "label": "on not rushing his return",
-     "text": "I have to respect the protocols at the moment, because if we rush things we could have more serious problems.",
-     "from": [
-      "quote-9f26375b77790f"
-     ]
-    }
-   ],
-   "model": "claude-opus-5-5",
-   "sourceHash": "9612ad4b6dfa2db1",
-   "publishedAt": "2026-11-26T02:48:24.212Z",
    "file": "news-ticker/tour-2026.json"
   }
  ]
