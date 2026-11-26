@@ -2,8 +2,39 @@
  "tournament": "ATP Tour",
  "tournamentKey": "tour",
  "season": "2026",
- "updatedAt": "2026-11-26T03:07:11.476Z",
+ "updatedAt": "2026-11-26T03:37:07.649Z",
  "items": [
+  {
+   "id": "quote-0ee6b1e1c93196",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-26T03:30:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "No, not at all. It's not a court case. It's a... what is it called?",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "TennisUpToDate",
+   "sourceUrl": "https://tennisuptodate.com/atp/im-not-too-concerned-alexander-zverev-breaks-silence-on-fresh-lawsuit-from-former-partner-brenda-patea",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On Brenda Patea's new legal action against him",
+   "setting": "in his press conference at the Davis Cup Finals in Bologna",
+   "sourceHash": "e30d0900a2a22acc",
+   "publishedAt": "2026-11-26T03:37:07.649Z"
+  },
   {
    "id": "quote-6daa8098cf1fd8",
    "type": "quote",
@@ -713,11 +744,12 @@
    "sourceUrl": "https://news.rthk.hk/rthk/en/component/k2/1879154-20261125.htm",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "42d68cec973375e9",
+   "topic": "On being unable to compete due to injury",
+   "setting": "in a recent documentary, before his knee surgery in Finland",
+   "sourceHash": "55d1e53795c61cf6",
    "publishedAt": "2026-11-24T16:02:36.159Z",
-   "revisedAt": "2026-11-25T00:05:43.154Z",
-   "revision": 2,
-   "topic": "On being unable to compete due to injury"
+   "revisedAt": "2026-11-26T03:37:07.649Z",
+   "revision": 3
   },
   {
    "id": "quote-9f26375b77790f",
@@ -745,11 +777,19 @@
    "sourceUrl": "https://gulfnews.com/sport/tennis/jannik-sinner-undergoes-knee-surgery-australian-open-return-uncertain-1.500759767",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "ad522c3735c50bd3",
+   "topic": "On respecting protocols and not rushing",
+   "setting": "at a news conference in Milan this month",
+   "alsoReportedBy": [
+    {
+     "sourceName": "Hindustan Times",
+     "sourceUrl": "https://www.hindustantimes.com/sports/tennis/australian-open-says-jannik-sinner-wont-play-the-first-grand-slam-of-2027-101795662656353.html",
+     "language": "en"
+    }
+   ],
+   "sourceHash": "d55bcc47b9cf6648",
    "publishedAt": "2026-11-24T18:02:52.840Z",
-   "revisedAt": "2026-11-24T19:34:01.039Z",
-   "revision": 1,
-   "topic": "On respecting protocols and not rushing"
+   "revisedAt": "2026-11-26T03:37:07.649Z",
+   "revision": 2
   },
   {
    "id": "quote-64a9642ea4ec54",
@@ -777,9 +817,12 @@
    "sourceUrl": "https://www.theguardian.com/sport/2026/nov/24/jannik-sinners-australian-open-in-great-doubt-after-he-has-to-have-knee-surgery",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "f30ec418e8a62796",
+   "topic": "On his knee surgery on the iliotibial band",
+   "settingTried": true,
+   "sourceHash": "0b1dd7429d8ff46f",
    "publishedAt": "2026-11-24T19:03:16.798Z",
-   "topic": "On his knee surgery on the iliotibial band"
+   "revisedAt": "2026-11-26T03:37:07.649Z",
+   "revision": 1
   },
   {
    "id": "quote-009f73c624dd2b",
@@ -807,9 +850,12 @@
    "sourceUrl": "https://www.bbc.co.uk/sport/tennis/articles/cxlylr3p4q8mo?at_medium=RSS&at_campaign=rss",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "7e7c311382dbce3e",
+   "topic": "On the condition of his iliotibial band",
+   "setting": "in an Instagram post seven weeks before the Australian Open",
+   "sourceHash": "26d8a2dac870003e",
    "publishedAt": "2026-11-24T18:02:52.840Z",
-   "topic": "On the condition of his iliotibial band"
+   "revisedAt": "2026-11-26T03:37:07.649Z",
+   "revision": 1
   },
   {
    "id": "quote-80a8d3cd9921ea",
@@ -837,9 +883,12 @@
    "sourceUrl": "https://www.bbc.co.uk/sport/tennis/articles/cxlylr3p4q8mo?at_medium=RSS&at_campaign=rss",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "ffd10b949109675b",
+   "topic": "On missing tennis and beginning his recovery",
+   "setting": "in an Instagram post after his knee surgery",
+   "sourceHash": "b82acdadc5341233",
    "publishedAt": "2026-11-24T18:02:52.840Z",
-   "topic": "On missing tennis and beginning his recovery"
+   "revisedAt": "2026-11-26T03:37:07.649Z",
+   "revision": 1
   },
   {
    "id": "quote-ef564531466e17",
@@ -867,9 +916,12 @@
    "sourceUrl": "https://www.bbc.co.uk/sport/tennis/articles/cxlylr3p4q8mo?at_medium=RSS&at_campaign=rss",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "9f5bf84c0cf97116",
+   "topic": "On Jannik's absence",
+   "setting": "after winning the ATP Finals in Turin",
+   "sourceHash": "f6ee722210ec1937",
    "publishedAt": "2026-11-24T18:02:52.840Z",
-   "topic": "On Jannik's absence"
+   "revisedAt": "2026-11-26T03:37:07.649Z",
+   "revision": 1
   },
   {
    "id": "quote-f5a2dbd017ea5b",
@@ -897,9 +949,12 @@
    "sourceUrl": "https://www.bbc.co.uk/sport/tennis/articles/cxlylr3p4q8mo?at_medium=RSS&at_campaign=rss",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "7985beb8fbb513a8",
+   "topic": "On a fellow player's comeback from injury",
+   "setting": "after winning the ATP Finals in Turin",
+   "sourceHash": "b4bada5949666645",
    "publishedAt": "2026-11-24T18:02:52.840Z",
-   "topic": "On a fellow player's comeback from injury"
+   "revisedAt": "2026-11-26T03:37:07.649Z",
+   "revision": 1
   },
   {
    "id": "quote-5a05fd64bc0e5a",
@@ -1568,7 +1623,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "eadadba053028be6",
-   "publishedAt": "2026-11-24T15:32:00.033Z"
+   "publishedAt": "2026-11-24T15:32:00.033Z",
+   "topicTried": true
   },
   {
    "id": "quote-f5cdf70e2ec995",
@@ -1597,7 +1653,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "a501b9df23583f83",
-   "publishedAt": "2026-11-24T15:32:00.033Z"
+   "publishedAt": "2026-11-24T15:32:00.033Z",
+   "topic": "On critics who say his result was undeserved"
   },
   {
    "id": "quote-8a23b6bf6431bb",
@@ -1626,7 +1683,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "4470e9cc22af4e9c",
-   "publishedAt": "2026-11-22T14:15:04.152Z"
+   "publishedAt": "2026-11-22T14:15:04.152Z",
+   "topic": "On his comeback plans for the Australian season"
   },
   {
    "id": "quote-047c1e9f47f0cc",
@@ -1655,7 +1713,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
    "sourceHash": "6da7a6e27a6010f3",
-   "publishedAt": "2026-11-24T00:26:58.468Z"
+   "publishedAt": "2026-11-24T00:26:58.468Z",
+   "topic": "On a 23-year-old rival's already legendary career"
   },
   {
    "id": "quote-0bb6832f6ad5c1",
@@ -1684,7 +1743,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
    "sourceHash": "8aae595c7653abfa",
-   "publishedAt": "2026-11-24T21:34:33.922Z"
+   "publishedAt": "2026-11-24T21:34:33.922Z",
+   "topic": "On his next opponent's serve and their matches"
   },
   {
    "id": "quote-1b63b1fe746a33",
@@ -1713,7 +1773,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
    "sourceHash": "584e4437cd1caca3",
-   "publishedAt": "2026-11-22T16:15:17.718Z"
+   "publishedAt": "2026-11-22T16:15:17.718Z",
+   "topic": "On trusting his more experienced coaching team"
   },
   {
    "id": "quote-2ee2d7753b39fd",
@@ -1742,7 +1803,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
    "sourceHash": "6d16a5109fd67968",
-   "publishedAt": "2026-11-24T00:26:58.468Z"
+   "publishedAt": "2026-11-24T00:26:58.468Z",
+   "topic": "On his grandfather's three C's of tennis"
   },
   {
    "id": "quote-52d719f7d01844",
@@ -1771,7 +1833,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
    "sourceHash": "de88bf5c326598b2",
-   "publishedAt": "2026-11-24T00:26:58.468Z"
+   "publishedAt": "2026-11-24T00:26:58.468Z",
+   "topic": "On how nerves affect his serve"
   },
   {
    "id": "quote-61b36f14b59acb",
@@ -1800,7 +1863,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
    "sourceHash": "ce207991df6b4ec9",
-   "publishedAt": "2026-11-24T00:26:58.468Z"
+   "publishedAt": "2026-11-24T00:26:58.468Z",
+   "topic": "On managing his physical effort and aggressive play"
   },
   {
    "id": "quote-a520b291ff9b0e",
@@ -1829,7 +1893,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
    "sourceHash": "392da0899d7931a6",
-   "publishedAt": "2026-11-24T00:26:58.468Z"
+   "publishedAt": "2026-11-24T00:26:58.468Z",
+   "topic": "On why today's match mattered as a test"
   },
   {
    "id": "quote-ecac84ecc8dbb6",
@@ -1858,7 +1923,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
    "sourceHash": "385745558bef1de3",
-   "publishedAt": "2026-11-24T00:26:58.468Z"
+   "publishedAt": "2026-11-24T00:26:58.468Z",
+   "topic": "On finally winning a tournament he long chased"
   },
   {
    "id": "quote-f569b2d0d2e16d",
@@ -1887,7 +1953,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
    "sourceHash": "0e2150d7c6fa9d08",
-   "publishedAt": "2026-11-24T00:26:58.468Z"
+   "publishedAt": "2026-11-24T00:26:58.468Z",
+   "topic": "On adjusting his serve during the match"
   },
   {
    "id": "quote-fc086c87784865",
