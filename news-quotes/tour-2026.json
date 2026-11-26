@@ -2,7 +2,7 @@
  "tournament": "ATP Tour",
  "tournamentKey": "tour",
  "season": "2026",
- "updatedAt": "2026-11-26T03:37:07.649Z",
+ "updatedAt": "2026-11-26T04:07:16.271Z",
  "items": [
   {
    "id": "quote-0ee6b1e1c93196",
@@ -522,6 +522,39 @@
    "topic": "On denying ever taking banned substances"
   },
   {
+   "id": "quote-5a05fd64bc0e5a",
+   "type": "quote",
+   "playerId": "2973",
+   "opponentId": null,
+   "player": "B. Shelton",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-25T09:25:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "I think what a lot of people don't see is when we actually do have time or a couple of days off, we're so exhausted that it's tough to do anything. It is tough to make time.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "TennisUpToDate",
+   "sourceUrl": "https://tennisuptodate.com/atp/ben-shelton-warned-of-relationship-struggles-just-weeks-before-reported-trinity-rodman-breakup",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On exhaustion during rare days off on tour",
+   "setting": "in a magazine interview published on September 28",
+   "sourceHash": "b193d1e00d72290d",
+   "publishedAt": "2026-11-24T17:02:22.604Z",
+   "revisedAt": "2026-11-26T04:07:16.271Z",
+   "revision": 1
+  },
+  {
    "id": "quote-993cfa8aa1a06e",
    "type": "quote",
    "playerId": "1902",
@@ -957,36 +990,6 @@
    "revision": 1
   },
   {
-   "id": "quote-5a05fd64bc0e5a",
-   "type": "quote",
-   "playerId": "2973",
-   "opponentId": null,
-   "player": "B. Shelton",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-24T17:00:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "I think what a lot of people don't see is when we actually do have time or a couple of days off, we're so exhausted that it's tough to do anything. It is tough to make time.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "TennisUpToDate",
-   "sourceUrl": "https://tennisuptodate.com/atp/ben-shelton-warned-of-relationship-struggles-just-weeks-before-reported-trinity-rodman-breakup",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "09e7d98482977724",
-   "publishedAt": "2026-11-24T17:02:22.604Z",
-   "topic": "On exhaustion during rare days off on tour"
-  },
-  {
    "id": "quote-3df7ed26bb8b09",
    "type": "quote",
    "playerId": "2072",
@@ -1043,10 +1046,18 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "topic": "On protecting the knee limiting life outside tennis",
-   "sourceHash": "fbd13fce174a550b",
+   "setting": "in a recent video before his knee surgery",
+   "alsoReportedBy": [
+    {
+     "sourceName": "Gulf Times",
+     "sourceUrl": "https://www.gulf-times.com/article/738938/sport/tennis/sinner-at-risk-of-missing-australian-open-after-confirming-knee-surgery",
+     "language": "en"
+    }
+   ],
+   "sourceHash": "2f8b81ec77783bcf",
    "publishedAt": "2026-11-12T15:59:12.115Z",
-   "revisedAt": "2026-11-24T22:35:17.056Z",
-   "revision": 3
+   "revisedAt": "2026-11-26T04:07:16.271Z",
+   "revision": 4
   },
   {
    "id": "quote-5d6a8ef4cb8ee0",
@@ -1074,9 +1085,19 @@
    "sourceUrl": "https://supersport.com/tennis/news/cfa3675a-b903-4cdd-8c88-d3f6770b2743/sinner-at-risk-of-missing-australian-open-after-knee-surgery",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "2e96721e9aa34fc0",
+   "topic": "On his minor knee surgery on the iliotibial band",
+   "setting": "in a statement on Tuesday announcing his knee surgery",
+   "alsoReportedBy": [
+    {
+     "sourceName": "Gulf Times",
+     "sourceUrl": "https://www.gulf-times.com/article/738938/sport/tennis/sinner-at-risk-of-missing-australian-open-after-confirming-knee-surgery",
+     "language": "en"
+    }
+   ],
+   "sourceHash": "f07fb4582bd891ba",
    "publishedAt": "2026-11-24T22:35:17.056Z",
-   "topic": "On his minor knee surgery on the iliotibial band"
+   "revisedAt": "2026-11-26T04:07:16.271Z",
+   "revision": 1
   },
   {
    "id": "quote-bf5398d6e15566",
@@ -1437,10 +1458,22 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
    "topic": "On trying to treat his injury without surgery",
-   "sourceHash": "ca430d22ad0a2ae7",
+   "alsoReportedBy": [
+    {
+     "sourceName": "SuperSport",
+     "sourceUrl": "https://supersport.com/tennis/news/cfa3675a-b903-4cdd-8c88-d3f6770b2743/sinner-at-risk-of-missing-australian-open-after-knee-surgery",
+     "language": "en"
+    },
+    {
+     "sourceName": "Gulf Times",
+     "sourceUrl": "https://www.gulf-times.com/article/738938/sport/tennis/sinner-at-risk-of-missing-australian-open-after-confirming-knee-surgery",
+     "language": "en"
+    }
+   ],
+   "sourceHash": "d44750fe12da8655",
    "publishedAt": "2026-11-24T18:02:52.840Z",
-   "revisedAt": "2026-11-26T02:06:51.017Z",
-   "revision": 5
+   "revisedAt": "2026-11-26T04:07:16.271Z",
+   "revision": 6
   },
   {
    "id": "quote-420cde4b816820",
@@ -1983,7 +2016,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
    "sourceHash": "afb0a4f75c0a4e14",
-   "publishedAt": "2026-11-24T00:26:58.468Z"
+   "publishedAt": "2026-11-24T00:26:58.468Z",
+   "topic": "On celebrating with his team after tough fortnight"
   },
   {
    "id": "quote-90fe87d1bb92e6",
@@ -5159,15 +5193,16 @@
    "category": "Quotes",
    "timestamp": "2026-11-25T22:15:00.000Z",
    "members": [
+    "quote-5a05fd64bc0e5a",
     "quote-6daa8098cf1fd8",
     "quote-ae7e8f8802058f"
    ],
-   "memberHash": "862e4bad89ea5ad8",
-   "digestedAt": "2026-11-26T02:06:51.017Z",
+   "memberHash": "7ca8afb50997615a",
+   "digestedAt": "2026-11-26T04:07:16.271Z",
    "blocks": [
     {
      "label": "on his relationship with an elite athlete partner",
-     "text": "Sometimes I leave these tournaments and I'm a bit of a zombie… I'm not the most fun person to be around. But we make a lot of sacrifices for our sport. I'd say both of us are chasing things for our sport. We're not where we want to be yet, we're not in our primes. So this is kind of crunch time… This is going to be the hardest, most grueling time in our relationship, from my perspective. None of it is easy. But being able to have someone to lean on who's such an elite athlete and doing things at a really high level as well, it helps in so many ways.",
+     "text": "Sometimes I leave these tournaments and I'm a bit of a zombie. I'm not the most fun person to be around. But we make a lot of sacrifices for our sport. I'd say both of us are chasing things for our sport. We're not where we want to be yet, we're not in our primes. So this is kind of crunch time. This is going to be the hardest, most grueling time in our relationship, from my perspective. None of it is easy. But being able to have someone to lean on who's such an elite athlete and doing things at a really high level as well, it helps in so many ways.",
      "from": [
       "quote-6daa8098cf1fd8"
      ]
@@ -5177,6 +5212,13 @@
      "text": "She grinded a ridiculous amount to show up for me. She must have flown back and forth six or seven times during the tournament. Probably more, I'm probably under-shooting it.",
      "from": [
       "quote-ae7e8f8802058f"
+     ]
+    },
+    {
+     "label": "on exhaustion during rare days off on tour",
+     "text": "I think what a lot of people don't see is when we actually do have time or a couple of days off, we're so exhausted that it's tough to do anything. It is tough to make time.",
+     "from": [
+      "quote-5a05fd64bc0e5a"
      ]
     }
    ],
