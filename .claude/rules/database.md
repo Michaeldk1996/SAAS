@@ -157,13 +157,19 @@ inside every mount (`[data-db-root]`). Ratings and Lines rules: `ratings.md`, `l
   whole; `meta.exclusions.pinnacleBrokenFellThrough` counts them. **Test:** `tools/test-approx-pinnacle.mjs` "broken".
 
 ## Tour
-- **Fixed price bands** (founder 2026-11-16): Favourites = Heavy favourite 1.01–1.20 · Clear favourite 1.21–1.35 ·
-  Favourite 1.36–1.50 · Slight favourite 1.51–1.70 · Near coin-flip 1.71–1.94; Underdogs = Slight
+- **Fixed price bands** (founder 2026-11-16; the meeting point founder 2026-11-26): Favourites = Heavy favourite 1.01–1.20 ·
+  Clear favourite 1.21–1.35 · Favourite 1.36–1.50 · Slight favourite 1.51–1.70 · Near coin-flip 1.71–1.94; Underdogs = Slight
   underdog 1.95–2.49 · Underdog 2.50–2.99 · Big underdog 3.00–3.99 · Long underdog 4.00–5.99 · Longshot 6.00 + (`DB2_BANDS`).
-  **Near coin-flip is a favourite band only**; the underdog bands start at **1.95** (founder 2026-11-26, replacing 2.00 —
-  the one ladder, `modal-market-edge.md` "Bands"); an underdog priced under 1.95 or a favourite at 1.95+ (45 of 82,574
-  sides) counts in the side's total and in no band row, the count on the headline's hover. Edges are half-open (an archive close of 1.357 is a Clear favourite). **Test:** every
-  favourite price under 1.95 lands in exactly one band; an underdog price under 1.95 lands in none (`test-database-v2.mjs` "bands").
+  **The two sides meet at 1.95, no gap and no overlap** (founder 2026-11-26: "find the right number if it's 1.95 or 1.96";
+  replaces 2026-11-19's 2.00). Measured 26 Nov on the 41,287 Database matches (Pinnacle closes, favourite = the shorter
+  price), the prices left in no band of their side per cut: 1.85 → 2,632 favourites + 0 underdogs · 1.90 → 1,179 + 2 · 1.95
+  → 33 + 12 · 1.96 → 1 + 78 · 2.00 → 0 + 888; 1.95 leaves the fewest. (Yield context: favourites 1.71–1.85 −3.46% on 5,077,
+  1.86–1.95 −0.8% on 2,221, close to the underdogs 1.95–2.49 at −1.7%.) A price on the other side of the cut (a near-even
+  match) counts in its side's total and in no band row, the count on the headline's hover. Edges are half-open (an archive
+  close of 1.357 is a Clear favourite). Market edge and the profile (`MarketEdgeCore.BANDS`,
+  `MK_BANDS`, `modal-market-edge.md` "Bands") moved to the same 1.95 edge the same day (Player Profile v6): one edge site-wide. **Test:** every
+  favourite price under 1.95 lands in exactly one favourite band and none from 1.95; every underdog price from 1.95 in
+  exactly one underdog band and none under it (`test-database-v2.mjs` "bands"; mutant: the cut back at 2.00).
 - **Band cards (CHANGES §2):** two section cards (24/26/10, radius 14). Head: title 18/800 over the 13px hint ("Back the
   shorter / longer price") | the side's yield 26px over "N matches · median price X" (+ " · tour Y"). Columns Odds · Yield
   (Event / Player) · Matches (· Tour); a row (min 64px, hover `--db2-hover`) = the odds 19px mono low · grey dash · high over
@@ -183,8 +189,14 @@ inside every mount (`[data-db-root]`). Ratings and Lines rules: `ratings.md`, `l
   odds 22px + band name 18/800 over the scope line | drawn close cross; four centred tiles Yield · Win rate ("won n · lost
   n") · Market expected (implied from the band's median price, "+x pts against the price") · Rank (bands with 30+ matches);
   under 30 Yield and Win rate are dashes; then "Matches in this band": Date · Match (backed player bold v opponent) · Event ·
-  Rd · Score · Price · Result pill · Return, newest first, 12 then "Show 12 more matches". **Score is a dash** (the Database
-  archive holds no set score; the hover says so). On Player the backed name is the player, or his opponent when fading.
+  Rd · Score · Price · Result pill · Return, newest first, 12 then "Show 12 more matches". **Score = the career-history
+  row the match-sheet click joins** (founder 2026-11-26, "you need to fix this"; replaces "Score is a dash"): ONE join
+  (`db3CareerRow`), the set scores from the BACKED side ("5-7 6-3 6-7(11)": a tiebreak shows the loser's points), " ret." on
+  a retirement; no player key, no joining row or a row with no sets = a dash with the reason on hover, never a made-up
+  score. **Every row sits on one line** (founder 2026-11-26): the Match and Score cells never wrap; every row and the head
+  take the widest text as the track (`db3FitCols`), and the list scrolls sideways when the box is narrower. **Test:**
+  `test-database-v2.mjs` "boxScore" / "oneLine" (+ mutants). On Player the backed name is the player, or his opponent when
+  fading.
   **Every match row opens the one match stats sheet** (founder 2026-11-19; the band box and the fade box): the backed
   player's career-history row of that match (same result, opponent surname, match day ±2 for a feed row, event start up to
   16 days before for an archive row, nearest wins) through the profile's hand-off `pp2OpenMatchSheet`, priced with the
@@ -250,9 +262,18 @@ inside every mount (`[data-db-root]`). Ratings and Lines rules: `ratings.md`, `l
   matches … not list players with 1 match"; replaces the unranked under-30 block). **24 months** = the same filters over the
   24 months to the archive's last match. **Vs price** = the backed side's win rate minus the mean implied chance of its
   closing price, in points ("lost 41% · priced 33%"). Opp. price / His price = the backed side's mean closing price.
-- The card: "Players to fade / back" over the scope line (filters only) | "N players ranked" + "?" (every explanation).
-  Controls on one line: the pin search (well, max 320px), To fade · To back, All · As favourite · As underdog. Table grid
-  `26px minmax(140px,1.1fr) minmax(100px,1.3fr) 90px 122px 68px 54px 14px`, min 684px; 12 rows, then "Show all N players".
+- **Locked design 2026-11-26** (`design_handoff_database_final_2026-11-26`): the card: "Players to fade / back" over the
+  scope line | a pill "N of M players ranked" ("9 of 34 players · top 50 · 40+ matches" while Rank or Min. matches is on) + "?"
+  (every explanation). **Rank** = a single-pick trigger in the page filter bar, Fade finder only, after Surface (All · Top
+  25 · Top 50 · Top 100, this week's ATP ranking; the picked one again or the X clears it; Reset filters clears it). The
+  control row (margin 16 / pad-top 14): the pin search (35px well), To fade · To back, All · As favourite · As underdog
+  (pills 12.5 pad 5/11), **Min. matches** = ONE number field the member types (56 × 27, mono 12.5/700, "Any", digits, max 4;
+  empty = no minimum). Both remove players and the ranks are recounted. Heads (Hanken 11.5/600 grey, never caps): # · Player
+  · Fade yield · 24 months · Vs price · Opp. price · Matches; **the five figure heads sort high to low** (dim "↕" `--db2-dim`,
+  white "↓" on the sorted head, white 700), # stays the yield rank; every figure column centred. Grid
+  `26px minmax(128px,1.1fr) minmax(94px,1.3fr) 88px 126px 78px 78px 14px` gap 8, min 688px, rows 56px, grey ›; 12 rows,
+  then "Show all N players". **Empty state:** "No players match these filters" + "Lower the minimum matches or widen the
+  rank." + "Show every player" (clears both). **Test:** `test-database-v2.mjs` "fadeLocked" (+ mutants).
 - **Today:** a player with a match on today's board (`matches`, `matchDayBucket` = today, not finished, his key from `db2Who`)
   reads a blue dot + "Today" + the time under his name; a click opens that match (`openAnalysisModal`).
 - **Pin:** a pick from the search pins the player: a chip in the well, his row first and lifted (`--db2-layer` + 14% ring,
@@ -261,9 +282,8 @@ inside every mount (`[data-db-root]`). Ratings and Lines rules: `ratings.md`, `l
   Rank; "Open in Player ›" jumps to the Player view with the player and Side preset. **Window switch in the box** (founder
   2026-11-19): All · Last 52 weeks · Last 24 months recompute the tiles and the list from his matches in that window; Rank
   stays his place in the list (whole period). Its match rows open the sheet like the band box.
-- **Filters (founder 2026-11-19):** All ranks · Top 25 · Top 50 · Top 100 (this week's ATP ranking) and Any day · Plays
-  today · Plays tomorrow (a match on Today's Matches; the row says "Today" / "Tomorrow" + the time). **12 months and 24
-  months** columns: the same bet over the 12 / 24 months to the archive's last match, each with its count.
+- **The 12 months column and the Any day · Plays today · Plays tomorrow switch are gone** with the locked design (2026-11-26;
+  they were added 2026-11-19, the locked design has neither; the founder was asked). The Today dot stays.
 
 ## Formatting
 - **Test:** yields 2 dp with sign, `pp` deltas, units, all with a true minus `−` (`fmtPct`, `fmtPP`, `fmtU`);

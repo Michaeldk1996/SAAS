@@ -3299,7 +3299,7 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   [data-db-root] .db3-sw button{ white-space:nowrap; cursor:pointer; padding:6px 14px; border-radius:7px; font:600 13px var(--db-ui); background:transparent; border:1px solid transparent; color:var(--db2-muted); }
   [data-db-root] .db3-sw button.on{ font-weight:700; background:var(--db2-raised); border-color:var(--db2-h16); color:var(--db2-ink); }
   /* the Fade finder's two switches ring the chosen tab with a shadow, as the export (29px tabs, 37px track) */
-  [data-db-root] .db3-sw.sh button{ border:0; }
+  [data-db-root] .db3-sw.sh button{ border:0; padding:5px 11px; font-size:12.5px; }   /* locked design 2026-11-26: compact pills */
   [data-db-root] .db3-sw.sh button.on{ box-shadow:0 0 0 1px var(--db2-h16); }
   [data-db-root] .db-ctl{ background:var(--db2-card); border:1.25px solid var(--db2-h6); border-radius:14px; padding:6px 26px; box-shadow:none; }
   [data-db-root] .db-ctltop{ display:grid; grid-template-columns:104px minmax(0,1fr) auto; align-items:center; gap:14px; padding:12px 0; background:none; border-radius:0; }
@@ -3416,7 +3416,7 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   [data-db-root] .db3-lr .d, [data-db-root] .db3-lr .rd{ font-family:var(--db-mono); font-size:12px; color:var(--db2-muted); white-space:nowrap; }
   [data-db-root] .db3-lr .sc{ font-family:var(--db-mono); font-size:12px; color:var(--db2-ink-2); white-space:nowrap; }
   [data-db-root] .db3-lr .ev{ min-width:0; color:var(--db2-ink-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  [data-db-root] .db3-lr .m{ min-width:0; text-wrap:pretty; }
+  [data-db-root] .db3-lr .m{ min-width:0; white-space:nowrap; }   /* founder 2026-11-26: one line */
   [data-db-root] .db3-lr .m b{ font-weight:700; color:var(--db2-ink); } [data-db-root] .db3-lr .m i{ font-style:normal; color:var(--db2-muted); } [data-db-root] .db3-lr .m span{ color:var(--db2-ink-2); }
   [data-db-root] .db3-lr .pr{ text-align:right; font-family:var(--db-mono); font-weight:700; color:var(--db2-ink); }
   [data-db-root] .db3-lr .rp{ justify-self:end; padding:2px 9px; border-radius:999px; font-size:11.5px; font-weight:700; }
@@ -3475,9 +3475,21 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   [data-db-root] .db3-fcard{ background:var(--db2-card); border:1.25px solid var(--db2-h6); border-radius:14px; padding:24px 26px 10px; min-width:0; display:flex; flex-direction:column; font-family:var(--db-ui); color:var(--db2-ink); line-height:normal; }
   [data-db-root] .db3-fhead{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px 20px; flex-wrap:wrap; }
   [data-db-root] .db3-pill{ padding:5px 11px; border-radius:999px; background:var(--db2-layer); border:1px solid var(--db2-h8); font-size:12px; font-weight:600; color:var(--db2-ink-2); white-space:nowrap; }
-  [data-db-root] .db3-fctl{ display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-top:18px; padding-top:16px; border-top:1px solid var(--db2-h6); }
+  [data-db-root] .db3-fctl{ display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-top:16px; padding-top:14px; border-top:1px solid var(--db2-h6); }
+  [data-db-root] .db3-fmin{ flex:none; align-items:center; }
+  [data-db-root] .db3-fmin .l{ padding:0 6px 0 9px; font-size:12px; font-weight:600; color:var(--db2-muted); white-space:nowrap; }
+  [data-db-root] .db3-fmin input{ width:56px; height:27px; box-sizing:border-box; padding:0 8px; border-radius:7px; background:var(--db2-raised); border:1px solid var(--db2-h16); outline:none; text-align:center; font:700 12.5px var(--db-mono); font-variant-numeric:tabular-nums; color:var(--db2-ink); }
+  [data-db-root] .db3-fmin input:focus{ border-color:color-mix(in srgb, var(--db2-blue) 70%, transparent); }
+  [data-db-root] .db3-fsort{ display:flex; align-items:center; justify-content:center; gap:3px; padding-left:11px; text-align:center; cursor:pointer; }
+  [data-db-root] .db3-fsort:hover, [data-db-root] .db3-fsort.on{ color:var(--db2-ink); } [data-db-root] .db3-fsort.on{ font-weight:700; }
+  [data-db-root] .db3-fsort i{ flex:none; width:8px; font-style:normal; font-size:11px; line-height:1; text-align:center; color:var(--db2-dim); } [data-db-root] .db3-fsort.on i{ color:var(--db2-ink); }
+  [data-db-root] .db3-fr .db3-chev{ color:var(--db2-muted); }   /* locked design 2026-11-26: row arrows are grey */
+  [data-db-root] .db3-fn{ text-align:center; font-family:var(--db-mono); font-size:13.5px; font-variant-numeric:tabular-nums; font-weight:700; color:var(--db2-ink); }
+  [data-db-root] .db3-fempty{ display:flex; flex-direction:column; align-items:center; gap:8px; padding:34px 10px 30px; border-top:1px solid var(--db2-h6); text-align:center; }
+  [data-db-root] .db3-fempty b{ font-size:14px; font-weight:700; color:var(--db2-ink); } [data-db-root] .db3-fempty span{ font-size:13px; color:var(--db2-muted); text-wrap:pretty; }
+  [data-db-root] .db3-fempty .lnk{ font-weight:600; color:var(--db2-blue); cursor:pointer; } [data-db-root] .db3-fempty .lnk:hover{ color:var(--db2-blue-hov); }
   [data-db-root] .db3-pin{ position:relative; flex:1 1 180px; min-width:170px; max-width:320px; }
-  [data-db-root] .db3-well{ display:flex; align-items:center; gap:6px; min-height:36px; padding:4px 9px; border-radius:9px; background:var(--db2-inset); border:1px solid var(--db2-h8); box-sizing:border-box; }
+  [data-db-root] .db3-well{ display:flex; align-items:center; gap:6px; min-height:35px; padding:3px 9px; border-radius:9px; background:var(--db2-inset); border:1px solid var(--db2-h8); box-sizing:border-box; }
   [data-db-root] .db3-well input{ flex:1 1 90px; min-width:90px; height:26px; background:transparent; border:none; padding:0 3px; color:var(--db2-ink); font:13px var(--db-ui); outline:none; }
   [data-db-root] .db3-chip{ flex:none; display:inline-flex; align-items:center; gap:7px; height:26px; padding:0 4px; border-radius:6px; background:var(--db2-raised); border:1px solid var(--db2-h16); white-space:nowrap; box-sizing:border-box; font-size:12.5px; font-weight:600; color:var(--db2-ink); }
   [data-db-root] .db3-ava{ flex:none; position:relative; overflow:hidden; display:inline-flex; align-items:center; justify-content:center; border-radius:50%; background:var(--db2-inset); box-shadow:0 0 0 1px var(--db2-h12); font-family:var(--db-mono); font-weight:700; color:var(--db2-ink-2); }
@@ -3490,26 +3502,26 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   [data-db-root] .db3-hits > span:hover{ background:var(--db2-inset); color:var(--db2-ink); }
   [data-db-root] .db3-hits em{ margin-left:auto; flex:none; font-style:normal; font-family:var(--db-mono); font-size:11px; color:var(--db2-muted); }
   [data-db-root] .db3-ftab{ overflow-x:auto; margin:0 -10px; padding:0 10px; }
-  [data-db-root] .db3-ftab > div{ min-width:774px; }
-  [data-db-root] .db3-fr{ display:grid; grid-template-columns:26px minmax(140px,1.1fr) minmax(100px,1.3fr) 84px 84px 122px 68px 54px 14px; gap:0 10px; align-items:center; min-height:60px; margin:0 -10px; padding:0 10px; border-radius:8px; border-top:1px solid var(--db2-h6); cursor:pointer; }
+  [data-db-root] .db3-ftab > div{ min-width:688px; }
+  [data-db-root] .db3-fr{ display:grid; grid-template-columns:26px minmax(128px,1.1fr) minmax(94px,1.3fr) 88px 126px 78px 78px 14px; gap:0 8px; align-items:center; min-height:56px; margin:0 -10px; padding:0 10px; border-radius:8px; border-top:1px solid var(--db2-h6); cursor:pointer; }
   [data-db-root] .db3-fr:hover{ background:var(--db2-hover); }
-  [data-db-root] .db3-fr.hd{ min-height:0; align-items:end; margin-top:20px; padding-bottom:10px; border:0; font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--db2-muted); white-space:nowrap; cursor:default; }
+  [data-db-root] .db3-fr.hd{ min-height:0; margin-top:18px; padding-top:10px; padding-bottom:10px; border-radius:0; font-size:11.5px; font-weight:600; color:var(--db2-muted); white-space:nowrap; cursor:default; }
   [data-db-root] .db3-fr.hd:hover{ background:transparent; }
   [data-db-root] .db3-fr.pin{ margin-bottom:8px; border-radius:10px; border-top-color:transparent; background:var(--db2-layer); box-shadow:inset 0 0 0 1px var(--db2-h14); }
-  [data-db-root] .db3-fr .rk{ font-family:var(--db-mono); font-size:13px; }
+  [data-db-root] .db3-fr .rk{ font-family:var(--db-mono); font-size:12.5px; font-variant-numeric:tabular-nums; }
   [data-db-root] .db3-fr .pl{ display:flex; align-items:center; gap:11px; min-width:0; }
   [data-db-root] .db3-fr .pl > span:last-child{ min-width:0; display:flex; flex-direction:column; gap:4px; }
-  [data-db-root] .db3-fr .nm{ font-size:14.5px; font-weight:700; line-height:1.15; text-wrap:pretty; }
+  [data-db-root] .db3-fr .nm{ font-size:14px; font-weight:700; line-height:1.15; text-wrap:pretty; }
   [data-db-root] .db3-fr .sub{ display:flex; align-items:center; flex-wrap:wrap; gap:3px 8px; white-space:nowrap; }
   [data-db-root] .db3-fr .pn{ font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--db2-ink-2); }
   [data-db-root] .db3-fr .td{ display:inline-flex; align-items:center; gap:6px; font-size:11.5px; color:var(--db2-muted); cursor:pointer; }
   [data-db-root] .db3-fr .td:hover{ color:var(--db2-ink); }
   [data-db-root] .db3-fr .td::before{ content:''; flex:none; width:6px; height:6px; border-radius:50%; background:var(--db2-blue); }
   [data-db-root] .db3-fr .td b{ font-family:var(--db-mono); font-size:11px; font-weight:500; color:var(--db2-ink-2); }
-  [data-db-root] .db3-fr .st{ display:flex; flex-direction:column; align-items:flex-end; gap:3px; }
-  [data-db-root] .db3-fr .st b{ font-family:var(--db-mono); font-size:13.5px; font-weight:700; white-space:nowrap; }
+  [data-db-root] .db3-fr .st{ display:flex; flex-direction:column; align-items:center; text-align:center; gap:3px; }
+  [data-db-root] .db3-fr .st b{ font-family:var(--db-mono); font-size:13.5px; font-variant-numeric:tabular-nums; font-weight:700; white-space:nowrap; }
   [data-db-root] .db3-fr .st span{ font-size:11.5px; color:var(--db2-muted); white-space:nowrap; }
-  [data-db-root] .db3-fr .pr{ text-align:right; font-family:var(--db-mono); font-size:13.5px; font-weight:500; color:var(--db2-ink-2); }
+  [data-db-root] .db3-fr .pr{ text-align:center; font-family:var(--db-mono); font-size:13.5px; font-variant-numeric:tabular-nums; font-weight:500; color:var(--db2-ink-2); }
   [data-db-root] .db3-fmore{ margin:0 -10px; padding:13px 10px; border-top:1px solid var(--db2-h6); border-radius:8px; text-align:center; font-size:13px; font-weight:600; color:var(--db2-blue); cursor:pointer; }
   [data-db-root] .db3-fmore:hover{ background:var(--db2-hover); }
   [data-db-root] .db3-boxh .ava44{ width:44px; height:44px; font-size:13px; }
@@ -3693,32 +3705,30 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   [data-db-root] .db2-lntile.db2-lntile0:hover{ border-color:var(--db2-h6); }
   [data-db-root] .db2-lntile0 .db2-lntline, [data-db-root] .db2-lntile0 .db2-lntrate{ color:var(--db2-muted); }
   [data-db-root] .db2-q16:hover{ border-color:var(--db2-h16); color:var(--db2-muted); }
-  [data-db-root] .db2-rscroll{ overflow-x:auto; margin-top:16px; }
-  [data-db-root] .db2-rgh{ display:grid; gap:8px; padding:0 10px 10px; }   /* v3 §9: no heavy line under the column heads */
-  [data-db-root] .db2-rh{ font-family:var(--db-ui); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--db2-muted); }
-  [data-db-root] .db2-rh.r{ text-align:right; }
-  [data-db-root] .db2-rhs{ text-align:right; line-height:1.4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; background:none; border:0; padding:0; cursor:pointer; }
-  [data-db-root] .db2-rhs.on{ color:var(--db2-ink); }
-  [data-db-root] .db2-rhs span{ color:var(--db2-ink); }
-  [data-db-root] .db2-rmed{ display:grid; gap:8px; align-items:center; min-height:40px; padding:0 10px; margin-bottom:4px; background:var(--db2-layer); box-shadow:inset 0 0 0 1px var(--db2-h8); border-radius:9px; }   /* v3 §9: the lifted Field median strip */
-  [data-db-root] .db2-rq{ text-align:right; font-family:var(--db-mono); font-size:13px; font-variant-numeric:tabular-nums; color:var(--db2-muted); }
-  [data-db-root] .db2-rrow{ display:grid; gap:8px; align-items:center; min-height:54px; padding:0 10px; border-radius:8px; border-top:1px solid var(--db2-h6); }
+  [data-db-root] .db2-rscroll{ overflow-x:auto; scrollbar-width:thin; margin-top:14px; }
+  [data-db-root] .db2-rgh{ display:grid; gap:8px; align-items:end; padding:10px; border-top:1px solid var(--db2-h6); }   /* locked 2026-11-26: two-line heads, bottom-aligned */
+  [data-db-root] .db2-rh{ font-family:var(--db-ui); font-size:11.5px; font-weight:600; color:var(--db2-muted); }
+  [data-db-root] .db2-rhp{ display:flex; flex-direction:column; gap:6px; } [data-db-root] .db2-rhp .m{ font-weight:500; line-height:1.4; padding:1px 0; }
+  [data-db-root] .db2-rhn{ display:flex; flex-direction:column; align-items:center; gap:6px; }
+  [data-db-root] .db2-rhs{ display:flex; flex-direction:column; align-items:center; gap:6px; min-width:0; line-height:1.4; white-space:nowrap; background:none; border:0; padding:0; cursor:pointer; }
+  [data-db-root] .db2-rhs:hover, [data-db-root] .db2-rhs.on{ color:var(--db2-ink); }
+  [data-db-root] .db2-rhs i{ font-style:normal; letter-spacing:0; color:var(--db2-dim); } [data-db-root] .db2-rhs.on i{ color:var(--db2-ink); }
+  [data-db-root] .db2-rmc{ padding:1px 6px; border-radius:6px; background:var(--db2-layer); border:1px solid var(--db2-h10); font-family:var(--db-mono); font-size:11.5px; font-weight:500; line-height:1.4; font-variant-numeric:tabular-nums; color:var(--db2-ink-2); white-space:nowrap; }
+  [data-db-root] .db2-rq{ text-align:center; font-family:var(--db-mono); font-size:12.5px; font-variant-numeric:tabular-nums; color:var(--db2-muted); }
+  [data-db-root] .db2-rrow{ display:grid; gap:8px; align-items:center; min-height:52px; padding:0 10px; border-radius:8px; border-top:1px solid var(--db2-h6); }
   [data-db-root] .db2-rrow:hover{ background:var(--db2-hover); }
   [data-db-root] .db2-rrow.on{ background:var(--db2-layer); border-top-color:transparent; box-shadow:inset 0 0 0 1px var(--db2-h14); }   /* v3 §9: lifted grey, never a blue wash */
-  [data-db-root] .db2-rrank{ font-family:var(--db-mono); font-size:12px; font-weight:400; color:var(--db2-muted); }
+  [data-db-root] .db2-rrank{ font-family:var(--db-mono); font-size:12.5px; font-variant-numeric:tabular-nums; font-weight:500; color:var(--db2-muted); }
   [data-db-root] .db2-rrank.top{ font-weight:700; color:var(--db2-ink); }
   [data-db-root] .db2-rpl{ display:flex; align-items:center; gap:10px; min-width:0; }
   [data-db-root] .db2-rpl .db-av{ flex:none; display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; box-sizing:border-box; border-radius:50%; position:relative; overflow:hidden;
     background:var(--db2-raised); border:1px solid var(--db2-h16); font-family:var(--db-mono); font-size:10px; font-weight:700; color:var(--db2-ink); }
   [data-db-root] .db2-rpl .db-av img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
-  [data-db-root] .db2-rnm{ font-size:14.5px; font-weight:700; color:var(--db2-ink); text-decoration:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  [data-db-root] .db2-ratp{ flex:none; font-family:var(--db-mono); font-size:11px; color:var(--db2-muted); }
-  [data-db-root] .db2-rv{ text-align:right; font-family:var(--db-mono); font-size:13px; font-weight:400; color:var(--db2-ink-2); font-variant-numeric:tabular-nums; white-space:nowrap; }
-  [data-db-root] .db2-rv.rtg{ font-weight:400; color:var(--db2-ink-2); }   /* v3 §9: only the sorted column is white 700 */
-  [data-db-root] .db2-rv.on{ font-weight:700; color:var(--db2-white); }
+  [data-db-root] .db2-rnm{ font-size:14px; font-weight:700; color:var(--db2-ink); text-decoration:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  [data-db-root] .db2-ratp{ flex:none; font-family:var(--db-mono); font-size:11px; font-variant-numeric:tabular-nums; color:var(--db2-muted); }
+  [data-db-root] .db2-rv{ text-align:center; font-family:var(--db-mono); font-size:13px; font-weight:500; color:var(--db2-ink); font-variant-numeric:tabular-nums; white-space:nowrap; }   /* locked 2026-11-26: no bold column */
   [data-db-root] .db2-rv.dash{ color:var(--db2-muted); }
-  [data-db-root] .db2-rv.vspk{ font-weight:700; color:var(--db2-muted); }
-  [data-db-root] .db2-rv.vspk.on{ color:var(--db2-white); }
+  [data-db-root] .db2-rv.vspk{ color:var(--db2-muted); }
   [data-db-root] .db2-rv.vspk.red, [data-db-root] .db2-rv.vspk.red.on{ color:var(--db2-red); }
   [data-db-root] .db2-plus{ order:-1; justify-self:start; width:24px; height:24px; box-sizing:border-box; border-radius:50%; border:1px solid color-mix(in srgb, var(--db2-white) 14%, transparent);
     background:transparent; box-shadow:none; display:inline-flex; align-items:center; justify-content:center; color:var(--db2-muted); padding:0; cursor:pointer;
@@ -28924,9 +28934,9 @@ window.DatabaseTab = (function(){
   var DB2_BANDS={
     fav:[['Heavy favourite','1.01','1.20',1.01,1.21],['Clear favourite','1.21','1.35',1.21,1.36],['Favourite','1.36','1.50',1.36,1.51],
          ['Slight favourite','1.51','1.70',1.51,1.71],['Near coin-flip','1.71','1.94',1.71,1.95]],
-    // founder 2026-11-19: Near coin-flip (1.71–1.99) is a favourite band only; the underdog bands start at 2.00. An underdog
-    // priced under 2.00 (a near-even match) counts in the side's total and in no band row (the "?" says how many).
-    // founder 2026-11-26: Near coin-flip ends at 1.94, Slight underdog starts at 1.95 (measured on 82,574 priced sides: 33 favourites at 1.95+ and 12 underdogs under 1.95 sit across the line, 45 in all, against 888 underdogs under 2.00 at the old cut).
+    // founder 2026-11-26: the two sides meet at 1.95 (measured on the 41,287 Database matches: only 33 favourites are priced
+    // 1.95 or longer and 12 underdogs under 1.95, the fewest of any cut). A price on the other side of the cut (a near-even
+    // match) counts in the side's total and in no band row (its hover says how many).
     dog:[['Slight underdog','1.95','2.49',1.95,2.50],['Underdog','2.50','2.99',2.50,3.00],
          ['Big underdog','3.00','3.99',3.00,4.00],['Long underdog','4.00','5.99',4.00,6.00],['Longshot','6.00','+',6.00,Infinity]]
   };
@@ -29188,7 +29198,7 @@ window.DatabaseTab = (function(){
   }
   function resetFilters(){
     state.levels=null; state.surfaces=null; state.rounds=null; state.swings=null; state.circuits=null;
-    state.fadeMode='fade'; state.fadeRole='all'; state.fadeQ=''; state.fadePin=null; state.fadeAll=false; state.fadeTop=0; state.fadePlays='all';
+    state.fadeMode='fade'; state.fadeRole='all'; state.fadeQ=''; state.fadePin=null; state.fadeAll=false; state.fadeTop=0; state.fadeMin=''; state.fadeSort='y';
     if(state.view==='fade' && M && M.rounds.indexOf('1st Round')>=0) state.rounds=new Set([M.rounds.indexOf('1st Round')]);   // CHANGES §7.1
     state.yearMin=null; state.yearMax=null;
     state.tq=''; state.pq=''; state.menu=null; state.menuQ='';
@@ -29375,6 +29385,9 @@ window.DatabaseTab = (function(){
       if(!lvOpts) state.levels=null;
       if(lvOpts) zR.appendChild(trigger('Level', countOf(state.levels, lvOpts), !!state.levels, 'level', function(){ return multiMenu(lvOpts, state.levels, function(s){state.levels=s;}); }, function(){ state.levels=null; }));
       zR.appendChild(trigger('Surface', countOf(state.surfaces, allOpts(M.surfaces)), !!state.surfaces, 'surface', function(){ return multiMenu(allOpts(M.surfaces), state.surfaces, function(s){state.surfaces=s;}); }, function(){ state.surfaces=null; }));
+      // locked design 2026-11-26: Fade finder only, a single-pick Rank (this week's ATP ranking); the picked one again clears it
+      if(state.view==='fade') zR.appendChild(trigger('Rank', state.fadeTop?'Top '+state.fadeTop:'All', !!state.fadeTop, 'rank', function(){
+        return singleMenu([[25,'Top 25'],[50,'Top 50'],[100,'Top 100']], state.fadeTop||0, function(v){ state.fadeTop = state.fadeTop===v ? 0 : v; state.fadeAll=false; }); }, function(){ state.fadeTop=0; }));
       var rdOpts=roundOpts();   // null => dictionary moved; drop the control and the filter with it
       if(!rdOpts) state.rounds=null;
       if(rdOpts) zR.appendChild(trigger('Round', countOf(state.rounds, rdOpts), !!state.rounds, 'round', function(){ return multiMenu(rdOpts, state.rounds, function(s){state.rounds=s;}, true); }, function(){ state.rounds=null; }));
@@ -30206,34 +30219,37 @@ window.DatabaseTab = (function(){
     card.appendChild(board==='overview' ? db2RatOverview(pool) : db2RatBoard(pool, board));
     col.appendChild(card);
   }
-  function db2SortHead(label, key, full, sorted, dir, onClick){
-    var h=el('button','db2-rh db2-rhs'+(sorted?' on':''), esc(label)+' <span>'+(sorted?(dir==='asc'?'↑':'↓'):'')+'</span>');
+  // locked design 2026-11-26: a sortable head = label + sort mark (dim "↕", white "↓" / "↑" on the sorted one) over a lifted
+  // chip with that column's field median (no separate Field median row); the head is centred over its values
+  function db2SortHead(label, key, full, sorted, dir, onClick, med, pad){
+    var h=el('button','db2-rh db2-rhs'+(sorted?' on':''));
+    h.innerHTML='<span'+(pad?' style="padding-left:11px"':'')+'>'+esc(label)+' <i data-ratsort-mark="1">'+(sorted?(dir==='asc'?'\u2191':'\u2193'):'\u2195')+'</i></span>'+db2MedChip(med);
     h.type='button'; if(full) h.title=full; h.onclick=onClick; return h;
   }
+  function db2MedChip(v){ return '<span class="db2-rmc" data-ratmed="1" title="Field median">'+esc(v)+'</span>'; }
+  function db2HeadPlayer(){ return el('span','db2-rh db2-rhp','<span>Player</span><span class="m">Field median</span>'); }
+  function db2HeadN(med){ return el('span','db2-rh db2-rhn','<span>n</span>'+db2MedChip(med)); }
   function db2RatOverview(pool){
     var cols=[['elo','Elo','Elo, current surface'],['serve','Serve','Serve rating'],['return','Return','Return rating'],['up','Under pressure','Under-pressure rating']];
     var key=state.r2Sort||'elo', dir=state.r2Dir||'desc';
     var rows=pool.map(function(p){ return {p:p, v:db2RatOverVal(p,key)}; }).sort(function(a,b){
       if(a.v==null && b.v==null) return (a.p.rank||9999)-(b.p.rank||9999); if(a.v==null) return 1; if(b.v==null) return -1;
       var d = dir==='asc' ? a.v-b.v : b.v-a.v; return d || (a.p.rank||9999)-(b.p.rank||9999); });
-    var tpl='28px 28px minmax(170px,2.4fr) 40px repeat(4,minmax(72px,1fr))';
-    var sc=el('div','db2-rscroll'), t=el('div'); t.style.minWidth='620px';
+    var tpl='28px 28px minmax(160px,2.4fr) 40px repeat(3,minmax(80px,1fr)) minmax(112px,1.2fr)';
+    var sc=el('div','db2-rscroll'), t=el('div'); t.style.minWidth='684px';
     var hd=el('div','db2-rgh'); hd.style.gridTemplateColumns=tpl;
-    hd.appendChild(el('span')); hd.appendChild(el('span','db2-rh','#')); hd.appendChild(el('span','db2-rh','Player')); hd.appendChild(el('span','db2-rh r','n'));
-    cols.forEach(function(c){ hd.appendChild(db2SortHead(c[1], c[0], c[2], key===c[0], dir, function(){ state.r2Dir = key===c[0] ? (dir==='desc'?'asc':'desc') : 'desc'; state.r2Sort=c[0]; render(); })); });
+    var mn=db2Med(pool.map(function(p){ return ratN(p,'serve'); }));
+    hd.appendChild(el('span')); hd.appendChild(el('span','db2-rh','#')); hd.appendChild(db2HeadPlayer()); hd.appendChild(db2HeadN(mn==null?'—':String(Math.round(mn))));
+    cols.forEach(function(c){ var m=db2Med(pool.map(function(p){ return db2RatOverVal(p,c[0]); }));
+      hd.appendChild(db2SortHead(c[1], c[0], c[2], key===c[0], dir, function(){ state.r2Dir = key===c[0] ? (dir==='desc'?'asc':'desc') : 'desc'; state.r2Sort=c[0]; render(); }, m==null?'—':String(Math.round(m)), true)); });
     t.appendChild(hd);
-    var md=el('div','db2-rmed'); md.style.gridTemplateColumns=tpl;
-    md.appendChild(el('span')); md.appendChild(el('span')); md.appendChild(el('span','db2-rh','Field median'));
-    var mn=db2Med(pool.map(function(p){ return ratN(p,'serve'); })); md.appendChild(el('span','db2-rq',mn==null?'—':String(Math.round(mn))));
-    cols.forEach(function(c){ var m=db2Med(pool.map(function(p){ return db2RatOverVal(p,c[0]); })); md.appendChild(el('span','db2-rq',m==null?'—':String(Math.round(m)))); });
-    t.appendChild(md);
     rows.forEach(function(o,i){
       var p=o.p, on=state.ratSel.indexOf(p.name)>=0, r=el('div','db2-rrow'+(on?' on':'')); r.style.gridTemplateColumns=tpl;
       r.appendChild(db2PickBtn(p));
       r.appendChild(el('span','db2-rrank'+(i<3?' top':''),String(i+1)));
       r.appendChild(db2RatPlayerCell(p));
       var n=ratN(p,'serve'); r.appendChild(el('span','db2-rq',n==null?'—':fmtInt(n)));
-      cols.forEach(function(c){ var v=db2RatOverVal(p,c[0]), s=el('span','db2-rv'+(key===c[0]?' on':'')+(v==null?' dash':''), v==null?'—':String(Math.round(v))); s.title=c[2]+' · '+p.name; r.appendChild(s); });
+      cols.forEach(function(c){ var v=db2RatOverVal(p,c[0]), s=el('span','db2-rv'+(v==null?' dash':''), v==null?'—':String(Math.round(v))); s.title=c[2]+' · '+p.name; r.appendChild(s); });
       t.appendChild(r);
     });
     sc.appendChild(t); return sc;
@@ -30249,16 +30265,13 @@ window.DatabaseTab = (function(){
     var tpl='28px 28px minmax('+pmin+'px,2.4fr) 40px '+new Array(nc+1).join('minmax(52px,1fr) ').trim();
     var sc=el('div','db2-rscroll'), t=el('div'); t.style.minWidth=(96+pmin+nc*52+(nc+3)*8)+'px';
     var hd=el('div','db2-rgh'); hd.style.gridTemplateColumns=tpl;
-    hd.appendChild(el('span')); hd.appendChild(el('span','db2-rh','#')); hd.appendChild(el('span','db2-rh','Player')); hd.appendChild(el('span','db2-rh r','n'));
     var heads=[{k:'rtg', h:B.rtg, full:B.label+' rating', dec:B.rtgDec}].concat(B.cols);
-    heads.forEach(function(c){ hd.appendChild(db2SortHead(c.h, c.k, c.full, sortK===c.k, dir, function(){ state.r2Dir = sortK===c.k ? (dir==='desc'?'asc':'desc') : 'desc'; state.r2Sort=c.k; render(); })); });
-    t.appendChild(hd);
     var fmt=function(c, v){ if(v==null || isNaN(v)) return '—'; if(c.sgn){ var g=Math.round(v); return (g>=0?'+':'−')+Math.abs(g); } return c.pct ? v.toFixed(c.dec)+'%' : v.toFixed(c.dec||0); };
-    var md=el('div','db2-rmed'); md.style.gridTemplateColumns=tpl;
-    md.appendChild(el('span')); md.appendChild(el('span')); md.appendChild(el('span','db2-rh','Field median'));
-    var mn=db2Med(pool.map(function(p){ return ratMatches(p); })); md.appendChild(el('span','db2-rq',mn==null?'—':String(Math.round(mn))));
-    heads.forEach(function(c){ var m=db2Med(pool.map(function(p){ return valOf(p,c.k); })); md.appendChild(el('span','db2-rq',fmt(c,m))); });
-    t.appendChild(md);
+    var mn=db2Med(pool.map(function(p){ return ratMatches(p); }));
+    hd.appendChild(el('span')); hd.appendChild(el('span','db2-rh','#')); hd.appendChild(db2HeadPlayer()); hd.appendChild(db2HeadN(mn==null?'—':String(Math.round(mn))));
+    heads.forEach(function(c){ var m=db2Med(pool.map(function(p){ return valOf(p,c.k); }));
+      hd.appendChild(db2SortHead(c.h, c.k, c.full, sortK===c.k, dir, function(){ state.r2Dir = sortK===c.k ? (dir==='desc'?'asc':'desc') : 'desc'; state.r2Sort=c.k; render(); }, fmt(c,m), false)); });
+    t.appendChild(hd);
     rows.forEach(function(o,i){
       var p=o.p, on=state.ratSel.indexOf(p.name)>=0, r=el('div','db2-rrow'+(on?' on':'')); r.style.gridTemplateColumns=tpl;
       r.appendChild(db2PickBtn(p));
@@ -30268,7 +30281,7 @@ window.DatabaseTab = (function(){
       heads.forEach(function(c,ci){ var v=valOf(p,c.k);
         // Vs pk as the export draws it (founder 2026-11-16, replacing the 2026-09-23 no-colour ruling): 700, muted at -60 or
         // better, red below; a red figure keeps its red when its column is sorted.
-        var s=el('span','db2-rv'+(ci===0?' rtg':'')+(sortK===c.k?' on':'')+(v==null?' dash':'')+(c.sgn && v!=null ? (Math.round(v)>=DB2_VSPK_RED ? ' vspk' : ' vspk red') : ''), fmt(c,v)); s.title=c.full+' · '+p.name; r.appendChild(s); });
+        var s=el('span','db2-rv'+(ci===0?' rtg':'')+(v==null?' dash':'')+(c.sgn && v!=null ? (Math.round(v)>=DB2_VSPK_RED ? ' vspk' : ' vspk red') : ''), fmt(c,v)); s.title=c.full+' · '+p.name; r.appendChild(s); });
       t.appendChild(r);
     });
     sc.appendChild(t); return sc;
@@ -31902,7 +31915,7 @@ window.DatabaseTab = (function(){
     var tourAll = withBase ? (baseKnown ? (opts.baseAll!==undefined ? opts.baseAll : (function(){ var b=baseAll(sideKey); return b?fmtPct(b.yield):'\u2014'; })()) : '\u2014') : null;
     var inRows=res.bands.reduce(function(t,b){ return t+(b.agg?b.agg.n:0); },0), outRows=a?a.n-inRows:0;
     card.innerHTML='<div class="db3-bhead"><span class="t"><b>'+esc(title)+'</b><span>'+esc(hint)+'</span></span>'+
-      '<span class="a"'+(outRows>0?' title="'+fmtInt(outRows)+' '+dbMatchWord(outRows)+' priced across the 1.95 line on this side (near-even) count in this total and in no band"':'')+'><b style="color:'+allCol+'">'+allTxt+'</b><span>'+(a?fmtInt(a.n):'0')+' matches'+(a && a.w!=null?' \u00b7 '+a.w+'\u2013'+(a.n-a.w):'')+' \u00b7 median price '+(a?fmtP(a.median):'\u2014')+(tourAll!=null?' \u00b7 tour '+tourAll:'')+'</span></span></div>';
+      '<span class="a"'+(outRows>0?' title="'+fmtInt(outRows)+' '+dbMatchWord(outRows)+' on this side priced '+(sideKey==='fav'?DB2_BANDS.dog[0][1]+' or longer':'under '+DB2_BANDS.dog[0][1])+' (near-even) count in this total and in no band"':'')+'><b style="color:'+allCol+'">'+allTxt+'</b><span>'+(a?fmtInt(a.n):'0')+' matches'+(a && a.w!=null?' \u00b7 '+a.w+'\u2013'+(a.n-a.w):'')+' \u00b7 median price '+(a?fmtP(a.median):'\u2014')+(tourAll!=null?' \u00b7 tour '+tourAll:'')+'</span></span></div>';
     var hd=el('div','db3-bcols'); hd.style.gridTemplateColumns=cols;
     hd.innerHTML='<span>Odds</span><span style="text-align:center">'+(isPl?'Player':mode==='tourn'?'Event':'Yield')+'</span><span style="text-align:right">Matches</span>'+(withBase?'<span style="text-align:right">Tour</span>':'')+'<span></span>';
     card.appendChild(hd);
@@ -31947,17 +31960,37 @@ window.DatabaseTab = (function(){
   function db3TdSur(n){ return db3Fold(String(n||'').replace(/(\s+[A-Z][a-z]?\.(?:-?[A-Z][a-z]?\.)*)+\s*$/,'')); }
   function db3CarSur(n){ return db3Fold(String(n||'').replace(/^(?:[A-Z][a-z]?\.(?:-?[A-Z][a-z]?\.)*\s*)+/,'')); }
   function db3Nm(n){ var m=/^(.*?)\s+((?:[A-Z][a-z]?\.(?:-?[A-Z][a-z]?\.)*))\s*$/.exec(String(n||'')); return m ? m[2]+' '+m[1] : String(n||''); }
-  function db3OpenMatch(m){
-    if(typeof window.pp2OpenMatchSheet!=='function' || typeof loadCareerHistory!=='function') return;
-    var w=db2Who(m.backed), mine=true; if(!w || w.key==null){ w=db2Who(m.opp); mine=false; } if(!w || w.key==null) return;
-    var subj=mine?m.backed:m.opp, opp=mine?m.opp:m.backed, won=mine?m.won:!m.won, pr=mine?m.p:m.op, opr=mine?m.op:m.p;
+  // the ONE join (sheet click and Score column): resolves { w, mine, subj, opp, won, iso, best } or null (no player key)
+  function db3CareerRow(m){
+    if(typeof loadCareerHistory!=='function') return Promise.resolve(null);
+    var w=db2Who(m.backed), mine=true; if(!w || w.key==null){ w=db2Who(m.opp); mine=false; } if(!w || w.key==null) return Promise.resolve(null);
+    var subj=mine?m.backed:m.opp, opp=mine?m.opp:m.backed, won=mine?m.won:!m.won;
     var ds=String(m.d), iso=ds.slice(0,4)+'-'+ds.slice(4,6)+'-'+ds.slice(6,8), t=Date.parse(iso), sn=db3TdSur(opp);
-    loadCareerHistory(w.key).then(function(ms){
-      var best=null, bd=1e9;
-      (ms||[]).forEach(function(c){ if(!c || c.walkover || !!c.won!==won) return; var dd=(t-Date.parse(c.date))/864e5;
-        if(!(c.eventKey!=null ? Math.abs(dd)<=2 : (dd>=-1 && dd<=16))) return;
-        var cs=db3CarSur(c.opponent); if(!cs || !sn || !(cs===sn || cs.indexOf(sn)===0 || sn.indexOf(cs)===0)) return;
-        if(Math.abs(dd)<bd){ bd=Math.abs(dd); best=c; } });
+    return loadCareerHistory(w.key).then(function(ms){ return { w:w, mine:mine, subj:subj, opp:opp, won:won, iso:iso, best:db3BestRow(ms, won, t, sn) }; });
+  }
+  function db3BestRow(ms, won, t, sn){
+    var best=null, bd=1e9;
+    (ms||[]).forEach(function(c){ if(!c || c.walkover || !!c.won!==won) return; var dd=(t-Date.parse(c.date))/864e5;
+      if(!(c.eventKey!=null ? Math.abs(dd)<=2 : (dd>=-1 && dd<=16))) return;
+      var cs=db3CarSur(c.opponent); if(!cs || !sn || !(cs===sn || cs.indexOf(sn)===0 || sn.indexOf(cs)===0)) return;
+      if(Math.abs(dd)<bd){ bd=Math.abs(dd); best=c; } });
+    return best;
+  }
+  // founder 2026-11-26: the Score column = that career row's set scores from the BACKED side ("6-7(11)" = the loser's
+  // tiebreak points, " ret." on a retirement); no row or no sets = null (a dash with its reason), never a made-up score
+  function db3ScoreTxt(c, flip){
+    if(!c || !c.sets || !c.sets.length) return null;
+    var t=c.sets.map(function(x){ var a=flip?x.o:x.p, b=flip?x.p:x.o; if(a==null || b==null) return null;
+      var tb=(x.pTb!=null && x.oTb!=null && Math.abs(a-b)===1 && Math.max(a,b)===7) ? '('+Math.min(x.pTb,x.oTb)+')' : '';
+      return a+'-'+b+tb; });
+    if(t.some(function(x){ return x==null; })) return null;
+    return t.join(' ')+(c.retired?' ret.':'');
+  }
+  function db3OpenMatch(m){
+    if(typeof window.pp2OpenMatchSheet!=='function') return;
+    db3CareerRow(m).then(function(J){
+      if(!J) return;
+      var w=J.w, mine=J.mine, subj=J.subj, opp=J.opp, won=J.won, iso=J.iso, best=J.best, pr=mine?m.p:m.op, opr=mine?m.op:m.p;
       var row = best ? { date:best.date, opponent:best.opponent, opponentKey:best.oppKey!=null?best.oppKey:null, tournament:best.tournament, round:best.round,
           surface:best.surface||null, result:best.result||null, won:!!best.won, sets:best.sets||null, retired:!!best.retired, walkover:false,
           eventKey:best.eventKey!=null?best.eventKey:null, qualifying:!!best.qualifying }
@@ -31984,7 +32017,7 @@ window.DatabaseTab = (function(){
     var root=db3Root(from);
     var old=root.querySelector(':scope > .db3-ov'), keep=old ? old.scrollTop : 0; if(old) (old._close ? old._close() : old.remove());
     function sg(v,d,u){ return (v>0?'+':v<0?'\u2212':'')+Math.abs(v).toFixed(d)+u; }
-    var ms=spec.ms, shown=Math.min(ms.length, 12+(more||0)*12), COLS='76px minmax(0,1.5fr) minmax(0,1fr) 36px 104px 50px 62px 62px';
+    var ms=spec.ms, shown=Math.min(ms.length, 12+(more||0)*12), COLS=db3BoxCols(0,0);
     var ov=el('div','db3-ov'), bx=el('div','db3-box');
     ov.innerHTML='<div class="bg"></div>';
     bx.innerHTML=spec.head+
@@ -31993,7 +32026,7 @@ window.DatabaseTab = (function(){
       '<div class="db3-lr hd" style="grid-template-columns:'+COLS+'"><span>Date</span><span>Match</span><span>Event</span><span>Rd</span><span>Score</span><span style="text-align:right">Price</span><span style="text-align:right">Result</span><span style="text-align:right">Return</span></div>'+
       ms.slice(0,shown).map(function(m){ var c=m.won?'var(--db2-green)':'var(--db2-red)';
         return '<div class="db3-lr go" role="button" tabindex="0" title="Open the match stats" data-mi="'+ms.indexOf(m)+'" style="grid-template-columns:'+COLS+'"><span class="d">'+db3Date(m.d)+'</span><span class="m"><b>'+esc(m.backed||'\u2014')+'</b><i> v </i><span>'+esc(m.opp||'\u2014')+'</span></span>'+
-          '<span class="ev">'+esc(m.ev||'\u2014')+'</span><span class="rd">'+esc(DB3_RD[m.rd]||m.rd||'\u2014')+'</span><span class="sc" title="No set score in the Database archive">\u2014</span>'+
+          '<span class="ev">'+esc(m.ev||'\u2014')+'</span><span class="rd">'+esc(DB3_RD[m.rd]||m.rd||'\u2014')+'</span><span class="sc"></span>'+
           '<span class="pr">'+fmtP(m.p)+'</span><span class="rp '+(m.won?'w':'l')+'">'+(m.won?'Won':'Lost')+'</span><span class="rt" style="color:'+c+'">'+(m.won?sg(m.p-1,2,'%'):'\u22121.00%')+'</span></div>'; }).join('')+
       (shown<ms.length?'<div class="db3-more">Show 12 more matches</div>':'')+'</div></div>';
     ov.appendChild(bx); root.appendChild(ov); ov.scrollTop=keep;
@@ -32001,8 +32034,31 @@ window.DatabaseTab = (function(){
     ov.querySelector('.bg').onclick=close; bx.querySelector('.db3-close').onclick=close;
     var mo=bx.querySelector('.db3-more'); if(mo) mo.onclick=function(){ db3OpenBox(spec, from, (more||0)+1); };
     Array.prototype.forEach.call(bx.querySelectorAll('.db3-lr.go'), function(r){ var mm=ms[+r.getAttribute('data-mi')];
-      r.onclick=function(){ db3OpenMatch(mm); }; r.onkeydown=function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); db3OpenMatch(mm); } }; });
+      r.onclick=function(){ db3OpenMatch(mm); }; r.onkeydown=function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); db3OpenMatch(mm); } };
+      db3FillScore(r.querySelector('.sc'), mm, bx); });
+    db3FitCols(bx);
     if(spec.wire) spec.wire(bx, close);
+  }
+  // founder 2026-11-26: every match row sits on one line. The Match and Score cells never wrap; every row (and the head)
+  // takes the widest of them as its track, so the columns stay aligned; the list scrolls sideways when the box is too narrow.
+  function db3BoxCols(mw, sw){ return '76px '+(mw?'minmax('+mw+'px,1.5fr)':'minmax(0,1.5fr)')+' minmax(48px,1fr) 36px '+Math.max(104,sw||0)+'px 50px 62px 62px'; }
+  function db3FitCols(bx){
+    // the text's own width (a Range), never the cell's, so a widened track never feeds back into the next fit
+    var rows=bx.querySelectorAll('.db3-lr'), mw=0, sw=0, rg=document.createRange();
+    function tw(n){ if(!n) return 0; rg.selectNodeContents(n); return rg.getBoundingClientRect().width; }
+    Array.prototype.forEach.call(rows, function(r){ mw=Math.max(mw, tw(r.querySelector('.m'))); sw=Math.max(sw, tw(r.querySelector('.sc'))); });
+    var cols=db3BoxCols(Math.ceil(mw), Math.ceil(sw));
+    Array.prototype.forEach.call(rows, function(r){ r.style.gridTemplateColumns=cols; });
+    var inner=bx.querySelector('.db3-list > div'); if(inner) inner.style.minWidth=Math.max(700, 76+Math.ceil(mw)+48+36+Math.max(104,Math.ceil(sw))+50+62+62+7*12+32)+'px';
+  }
+  function db3FillScore(cell, m, bx){
+    if(!cell) return;
+    db3CareerRow(m).then(function(J){
+      var c=J && J.best, txt=c ? db3ScoreTxt(c, !J.mine) : null;
+      cell.textContent = txt || '\u2014';
+      cell.title = txt ? 'Set scores from the match record' : !J ? 'No match record on file for either player' : !c ? 'No match record joins this match' : 'The match record holds no set scores';
+      db3FitCols(bx);
+    }, function(){ cell.textContent='\u2014'; cell.title='The match record could not load'; });
   }
   function db3BandBox(ctx, from){
     if(!NAMES && !ctx.player){ loadNames().then(function(){ db3BandBox(ctx, from); }); }
@@ -32151,24 +32207,29 @@ window.DatabaseTab = (function(){
         var me=nm[k], op=nm[1-k], won=k===0, isFav=(r[7]===1)===won;   // names[0] = the winner
         if(role==='fav' && !isFav) return; if(role==='dog' && isFav) return;
         var myP=isFav?r[5]:r[6], opP=isFav?r[6]:r[5], bp=back?myP:opP, bw=back?won:!won, pr=bw?bp-1:-1;
-        var x=P[me]||(P[me]={ name:me, n:0, pr:0, bw:0, imp:0, sp:0, n24:0, pr24:0, n12:0, pr12:0, ms:[] });
+        var x=P[me]||(P[me]={ name:me, n:0, pr:0, bw:0, imp:0, sp:0, n24:0, pr24:0, ms:[] });
         x.n++; x.pr+=pr; x.bw+=bw?1:0; x.imp+=1/bp; x.sp+=bp;
         if(r[0]>cut24){ x.n24++; x.pr24+=pr; }
-        if(r[0]>cut12){ x.n12++; x.pr12+=pr; }
         x.ms.push({ d:r[0], backed:back?me:op, opp:back?op:me, ev:db3Ev(r[4]), rd:M.rounds[r[3]], p:bp, op:back?opP:myP, b:r[8], won:bw });
       });
     });
     // the list = players with a Database match in the 24 months to the archive's end (the export lists the current tour,
     // not retired players): his whole filtered record still counts
     var active=function(nm){ var rs=playerIndex && playerIndex[nm]; if(!rs) return false; for(var i=rs.length-1;i>=0;i--) if(rs[i].d>cut24) return true; return false; };
-    // founder 2026-11-19: filter by this week's ATP rank (Top 25 / 50 / 100) and by when he plays (today / tomorrow)
-    var topN=state.fadeTop||0, plays=state.fadePlays||'all';
-    var keep=function(nm){ if(topN){ var w=db2Who(nm); if(!w || w.rank==null || w.rank>topN) return false; } if(plays!=='all' && !db3Today(nm, plays)) return false; return true; };
-    // founder 2026-11-20: a player is listed from FADE_MIN (5) matches and every listed player is ranked; fewer are not listed
-    var list=Object.keys(P).filter(active).filter(keep).filter(function(k){ return P[k].n>=FADE_MIN; }).map(function(k){ var x=P[k]; x.y=x.pr/x.n; x.gated=false; return x; })
+    // founder 2026-11-20: a player is listed from FADE_MIN (5) matches and every listed player is ranked; fewer are not listed.
+    // Locked design 2026-11-26: the Rank trigger (this week's ATP ranking, Top 25 / 50 / 100) and the typed Min. matches remove
+    // players; the ranks are recounted on what is left; the pill says how many of how many.
+    var topN=state.fadeTop||0, minN=Math.max(0, parseInt(state.fadeMin,10)||0);
+    var base=Object.keys(P).filter(active).filter(function(k){ return P[k].n>=FADE_MIN; });
+    var keep=function(nm){ if(topN){ var w=db2Who(nm); if(!w || w.rank==null || w.rank>topN) return false; } return P[nm].n>=minN; };
+    var list=base.filter(keep).map(function(k){ var x=P[k]; x.y=x.pr/x.n; x.y24=x.n24?x.pr24/x.n24:null; x.vp=x.bw/x.n-x.imp/x.n; x.avg=x.sp/x.n; x.gated=false; return x; })
       .sort(function(a,b){ return (b.y-a.y) || (b.n-a.n); });
     list.forEach(function(x,i){ x.rank=i+1; });
-    return { list:list, ranked:list.filter(function(x){ return !x.gated; }).length, back:back, role:role, cut12:cut12, cut24:cut24 };
+    // a head click sorts high to low on its column; # stays the yield rank
+    var SK={ l24:function(x){ return x.y24==null?-1e9:x.y24; }, vp:function(x){ return x.vp; }, price:function(x){ return x.avg; }, n:function(x){ return x.n; } };
+    var sortK=SK[state.fadeSort]?state.fadeSort:'y';
+    if(sortK!=='y') list=list.slice().sort(function(a,b){ return (SK[sortK](b)-SK[sortK](a)) || (a.rank-b.rank); });
+    return { list:list, ranked:list.length, all:base.length, topN:topN, minN:minN, sortK:sortK, back:back, role:role, cut12:cut12, cut24:cut24 };
   }
   function db3FadeScope(role){
     var parts=[];
@@ -32188,51 +32249,62 @@ window.DatabaseTab = (function(){
     return sw;
   }
   function renderFade(body){
-    if(!NAMES){ body.appendChild(el('div','db-prompt','<h3>Loading the player archive\u2026</h3>')); loadNames().then(render); return; }
+    if(!NAMES){ body.appendChild(el('div','db-prompt','<h3>Loading the player archive…</h3>')); loadNames().then(render); return; }
     var F=db3FadeModel(), back=F.back, role=F.role;
-    function sg(v,d,u){ return (v>0?'+':v<0?'\u2212':'')+Math.abs(v).toFixed(d)+u; }
+    function sg(v,d,u){ return (v>0?'+':v<0?'−':'')+Math.abs(v).toFixed(d)+u; }
     var card=el('div','db3-fcard');
     var help='Yield of a flat 1% stake '+(back?'on the player':'on his opponent')+' in every match under the chosen filters, at Pinnacle closing prices. '+
       'A blue dot with a time means he plays today; click it to open the match. Search a player to pin him above the list with his real rank. '+
-      'The list holds the players with a Database match in the 24 months to the archive\u2019s last match. A player needs '+FADE_MIN+' matches under these filters to be listed; every listed player is ranked. Top 25 / 50 / 100 is this week\u2019s ATP ranking; Plays today / tomorrow keeps the players with a match on Today\u2019s Matches. 12 months and 24 months are the same bet over the 12 and 24 months to the archive\u2019s last match ('+fmtDate(M.dateRange[1])+'), to show whether the edge is still alive. '+
-      'Vs price is how many points more often the backed side won than its closing price implied. Click a row to see his matches.';
+      'The list holds the players with a Database match in the 24 months to the archive’s last match. A player needs '+FADE_MIN+' matches under these filters to be listed; every listed player is ranked. '+
+      'Type your own number in Min. matches to hide every player with fewer matches, so small samples leave the list; leave it empty for no minimum. The Rank filter in the bar above (Top 25, Top 50, Top 100) keeps only players inside this week’s ATP ranking. '+
+      '24 months is the same bet over the 24 months to the archive’s last match ('+fmtDate(M.dateRange[1])+'), to show whether the edge is still alive. '+
+      'Vs price is how many points more often the backed side won than its closing price implied. Click a column head to sort by it, high to low. Click a row to see his matches.';
+    var pill = F.minN||F.topN ? fmtInt(F.list.length)+' of '+fmtInt(F.all)+' players'+(F.topN?' · top '+F.topN:'')+(F.minN?' · '+F.minN+'+ matches':'') : fmtInt(F.ranked)+' of '+fmtInt(F.all)+' players ranked';
     card.innerHTML='<div class="db3-fhead"><span class="db3-tt"><b>'+(back?'Players to back':'Players to fade')+'</b><span>'+esc(db3FadeScope(role))+'</span></span>'+
-      '<span style="flex:none;margin-left:auto;display:flex;align-items:center;gap:10px"><span class="db3-pill">'+fmtInt(F.ranked)+' players ranked</span><span class="db2-q" title="'+esc(help)+'">?</span></span></div>';
+      '<span style="flex:none;margin-left:auto;display:flex;align-items:center;gap:10px"><span class="db3-pill">'+esc(pill)+'</span><span class="db2-q" title="'+esc(help)+'">?</span></span></div>';
     var ctl=el('div','db3-fctl'), pin=el('div','db3-pin'), well=el('div','db3-well');
     var pinned=state.fadePin && F.list.filter(function(x){ return x.name===state.fadePin; })[0];
     if(pinned){ var ch=el('span','db3-chip', db3Ava(pinned.name,20,8.5)+'<span>'+esc(pinned.name)+'</span>'); var xb=el('button','db3-xs'); xb.type='button'; xb.title='Unpin';
       xb.onclick=function(e){ e.stopPropagation(); state.fadePin=null; render(); }; ch.appendChild(xb); well.appendChild(ch); }
-    var inp=el('input'); inp.type='text'; inp.placeholder=pinned?'Pin another player\u2026':'Search a player to pin\u2026'; inp.value=state.fadeQ||'';
+    var inp=el('input'); inp.type='text'; inp.placeholder=pinned?'Pin another player…':'Search a player to pin…'; inp.value=state.fadeQ||'';
     inp.oninput=function(){ state.fadeQ=inp.value; render(); var n=q('body') && q('body').querySelector('.db3-well input'); if(n){ n.focus(); n.setSelectionRange(n.value.length,n.value.length); } };
     well.appendChild(inp); pin.appendChild(well);
     var fq=(state.fadeQ||'').trim().toLowerCase();
     if(fq){ var hits=F.list.filter(function(x){ return x.name.toLowerCase().indexOf(fq)>=0; }).slice(0,8), hp=el('div','db3-hits');
       if(!hits.length) hp.appendChild(el('span',null,'No player matches that.'));
-      hits.forEach(function(x){ var h=el('span',null, db3Ava(x.name,24,9.5)+'<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(x.name)+'</span><em>'+(x.rank?'#'+x.rank:'not ranked')+'</em>');
+      hits.forEach(function(x){ var h=el('span',null, db3Ava(x.name,24,9.5)+'<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(x.name)+'</span><em>#'+x.rank+'</em>');
         h.onmousedown=function(e){ e.preventDefault(); state.fadePin=x.name; state.fadeQ=''; render(); }; hp.appendChild(h); });
       pin.appendChild(hp); }
     ctl.appendChild(pin);
     var m1=db3Sw([['fade','To fade'],['back','To back']], back?'back':'fade', function(v){ state.fadeMode=v; }); m1.style.marginLeft='auto'; m1.style.flex='none'; ctl.appendChild(m1);
     var m2=db3Sw([['all','All'],['fav','As favourite'],['dog','As underdog']], role, function(v){ state.fadeRole=v; }); m2.style.flex='none'; ctl.appendChild(m2);
-    var m3=db3Sw([[0,'All ranks'],[25,'Top 25'],[50,'Top 50'],[100,'Top 100']], state.fadeTop||0, function(v){ state.fadeTop=v; state.fadeAll=false; }); m3.style.flex='none'; m3.title='This week\u2019s ATP ranking'; ctl.appendChild(m3);
-    var m4=db3Sw([['all','Any day'],['today','Plays today'],['tomorrow','Plays tomorrow']], state.fadePlays||'all', function(v){ state.fadePlays=v; state.fadeAll=false; }); m4.style.flex='none'; m4.title='His next match on Today\u2019s Matches'; ctl.appendChild(m4);
+    // locked design 2026-11-26: Min. matches is ONE number field the member types in (empty = no minimum)
+    var mn=el('span','db3-sw db3-fmin'); mn.title='Minimum matches: hide every player with fewer matches under these filters';
+    mn.innerHTML='<span class="l">Min. matches</span>';
+    var mi=el('input'); mi.type='text'; mi.inputMode='numeric'; mi.maxLength=4; mi.placeholder='Any'; mi.setAttribute('aria-label','Minimum matches'); mi.value=state.fadeMin||'';
+    mi.oninput=function(){ state.fadeMin=String(mi.value||'').replace(/\D/g,'').slice(0,4); state.fadeAll=false; render(); var n=q('body') && q('body').querySelector('.db3-fmin input'); if(n){ n.focus(); n.setSelectionRange(n.value.length,n.value.length); } };
+    mn.appendChild(mi); ctl.appendChild(mn);
     card.appendChild(ctl);
     var tab=el('div','db3-ftab'), inner=el('div'); tab.appendChild(inner);
-    inner.appendChild(el('div','db3-fr hd','<span>#</span><span>Player</span><span style="text-align:center">'+(back?'Back yield':'Fade yield')+'</span><span style="text-align:right">12 months</span><span style="text-align:right">24 months</span><span style="text-align:right">Vs price</span><span style="text-align:right">'+(back?'His price':'Opp. price')+'</span><span style="text-align:right">Matches</span><span></span>'));
+    var heads=[['y', back?'Back yield':'Fade yield'], ['l24','24 months'], ['vp','Vs price'], ['price', back?'His price':'Opp. price'], ['n','Matches']];
+    var hd=el('div','db3-fr hd','<span>#</span><span>Player</span>');
+    heads.forEach(function(h){ var on=F.sortK===h[0], b=el('span','db3-fsort'+(on?' on':''), esc(h[1])+'<i>'+(on?'↓':'↕')+'</i>');
+      b.setAttribute('data-fadesort', h[0]); b.title=on?'Sorted by '+h[1]+', high to low':'Sort by '+h[1]+', high to low';
+      b.onclick=function(e){ e.stopPropagation(); state.fadeSort=h[0]; state.fadeAll=false; render(); }; hd.appendChild(b); });
+    hd.appendChild(el('span')); inner.appendChild(hd);
     function row(x, isPin){
-      var r=el('div','db3-fr'+(isPin?' pin':'')), bw=x.bw/x.n, imp=x.imp/x.n, td=db3Today(x.name), top=x.rank && x.rank<=3;
-      var y24=x.n24?x.pr24/x.n24:null, y12=x.n12?x.pr12/x.n12:null, ylr=db3YieldLine({n:x.n, yield:x.y}, 20, 1);
-      function stc(y,n){ return '<span class="st"><b style="color:'+(y==null?'var(--db2-muted)':y>0?'var(--db2-green)':y<0?'var(--db2-red)':'var(--db2-muted)')+'">'+(y==null?'\u2014':sg(y*100,1,'%'))+'</b><span>'+fmtInt(n)+' '+dbMatchWord(n)+'</span></span>'; }
-      var sub = (isPin?'<span class="pn">Pinned</span>':'')+(td?'<span class="td" title="'+esc('Plays '+td.opp+' '+(td.day==='tomorrow'?'tomorrow':'today')+' at '+td.time+' \u00b7 '+sfEventName(td.m.tour||''))+'">'+(td.day==='tomorrow'?'Tomorrow':'Today')+'<b>'+esc(td.time)+'</b></span>':'');
-      r.innerHTML='<span class="rk" style="font-weight:'+(top?700:500)+';color:'+(top?'var(--db2-ink)':'var(--db2-muted)')+'">'+(x.rank||'\u2014')+'</span>'+
-        '<span class="pl">'+db3Ava(x.name,30,10.5)+'<span><span class="nm" style="color:'+(x.gated?'var(--db2-muted)':'var(--db2-ink)')+'">'+esc(x.name)+'</span>'+(sub?'<span class="sub">'+sub+'</span>':'')+'</span></span>'+
+      var r=el('div','db3-fr'+(isPin?' pin':'')), bw=x.bw/x.n, imp=x.imp/x.n, td=db3Today(x.name, 'today'), top=x.rank && x.rank<=3;
+      var ylr=db3YieldLine({n:x.n, yield:x.y}, 20, 1);
+      var sub = (isPin?'<span class="pn">Pinned</span>':'')+(td?'<span class="td" title="'+esc('Plays '+td.opp+' today at '+td.time+' · '+sfEventName(td.m.tour||''))+'">Today<b>'+esc(td.time)+'</b></span>':'');
+      r.innerHTML='<span class="rk" style="font-weight:'+(top?700:500)+';color:'+(top?'var(--db2-ink)':'var(--db2-muted)')+'">'+x.rank+'</span>'+
+        '<span class="pl">'+db3Ava(x.name,30,10.5)+'<span><span class="nm">'+esc(x.name)+'</span>'+(sub?'<span class="sub">'+sub+'</span>':'')+'</span></span>'+
         ylr+
-        stc(y12, x.n12)+stc(y24, x.n24)+
-        '<span class="st"><b style="color:'+(bw>imp?'var(--db2-green)':bw<imp?'var(--db2-red)':'var(--db2-muted)')+'">'+sg((bw-imp)*100,1,' pts')+'</b><span>'+(back?'won ':'lost ')+Math.round(bw*100)+'% \u00b7 priced '+Math.round(imp*100)+'%</span></span>'+
-        '<span class="pr">'+fmtP(x.sp/x.n)+'</span><span class="db3-bm">'+fmtInt(x.n)+'</span>';
+        '<span class="st"><b style="color:'+(x.y24==null?'var(--db2-muted)':x.y24>0?'var(--db2-green)':x.y24<0?'var(--db2-red)':'var(--db2-muted)')+'">'+(x.y24==null?'—':sg(x.y24*100,1,'%'))+'</b><span>'+fmtInt(x.n24)+' '+dbMatchWord(x.n24)+'</span></span>'+
+        '<span class="st"><b style="color:'+(bw>imp?'var(--db2-green)':bw<imp?'var(--db2-red)':'var(--db2-muted)')+'">'+sg((bw-imp)*100,1,' pts')+'</b><span>'+(back?'won ':'lost ')+Math.round(bw*100)+'% · priced '+Math.round(imp*100)+'%</span></span>'+
+        '<span class="pr">'+fmtP(x.avg)+'</span><span class="db3-fn">'+fmtInt(x.n)+'</span>';
       if(isPin){ var xb=el('button','db3-xs'); xb.type='button'; xb.title='Unpin'; xb.style.marginLeft='-4px'; xb.onclick=function(e){ e.stopPropagation(); state.fadePin=null; render(); }; r.appendChild(xb); }
-      else r.appendChild(el('span','db3-chev','\u203a'));
-      r.title = (x.gated ? 'Small sample: '+fmtInt(x.n)+' '+dbMatchWord(x.n)+', not ranked \u00b7 ' : '')+'See the matches of '+x.name;
+      else r.appendChild(el('span','db3-chev','›'));
+      r.title='See the matches of '+x.name;
       var tdEl=r.querySelector('.td'); if(tdEl && td) tdEl.onclick=function(e){ e.stopPropagation(); if(typeof openAnalysisModal==='function') openAnalysisModal(td.m.id); };
       r.onclick=function(){ db3FadeBox(x, F, r); };
       return r;
@@ -32240,8 +32312,12 @@ window.DatabaseTab = (function(){
     if(pinned) inner.appendChild(row(pinned, true));
     var cut=state.fadeAll ? F.list.length : 12;
     F.list.slice(0,cut).filter(function(x){ return x!==pinned; }).forEach(function(x){ inner.appendChild(row(x,false)); });
-    if(!F.list.length) inner.appendChild(el('div','db2-bnote','No matches under these filters.'));
     card.appendChild(tab);
+    if(!F.list.length){
+      // locked design 2026-11-26: the empty state when the filters leave no player
+      var em=el('div','db3-fempty','<b>No players match these filters</b><span>Lower the minimum matches or widen the rank.</span>');
+      var lk=el('span','lnk','Show every player'); lk.onclick=function(){ state.fadeMin=''; state.fadeTop=0; state.fadeAll=false; render(); }; em.appendChild(lk); card.appendChild(em);
+    }
     if(F.list.length>12){ var mo=el('div','db3-fmore', state.fadeAll?'Show the top 12 only':'Show all '+fmtInt(F.list.length)+' players'); mo.onclick=function(){ state.fadeAll=!state.fadeAll; render(); }; card.appendChild(mo); }
     body.appendChild(card);
   }

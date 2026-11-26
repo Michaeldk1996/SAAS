@@ -33,21 +33,24 @@ const CHECKS = {
     const code = varSource(src, 'DB2_BANDS') + '\n' + fnSource(src, 'db2InBand') + '\nreturn {DB2_BANDS, db2InBand};';
     const { DB2_BANDS, db2InBand } = new Function(code)();
     const want = { fav: ['Heavy favourite', 'Clear favourite', 'Favourite', 'Slight favourite', 'Near coin-flip'],
-      dog: ['Slight underdog', 'Underdog', 'Big underdog', 'Long underdog', 'Longshot'] };   // founder 2026-11-26: underdogs start at 1.95 (2.00 until then)
+      dog: ['Slight underdog', 'Underdog', 'Big underdog', 'Long underdog', 'Longshot'] };   // founder 2026-11-26: the sides meet at 1.95
     for (const sd of ['fav', 'dog']) {
       const names = DB2_BANDS[sd].map(b => b[0]);
       if (names.join('|') !== want[sd].join('|')) return sd + ' bands are ' + names.join(', ');
     }
-    for (const p of [1.01, 1.2, 1.205, 1.21, 1.357, 1.5, 1.509, 1.7, 1.71, 1.949]) {   // founder 2026-11-26: the fav / dog edge is 1.95
+    for (const p of [1.01, 1.2, 1.205, 1.21, 1.357, 1.5, 1.509, 1.7, 1.71, 1.949]) {
       const n = DB2_BANDS.fav.filter(b => db2InBand(b, p)).length;
       if (n !== 1) return `favourite price ${p} lands in ${n} bands`;
     }
-    for (const p of [1.95, 1.99, 2, 2.49, 2.5, 2.999, 3, 3.99, 4, 5.99, 6, 26]) {
+    for (const p of [1.95, 1.999, 2, 2.49, 2.5, 2.999, 3, 3.99, 4, 5.99, 6, 26]) {
       const n = DB2_BANDS.dog.filter(b => db2InBand(b, p)).length;
       if (n !== 1) return `underdog price ${p} lands in ${n} bands`;
     }
-    // an underdog priced under 1.95 (near-even) is in no underdog band: it counts in the side's total only
-    for (const p of [1.71, 1.94]) if (DB2_BANDS.dog.some(b => db2InBand(b, p))) return `underdog price ${p} lands in an underdog band`;
+    // founder 2026-11-26: the two sides meet at 1.95, no gap and no overlap: a price under 1.95 is in no underdog band,
+    // 1.95 or longer in no favourite band (near-even prices count in the side's total only)
+    for (const p of [1.71, 1.949]) if (DB2_BANDS.dog.some(b => db2InBand(b, p))) return `underdog price ${p} lands in an underdog band`;
+    for (const p of [1.95, 1.99]) if (DB2_BANDS.fav.some(b => db2InBand(b, p))) return `favourite price ${p} lands in a favourite band`;
+    if (DB2_BANDS.fav[4][4] !== DB2_BANDS.dog[0][3] || DB2_BANDS.dog[0][3] !== 1.95) return 'the sides do not meet at 1.95';
     if (!db2InBand(DB2_BANDS.fav[1], 1.357) && !db2InBand(DB2_BANDS.fav[2], 1.357)) return '1.357 is in no band';
     if (!db2InBand(DB2_BANDS.fav[1], 1.21)) return '1.21 is not a Clear favourite';
     return null;
@@ -200,6 +203,57 @@ const CHECKS = {
     if (/catalogEntryForNames/.test(f)) return 'the swing reads the Database name list (no country there)';
     return null;
   },
+  // founder 2026-11-26: the box's Score = the backed side's set scores from the career-history row the sheet click joins
+  // (one join, db3CareerRow); tiebreak = the loser's points, " ret." on a retirement; no row / no sets = a dash.
+  boxScore(src) {
+    const f = new Function(fnSource(src, 'db3ScoreTxt') + '\n' + fnSource(src, 'db3BestRow') + '\nfunction db3CarSur(n){ return String(n).replace(/^[A-Z]\\. /,"").toLowerCase(); }\nreturn {db3ScoreTxt, db3BestRow};');
+    const { db3ScoreTxt, db3BestRow } = f();
+    const c = { sets: [{ p: 5, o: 7 }, { p: 6, o: 3 }, { p: 6, o: 7, pTb: 11, oTb: 13 }] };
+    if (db3ScoreTxt(c, false) !== '5-7 6-3 6-7(11)') return 'his side reads ' + db3ScoreTxt(c, false);
+    if (db3ScoreTxt(c, true) !== '7-5 3-6 7-6(11)') return 'the backed opponent side reads ' + db3ScoreTxt(c, true);
+    if (db3ScoreTxt({ sets: [{ p: 6, o: 1 }, { p: 1, o: 1 }], retired: true }, false) !== '6-1 1-1 ret.') return 'a retirement is not marked';
+    if (db3ScoreTxt({ sets: [] }, false) !== null || db3ScoreTxt(null) !== null) return 'no sets is not a dash';
+    const t = Date.parse('2026-10-27');
+    const feed = { date: '2026-10-24', eventKey: 1, won: true, opponent: 'A. Zverev' }, arch = { date: '2026-10-17', won: true, opponent: 'A. Zverev' };
+    if (db3BestRow([feed], true, t, 'zverev') !== null) return 'a feed row 3 days off joins';
+    if (db3BestRow([arch], true, t, 'zverev') !== arch) return 'an archive row 10 days before does not join';
+    if (db3BestRow([arch], false, t, 'zverev') !== null) return 'a row with the other result joins';
+    if (!/db3CareerRow\(m\)/.test(fnSource(src, 'db3OpenMatch')) || !/db3CareerRow\(m\)/.test(fnSource(src, 'db3FillScore'))) return 'the sheet and the Score column do not share one join';
+    if (/No set score in the Database archive/.test(src)) return 'the Score column is still a fixed dash';
+    return null;
+  },
+  // founder 2026-11-26: every box match row sits on one line (Match and Score never wrap; the tracks fit the widest cell)
+  oneLine(src) {
+    if (!/\.db3-lr \.m\{ min-width:0; white-space:nowrap; \}/.test(src)) return 'the Match cell wraps';
+    if (!/\.db3-lr \.sc\{[^}]*white-space:nowrap;/.test(src)) return 'the Score cell wraps';
+    if (!/db3FitCols\(bx\);/.test(fnSource(src, 'db3OpenBox'))) return 'the box does not fit its tracks';
+    return null;
+  },
+  // Locked design 2026-11-26, Fade finder: Rank in the page bar (Fade finder only), typed Min. matches, sortable heads with
+  // sort marks, the design's grid, an empty state; no 12 months column, no Plays today / tomorrow switch.
+  fadeLocked(src) {
+    const m = fnSource(src, 'db3FadeModel'), r = fnSource(src, 'renderFade');
+    if (!/if\(state\.view==='fade'\) zR\.appendChild\(trigger\('Rank'/.test(src)) return 'no Rank trigger in the Fade finder bar';
+    if (/All ranks'\]/.test(r) || /Plays today/.test(r) || /12 months/.test(r)) return 'the old rank / plays switches or 12 months are back';
+    if (!/return P\[nm\]\.n>=minN;/.test(m) || !/parseInt\(state\.fadeMin,10\)/.test(m)) return 'Min. matches does not remove players';
+    if (!/placeholder='Any'/.test(r) || !/replace\(\/\\D\/g,''\)\.slice\(0,4\)/.test(r)) return 'Min. matches is not a typed number field';
+    if (!/var sortK=SK\[state\.fadeSort\]\?state\.fadeSort:'y';/.test(m)) return 'the heads do not sort';
+    if (!/on\?'(?:↓|\\u2193)':'(?:↕|\\u2195)'/.test(r)) return 'no sort mark';
+    if (!/grid-template-columns:26px minmax\(128px,1\.1fr\) minmax\(94px,1\.3fr\) 88px 126px 78px 78px 14px; gap:0 8px;/.test(src)) return 'not the locked grid';
+    if (!/No players match these filters/.test(r)) return 'no empty state';
+    if (!/--db2-dim:\s*#5D6680;/.test(TOKENS)) return 'no --db2-dim token';
+    return null;
+  },
+  // Locked design 2026-11-26, Ratings: sort marks, a median chip under every head (no median row), no bold column, centred.
+  ratingsLocked(src) {
+    const h = fnSource(src, 'db2SortHead');
+    if (!/'\\u2195'/.test(h) || !/db2MedChip\(med\)/.test(h)) return 'a head has no sort mark or median chip';
+    if (/db2-rmed/.test(src)) return 'the Field median row is back';
+    if (/\.db2-rv\.on\{/.test(src) || /db2-rv'\+\(key===c\[0\]\?' on'/.test(src)) return 'the sorted column is bold again';
+    if (!/\.db2-rv\{ text-align:center; font-family:var\(--db-mono\); font-size:13px; font-weight:500;/.test(src)) return 'figures are not centred mono 13/500';
+    if (!/var tpl='28px 28px minmax\(160px,2\.4fr\) 40px repeat\(3,minmax\(80px,1fr\)\) minmax\(112px,1\.2fr\)';/.test(fnSource(src, 'db2RatOverview'))) return 'not the locked overview grid';
+    return null;
+  },
   // The design's own colours, read through tokens.css (identical colours).
   tokens(src) {
     const want = { card: '#0E1019', inset: '#0C0E16', raised: '#131623', ink: '#E7E9EE', 'ink-2': '#C6CCDB', muted: '#8B96B5', blue: '#5B9BFF', green: '#3DD68C', red: '#E0616F' };
@@ -214,6 +268,19 @@ const MUTANTS = [
   ['period ignores years', 'playerPeriod', s => s.replace("return !(state.yearMin!=null && y<state.yearMin) && !(state.yearMax!=null && y>state.yearMax);", "return true;")],
   ['swing back on the name list', 'swing', s => s.replace("var nm=M.tournaments[r[4]], e=db3CatEntry(nm),", "var nm=M.tournaments[r[4]], e=catalogEntryForNames([nm])||{},")],
   ['band edges inclusive', 'bands', s => s.replace("function db2InBand(B, p){ return p>=B[3]-1e-9 && p<B[4]-1e-9; }", "function db2InBand(B, p){ return p>=B[3]-1e-9 && p<=B[4]+1e-9; }")],
+  ['coin-flip back at 2.00', 'bands', s => s.replace("['Near coin-flip','1.71','1.94',1.71,1.95]", "['Near coin-flip','1.71','1.99',1.71,2.00]").replace("['Slight underdog','1.95','2.49',1.95,2.50]", "['Slight underdog','2.00','2.49',2.00,2.50]")],
+  ['tiebreak shows the winner', 'boxScore', s => s.replace("'('+Math.min(x.pTb,x.oTb)+')'", "'('+Math.max(x.pTb,x.oTb)+')'")],
+  ['score not flipped', 'boxScore', s => s.replace("db3ScoreTxt(c, !J.mine)", "db3ScoreTxt(c, false)").replace("var a=flip?x.o:x.p, b=flip?x.p:x.o;", "var a=x.p, b=x.o;")],
+  ['score a fixed dash', 'boxScore', s => s.replace('<span class="sc"></span>', '<span class="sc" title="No set score in the Database archive">\u2014</span>')],
+  ['match cell wraps', 'oneLine', s => s.replace('.db3-lr .m{ min-width:0; white-space:nowrap; }', '.db3-lr .m{ min-width:0; text-wrap:pretty; }')],
+  ['tracks not fitted', 'oneLine', s => s.replace('    db3FitCols(bx);\n    if(spec.wire)', '    if(spec.wire)')],
+  ['rank back in the control row', 'fadeLocked', s => s.replace("if(state.view==='fade') zR.appendChild(trigger('Rank'", "if(false) zR.appendChild(trigger('Rank'")],
+  ['min matches ignored', 'fadeLocked', s => s.replace("return P[nm].n>=minN;", "return true;")],
+  ['heads do not sort', 'fadeLocked', s => s.replace("var sortK=SK[state.fadeSort]?state.fadeSort:'y';", "var sortK='y';")],
+  ['no fade empty state', 'fadeLocked', s => s.replace("'<b>No players match these filters</b>", "'<b>Nothing</b>")],
+  ['median row back', 'ratingsLocked', s => s.replace("    t.appendChild(hd);\n    rows.forEach", "    t.appendChild(hd); t.appendChild(el('div','db2-rmed'));\n    rows.forEach")],
+  ['bold sorted column', 'ratingsLocked', s => s.replace("var v=db2RatOverVal(p,c[0]), s=el('span','db2-rv'+(v==null?' dash':'')", "var v=db2RatOverVal(p,c[0]), s=el('span','db2-rv'+(key===c[0]?' on':'')+(v==null?' dash':'')")],
+  ['no sort mark', 'ratingsLocked', s => s.replace("(sorted?(dir==='asc'?'\\u2191':'\\u2193'):'\\u2195')", "(sorted?(dir==='asc'?'\\u2191':'\\u2193'):'')")],
   ['terciles back', 'bands', s => s.replace("['Clear favourite','1.21','1.35',1.21,1.36]", "['Firm favourite','1.21','1.35',1.21,1.36]")],
   ['dates back', 'dates', s => s.replace("{ N:n, seasons:db3Seasons(ordered.map(function(r){ return r[0]; }))", "{ N:n, xs:ordered.map(function(r){ return db2Ms(r[0]); }), seasons:db3Seasons(ordered.map(function(r){ return r[0]; }))")],
   ['hard gate dashes again', 'yieldColour', s => s.replace("var hard=!g || !g.n,", "var hard=!g || g.n<HARD_GATE,")],

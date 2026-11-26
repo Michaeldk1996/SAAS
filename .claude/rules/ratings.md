@@ -12,10 +12,15 @@ Applies to the Database tab's Ratings view (`renderRatings`, `db2RatOverview`, `
   board lists its rows on both. **Test:** `test-ten262.mjs` "eloDash" (mutant: the Last 52 gate back).
 - **Boards: Overview · Elo · Serve · Return · Under pressure** — the Mental Edge board, its view pills, the 200-point
   ranking minimum and its count line are gone with it (the design has none).
-- The board lists the whole gated field while players are compared; the sorted column is white 700, the others ink-2 400;
-  places 1-3 white 700. **Consistency pass (export 2026-11-18, CHANGES §9):** no heavy line under the column heads; "Field
-  median" is a lifted strip (`--db2-layer` + 8% inset ring, radius 9, 40px, 4px under it); rows 54px on a 6% hairline, hover
-  `--db2-hover`, 30px avatars, names 14.5/700, rank mono 11. The "+" in the first track picks a player (blue + 3px halo,
+- The board lists the whole gated field while players are compared. **Locked design 2026-11-26** (replaces the 2026-11-18
+  Field median strip and the white 700 sorted column): heads Hanken 11.5/600 grey, never caps, two lines bottom-aligned on a
+  6% hairline — label + sort mark (dim "↕" `--db2-dim`, white "↓" / "↑" on the sorted head, a second click flips) over a
+  lifted chip with that column's field median (`--db2-layer` + 10% edge, r6, mono 11.5/500); "Field median" under Player,
+  the median n chip under n; **no Field median row, no bold column**: every figure mono 13/500 `--db2-ink`, centred under
+  its head (meaning colours stay); places 1-3 white 700. Overview grid `28px 28px minmax(160px,2.4fr) 40px
+  repeat(3,minmax(80px,1fr)) minmax(112px,1.2fr)`, min 684px, its four sortable heads 11px left pad; rows 52px on a 6%
+  hairline, hover `--db2-hover`, 30px avatars, names 14/700, rank mono 12.5. **Test:** `test-database-v2.mjs`
+  "ratingsLocked" (+ mutants). The "+" in the first track picks a player (blue + 3px halo,
   rotates to × in .22s; hover edge 45% white; "Four players maximum"); **a picked row is lifted grey** (`--db2-layer` + 14%
   inset ring), never a blue wash. The compare card carries **no remove buttons in its heads** (the filter chips and the
   row button remove; "Clear all" stays); the pair's difference chip is the band chip (`--db2-layer` + 14% ring, radius 9,
@@ -27,7 +32,7 @@ Applies to the Database tab's Ratings view (`renderRatings`, `db2RatOverview`, `
 - The design's own colours (`--db2-*`); the ruled footnote words live in the board's "?" hover.
 
 ## Vs pk as the export draws it (founder 2026-11-16, "follow export"; replaces the 2026-09-23 no-colour ruling)
-- **Test:** on the Elo board every `Vs pk` cell (current overall Elo − peak) is signed mono 13px **weight 700**, muted
+- **Test:** on the Elo board every `Vs pk` cell (current overall Elo − peak) is signed mono 13px, weight 500 like every figure (locked design 2026-11-26; was 700), muted
   (`--db2-muted`) at −60 or better and red (`--db2-red`) below (`DB2_VSPK_RED = -60`); a red cell keeps its red when its
   column is sorted. `test-database-v2.mjs` "constants" (mutant: uncoloured). The 23 Sep measurement (173 of 216 rows below
   −60 on real peaks) stands as context: most of the board reads red.
