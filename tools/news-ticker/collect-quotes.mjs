@@ -115,7 +115,7 @@ export const tourDuplicate = (key, x, { movedIds, inTournaments, toTournaments }
 export const notTennis = (url) => OTHER_SPORT_PATH.test(String(url || ''));
 // Held quotes that turned out to be somebody else's (hand-reviewed, a reason per entry); new ones are refused where the
 // article is read (outlet-reader.mjs otherBearer).
-export const HELD_EXCLUDE = [[/\/leon-smith-reflects-on-career/, 'Leon Smith, the Davis Cup captain, is not K. Smith']];
+export const HELD_EXCLUDE = [[/leon-smith|\/cvze7d03880ko/, 'Leon Smith, the Davis Cup captain, is not K. Smith (LTA, tennisnet, Sky Sports and the BBC article cvze7d03880ko, 20-24 Nov 2026)']];
 export const notHisWords = (url) => HELD_EXCLUDE.some(([re]) => re.test(String(url || '')));
 // The aliases of the tournaments a URL names in its own slug ("…/zverev-wins-to-reach-atp-finals-last-four").
 export function urlMentions(url, tournaments) {

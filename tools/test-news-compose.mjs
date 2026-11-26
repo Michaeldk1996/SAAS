@@ -149,6 +149,10 @@ await ok('refuses a shot, the body or a title that no line of the sheet carries 
   refuses(GOOD.replace('and that was enough to take it', 'and he hit a great volley to take it'), /"volley"/);
   refuses(GOOD.replace('The second set was a different Fritz:', 'Musetti looked tired in the second set and it was a different Fritz:'), /"tired"/);
   refuses(GOOD.replace('Next is Tirante', 'It would be his first title of the year for sure. Next is Tirante'), /"title"|"year"/);
+  // "the trophy" passes only on a sheet that carries the title (the ATP Finals final was refused twice for it)
+  refuses(GOOD.replace('Next is Tirante', 'He wants the trophy. Next is Tirante'), /"trophy"/);
+  const withTitle = { ...SHEET, text: SHEET.text + '\nIn our records this is tour-level title number 12 for Fritz.' };
+  yes(!checkComposed(GOOD.replace('Next is Tirante', 'He wants the trophy. Next is Tirante'), withTitle, { surnames: SUR }).failures.some((f) => /trophy/.test(f)), 'the trophy on a sheet with the title');
 });
 await ok('refuses a comma before "but" or "and" (founder 2026-11-14) — outside a quotation only', () => {
   refuses(GOOD.replace('and that was enough to take it', ', but that was enough to take it'), /comma before "but"/);

@@ -23,7 +23,7 @@ const require = createRequire(import.meta.url);
 const PI = require('../../pbp-integrity.js');
 
 const API_URL = 'https://api.anthropic.com/v1/messages';
-export const COMPOSE_VERSION = 3;        // 3 = the short report of the founder's 15 Nov feedback
+export const COMPOSE_VERSION = 4;        // 3 = the short report of the founder's 15 Nov feedback; 4 = the check reads "the trophy" as the title (2026-11-26), so a report that failed under 3 and has no text is tried again
 export const MAX_COMPOSE_RUNS = 2;       // a report is written ONCE (founder 2026-11-15); the second run exists only for a report whose first write failed its check
 export const COMPOSE_FRESH_HOURS = 36;   // after this, a report that failed its check is no longer tried again
 // Written once, when the quotes and the highlights are in (founder 2026-11-15: "Good"): from 45 minutes after the match
@@ -575,7 +575,9 @@ export function checkComposed(text, sheet, { surnames = new Set() } = {}) {
   // how a player felt may be said when it sets up his own quotation (founder 2026-11-15: "a set down and angry" before
   // "Yeah, I was pissed"): with a quotation in the text, these words need no sheet line. Measured: "angry" cost two paid retries.
   const FELT = new Set(['angry', 'frustrat', 'nervous', 'nerves']);
-  for (const r of RISKY) if (new RegExp(`\\b${r}`, 'i').test(low) && !new RegExp(`\\b${r}`, 'i').test(ix.lower) && !(FELT.has(r) && spans.length) && !quoted.some((t) => new RegExp(`\\b${r}`, 'i').test(t))) fail.push(`"${r}" — nothing on the sheet says it`);
+  // "the trophy" is the title said another way: a sheet that carries the title carries it (the report of the 2026 ATP Finals final was refused twice for this word)
+  const sheetHas = (r) => new RegExp(`\\b${r}`, 'i').test(ix.lower) || (r === 'trophy' && /\btitle/.test(ix.lower));
+  for (const r of RISKY) if (new RegExp(`\\b${r}`, 'i').test(low) && !sheetHas(r) && !(FELT.has(r) && spans.length) && !quoted.some((t) => new RegExp(`\\b${r}`, 'i').test(t))) fail.push(`"${r}" — nothing on the sheet says it`);
   return { ok: fail.length === 0, failures: [...new Set(fail)] };
 }
 

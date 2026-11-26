@@ -514,6 +514,7 @@ await ok('a press quote gets a topic label, asked once; a label that is not "On 
   assert.equal(candidatesFromOutletArticle({ url: 'https://x/a', html, outlet: 'LTA', language: 'en', players: [smith] }).candidates.length, 0, 'the captain is not the player');
   assert.equal(candidatesFromOutletArticle({ url: 'https://x/a', html: html.replace('Leon', 'Keegan'), outlet: 'LTA', language: 'en', players: [smith] }).candidates.length, 1, 'control: his own given name');
   assert.ok(notHisWords('https://www.lta.org.uk/fan-zone/davis-cup/news/leon-smith-reflects-on-career-as-davis-cup-captain') && !notHisWords('https://www.lta.org.uk/news/keegan-smith-wins'));
+  assert.ok(notHisWords('https://www.bbc.co.uk/sport/tennis/articles/cvze7d03880ko?at_medium=RSS') && notHisWords('https://www.skysports.com/tennis/news/12110/13614421/andy-murray-great-britains-outgoing-davis-cup-captain-leon-smith-hopes-scot'));
   const { addContext } = await import('./news-ticker/quote-sources.mjs');
   const main = [{ id: 'past-1', date: '2026-11-11', p1: 'M. Kecmanovic', p2: 'H. Rune', finalScore: { winner: 'p2' } }, { id: 'past-2', date: '2026-11-12', p1: 'T. Fritz', p2: 'H. Rune', walkover: true, finalScore: { winner: 'p1' } }];
   const c = { speaker: 'H. Rune', day: '2026-11-12' }; addContext(c, main);
