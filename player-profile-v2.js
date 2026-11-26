@@ -9018,35 +9018,33 @@
     var LIST = state.lcDrillRes || 'all';
     var shown = all.filter(function (x) { return LIST === 'all' || x.res === LIST; });
     var rated = all.filter(function (x) { return x.res === 'cover' || x.res === 'miss'; });
-    var played = all.filter(function (x) { return x.res !== 'retired'; });
     var rn = row.n - (row.voids || 0), thin = rn < MK_FLOOR;
     var fld = lcFieldOf(d, fmt, label), gap = !thin && fld && row.rate != null ? row.rate - fld.rate : null;
     var rateOf = function (a) { return a.length ? 100 * a.filter(function (x) { return x.res === 'cover'; }).length / a.length : null; };
     var recOf = function (a) { var c = a.filter(function (x) { return x.res === 'cover'; }).length; return recordText(c, a.length - c); };
     var last20 = rated.slice(0, 20), r20 = rateOf(last20), d20 = r20 == null || row.rate == null ? null : r20 - row.rate;
-    var unit = kind === 'sh' ? ' sets' : ' games', f1 = function (v) { return (Math.round(v * 10) / 10).toFixed(1); };
-    var fmtAvg = function (a) {
-      var vals = a.map(function (x) { return marginOf(x.m); }).filter(function (v) { return v != null; });
-      if (!vals.length) return DASH;
-      var v = vals.reduce(function (s, x) { return s + x; }, 0) / vals.length;
-      return isT ? f1(v) + unit : (v > 0 ? '+' : v < 0 ? MINUS : '') + f1(Math.abs(v)) + unit;
-    };
-    var favM = played.filter(function (x) { return x.m.role === 'fav'; }), dogM = played.filter(function (x) { return x.m.role === 'dog'; });
     var in10 = rn ? Math.round(row.rate / 10) : null, longMiss = 0, cur = 0;
     rated.slice().reverse().forEach(function (x) { if (x.res === 'miss') { cur++; if (cur > longMiss) longMiss = cur; } else cur = 0; });
     var relWord = in10 == null ? '' : lcReliability(row.rate).word;
-    var avgLabel = isT ? 'Average total' : kind === 'gh' ? 'Average games margin' : 'Average sets margin';
+    // founder 2026-11-26 (export, final lock): the third tile is Expected cover rate = the field's cover rate on this line
+    // (the same Field figure the table prints); tail = his rate minus it, green / red. The Average games margin tile is gone.
+    var expTile = function () {
+      var thinOrNone = thin || row.rate == null;
+      return { label: 'Expected cover rate', fig: fld && fld.rate != null ? fld.rate.toFixed(1) + '%' : DASH, sub: 'the field on this line',
+        tail: !fld || fld.rate == null ? 'no field rate for this line' : thinOrNone ? 'too few matches to compare' : signed(row.rate - fld.rate, 1, 'pp') + ' vs expected',
+        tailColor: !fld || fld.rate == null || thinOrNone ? null : signColour(Math.round((row.rate - fld.rate) * 10) / 10) };
+    };
     var tiles = thin ? [
       { label: 'Record', fig: rn ? recOf(rated) : DASH, sub: rn + ' matches', tail: 'too few matches for a rate' },
       { label: 'Last 20', fig: recOf(last20), sub: 'his ' + last20.length + ' latest on this line' },
-      { label: avgLabel, fig: fmtAvg(favM), sub: 'as favourite ' + MIDDOT + ' ' + favM.length + ' matches', tail: fmtAvg(dogM) + ' as underdog ' + MIDDOT + ' ' + dogM.length + ' matches' },
+      expTile(),
       { label: 'Reliability', fig: in10 == null ? DASH : in10 + ' in 10', sub: 'covers this line ' + MIDDOT + ' ' + rn + ' matches', tail: rn ? relWord + ' ' + MIDDOT + ' longest miss streak ' + longMiss : 'no completed match' }
     ] : [
       { label: 'Cover rate', fig: row.rate.toFixed(1) + '%', sub: recOf(rated) + ' ' + MIDDOT + ' ' + rn + ' matches',
         tail: gap == null ? 'field ' + DASH : signed(gap, 1, 'pp') + ' vs the field at ' + fld.rate.toFixed(1) + '%', tailColor: gap == null ? null : signColour(gap) },
       { label: 'Last 20', fig: r20 == null ? DASH : Math.round(r20) + '%', sub: recOf(last20) + ' ' + MIDDOT + ' his latest on this line',
         tail: d20 == null ? '' : signed(d20, 1, 'pp') + ' vs his rate here', tailColor: d20 == null ? null : signColour(d20) },
-      { label: avgLabel, fig: fmtAvg(favM), sub: 'as favourite ' + MIDDOT + ' ' + favM.length + ' matches', tail: fmtAvg(dogM) + ' as underdog ' + MIDDOT + ' ' + dogM.length + ' matches' },
+      expTile(),
       { label: 'Reliability', fig: in10 + ' in 10', sub: 'covers this line ' + MIDDOT + ' ' + rn + ' matches', tail: relWord + ' ' + MIDDOT + ' longest miss streak ' + longMiss,
         tailColor: lcReliability(row.rate).colour }
     ];

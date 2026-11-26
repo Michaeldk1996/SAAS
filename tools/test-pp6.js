@@ -191,4 +191,23 @@ H.mustFail('CONTROL · the pre-ruling model (pbp rows on Last 24 months only) da
   M.resetState(KEY); Object.assign(M.state, { key: KEY, ltWin: 'w52', ltSurf: 'all' });
   [].concat(...M.ltModel(p).groups.map(g => g.rows)).filter(r => r.src === 'pbp').forEach(r => assert(r.held, r.id + ' dashed'));
 });
+// ── lines ───────────────────────────────────────────────────────────────────────────────────────────────────
+// founder 2026-11-26 (export final lock): the derived-line results box's third tile = Expected cover rate (the field's
+// cover rate on that line), never the Average games / sets margin
+const linesTile = (I2) => {
+  const rows = [].concat(...I2.lineCoverage(p, 'bo3', 'all', { win: 'career', tier: 'all' }).groups.map(g => g.rows)).filter(r => r.n >= 5);
+  assert(rows.length, 'no line with five matches');
+  I2.resetState(KEY); Object.assign(I2.state, { key: KEY, marketTab: 'lines', lcFmt: 'bo3', lcRole: 'all', lcWin: 'career', lcTier: 'all' });
+  const box = I2.FB_BUILD.lcline(p, rows[0].label);
+  assert(box, 'no results box for ' + rows[0].label);
+  const t = JSON.stringify(box);
+  assert(/Expected cover rate/.test(t) && /the field on this line/.test(t), 'no Expected cover rate tile');
+  assert(!/Average (games|sets) margin|Average total/.test(t), 'the Average margin tile is back');
+};
+H.check('lines · the results box tiles are Cover rate · Last 20 · Expected cover rate · Reliability', () => linesTile(I));
+H.mustFail('CONTROL · the pre-ruling tile (Average games margin) fails', () => {
+  const mut = SRC.replace("label: 'Expected cover rate', fig:", "label: 'Average games margin', fig:").replace("sub: 'the field on this line',", "sub: 'as favourite',");
+  assert.notStrictEqual(mut, SRC, 'mutation not applied');
+  linesTile(L.loadPp2({ src: mut, now: FX.asOf, players: { [KEY]: p }, careerHistory: { [KEY]: FX.careerHistory }, marketEdge: { [KEY]: FX.marketEdge } }).I);
+});
 H.done();

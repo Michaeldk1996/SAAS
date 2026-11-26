@@ -576,6 +576,10 @@ Supersedes the v3 values it restates. Reference = `Player Stat Boxes.dc.html` / 
 - **Market edge bands: the fav / dog edge is 1.95** — Near coin-flip 1.71 – 1.94, Slight underdog 1.95 – 2.49, on the
   ONE ladder (`market-edge-core.js` → shard builder, tour baselines, profile, Match analysis, Database); measured and
   ruled in `modal-market-edge.md` "Bands". **Test:** `tools/test-price-bands.js`, `test-ten310-market-edge.mjs`.
+- **Derived lines results box tiles = Cover rate · Last 20 · Expected cover rate · Reliability** (export final lock):
+  Expected cover rate = the field's cover rate on that line (the Field figure, `lcFieldOf`), sub "the field on this line",
+  tail = his rate minus it in pp, green / red; "too few matches to compare" under the floor; no field cell → a dash. The
+  Average games / sets margin tile is gone. **Test:** `tools/test-pp6.js` lines (+ control).
 - **Live trading · Last 52 weeks:** the point-by-point rows of Record by situation (Break of serve, Serving for the set,
   "Lost set 1, first break in set 2") and the Hold / break heatmap fill on Last 52 weeks as well as Last 24 months
   (All surfaces, no filter; the heatmap also Clay / Grass). Cause of the dashes (Kecmanovic, 26 Nov): `situational.json`
