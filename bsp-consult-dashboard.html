@@ -33606,6 +33606,10 @@ window.DatabaseTab = (function(){
     BIG_GAP: 15,               // Stats compare: a gap of 15+ points is bold and coloured
     HEAT_NEUTRAL: 3,           // Heatmap: neutral within ±3 points
     PRICE_MOVE_NO_BREAK: null, // "Price moved, no break": no threshold ruled — not built
+    // In-play price = Bet105 (Kibl), pushed (founder 2026-11-26: "the one that updates the fastest and is in line with Bet105").
+    // A price shows only while the stream is in line with Bet105: the worker at most LP_LAG_MAX_MS behind Kibl (the live
+    // arbitrage worker's rule), its position read at most LP_POS_MAX_MS old, each side re-priced within LP_SIDE_MAX_MS.
+    LP_LAG_MAX_MS: 5000, LP_POS_MAX_MS: 20000, LP_SIDE_MAX_MS: 600000, LP_READ_MS: 10000, LP_OVER_MAX: 1.20,
     CARD_MOMENTS_CAP: 5, TIMELINE_CAP: 6, AVG_MIN_MATCHES: 10,
   });
   window.LIVE_CONST = LIVE_CONST;
@@ -33652,6 +33656,152 @@ window.DatabaseTab = (function(){
   const ratingsOf = key => { const R = window.surfaceRatings; return R && Array.isArray(R.players) ? R.players.find(p => String(p.key) === String(key)) || null : null; };
   const hbData = () => { const H = (LF() && LF().holdbreak()) || window.holdbreak || null; return H && H.players ? H : null; };
 
+  // ── Bet105 in-play prices (kibl_live_ml, founder 2026-11-26) ──────────────────────────────────────────────────
+  // One read (live_ml_state RPC) on open and every LP_READ_MS with the live feed; between reads every price change is
+  // pushed over Realtime, filtered to the fixtures on the grid. A live match takes the ONE Kibl fixture whose two
+  // players both match by the stream join's name rule (KiblJoin.same: the card's full surname is the tail of Kibl's
+  // name, its initial any of Kibl's given names) with Kibl's start within 36 h of the match day; the lower participant
+  // id is Kibl's first-named player (kibl-stream/card_join.py side_map). Anything else is a dash, never a guess.
+  const LP = { fx: new Map(), pos: null, skew: 0, readAt: 0, inflight: false, err: null, ws: null, topic: null, joined: false,
+    scope: '', ref: 0, beat: null, idle: null, timer: null, retry: 0 };
+  const lpCfg = () => { const u = String(window.SUPABASE_URL || '').replace(/\/$/, ''), k = String(window.SUPABASE_ANON_KEY || '');
+    return u && k && !u.startsWith('__') && !k.startsWith('__') ? { u, k } : null; };
+  const lpNow = () => Date.now() + LP.skew;                       // the server's clock
+  const lpMs = v => { const t = v ? Date.parse(v) : NaN; return isFinite(t) ? t : null; };
+  function lpNames(name) {
+    const t = String(name || '').replace(/^\s*\d+\s+/, ''), parts = t.split(/\s+vs\.?\s+/i);
+    return parts.length === 2 && !/\//.test(t) ? parts.map(x => x.trim()) : null;
+  }
+  function lpPut(r) {
+    if (!r || r.fixture_id == null || Number(r.fixture_id) === 0) {
+      if (r && Number(r.fixture_id) === 0) LP.pos = { ins: r.kibl_inserted_on, rcv: r.received_at, at: lpNow() };
+      return false;
+    }
+    const f = LP.fx.get(String(r.fixture_id)); if (!f) return false;
+    const pid = String(r.fixture_participant_id ?? r.pid), prev = f.sides.get(pid);
+    const ins = r.kibl_inserted_on ?? r.ins;
+    if (prev && lpMs(prev.ins) != null && lpMs(ins) != null && lpMs(ins) <= lpMs(prev.ins)) return false;   // newer only
+    f.sides.set(pid, { price: r.price == null ? null : Number(r.price), st: r.market_status_id ?? r.st, ins, rcv: r.received_at ?? r.rcv });
+    return true;
+  }
+  function lpApply(j) {
+    if (!j || typeof j !== 'object') return;
+    const srv = lpMs(j.now); if (srv != null) LP.skew = srv - Date.now();
+    LP.pos = j.pos ? { ins: j.pos.ins, rcv: j.pos.rcv, at: srv != null ? srv : lpNow() } : null;
+    const next = new Map();
+    for (const f of Array.isArray(j.fx) ? j.fx : []) {
+      const id = String(f.id), old = LP.fx.get(id);
+      const e = { id, name: f.name, names: lpNames(f.name), start: lpMs(f.start), sides: old ? old.sides : new Map() };
+      next.set(id, e);
+      for (const sd of Array.isArray(f.sides) ? f.sides : []) lpPut({ fixture_id: id, ...sd });
+      LP.fx.set(id, e);
+    }
+    LP.fx = next;
+  }
+  // the stream is in line with Bet105: the worker's position read recently and close behind Kibl
+  function lpStreamOk() {
+    const p = LP.pos; if (!p) return false;
+    const rcv = lpMs(p.rcv), ins = lpMs(p.ins); if (rcv == null || ins == null) return false;
+    return rcv - ins <= LIVE_CONST.LP_LAG_MAX_MS && p.at - rcv <= LIVE_CONST.LP_LAG_MAX_MS && lpNow() - p.at <= LIVE_CONST.LP_POS_MAX_MS;
+  }
+  function lpFixtureOf(m) {
+    const same = window.KiblJoin && window.KiblJoin.same; if (typeof same !== 'function') return null;
+    const day = lpMs((m.date || '') + 'T12:00:00Z');
+    const hits = [];
+    for (const f of LP.fx.values()) {
+      if (!f.names || f.sides.size !== 2) continue;
+      if (day != null && f.start != null && Math.abs(f.start - day) > 36 * 3600e3) continue;
+      const [lo, hi] = [...f.sides.keys()].sort((x, y) => Number(x) - Number(y));
+      if (same(m.A.raw, f.names[0]) && same(m.B.raw, f.names[1])) hits.push({ f, a: lo, b: hi });
+      else if (same(m.A.raw, f.names[1]) && same(m.B.raw, f.names[0])) hits.push({ f, a: hi, b: lo });
+    }
+    return hits.length === 1 ? hits[0] : null;
+  }
+  // -> { v: [a, b] | [null, null], tip }
+  function livePriceOf(m) {
+    const none = tip => ({ v: [null, null], tip });
+    if (!lpCfg()) return none('No in-play price feed on this page');
+    const h = lpFixtureOf(m);
+    if (!h) return none(LP.readAt ? 'Bet105 lists no in-play price for this match' : LP.err ? 'In-play prices unavailable' : 'Loading in-play prices');
+    if (!lpStreamOk()) return none('Bet105 feed behind — price not shown');
+    const A = h.f.sides.get(h.a), B = h.f.sides.get(h.b), now = lpNow();
+    const ok = x => x && x.price >= 1.01 && (x.st == null || Number(x.st) === 1) && lpMs(x.ins) != null && now - lpMs(x.ins) <= LIVE_CONST.LP_SIDE_MAX_MS;
+    if (!ok(A) || !ok(B)) return none('Bet105 market suspended');
+    const over = 1 / A.price + 1 / B.price;
+    if (over < 0.99 || over > LIVE_CONST.LP_OVER_MAX) return none('Bet105 market suspended');
+    const t = Math.max(lpMs(A.ins), lpMs(B.ins));
+    return { v: [A.price, B.price], tip: 'Bet105 in-play · ' + timeOf(t) };
+  }
+  function lpRead() {
+    const c = lpCfg(); if (!c || LP.inflight || document.hidden) return;
+    LP.inflight = true;
+    fetch(c.u + '/rest/v1/rpc/live_ml_state', { method: 'POST', cache: 'no-store',
+      headers: { apikey: c.k, Authorization: 'Bearer ' + c.k, 'Content-Type': 'application/json' }, body: '{}' })
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
+      .then(j => { lpApply(j); LP.readAt = Date.now(); LP.err = null; lpScope(); paint(); })
+      .catch(e => { LP.err = String(e && e.message || e); paint(); })
+      .finally(() => { LP.inflight = false; });
+  }
+  // the push channel: kibl_live_ml changes for the fixtures the grid shows (≤ 100 per binding)
+  function lpSend(t, event, payload, ref) { try { LP.ws.send(JSON.stringify({ topic: t, event, payload, ref: ref || String(++LP.ref) })); } catch (e) { /* closing */ } }
+  function lpWanted() { return LIVE.map(m => lpFixtureOf(m)).filter(Boolean).map(h => h.f.id).sort(); }
+  function lpScope() {
+    const c = lpCfg(); if (!c) return;
+    if (document.hidden) { lpClose(); return; }
+    const ids = lpWanted(), key = ids.join(',');
+    if (!ids.length) { if (LP.topic && LP.ws && LP.ws.readyState === 1) lpSend(LP.topic, 'phx_leave', {}); LP.topic = null; LP.joined = false; LP.scope = ''; return; }
+    if (key === LP.scope && LP.ws && LP.ws.readyState <= 1) return;
+    LP.scope = key;
+    if (!LP.ws || LP.ws.readyState > 1) { lpConnect(c); return; }
+    if (LP.ws.readyState === 1) lpJoin(c);
+  }
+  function lpJoin(c) {
+    if (LP.topic) lpSend(LP.topic, 'phx_leave', {});
+    const ids = LP.scope.split(',').filter(Boolean); if (!ids.length) return;
+    const bindings = [];
+    for (let i = 0; i < ids.length; i += 100)
+      bindings.push({ event: '*', schema: 'public', table: 'kibl_live_ml', filter: `fixture_id=in.(${ids.slice(i, i + 100).join(',')})` });
+    LP.topic = 'realtime:live-ml-' + (++LP.ref); LP.joined = false;
+    lpSend(LP.topic, 'phx_join', { config: { broadcast: { ack: false, self: false }, presence: { key: '' }, postgres_changes: bindings, private: false },
+      access_token: c.k });
+  }
+  function lpConnect(c) {
+    let sock; try { sock = new WebSocket(c.u.replace(/^http/, 'ws') + '/realtime/v1/websocket?apikey=' + encodeURIComponent(c.k) + '&vsn=1.0.0'); } catch (e) { return; }
+    LP.ws = sock;
+    sock.onopen = () => { LP.retry = 0; lpJoin(c); clearInterval(LP.beat); LP.beat = setInterval(() => lpSend('phoenix', 'heartbeat', {}), 25000); };
+    sock.onmessage = ev => {
+      let msg; try { msg = JSON.parse(ev.data); } catch (e) { return; }
+      if (sock !== LP.ws || msg.topic !== LP.topic) return;
+      if (msg.event === 'system' && msg.payload && msg.payload.status === 'ok') { LP.joined = true; lpRead(); return; }   // re-read: nothing between read and join is missed
+      if (msg.event === 'phx_error' || msg.event === 'phx_close') { LP.joined = false; setTimeout(() => { if (LP.ws === sock && sock.readyState === 1) lpJoin(lpCfg() || c); }, 3000); return; }
+      if (msg.event !== 'postgres_changes') return;
+      const d = msg.payload && msg.payload.data, rec = d && (d.record || d.new);
+      if (!rec) return;
+      // a pushed row written while the worker was behind Kibl is not in line with Bet105: hold it out until the next read
+      const lag = (lpMs(rec.received_at) ?? 0) - (lpMs(rec.kibl_inserted_on) ?? 0);
+      if (lag > LIVE_CONST.LP_LAG_MAX_MS && LP.pos) LP.pos = { ...LP.pos, at: -Infinity };
+      if (lpPut(rec)) paint();
+    };
+    sock.onclose = () => {
+      clearInterval(LP.beat); if (LP.ws !== sock) return;
+      LP.ws = null; LP.topic = null; LP.joined = false;
+      if (document.hidden || !LP.scope) return;
+      setTimeout(() => { if (!LP.ws && LP.scope) lpConnect(lpCfg() || c); }, Math.min(2000 * 2 ** Math.min(LP.retry++, 5), 60000));
+    };
+  }
+  function lpClose() {
+    clearInterval(LP.beat); LP.beat = null; clearInterval(LP.timer); LP.timer = null;
+    const w = LP.ws; LP.ws = null; LP.topic = null; LP.joined = false; LP.scope = '';
+    if (w) try { w.close(); } catch (e) { /* closed */ }
+  }
+  // the Live feed calls this on every update (only while the Live page is open); no update for 45 s = the page is gone
+  function lpTick() {
+    clearTimeout(LP.idle); LP.idle = setTimeout(lpClose, 45000);
+    if (!LP.timer) LP.timer = setInterval(lpRead, LIVE_CONST.LP_READ_MS);   // the stream check needs a fresh position read
+    if (Date.now() - LP.readAt >= LIVE_CONST.LP_READ_MS) lpRead(); else lpScope();
+  }
+  document.addEventListener('visibilitychange', () => { if (document.hidden) lpClose(); else if (inited && LIVE.length) lpRead(); });
+
   // ── view model, one per live fixture ──────────────────────────────────────────────────────────────────────────
   const SLAM_RE = /australian open|roland garros|french open|wimbledon|us open/i;
   const setNo = s => +String(s || '').replace(/[^0-9]/g, '') || 0;
@@ -33690,6 +33840,7 @@ window.DatabaseTab = (function(){
     m.schedMs = has('cardStartMs') ? cardStartMs({ date: m.date, time: m.time }) : NaN;   // sort key only
     m.surface = surfaceOf(m);
     m.pre = preOf(m);
+    m.lp = livePriceOf(m);
     m.mto = mtoOf(m);
     return m;
   }
@@ -33923,7 +34074,7 @@ window.DatabaseTab = (function(){
     const rows = [0, 1].map(s => { const p = s ? m.B : m.A, lead = sc(s) > sc(1 - s), lvl = sc(s) === sc(1 - s);
       return `<div style="display:flex; align-items:center;"><span style="flex:1; display:flex; align-items:center; gap:8px; min-width:0;">${ava(p, 26, { fs: '9.5px', cb: true })}<span title="${esc(p.name)}" style="font-size:14px; font-weight:${lead ? 700 : lvl ? 600 : 500}; color:${lead || lvl ? C.text : C.soft}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(p.name)}</span><span style="width:7px; height:7px; border-radius:50%; background:${m.live && m.serving === s ? C.text : 'transparent'}; flex:none;"></span></span>
         <span style="width:36px; flex:none; text-align:center; ${MONO} font-variant-numeric:tabular-nums; font-size:14px; font-weight:500; color:${C.soft};">${esc(m.point ? m.point[s] : D)}</span><span style="width:36px; flex:none; text-align:center; ${MONO} font-variant-numeric:tabular-nums; font-size:14px; font-weight:700; color:${C.text};">${sw(s)}</span><span style="width:42px; flex:none; text-align:center; ${MONO} font-variant-numeric:tabular-nums; font-size:14px; font-weight:500; color:${C.grey};">${m.sets[cur][s]}</span>${div(20)}<span${m.pre.tip ? ` title="${esc(m.pre.tip)}"` : ''} style="width:40px; flex:none; text-align:center; ${MONO} font-variant-numeric:tabular-nums; font-size:13px; color:${C.grey};">${px(m.pre.v[s])}</span></div>`; }).join('');
-    const box = s => `<span style="flex:1; min-width:0; display:flex; align-items:center; justify-content:space-between; height:34px; box-sizing:border-box; padding:0 10px; border-radius:8px; background:${C.card}; border:1px solid ${wa(8)};"><span style="font-size:12.5px; color:${C.grey};">${s + 1}</span><span title="No in-play price feed on this page yet" style="${MONO} font-variant-numeric:tabular-nums; font-size:14px; font-weight:700; color:${C.text};">${D}</span></span>`;
+    const box = s => `<span style="flex:1; min-width:0; display:flex; align-items:center; justify-content:space-between; height:34px; box-sizing:border-box; padding:0 10px; border-radius:8px; background:${C.card}; border:1px solid ${wa(8)};"><span style="font-size:12.5px; color:${C.grey};">${s + 1}</span><span title="${esc(m.lp.tip || '')}" style="${MONO} font-variant-numeric:tabular-nums; font-size:14px; font-weight:700; color:${C.text};">${px(m.lp.v[s])}</span></span>`;
     const btn = !mj ? '' : n ? `<span data-act="mom:${m.ek}" style="flex:none; display:inline-flex; align-items:center; gap:6px; height:34px; padding:0 8px; border-radius:8px; font-size:12px; font-weight:600; color:${open ? C.text : C.grey}; background:${open ? C.lifted : 'transparent'}; white-space:nowrap; cursor:pointer; transition:color .14s, background .14s;" class="lv-mbtn">${n === 1 ? '1 moment' : n + ' moments'}<span style="font-size:9px; transform:${open ? 'rotate(180deg)' : 'none'}; transition:transform .14s;">▼</span></span>`
       : `<span style="flex:none; display:inline-flex; align-items:center; height:34px; padding:0 8px; font-size:12px; color:${C.grey}; white-space:nowrap;">No moments</span>`;
     const list = !open ? '' : `<div data-stop="1" style="margin:0 14px 12px; padding:6px 0; border-radius:10px; background:${C.card}; border:1px solid ${wa(6)}; display:flex; flex-direction:column; gap:1px; cursor:default;">${mj.slice(0, LIVE_CONST.CARD_MOMENTS_CAP).map(e => `<div class="lv-mrow" style="display:flex; align-items:baseline; gap:8px; min-height:26px; box-sizing:border-box; margin:0 4px; padding:5px 8px; border-radius:7px; transition:background .14s;">
@@ -33988,6 +34139,7 @@ window.DatabaseTab = (function(){
   }
   function paint() {
     if (!inited) return;
+    for (const m of LIVE) m.lp = livePriceOf(m);   // pushed prices land between feed updates
     paintPage();
     if (S.sel != null) paintModal();
   }
@@ -34032,7 +34184,7 @@ window.DatabaseTab = (function(){
     const nS = m.nSets, setsWon = s => m.sets.slice(0, nS - 1).filter(st => st[s] > st[1 - s]).length, aW = setsWon(0), bW = setsWon(1);
     const cs = m.sets[nS - 1], stC = m.live ? C.text : C.amber;
     const priceLine = s => {
-      const live = `<span title="No in-play price feed on this page yet" style="${MONO} font-size:13px; font-weight:700; color:${C.text}; font-variant-numeric:tabular-nums;">${D}</span><span style="color:${C.quiet};">${DOT}</span>`;
+      const live = `<span title="${esc(m.lp.tip || '')}" style="${MONO} font-size:13px; font-weight:700; color:${C.text}; font-variant-numeric:tabular-nums;">${px(m.lp.v[s])}</span><span style="color:${C.quiet};">${DOT}</span>`;
       const pre = `<span>Pre</span><span title="${esc(m.pre.tip || 'Pre-match price')}" style="${MONO} font-size:12px; font-weight:500; color:${C.grey}; font-variant-numeric:tabular-nums;">${px(m.pre.v[s])}</span>`;
       return `<span style="display:flex; align-items:baseline;${s ? ' justify-content:flex-end;' : ''} gap:2px 6px; flex-wrap:wrap; font-size:11.5px; font-weight:600; color:${C.grey}; white-space:nowrap;">${s ? pre + `<span style="color:${C.quiet};">${DOT}</span>` + live.replace(`<span style="color:${C.quiet};">${DOT}</span>`, '') : live + pre}</span>`;
     };
@@ -34501,6 +34653,7 @@ window.DatabaseTab = (function(){
     LIVE = (Array.isArray(FEED.live) ? FEED.live : []).map(vm);
     if (S.sel != null && !LIVE.some(m => m.ek === S.sel)) { S.sel = null; if (OV) { OV.remove(); OV = null; document.body.style.overflow = ''; } }
     if (S.sel != null && LF()) LF().pbpLoad(S.sel, () => { if (S.sel != null) paint(); });
+    lpTick();
     paint();
   }
   (window.__LV_SUBS = window.__LV_SUBS || []).push(onFeed);
@@ -34512,7 +34665,7 @@ window.DatabaseTab = (function(){
   if (btn) btn.addEventListener('click', init, true);
   const pg = document.querySelector('.tabpage[data-page="live"]');
   if (pg && pg.classList.contains('active')) init();
-  window.LivePage = { init, LIVE_CONST, _S: S, _vm: vm, _buildPlay: buildPlay, _sig: sigOf, _paint: paint, _open: openModal, _onFeed: onFeed, _side: SIDE,
+  window.LivePage = { init, LIVE_CONST, _S: S, _vm: vm, _buildPlay: buildPlay, _sig: sigOf, _paint: paint, _open: openModal, _onFeed: onFeed, _side: SIDE, _lp: { LP, apply: lpApply, priceOf: livePriceOf, streamOk: lpStreamOk, names: lpNames },
     _html: { header: headerHtml, card: cardHtml, momentum: momentumHtml, stats: statsHtml, points: pointsHtml, heat: heatHtml, modalHead: modalHeadHtml, cards: cardsModel } };
 })();
 </script>
