@@ -1752,22 +1752,11 @@
     "venue": null,
     "courtSpeed": null,
     "weather": null,
-    "live": true,
-    "liveStatus": "Set 2",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 6,
-        "p2": 0
-      },
-      {
-        "set": 2,
-        "p1": 4,
-        "p2": 3
-      }
-    ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p2",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2849_l-musetti.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/8431_s-c-hong.jpg",
     "tournamentKey": "3120",
@@ -1958,7 +1947,27 @@
           }
         }
       }
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "6-0, 7-6(5)",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 0
+        },
+        {
+          "p1": 7,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12182774",
@@ -5303,7 +5312,31 @@
       "edgeVsPinnacleP1": -0.0565,
       "edgeVsPinnacleP2": 0.0565,
       "ts": "2026-11-25T16:22:13.340Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "6-3, 6-7(3), 6-7(5)",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 3
+        },
+        {
+          "p1": 6,
+          "p2": 7
+        },
+        {
+          "p1": 6,
+          "p2": 7
+        }
+      ],
+      "p1Sets": 1,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "past-12181958",
