@@ -1,30 +1,30 @@
 {
- "generatedAt": "2026-11-25T03:59:46.433Z",
+ "generatedAt": "2026-11-26T11:58:09.922Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (the earlier of Oddspapi trueStart and the card-state start: Oddspapi, the live-flip lower bound, the Bet105 switch or the first point — founder 2026-11-08; a cut at Oddspapi start before a verified start counts at the verified start only when the same tick, seen within 60 min and within 1.5pp of the Bet105 close, else it stays held back); both sides required; dropped when no unique actual start. seenAt = our last capture read before the start that confirmed the close (founder 2026-10-28); age = start - (seenAt or at)",
  "scannedThrough": {
-  "commit": "7185a4ab0a625fbe67474d882b102885253abe2c",
-  "at": "2026-11-25T03:56:12Z"
+  "commit": "862b9f3febb2d515949267a4d319dd3e354dc18c",
+  "at": "2026-11-26T11:51:41Z"
  },
- "commitsScanned": 7223,
+ "commitsScanned": 7226,
  "lastRun": {
-  "from": "2026-11-23T11:45:17Z",
-  "snapshots": 3,
-  "added": 1,
+  "from": "2026-11-25T03:56:12Z",
+  "snapshots": 4,
+  "added": 2,
   "replaced": 0,
   "seenBackfilled": 0,
   "earlierCutBackfilled": 0,
   "series": 4,
-  "kept": 4,
+  "kept": 3,
   "bySource": {
-   "oddspapi": 1,
-   "bet105-switch": 2,
-   "first-point": 1
+   "first-point": 3
   },
   "byBook": {
-   "Pinnacle +30s": 4
+   "Pinnacle +30s": 3
   },
-  "dropped": {}
+  "dropped": {
+   "noStart": 1
+  }
  },
  "stats": {
   "series": 467,
@@ -16482,6 +16482,48 @@
    "o2": 2.29,
    "oAt": "2026-11-24T15:56:52.879Z",
    "winner": "p1"
+  },
+  {
+   "eventKey": 12182952,
+   "date": "2026-11-26",
+   "p1Key": 1103,
+   "p2Key": 2831,
+   "p1Name": "C. Norrie",
+   "p2Name": "J-L. Struff",
+   "p1": 2.08,
+   "p2": 1.806,
+   "at": "2026-11-26T09:14:32.727Z",
+   "trueStart": "2026-11-26T09:19:16.000Z",
+   "startSource": "first-point",
+   "book": "Pinnacle +30s",
+   "round": null,
+   "qualifying": false,
+   "event": "ATP Davis Cup - World Group",
+   "o1": 2.07,
+   "o2": 1.813,
+   "oAt": "2026-11-26T08:45:49.453Z",
+   "winner": "p1"
+  },
+  {
+   "eventKey": 12182953,
+   "date": "2026-11-26",
+   "p1Key": 8174,
+   "p2Key": 1980,
+   "p1Name": "A. Fery",
+   "p2Name": "A. Zverev",
+   "p1": 11.71,
+   "p2": 1.054,
+   "at": "2026-11-26T11:15:49.451Z",
+   "trueStart": "2026-11-26T11:16:49.000Z",
+   "startSource": "first-point",
+   "book": "Pinnacle +30s",
+   "round": null,
+   "qualifying": false,
+   "event": "ATP Davis Cup - World Group",
+   "o1": 10.74,
+   "o2": 1.057,
+   "oAt": "2026-11-26T08:45:49.315Z",
+   "winner": null
   }
  ]
 }
