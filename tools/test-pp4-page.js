@@ -136,7 +136,7 @@ check('host: the profile loads mto-matches.json once per session, a failed read 
 check('Match-up: a thin dot sits at its own rate (hollow, no label), as the reference', () =>
   /var yv = d\.pct;/.test(SRC) && /var vals = pts\.map\(function \(d\) \{ return d\.pct; \}\);/.test(SRC) || 'thin dot');
 check('Record per tournament: a search that matches nothing leaves the list card empty (the reference); no sentence', () =>
-  /\(q \|\| lvl !== 'all' \|\| sf !== 'all' \? '<div data-pp2-tourn-empty="1"><\/div>'/.test(SRC) && !/No tournament matches that search/.test(SRC) || 'tourn empty');
+  /\(views\.length \|\| q \? '<div data-pp2-tourn-empty="1"><\/div>'/.test(SRC) && !/No tournament matches that search/.test(SRC) || 'tourn empty');
 check('Money in units (founder 2026-11-14): no match-list P&L or drawer headline prints a %', () =>
   !/signed\(m\.pl \|\| 0, 2, '%'\)/.test(SRC) && !/fig: signed\(b\.u, 1, '%'\)/.test(SRC) && /\(has \? signed\(s\.u, 2, 'u'\) : DASH\)/.test(SRC) || 'units');
 const HOST = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
