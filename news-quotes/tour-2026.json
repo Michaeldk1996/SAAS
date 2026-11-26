@@ -2,7 +2,7 @@
  "tournament": "ATP Tour",
  "tournamentKey": "tour",
  "season": "2026",
- "updatedAt": "2026-11-26T10:09:05.309Z",
+ "updatedAt": "2026-11-26T14:10:39.373Z",
  "items": [
   {
    "id": "quote-e80516a3ac9ec2",
@@ -421,6 +421,36 @@
    "settingTried": true,
    "sourceHash": "e6b460e472a5aab5",
    "publishedAt": "2026-11-26T04:37:22.465Z"
+  },
+  {
+   "id": "quote-9fa5c737f7678d",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-26T00:00:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "It's a great honour to be holding this trophy, to be part of this celebration, … Last year, playing this tournament I thought, 'Maybe I can win a Grand Slam. Maybe I can do well during the year'. But I didn't imagine I could be standing here holding this trophy. To be the Year-End No 1 is the most special thing. It's the biggest achievement of my career.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "ATP Tour",
+   "sourceUrl": "https://www.atptour.com/en/news/zverev-70-wins-record-2026",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
+   "sourceHash": "0cf85f3b42fe02d8",
+   "publishedAt": "2026-11-26T14:10:39.373Z",
+   "topic": "On finishing the season as year-end No 1"
   },
   {
    "id": "quote-6daa8098cf1fd8",
@@ -5350,11 +5380,19 @@
    "members": [
     "quote-0ee6b1e1c93196",
     "quote-797d7f3bddbbe3",
+    "quote-9fa5c737f7678d",
     "quote-e07e715b2d4034"
    ],
-   "memberHash": "daeea07f5efc96a7",
-   "digestedAt": "2026-11-26T09:08:49.999Z",
+   "memberHash": "ff92f935c53b1ec9",
+   "digestedAt": "2026-11-26T14:10:39.373Z",
    "blocks": [
+    {
+     "label": "on finishing the season as year-end No 1",
+     "text": "It's a great honour to be holding this trophy, to be part of this celebration. Last year, playing this tournament, I thought: Maybe I can win a Grand Slam. Maybe I can do well during the year. But I didn't imagine I could be standing here holding this trophy. To be the Year-End No 1 is the most special thing. It's the biggest achievement of my career.",
+     "from": [
+      "quote-9fa5c737f7678d"
+     ]
+    },
     {
      "label": "on his chronic right ankle pain",
      "text": "Since what happened in Paris. They come and go, I'll have to live with them until the end of my career. But, considering that I've played more than anyone, I should be satisfied with how this year has gone.",
