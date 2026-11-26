@@ -83,8 +83,9 @@ check(/\(\\d\+\)\\s\*\\\/\\s\*\(\\d\+\)/.test(LIVE),
   'stat_value "X/Y" is parsed when stat_won/stat_total are null (Number(null) is 0)');
 check(/ready \? ip : D/.test(LIVE) && /if \(!FEED\.ready\) return skeletonHtml\(\);/.test(LIVE),
   'before the first snapshot the header dashes and the grid shows the loading skeleton, never "Nothing in play"');
-check(/No in-play price feed on this page yet/.test(LIVE) && !/kibl_live_ml/.test(LIVE),
-  'no live price is shown until an in-play source is ruled (a dash, never the pre-match price as live)');
+// founder 2026-11-26: the in-play price is Bet105's (kibl_live_ml, pushed), never the pre-match price passed off as live
+check(/rpc\/live_ml_state/.test(LIVE) && /table: 'kibl_live_ml'/.test(LIVE) && /px\(m\.lp\.v\[s\]\)/.test(LIVE) && !/px\(m\.pre\.v\[s\]\)[^\n]*Bet105 in-play/.test(LIVE),
+  'the live price is Bet105 in-play (live_ml_state + kibl_live_ml push), a separate slot from Pre');
 
 console.log('=== source guard: live-tab.js is the data layer, not a renderer ===');
 

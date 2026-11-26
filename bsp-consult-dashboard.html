@@ -33692,9 +33692,8 @@ window.DatabaseTab = (function(){
     for (const f of Array.isArray(j.fx) ? j.fx : []) {
       const id = String(f.id), old = LP.fx.get(id);
       const e = { id, name: f.name, names: lpNames(f.name), start: lpMs(f.start), sides: old ? old.sides : new Map() };
-      next.set(id, e);
+      next.set(id, e); LP.fx.set(id, e);   // in the map before its sides land (lpPut looks it up)
       for (const sd of Array.isArray(f.sides) ? f.sides : []) lpPut({ fixture_id: id, ...sd });
-      LP.fx.set(id, e);
     }
     LP.fx = next;
   }

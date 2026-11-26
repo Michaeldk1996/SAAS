@@ -19,8 +19,17 @@ check also runs on a mutated copy and must go red. `tools/test-live-tab-feed.js`
 - **Pre price** = the Today's Matches card's price for the match: `odds-card-state` (`_ocsOf`), the card's one book, its
   close (last price before the real start), else its last pre-start Now; both sides or neither; the hover names the book and
   the time. **Test:** Pre = the card state's close, never its open.
-- **Live price:** no in-play price is readable from the browser yet (`kibl_live_ml` is service-key only). The price boxes
-  and every "before → after" read a dash until the source is ruled. Never the pre-match price shown as live.
+- **Live price = Bet105 in-play, pushed** (founder 2026-11-26: "the one that updates the fastest and is in line with
+  Bet105"). `kibl_live_ml` (latest row per player, the Kibl stream worker's) is SELECT-only for the browser and in
+  `supabase_realtime`; `live_ml_state()` is the one read (on open and every `LP_READ_MS` 10 s): stream position, server
+  clock, in-play fixtures with Kibl's names. Between reads each change is pushed, channel filtered to the grid's fixtures.
+  A live match takes the ONE Kibl fixture whose two players both match by the stream join's name rule (`KiblJoin.same`
+  = drops-page.js `kiblSame`), Kibl's start within 36 h of the match day; the lower participant id = Kibl's first-named
+  player. **Test:** a price shows only when the worker is ≤ `LP_LAG_MAX_MS` 5 s behind Kibl (the arbitrage rule), its
+  position read ≤ `LP_POS_MAX_MS` 20 s old, both sides open (market status 1, ≥ 1.01, overround 0.99–`LP_OVER_MAX` 1.20)
+  and re-priced within `LP_SIDE_MAX_MS` 10 min; else a dash whose hover says why. Never the pre-match price shown as live.
+  The moments' "before → after" stay a dash (the point log has no times to cut the price history at).
+  `test-live-page.mjs` "in-play price"; `kibl-stream/test-live-ml.py` (no write grant, history never readable).
 - **Medical timeout:** `mto-matches.json` (published every data run, ~10 min behind the detector). An open MTO = the amber
   "Medical timeout" chip, the moment, the chart sign. **Never a body part or a reason:** the chip's hover is player + where.
   A rain delay has no source (the feed says only "Interrupted"): no chip, no moment.

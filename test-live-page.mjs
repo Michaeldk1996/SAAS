@@ -15,6 +15,8 @@ const HTML = readFileSync(join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
 const LIVETAB = readFileSync(join(HERE, 'live-tab.js'), 'utf8');
 const HOUSE = readFileSync(join(HERE, 'house-ratings.js'), 'utf8');
 const FIX = JSON.parse(readFileSync(join(HERE, 'tools/fixtures/ten417-live.json'), 'utf8'));
+import { createRequire } from 'node:module';
+const KIBL_SAME = createRequire(import.meta.url)('./drops-page.js').kiblSame;   // the stream join's name rule, as shipped
 const BLOCK = (() => { const a = HTML.lastIndexOf('<script>'), b = HTML.indexOf('</script>', a); const s = HTML.slice(a + 8, b);
   assert.ok(/LIVE_CONST/.test(s) && /lvTab/.test(s), 'the Live renderer is the last <script> block'); return s; })();
 function fn(src, name) {
@@ -51,6 +53,7 @@ function boot(block = BLOCK, opts = {}) {
     function cardStartMs(m){ return Date.parse(m.date + 'T' + (m.time || '00:00') + ':00Z'); }
     var OCS = { byKey: {} }; function _ocsOf(m){ return ${JSON.stringify(opts.ocs || null)}; } function mxBookLabel(b){ return b === 'bet105' ? 'Bet105' : b; }
     var surfaceRatings = ${JSON.stringify(opts.ratings || { players: [] })}; var holdbreak = ${JSON.stringify(opts.hb || null)};`, ctx);
+  ctx.KiblJoin = { same: KIBL_SAME };
   vm.runInContext(block, ctx);
   return ctx;
 }
@@ -88,7 +91,7 @@ test('the grid: ATP and Challenger men\'s singles underway, never ITF, WTA or do
   assert.match(LIVETAB, /const live = all\.filter\(isLiveTour\)\.filter\(isUnderway\)/);
 });
 
-test('card: score, server, Pre = the card state\'s close, live price a dash (no in-play feed on the page)', async () => {
+test('card: score, server, Pre = the card state\'s close, live price a dash before any in-play read', async () => {
   const ocs = { book: 'bet105', startTs: '2026-10-08T05:00:00Z', p1: { close: 1.553, closeTs: '2026-10-08T04:59:00Z' }, p2: { close: 2.48, closeTs: '2026-10-08T04:59:00Z' } };
   await both('Pre from the open', s => s.replace("const side = s => s.close != null ? { v: s.close, ts: s.closeTs, k: 'close' }", "const side = s => s.open != null ? { v: s.open, ts: s.openTs, k: 'open' }"), src => {
     const c = boot(src, { ocs }); const m = c.LivePage._vm(board()[0], 0);
@@ -246,4 +249,34 @@ test('hover boxes close when the pointer moves anywhere else (the body re-render
   assert.match(h, /if \(S\.momTip && k !== 'momtip'\) patch\.momTip = false;/);
   assert.match(h, /if \(S\.drTip && k !== 'drtip'\) patch\.drTip = false;/);
   assert.match(h, /if \(\(S\.momK \|\| S\.momDot\) && !\/\^\(dot\|row\):\/\.test\(k\)\)/);
+});
+
+// founder 2026-11-26: the in-play price = Bet105 (kibl_live_ml), pushed; shown only while the stream is in line with Bet105
+test('in-play price: Bet105, each player placed by Kibl\'s name order; dash when behind, suspended or ambiguous', async () => {
+  const T = Date.now(), iso = ms => new Date(ms).toISOString();
+  const state = (o = {}) => ({ now: iso(T), pos: { ins: iso(T - 1000 - (o.lag || 0)), rcv: iso(T - 900) },
+    fx: [{ id: 5, name: '777 Lorenzo Musetti vs Yibing Zhou', league: 19, start: '2026-10-09T08:00:00Z',
+      sides: [{ pid: 100, price: 1.4, st: o.st || 1, ins: iso(T - 20000) }, { pid: 101, price: 2.9, st: 1, ins: iso(T - 20000) }] }]
+      .concat(o.twin ? [{ id: 6, name: '12 Lorenzo Musetti vs Yibing Zhou', league: 19, start: '2026-10-09T09:00:00Z',
+        sides: [{ pid: 7, price: 1.5, st: 1, ins: iso(T - 5000) }, { pid: 8, price: 2.6, st: 1, ins: iso(T - 5000) }] }] : []) });
+  const run = (src, o) => { const c = boot(src); c.LivePage._lp.apply(state(o)); c.LivePage._lp.LP.readAt = T; return c; };
+  await both('players swapped', s => s.replace('hits.push({ f, a: hi, b: lo })', 'hits.push({ f, a: lo, b: hi })'), src => {
+    const c = run(src), m = c.LivePage._vm(board()[0], 0);        // Y. Zhou v L. Musetti: Kibl lists Musetti first
+    assert.equal(JSON.stringify(m.lp.v), '[2.9,1.4]');
+    const h = c.LivePage._html.card({ m, sig: c.LivePage._sig(m) });
+    assert.match(h, />2\.90</); assert.match(h, />1\.40</); assert.match(h, /Bet105 in-play/);
+    const mh = c.LivePage._html.modalHead(m); assert.match(mh, />2\.90</); assert.match(mh, />1\.40</);
+  });
+  await both('lag check dropped', s => s.replace('return rcv - ins <= LIVE_CONST.LP_LAG_MAX_MS && ', 'return '), src => {
+    const m = run(src, { lag: 8000 }).LivePage._vm(board()[0], 0);
+    assert.equal(JSON.stringify(m.lp.v), '[null,null]', 'worker 8 s behind Kibl = no price');
+  });
+  await both('suspension ignored', s => s.replace('(x.st == null || Number(x.st) === 1)', 'true'), src => {
+    const m = run(src, { st: 2 }).LivePage._vm(board()[0], 0);
+    assert.equal(JSON.stringify(m.lp.v), '[null,null]'); assert.match(m.lp.tip, /suspended/);
+  });
+  await both('two fixtures picked anyway', s => s.replace('return hits.length === 1 ? hits[0] : null;', 'return hits[0] || null;'), src => {
+    const m = run(src, { twin: true }).LivePage._vm(board()[0], 0);
+    assert.equal(JSON.stringify(m.lp.v), '[null,null]', 'two Kibl fixtures for one match = no guess');
+  });
 });
