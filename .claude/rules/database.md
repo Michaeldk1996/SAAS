@@ -282,8 +282,10 @@ inside every mount (`[data-db-root]`). Ratings and Lines rules: `ratings.md`, `l
   Rank; "Open in Player ›" jumps to the Player view with the player and Side preset. **Window switch in the box** (founder
   2026-11-19): All · Last 52 weeks · Last 24 months recompute the tiles and the list from his matches in that window; Rank
   stays his place in the list (whole period). Its match rows open the sheet like the band box.
-- **The 12 months column and the Any day · Plays today · Plays tomorrow switch are gone** with the locked design (2026-11-26;
-  they were added 2026-11-19, the locked design has neither; the founder was asked). The Today dot stays.
+- **The 12 months column and the Any day · Plays today · Plays tomorrow switch are gone** (founder 2026-11-26: "Drop both,
+  follow design"; supersedes his 2026-11-19 request). The Fade finder is built exactly as the locked export draws it; the
+  Today dot on a row stays (it is in the export). **Test:** `test-database-v2.mjs` "fadeLocked" (no 12 months, no Plays
+  switch).
 
 ## Formatting
 - **Test:** yields 2 dp with sign, `pp` deltas, units, all with a true minus `−` (`fmtPct`, `fmtPP`, `fmtU`);
