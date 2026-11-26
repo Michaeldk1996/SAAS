@@ -18,7 +18,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const CODE_REQUIRED = ['index.html', 'bsp-consult-dashboard.html', 'auth.html', 'account.html', 'funnel.html', 'verify.html',
-  'auth.js', 'analytics.js', 'house-ratings.js', 'live-tab.js', 'kibl-now-stream.js', 'price-history-box.js', 'line-prices.js', 'holdbreak-heatmap.js',
+  'auth.js', 'analytics.js', 'house-ratings.js', 'live-tab.js', 'live-moments.js', 'kibl-now-stream.js', 'price-history-box.js', 'line-prices.js', 'holdbreak-heatmap.js',
   'player-profile-v2.js', 'settlement.js', 'market-edge-core.js', 'tournament-identity.js', 'h2h-core.js', 'wue-sheet.js', 'draw-view.js', 'esc-nav.js', 'pbp-integrity.js', 'series.js', 'series.css', 'tokens.css', 'theme.js',
   'drops-page.js', 'drops-page.css', 'picks-core.js', 'picks-store.js', 'picks-page.js', 'picks-drawer.js', 'picks-shell.js', 'picks-page.css', 'sharp-drops-core.js', 'sharp-drops-page.js', 'sharp-drops-page.css', 'bettracker-math.js', 'bettracker-store.js', 'bettracker-page.js', 'bettracker-page.css', 'bettracker-import.js', 'bettracker-seed.js',
   'assets/logo-dark-transparent.png', 'assets/ring-transparent.png', 'assets/fonts/hankengrotesk_v12_ieVn2YZDLWuGJpnzaiwFXS9tYtpd59CxCis4.woff2'];
