@@ -31902,7 +31902,7 @@ window.DatabaseTab = (function(){
     var tourAll = withBase ? (baseKnown ? (opts.baseAll!==undefined ? opts.baseAll : (function(){ var b=baseAll(sideKey); return b?fmtPct(b.yield):'\u2014'; })()) : '\u2014') : null;
     var inRows=res.bands.reduce(function(t,b){ return t+(b.agg?b.agg.n:0); },0), outRows=a?a.n-inRows:0;
     card.innerHTML='<div class="db3-bhead"><span class="t"><b>'+esc(title)+'</b><span>'+esc(hint)+'</span></span>'+
-      '<span class="a"'+(outRows>0?' title="'+fmtInt(outRows)+' '+dbMatchWord(outRows)+' priced under 2.00 on this side (near-even) count in this total and in no band"':'')+'><b style="color:'+allCol+'">'+allTxt+'</b><span>'+(a?fmtInt(a.n):'0')+' matches'+(a && a.w!=null?' \u00b7 '+a.w+'\u2013'+(a.n-a.w):'')+' \u00b7 median price '+(a?fmtP(a.median):'\u2014')+(tourAll!=null?' \u00b7 tour '+tourAll:'')+'</span></span></div>';
+      '<span class="a"'+(outRows>0?' title="'+fmtInt(outRows)+' '+dbMatchWord(outRows)+' priced across the 1.95 line on this side (near-even) count in this total and in no band"':'')+'><b style="color:'+allCol+'">'+allTxt+'</b><span>'+(a?fmtInt(a.n):'0')+' matches'+(a && a.w!=null?' \u00b7 '+a.w+'\u2013'+(a.n-a.w):'')+' \u00b7 median price '+(a?fmtP(a.median):'\u2014')+(tourAll!=null?' \u00b7 tour '+tourAll:'')+'</span></span></div>';
     var hd=el('div','db3-bcols'); hd.style.gridTemplateColumns=cols;
     hd.innerHTML='<span>Odds</span><span style="text-align:center">'+(isPl?'Player':mode==='tourn'?'Event':'Yield')+'</span><span style="text-align:right">Matches</span>'+(withBase?'<span style="text-align:right">Tour</span>':'')+'<span></span>';
     card.appendChild(hd);

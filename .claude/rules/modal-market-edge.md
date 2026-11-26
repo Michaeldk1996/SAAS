@@ -24,16 +24,19 @@ Applies to the TEN-310 block in `bsp-consult-dashboard.html` (`me*` functions, `
   (completed / live / suspended, or no odds) → no TODAY band and the Derived lines card reads "Derived lines need
   today's price."; Match winner still renders.
 - **Bands = the ten (founder 2026-11-14, replacing the eight of 2026-09-18)**, half-open in thousandths: [1.01,1.21)
-  [1.21,1.36) [1.36,1.51) [1.51,1.71) [1.71,2.00) | [2.00,2.50) [2.50,3.00) [3.00,4.00) [4.00,6.00) [6.00,∞). Names (profile):
+  [1.21,1.36) [1.36,1.51) [1.51,1.71) [1.71,1.95) | [1.95,2.50) [2.50,3.00) [3.00,4.00) [4.00,6.00) [6.00,∞). Names (profile):
   Heavy favourite · Clear favourite · Favourite · Slight favourite · Near coin-flip | Slight underdog · Underdog · Big
   underdog · Long underdog · Longshot. One ladder in `market-edge-core.js` `BANDS`, mirrored by `build-market-edge.js`
   (shard ids), `build-database-yield.js` (`tour-baselines.json` `bands8`, each entry with its lo / hi) and the profile's
   `MK_BANDS`; the profile takes a band's tour figure only from the baselines entry with the SAME edges, never by index
   (`mkTourBand`). Why these edges (measured on 82,162 priced sides 2010–2026, stable in both 2010–17 and 2018–26):
   favourites beat their no-vig price up to 1.50 and lose to it from 1.51; underdogs are fair to 2.99 and lose to it from
-  3.00, worse at 4.00 and 6.00; the other cuts keep ~10% of matches in each band. Favourite = price < 2.00; **2.00 is
-  underdog**. **Test:** 1.205 → 1.01 – 1.20, 1.505 → 1.36 – 1.50, 1.51 → 1.51 – 1.70, 2.00 → 2.00 – 2.49, 3.00 → 3.00 – 3.99
-  (`test-ten310-market-edge.mjs`).
+  3.00, worse at 4.00 and 6.00; the other cuts keep ~10% of matches in each band. **The fav / dog edge is 1.95** (founder
+  2026-11-26, replacing 2.00: on 82,574 priced sides a 1.95 cut leaves 45 across the line — 33 favourites at 1.95+, 12
+  underdogs under 1.95 — against 888 underdogs under 2.00 at the old cut): Near coin-flip 1.71 – 1.94, Slight underdog
+  1.95 – 2.49; a price alone reads favourite under 1.95 (`isFavPrice`). Shard band ids keep their old names
+  (`f171_199`, `d200_249`). **Test:** 1.205 → 1.01 – 1.20, 1.505 → 1.36 – 1.50, 1.51 → 1.51 – 1.70, 1.949 → 1.71 – 1.94,
+  1.95 → 1.95 – 2.49, 3.00 → 3.00 – 3.99 (`test-ten310-market-edge.mjs`, `tools/test-price-bands.js`).
 
 ## Sheet and footnote (TEN-312, founder 2026-09-28)
 - **Every pop-up row opens the match stats sheet** — the "stats on file" click condition (`meSheetOk`) is dropped; where no stats exist the sheet shows the wired header and "Match stats not available for this match".
@@ -143,7 +146,7 @@ Applies to the TEN-310 block in `bsp-consult-dashboard.html` (`me*` functions, `
   close in the tab's order (R8 + card ruling, 2026-09-28: **our captured Pinnacle → Tennis-Data Pinnacle** →
   Tennis-Data Bet365 → our captured Bet365, the page's `FH_BOOK_ORDER = ['Pcap','Ptd','Btd','Bcap']`, also the
   Form/H2H order; captures from `match-closes/{key}.json`, so `build-market-edge.js`
-  runs after `build-match-closes.js`; test `tools/test-ten310-price-order.js`); favourite = price < 2.00 (no "level" role); the half-open band ladder; the same cents P&L; the tour
+  runs after `build-match-closes.js`; test `tools/test-ten310-price-order.js`); favourite = price < 1.95 (no "level" role; 2.00 until 2026-11-26); the half-open band ladder; the same cents P&L; the tour
   baseline on the same basis. This supersedes R1 (2026-09-17, "Pinnacle closing only"). **Test:**
   `tools/test-market-edge-basis.js` (11 controls) and the pipeline's market-edge assert
   (`priceBasis === "Pinnacle closing, else Bet365 closing"`, Bet365 sides in the tour baseline).

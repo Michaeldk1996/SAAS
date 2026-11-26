@@ -25,8 +25,8 @@ Where a ruling below reverses an older one in this file, the older one is supers
 - **Levels:** ATP 500 and ATP 250 are separate rows, linked by the tournament catalog's level.
 - **Derived lines field rates** are built for every filter the tab offers (`derived-field.json`).
 - **Watchlist:** the star in the header is real — stored per member (signed in: the account; signed out: this browser).
-- **Streaks tab is back** in Calendar record [supersedes TEN-384 Q1]; the 2026 tab and the fixed five-band Swing row go
-  [supersede fx6 item 5 and the 2026-tab ruling].
+- **Calendar record = Calendar only** (founder 2026-11-26: Streaks removed — tab, page switch, run timeline, ladders and
+  their code; supersedes the 2026-11-09 "Streaks tab is back"). The 2026 tab and the fixed five-band Swing row stay gone.
 - **Sign colour by sign only, as the export draws it:** no ±3 / noise dead zones and no one-green-one-red rule on the
   profile [supersedes "vs Field dims within sampling noise" and "One green, one red per table"]; grey only at a rounded 0
   or no sample.
@@ -108,8 +108,7 @@ Where a ruling below reverses an older one in this file, the older one is supers
     scores and "DD.MM." dates, the top line ends on the total units; Match-up's line prints the win rate; Market edge's tabs
     are 10/11px padded and the return carries "Return · flat 1u stake"; the DNA figure sits 9px outside its vertex (inside it
     above 85%, so it never covers an axis name) and no tile carries a "↓ better" mark; Level & round's Sets & games bolds
-    Sets and Service bolds Holds and Breaks, and "Over 3.5 sets" is a Results row only; Streaks headings name the surface
-    only when one is picked; the Calendar's By swing carries the export's "i" (how the swing figures are counted).
+    Sets and Service bolds Holds and Breaks, and "Over 3.5 sets" is a Results row only; the Calendar's By swing carries the export's "i" (how the swing figures are counted).
 
 - **No legacy fallback (founder, 2026-10-21).** The TEN-206 renderer is the only player profile: the legacy
   full-page view (`buildPlayerProfileHtml`, `ppCareerYears`) and its `?pp2=0` / `stennisfy.flags.pp2` switch are
@@ -385,8 +384,7 @@ Where a ruling below reverses an older one in this file, the older one is supers
 ## Profile v3 (founder handoff 2026-11-12, `design_handoff_player_profile_v3`, CHANGES_2026-11-11_to_12)
 Supersedes the v2 items it names; everything else stays v2. Reference: `Player Profile.dc.html` + `Player Stat Boxes.dc.html`.
 - **Drawer pages = ONE sliding switch in the header** (B1), left of ✕: track `--inner` + 6% ring r11 pad 3, cells 116×34
-  13px (600 grey / 700 white), thumb `--selected` + 14% ring r8 sliding 240ms. Career record Record · Ratings · Calendar
-  record Calendar · Streaks · Market edge Match winner · Derived lines · Level & round Results · Sets & games · Service.
+  13px (600 grey / 700 white), thumb `--selected` + 14% ring r8 sliding 240ms. Career record Record · Ratings · Market edge Match winner · Derived lines · Level & round Results · Sets & games · Service.
   **Test:** no underlined tab row and no Level & round view toggle in any drawer body (`pageSwitchHtml`).
 - **Filters = a band of pills** (B2, `bandBox` / `bandPill`): pill 6×13 r8 11.5px, off 600 grey on an 8% ring, on 700
   white on `--selected` + 16%; groups split by a 1×18 10% divider; no caps labels, no tracks. Joined band (r12 top, the
@@ -426,10 +424,6 @@ Supersedes the v2 items it names; everything else stays v2. Reference: `Player P
   Swing view `128px repeat(12) 72px` shared by the grid and By swing (By swing drops its Surface / Swing rows), Month view
   `56px …`; the two scroll together; season totals behind one continuous 6% hairline; both indoor swings code EU INDOOR
   (hover names which). Cut-offs `CAL_MIN` 5 / `CAL_THIN` 10 (thin: bar 30%, "thin" tag, grey count and Vs others).
-- **Streaks (D4):** four tiles Back him · Fade him · Longest win run · Longest losing run; the timeline opens at the
-  latest end, a hover lights one bar (no repaint), a click opens the six-tile run box; two ladders (W1 → W2 …) with
-  Chance (loss rows = share of next matches lost) and a verdict on `STK_MINP` (30) priced / `STK_EDGE` (1pp). Streaks
-  reads Window + Surface only, never the Calendar Filters. Cut-off values are placeholders until the founder sets them.
 - **Clean-ups:** the match sheet's Dominance ratio card = `--inner` + 5% ring (the section bands' token); no
   "provisional · api-tennis" text on any match row (the flag stays on the data). The "Surface not known" column STAYS:
   the feasibility check found 97 matches with no surface (35 of 350 profiles, 12 Nov 2026), and the brief says stop.
@@ -437,8 +431,7 @@ Supersedes the v2 items it names; everything else stays v2. Reference: `Player P
 ## Profile v4 (handoff `design_handoff_player_profile_v4`, founder brief 2026-11-14)
 Supersedes the v3 values it restates. Reference = `Player Stat Boxes.dc.html` / `Player Profile.dc.html` inline styles at
 1440px; CHANGES 13–14 > 11–12. **Test:** `tools/test-pp4-page.js` (+ `test-pp4-speed/-styles/-market.js`).
-- **Cut-offs in ONE place** (`PP4`, top of `player-profile-v2.js`, founder's placeholders until he sets them): Streaks
-  `STK_MINP` 30 · `STK_EDGE` 1pp · Calendar `CAL_MIN` 5 · `CAL_THIN` 10 · Court speed `SPEED_FLOOR` 5 · `ALT_CUT_M` 500 ·
+- **Cut-offs in ONE place** (`PP4`, top of `player-profile-v2.js`, founder's placeholders until he sets them): Calendar `CAL_MIN` 5 · `CAL_THIN` 10 · Court speed `SPEED_FLOOR` 5 · `ALT_CUT_M` 500 · `ALT_FAST_M` 350 ·
   Level & round `SPL_MINB` 15 · heatmap `HB_MIN` 10 · MTO window 12 months · Derived lines dot `LC_FIELD_DOT_PP` 1.
   **Test:** a drawer that reads a literal cut-off instead of `PP4` is wrong.
 - **§0.1 bars are neutral (`--pp-x-bar-neutral` #4A5470) unless the member clicked that item, then blue (`pp4Bar`).** Never
@@ -480,7 +473,7 @@ Supersedes the v3 values it restates. Reference = `Player Stat Boxes.dc.html` / 
 - **Event names in the match lists** (founder 2026-11-14): a Tennis-Data sponsor name prints the site's one event name
   through the Database page's sponsor → city map (`sfSponsorCity`; a season-split name and Astana stay as written).
 - **Audit fixes (founder 2026-11-15).** Each a test in `tools/test-pp4-page.js` unless named.
-  - **Calendar total = Career record total:** the Calendar (and its Streaks) count the record's counted rows
+  - **Calendar total = Career record total:** the Calendar counts the record's counted rows
     (`countedSpine`: Tennis Explorer's edition year, its TE-only rows in, the rows it leaves out out), never the feed
     rows (Fritz 796 = 796, was 618).
   - **Favourite = the shorter closing price, on every Market edge figure:** 1.95 v 1.96 favourite, 1.96 v 1.95 underdog;
@@ -500,9 +493,11 @@ Supersedes the v3 values it restates. Reference = `Player Stat Boxes.dc.html` / 
     (`tools/test-tournament-history-editions.js` A + C).
 
 ## Profile v5 (handoff `design_handoff_player_profile_v5/`, 2026-11-19) — round 1 (founder 2026-11-19)
-- **Calendar · Best / Worst swing and month = win rate, 20 matches.** Ranked on the win rate (not the yield gap), among
-  swings / months with at least `PP4.CAL_PICK_MIN` (20) matches played; ties go to the larger sample; none → a dash
-  "no swing with 20 matches". **Test:** `tools/test-pp5-r1.js` cal (control: the yield rule names another worst swing).
+- **Calendar · Best / Worst swing and month = win rate.** Ranked on the win rate (not the yield gap); ties go to the
+  larger sample. The `PP4.CAL_PICK_MIN` (20) floor applies on **Career only** (founder 2026-11-26); and a tile is never a
+  dash while the selection holds a match: the floor steps down (Career 20 → 5 → 1; Last 52 weeks 5 → 1) until a swing
+  qualifies, under any Filter too. Best surface steps 5 → 1. **Test:** `tools/test-pp5-r1.js` cal, `tools/test-pp6.js`
+  tiles (control: the 20-match floor on Last 52 weeks dashes Best swing).
 - **Court speed record = the v5 layout (CHANGES §3):** filter card (Window · Surface switches, Filters right), one card,
   three rows that open in place (Fast open by default, a click on the open row shuts all three). The open row's tiles are
   **On the price · As favourite (W–L, % won, n) · As underdog (same) · Deciding sets** — no Vs tour (founder).
@@ -541,8 +536,6 @@ Supersedes the v3 values it restates. Reference = `Player Stat Boxes.dc.html` / 
     and the scope in the "?" chip.
   - **Calendar record:** separate tiles; one grid for Swing and Month (`128px`, n columns, `72px`); a cell's tint grows with
     its W–L margin; Month view columns are the twelve month codes (JAN … DEC), no Surface row; heads 18/800.
-  - **Streaks:** one card, three sections (Runs · Run timeline · What follows a run), each a 18/800 title over a 13 grey
-    line, sections 2–3 under a 6% hairline; ladders are tiles with 4px bars; tooltip and "Scroll for earlier years" lifted.
   - **Career record · Ratings:** DNA panel and the Serve / Return / Under pressure groups are section cards (no well);
     group titles stay centred caps; DNA head 18/800 + "Centre is the lowest ATP player, the edge the highest".
   - **Derived lines:** head "Cover rate by line" 18/800 + 13 grey meta, family titles 14/700, row labels 11.5/600 sentence
@@ -562,3 +555,34 @@ Supersedes the v3 values it restates. Reference = `Player Stat Boxes.dc.html` / 
     ends, no units without set scores); walkovers and rows not counted are out. **Test:** `tools/test-pp5-r1.js` drill.
   - **Boxes:** backdrop `--pp-x-backdrop` on the history and Live trading boxes; every "?" popover is the v5 one (width
     400, 12% ring, 14/16/16).
+
+## Profile v6 (founder 2026-11-26, export `Stennisfy dashboard rebuild (19) 2`) — each item is a test in `tools/test-pp6.js`
+- **Players page cards:** the price badge shows only when the player has a price; no "— no price" pill
+  (`test-ten384-landing.mjs`).
+- **Every clickable box has a hover outline:** the Recent form W/L squares (70% ink ring, so it reads on green / red) and
+  the ledger rows (16% ring), as the other clickable tiles. **Test:** `tools/test-pp6.js` hover (+ control).
+- **Calendar record → By swing:** the bars are his **win rate** in the swing minus his win rate in every other swing
+  (months: every other month), team events out — never the yield gap (Alcaraz's Australian swing, 87%, is green). A bar
+  shows from `CAL_MIN` (5) matches; the scale is the largest bar drawn, so no bar leaves its 96px plot (the Last 52 weeks
+  bug: the scale came from the 20-match picks while every 5-priced swing drew). A swing he never played in the selection
+  has no column, in the grid and in By swing. A calendar record opens centred on the screen. The swing calendar stays
+  ours (North American winter, South Africa & India …), not the export's older list. **Test:** `tools/test-pp6.js` bars /
+  cols / drill (controls: the old scale overflows; `tools/test-pp5-r1.js` reads only the shown columns).
+- **Record per tournament opens on ATP** (`state.tourLevel` default). **Test:** `tools/test-pp6.js` tourn.
+- **Court speed record:** a venue at `PP4.ALT_FAST_M` (350 m) or higher is **Fast**, whatever its reading — a rule on
+  the court sheet's altitude, never a list (today: Almaty 800, Kitzbühel 762, Madrid 650, Munich 520, Santiago 520,
+  Gstaad 1050, Marrakech 457, Córdoba 390, Geneva 375). The Altitude filter keeps its 500 m cut. No Opponent archetype
+  filter. **Test:** `tools/test-pp4-speed.js` 9 (+ control: the reading-only band is not Fast there), 2.
+- **Market edge bands: the fav / dog edge is 1.95** — Near coin-flip 1.71 – 1.94, Slight underdog 1.95 – 2.49, on the
+  ONE ladder (`market-edge-core.js` → shard builder, tour baselines, profile, Match analysis, Database); measured and
+  ruled in `modal-market-edge.md` "Bands". **Test:** `tools/test-price-bands.js`, `test-ten310-market-edge.mjs`.
+- **Live trading · Last 52 weeks:** the point-by-point rows of Record by situation (Break of serve, Serving for the set,
+  "Lost set 1, first break in set 2") and the Hold / break heatmap fill on Last 52 weeks as well as Last 24 months
+  (All surfaces, no filter; the heatmap also Clay / Grass). Cause of the dashes (Kecmanovic, 26 Nov): `situational.json`
+  and `holdbreak.json` held 24 months only, so the drawer dashed every other window by design. Now `build-situational.js`
+  writes a `w52` node per player and `tour52` beside `tour`, and `build-holdbreak.js` writes `holdbreak-52w.json` (same
+  shape and roster, the last 364 days; `holdbreak.json`, which Live reads, is unchanged), fetched only when the drawer
+  asks for that window. Both come from the daily styles job (`playing-styles.yml`). A file built before (no `w52`) dashes
+  Last 52 weeks with the reason. **Test:** `tools/test-pp6.js` sit, `tools/test-pp6-builders.js` (control: the
+  pre-ruling builder writes no `w52`).
+

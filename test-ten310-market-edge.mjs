@@ -86,7 +86,7 @@ function load(ui) {
   return [['2072', 'J. Sinner'], ['2382', 'C. Alcaraz']].map(([k, n]) => ui.meRowsFor(rd(`career-history-${k}.json`).matches, ui.fhParseCloses(rd(`match-closes-${k}.json`)), k, n));
 }
 // Independent oracle for the mutation check: its own band edges and its own P&L, from the rows.
-const EDGES = [1.01, 1.21, 1.36, 1.51, 1.71, 2.0, 2.5, 3.0, 4.0, 6.0, Infinity];   // the ten bands (founder 2026-11-14)
+const EDGES = [1.01, 1.21, 1.36, 1.51, 1.71, 1.95, 2.5, 3.0, 4.0, 6.0, Infinity];   // the ten bands (founder 2026-11-14)
 function oracle(rows, scope, refDay) {
   // ruling 4 (2026-10-22), the oracle's OWN copy of Pinnacle's rule: a retirement counts only when its first set finished
   const firstDone = (r) => { const s = r.fs ? null : (r.sets || [])[0]; if (r.fs) return r.fs === 'c'; if (!s) return false;
@@ -282,7 +282,7 @@ test('§4 edge cases: half-open bands, 2.00 is underdog, match-tiebreak is not a
   const ui = buildUI(), core = ui.core;
   assert.equal(core.bandOf(1.205), 0); assert.equal(core.bandOf(1.21), 1); assert.equal(core.bandOf(1.2), 0);
   assert.equal(core.bandOf(1.355), 1); assert.equal(core.bandOf(1.36), 2); assert.equal(core.bandOf(1.505), 2); assert.equal(core.bandOf(1.51), 3);
-  assert.equal(core.bandOf(1.705), 3); assert.equal(core.bandOf(1.71), 4); assert.equal(core.bandOf(1.999), 4);
+  assert.equal(core.bandOf(1.705), 3); assert.equal(core.bandOf(1.71), 4); assert.equal(core.bandOf(1.949), 4); assert.equal(core.bandOf(1.95), 5); assert.equal(core.isFavPrice(1.949), true); assert.equal(core.isFavPrice(1.95), false);   // founder 2026-11-26: the edge is 1.95
   assert.equal(core.bandOf(2.0), 5); assert.equal(core.isFavPrice(2.0), false); assert.equal(core.bandOf(2.999), 6); assert.equal(core.bandOf(3.0), 7);
   assert.equal(core.bandOf(3.999), 7); assert.equal(core.bandOf(4.0), 8); assert.equal(core.bandOf(5.999), 8); assert.equal(core.bandOf(6.0), 9);
   assert.equal(core.bandOf(1.0), -1); assert.equal(core.bandOf(null), -1);

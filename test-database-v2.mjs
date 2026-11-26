@@ -33,21 +33,21 @@ const CHECKS = {
     const code = varSource(src, 'DB2_BANDS') + '\n' + fnSource(src, 'db2InBand') + '\nreturn {DB2_BANDS, db2InBand};';
     const { DB2_BANDS, db2InBand } = new Function(code)();
     const want = { fav: ['Heavy favourite', 'Clear favourite', 'Favourite', 'Slight favourite', 'Near coin-flip'],
-      dog: ['Slight underdog', 'Underdog', 'Big underdog', 'Long underdog', 'Longshot'] };   // founder 2026-11-19: underdogs start at 2.00
+      dog: ['Slight underdog', 'Underdog', 'Big underdog', 'Long underdog', 'Longshot'] };   // founder 2026-11-26: underdogs start at 1.95 (2.00 until then)
     for (const sd of ['fav', 'dog']) {
       const names = DB2_BANDS[sd].map(b => b[0]);
       if (names.join('|') !== want[sd].join('|')) return sd + ' bands are ' + names.join(', ');
     }
-    for (const p of [1.01, 1.2, 1.205, 1.21, 1.357, 1.5, 1.509, 1.7, 1.71, 1.999]) {
+    for (const p of [1.01, 1.2, 1.205, 1.21, 1.357, 1.5, 1.509, 1.7, 1.71, 1.949]) {   // founder 2026-11-26: the fav / dog edge is 1.95
       const n = DB2_BANDS.fav.filter(b => db2InBand(b, p)).length;
       if (n !== 1) return `favourite price ${p} lands in ${n} bands`;
     }
-    for (const p of [2, 2.49, 2.5, 2.999, 3, 3.99, 4, 5.99, 6, 26]) {
+    for (const p of [1.95, 1.99, 2, 2.49, 2.5, 2.999, 3, 3.99, 4, 5.99, 6, 26]) {
       const n = DB2_BANDS.dog.filter(b => db2InBand(b, p)).length;
       if (n !== 1) return `underdog price ${p} lands in ${n} bands`;
     }
-    // an underdog priced under 2.00 (near-even) is in no underdog band: it counts in the side's total only
-    for (const p of [1.71, 1.99]) if (DB2_BANDS.dog.some(b => db2InBand(b, p))) return `underdog price ${p} lands in an underdog band`;
+    // an underdog priced under 1.95 (near-even) is in no underdog band: it counts in the side's total only
+    for (const p of [1.71, 1.94]) if (DB2_BANDS.dog.some(b => db2InBand(b, p))) return `underdog price ${p} lands in an underdog band`;
     if (!db2InBand(DB2_BANDS.fav[1], 1.357) && !db2InBand(DB2_BANDS.fav[2], 1.357)) return '1.357 is in no band';
     if (!db2InBand(DB2_BANDS.fav[1], 1.21)) return '1.21 is not a Clear favourite';
     return null;

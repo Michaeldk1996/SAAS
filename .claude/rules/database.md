@@ -158,12 +158,12 @@ inside every mount (`[data-db-root]`). Ratings and Lines rules: `ratings.md`, `l
 
 ## Tour
 - **Fixed price bands** (founder 2026-11-16): Favourites = Heavy favourite 1.01–1.20 · Clear favourite 1.21–1.35 ·
-  Favourite 1.36–1.50 · Slight favourite 1.51–1.70 · Near coin-flip 1.71–1.99; Underdogs = Near coin-flip 1.71–1.99 · Slight
-  underdog 2.00–2.49 · Underdog 2.50–2.99 · Big underdog 3.00–3.99 · Long underdog 4.00–5.99 · Longshot 6.00 + (`DB2_BANDS`).
-  **Near coin-flip is a favourite band only** (founder 2026-11-19: the underdog bands start at 2.00, as the profile and Head
-  to Head draw them); an underdog priced under 2.00 (a near-even match) counts in the side's total and in no band row, the
-  count on the headline's hover. Edges are half-open (an archive close of 1.357 is a Clear favourite). **Test:** every
-  favourite price lands in exactly one band; an underdog price under 2.00 lands in none (`test-database-v2.mjs` "bands").
+  Favourite 1.36–1.50 · Slight favourite 1.51–1.70 · Near coin-flip 1.71–1.94; Underdogs = Slight
+  underdog 1.95–2.49 · Underdog 2.50–2.99 · Big underdog 3.00–3.99 · Long underdog 4.00–5.99 · Longshot 6.00 + (`DB2_BANDS`).
+  **Near coin-flip is a favourite band only**; the underdog bands start at **1.95** (founder 2026-11-26, replacing 2.00 —
+  the one ladder, `modal-market-edge.md` "Bands"); an underdog priced under 1.95 or a favourite at 1.95+ (45 of 82,574
+  sides) counts in the side's total and in no band row, the count on the headline's hover. Edges are half-open (an archive close of 1.357 is a Clear favourite). **Test:** every
+  favourite price under 1.95 lands in exactly one band; an underdog price under 1.95 lands in none (`test-database-v2.mjs` "bands").
 - **Band cards (CHANGES §2):** two section cards (24/26/10, radius 14). Head: title 18/800 over the 13px hint ("Back the
   shorter / longer price") | the side's yield 26px over "N matches · median price X" (+ " · tour Y"). Columns Odds · Yield
   (Event / Player) · Matches (· Tour); a row (min 64px, hover `--db2-hover`) = the odds 19px mono low · grey dash · high over
