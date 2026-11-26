@@ -238,13 +238,18 @@ jobs:
                   bad.append(f"publishable key could INSERT a live price ({st})")
                   call(f"{url}/rest/v1/kibl_live_ml?fixture_id=eq.-1", "DELETE", key=os.environ["SUPABASE_SECRET_KEY"])
               st, r = call(f"{url}/rest/v1/kibl_live_ml_history?select=id&limit=1", key=pk)
-              n_h = len(json.loads(r)) if st == 200 and r.strip().startswith("[") else -1
+              try:
+                  n_h = len(json.loads(r)) if st == 200 and r.strip().startswith("[") else -1
+              except ValueError:
+                  n_h = -1
               print(f"[publishable] SELECT kibl_live_ml_history -> HTTP {st}, {n_h} row(s)  (want 401/403, or 200 with 0 rows)")
               if st not in (401, 403) and not (st == 200 and n_h == 0): bad.append(f"live price history readable ({st})")
               st, r = call(f"{url}/rest/v1/rpc/live_ml_state", "POST", {}, key=pk)
               try:
                   d = json.loads(r) if st == 200 else {}
               except ValueError:
+                  d = {}
+              if not isinstance(d, dict):
                   d = {}
               print(f"[publishable] rpc live_ml_state -> HTTP {st}, {len(r)} bytes, fixtures {len(d.get('fx') or [])}, "
                     f"position {'yes' if d.get('pos') else 'no'}")
