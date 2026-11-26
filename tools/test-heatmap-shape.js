@@ -171,7 +171,7 @@ function scoreAgainst(mod) {
   const indoor = sheet(mod, { surf: 'indoor' }), fav = sheet(mod, { role: 'fav' }), career = sheet(mod, { win: 'career' });
   [indoor, fav, career].forEach((h, i) => {
     if (/class="pp2-hb-grid"/.test(h)) throw new Error('an unheld scope drew a grid (#' + i + ')');
-    if (!/held for the last 24 months only/.test(h)) throw new Error('an unheld scope does not say why (#' + i + ')');
+    if (!/held for the last 52 weeks and the last 24 months/.test(h)) throw new Error('an unheld scope does not say why (#' + i + ')');
   });
   mod.state.ltRole = 'all'; mod.state.ltSurf = 'all'; mod.state.ltWin = 'm24';
 }

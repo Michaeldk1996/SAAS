@@ -6780,7 +6780,7 @@
         (shown.length ? rows : tournHistPending(p) ? '' :
           // a search or filter that matches nothing: the list card stays, empty, as the reference draws it (founder
           // 2026-11-14 "follow design"); a player with no tournament at all still says so
-          (q || lvl !== 'all' || sf !== 'all' ? '<div data-pp2-tourn-empty="1"></div>'
+          (views.length || q ? '<div data-pp2-tourn-empty="1"></div>'   // founder 2026-11-26: ATP is the default, so "empty" = no tournament at all
             : '<div data-pp2-tourn-empty="1" style="border-top:1px solid var(--line);padding:26px;text-align:center;font-size:13px;' +
               'color:var(--text-label);">No tournaments on record.</div>')) +
       '</div>';

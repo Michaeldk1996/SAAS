@@ -78,7 +78,7 @@ function suite(src, label) {
   });
   check('PP4: every v4 cut-off in one block, at the handoff\'s placeholder values', () => {
     const P = I.PP4;
-    const want = { STK_MINP: 30, STK_EDGE: 1, CAL_MIN: 5, CAL_THIN: 10, SPEED_FLOOR: 5, ALT_CUT_M: 500, SPL_MINB: 15, HB_MIN: 10, MTO_WINDOW_MONTHS: 12, LC_FIELD_DOT_PP: 1 };
+    const want = { CAL_MIN: 5, CAL_THIN: 10, SPEED_FLOOR: 5, ALT_CUT_M: 500, SPL_MINB: 15, HB_MIN: 10, MTO_WINDOW_MONTHS: 12, LC_FIELD_DOT_PP: 1 };
     const bad = Object.keys(want).filter(k => P[k] !== want[k]);
     return !bad.length || bad.join(',');
   });

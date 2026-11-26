@@ -155,7 +155,7 @@ check('Window re-derives the set rows; any scope the pbp store cannot honour das
   I.state.ltWin = 'w52';
   let html = I.renderSituational(SUBJECT), r = rowsOf(html);
   assert(/>14 of 24</.test(r.winSet1), 'last 52 weeks');
-  assert(/data-lt-row="brokenFirstSvc"[^>]*title="Point-by-point rows are held for the last 24 months/.test(html), 'pbp rows give no reason on Last 52');
+  assert(/data-lt-row="brokenFirstSvc"[^>]*title="Point-by-point rows are held for the last 52 weeks and the last 24 months/.test(html), 'pbp rows give no reason on Last 52 (a store with no w52 node)');
   assert(!/>4 of 40</.test(r.brokenFirstSvc), 'a pbp record read under Last 52 weeks');
   I.state.ltWin = 'career';
   r = rowsOf(I.renderSituational(SUBJECT));
@@ -239,7 +239,7 @@ check('a closed group hides its rows but keeps its header', () => {
 const MUT = [
   ['inversion dropped', 'var r = Math.round(gap * 10) / 10, e = inv ? -r : r;', 'var r = Math.round(gap * 10) / 10, e = r;'],
   ['bold rule swapped', 'var N = gapCell(!held || hard || !nm ? null : rate - nm.v, f.inv, !!f.hb,', 'var N = gapCell(!held || hard || !nm ? null : rate - nm.v, f.inv, !f.hb,'],
-  ['pbp rows read under every scope', "var pbpOk = !!pbp && S.win === 'm24' && S.surf === 'all' && !ltFiltersOn(S);", 'var pbpOk = !!pbp;'],
+  ['pbp rows read under every scope', "var pbpOk = !!pbp && S.surf === 'all' && !ltFiltersOn(S);", 'pbp = pbp || pbpRec; var pbpOk = !!pbp;'],
   ['the window ignored', "var cut = S.win === 'w52' ? mkCut('l52') : S.win === 'm24' ? mkCut('l24') : null;", 'var cut = null;'],
   ['bars blue by default', "'%;border-radius:2px;background:' + pp4Bar(picked) + ';\"></span>' +\n        (r.base == null", "'%;border-radius:2px;background:' + pp4Bar(true) + ';\"></span>' +\n        (r.base == null"],
   ['record back to W–L', "rec: held && rec && n ? w + ' of ' + n.toLocaleString('en-US') : DASH,", "rec: held && rec && n ? w + '–' + (n - w) : DASH,"],

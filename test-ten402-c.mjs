@@ -127,7 +127,7 @@ test('Market edge = the Match analysis maths: the site\'s ten MarketEdgeCore.BAN
   assert.equal(Math.round(fb.needs * 1000), Math.round(12 / (12 * 1.5) * 1000), 'Needs = n / Σ price');
   assert.match(card, /12 priced matches/);
   // half-open bands in thousandths, 2.00 underdog
-  assert.deepEqual([1.205, 1.21, 1.99, 2.00, 5.99, 6.0, 21].map(p => core.BANDS[core.bandOf(p)].gk + core.bandOf(p)), ['fav0', 'fav1', 'fav4', 'dog5', 'dog8', 'dog9', 'dog9']);
+  assert.deepEqual([1.205, 1.21, 1.949, 1.95, 5.99, 6.0, 21].map(p => core.BANDS[core.bandOf(p)].gk + core.bandOf(p)), ['fav0', 'fav1', 'fav4', 'dog5', 'dog8', 'dog9', 'dog9']);
 });
 
 // PRODUCT BUG (reported, not fixed here): the band row prints its Return (units) at n < 5 while Won and Edge dash; the

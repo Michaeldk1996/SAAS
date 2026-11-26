@@ -1943,7 +1943,9 @@ check('profile v2 · By swing carries every row the export draws', () => withCal
   // v3 D3: Swing view = one aligned table with the season grid — no Surface / Swing rows of its own
   ['Vs other swings', 'Win rate', 'Priced matches', 'Yield', 'Vs others', 'Winning seasons'].forEach((r) => assert(new RegExp('>' + r + '<').test(html), `the ${r} row is missing`));
   assert(!/>Surface<\/span>/.test(html.slice(html.indexOf('Vs other swings'))) && !/>Swing<\/span>/.test(html.slice(html.indexOf('Vs other swings'))), 'the Swing view kept its own Surface / Swing rows');
-  assert(/>not in yield</.test(html), 'Team / other is not marked out of the yield');
+  // founder 2026-11-26: a swing he never played has no column — Team / other shows (marked out of the yield) only when played
+  if (I.calRows(CAL_P).some((x) => x.sw === 'team')) assert(/>not in yield</.test(html), 'Team / other is not marked out of the yield');
+  else assert(!/>not in yield</.test(html) && !/>TEAM</.test(html), 'an unplayed Team / other column is drawn');
   // v5 §2: the Month view is a By month table on the same grid — twelve month codes, no Surface row
   I.state.calView = 'month';
   const hm = I.renderSeasonModal(CAL_P);
@@ -2118,17 +2120,13 @@ mustFail('[neg] the cal-2 lock would catch the Calendar reverting to the archive
 // The tab, its tiles, the run timeline, "What follows a run" and the code only it used are gone. The
 // 2026 tab's content ruling landed the same day (second card): it is pinned by the "2026 tab" checks below.
 // profile v2 (founder 2026-11-09): the Calendar record is the export's swing grid + Streaks.
-check('profile v2 · Calendar record tabs are Calendar · Streaks; the 2026 tab and the fixed Swing row are gone', () => withCal(() => {
-  Object.assign(I.state, { key: '__cal', seasonTab: 'calendar', calWin: 'career', calSurf: 'all', calCellV2: null });
+// founder 2026-11-26: Streaks removed again — the Calendar record is Calendar only (no page switch, no tab row).
+check('profile v6 · Calendar record is Calendar only: no Streaks, no switch; the 2026 tab and the fixed Swing row are gone', () => withCal(() => {
+  Object.assign(I.state, { key: '__cal', calWin: 'career', calSurf: 'all', calCellV2: null });
   const html = I.renderSeasonModal(CAL_P), shell = I.modalShell('season', CAL_P, {}, html);
-  // v3 B1: the pages are ONE sliding switch in the drawer header (no tab row in the body)
-  assert(/data-pp2-pgsw="season"/.test(shell) && /data-pp2="cal-tab" data-v="calendar"/.test(shell) && /data-pp2="cal-tab" data-v="streaks"/.test(shell), 'the Calendar · Streaks switch is not painted');
-  assert(!/data-pp2="cal-tab"/.test(html), 'a tab row is still drawn in the body');
+  assert(!/data-pp2-pgsw="season"/.test(shell) && !/data-pp2="cal-tab"/.test(shell), 'a Calendar page switch is still painted');
+  assert(!/data-v="streaks"|>Streaks</.test(shell), 'a Streaks tab is still painted');
   assert(!/data-pp2="cal-tab" data-v="2026"/.test(html) && !/Month by month/.test(html), 'the 2026 tab survived');
-  I.state.seasonTab = 'streaks';
-  const st = TXT(I.renderSeasonModal(CAL_P));
-  assert(/LONGEST WIN RUN W8/i.test(st) && !/RUNS OF 5\+|EXPECTED LONGEST/i.test(st), 'Streaks does not read its runs (longest win run W8): ' + st.slice(0, 200));
-  I.state.seasonTab = 'calendar';
 }));
 mustFail('[neg] the Q1 check would catch a Streaks tab coming back', () => {
   const html = '<button data-pp2="cal-tab" data-v="streaks">Streaks</button>';
@@ -3976,7 +3974,10 @@ check('the all-stores table covers every data store the module reads', () => {
   // TEN-391: careerSplitsPending is the same in-flight flag for a player's career-splits file (the rows land on
   // careerSplits[key]).
   const NOT_STORES = new Set(['FEATURE_PP2', 'PlayerProfileV2', 'RoundClassify', 'HoldBreakHeatmap', 'MarketEdgeCore', 'HouseRatings', 'sfOverlayClosers',
-    'TournamentIdentity', 'marketEdgePending', 'tourHistPending', 'careerSplitsPending', 'sfEscLayers']);
+    'TournamentIdentity', 'marketEdgePending', 'tourHistPending', 'careerSplitsPending', 'sfEscLayers',
+    // founder 2026-11-26: holdbreak-52w.json is holdbreak.json's 52-week sibling, built in the same pass on the SAME roster
+    // (tools/test-pp6-builders.js), so the holdbreak row's coverage is its coverage
+    'holdbreak52']);
   // Host callbacks the mount calls back into (navigation, not data). Exempt from
   // the coverage table but NOT from scrutiny: the module must not assume the
   // host defined them, so each is asserted to be typeof-guarded at its call
@@ -4030,7 +4031,9 @@ check('the all-stores table covers every data store the module reads', () => {
     'loadCareerSplitsTour',
     // market-edge-stale (founder 2026-10-29): why the Market edge box is empty (pp2MarketDashed over the page's loaded
     // Database join + career-history; tools/test-market-edge-stale.mjs) — logic, no rows
-    'pp2MarketDashed']);
+    'pp2MarketDashed',
+    // founder 2026-11-26: the trigger that fetches holdbreak-52w.json the first time Live trading asks for Last 52 weeks
+    'pp2HoldbreakNeed52']);
   for (const cb of HOST_CALLBACKS) {
     assert(new RegExp(`typeof window\\.${cb} === 'function'`).test(src),
       `window.${cb} is called without a typeof guard — the page must not assume the host defines it`);
