@@ -330,7 +330,10 @@ this file wins.
   6 tiebreaks, 5 deciders; 3-of-4 → mean × 4; Challenger fold-in × 0.9), used by **every display** — the Edge Ratings
   table, Database boards, H2H rating row and all three style radars (DNA). The DNA builder's floor-less version and any
   display of `clutch-rating.js` are retired for display. **Test:** Medvedev Clay last-52 reads the same value on the
-  Ratings board and the Playing style radar.
+  Ratings board and the Playing style radar. **The model reads it too** (founder 2026-11-26): layer #15 Under pressure
+  takes `surface-ratings.json` `underPressure.index`, career scope, match surface else All, joined by api-tennis key
+  (`h2h-model/data.js` `underPressureRow`) — never `clutch-rating.json` (183 players; A. Fery had none). **Test:**
+  `h2h-model/test-h2h.js` "under pressure".
 - Evidence: document `formula-unification` (every place that changes, before/after on 3 players).
 
 ## Design-file bugs not to port

@@ -386,7 +386,7 @@ module.exports = {
     //    The court-speed DATA field (m.courtSpeed) and its dashboard environment
     //    display are unaffected — only the model adjustment layer is gone. The
     //    altitudeMeters table below is retained for the future #9/#10 redesign.
-    // 15. Clutch ("Under pressure") rating — clutch-rating.json index.
+    // 15. Under pressure — surface-ratings.json career index (founder 2026-11-26; was clutch-rating.json).
     //     Model v2.0 Phase-0: flat 3pp cap (was 2pp), no surface/altitude
     //     modifier. clutchIndex is a 0-100 pool-percentile, so `divisor` = 94
     //     (the widest REAL spread ~94) makes that extreme land at exactly the

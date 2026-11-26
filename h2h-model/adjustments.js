@@ -1300,7 +1300,7 @@ function formatSplit(ctx) {
 }
 
 // =========================================================================
-// 15. UNDER PRESSURE — clutch-rating.json under-pressure index
+// 15. UNDER PRESSURE — surface-ratings.json under-pressure index (founder 2026-11-26)
 // =========================================================================
 // Labelled "Under pressure" to match the site-wide terminology (the Players
 // ratings table's Under-pressure rating). The underlying clutchIndex IS the ATP
@@ -1308,7 +1308,7 @@ function formatSplit(ctx) {
 // set win % (see clutch-rating.json `method`). Same number, consistent name.
 function clutch(ctx) {
   const c = config.adjustments.clutch;
-  const res = base(c.id, 'clutch', 'Under pressure', c.maxMagnitude, 'clutch-rating.json');
+  const res = base(c.id, 'clutch', 'Under pressure', c.maxMagnitude, 'surface-ratings.json');
   const c1 = ctx.p1.clutch, c2 = ctx.p2.clutch;
   if (!c1 || !c2 || num(c1.clutchIndex) == null || num(c2.clutchIndex) == null) return res;
   // Per-surface preference (#15 upgrade, TEN-8): use the match-surface Under-

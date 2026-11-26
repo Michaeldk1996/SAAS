@@ -328,7 +328,10 @@ console.log('=== resolvePlayer Elo join: aliases + no-key fallback (TEN-263 foll
     names:{ 'shang|j':'Juncheng Shang', 'zhang|z':'Zhizhen Zhang', 'blanch|d':'Darwin Blanch', 'yunchaokete|b':'Bu Yunchaokete' }, ambiguous:['blanch|d'] });
   fs.mkdirSync(path.join(root,'career-splits')); W('career-splits/47.json',{ fullName:'Jannik Sinner' });   // TEN-391: one file per player
   W('player-profiles.json',{ players:{ '796':{ name:'Y. Bu' }, '1062':{ name:'Wu Tung-Lin' } } });
-  W('clutch-rating.json',[]); W('style-radar.json',{players:{}}); W('playing-styles.json',[]);
+  W('style-radar.json',{players:{}}); W('playing-styles.json',[]);
+  const upS=(i,c)=>({ career:{ underPressure:{ index:i, rating:150+i, components:c } } });
+  W('surface-ratings.json',{ players:[ { key:'47', name:'J. Sinner', surfaces:{ All:upS(80,4), Hard:upS(85,4), Clay:upS(70,3) } },
+    { key:'796', name:'Y. Bu', surfaces:{ Hard:upS(40,4) } } ] });
   const D=require(path.join(root,'h2h-model','data.js'));
   const R=(k,n)=>D.resolvePlayer(k,n);
   ok('alias by key: Y. Bu (796) -> yunchaokete|b', R('796','Y. Bu').elo && R('796','Y. Bu').elo.all.rating===1700, R('796','Y. Bu').eloKey);
@@ -343,6 +346,11 @@ console.log('=== resolvePlayer Elo join: aliases + no-key fallback (TEN-263 foll
   ok('control: a keyed player still resolves via career-splits', R('47','J. Sinner').elo.all.rating===2300 && R('47','J. Sinner').fullName==='Jannik Sinner');
   ok('control: a KEYED player with no stored name does not borrow the feed name', R('999','Juncheng Shang').elo===null && R('999','Juncheng Shang').fullName===null);
   ok('control: an unknown no-key player stays null (never fabricated)', R(null,'Nobody Known').elo===null);
+  // Under pressure (founder 2026-11-26): layer #15 reads surface-ratings.json by api-tennis key, career scope.
+  { const c=R('47','J. Sinner').clutch;
+    ok('under pressure: surface-ratings career index by key, per surface, 3 components = med', c && c.clutchIndex===80 && c.bySurface.Hard.clutchIndex===85 && c.bySurface.Clay.confidence==='med' && !c.bySurface.Grass, c); }
+  ok('under pressure: no All-surfaces index → no row (the layer stays silent)', R('796','Y. Bu').clutch===null);
+  ok('under pressure: a key the file lacks → no row', R('999','Juncheng Shang').clutch===null);
   W('elo-ratings.json',{ elo:{ 'shang|j':rec(1750) } });   // a store from before names were recorded
   delete require.cache[require.resolve(path.join(root,'h2h-model','data.js'))];
   const D2=require(path.join(root,'h2h-model','data.js'));

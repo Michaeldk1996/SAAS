@@ -7,7 +7,7 @@
  *   - matches.json / career-splits.json / player-profiles.json : numeric
  *     api-tennis id (e.g. "1083")
  *   - elo-ratings.json / style-radar.json : "lastname|initial" (e.g. "kopriva|v")
- *   - clutch-rating.json / playing-styles.json : abbreviated name ("V. Kopriva")
+ *   - playing-styles.json : abbreviated name ("V. Kopriva")
  *
  * resolvePlayer() takes the numeric key + abbreviated name from a match record
  * and joins every source into one bundle. Missing sources return null (never
@@ -42,45 +42,25 @@ function splitsFor(idStr) {
   return _splitsCache[k];
 }
 
-// Under-pressure supplement (TEN-8). clutch-rating.js derives from TML (tour-only),
-// so players below its floors — young / Challenger-heavy names like Merida, Buse,
-// Draxl — carry no clutch row, and the model's Clutch layer stays silent for them.
-// clutch-apitennis-supplement.js fills those from api-tennis per-match break-point
-// statistics (ATP-first, component-specific Challenger discount, ITF excluded),
-// written to clutch-supplement.json. Loaded ADDITIVELY — it only supplies a row
-// where clutch-rating.json has none, never overriding a tour-derived rating — so
-// clutch-rating.js can rebuild/clobber its own pool without touching these. Rows
-// share the clutch shape (name + clutchIndex + component %) plus provisional:true /
-// confidence:'med'. Absent file => no-op (pre-supplement behaviour). Mirrors the
-// rank-at-time sidecar loader below.
-let _clutchSuppl;
-function clutchSupplement() {
-  if (_clutchSuppl === undefined) {
-    try {
-      _clutchSuppl = playersOf(load('clutch-supplement.json')) || null;
-    } catch (e) {
-      _clutchSuppl = null; // sidecar absent -> tour-only clutch, as before
-    }
-  }
-  return _clutchSuppl;
-}
-
-// Per-surface under-pressure sidecar (TEN-8). clutch-surface.js splits the same
-// four ATP components by Hard/Clay/Grass for the tour pool. Loaded ADDITIVELY:
-// it only attaches a `bySurface` block onto a clutch row that already exists —
-// the Clutch layer prefers the match-surface index when its floor clears and
-// falls back to the career index otherwise, never overriding it. Sidecar absent
-// => career-only clutch, exactly as before.
-let _clutchSurface;
-function clutchSurface() {
-  if (_clutchSurface === undefined) {
-    try {
-      _clutchSurface = playersOf(load('clutch-surface.json')) || null;
-    } catch (e) {
-      _clutchSurface = null;
-    }
-  }
-  return _clutchSurface;
+// Under pressure (founder 2026-11-26): the site's ONE Under-pressure rating, surface-ratings.json
+// (Ratings board / Head to Head / Playing style), joined by api-tennis key, career scope. It
+// replaces clutch-rating.json, whose 183-player pool left most of the tour (A. Fery) unrated.
+function underPressureRow(idStr) {
+  if (!idStr) return null;
+  let arr;
+  try { arr = playersOf(load('surface-ratings.json')); } catch (e) { return null; }
+  const p = (Array.isArray(arr) ? arr : Object.values(arr || {})).find(x => x && String(x.key) === idStr);
+  if (!p || !p.surfaces) return null;
+  const up = (s) => {
+    const u = p.surfaces[s] && p.surfaces[s].career && p.surfaces[s].career.underPressure;
+    if (!u || u.index == null || !Number.isFinite(Number(u.index))) return null;
+    return { clutchIndex: Number(u.index), rating: u.rating, confidence: u.components >= 4 ? 'high' : 'med' };
+  };
+  const all = up('All');
+  if (!all) return null;
+  const bySurface = {};
+  for (const s of ['Hard', 'Clay', 'Grass']) { const v = up(s); if (v) bySurface[s] = v; }
+  return { ...all, bySurface };
 }
 
 // ---- key derivation -------------------------------------------------------
@@ -154,7 +134,6 @@ function resolvePlayer(numericKey, abbrName) {
 
   const eloAll = load('elo-ratings.json').elo || {};
 
-  const clutchArr = playersOf(load('clutch-rating.json'));
   const radarAll = load('style-radar.json').players || {};
   const stylesArr = playersOf(load('playing-styles.json'));
   const profilesAll = playersOf(load('player-profiles.json'));
@@ -233,26 +212,7 @@ function resolvePlayer(numericKey, abbrName) {
   const radarOk = Boolean(radarRow && radarRow.ok === true && radarRow.radar);
   const radar = radarOk ? radarRow.radar : null;
 
-  // Tour-derived pool first; only reach for the api-tennis supplement when it has
-  // no row for this player. Match the supplement on numeric api-tennis key (it
-  // carries playerKey — the strongest join), then fall back to the same name join.
-  let clutch = matchByAbbr(clutchArr);
-  if (!clutch) {
-    const suppl = clutchSupplement();
-    if (suppl) {
-      clutch = (idStr && suppl.find(s => s && String(s.playerKey) === idStr))
-        || matchByAbbr(suppl)
-        || null;
-    }
-  }
-  // Attach the per-surface index block additively — only onto an existing clutch
-  // row, matched on the same abbreviated-name join. Career index stays authoritative;
-  // the Clutch layer reads bySurface[surface] with a career fallback.
-  if (clutch) {
-    const surfArr = clutchSurface();
-    const surfRow = surfArr ? matchByAbbr(surfArr) : null;
-    if (surfRow && surfRow.bySurface) clutch = { ...clutch, bySurface: surfRow.bySurface };
-  }
+  const clutch = underPressureRow(idStr);
   const style = matchByAbbr(stylesArr);
 
   return {
