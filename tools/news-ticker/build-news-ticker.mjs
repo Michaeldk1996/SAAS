@@ -243,8 +243,11 @@ export async function build({ nowIso, times, rewrite = null, writer = null, apiK
         // not written yet: the result line and the closing lines, no paid call (the full report follows within 75 minutes)
         else if (waiting) { baseText = plainNames(rep.sentences[0], [{ card: m[w] }, { card: m[l] }]); text = [baseText, ...rating].join('\n\n'); summary.reportsWaiting = (summary.reportsWaiting || 0) + 1; }
         else if (composed && composed.body) { baseText = composed.body; text = assemble(composed.body, phys.sentences, rating); summary.reportsComposed = (summary.reportsComposed || 0) + 1; }
+        // the writer is on but this report has no written text (the model could not be reached, or its text failed the check):
+        // the result line only, never the list of percentages (founder 2026-11-26: "even if it fails, it's still too many
+        // numbers"). The figures are in the stats box; no voice call is spent on a text nobody should read.
+        else if (composeOn) { baseText = plainNames(rep.sentences[0], [{ card: m[w] }, { card: m[l] }]); text = [baseText, ...rating].join('\n\n'); summary.reportsResultOnly = (summary.reportsResultOnly || 0) + 1; }
         else {
-          if (composeOn) await voiceStep();
           baseText = text;
           text = [[text, ...shot].join(' '), cm && cm.text ? cm.text : null, mto.length ? mto.join(' ') : null, ...rating].filter(Boolean).join('\n\n');
         }

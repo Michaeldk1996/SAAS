@@ -322,14 +322,17 @@ await ok('a report that passes the check is published: the written text, then th
   eq([b.calls, b.revised, b.added], [0, 0, 0], 'same facts: no second call, nothing revised');
   yes(a.calls >= 2);
 });
-await ok('a report that fails the check keeps the older report text, and the same facts are not sent again', () => {
+await ok('a report that fails the check shows the result line only, and the same facts are not sent again', () => {
   const d = mk(); run(d, '2026-11-13T19:00:00.000Z', 'bad');
   const it = item(d, '12179838');
   yes(it.text.startsWith('Fritz beat Musetti'), it.text.slice(0, 80)); yes(!it.text.includes('9.6'));
   eq(it.composed.status, 'failed-check'); yes(it.composed.failures.some((f) => /9\.6/.test(f)));
   eq(run(d, '2026-11-13T19:10:00.000Z', 'bad').calls, 0);
   const off = mk(); run(off, '2026-11-13T19:00:00.000Z', 'off');
-  eq(item(off, '12179838').text, it.text, 'the fallback is exactly the report built with no writer at all');
+  // founder 2026-11-26: a report that could not be written is the result line only, never the list of percentages
+  eq(it.text.split('\n\n')[0], 'Fritz beat Musetti 6-4, 6-2 in the semi-finals.', 'the result line alone');
+  yes(!/%|serve quality/.test(it.text.split('\n\n')[0]) && it.text.split('\n\n').slice(1).every((p) => /^(Fritz|Musetti): /.test(p)), 'no stat sentence, only the closing lines the page hides');
+  yes(/unreturned serves/.test(item(off, '12179838').text), 'control: with the writer off altogether the template report is unchanged');
 });
 await ok('a report is written ONCE: a later quote never writes it again (founder 2026-11-15)', () => {
   const d = mk(); run(d, '2026-11-13T19:00:00.000Z', 'good');
