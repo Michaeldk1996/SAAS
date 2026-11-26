@@ -2,8 +2,74 @@
  "tournament": "Davis Cup - World Group",
  "tournamentKey": "3120",
  "season": "2026",
- "updatedAt": "2026-11-26T13:38:52.872Z",
+ "updatedAt": "2026-11-26T19:44:24.055Z",
  "items": [
+  {
+   "id": "digest-4be9bee741c766",
+   "type": "digest",
+   "version": 1,
+   "playerId": "1980",
+   "player": "A. Zverev",
+   "opponentId": "8174",
+   "opponent": "A. Fery",
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "eventKey": "12182953",
+   "context": "after beating A. Fery",
+   "category": "Quotes",
+   "timestamp": "2026-11-26T19:00:00.000Z",
+   "members": [
+    "quote-4e60d0454393e6",
+    "quote-e7e249e46589d1"
+   ],
+   "memberHash": "16a1719ca3a02300",
+   "digestedAt": "2026-11-26T19:12:05.500Z",
+   "blocks": [
+    {
+     "label": "after his win over Fery",
+     "text": "The team needed me today and I'm glad that I could deliver. I'm happy with the match.",
+     "from": [
+      "quote-4e60d0454393e6",
+      "quote-e7e249e46589d1"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "0db077ee06d26006",
+   "publishedAt": "2026-11-26T19:44:24.055Z"
+  },
+  {
+   "id": "quote-4e60d0454393e6",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": "8174",
+   "player": "A. Zverev",
+   "opponent": "A. Fery",
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-26T19:00:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating A. Fery",
+   "eventKey": "12182953",
+   "won": true,
+   "text": "The team needed me today and I'm glad that I could deliver",
+   "originalText": "Das Team hat mich heute gebraucht und ich bin froh, dass ich liefern konnte",
+   "language": "de",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "tennisnet.com",
+   "sourceUrl": "https://www.tennisnet.com/news/davis-cup-alexander-zverev-und-co-verlassen-bologna-mega-enttaeuscht",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his singles win over Fery for Germany",
+   "setting": "after beating Fery at the Davis Cup Finals in Bologna",
+   "sourceHash": "e45ea7dc0c0f8cfd",
+   "publishedAt": "2026-11-26T19:44:24.055Z"
+  },
   {
    "id": "quote-e7e249e46589d1",
    "type": "quote",
