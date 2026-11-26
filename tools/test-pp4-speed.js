@@ -50,7 +50,7 @@ const checks = {
     const surfs = (band.match(/data-pp2="spd-surf" data-v="(\w+)"/g) || []).map(x => x.replace(/.*data-v="(\w+)"/, '$1'));
     assert.deepStrictEqual(surfs, ['all', 'Hard', 'Clay', 'Grass', 'Indoors'], 'the surface switch');
     assert((band.match(/border-radius:10px;padding:3px;flex:none;/g) || []).length === 2, 'the two switches are not well tracks');
-    assert(/data-pp2="fm-toggle" data-v="spd" class="pp2-v5fm"[^>]*height:38px/.test(band) && /margin-left:auto/.test(band), 'no v5 Filters button at the right');
+    assert(/data-pp2="fm-toggle" data-v="spd" class="pp2-v5fm"[^>]*height:34px/.test(band) && /margin-left:auto/.test(band), 'no v5 Filters button at the right');
   },
   // the popover: Level · Price role · Altitude · Opponent archetype; every count = the banded rows the filter keeps
   popover(html) {
@@ -86,7 +86,7 @@ const checks = {
     assert.deepStrictEqual(got, ['On the price', 'As favourite', 'As underdog', 'Deciding sets'], 'the four tiles');
     assert(/% won/.test(T(det)), 'As favourite / underdog carry no win rate');
     assert(/grid-template-columns:58px 22px minmax\(0,1\.1fr\) 46px 50px minmax\(0,1\.3fr\) 52px 52px;gap:0;/.test(html), 'the match grid');
-    assert(/data-pp2-spdgroup="1"[\s\S]*?>speed<\/span>/.test(html), 'the group line has no speed');
+    assert(/data-pp2-spdgroup="1"[\s\S]*?data-evsp="1"[\s\S]*?>Speed<\/span>/.test(html), 'the group line has no speed chip');   // final 2026-11-26: the lifted Speed chip
     assert(/[+−]\d+\.\du\b/.test(T(html)) && /on the price/.test(T(html)), 'no units on the price');
   },
 };

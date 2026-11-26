@@ -70,7 +70,7 @@ H.check('sty · Window = Last 52 weeks · Last 24 months · Career; Last 24 mont
   Object.assign(I.state, { key: KEY, modal: 'styles' });
   const html = I.renderStylesModal(p);
   const wins = (html.match(/data-pp2="sty-win" data-v="(\w+)"/g) || []).map(x => x.replace(/.*data-v="(\w+)"/, '$1'));
-  assert.deepStrictEqual(wins, ['l52', 'l24', 'career'], 'the Window options');
+  assert.deepStrictEqual(wins, ['l52', 'career'], 'the Window options');   // final 2026-11-26: Last 52 weeks · Career
   const n = w => { I.state.styWin = w; return I.styData(p).data.reduce((s, d) => s + d.n, 0); };
   const a = n('l52'), b = n('l24'), c = n('career');
   assert(a < b && b < c, 'Last 24 months does not sit between Last 52 weeks and Career: ' + [a, b, c]);

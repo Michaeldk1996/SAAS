@@ -102,8 +102,8 @@ check('with the store all 4 groups and 14 rows render, one head line', () => {
   const I = load();
   const html = I.renderSituational(SUBJECT);
   assert.strictEqual(Object.keys(rowsOf(html)).length, 14);
-  const heads = html.match(/>Situation<|>Record<|>Rate<|>Vs his norm<|>Vs tour</g) || [];
-  assert.deepStrictEqual(heads, ['>Situation<', '>Record<', '>Rate<', '>Vs his norm<', '>Vs tour<'], 'the head line must render once, in order');
+  const heads = html.match(/>Group<|>Situation<|>Record<|>Rate<|>vs his norm<|>vs tour</g) || [];   // final 2026-11-26: Group first, sentence case
+  assert.deepStrictEqual(heads, ['>Group<', '>Situation<', '>Record<', '>Rate<', '>vs his norm<', '>vs tour<'], 'the head line must render once, in order');
 });
 
 check('Record reads "w of n" and there is no sample caption anywhere (§0.4)', () => {
@@ -119,7 +119,7 @@ check('under 5 the record shows and the rate dashes; thin rows are grey', () => 
   const I = load();
   const r = rowsOf(I.renderSituational(THIN));
   assert(/>2 of 3</.test(r.winSet1), 'the thin record is not shown');
-  assert(r.winSet1.includes('font-weight:700;color:var(--text-label);text-align:right;">' + DASH), 'the thin rate is not a grey dash');
+  assert(r.winSet1.includes('font-weight:700;color:var(--text-label);text-align:center;font-variant-numeric:tabular-nums;">' + DASH), 'the thin rate is not a grey dash');
 });
 
 check('a missing tour figure dashes Vs tour, never 0', () => {

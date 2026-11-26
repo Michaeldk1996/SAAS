@@ -150,7 +150,7 @@ H.check('2 · Record per tournament modal while the shard loads: no empty-state 
   assert(/No tournaments on record\./.test(t2), 'settled empty: ' + t2.slice(-120));
   // founder 2026-11-14 ("follow design"): a search that matches nothing leaves the list card empty, as the reference draws it
   const h3 = withState(I2, { key: p2.key, tournQuery: 'zzz', tournOpen: null }, () => I2.renderTournModal(p2));
-  assert(/data-pp2-tourn-empty="1"><\/div>/.test(h3) && !/No tournament/.test(T(h3)), 'search empty: an empty list card, no sentence');
+  assert(/data-pp2-tourn-empty="1"/.test(h3) && /No tournaments match these filters/.test(T(h3)) && /Back to ATP · all surfaces/.test(T(h3)), 'search empty: the export\'s empty state');   // final 2026-11-26
 });
 H.check('2 · a career drill while its shard loads lists nothing and says it is loading (TEN-442: the career-history shard)', () => {
   // TEN-442 · season drills list the dated career-history store, so THAT shard is the one whose absence means

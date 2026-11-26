@@ -246,7 +246,7 @@ H.check('4 · Matchup Backing while the shard loads: no units, no "0 priced"', (
   assert(!/0 priced/.test(t), 'the drill claims 0 priced while loading');
   W.marketEdge[FX.key] = FX.marketEdge; delete W.marketEdgePending[FX.key];
   const t2 = T(withState(I, open, () => I.renderStylesModal(p)));
-  assert(/[+−]\d+\.\d\du\s*backing him/.test(t2), 'the landed modal prints no units backing him (founder 2026-11-14: units)');
+  assert(/[+−]\d+\.\d\du/.test(t2) && !/backing him/.test(t2), 'the landed modal prints no units in its Backing column (founder 2026-11-14: units; the head carries none since the final lock 2026-11-26)');
 });
 H.check('4 · the ledger while the shard loads: an unpriced H / A cell is blank, not a dash', () => {
   const { I, p } = fxModule({ noShard: true, extra: PENDING() });

@@ -387,16 +387,16 @@ const POOL = { pooled: {
 const cellsOf = (h, label) => {
   const i = h.indexOf('data-pp2-splrow="' + label + '"'); assert(i > 0, 'row ' + label);
   const row = h.slice(i, h.indexOf('</div>', i));
-  return { row, cells: (row.match(/text-align:right;white-space:nowrap;">([^<]*)</g) || []).map(x => x.replace(/^.*">/, '').replace(/<$/, '')) };
+  return { row, cells: (row.match(/text-align:center;white-space:nowrap;">([^<]*)</g) || []).map(x => x.replace(/^.*">/, '').replace(/<$/, '')) };
 };
 const boxesOf = h => (h.match(/data-pp2-splbox="[^"]+"/g) || []).map(x => x.slice(17, -1));
-H.check('F1 · v5 structure (2026-11-20): 1180 drawer, head card 22/24, boxes (4 · 4 · 3), four blocks in two columns, 44px rows, the export\'s column heads', () => {
+H.check('F1 · final 2026-11-26: 1300 drawer, head card 22/24, boxes (4 · 4 · 3), four blocks in two columns, 44px rows, the export\'s column heads', () => {
   const { I } = load();
-  assert.strictEqual(I.MODAL_WIDTH.splits, 1180, 'drawer width');
+  assert.strictEqual(I.MODAL_WIDTH.splits, 1300, 'drawer width');
   const want = { results: ['Strongest level', 'Weakest level', 'Best round', 'vs Top 10'], sets: ['Tiebreaks', 'Sets won', 'Strongest situation', 'Weakest situation'],
     service: ['Hold', 'Return games won', 'Aces'] };
-  const heads = { results: 'W–L Win % vs his avg vs tour', sets: 'Tiebreaks won TB per match Games won Sets won Sets vs his avg Sets vs tour',
-    service: 'Aces % DF % Service held Return won Hold vs his avg Hold vs tour' };
+  const heads = { results: 'W–L Win % vs avg vs tour', sets: 'TB won TB / m Games Sets vs avg vs tour',
+    service: 'Aces DF Hold Break vs avg vs tour' };
   Object.keys(want).forEach(v => {
     I.state.splView = v;
     const h = I.renderSplitsModal(P);
@@ -405,7 +405,7 @@ H.check('F1 · v5 structure (2026-11-20): 1180 drawer, head card 22/24, boxes (4
     assert.strictEqual((h.match(/data-pp2-splsec=/g) || []).length, 4, 'four blocks ' + v);
     assert(/grid-template-columns:repeat\(2,minmax\(0,1fr\)\);gap:12px;/.test(h), '2-column grid ' + v);
     assert(T(h).includes(heads[v]), 'column heads ' + v);
-    assert(/class="pp2-splrow pp2-v5row" style="[^"]*min-height:44px;/.test(h), '44px rows ' + v);
+    assert(/class="pp2-splrow pp2-v5row" style="[^"]*min-height:42px;/.test(h), '42px rows ' + v);
   });
   I.state.splView = 'results';
 });
@@ -437,14 +437,14 @@ H.check('F3 · the tour figure = Σ wins ÷ Σ matches of every tracked player i
   assert.strictEqual(cellsOf(h2, 'Masters 1000').cells[3], '—', 'last 52 reads the last52 pool only');
   m.I.state.splitScope = 'career';
 });
-H.check('F4 · v5 §0.7: vs tour and vs his avg are 13 mono 700, green / red by sign, small samples included', () => {
+H.check('F4 · v5 §0.7: vs tour and vs his avg are 12.5 mono 700 (final 2026-11-26), green / red by sign, small samples included', () => {
   const m = load(); m.W.careerSplitsTour = { pooled: { a: { last52: { 'Finals': { M: 100, W: 50 }, 'Grand Slams': { M: 100, W: 50 } } } } };
   m.I.state.splitScope = 'last52';
   const h = m.I.renderSplitsModal(P), S = m.I.splModel(P);
   const fin = S.groups['By round'].find(x => x.label === 'Finals').s, gs = S.groups.Level.find(x => x.label === 'Grand Slams').s;
   assert(fin.n >= 5 && fin.n < 15 && gs.n >= 15, 'fixture: Finals ' + fin.n + ', Grand Slams ' + gs.n);
-  const cellsCol = r => { const row = cellsOf(h, r).row, sp = row.split('<span').filter(x => /text-align:right;white-space:nowrap;">[+−]\d/.test(x));
-    return sp.map(x => /font-size:13px;font-weight:700;color:([^;]+);/.exec(x)[1]); };
+  const cellsCol = r => { const row = cellsOf(h, r).row, sp = row.split('<span').filter(x => /text-align:center;white-space:nowrap;">[+−]\d/.test(x));
+    return sp.map(x => /font-size:12.5px;font-weight:700;color:([^;]+);/.exec(x)[1]); };
   cellsCol('Finals').forEach(c => assert(/var\(--(pos|neg)\)/.test(c), 'Finals ' + fin.n + ' matches: signed colour, not grey (' + c + ')'));
   const gsC = cellsCol('Grand Slams');
   assert(gsC.length === 2 && gsC.every(c => /var\(--(pos|neg)\)/.test(c)), 'Grand Slams: vs his avg and vs tour coloured (' + gsC + ')');

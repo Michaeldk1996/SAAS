@@ -590,3 +590,53 @@ Supersedes the v3 values it restates. Reference = `Player Stat Boxes.dc.html` / 
   Last 52 weeks with the reason. **Test:** `tools/test-pp6.js` sit, `tools/test-pp6-builders.js` (control: the
   pre-ruling builder writes no `w52`).
 
+
+## Profile final export parity (founder lock 2026-11-26, `design_handoff_player_profile_final_2026-11-26`) — each item is a test in `tools/test-pp7.js`
+- **Level & round:** drawer 1300px, content min-width 1170. Every value column has the same width per view (Results
+  4 × 81px, Sets & games 6 × 70px, Service 6 × 68px); every head AND value is centred, values mono 12.5. Short heads with
+  the full name on hover: W–L · Win % · vs avg · vs tour; TB won · TB / m · Games · Sets · vs avg · vs tour; Aces · DF ·
+  Hold · Break · vs avg · vs tour (Hanken 11.5/600, "vs tour" white 700). Cards paired by length: Results By round |
+  Extra stats, Level | Opponent rank; Sets & games and Service By round | Level, Opponent rank | Extra stats; both cards of
+  a row stretch to one height, rows `flex:1 0 42px`. Tiles pad 14/16/13, name 14, figure 24, arrows grey.
+- **Match-up record:** head = the title only (no record, win rate or "backing him"). Filter bar = the site toolbar (pad
+  12/14, margin-bottom 12): Window (Last 52 weeks · Career) then Surface; pills 12.5 pad 5/11, the picked one on a 16%
+  edge. Table grid `minmax(290px,2.6fr) minmax(48px,1fr) 56px 60px 56px 76px 68px 8px`; heads Hanken 11.5/600 not caps;
+  rows 50px; W–L `--pp-x-text-soft`; Win % 13.5/700; the Best / Toughest badge sits in the name's own line, 8px after
+  it, never pushed right. Our Backing column (units, founder 2026-11-14) stays where the export prints "Yield".
+- **Playing styles tab:** cards 12 apart; grid card pad 22/24/12, label column 176px, rows 54px, row name 13/700 (wraps —
+  our classifier names run longer than the export's; never cut), column names 11/600, legend 11.5/600; archetype cards
+  pad 18/24, hover edge 16%, chevron grey; opened panel pad 18, gap 32, rows 38px, list head Hanken 11.5/600 not caps,
+  win % `--pp-x-text-soft`, average edge mono 24.
+- **Live trading · Record by situation:** head and rows share ONE grid `190px minmax(0,1fr) repeat(4,88px)`, gap 16;
+  heads Group · Situation (left) · Record · Rate · vs his norm · vs tour (centred), Hanken 11.5/600 between two 6%
+  hairlines, a hover title each; rows 50px, situation 13/600, record mono 12.5 soft, rate mono 13.5/700, caret grey.
+- **Live trading · spot box tiles = Record · Rate · Favourite · underdog · Vs tour** (no "Vs his norm" tile; the table
+  column stays). Favourite · underdog = the spot rate as favourite · as underdog (shorter / longer closing price, the
+  match's own pair through `ltRoleOf`; an exact tie or an unpriced match is in neither), "74% · 58%", a dash under 5;
+  sub = the two records. A point-by-point row keeps no match list: "— · —" with "no match list for this row".
+- **Every results list** (Career drill, Calendar box, Court speed band, Record per tournament detail, Recent form ledger,
+  the 2026 month ledger, Level & round / archetype boxes): the two closing-price heads = a 20px avatar with HIS
+  initials (`--pp-x-lifted`, 16% edge, 8.5 white; `hdTxt`) and "Opp" — never H / A / Home / Away / Price. A tournament
+  header carries ONE lifted chip "Speed +0.13" (`evSpeedChip`: the edition's speed minus its surface's average, the
+  Court speed figure `spdEditionGap`; signed, 2 decimals, true minus; none → "Speed —") directly after its text; no
+  altitude. A walkover = the "WO" chip (`woChipHtml`, mono 10/700, r5, 14% ring) directly right of the opponent's name,
+  never under the date and never in the Sets column. The drill foot reads "last two columns = closing price on him /
+  the opponent".
+- **Career drill (surface results box):** 820px, 16% edge, r14. The As favourite / As underdog tiles filter the list
+  (`state.drillRole` {key, role}; walkovers and rows not counted out, empty tournaments drop, an exact tie in neither);
+  the picked tile = 28% edge + 4% wash; tile figures stay on the full list; the foot says "N matches as favourite · click
+  the tile again for all matches"; a second click shows all.
+- **Calendar record:** no Country filter (five groups). Toolbar = pad 10/12, r12, loose pills 12px pad 6/13 r8 on an 8%
+  edge (16% picked), a divider between Window and Surface; the Filters button the small 6/11 pill. A swing / month cell
+  opens a centred 680px box: title 18/800 + grey 12 scope line + lifted X; four tiles Record · Win rate · Yield (dash under
+  5 priced) · Profit at 1u flat (list box `--pp-x-inner` + 6% edge r11); the list head Opponent · Rd · Score · Sets · his
+  avatar · Opp. · P&L (Hanken 11.5/600 on a band between 6% hairlines); one list box (r12) per tournament, earliest first,
+  name · grey record · surface · Speed chip · P&L at the right; rows carry the Sets pill (green / red on a 5% wash).
+- **Ratings tiles:** list box (`--pp-x-inner` + 6% edge, r11, pad 14/8/13, hover 16%); value mono 21 + gap mono 12.5 on
+  one line; label 12/600 `--pp-x-text-soft`, one line (ellipsis last resort); ATP average line one line. DNA rows pad 11.
+  Career record band: pad 20/24, loose pills 11.5 pad 6/13 r8 gap 8, a divider before the tier pills.
+- **Toolbars:** Court speed and Record per tournament bars pad 12/14 (tournament 12/14/12/18), margin-bottom 12, tracks
+  of 12.5 pills pad 5/11, Filters / search 34px (search 210px, 12.5); Court speed Filters menu 400px, two columns.
+  Record per tournament: "N tournaments · W–L" in grey mono after the "?"; heads Hanken 11.5/600 not caps; rows 54px,
+  name 14, surface and W–L soft, chevron grey; empty = "No tournaments match these filters" + "Back to ATP · all
+  surfaces" (resets level, surface and search). Court speed band heads Hanken 11.5/600 not caps.

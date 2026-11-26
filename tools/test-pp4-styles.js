@@ -75,18 +75,18 @@ const HTML = render(E.I, E.p);
 const TXT = T(HTML);
 
 // v5 (handoff 2026-11-19, CHANGES §6.1) · filter card + ONE card (dot chart over table); Best / Toughest marks, no tiles
-H.check('v5 · filter card (Surface + Window well switches) and one card radius 16, chart over table', () => {
-  assert(/data-pp2-band="v5"[^>]*padding:22px 24px/.test(HTML), 'no v5 filter card');
+H.check('final 2026-11-26 · filter bar = the site toolbar (pad 12/14, Window then Surface) and one card radius 16, chart over table', () => {
+  assert(/data-pp2-stybar="1"[^>]*padding:12px 14px;margin-bottom:12px/.test(HTML), 'no site toolbar');
   const wins = (HTML.match(/data-pp2="sty-win" data-v="(\w+)"/g) || []).map(x => x.replace(/.*="(\w+)"/, '$1'));
-  assert.deepStrictEqual(wins, ['l52', 'l24', 'career'], 'the Window switch');
-  assert(/data-pp2-sty="card"[^>]*border-radius:16px;margin-bottom:16px/.test(HTML), 'the one card');
+  assert.deepStrictEqual(wins, ['l52', 'career'], 'the Window track');
+  assert(HTML.indexOf('data-pp2="sty-win"') < HTML.indexOf('data-pp2="sty-surf"'), 'Window comes before Surface');
+  assert(/data-pp2-sty="card"[^>]*border-radius:16px;margin-bottom:12px/.test(HTML), 'the one card');
   assert(!/data-pp2-sty="table"/.test(HTML), 'a second (table) card is back');
   assert(HTML.indexOf('pp2-stychart') < HTML.indexOf('pp2-styrow'), 'the chart is not over the table');
 });
-H.check('v5 · head: title, record, "% win rate", units "backing him"; the scope sits in the "?" as a lifted chip', () => {
+H.check('final 2026-11-26 · head = the title only (no record, win rate or yield); the scope sits in the "?" as a lifted chip', () => {
   assert(/font-size:18px;font-weight:800;[^>]*>Career</.test(HTML), 'no 18/800 title');
-  assert(/\d+% win rate/.test(TXT), 'no "N% win rate"');
-  assert(/[+−]\d+\.\d\du\s*backing him/.test(TXT), 'no units backing him headline');
+  assert(!/\d+% win rate/.test(TXT) && !/backing him/.test(TXT.replace(/Backing him: units/g, '')), 'the head still carries a record / win rate / yield');
   const open = render(E.I, E.p, { info: 'sty1' });
   assert(/background:var\(--pp-x-lifted\);box-shadow:inset 0 0 0 1px [^;]+;border-radius:8px;[^"]*">Career · \d+ matches · by the opponent/.test(open), 'no scope chip in the "?"');
 });

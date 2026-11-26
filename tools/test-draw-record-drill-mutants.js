@@ -25,7 +25,7 @@ const MUTANTS = [
   ['src', 'every Masters treated as a 56 draw', "    if (m.lv === 'M') return /indian wells|miami/i.test(t) || (y >= 2023 && /madrid|rome|shanghai/i.test(t)) ? 0 : 1;", "    if (m.lv === 'M') return 1;"],
   ['src', 'Masters rows filed as Grand Slams', "if (m.lv === 'M') return 'Masters 1000';", "if (m.lv === 'M') return 'Grand Slams';"],
   ['src', 'the tiebreak box lists every set', "        if (!((x.p === 7 && x.o === 6) || (x.p === 6 && x.o === 7))) return;\n        tbs.push(", "        tbs.push("],
-  ['src', 'the W\u2013L cell wraps', "(col ? 'color:' + col + ';' : '') + 'text-align:right;white-space:nowrap;\">'", "(col ? 'color:' + col + ';' : '') + 'text-align:right;\">'"],
+  ['src', 'the W\u2013L cell wraps', "(col ? 'color:' + col + ';' : '') + 'text-align:center;white-space:nowrap;\">'", "(col ? 'color:' + col + ';' : '') + 'text-align:center;\">'"],
   ['src', 'an opponent linked without a profile', "window.pp2HasProfile(k) && k !== String(state.key)", "true"],
   ['src', 'the sheet ignores the career match', "    if (c) {\n      var walkover = !!(c.walkover || c.wo);", "    if (false) {\n      var walkover = !!(c.walkover || c.wo);"],
   ['html', 'the join does not hand back the career match', "if (j != null && meet[j]) Object.defineProperty(r, 'careerMatch'", "if (false) Object.defineProperty(r, 'careerMatch'"],

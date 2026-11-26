@@ -102,7 +102,7 @@ check('drawer: stops clipping while a (?) popover is open, so a long definition 
   /'\.pp2-card:has\(\[data-pp2-infopop\]\)\{overflow:visible!important;\}'/.test(SRC) && /data-pp2="card" data-pp2-infopop="1"/.test(SRC) || 'popover clipping rule');
 check('Filters menus: Market edge, Derived lines and Calendar draw the export\'s menu (o.x), Market edge chips v4 with the count', () =>
   /filtersTriggerHtml\('mk', [^\n]*\{ x: true, noEllipsis: true \}\)/.test(SRC) && /filtersTriggerHtml\('lc', [^\n]*\{ x: true, noEllipsis: true \}\)/.test(SRC) &&
-  /filtersTriggerHtml\('cal', [^\n]*\{ x: true, gap: '18px 18px', gutter: true \}\)/.test(SRC) &&
+  /filtersTriggerHtml\('cal', [^\n]*\{ x: true, small: true, gap: '18px 18px', gutter: true \}\)/.test(SRC) &&
   /filtersAppliedHtml\('mk', [^\n]*\{ v4: true, count: true \}\)/.test(SRC) && /var\(--pp-x-shadow-pop6\)/.test(SRC) || 'menu variant');
 check('Court speed: the row that opened the match box is raised while the box is open; the host clears it on close', () =>
   /state\.sheetRow = v;/.test(SRC) && /'\.pp2-spdrow\.pp2-rowopen>\*\{background:var\(--selected\)!important;\}'/.test(SRC) &&
@@ -111,8 +111,7 @@ check('Court speed: the row that opened the match box is raised while the box is
 check('Market edge band box: the foot names the tour figure\'s real population (whole tour since 2010), never "same window"', () =>
   /tour at this band = every priced ATP main-tour match since 2010 with a closing price in ' \+ B\[1\]/.test(SRC) && !/same window and surface as the drawer/.test(SRC) &&
   /data-pp2-fbfoot="1"/.test(SRC) || 'band foot');
-check('Calendar Country: the export\'s search field, filtering in place, with "No country matches"', () =>
-  /search: true, searchPh: 'Type a country…', noHits: 'No country matches'/.test(SRC) && /data-pp4-search/.test(SRC) && /oninput="\(function\(i\)/.test(SRC) || 'country search');
+check('Calendar: no Country filter (final 2026-11-26)', () => !/calCtry|Type a country/.test(SRC) || 'the Country filter is back');
 const tok = fs.readFileSync(path.join(ROOT, 'tokens.css'), 'utf8');
 check('tokens: the v4 profile colours are named once in tokens.css', () =>
   /--pp-x-bar-neutral:\s*rgba\(91, 155, 255, 0\.55\)/.test(tok) && /--pp-x-faint:\s*#5B6480/i.test(tok) && /--pp-x-shadow-pop:\s*0 18px 48px rgba\(0, 0, 0, 0\.55\)/.test(tok) || 'tokens');
@@ -135,8 +134,8 @@ check('host: the profile loads mto-matches.json once per session, a failed read 
 }
 check('Match-up: a thin dot sits at its own rate (hollow, no label), as the reference', () =>
   /var yv = d\.pct;/.test(SRC) && /var vals = pts\.map\(function \(d\) \{ return d\.pct; \}\);/.test(SRC) || 'thin dot');
-check('Record per tournament: a search that matches nothing leaves the list card empty (the reference); no sentence', () =>
-  /\(views\.length \|\| q \? '<div data-pp2-tourn-empty="1"><\/div>'/.test(SRC) && !/No tournament matches that search/.test(SRC) || 'tourn empty');
+check('Record per tournament: nothing matching = "No tournaments match these filters" + "Back to ATP · all surfaces" (final 2026-11-26)', () =>
+  /No tournaments match these filters/.test(SRC) && /data-pp2="tourn-reset"/.test(SRC) && !/No tournament matches that search/.test(SRC) || 'tourn empty');
 check('Money in units (founder 2026-11-14): no match-list P&L or drawer headline prints a %', () =>
   !/signed\(m\.pl \|\| 0, 2, '%'\)/.test(SRC) && !/fig: signed\(b\.u, 1, '%'\)/.test(SRC) && /\(has \? signed\(s\.u, 2, 'u'\) : DASH\)/.test(SRC) || 'units');
 const HOST = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');

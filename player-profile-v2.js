@@ -346,7 +346,9 @@
     '.pp2-psgrid.pp2-iso .pp2-psx{opacity:.35;}.pp2-psgrid .pp2-psx.pp2-lit{opacity:1;background:var(--pp-x-hover);}' +
     '.pp2-psgrid .pp2-psx.pp2-x{background:var(--pp-x-lifted)!important;box-shadow:inset 0 0 0 1px ' + 'color-mix(in srgb, var(--text) 14%, transparent);z-index:5;}' +
     '.pp2-psgrid .pp2-psh.pp2-lit{background:var(--pp-x-hover);}.pp2-psgrid.pp2-iso .pp2-psh:not(.pp2-lit) .pp2-psc{color:var(--text-label)!important;}' +
-    '.pp2-psarch:hover{border-color:color-mix(in srgb, var(--text) 22%, transparent)!important;}' +
+    '.pp2-psarch:hover{border-color:var(--edge-16)!important;}' +
+    '.pp2-dnabox:hover{border-color:var(--edge-16)!important;}' +
+    '.pp2-drillrole:hover{border-color:color-mix(in srgb, var(--text) 28%, transparent)!important;}' +
     '.pp2-stytile:hover{border-color:color-mix(in srgb, var(--text) 22%, transparent)!important;transform:translateY(-1px);}' +
     '.pp2-stydot.pp2-hov,.pp2-stydot:hover{background:var(--link)!important;border-color:var(--link)!important;box-shadow:0 0 0 4px color-mix(in srgb, var(--link) 18%, transparent)!important;z-index:2;}' +
     '.pp2-stycode:hover{color:var(--text)!important;font-weight:700!important;}' +
@@ -1690,16 +1692,16 @@
       shown.forEach(function (x) {
         var ev = eventName(x.m, p);
         var g = groups[groups.length - 1];
-        if (!g || g.ev !== ev) groups.push(g = { ev: ev, surface: x.m.surface, rows: [] });
+        if (!g || g.ev !== ev) groups.push(g = { ev: ev, surface: x.m.surface, first: x.m, rows: [] });
         g.rows.push(x);
       });
       body = '<div class="pp2-ledger-body">' + groups.map(function (g) {
         var rec = formRate(g.rows.map(function (x) { return x.m; }));
-        return '<div class="pp2-ledger-event" style="display:flex;align-items:baseline;gap:10px;' +
+        return '<div class="pp2-ledger-event" style="display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 10px;' +
             'padding:12px 8px 6px;border-top:1px solid var(--line);">' +
             '<span style="font-size:12.5px;font-weight:700;color:var(--text);">' + esc(g.ev) + '</span>' +
             '<span style="' + MONO + 'font-size:10.5px;color:var(--text-label);">' +
-              esc(surfaceWord(g.surface)) + ' ' + MIDDOT + ' ' + rec.won + ENDASH + rec.lost + '</span>' +
+              esc(surfaceWord(g.surface)) + ' ' + MIDDOT + ' ' + rec.won + ENDASH + rec.lost + '</span>' + evSpeedChip(rowSpeedGap(g.first)) +
           '</div>' +
           g.rows.map(ledgerRowHtml).join('');
       }).join('') + '</div>';
@@ -1740,10 +1742,39 @@
 
   // The export's group-header labels are `.cap` with two overrides (8.5px,
   // var(--text-label)) — the tracking stays 0.16em, where this had drifted to 0.1em.
+  // ── final 2026-11-26 · SITE RULES for every results list ─────────────────────────────────────────────────────
+  // (1) the two closing-price heads = a 20px avatar with HIS initials and "Opp", never H / A / Home / Away / Price;
+  // (2) a tournament header carries ONE lifted chip "Speed +0.13" directly after its text (no altitude; dash = none);
+  // (3) a walkover = a small "WO" chip directly right of the opponent's name, never under the date.
+  function subjIni() {
+    var p = state.key ? profileFor(state.key) : null;
+    return String((p && p.name) || '').replace(/\./g, ' ').split(/[\s-]+/).filter(Boolean).map(function (w) { return w.charAt(0); }).slice(0, 2).join('').toUpperCase();
+  }
+  function subjAvatarHtml() {
+    return '<span data-pp2-subjav="1" title="His closing price" style="display:inline-flex;vertical-align:middle;width:20px;height:20px;margin:-4px 0;border-radius:50%;' +
+      'background:var(--pp-x-lifted);border:1px solid var(--edge-16);align-items:center;justify-content:center;font-family:var(--font-words);font-size:8.5px;' +
+      'font-weight:700;letter-spacing:0;text-transform:none;color:var(--text);box-sizing:border-box;">' + esc(subjIni()) + '</span>';
+  }
+  /** A results-list head label: his price column → the avatar, the opponent's → "Opp". */
+  function hdTxt(t) { return t === 'H' || t === 'Price' ? subjAvatarHtml() : t === 'A' ? 'Opp' : esc(t); }
+  function evSpeedChip(gap) {
+    return '<span data-evsp="1" style="display:inline-flex;gap:5px;background:var(--pp-x-lifted);border:1px solid ' + EDGE_14 + ';border-radius:6px;padding:2px 8px;' +
+      'font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--text-label);white-space:nowrap;flex:none;">' +
+      '<span>Speed</span><span style="color:var(--text);font-weight:700;">' + (gap == null || !isFinite(gap) ? DASH : (gap > 0.005 ? '+' : gap < -0.005 ? MINUS : '') + Math.abs(gap).toFixed(2)) + '</span></span>';
+  }
+  /** The edition's speed gap for a results row (the Court speed record's own figure), or null. */
+  function rowSpeedGap(r) {
+    if (!r) return null;
+    try { return spdEditionGap(r.venue !== undefined ? r : speedRowOf(r)); } catch (e) { return null; }
+  }
+  function woChipHtml(title) {
+    return '<span data-pp2-wo="1" title="' + esc(title || 'Walkover: not a match played, counted in no record') + '" style="flex:none;font-family:\'IBM Plex Mono\',monospace;' +
+      'font-size:10px;font-weight:700;color:var(--pp-x-text-soft);background:var(--pp-x-lifted);box-shadow:inset 0 0 0 1px ' + EDGE_14 + ';border-radius:5px;padding:1px 6px;">WO</span>';
+  }
   function ledgerEyebrow(text, align) {
     return '<div style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
       'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);text-align:' + align + ';">' +
-      esc(text) + '</div>';
+      hdTxt(text) + '</div>';
   }
 
   // "a - b" (the feed's sets count) -> "a–b"; null when the row holds none.
@@ -1775,8 +1806,9 @@
         woDateHtml(m, fmtDotDate(m.date)) + '</span>' +
       '<span class="pp2-wl" style="width:8px;height:8px;border-radius:2px;background:' +
         markerFill(m) + ';"></span>' +
-      '<span style="font-size:12.5px;font-weight:600;color:var(--text);min-width:0;overflow:hidden;' +
-        'text-overflow:ellipsis;white-space:nowrap;">' + esc(m.opponent ? surnameFirst(m.opponent) : DASH) + '</span>' +
+      '<span style="font-size:12.5px;font-weight:600;color:var(--text);min-width:0;display:flex;align-items:center;gap:8px;white-space:nowrap;">' +
+        '<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;">' + esc(m.opponent ? surnameFirst(m.opponent) : DASH) + '</span>' +
+        (m.walkover || m.wo ? woChipHtml() : '') + '</span>' +
       // Item 9: nowrap as well as the short code — a wrapped row is the defect.
       '<span style="' + MONO + 'font-size:11px;color:var(--text-label);white-space:nowrap;">' +
         esc(roundLabel(m)) + '</span>' +
@@ -1843,11 +1875,7 @@
 
   // Founder 2026-10-22 · the date cell of a walkover row carries "WO" under the date, as Flashscore prints it. `text` is
   // the date already formatted for the list; returns HTML.
-  function woDateHtml(m, text) {
-    if (!m || !(m.wo || m.walkover)) return esc(text);
-    return esc(text) + '<span data-pp2-wo="1" title="Walkover: not a match played, counted in no record" ' +
-      'style="display:block;font-size:10px;font-weight:700;letter-spacing:0.04em;">WO</span>';
-  }
+  function woDateHtml(m, text) { return esc(text); }   // final 2026-11-26: the WO chip sits after the opponent's name (woChipHtml)
   // The result marker's fill: a walkover keeps W / L (L for the player who withdrew); an unconfirmed row has none.
   function markerFill(m) {
     if (m && (m.unconf || m.unconfirmed)) return 'transparent';
@@ -3276,7 +3304,7 @@
     // TEN-384 Q4.6 · Record per tournament goes up to 1440px (the brief's words win over the reference's 1120).
     // Profile v2 (founder 2026-11-09): the export's drawer widths (modal.maxW) — supersedes Q4.6's 1440 for tourn.
     career: 820, tourn: 1120, season: 1180, speed: 1120,
-    styles: 900, splits: 1180, market: 1080, profile: 1080   // v4 §6: Level & round 1180 · v4 §9: Live trading 1080
+    styles: 900, splits: 1300, market: 1080, profile: 1080   // final 2026-11-26: Level & round 1300 · v4 §9: Live trading 1080
   };
   var CAREER_SUBTITLE = 'Record by surface and season, and his ratings against the field';
   function modalSubtitle(key, p, ctx) {
@@ -3762,7 +3790,7 @@
     var head = (fb.head || []).map(function (h) {
       return '<span style="position:sticky;top:0;z-index:1;background:var(--card);font-family:var(--font-words);font-size:10.5px;' +
         'font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);text-align:' + (h.align || 'left') + ';' +
-        'padding-bottom:8px;border-bottom:1px solid var(--edge-10);white-space:nowrap;">' + esc(h.label) + '</span>';
+        'padding-bottom:8px;border-bottom:1px solid var(--edge-10);white-space:nowrap;">' + hdTxt(h.label) + '</span>';
     }).join('');
     var rows = (fb.rows || []).map(function (r, i) {
       var hook = r.hook != null ? r.hook : r.id != null ? sheetHook(r.id) : '';
@@ -3828,9 +3856,10 @@
     var active = groups.filter(function (g) { return g.cur !== 'all'; });
     var lit = open || active.length;
     var BLUE12 = 'color-mix(in srgb, var(--bar) 12%, transparent)', BLUE35 = 'color-mix(in srgb, var(--bar) 35%, transparent)';
-    var V5 = !!(o.v5 || o.v4 || o.x);   // v5 §0.3: one Filters button for every drawer
+    var V5 = !o.small && !!(o.v5 || o.v4 || o.x);   // v5 §0.3: one Filters button for every drawer; o.small = the Calendar's 6/11 pill (final 2026-11-26)
+    var H34 = !!o.h34;   // final 2026-11-26: the compact toolbars' 34px Filters button, 12.5/600
     var trig = '<span data-pp2="fm-toggle" data-v="' + esc(id) + '" class="' + (V5 ? 'pp2-v5fm' : 'pp2-fmtrig') + '" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;' +
-      (V5 ? 'white-space:nowrap;height:38px;padding:0 12px 0 13px;border-radius:10px;box-sizing:border-box;font-size:13px;font-weight:600;' +
+      (V5 ? 'white-space:nowrap;height:' + (H34 ? '34px;padding:0 11px 0 12px' : '38px;padding:0 12px 0 13px') + ';border-radius:10px;box-sizing:border-box;font-size:' + (H34 ? '12.5px' : '13px') + ';font-weight:600;' +
           'color:' + (lit ? 'var(--text)' : 'var(--text-soft)') + ';background:' + (active.length ? 'var(--pp-x-lifted)' : open ? 'var(--selected)' : 'var(--inner)') + ';' +
           'border:1px solid ' + (active.length ? EDGE_14 : open ? 'color-mix(in srgb, var(--text) 22%, transparent)' : EDGE_8) + ';user-select:none;">'
       : 'white-space:nowrap;padding:6px 11px 6px 12px;border-radius:8px;box-sizing:border-box;font-size:11.5px;font-weight:700;' +
@@ -3949,6 +3978,9 @@
     return '<span style="display:flex;gap:3px;background:var(--card);border:1.25px solid var(--edge-6);' +
       'border-radius:' + (small ? 9 : 10) + 'px;padding:' + (small ? 2 : 3) + 'px;flex:none;">' + inner + '</span>';
   }
+  function listHead(text, extra) {   // final 2026-11-26: every list head = Hanken 11.5/600 grey, never caps
+    return '<span style="font-family:\'Hanken Grotesk\',sans-serif;font-size:11.5px;font-weight:600;color:var(--text-label);' + (extra || '') + '">' + text + '</span>';
+  }
   function recCaps(text, extra) {
     return '<span style="font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;' +
       'text-transform:uppercase;color:var(--text-label);' + (extra || '') + '">' + text + '</span>';
@@ -4000,6 +4032,27 @@
           'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';background:' + (on ? 'var(--selected)' : 'transparent') + ';' +
           'border:1px solid ' + (on ? 'var(--edge-16)' : 'transparent') + ';">' + esc(o[1]) + '</span>';
       }).join('') + '</span>';
+  }
+  // final 2026-11-26 · the compact site toolbar track: pills 12.5 pad 5/11, the picked one on a 16% edge; a title names the track
+  function tbSeg(hook, opts, cur, title) {
+    return '<span title="' + esc(title || '') + '" style="display:flex;gap:3px;background:var(--inner);border:1px solid ' + EDGE_8 + ';border-radius:10px;padding:3px;flex:none;">' +
+      opts.map(function (o) {
+        var on = cur === o[0];
+        return '<span data-pp2="' + esc(hook) + '" data-v="' + esc(o[0]) + '" role="button" aria-pressed="' + (on ? 'true' : 'false') + '" class="pp2-v5seg" ' +
+          'style="cursor:pointer;white-space:nowrap;padding:5px 11px;border-radius:7px;font-size:12.5px;font-weight:' + (on ? 700 : 600) + ';' +
+          'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';background:' + (on ? 'var(--selected)' : 'transparent') + ';' +
+          'border:1px solid ' + (on ? 'var(--edge-16)' : 'transparent') + ';">' + esc(o[1]) + '</span>';
+      }).join('') + '</span>';
+  }
+  // the Calendar's toolbar (colours unchanged, founder): loose pills 12px pad 6/13 r8 on an 8% edge (16% picked), a divider between
+  function calPills(hook, opts, cur, size, attrOf) {
+    return opts.map(function (o) {
+      var on = cur === o[0];
+      return '<span data-pp2="' + esc(hook) + '" data-v="' + esc(o[0]) + '"' + (attrOf ? attrOf(o) : '') + ' role="button" aria-pressed="' + (on ? 'true' : 'false') + '" class="pp2-v5seg" ' +
+        'style="cursor:pointer;white-space:nowrap;padding:6px 13px;border-radius:8px;font-size:' + (size || 12) + 'px;font-weight:' + (on ? 700 : 600) + ';' +
+        'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';background:' + (on ? 'var(--selected)' : 'transparent') + ';' +
+        'border:1px solid ' + (on ? 'var(--edge-16)' : EDGE_8) + ';">' + esc(o[1]) + '</span>';
+    }).join('');
   }
   function bandDiv() { return ''; }   // v5 §0.2: two switches in a row sit side by side, no divider line
   // The band itself. kind: 'joined' (--inner, 5% ring, r12 top, sits on the card it changes), 'joined-card'
@@ -4724,6 +4777,7 @@
     var chPend = !careerHistorySettled(p.key);
     var scope = chPend ? [] : drillScope(p, opts.year, opts.since, opts.tier);
     var rows = opts.surf ? scope.filter(function (r) { return r.cell === opts.surf; }) : scope;
+    var fullRows = rows;
     var shown = rows.slice(0, DRILL_PAGE);
     var cellN = (opts.won || 0) + (opts.lost || 0);
     // The reasons a surface list can run short, counted off the same tags the list was filtered on.
@@ -4778,10 +4832,20 @@
       multiYear: !opts.year
     });
 
+    // final 2026-11-26: the As favourite / As underdog tiles filter the list (walkovers out, empty tournaments
+    // drop); the tile figures stay on the full list; a second click shows every match again.
+    var role = opts.box ? drillRoleOf(opts) : 'all';
+    if (role !== 'all' && !chPend) {
+      rows = rows.filter(function (r) { return drillRoleRow(r) === role; });
+      shown = rows.slice(0, DRILL_PAGE);
+      body = drillBodyHtml(rows, 0, shown.length, drillPager = { rows: rows, next: shown.length, lastEvent: null, cellN: cellN, surf: opts.surf, gap: gap, multiYear: !opts.year,
+        noteFn: function () { return drillRoleNote(rows.length, role); } });
+      note = drillRoleNote(rows.length, role);
+    }
     return drillPanelHtml({
       title: opts.title, record: recordText(opts.won, opts.lost) + ' ' + MIDDOT + ' ' + cellN + ' matches',
       note: note, close: 'career-drill-close', grid: GRID, head: HEAD, body: body, hasRows: shown.length > 0,
-      box: !!opts.box, sub: opts.sub || '', tiles: opts.box ? drillTilesHtml(rows, opts, chPend) : ''
+      box: !!opts.box, sub: opts.sub || '', tiles: opts.box ? drillTilesHtml(fullRows, opts, chPend, role) : ''
     });
   }
   // TEN-384 C6 · the drill is a panel (--card + --edge-6, r11, 15/17), title 14/700, the record mono 12,
@@ -4792,7 +4856,15 @@
   // As underdog, read off the listed rows' own closing prices (the drill's H / A). Founder 2026-11-14: money in units;
   // founder 2026-11-15: an exact price tie is neither favourite nor underdog; a retirement settles on Pinnacle rules
   // (void before the first set ends, no units without set scores). Walkovers and rows not counted are out.
-  function drillTilesHtml(rows, opts, pend) {
+  function drillKeyOf(opts) { return [opts.surf || '', opts.year || '', opts.since || '', opts.tier || ''].join('|'); }
+  function drillRoleOf(opts) { var d = state.drillRole; return d && d.key === drillKeyOf(opts) && (d.role === 'fav' || d.role === 'dog') ? d.role : 'all'; }
+  /** fav / dog by the row's own closing prices (an exact tie is neither, founder 2026-11-15); walkovers and rows not counted: null */
+  function drillRoleRow(r) {
+    if (r.wo || r.notCounted || !(r.price >= 1.01 && r.oppPrice >= 1.01) || r.price === r.oppPrice) return null;
+    return r.price < r.oppPrice ? 'fav' : 'dog';
+  }
+  function drillRoleNote(n, role) { return n + ' match' + (n === 1 ? '' : 'es') + ' as ' + (role === 'fav' ? 'favourite' : 'underdog') + ' ' + MIDDOT + ' click the tile again for all matches'; }
+  function drillTilesHtml(rows, opts, pend, pick) {
     var MEC = window.MarketEdgeCore;
     var live = rows.filter(function (r) { return !r.notCounted && !r.wo; });
     var priced = live.filter(function (r) {
@@ -4805,32 +4877,37 @@
     var fav = rec(priced.filter(function (r) { return r.price < r.oppPrice; })), dog = rec(priced.filter(function (r) { return r.price > r.oppPrice; }));
     var units = priced.reduce(function (t, r) { return t + (r.won ? Math.round(r.price * 100) - 100 : -100); }, 0) / 100;
     var w = opts.won || 0, l = opts.lost || 0, n = w + l;
-    var T = function (label, fig, col, sub) {
-      return '<div style="background:var(--card);border:1px solid var(--pp-x-edge-9);border-radius:11px;padding:13px 12px;display:flex;flex-direction:column;' +
+    var dk = drillKeyOf(opts);
+    var T = function (label, fig, col, sub, roleKey, n) {
+      var click = roleKey && n && !pend, on = click && pick === roleKey;
+      return '<div ' + (click ? 'data-pp2="drill-role" data-v="' + roleKey + '" data-k="' + esc(dk) + '" role="button" aria-pressed="' + (on ? 'true' : 'false') + '" class="pp2-drillrole" ' +
+        'title="' + (on ? 'Show all matches' : 'Show only his matches as ' + (roleKey === 'fav' ? 'favourite' : 'underdog')) + '" ' : '') +
+        'style="cursor:' + (click ? 'pointer' : 'default') + ';background:' + (on ? 'color-mix(in srgb, var(--text) 4%, var(--card))' : 'var(--card)') + ';' +
+        'border:1px solid ' + (on ? 'color-mix(in srgb, var(--text) 28%, transparent)' : 'var(--pp-x-edge-9)') + ';border-radius:11px;padding:13px 12px;display:flex;flex-direction:column;' +
         'align-items:center;text-align:center;gap:6px;min-width:0;"><span style="font-size:11.5px;font-weight:600;color:var(--text-label);max-width:100%;' +
         'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + label + '</span><span style="font-family:\'IBM Plex Mono\',monospace;font-size:20px;' +
         'font-weight:700;line-height:1;color:' + col + ';">' + fig + '</span><span style="font-size:11.5px;line-height:1.35;color:var(--text-label);max-width:100%;' +
         'text-wrap:balance;">' + sub + '</span></div>';
     };
-    var role = function (label, x) {
+    var role = function (label, x, k) {
       return pend ? T(label, '&nbsp;', 'var(--text)', '&nbsp;') : T(label, x.n ? (100 * x.w / x.n).toFixed(1) + '%' : DASH, x.n ? 'var(--text)' : 'var(--text-label)',
-        x.n ? recordText(x.w, x.n - x.w) + ' ' + MIDDOT + ' ' + x.n + ' match' + (x.n === 1 ? '' : 'es') : 'No matches');
+        x.n ? recordText(x.w, x.n - x.w) + ' ' + MIDDOT + ' ' + x.n + ' match' + (x.n === 1 ? '' : 'es') : 'No matches', k, x.n);
     };
-    return '<div data-pp2-drilltiles="1" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;">' +
+    return '<div data-pp2-drilltiles="1" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;">' +
       T('Win rate', n ? (100 * w / n).toFixed(1) + '%' : DASH, n ? 'var(--text)' : 'var(--text-label)', recordText(w, l) + ' ' + MIDDOT + ' ' + n + ' matches') +
       (pend ? T('Units backing him', '&nbsp;', 'var(--text)', '&nbsp;')
         : T('Units backing him', priced.length ? signed(units, 1, 'u') : DASH,
           !priced.length ? 'var(--text-label)' : units > 0 ? 'var(--pos)' : units < 0 ? 'var(--neg)' : 'var(--text-label)',
           // founder 2026-11-20 ("choose what's best"): units stay the figure, the yield sits under it with its n
           priced.length + ' priced match' + (priced.length === 1 ? '' : 'es') + ' ' + MIDDOT + ' yield ' + signed(100 * units / priced.length, 1, '%'))) +
-      role('As favourite', fav) + role('As underdog', dog) + '</div>';
+      role('As favourite', fav, 'fav') + role('As underdog', dog, 'dog') + '</div>';
   }
   function drillPanelHtml(o) {
     if (o.box) return drillBoxHtml(o);
     var head = o.head.map(function (h) {
       return '<div style="position:sticky;top:0;background:var(--card);font-family:var(--font-words);' +
         'font-size:10.5px;letter-spacing:0.10em;text-transform:uppercase; font-weight:700;color:var(--text-label);' +
-        'text-align:' + h[1] + ';padding:0 0 7px;">' + esc(h[0]) + '</div>';
+        'text-align:' + h[1] + ';padding:0 0 7px;">' + hdTxt(h[0]) + '</div>';
     }).join('');
     return '<div ' + (o.attr || '') + 'style="grid-column:1 / -1;background:var(--card);' +
       'border:1.25px solid var(--edge-6);border-radius:11px;' +
@@ -4856,19 +4933,19 @@
   // (Player Stat Boxes LOCKED 2026-11-09, `modal.drillModal`): a 72% scrim over the page, an 820px card on --edge-16,
   // title 16/800 + sub 12.5 grey, a 32px close, the match list (sticky head, grouped by tournament) under
   // calc(calc(100vh / var(--sf-z, 1)) − 230px), and the note in mono 11 on an 8% rule. Esc, the close and a scrim click close it.
-  var DRILL_HA_LEGEND = 'H / A = closing price on him / the opponent';   // the export's drill-box note
+  var DRILL_HA_LEGEND = 'last two columns = closing price on him / the opponent';   // the export's drill-box note (final 2026-11-26: never "H / A")
   function drillBoxHtml(o) {
     var head = o.head.map(function (h) {
       return '<div style="position:sticky;top:0;z-index:1;background:var(--card);font-family:var(--font-words);' +
         'font-size:10.5px;letter-spacing:0.10em;text-transform:uppercase;font-weight:700;color:var(--text-label);' +
-        'text-align:' + h[1] + ';padding:0 0 7px;">' + esc(h[0]) + '</div>';
+        'text-align:' + h[1] + ';padding:0 0 7px;">' + hdTxt(h[0]) + '</div>';
     }).join('');
     return '<div class="pp2-drillbox" data-pp2-drillbox="1" style="position:fixed;inset:0 0 0 var(--sf-side, 0px);z-index:64;' +
         'background:var(--pp-x-backdrop);display:flex;align-items:flex-start;justify-content:center;' +
         'padding:40px 24px;overflow-y:auto;clip-path:inset(0);text-align:left;">' +
       '<div data-pp2="' + o.close + '" style="position:absolute;inset:0;"></div>' +
-      '<div data-pp2="card" style="position:relative;width:100%;max-width:900px;background:var(--card);border:1px solid var(--pp-x-edge-9);' +
-        'border-radius:16px;padding:22px 24px 22px;display:flex;flex-direction:column;gap:16px;box-shadow:var(--pp-x-shadow-box);' +
+      '<div data-pp2="card" style="position:relative;width:100%;max-width:820px;background:var(--card);border:1px solid var(--edge-16);' +
+        'border-radius:14px;padding:20px 22px 22px;display:flex;flex-direction:column;gap:16px;box-shadow:var(--pp-x-shadow-box);' +
         'box-sizing:border-box;cursor:default;">' +
         '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;">' +
           '<div style="display:flex;flex-direction:column;gap:4px;min-width:0;">' +
@@ -4928,7 +5005,7 @@
           '<div style="font-size:12.5px;font-weight:700;color:var(--text);white-space:nowrap;">' +
             esc(r.event || DASH) + '</div>' +
           '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;color:var(--text-label);' +
-            'white-space:nowrap;">' + esc(eventMetaOf(r, pg.multiYear)) + '</div></div>';
+            'white-space:nowrap;">' + esc(eventMetaOf(r, pg.multiYear)) + '</div>' + evSpeedChip(rowSpeedGap(r)) + '</div>';
       }
       var wl = r.won ? 'var(--pos)' : 'var(--neg)';
       // Only a form-sourced row has a match sheet to open — the sheet is keyed on
@@ -4946,8 +5023,9 @@
              (r.wo ? ' data-pp2-wo-row="1"' : '') + ' ') +
         // a Derived line's drill (pg.neutral) has no W/L square: the LINE badge is its row's only colour
         (pg.neutral ? '' : cell('width:8px;height:8px;border-radius:2px;background:' + markerFill(r) + ';', '')) +
-        cell('font-size:12.5px;color:var(--text);overflow:hidden;text-overflow:ellipsis;' +
-             'white-space:nowrap;padding:5px 0;', esc(r.opp ? initialSurname(r.opp) : DASH)) +   // fx3 D12: drills read "I. M. Surname"
+        cell('font-size:12.5px;color:var(--text);display:flex;align-items:center;gap:8px;min-width:0;' +
+             'white-space:nowrap;padding:5px 0;', '<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;">' + esc(r.opp ? initialSurname(r.opp) : DASH) + '</span>' +
+             (r.wo ? woChipHtml(r.won ? 'Walkover in his favour · opponent withdrew' : 'Walkover against him · he withdrew') : '')) +   // fx3 D12: drills read "I. M. Surname"
         cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);padding:5px 0;',
              esc(r.round || DASH)) +
         (pg.neutral
@@ -5320,10 +5398,11 @@
   // pills (Record only). Ground follows the page: Record --card r16 top, Ratings --inner + 8% ring r12 top.
   function careerTabsHtml() {
     var tab = state.careerTab === 'ratings' ? 'ratings' : 'record';
-    var win = bandPills('career-scope', [['l52', 'Last 52 weeks'], ['career', 'Career']], state.careerScope === 'l52' ? 'l52' : 'career',
+    // final 2026-11-26 (export careerBand): loose pills 11.5 pad 6/13 r8, gap 8, a 1px divider before the tier pills; band pad 20/24
+    var win = calPills('career-scope', [['l52', 'Last 52 weeks'], ['career', 'Career']], state.careerScope === 'l52' ? 'l52' : 'career', 11.5,
       function (t) { return ' data-scope="' + t[0] + '"'; });
-    var tier = tab === 'record' ? bandDiv() + bandPills('career-tier', CAREER_TIERS, careerTier()) : '';
-    return bandBox(win + tier, tab === 'ratings' ? 'joined-8' : 'joined-card');
+    var tier = tab === 'record' ? '<span style="width:1px;height:18px;background:var(--edge-10);margin:0 6px;"></span>' + calPills('career-tier', CAREER_TIERS, careerTier(), 11.5) : '';
+    return bandBox(win + tier, tab === 'ratings' ? 'joined-8' : 'joined-card', 'padding:20px 24px;gap:8px;');
   }
 
   // ── the WINDOW control, `Career | Last 52` — now in the tab row (TEN-384) ──
@@ -5403,15 +5482,17 @@
     var has = v != null && isFinite(v);
     var dp = spec.dp, unit = spec.unit || '';
     var d = dnaDeltaParts(has ? dnaDelta(v, avg, dp) : null, dp, spec.lower);
-    return '<div data-pp2-dnabox="' + esc(spec.f) + '" style="background:var(--card);border:1px solid var(--pp-x-edge-9);border-radius:11px;' +
-      'padding:14px 12px;display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0;">' +
-      '<div style="display:flex;align-items:baseline;justify-content:center;gap:8px;">' +
-        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:21px;font-weight:700;color:' + (has ? 'var(--text)' : DNA_FAINT) + ';">' +
+    // final 2026-11-26: the site list box (--pp-x-inner + 6% edge, r11, pad 14/8/13, hover 16%); value 21 + gap 12.5 on one
+    // line; the label 12/600 always one line (ellipsis as the last resort); the ATP average line one line
+    return '<div data-pp2-dnabox="' + esc(spec.f) + '" class="pp2-dnabox" title="' + esc(spec.label) + '" style="background:var(--pp-x-inner);border:1px solid var(--edge-6);border-radius:11px;' +
+      'padding:14px 8px 13px;display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0;transition:border-color 120ms;">' +
+      '<div style="display:flex;align-items:baseline;justify-content:center;gap:7px;white-space:nowrap;">' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:21px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;color:' + (has ? 'var(--text)' : DNA_FAINT) + ';">' +
           (has ? (+v).toFixed(dp) + unit : DASH) + '</span>' +
-        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:15px;font-weight:700;color:' + d.col + ';">' + esc(d.txt) + '</span>' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums;color:' + d.col + ';">' + esc(d.txt) + '</span>' +
       '</div>' +
-      '<div style="font-size:12.5px;font-weight:600;color:var(--text-soft);margin-top:6px;">' + esc(spec.label) + '</div>' +
-      '<div style="display:flex;align-items:baseline;justify-content:center;gap:8px;margin-top:4px;">' +
+      '<div style="font-size:12px;font-weight:600;letter-spacing:-0.01em;color:var(--pp-x-text-soft);margin-top:8px;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(spec.label) + '</div>' +
+      '<div style="display:flex;align-items:baseline;justify-content:center;gap:6px;margin-top:5px;white-space:nowrap;max-width:100%;">' +
         '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--text-label);">ATP average ' +
           (avg == null ? DASH : esc((+avg).toFixed(dp) + unit)) + '</span>' +
       '</div></div>';
@@ -5511,7 +5592,7 @@
       '</div>';
 
     var HEAD = CAPS;
-    var CELL = 'padding:13px 0;border-top:1px solid var(--edge-6);';
+    var CELL = 'padding:11px 0;border-top:1px solid var(--edge-6);font-variant-numeric:tabular-nums;';   // final 2026-11-26: rows pad 11
     var rows = axes.map(function (a) {
       var d = dnaDeltaParts(a.delta, a.dp, false);
       return '<span style="font-size:13.5px;font-weight:600;color:var(--text);' + CELL + '">' + esc(a.label) + '</span>' +
@@ -6661,6 +6742,10 @@
       '</span>';
   }
   // v5 §0.4 · the scope line inside the "?" (career, events, record, rate, Backing summed over the events that have it)
+  function tournShownText(list) {   // "14 tournaments · 212–98" (the export's tourShown)
+    var w = 0, l = 0; list.forEach(function (t) { w += t.won; l += t.lost; });
+    return list.length ? list.length + ' tournament' + (list.length === 1 ? '' : 's') + ' ' + MIDDOT + ' ' + recordText(w, l) : 'No tournaments';
+  }
   function tournScopeLine(views) {
     var w = 0, l = 0, u = 0, pu = 0;
     views.forEach(function (t) { w += t.won; l += t.lost; if (t.pinN) { u += t.pinPl; pu++; } });
@@ -6690,15 +6775,15 @@
     // v4 §4 (handoff 2026-11-14): the column header and the list sit in ONE --card card (6% ring, radius 16); the
     // header is its top half (padding 16 24 0, no bottom edge) and draws no rule of its own — the first row's 5%
     // hairline is the only line between them.
-    var head = '<div data-pp2-tourn-head="1" class="pp2-tscroll" style="' + GRID + 'padding:20px 24px 0;overflow-y:auto;scrollbar-gutter:stable;' +
+    var head = '<div data-pp2-tourn-head="1" class="pp2-tscroll" style="' + GRID + 'padding:13px 24px 0;overflow-y:auto;scrollbar-gutter:stable;' +
       'background:var(--card);border:1.25px solid var(--edge-6);border-bottom:0;border-radius:16px 16px 0 0;">' +
       HEAD.map(function (h) {
         var on = h[2] && so.k === h[2];
         var arrow = on ? (so.d < 0 ? '↓' : '↑') : (h[2] ? '⇅' : '');
         return '<span' + (h[2] ? ' data-pp2="tourn-sort" data-v="' + h[2] + '"' : '') + ' ' + (h[0] === 'Backing' ? '' : 'title="' + esc(h[3] || '') + '" ') + 'style="display:flex;' +
           'align-items:baseline;gap:5px;justify-content:' + (h[1] === 'right' ? 'flex-end' : h[1] === 'center' ? 'center' : 'flex-start') + ';' +
-          'cursor:' + (h[2] ? 'pointer' : 'default') + ';font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;' +
-          'text-transform:uppercase;color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';padding-bottom:10px;' +
+          'cursor:' + (h[2] ? 'pointer' : 'default') + ';font-family:var(--font-words);font-size:11.5px;font-weight:600;' +
+          'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';padding-bottom:11px;' +
           'white-space:nowrap;"' +
           // TEN-325: Backing counts retirements, settled on Pinnacle rules — the one note (RET_SETTLE_NOTE) on its head.
           (h[0] === 'Backing' && window.MarketEdgeCore ? ' data-ret-note="profile-backing" title="' + esc(window.MarketEdgeCore.RET_SETTLE_NOTE) + '"' : '') + '>' +
@@ -6716,24 +6801,24 @@
       var regKey = typeof window.pp2TournamentKey === 'function' ? window.pp2TournamentKey(t.name, t.display) : null;
       var nameHtml = '<span ' + (regKey ? 'data-pp2="tourn-page" data-v="' + esc(regKey) + '" class="pp2-tlink" title="Open ' +
           esc(t.display) + ' ' + RARROW + ' Tournaments" ' : '') +
-        'style="align-self:flex-start;max-width:100%;font-size:14.5px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;' +
+        'style="align-self:flex-start;max-width:100%;font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;' +
         (regKey ? 'cursor:pointer;text-decoration:underline;text-decoration-color:transparent;text-underline-offset:3px;' : '') + '">' +
         esc(t.display) + '</span>';
       return '<div style="flex:none;display:flex;flex-direction:column;">' +
         '<div class="pp2-trow pp2-v5row" data-pp2="tourn-row" data-t="' + esc(t.name) + '" style="' + GRID +
-          'min-height:60px;padding:0 10px;border-radius:' + (open ? 10 : 0) + 'px;cursor:pointer;border-top:1px solid var(--edge-6);' +
+          'min-height:54px;padding:0 10px;border-radius:' + (open ? 10 : 0) + 'px;cursor:pointer;border-top:1px solid var(--edge-6);' +
           'background:' + (open ? 'var(--pp-x-hover)' : 'transparent') + ';">' +
           '<span style="display:flex;align-items:center;gap:12px;min-width:0;">' + tournLogoTile(regKey, t.display) +
             '<span style="display:flex;flex-direction:column;gap:3px;min-width:0;">' + nameHtml +
-            (tournLevelMeta(t.level) ? '<span class="pp2-tlevel" style="font-size:12px;color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' +
+            (tournLevelMeta(t.level) ? '<span class="pp2-tlevel" style="font-size:11.5px;color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' +
               esc(tournLevelMeta(t.level)) + '</span>' : '') + '</span></span>' +
-          '<span style="font-size:13px;color:var(--text-label);white-space:nowrap;">' + (t.surface ? esc(t.surface) : DASH) + '</span>' +
+          '<span style="font-size:12.5px;color:var(--pp-x-text-soft);white-space:nowrap;">' + (t.surface ? esc(t.surface) : DASH) + '</span>' +
           '<span style="display:inline-flex;align-items:baseline;gap:6px;white-space:nowrap;overflow:hidden;">' +
             (bp ? '<span title="' + esc(bp.label) + '" style="' + MONO + 'font-size:12px;font-weight:700;color:var(--text);">' + esc(bp.code) + '</span>' +
               (bp.year ? '<span style="' + MONO + 'font-size:11px;color:var(--text-label);">' + esc(bp.year) + '</span>' : '')
               : '<span style="color:' + DASH_COLOUR + ';">' + DASH + '</span>') + '</span>' +
           // v4 §4: W–L in soft ink; §0.1 the bar is neutral, blue only on the open tournament; a 1x12 tick marks 50%.
-          '<span style="' + MONO + 'font-size:13px;color:var(--text-label);text-align:right;white-space:nowrap;">' + recordText(t.won, t.lost) + '</span>' +
+          '<span style="' + MONO + 'font-size:13px;color:var(--pp-x-text-soft);text-align:right;white-space:nowrap;">' + recordText(t.won, t.lost) + '</span>' +
           '<span data-pp2-tbar="1" title="Win rate ' + MIDDOT + ' tick = 50%" style="position:relative;display:block;width:100%;height:4px;' +
             'border-radius:2px;background:var(--pp-x-track-7);">' +
             (pct != null ? '<span style="display:block;height:100%;border-radius:2px;width:' + pct.toFixed(1) + '%;background:' +
@@ -6747,7 +6832,7 @@
           '<span style="' + MONO + 'font-size:13px;font-weight:700;text-align:right;white-space:nowrap;color:' +
             (pin == null ? 'var(--text-label)' : pin > 0 ? 'var(--pos)' : pin < 0 ? 'var(--neg)' : 'var(--text-label)') + ';">' +
             (t.backingPending ? BACKING_PEND_HTML : pin == null ? DASH : t.pinTxt || signed(pin, 1, 'u')) + '</span>' +
-          '<span style="font-size:15px;font-weight:700;color:var(--pp-x-link);line-height:1;pointer-events:none;">›</span>' +
+          '<span style="font-size:15px;font-weight:700;color:var(--text-label);line-height:1;pointer-events:none;">›</span>' +
         '</div>' +
         (open ? renderTournDetail(p, t, regKey) : '') +
         '</div>';
@@ -6756,22 +6841,23 @@
     return '' +
       // v5 §4 · the filter card: "Tournaments" 18/800 + "?" (the career scope as a lifted chip inside it) | Level and
       // Surface switches | the search well (38 high, radius 10).
-      '<div data-pp2-band="v5" style="display:flex;align-items:center;gap:12px 10px;flex-wrap:wrap;margin-bottom:16px;padding:22px 24px;' +
+      '<div data-pp2-band="v5" data-pp2-tournbar="1" style="display:flex;align-items:center;gap:12px 10px;flex-wrap:wrap;margin-bottom:12px;padding:12px 14px 12px 18px;' +
         'background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;">' +
         '<span style="display:inline-flex;align-items:center;gap:9px;margin-right:auto;white-space:nowrap;">' +
           '<span style="font-size:18px;font-weight:800;letter-spacing:-0.01em;color:var(--text);">Tournaments</span>' +
           '<span style="position:relative;display:inline-flex;z-index:3;">' + infoIcon('tourn1', Object.assign({ width: 400, v4: true, scopeChip: tournScopeLine(views) }, TOURN_INFO)) + '</span>' +
+          '<span data-pp2-tournshown="1" style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--text-label);font-variant-numeric:tabular-nums;">' + esc(tournShownText(shown)) + '</span>' +
         '</span>' +
-        tournPills('tourn-level', TOURN_LEVELS, lvl) +
-        tournPills('tourn-surf', TOURN_SURFS, sf) +
-        '<label style="display:flex;align-items:center;gap:9px;width:220px;height:38px;box-sizing:border-box;flex:none;' +
+        tbSeg('tourn-level', TOURN_LEVELS, lvl, 'Level') +
+        tbSeg('tourn-surf', TOURN_SURFS, sf, 'Surface') +
+        '<label style="display:flex;align-items:center;gap:9px;width:210px;height:34px;box-sizing:border-box;flex:none;' +
           'background:var(--inner);border:1px solid ' + EDGE_8 + ';border-radius:10px;padding:0 12px;">' +
           '<svg width="14" height="14" viewBox="0 0 20 20" fill="none" style="flex:none;">' +
             '<circle cx="9" cy="9" r="6" stroke="var(--text-label)" stroke-width="1.7"></circle>' +
             '<path d="m14 14 3 3" stroke="var(--text-label)" stroke-width="1.7" stroke-linecap="round"></path></svg>' +
           '<input type="search" data-pp2="tourn-search" value="' + esc(state.tournQuery || '') + '" ' +
             'placeholder="Search a tournament" aria-label="Search a tournament" style="flex:1;background:transparent;' +
-            'border:0;outline:none;font-family:inherit;font-size:13px;color:var(--text);min-width:0;padding:1px 2px;"></label>' +
+            'border:0;outline:none;font-family:inherit;font-size:12.5px;color:var(--text);min-width:0;padding:1px 2px;"></label>' +
       '</div>' +
       head +
       '<div data-pp2-tourn-list="1" class="pp2-tscroll" style="max-height:calc(calc(100vh / var(--sf-z, 1)) - 270px);min-height:420px;overflow-y:auto;display:flex;' +
@@ -6780,7 +6866,9 @@
         (shown.length ? rows : tournHistPending(p) ? '' :
           // a search or filter that matches nothing: the list card stays, empty, as the reference draws it (founder
           // 2026-11-14 "follow design"); a player with no tournament at all still says so
-          (views.length || q ? '<div data-pp2-tourn-empty="1"></div>'   // founder 2026-11-26: ATP is the default, so "empty" = no tournament at all
+          (views.length || q ? '<div data-pp2-tourn-empty="1" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:64px 20px;border-top:1px solid var(--edge-6);text-align:center;">' +
+              '<span style="font-size:14px;font-weight:700;color:var(--text);">No tournaments match these filters</span>' +
+              '<span data-pp2="tourn-reset" role="button" style="font-size:12.5px;font-weight:600;color:var(--pp-x-link);cursor:pointer;">Back to ATP ' + MIDDOT + ' all surfaces</span></div>'
             : '<div data-pp2-tourn-empty="1" style="border-top:1px solid var(--line);padding:26px;text-align:center;font-size:13px;' +
               'color:var(--text-label);">No tournaments on record.</div>')) +
       '</div>';
@@ -6915,7 +7003,7 @@
       return '<span style="position:sticky;top:0;z-index:1;align-self:stretch;min-height:14px;background:var(--card);' +
         'font-family:var(--font-words);font-size:10.5px;letter-spacing:0.10em;text-transform:uppercase;font-weight:700;' +
         'color:var(--text-label);text-align:' + h[1] + ';white-space:nowrap;padding:0 0 9px 10px;' +
-        'border-bottom:1px solid var(--edge-10);">' + esc(h[0]) + '</span>';
+        'border-bottom:1px solid var(--edge-10);">' + hdTxt(h[0]) + '</span>';
     }).join('');
 
     var body = t.editions.map(function (e) {
@@ -6925,7 +7013,7 @@
           esc(t.display + ' ' + e.year) + '</span>' +
         '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--text-label);' +
           'white-space:nowrap;">' + esc((e.davis ? '' : (e.finish || DASH) + ' ' + MIDDOT + ' ') +
-          recordText(e.won, e.lost)) + '</span></span>';
+          recordText(e.won, e.lost)) + '</span>' + evSpeedChip(rowSpeedGap(e.matches && e.matches[0])) + '</span>';
       return grp + e.matches.map(function (m) {
         var wl = m.won ? 'var(--pos)' : 'var(--neg)';
         // §3: only advertise a click the sheet can actually resolve. The sheet
@@ -7425,11 +7513,11 @@
     }
     return Object.assign({ width: 400, notes: notes }, SPL_INFO1);
   }
-  var SPL_COLS = { results: 'minmax(124px,1fr) 84px 72px 84px 84px', sets: 'minmax(104px,1fr) 80px 70px 64px 54px 84px 68px',
-    service: 'minmax(104px,1fr) 52px 46px 76px 72px 90px 76px' };
-  var SPL_HEADS = { results: [['W' + ENDASH + 'L'], ['Win %'], ['vs his avg'], ['vs tour', 1]],
-    sets: [['Tiebreaks won'], ['TB per match'], ['Games won'], ['Sets won'], ['Sets vs his avg'], ['Sets vs tour', 1]],
-    service: [['Aces %'], ['DF %'], ['Service held'], ['Return won'], ['Hold vs his avg'], ['Hold vs tour', 1]] };
+  // final 2026-11-26: equal value columns per view, every head and value centred, short heads with the full name on hover
+  var SPL_COLS = { results: 'minmax(124px,1fr) repeat(4,81px)', sets: 'minmax(104px,1fr) repeat(6,70px)', service: 'minmax(104px,1fr) repeat(6,68px)' };
+  var SPL_HEADS = { results: [['W' + ENDASH + 'L'], ['Win %'], ['vs avg', 0, 'Win rate vs his average'], ['vs tour', 1, 'Win rate vs the tour average']],
+    sets: [['TB won', 0, 'Tiebreaks won'], ['TB / m', 0, 'Tiebreaks per match'], ['Games', 0, 'Games won'], ['Sets', 0, 'Sets won'], ['vs avg', 0, 'Sets won vs his average'], ['vs tour', 1, 'Sets won vs the tour average']],
+    service: [['Aces', 0, 'Aces per 100 serve points'], ['DF', 0, 'Double faults per 100 serve points'], ['Hold', 0, 'Service games held'], ['Break', 0, 'Return games won'], ['vs avg', 0, 'Hold vs his average'], ['vs tour', 1, 'Hold vs the tour average']] };
   // one row's cells: [kind, text, colour]; kinds d (dim 12 grey), k (key 12.5/600 white), h (his 11 grey), t (tour 12.5/700)
   function splRowCellsV4(view, x, B, tour, tourPend) {
     var s = x.s, n = s.n, thin = n < SPL_FLOOR, none = !n;
@@ -7510,34 +7598,36 @@
     var extra = S.groups['Extra stats'].slice();
     if (view !== 'results') extra = extra.filter(function (x) { return x.label !== 'Over 3.5 sets'; });
     else extra.push({ group: 'Extra stats', label: 'Tiebreak record', tb: true, s: { n: B.tw + B.tl, w: B.tw, l: B.tl, win: B.tw + B.tl ? 100 * B.tw / (B.tw + B.tl) : null } });
-    var GROUPS = [['By round', S.groups['By round']], ['Level', S.groups['Level']], ['Opponent rank', S.groups['Opponent rank']], ['Extra stats', extra]];
+    // cards paired by length (final 2026-11-26): Results By round | Extra stats, Level | Opponent rank; the other views By round | Level, Opponent rank | Extra stats
+    var GROUPS = (view === 'results' ? ['By round', 'Extra stats', 'Level', 'Opponent rank'] : ['By round', 'Level', 'Opponent rank', 'Extra stats'])
+      .map(function (g) { return [g, g === 'Extra stats' ? extra : S.groups[g]]; });
     var COLS = SPL_COLS[view];
-    var CELL = { d: M + 'font-size:12.5px;color:var(--text-label);', k: M + 'font-size:13px;font-weight:700;color:var(--text);',
-      h: M + 'font-size:13px;font-weight:700;', t: M + 'font-size:13px;font-weight:700;' };
+    var CELL = { d: M + 'font-size:12.5px;color:var(--pp-x-text-soft);', k: M + 'font-size:12.5px;font-weight:700;color:var(--text);',
+      h: M + 'font-size:12.5px;font-weight:700;', t: M + 'font-size:12.5px;font-weight:700;' };
     var infos = [];
     function section(group, items) {
-      var hd = '<div style="display:grid;grid-template-columns:' + COLS + ' 10px;align-items:center;padding-bottom:12px;">' +
-        '<span style="display:flex;align-items:center;gap:10px;"><span style="font-size:16px;font-weight:800;letter-spacing:-0.01em;color:var(--text);white-space:nowrap;">' + group + '</span>' +
+      var hd = '<div style="display:grid;grid-template-columns:' + COLS + ' 18px;align-items:center;padding-bottom:12px;">' +
+        '<span style="display:flex;align-items:center;gap:10px;"><span style="font-size:15px;font-weight:800;letter-spacing:-0.01em;color:var(--text);white-space:nowrap;">' + group + '</span>' +
           (group === 'Extra stats' ? '<span style="position:relative;display:inline-flex;z-index:3;">' + infoIcon('spl2', Object.assign({ width: 400 }, SPL_INFO2)) + '</span>' : '') + '</span>' +
         SPL_HEADS[view].map(function (h) {
-          return '<span style="text-align:right;font-size:11px;font-weight:' + (h[1] ? 800 : 700) + ';color:' + (h[1] ? 'var(--text)' : 'var(--text-label)') + ';white-space:nowrap;">' + h[0] + '</span>';
+          return '<span data-pp2-splhead title="' + esc(h[2] || h[0]) + '" style="text-align:center;font-family:\'Hanken Grotesk\',sans-serif;font-size:11.5px;font-weight:' + (h[1] ? 700 : 600) + ';color:' + (h[1] ? 'var(--text)' : 'var(--text-label)') + ';white-space:nowrap;cursor:default;">' + h[0] + '</span>';
         }).join('') + '<span></span></div>';
       var rows = items.map(function (x) {
         var n = x.s.n, none = !n, tour = splTourFor(x.tb ? 'All matches' : x.label, scope);
         var target = x.tb ? 'spltb:' : 'spl:' + x.group + '|' + x.label, on = openKey === target;
         if (!x.tb && n >= PP4.SPL_MINB) infos.push({ x: x, tour: tour, target: target });
         var hook = none ? '' : 'data-pp2="fb-open" data-box="' + (x.tb ? 'spltb' : 'spl') + '" data-v="' + esc(x.tb ? 'Extra stats|Tiebreak record' : x.group + '|' + x.label) + '" ';
-        return '<div ' + hook + 'data-pp2-splrow="' + esc(x.label) + '" class="pp2-splrow pp2-v5row" style="display:grid;grid-template-columns:' + COLS + ' 10px;align-items:center;min-height:44px;' +
+        return '<div ' + hook + 'data-pp2-splrow="' + esc(x.label) + '" class="pp2-splrow pp2-v5row" style="display:grid;grid-template-columns:' + COLS + ' 18px;align-items:center;flex:1 0 42px;min-height:42px;font-variant-numeric:tabular-nums;' +
           'border-top:1px solid ' + (on ? 'transparent' : 'var(--edge-6)') + ';margin:0 -8px;padding:0 8px;border-radius:' + (on ? 10 : 0) + 'px;cursor:' + (none ? 'default' : 'pointer') + ';' +
           'background:' + (on ? 'var(--pp-x-hover)' : 'transparent') + ';">' +
-          '<span style="font-size:13.5px;font-weight:600;color:' + (none ? 'var(--text-label)' : 'var(--text)') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(x.label) + '</span>' +
+          '<span style="font-size:13px;font-weight:600;color:' + (none ? 'var(--text-label)' : 'var(--text)') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(x.label) + '</span>' +
           splRowCellsV4(view, x, B, tour, tourPend).map(function (c) {
             var col = c[2] || (c[1] === DASH ? 'var(--text-label)' : '');   // a dash is grey whatever its column
             if (c[0] === 'h' && c[1] !== DASH) col = /^\+/.test(c[1]) ? 'var(--pos)' : /^[−-]/.test(c[1]) ? 'var(--neg)' : 'var(--text-label)';   // v5 §0.7
-            return '<span style="' + CELL[c[0]] + (col ? 'color:' + col + ';' : '') + 'text-align:right;white-space:nowrap;">' + (c[1] === '' ? '&nbsp;' : c[1]) + '</span>';
-          }).join('') + '<span style="text-align:right;font-size:15px;line-height:1;color:var(--pp-x-link);opacity:' + (none ? 0 : 1) + ';">›</span></div>';
+            return '<span style="' + CELL[c[0]] + (col ? 'color:' + col + ';' : '') + 'text-align:center;white-space:nowrap;">' + (c[1] === '' ? '&nbsp;' : c[1]) + '</span>';
+          }).join('') + '<span style="text-align:right;font-size:15px;line-height:1;color:var(--text-label);opacity:' + (none ? 0 : 1) + ';">›</span></div>';
       }).join('');
-      return '<div data-pp2-splsec="' + esc(group) + '" style="background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;padding:20px 18px 8px;">' + hd + rows + '</div>';
+      return '<div data-pp2-splsec="' + esc(group) + '" style="background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;padding:16px 18px 6px;display:flex;flex-direction:column;">' + hd + rows + '</div>';
     }
     var secHtml = GROUPS.map(function (g) { return section(g[0], g[1]); });
 
@@ -7590,13 +7680,13 @@
     }
     var boxHtml = '<div style="display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px;">' + boxes.map(function (b) {
       return '<div ' + (b.v ? 'data-pp2="fb-open" data-box="splbox" data-v="' + esc(b.v) + '" ' : '') + 'data-pp2-splbox="' + esc(b.label) + '" class="pp2-splbox" ' +
-        'style="cursor:' + (b.v ? 'pointer' : 'default') + ';background:var(--card);border:1.25px solid var(--pp-x-edge-9);border-radius:11px;padding:16px 18px 14px;' +
-        'display:flex;flex-direction:column;gap:6px;min-width:0;transition:border-color 120ms, background 120ms;">' +
+        'style="cursor:' + (b.v ? 'pointer' : 'default') + ';background:var(--card);border:1.25px solid var(--pp-x-edge-9);border-radius:11px;padding:14px 16px 13px;' +
+        'display:flex;flex-direction:column;gap:5px;min-width:0;font-variant-numeric:tabular-nums;transition:border-color 120ms, background 120ms;">' +
         '<span style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span style="font-size:11.5px;font-weight:600;color:var(--text-label);white-space:nowrap;">' + esc(b.label) + '</span>' +
-          '<span style="font-size:15px;line-height:1;color:var(--pp-x-link);">' + b.cue + '</span></span>' +
-        '<span style="font-size:15px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(b.name) + '</span>' +
+          '<span style="font-size:15px;line-height:1;color:var(--text-label);">' + b.cue + '</span></span>' +
+        '<span style="font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(b.name) + '</span>' +
         '<span style="display:flex;align-items:baseline;gap:10px;white-space:nowrap;margin-top:4px;">' +
-          '<span style="' + M + 'font-size:26px;font-weight:700;line-height:1;color:var(--text);">' + b.fig + '</span>' +
+          '<span style="' + M + 'font-size:24px;font-weight:700;line-height:1;color:var(--text);">' + b.fig + '</span>' +
           '<span style="' + M + 'font-size:13px;font-weight:700;color:' + b.gapColor + ';">' + (b.gap || '&nbsp;') + '</span>' +
           '<span style="font-size:11.5px;color:var(--text-label);">' + b.gapTail + '</span></span>' +
         '<span style="position:relative;display:block;height:4px;border-radius:2px;background:var(--pp-x-track-7);margin:8px 0 4px;">' +
@@ -7608,8 +7698,8 @@
     }).join('') + '</div>';
 
     return '<div style="display:flex;flex-direction:column;gap:16px;">' + head +
-      '<div style="overflow-x:auto;"><div style="min-width:1200px;display:flex;flex-direction:column;gap:16px;">' + boxHtml +
-        '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start;">' + secHtml.join('') + '</div>' +
+      '<div style="overflow-x:auto;"><div style="min-width:1170px;display:flex;flex-direction:column;gap:16px;">' + boxHtml +
+        '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:stretch;">' + secHtml.join('') + '</div>' +
       '</div></div></div>';
   }
   function splRowCells(r, view, join) {
@@ -10959,7 +11049,7 @@
   var CAL_ASIA = { CN: 1, JP: 1, KR: 1, TH: 1, MY: 1, SG: 1, IN: 1, HK: 1, TW: 1, PH: 1, ID: 1, VN: 1 };
   var CAL_SUNSHINE_RE = /indian wells|miami|bnp paribas open|sony (ericsson )?open|key biscayne/i;
   var CAL_AMERICAS = { US: 1, CA: 1, MX: 1, AR: 1, BR: 1, CL: 1, CO: 1, EC: 1, PE: 1, UY: 1, PY: 1, BO: 1 };
-  var CAL_FM_KEYS = ['calSpeed', 'calFmt', 'calBand', 'calArch', 'calOpp', 'calCtry'];
+  var CAL_FM_KEYS = ['calSpeed', 'calFmt', 'calBand', 'calArch', 'calOpp'];   // final 2026-11-26: no Country filter
   // v4 (handoff 2026-11-14): the Melbourne summer events are Australian. The event catalog has no country for them, so
   // in February (Murray River Open / Great Ocean Road Open, 31 Jan – 6 Feb 2021) the swing rule put them in the Middle
   // East; they are named here, by event, and only where the catalog is silent.
@@ -10970,9 +11060,6 @@
     if (!c && CAL_AU_EVENT_RE.test(String(nm || ''))) c = 'AU';
     if (!c && r.event && r.event !== nm && CAL_AU_EVENT_RE.test(String(r.event))) c = 'AU';
     return c ? String(c).toUpperCase() : null;
-  }
-  function calCountryName(cc) {
-    try { return new Intl.DisplayNames(['en'], { type: 'region' }).of(cc) || cc; } catch (e) { return cc; }
   }
   /** The swing a match belongs to: its month, surface, court and the event's country. */
   function calSwingOf(r, cc) {
@@ -11032,7 +11119,7 @@
   function calPass(x, skip) {
     var ok = function (k, v) { return skip === k || !state[k] || state[k] === 'all' || String(v) === String(state[k]); };
     return (skip === 'surf' || calSurfOf() === 'all' || x.surf === calSurfOf()) &&
-      ok('calSpeed', x.speed) && ok('calFmt', x.fmt) && ok('calBand', x.band) && ok('calArch', x.arch) && ok('calOpp', x.lvl) && ok('calCtry', x.cc);
+      ok('calSpeed', x.speed) && ok('calFmt', x.fmt) && ok('calBand', x.band) && ok('calArch', x.arch) && ok('calOpp', x.lvl);
   }
   function calStat(list) {
     var w = 0, l = 0, pc = 0, cents = 0;
@@ -11041,9 +11128,6 @@
   }
   function calFilterGroups(W0) {
     var cnt = function (key, field) { return function (v) { return W0.filter(function (x) { return calPass(x, key) && (v === 'all' || String(x[field]) === String(v)); }).length; }; };
-    var cc = {};
-    W0.filter(function (x) { return calPass(x, 'calCtry'); }).forEach(function (x) { if (x.cc) cc[x.cc] = (cc[x.cc] || 0) + 1; });
-    var ccs = Object.keys(cc).sort(function (a, b) { return cc[b] - cc[a] || a.localeCompare(b); });
     return [
       { key: 'calSpeed', title: 'Court speed', cur: state.calSpeed || 'all', options: [['all', 'All speeds'], ['fast', 'Fast'], ['medium', 'Medium'], ['slow', 'Slow']], count: cnt('calSpeed', 'speed') },
       { key: 'calFmt', title: 'Format', cur: state.calFmt || 'all', options: [['all', 'All formats'], ['bo3', 'Best of 3'], ['bo5', 'Best of 5']], count: cnt('calFmt', 'fmt') },
@@ -11053,9 +11137,7 @@
       { key: 'calArch', title: 'Opponent style', cur: state.calArch || 'all', options: [['all', 'All styles']].concat(STYLE_AXIS.map(function (a) {
         return [a.label, a.label.replace('Big Server + First Strike', 'Big Server + FS').replace('Big Server + Complete Baseliner', 'Big Server + CB')]; })),
         count: cnt('calArch', 'arch') },
-      { key: 'calOpp', title: 'Opponent level', cur: state.calOpp || 'all', options: OPP_LEVELS, count: cnt('calOpp', 'lvl') },
-      { key: 'calCtry', title: 'Country', cur: state.calCtry || 'all', maxH: 196, search: true, searchPh: 'Type a country…', noHits: 'No country matches', options: [['all', 'All countries']].concat(ccs.map(function (c) { return [c, calCountryName(c)]; })),
-        count: cnt('calCtry', 'cc') }
+      { key: 'calOpp', title: 'Opponent level', cur: state.calOpp || 'all', options: OPP_LEVELS, count: cnt('calOpp', 'lvl') }
     ];
   }
   var CAL_INFO1 = { what: 'Where in the tennis calendar he wins, swing by swing and season by season.', defs: [
@@ -11071,10 +11153,13 @@
     ['Consistent', 'Seasons the swing finished above .500, out of the seasons he actually played it.']] };
   // v3 D1 · the pages moved to the header switch. One standalone band (--card + 6% ring, r12), read by BOTH pages:
   // Window pills · divider · Surface pills; the Calendar page's Filters trigger at its right end, popover anchored right.
-  function calHeadRow(p, right) {
-    return bandBox(bandPills('cal-win', [['l52', 'Last 52 weeks'], ['career', 'Career']], calWinOf()) + bandDiv() +
-      bandPills('cal-surf', STY_SURFS.map(function (t) { return [t[0], t[0] === 'all' ? 'All' : t[1]]; }), calSurfOf()) +
-      (right || ''), 'standalone-card');
+  function calHeadRow(p, right) {   // final 2026-11-26: the compact Calendar toolbar (pad 10/12, r12, margin-bottom 12)
+    return '<div data-pp2-band="standalone-card" data-pp2-calbar="1" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;padding:10px 12px;' +
+      'background:var(--card);border:1.25px solid var(--edge-6);border-radius:12px;">' +
+      calPills('cal-win', [['l52', 'Last 52 weeks'], ['career', 'Career']], calWinOf()) +
+      '<span style="width:1px;height:18px;background:var(--edge-10);margin:0 6px;"></span>' +
+      calPills('cal-surf', STY_SURFS.map(function (t) { return [t[0], t[0] === 'all' ? 'All' : t[1]]; }), calSurfOf()) +
+      (right || '') + '</div>';
   }
   function calScopeText(nFilters) {
     return (calWinOf() === 'career' ? 'career' : 'last 52 weeks') + ' ' + MIDDOT + ' ' + (calSurfOf() === 'all' ? 'all surfaces' : calSurfOf().toLowerCase()) +
@@ -11364,7 +11449,7 @@
           '<span style="position:absolute;right:0;bottom:2px;' + M_ + 'font-size:9.5px;color:var(--text-label);">' + MINUS + maxPP.toFixed(1) + '</span>' + bars + '</span>' +
         codeRows + [winRow, pricedRow, yieldRow, vsRow, consRow].map(function (r) { return r + '<span></span>'; }).join('') +
       '</div></div></div>';
-    var trig = filtersTriggerHtml('cal', groups, M.length, W0.length, 620, true, { x: true, gap: '18px 18px', gutter: true });   // the export's Calendar menu is 620px, anchored right
+    var trig = filtersTriggerHtml('cal', groups, M.length, W0.length, 620, true, { x: true, small: true, gap: '18px 18px', gutter: true });   // the export's Calendar menu is 620px, anchored right
     return calHeadRow(p, trig) + filtersAppliedHtml('cal', groups, M.length, W0.length) + card1 + card2 + calDrawerV2(p, M, cols, view);
   }
   // The right-side drawer: 520px, fixed to the viewport edge; matches grouped by tournament (earliest first).
@@ -11393,30 +11478,83 @@
     // box (the export's drillModal), its rows built by the same row builder from the same spine rows, newest first.
     var rows = listed.map(function (x) { return Object.assign(last52DrillRow(x.r), { wo: !!x.wo }); })
       .sort(function (a, b) { return String(b.date).localeCompare(String(a.date)); });
-    // the Calendar keeps its P&L column (flat 1u, its yield sums it; a void retirement reads "void")
-    var GRID = 'display:grid;grid-template-columns:52px 12px minmax(0,1.15fr) 40px 44px minmax(0,1.35fr) 48px 48px 56px;gap:0 12px;align-items:center;';
-    var HEAD = [['Date', 'left'], ['', 'left'], ['Opponent', 'left'], ['Rd', 'left'], ['Sets', 'left'], ['Set scores', 'left'], ['H', 'right'], ['A', 'right'], ['P&L', 'right']];
+    // final 2026-11-26 · the swing / month box (export calDrawer): a centred 680px box, head = title 18/800 over a grey 12
+    // scope line + a lifted X; four tiles Record · Win rate · Yield (dash under 5 priced) · Profit at 1u flat; the H2H
+    // list head (Opponent · Rd · Score · Sets · his avatar · Opp. · P&L) on a band between two 6% hairlines; every
+    // tournament its own list box (name · grey record · surface · speed chip · P&L at the right), earliest first; rows
+    // carry the Sets pill (green / red on a 5% wash), never a square. A walkover = the WO chip, no score, no price.
     var srcOf = {}; listed.forEach(function (x) { srcOf[x.r.date + '|' + (x.r.opp || '')] = x.r; });
-    var MONO = 'font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;text-align:right;padding:5px 0;';
-    var tail = function (r, cell) {
-      var src = srcOf[r.date + '|' + (r.opp || '')] || r, plc = r.wo ? { t: '', c: 'var(--text-label)' } : calPlCell(src, pend);
-      return cell(MONO + 'font-weight:700;color:var(--text);', r.wo ? '' : r.price != null ? Number(r.price).toFixed(2) : pend ? '' : DASH) +
-        cell(MONO + 'color:var(--text-label);', r.wo ? '' : r.oppPrice != null ? Number(r.oppPrice).toFixed(2) : pend ? '' : DASH) +
-        cell(MONO + 'color:' + plc.c + ';', plc.t);
+    var GRIDC = 'display:grid;grid-template-columns:minmax(0,1fr) 34px minmax(0,1fr) 56px 44px 44px 56px;gap:0 10px;align-items:center;';
+    var pl2 = function (c) { return c == null ? DASH : signed(c / 100, 2, 'u'); };
+    var order = [], byEv = {};
+    rows.slice().sort(function (a, b) { return String(a.date).localeCompare(String(b.date)); }).forEach(function (r) {
+      var k = r.event || DASH;
+      if (!byEv[k]) { byEv[k] = []; order.push(k); }
+      byEv[k].push(r);
+    });
+    var groupsHtml = order.map(function (k) {
+      var rs = byEv[k], gw = 0, gl = 0, gc = 0, gp = 0;
+      rs.forEach(function (r) { if (r.wo) return; if (r.won) gw++; else gl++; var src = srcOf[r.date + '|' + (r.opp || '')] || r; if (src.cents != null) { gp++; gc += src.cents; } });
+      var surf = rs[0].surface ? surfaceWord(rs[0].surface) : '';
+      return '<div data-pp2-calgrp="1" style="display:flex;flex-direction:column;background:var(--pp-x-inner);border:1px solid var(--edge-6);border-radius:12px;padding:4px 14px 6px;">' +
+        '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px 9px;padding:10px 0 9px;">' +
+          '<span style="font-size:13px;font-weight:700;color:var(--text);">' + esc(tournDisplayName(k, null) || k) + '</span>' +
+          '<span style="' + M_ + 'font-size:11px;color:var(--text-label);">' + esc(recordText(gw, gl) + (surf ? ' ' + MIDDOT + ' ' + surf : '')) + '</span>' +
+          evSpeedChip(rowSpeedGap(rs[0])) +
+          '<span style="margin-left:auto;' + M_ + 'font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums;color:' + (pend || !gp ? 'var(--text-label)' : signColour(gc)) + ';">' + (pend ? '&nbsp;' : gp ? pl2(gc) : DASH) + '</span></div>' +
+        rs.map(function (r) {
+          var src = srcOf[r.date + '|' + (r.opp || '')] || r, plc = r.wo ? { t: '', c: 'var(--text-label)' } : calPlCell(src, pend);
+          var sm = /(\d+)\s*[-–]\s*(\d+)/.exec(String(r.sets || '')), sets = r.wo ? '' : sm ? sm[1] + ENDASH + sm[2] : '';
+          var hook = r.wo ? '' : r.sheetId ? sheetHook(r.sheetId) : '';
+          return '<div ' + hook + (r.wo ? 'data-pp2-wo-row="1" ' : '') + 'title="' + esc((r.wo ? 'Walkover' : r.won ? 'Won' : 'Lost') + ' ' + MIDDOT + ' ' + (r.round || DASH) + ' ' + MIDDOT + ' ' + (r.opp || '')) + '" ' +
+            'style="' + GRIDC + (hook ? sheetCursor() : '') + 'padding:8px 0;border-top:1px solid var(--edge-6);font-variant-numeric:tabular-nums;">' +
+            '<span style="display:flex;align-items:center;gap:8px;min-width:0;font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;">' +
+              esc(r.opp ? initialSurname(r.opp) : DASH) + '</span>' + (r.wo ? woChipHtml() : '') + '</span>' +
+            '<span style="' + M_ + 'font-size:11px;color:var(--text-label);">' + esc(r.round || DASH) + '</span>' +
+            '<span style="' + M_ + 'font-size:11.5px;color:var(--pp-x-text-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (r.wo ? '' : esc(scoreWithStatus(r, r.setScores))) + '</span>' +
+            (sets ? '<span data-pp2-calsets="1" style="justify-self:center;' + M_ + 'font-size:11.5px;font-weight:700;color:' + (r.won ? 'var(--pos)' : 'var(--neg)') + ';background:var(--wash-5);border-radius:999px;padding:2px 9px;white-space:nowrap;">' + sets + '</span>' : '<span></span>') +
+            '<span style="' + M_ + 'font-size:11.5px;color:var(--text);text-align:right;">' + (r.wo ? '' : r.price != null ? Number(r.price).toFixed(2) : pend ? '' : DASH) + '</span>' +
+            '<span style="' + M_ + 'font-size:11.5px;color:var(--text-label);text-align:right;">' + (r.wo ? '' : r.oppPrice != null ? Number(r.oppPrice).toFixed(2) : pend ? '' : DASH) + '</span>' +
+            '<span style="' + M_ + 'font-size:11.5px;text-align:right;color:' + plc.c + ';">' + plc.t + '</span></div>';
+        }).join('') + '</div>';
+    }).join('');
+    var kicker = (view === 'swing' ? 'Swing' : 'Month') + ' ' + MIDDOT + ' ' + (calSurfOf() === 'all' ? 'all surfaces' : calSurfOf().toLowerCase()) +
+      (wos.length ? ' ' + MIDDOT + ' ' + wos.length + ' walkover' + (wos.length === 1 ? '' : 's') + ', not counted' : '');
+    var tileC = function (label, value, color, sub) {
+      return '<div style="display:flex;flex-direction:column;gap:6px;background:var(--pp-x-inner);border:1px solid var(--edge-6);border-radius:11px;padding:12px 14px;min-width:0;">' +
+        '<span style="font-size:11.5px;font-weight:600;color:var(--text-label);white-space:nowrap;">' + label + '</span>' +
+        '<span style="' + M_ + 'font-size:18px;font-weight:700;color:' + color + ';white-space:nowrap;font-variant-numeric:tabular-nums;">' + value + '</span>' +
+        '<span style="' + M_ + 'font-size:10.5px;color:var(--text-label);white-space:nowrap;">' + sub + '</span></div>';
     };
-    var body = drillBodyHtml(rows, 0, rows.length, { rows: rows, next: rows.length, lastEvent: null, multiYear: false, tail: tail });
-    var subBits = [(view === 'swing' ? 'Swing' : 'Month') + ' ' + MIDDOT + ' ' + (calSurfOf() === 'all' ? 'all surfaces' : calSurfOf().toLowerCase())];
-    if (ms.length && !pend && st.priced) subBits.push(signed(st.units, 2, 'u') + (st.priced >= 5 ? ' ' + MIDDOT + ' ' + signed(st.y, 1, '%') + ' yield' : '') + ' ' + MIDDOT + ' ' + st.priced + ' priced');
-    return drillBoxHtml({
-      title: col.title(y), record: recordText(st.w, st.l) + ' ' + MIDDOT + ' ' + ms.length + ' match' + (ms.length === 1 ? '' : 'es'),
-      sub: subBits.join(' ' + MIDDOT + ' '), close: 'cal-cell2', grid: GRID, head: HEAD, body: body, hasRows: rows.length > 0,
-      note: (wos.length ? 'All ' + ms.length + ' matches ' + MIDDOT + ' ' + wos.length + ' walkover' + (wos.length === 1 ? '' : 's') + ', not counted' : 'All ' + ms.length + ' matches'),
-      empty: '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:40px 32px;text-align:center;">' +
-        '<span style="font-size:13.5px;font-weight:700;color:var(--text);">No matches here</span>' +
-        '<span style="font-size:12.5px;color:var(--text-label);line-height:1.5;">He did not play this part of the calendar in ' + esc(y) + '. Try another season, or widen the surface filter.</span></div>'
-    }).replace('class="pp2-drillbox"', 'class="pp2-drillbox" data-pp2-drawer="cal" data-pp2-cal-drill="1"')
-      // founder 2026-11-26: a calendar record opens in the middle of the screen, not 40px from the top
-      .replace('display:flex;align-items:flex-start;justify-content:center;', 'display:flex;align-items:safe center;justify-content:center;');
+    var tiles = '<div data-pp2-caltiles2="1" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:16px 22px 4px;">' +
+      tileC('Record', recordText(st.w, st.l), 'var(--text)', ms.length + ' match' + (ms.length === 1 ? '' : 'es')) +
+      tileC('Win rate', ms.length ? Math.round(100 * st.w / ms.length) + '%' : DASH, ms.length ? 'var(--text)' : 'var(--text-label)', order.length + (order.length === 1 ? ' tournament' : ' tournaments')) +
+      (pend ? tileC('Yield', '&nbsp;', 'var(--text)', '&nbsp;') + tileC('Profit at 1u flat', '&nbsp;', 'var(--text)', '&nbsp;')
+        : tileC('Yield', st.priced >= 5 ? signed(st.y, 1, '%') : DASH, st.priced >= 5 ? signColour(st.y) : 'var(--text-label)', st.priced + ' priced' + (st.priced >= 5 ? '' : ' ' + MIDDOT + ' needs 5')) +
+          tileC('Profit at 1u flat', st.priced ? signed(st.units, 2, 'u') : DASH, st.priced ? signColour(st.units) : 'var(--text-label)', 'closing price')) + '</div>';
+    var headC = '<div data-pp2-calhead="1" style="' + GRIDC + 'margin-top:14px;padding:8px 37px;background:var(--card);border-top:1px solid var(--edge-6);border-bottom:1px solid var(--edge-6);' +
+      'font-family:\'Hanken Grotesk\',sans-serif;font-size:11.5px;font-weight:600;color:var(--text-label);">' +
+      '<span>Opponent</span><span>Rd</span><span>Score</span><span style="text-align:center;">Sets</span>' +
+      '<span title="His closing price" style="justify-self:end;width:24px;height:24px;border-radius:50%;border:1px solid ' + EDGE_14 + ';display:flex;align-items:center;justify-content:center;box-sizing:border-box;' +
+        M_ + 'font-size:9.5px;font-weight:700;letter-spacing:0;color:var(--text);">' + esc(subjIni()) + '</span>' +
+      '<span title="The opponent\'s closing price" style="text-align:right;">Opp.</span><span style="text-align:right;">P&amp;L</span></div>';
+    var empty = '<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:40px 32px;text-align:center;">' +
+      '<span style="font-size:13.5px;font-weight:700;color:var(--text);">No matches in this ' + (view === 'swing' ? 'swing' : 'month') + '</span>' +
+      '<span style="font-size:12px;color:var(--text-label);line-height:1.5;max-width:300px;">He did not play this part of the calendar in ' + esc(y) + '. Try another season, or widen the surface filter.</span></div>';
+    // founder 2026-11-26: a calendar record opens in the middle of the screen, not 40px from the top
+    return '<div class="pp2-drillbox" data-pp2-drawer="cal" data-pp2-cal-drill="1" data-pp2-drillbox="1" style="position:fixed;inset:0 0 0 var(--sf-side, 0px);z-index:66;' +
+        'background:var(--pp-x-backdrop);display:flex;align-items:safe center;justify-content:center;padding:40px 20px;overflow-y:auto;clip-path:inset(0);text-align:left;">' +
+      '<div data-pp2="cal-cell2" style="position:absolute;inset:0;"></div>' +
+      '<div data-pp2="card" style="position:relative;width:100%;max-width:680px;max-height:calc(calc(100vh / var(--sf-z, 1)) - 80px);background:var(--card);border:1px solid var(--edge-16);' +
+        'border-radius:16px;box-shadow:var(--pp-x-shadow-box);overflow:hidden;display:flex;flex-direction:column;box-sizing:border-box;cursor:default;">' +
+        '<div style="display:flex;align-items:center;gap:14px;padding:18px 22px;border-bottom:1px solid ' + EDGE_8 + ';">' +
+          '<div style="display:flex;flex-direction:column;gap:5px;min-width:0;"><span style="font-size:18px;font-weight:800;letter-spacing:-0.01em;color:var(--text);text-wrap:pretty;">' + esc(col.title(y)) + '</span>' +
+            '<span style="font-size:12px;color:var(--text-label);">' + esc(kicker) + '</span></div>' +
+          '<span data-pp2="cal-cell2" role="button" aria-label="Close" class="pp2-fbclose" style="margin-left:auto;flex:none;width:30px;height:30px;border-radius:9px;background:var(--pp-x-lifted);' +
+            'border:1px solid ' + EDGE_14 + ';color:var(--text-label);cursor:pointer;display:flex;align-items:center;justify-content:center;box-sizing:border-box;">' +
+            '<svg width="12" height="12" viewBox="0 0 20 20" fill="none" style="pointer-events:none;"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg></span></div>' +
+        (rows.length ? tiles + headC + '<div style="flex:1;overflow-y:scroll;scrollbar-gutter:stable;padding:12px 22px 22px;display:flex;flex-direction:column;gap:10px;">' + groupsHtml + '</div>' : empty) +
+      '</div></div>';
   }
 
   function renderSeasonModal(p) {
@@ -11600,17 +11738,17 @@
       var groups = [];
       cal26LedgerRows(p, x.rows).forEach(function (y) {
         var g = groups[groups.length - 1];
-        if (!g || g.ev !== y.r.event) groups.push(g = { ev: y.r.event, surface: y.r.surface, rows: [] });
+        if (!g || g.ev !== y.r.event) groups.push(g = { ev: y.r.event, surface: y.r.surface, first: y.r, rows: [] });
         g.rows.push(y);
       });
       var body = groups.map(function (g) {
         var gw = 0, gl = 0;
         g.rows.forEach(function (y) { if (y.r.won) gw++; else gl++; });
-        return '<div style="display:flex;align-items:baseline;gap:10px;padding:12px 8px 6px;' +
+        return '<div style="display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 10px;padding:12px 8px 6px;' +
             'border-top:1px solid var(--line);">' +
             '<span style="font-size:12.5px;font-weight:700;color:var(--text);">' + esc(g.ev || DASH) + '</span>' +
             '<span style="' + MONO_W + 'font-size:10.5px;color:var(--text-label);">' +
-              esc(surfaceWord(g.surface)) + ' ' + MIDDOT + ' ' + gw + ENDASH + gl + '</span></div>' +
+              esc(surfaceWord(g.surface)) + ' ' + MIDDOT + ' ' + gw + ENDASH + gl + '</span>' + evSpeedChip(rowSpeedGap(g.first)) + '</div>' +
           g.rows.map(function (y) { return ledgerRowHtml(y.x); }).join('');
       }).join('');
       return row + '<div data-pp2-cal26="panel" style="background:var(--card);border:1px solid var(--edge-6);' +
@@ -12613,11 +12751,11 @@
       { key: 'spdAlt', title: 'Altitude', cur: F.alt, options: SPD_ALTS, count: function (v) { return countOf('alt', v); },
         hint: 'Altitude = venues at ' + PP4.ALT_CUT_M + ' m or higher.' }
     ];   // founder 2026-11-26: no Opponent archetype filter on Court speed
-    var filterCard = '<div data-pp2-band="v5" style="display:flex;align-items:center;gap:12px 10px;flex-wrap:wrap;margin-bottom:16px;padding:22px 24px;' +
+    var filterCard = '<div data-pp2-band="v5" data-pp2-spdbar="1" style="display:flex;align-items:center;gap:12px 10px;flex-wrap:wrap;margin-bottom:12px;padding:12px 14px;' +
         'background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;">' +
-        v5Seg('spd-win', [['l52', 'Last 52 weeks'], ['career', 'Career']], F.win) +
-        v5Seg('spd-surf', [['all', 'All'], ['Hard', 'Hard'], ['Clay', 'Clay'], ['Grass', 'Grass'], ['Indoors', 'Indoors']], F.surf) +
-        filtersTriggerHtml('spd', groups, D.tn, poolAll, 760, true, { v5: true, cols: 4, foot: spdTitleCount(p) }) +
+        tbSeg('spd-win', [['l52', 'Last 52 weeks'], ['career', 'Career']], F.win, 'Window') +
+        tbSeg('spd-surf', [['all', 'All'], ['Hard', 'Hard'], ['Clay', 'Clay'], ['Grass', 'Grass'], ['Indoors', 'Indoors']], F.surf, 'Surface') +
+        filtersTriggerHtml('spd', groups, D.tn, poolAll, 400, true, { v5: true, h34: true, cols: 2, foot: spdTitleCount(p) }) +
       '</div>';
     var applied = filtersAppliedHtml('spd', groups, D.tn, poolAll, { v4: true, v5: true });
 
@@ -12707,16 +12845,14 @@
         idx[k].rows.push(m);
       });
       var lhead = ['Date', '', 'Opponent', 'Rd', 'Sets', 'Set scores', 'H', 'A'].map(function (h, i) {
-        return '<span style="position:sticky;top:0;z-index:2;background:var(--card);' + CAPS + 'text-align:' + (i >= 6 ? 'right' : 'left') + ';padding:10px 0 9px;">' + h + '</span>';
+        return '<span style="position:sticky;top:0;z-index:2;background:var(--card);' + CAPS + 'text-align:' + (i >= 6 ? 'right' : 'left') + ';padding:10px 0 9px;">' + hdTxt(h) + '</span>';
       }).join('');
       var CELL = 'padding:8px 0;border-top:1px solid var(--edge-6);display:flex;align-items:center;';
       var body = groupsE.map(function (G) {
-        var right = (G.gap != null ? '<span style="display:inline-flex;gap:6px;"><span>speed</span><span style="color:var(--text-soft);font-weight:700;">' + sgnStr(G.gap, 2) + '</span></span>' : '') +
-          (G.alt != null ? '<span style="display:inline-flex;gap:6px;"><span>altitude</span><span style="color:var(--text-soft);font-weight:700;">' + Number(G.alt).toLocaleString('en-US') + ' m</span></span>' : '');
-        return '<span data-pp2-spdgroup="1" style="grid-column:1 / -1;display:flex;align-items:baseline;gap:10px;padding:14px 0 8px;border-top:1px solid var(--edge-6);min-width:0;">' +
+        return '<span data-pp2-spdgroup="1" style="grid-column:1 / -1;display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 10px;padding:14px 0 8px;border-top:1px solid var(--edge-6);min-width:0;">' +
             '<span style="font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;">' + esc((tournDisplayName(G.event, null) || DASH) + ' ' + G.year) + '</span>' +
-            '<span style="font-size:11.5px;color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc([G.surf, G.level].filter(Boolean).join(' ' + MIDDOT + ' ')) + '</span>' +
-            (right ? '<span style="margin-left:auto;display:inline-flex;align-items:baseline;gap:14px;' + M + 'font-size:10.5px;color:var(--text-label);white-space:nowrap;">' + right + '</span>' : '') +
+            '<span style="font-size:11.5px;color:var(--text-label);white-space:nowrap;">' + esc([G.surf, G.level].filter(Boolean).join(' ' + MIDDOT + ' ')) + '</span>' +
+            evSpeedChip(G.gap) +
           '</span>' +
           G.rows.map(function (m) {
             var wo = !!m.wo, unconf = !wo && !!m.unconf, quiet = wo || unconf;
@@ -12725,14 +12861,13 @@
             var c = function (html, st) { return '<span ' + hook + 'style="' + cur + CELL + (st || '') + '">' + html + '</span>'; };
             var dot = unconf ? '' : '<span title="' + (wo ? (m.won ? 'Walkover in his favour ' + MIDDOT + ' opponent withdrew' : 'Walkover against him ' + MIDDOT + ' he withdrew') : (m.won ? 'Won' : 'Lost')) +
               '" style="display:block;width:8px;height:8px;border-radius:2px;background:' + (m.won ? 'var(--pos)' : 'var(--neg)') + ';"></span>';
-            var sets = unconf ? ENDASH : wo ? '<span style="display:inline-flex;align-items:center;height:16px;padding:0 5px;border-radius:4px;box-sizing:border-box;background:var(--edge-6);border:1px solid var(--edge-10);' +
-              M + 'font-size:8.5px;font-weight:700;letter-spacing:0.06em;color:var(--text-label);white-space:nowrap;">WO</span>' : esc(m.sets || DASH);
+            var sets = unconf || wo ? '' : esc(m.sets || DASH);
             var favR = spdRoleOf(m) === 'fav';
             var rowOpen = !quiet && state.sheetRow === (m.sheetId || (m.date + '|' + m.opp)) && sheetOnScreen();
             return '<div class="pp2-spdrow' + (quiet ? ' wo' : '') + (rowOpen ? ' pp2-rowopen' : '') + '"' + (wo ? ' data-pp2-wo-row="1"' : '') + ' style="display:contents;">' +
               c(fmtDotDate(m.date) + '.', M + 'font-size:11px;color:var(--text-label);white-space:nowrap;') +
               c(dot) +
-              c('<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(initialSurname(m.opp || '') || DASH) + '</span>', 'font-size:13px;color:var(--text);min-width:0;padding-right:10px;') +
+              c('<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(initialSurname(m.opp || '') || DASH) + '</span>' + (wo ? woChipHtml() : ''), 'font-size:13px;color:var(--text);min-width:0;padding-right:10px;gap:8px;') +
               c(esc(m.round || DASH), M + 'font-size:11px;color:var(--text-label);') +
               c(sets, M + 'font-size:12px;font-weight:700;color:' + (quiet ? 'var(--pp-x-ink-muted)' : m.won ? 'var(--pos)' : 'var(--neg)') + ';') +
               c('<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (quiet ? '' : esc(String(m.score || DASH))) + '</span>', M + 'font-size:11px;color:var(--text-label);min-width:0;padding-right:10px;') +
@@ -12771,7 +12906,7 @@
       '<div style="overflow-x:auto;"><div style="min-width:660px;display:flex;flex-direction:column;">' +
         '<div style="' + RGRID + 'padding:0 14px 9px;">' +
           ['Court speed', 'Win rate ' + MIDDOT + ' tick = 50%', 'Record', 'Win %', 'Vs others', 'On price'].map(function (h, i) {
-            return '<span style="' + CAPS + (i >= 2 ? 'text-align:right;' : '') + '">' + h + '</span>';
+            return listHead(h, (i >= 2 ? 'text-align:right;' : '') + 'white-space:nowrap;');   // final 2026-11-26: Hanken 11.5/600, not caps
           }).join('') + '<span></span></div>' + rows +
       '</div></div></div>';
 
@@ -12970,7 +13105,7 @@
       'color:var(--text-label);';
     var heads = [['Date', 'left'], ['', 'left'], ['Opponent', 'left'], ['Rd', 'left'], ['Sets', 'left'],
       ['Set scores', 'left'], ['H', 'right'], ['A', 'right']].map(function (h) {
-        return '<span style="' + HEAD + 'text-align:' + h[1] + ';">' + h[0] + '</span>';
+        return '<span style="' + HEAD + 'text-align:' + h[1] + ';">' + hdTxt(h[0]) + '</span>';
       }).join('');
     out = out ? '<div style="display:grid;grid-template-columns:48px 12px minmax(0,1fr) 36px 40px ' +
       'minmax(0,1.2fr) 46px 46px;gap:0 10px;align-items:center;">' + heads + out + '</div>' : '';
@@ -13552,7 +13687,7 @@
         marks + '</div>' +
       '<span></span><div style="position:relative;height:58px;">' + codes + brackets + '</div></div>';
   }
-  var STY5_GRID = 'display:grid;grid-template-columns:minmax(0,2.6fr) minmax(0,1fr) 56px 60px 56px 76px 68px 8px;gap:0 12px;align-items:center;';
+  var STY5_GRID = 'display:grid;grid-template-columns:minmax(290px,2.6fr) minmax(48px,1fr) 56px 60px 56px 76px 68px 8px;gap:0 12px;align-items:center;';   // final 2026-11-26: the name + badge never cut
   function styTableV5(D, MK) {
     var so = state.stySort || { k: 'pct', d: -1 };
     var keyOf = function (d) { return so.k === 'name' ? d.name : so.k === 'wl' ? d.w - d.l : so.k === 'n' ? d.n : so.k === 'u' ? (d.priced ? d.units : -Infinity) : (d.pct == null ? -Infinity : d.pct); };
@@ -13572,8 +13707,8 @@
       var on = c[2] && so.k === c[2];
       return '<span' + (c[2] ? ' data-pp2="sty-sort" data-v="' + c[2] + '"' : '') + ' title="' + esc(c[3] || '') + '" style="display:flex;align-items:baseline;gap:5px;' +
         'justify-content:' + (c[1] === 'right' ? 'flex-end' : 'flex-start') + ';cursor:' + (c[2] ? 'pointer' : 'default') + ';' +
-        'font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;' +
-        'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';padding-bottom:12px;white-space:nowrap;">' +
+        'font-family:var(--font-words);font-size:11.5px;font-weight:600;' +   // final 2026-11-26: the site list head, not caps
+        'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';padding-bottom:11px;white-space:nowrap;">' +
         '<span style="pointer-events:none;">' + esc(c[0]) + '</span><span style="pointer-events:none;' + STY_MONO + 'font-size:10px;letter-spacing:0;color:' +
           (on ? 'var(--text)' : 'color-mix(in srgb, var(--text-label) 45%, transparent)') + ';">' + (on ? (so.d < 0 ? '↓' : '↑') : c[2] ? '⇅' : '') + '</span></span>';
     }).join('') + '<span></span></div>';
@@ -13582,35 +13717,35 @@
     var rows = list.map(function (d) {
       var dim = d.thin || d.empty, on = sel === d.name, mk = MK[d.name], gp = dim ? null : styGap(d, D.avg), y = styYield(d);
       return '<div ' + (d.empty ? '' : 'data-pp2="fb-open" data-box="styles" data-v="' + esc(d.name) + '" ') + 'class="pp2-styrow pp2-v5row' + (on ? ' on' : '') + '" ' +
-        'style="' + STY5_GRID + 'min-height:54px;padding:0 10px;margin:0 -10px;border-top:1px solid var(--edge-6);border-radius:' + (on ? 10 : 0) + 'px;' +
+        'style="' + STY5_GRID + 'min-height:50px;padding:0 10px;margin:0 -10px;border-top:1px solid var(--edge-6);border-radius:' + (on ? 10 : 0) + 'px;' +
         'cursor:' + (d.empty ? 'default' : 'pointer') + ';background:' + (on ? 'var(--pp-x-hover)' : 'transparent') + ';">' +
         '<span style="display:inline-flex;align-items:baseline;gap:8px;min-width:0;pointer-events:none;"><span style="font-size:14px;font-weight:700;' +
           'color:' + (dim ? 'var(--text-label)' : 'var(--text)') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(d.name) + '</span>' +
           (mk ? '' : '<span style="' + MONO + 'font-size:10.5px;color:var(--text-label);flex:none;">' + esc(d.code) + '</span>') +
           (d.thin ? '<span class="pp2-stytag" style="font-size:11.5px;color:var(--text-label);flex:none;white-space:nowrap;">under ' + STY_FLOOR + '</span>' : '') +
-          (mk ? '<span title="' + esc(mk.tip) + '" style="flex:none;margin-left:2px;' + STY5_CHIP + 'padding:3px 8px 4px;font-size:11px;font-weight:700;color:' + mk.color + ';pointer-events:auto;">' + mk.word + '</span>' : '') +
+          (mk ? '<span data-pp2-stymark title="' + esc(mk.tip) + '" style="flex:none;align-self:center;' + STY5_CHIP + 'padding:3px 8px 4px;font-size:11px;font-weight:700;color:' + mk.color + ';pointer-events:auto;">' + mk.word + '</span>' : '') +
           '</span>' +
         '<span style="position:relative;display:block;width:100%;height:4px;border-radius:2px;background:var(--pp-x-track-7);pointer-events:none;">' +
           '<span style="position:absolute;left:0;top:0;bottom:0;width:' + (dim ? 0 : d.pct).toFixed(1) + '%;border-radius:2px;background:' + (on || mk ? 'var(--pp-x-link)' : 'var(--pp-x-bar-55)') + ';"></span>' +
           (D.avg == null ? '' : '<span title="his average" style="position:absolute;left:calc(' + D.avg.toFixed(1) + '% - 1px);top:-3px;bottom:-3px;width:2px;background:var(--text);"></span>') + '</span>' +
-        '<span style="' + MONO + 'font-size:13px;color:var(--text-label);text-align:right;pointer-events:none;">' + recordText(d.w, d.l) + '</span>' +
+        '<span style="' + MONO + 'font-size:13px;color:var(--pp-x-text-soft);text-align:right;pointer-events:none;">' + recordText(d.w, d.l) + '</span>' +
         '<span style="' + MONO + 'font-size:13px;color:var(--text-label);text-align:right;white-space:nowrap;pointer-events:none;">' + d.n + '</span>' +
-        '<span style="' + MONO + 'font-size:14px;font-weight:700;text-align:right;pointer-events:none;color:' + (dim ? 'var(--text-label)' : 'var(--text)') + ';">' + (dim ? DASH : Math.round(d.pct) + '%') + '</span>' +
+        '<span style="' + MONO + 'font-size:13.5px;font-weight:700;text-align:right;pointer-events:none;color:' + (dim ? 'var(--text-label)' : 'var(--text)') + ';">' + (dim ? DASH : Math.round(d.pct) + '%') + '</span>' +
         '<span style="' + MONO + 'font-size:13px;font-weight:700;text-align:right;white-space:nowrap;pointer-events:none;color:' + styGapColour(gp) + ';">' + (gp == null ? DASH : signed(gp, 1, 'pp')) + '</span>' +
         '<span style="' + MONO + 'font-size:13px;font-weight:700;text-align:right;pointer-events:none;color:' + (STYLE_PEND || dim || y == null ? 'var(--text-label)' : signColour(d.units)) + ';">' +
           (STYLE_PEND ? '&nbsp;' : dim || y == null ? DASH : styU(d.units)) + '</span>' +
-        '<span style="text-align:right;font-size:15px;line-height:1;color:var(--pp-x-link);opacity:' + (d.empty ? 0 : 1) + ';pointer-events:none;">›</span>' +
+        '<span style="text-align:right;font-size:15px;line-height:1;color:var(--text-label);opacity:' + (d.empty ? 0 : 1) + ';pointer-events:none;">›</span>' +
         '</div>';
     }).join('');
     return head + rows;
   }
-  function stySwitch(hook, opts, cur) {   // the reference's Match-up switch: option 6/14, no ring on the picked one
-    return '<span style="display:flex;flex-wrap:wrap;gap:3px;background:var(--inner);border:1px solid ' + EDGE_8 + ';border-radius:10px;padding:3px;">' +
+  function stySwitch(hook, opts, cur, title) {   // final 2026-11-26: the site toolbar track (pills 12.5 pad 5/11, the picked one on a 16% edge)
+    return '<span title="' + esc(title || '') + '" style="display:flex;gap:3px;background:var(--inner);border:1px solid ' + EDGE_8 + ';border-radius:10px;padding:3px;flex:none;">' +
       opts.map(function (o) {
         var on = cur === o[0];
         return '<span data-pp2="' + esc(hook) + '" data-v="' + esc(o[0]) + '" role="button" aria-pressed="' + (on ? 'true' : 'false') + '" class="pp2-v5seg" ' +
-          'style="cursor:pointer;white-space:nowrap;padding:6px 14px;border-radius:7px;font-size:13px;font-weight:' + (on ? 700 : 600) + ';' +
-          'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';background:' + (on ? 'var(--selected)' : 'transparent') + ';">' + esc(o[1]) + '</span>';
+          'style="cursor:pointer;white-space:nowrap;padding:5px 11px;border-radius:7px;font-size:12.5px;font-weight:' + (on ? 700 : 600) + ';' +
+          'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';background:' + (on ? 'var(--selected)' : 'transparent') + ';border:1px solid ' + (on ? 'var(--edge-16)' : 'transparent') + ';">' + esc(o[1]) + '</span>';
       }).join('') + '</span>';
   }
   function renderStylesModalV2(p) {
@@ -13618,25 +13753,17 @@
     var D = styData(p), MK = styMarks(D);
     var win = state.styWin || 'career', surf = state.stySurf || 'all';
     var title = (win === 'l52' ? 'Last 52 weeks' : win === 'l24' ? 'Last 24 months' : 'Career') + (surf === 'all' ? '' : ' ' + MIDDOT + ' ' + surf);
-    var TU = 0, TP = 0;
-    D.data.forEach(function (d) { if (!d.thin && d.priced) { TU += d.units; TP += d.priced; } });
     var scopeLine = title + ' ' + MIDDOT + ' ' + D.TN + ' matches ' + MIDDOT + ' by the opponent’s playing style ' + MIDDOT + ' a bigger dot is more matches ' + MIDDOT + ' click a dot or a row for its matches';
-    var filter = '<div data-pp2-band="v5" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:22px 24px;margin-bottom:16px;' +
+    var filter = '<div data-pp2-band="v5" data-pp2-stybar="1" style="display:flex;align-items:center;gap:12px 10px;flex-wrap:wrap;padding:12px 14px;margin-bottom:12px;' +
       'background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;">' +
-      stySwitch('sty-surf', STY_SURFS, surf) + stySwitch('sty-win', [['l52', 'Last 52 weeks'], ['l24', 'Last 24 months'], ['career', 'Career']], win) + '</div>';
+      stySwitch('sty-win', [['l52', 'Last 52 weeks'], ['career', 'Career']], win, 'Window') + stySwitch('sty-surf', STY_SURFS, surf, 'Surface') + '</div>';   // final 2026-11-26: Window then Surface
     return filter +
-      '<div data-pp2-sty="card" style="position:relative;background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;margin-bottom:16px;">' +
-        '<div style="position:relative;padding:24px 24px 0;">' +
+      '<div data-pp2-sty="card" style="position:relative;background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;margin-bottom:12px;">' +
+        '<div style="position:relative;padding:22px 24px 0;">' +
           '<span style="position:absolute;top:26px;right:24px;z-index:3;display:flex;">' +
             infoIcon('sty1', Object.assign({ width: 400, align: 'right', v4: true }, STY_INFO1, { scopeChip: scopeLine, notes: [styCoverageText(p)] })) + '</span>' +
           '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px 24px;flex-wrap:wrap;margin-bottom:30px;padding-right:36px;">' +
-            '<span style="font-size:18px;font-weight:800;letter-spacing:-0.01em;color:var(--text);">' + esc(title) + '</span>' +
-            '<span style="display:inline-flex;align-items:baseline;gap:10px;flex-wrap:wrap;">' +
-              '<span style="' + STY_MONO + 'font-size:26px;font-weight:700;color:var(--text);line-height:1;">' + (D.TN ? recordText(D.TW, D.TN - D.TW) : DASH) + '</span>' +
-              '<span style="' + STY_MONO + 'font-size:14px;color:var(--text-label);white-space:nowrap;">' + (D.TN ? Math.round(100 * D.TW / D.TN) + '% win rate' : '') + '</span>' +
-              '<span style="display:inline-flex;align-items:baseline;gap:6px;white-space:nowrap;margin-left:8px;">' +
-                '<span style="' + STY_MONO + 'font-size:14px;font-weight:700;color:' + (STYLE_PEND || !TP ? 'var(--text-label)' : signColour(TU)) + ';">' + (STYLE_PEND ? '&nbsp;' : TP ? styU(TU) : DASH) + '</span>' +
-                '<span style="font-size:13px;color:var(--text-label);">backing him</span></span></span></div>' +
+            '<span style="font-size:18px;font-weight:800;letter-spacing:-0.01em;color:var(--text);">' + esc(title) + '</span></div>' +   // final 2026-11-26: the title only
           styChartV5(D, MK) +
         '</div>' +
         '<div style="position:relative;padding:0 24px 10px;"><div style="height:1px;background:var(--edge-6);margin:18px 0 20px;"></div>' + styTableV5(D, MK) + '</div>' +
@@ -13659,16 +13786,16 @@
     var A = P.arch, C = P.cells, M = STY_MONO;
     var band = function (e) { return e == null ? 'var(--text-label)' : e > 2 ? 'var(--pos)' : e < -2 ? 'var(--neg)' : 'var(--text-label)'; };
     var fmt = function (e) { return psFmtEdge(e); };
-    var GRID = 'display:grid;grid-template-columns:168px repeat(' + A.length + ',minmax(64px,1fr));gap:0 4px;';
-    var head = '<div style="' + GRID + 'align-items:end;padding-bottom:10px;"><span></span>' + A.map(function (c) {
+    var GRID = 'display:grid;grid-template-columns:176px repeat(' + A.length + ',minmax(64px,1fr));gap:0 4px;';
+    var head = '<div style="' + GRID + 'align-items:end;padding-bottom:8px;"><span></span>' + A.map(function (c) {
       return '<span data-c="' + c.i + '" title="' + esc(c.name) + '" class="pp2-psh" style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;border-radius:8px;transition:background 120ms ease;">' +
         '<span class="pp2-psc" style="' + M + 'font-size:12.5px;font-weight:700;color:var(--text);">' + esc(c.code) + '</span>' +
-        '<span style="font-size:10.5px;color:var(--text-label);line-height:1.25;text-align:center;text-wrap:balance;">' + esc(c.name) + '</span></span>';
+        '<span style="font-size:11px;font-weight:600;color:var(--text-label);line-height:1.25;text-align:center;text-wrap:balance;">' + esc(c.name) + '</span></span>';
     }).join('') + '</div>';
     var rows = A.map(function (r) {
-      return '<div style="' + GRID + 'align-items:center;min-height:58px;border-top:1px solid var(--edge-6);">' +
+      return '<div style="' + GRID + 'align-items:center;min-height:54px;border-top:1px solid var(--edge-6);">' +
         '<span data-r="' + r.i + '" class="pp2-psh" style="display:flex;flex-direction:column;gap:2px;padding:8px 10px;margin:3px 0;border-radius:8px;transition:background 120ms ease;min-width:0;">' +
-          '<span style="font-size:13.5px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(r.name) + '</span>' +
+          '<span title="' + esc(r.name) + '" style="font-size:13px;font-weight:700;line-height:1.25;color:var(--text);text-wrap:balance;">' + esc(r.name) + '</span>' +   // never cut: the real names run longer than the export's
           '<span style="font-size:11.5px;color:var(--text-label);white-space:nowrap;"><span style="' + M + '">' + esc(r.code) + '</span> ' + MIDDOT + ' ' + (r.count == null ? DASH : r.count) + ' players</span></span>' +
         A.map(function (c) {
           var x = C[r.i][c.i], at = 'data-r="' + r.i + '" data-c="' + c.i + '"';
@@ -13691,11 +13818,11 @@
       .concat(small.length ? [['Small sample', small.map(function (a) { return a.name + ' (' + a.count + ' players)'; }).join(' and ') + (small.length === 1 ? ' has' : ' have') + ' fewer than ' + PS_SMALL_N + ' players, so read those figures with care.']] : [])
       .concat([['Archetypes', 'Each card shows its two best and two worst match-ups. Click a card for all seven and its players.']]),
       notes: P.note ? [P.note] : [] };
-    var gridCard = '<div data-pp2-psgrid="1" style="background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;padding:24px 26px 14px;display:flex;flex-direction:column;">' +
-      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px 24px;flex-wrap:wrap;padding-bottom:18px;">' +
+    var gridCard = '<div data-pp2-psgrid="1" style="background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;padding:22px 24px 12px;display:flex;flex-direction:column;">' +
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px 24px;flex-wrap:wrap;padding-bottom:16px;">' +
         '<span style="display:inline-flex;align-items:center;gap:10px;"><span style="font-size:18px;font-weight:800;letter-spacing:-0.005em;color:var(--text);">Row against column</span>' +
           '<span style="position:relative;display:inline-flex;z-index:3;">' + infoIcon('psg', Object.assign({ width: 400, v4: true }, info)) + '</span></span>' +
-        '<span style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--text-label);padding-top:4px;">' + legend + '</span></div>' +
+        '<span style="display:flex;align-items:center;gap:8px 16px;flex-wrap:wrap;font-size:11.5px;font-weight:600;color:var(--text-label);padding-top:5px;">' + legend + '</span></div>' +
       '<div style="overflow-x:auto;scrollbar-width:thin;margin:0 -10px;padding:0 10px;"><div class="pp2-psgrid" style="min-width:712px;">' + head + rows + '</div></div></div>';
     var open = state.psOpen;
     var cards = A.map(function (a) {
@@ -13711,16 +13838,16 @@
             '<span style="position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--text);"></span></span>' +
           '<span style="text-align:right;' + M + 'font-size:13px;font-weight:700;color:' + band(e) + ';">' + (e == null ? DASH : fmt(e)) + '</span></div>';
       };
-      var html = '<div data-pp2-psarch="' + a.i + '" class="pp2-psarch" style="background:var(--card);border:1.25px solid ' + (isOpen ? EDGE_14 : 'var(--edge-6)') + ';border-radius:16px;padding:20px 24px;transition:border-color 120ms;">' +
+      var html = '<div data-pp2-psarch="' + a.i + '" class="pp2-psarch" style="background:var(--card);border:1.25px solid ' + (isOpen ? EDGE_14 : 'var(--edge-6)') + ';border-radius:16px;padding:18px 24px;transition:border-color 120ms;">' +
         '<div data-pp2="ps-open" data-v="' + a.i + '" style="display:grid;grid-template-columns:24px minmax(0,1fr) minmax(260px,320px) 12px;gap:18px;align-items:start;cursor:pointer;">' +
           '<span style="' + M + 'font-size:12px;color:var(--text-label);margin-top:3px;pointer-events:none;">' + String(a.i + 1).padStart(2, '0') + '</span>' +
           '<div style="min-width:0;pointer-events:none;"><div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">' +
             '<span style="font-size:16px;font-weight:800;letter-spacing:-0.01em;color:var(--text);">' + esc(a.name) + '</span>' +
             '<span style="font-size:12px;color:var(--text-label);white-space:nowrap;"><span style="' + M + '">' + esc(a.code) + '</span> ' + MIDDOT + ' ' + (a.count == null ? DASH : a.count) + ' players</span>' +
             (a.small ? '<span style="align-self:center;' + STY5_CHIP + 'padding:3px 8px 4px;font-size:11px;font-weight:600;color:var(--text-soft);">Small sample</span>' : '') + '</div>' +
-            '<div style="font-size:13px;color:var(--text-label);line-height:1.55;margin-top:6px;max-width:620px;text-wrap:pretty;">' + esc(a.description) + '</div></div>' +
-          '<div style="display:flex;flex-direction:column;gap:9px;pointer-events:none;">' + (a.picks || []).map(bar).join('') + '</div>' +
-          '<span style="display:inline-flex;justify-content:center;font-size:15px;line-height:1;color:var(--pp-x-link);transform:rotate(' + (isOpen ? 90 : 0) + 'deg);transition:transform .16s;margin-top:3px;pointer-events:none;">›</span></div>';
+            '<div style="font-size:13px;color:var(--text-label);line-height:1.5;margin-top:5px;max-width:600px;text-wrap:pretty;">' + esc(a.description) + '</div></div>' +
+          '<div style="display:flex;flex-direction:column;gap:8px;pointer-events:none;">' + (a.picks || []).map(bar).join('') + '</div>' +
+          '<span style="display:inline-flex;justify-content:center;font-size:15px;line-height:1;color:var(--text-label);transform:rotate(' + (isOpen ? 90 : 0) + 'deg);transition:transform .16s;margin-top:3px;pointer-events:none;">›</span></div>';
       if (isOpen) {
         var avg = a.avg, tw = avg == null ? 0 : Math.min(50, Math.abs(avg) / 40 * 50);
         var ec = avg == null ? 'var(--text-label)' : avg > 0 ? 'var(--pos)' : avg < 0 ? 'var(--neg)' : 'var(--text)';
@@ -13733,10 +13860,10 @@
               : '<span style="font-size:12.5px;font-weight:700;color:var(--text);">' + esc(e.name) + '</span>') +
             '<span style="' + M + 'font-size:11.5px;color:var(--text-label);">' + e.elo + '</span></span>';
         }).join('');
-        html += '<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:36px;margin-top:20px;padding:20px 0 2px 42px;border-top:1px solid var(--edge-6);">' +
+        html += '<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:32px;margin-top:18px;padding:18px 0 2px 42px;border-top:1px solid var(--edge-6);">' +
           '<div style="display:flex;flex-direction:column;gap:12px;">' +
             '<span style="font-size:11.5px;font-weight:600;color:var(--text-label);">Average edge across its ' + ({ 7: 'seven', 6: 'six', 5: 'five', 4: 'four', 3: 'three', 2: 'two', 1: 'one' }[a.rated] || a.rated) + ' match-up' + (a.rated === 1 ? '' : 's') + '</span>' +
-            '<span style="display:flex;align-items:baseline;gap:10px;"><span style="' + M + 'font-size:26px;font-weight:700;line-height:1;color:' + ec + ';">' + (avg == null ? DASH : fmt(avg)) + '</span>' +
+            '<span style="display:flex;align-items:baseline;gap:10px;"><span style="' + M + 'font-size:24px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;color:' + ec + ';">' + (avg == null ? DASH : fmt(avg)) + '</span>' +
               '<span style="font-size:14px;font-weight:700;color:var(--text);">' + (avg == null ? '' : psVerdict(avg)) + '</span></span>' +
             '<span style="position:relative;display:block;height:4px;border-radius:2px;background:var(--pp-x-track-7);"><span style="position:absolute;top:0;bottom:0;left:' + (avg >= 0 ? 50 : 50 - tw).toFixed(1) + '%;width:' + tw.toFixed(1) + '%;background:' + ec + ';border-radius:2px;"></span>' +
               '<span style="position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--text);"></span></span>' +
@@ -13744,19 +13871,19 @@
             '<span style="font-size:11.5px;font-weight:600;color:var(--text-label);margin-top:10px;">Example players ' + MIDDOT + ' by Elo</span>' +
             '<div style="display:flex;flex-wrap:wrap;gap:8px;">' + (ex || '<span style="font-size:12.5px;color:var(--text-label);">' + DASH + '</span>') + '</div></div>' +
           '<div style="display:flex;flex-direction:column;"><div style="display:grid;grid-template-columns:minmax(0,1fr) 56px 64px;gap:0 12px;padding-bottom:10px;">' +
-            recCaps('Against ' + MIDDOT + ' best to worst') + recCaps('Win %', 'text-align:right;') + recCaps('Edge', 'text-align:right;') + '</div>' +
+            listHead('Against ' + MIDDOT + ' best to worst') + listHead('Win %', 'text-align:right;') + listHead('Edge', 'text-align:right;') + '</div>' +
             (a.vs || []).map(function (j) {
               var x = C[a.i][j];
-              return '<div style="display:grid;grid-template-columns:minmax(0,1fr) 56px 64px;gap:0 12px;align-items:center;min-height:40px;border-top:1px solid var(--edge-6);">' +
-                '<span style="font-size:13.5px;font-weight:600;color:var(--text);">' + esc(A[j].name) + '</span>' +
-                '<span style="' + M + 'font-size:13px;color:var(--text-label);text-align:right;">' + (x.edge == null ? DASH : x.wr + '%') + '</span>' +
+              return '<div style="display:grid;grid-template-columns:minmax(0,1fr) 56px 64px;gap:0 12px;align-items:center;min-height:38px;border-top:1px solid var(--edge-6);font-variant-numeric:tabular-nums;">' +
+                '<span style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(A[j].name) + '</span>' +
+                '<span style="' + M + 'font-size:13px;color:var(--pp-x-text-soft);text-align:right;">' + (x.edge == null ? DASH : x.wr + '%') + '</span>' +
                 '<span style="' + M + 'font-size:13px;font-weight:700;color:' + band(x.edge) + ';text-align:right;">' + (x.edge == null ? DASH : fmt(x.edge)) + '</span></div>';
             }).join('') + '</div></div>';
       }
       return html + '</div>';
     }).join('');
-    return '<div style="display:flex;flex-direction:column;gap:16px;">' + gridCard +
-      '<div style="display:flex;flex-direction:column;gap:8px;"><div style="padding:8px 2px 8px;"><span style="font-size:18px;font-weight:800;letter-spacing:-0.01em;color:var(--text);">Eight archetypes</span></div>' + cards + '</div></div>';
+    return '<div style="display:flex;flex-direction:column;gap:12px;">' + gridCard +
+      '<div style="display:flex;flex-direction:column;gap:8px;"><div style="padding:6px 2px 6px;"><span style="font-size:18px;font-weight:800;letter-spacing:-0.01em;color:var(--text);">Eight archetypes</span></div>' + cards + '</div></div>';
   }
   // v5 §6.2 hover: row + column lit, the cell lifted, the rest 35%; the hover box sits in a fixed layer (never clipped).
   function psGridHover(e) {
@@ -14211,8 +14338,8 @@
       ['Date', 'Opponent', 'Event', 'Rd', 'Score'].map(function (h) {
         return '<span style="' + headCell + '">' + h + '</span>';
       }).join('') +
-      ['Price', 'Opp', 'P&amp;L'].map(function (h) {
-        return '<span style="' + headCell + 'text-align:right;">' + h + '</span>';
+      ['Price', 'Opp', 'P&L'].map(function (h) {
+        return '<span style="' + headCell + 'text-align:right;">' + hdTxt(h) + '</span>';
       }).join('');
   }
   function mlRowHtml(x) {
@@ -16238,9 +16365,10 @@
   }
 
   // ── the card: Record by situation ───────────────────────────────────────────
-  var LT_COLS = 'minmax(0,1fr) 92px 72px 92px 92px';
+  // final 2026-11-26: head + rows share ONE grid (190px group · situation · 4 × 88px, gap 16); the four figure columns centred
+  var LT_COLS = 'minmax(0,1fr) repeat(4,88px)';
   function ltGapHtml(c) {
-    return '<span title="' + esc(c.tip || '') + '" style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">' +
+    return '<span title="' + esc(c.tip || '') + '" style="display:flex;flex-direction:column;align-items:center;gap:3px;font-variant-numeric:tabular-nums;">' +
       '<span style="' + LT_MONO + 'font-size:' + c.size + ';font-weight:' + c.weight + ';color:' + c.color + ';">' + esc(c.txt) + '</span>' +
       '<span style="' + LT_MONO + 'font-size:11px;color:var(--text-label);white-space:nowrap;">' + esc(c.base) + '</span></span>';
   }
@@ -16263,30 +16391,31 @@
       (M.pbp && M.pbp.matches != null ? ' and ' + M.pbp.matches + ' with point-by-point data' : '') + ' we hold for ' + shortName(p) +
       ', not the full career figure shown in Career record. Situations are counted per match, so a match can appear in several rows. ' +
       'Nothing here is estimated.';
-    var head = '<div style="display:grid;grid-template-columns:190px ' + LT_COLS + ';gap:0 20px;align-items:baseline;padding:20px 0 10px;white-space:nowrap;">' +
-      '<span></span>' + ['Situation', 'Record', 'Rate', 'Vs his norm', 'Vs tour'].map(function (h, i) {
-        return '<span style="' + LT_CAPS + 'text-align:' + (i ? 'right' : 'left') + ';">' + h + '</span>';
+    var head = '<div data-lt-head="1" style="display:grid;grid-template-columns:190px ' + LT_COLS + ';gap:0 16px;align-items:center;margin-top:16px;padding:9px 0;border-top:1px solid var(--edge-6);white-space:nowrap;">' +
+      [['Group', 'Click a group to fold it'], ['Situation', 'The match state the record is counted on'], ['Record', 'Times it happened out of the times it could'],
+        ['Rate', 'Record as a percentage'], ['vs his norm', 'His rate here minus his own usual rate'], ['vs tour', 'His rate here minus the tour rate']].map(function (h, i) {
+        return '<span title="' + esc(h[1]) + '" style="font-family:\'Hanken Grotesk\',sans-serif;font-size:11.5px;font-weight:600;color:var(--text-label);text-align:' + (i > 1 ? 'center' : 'left') + ';">' + h[0] + '</span>';
       }).join('') + '</div>';
     var body = M.groups.map(function (g) {
       var on = open[g.title] == null ? true : !!open[g.title];
-      return '<div style="display:grid;grid-template-columns:190px minmax(0,1fr);gap:0 20px;border-top:1px solid var(--edge-6);">' +
+      return '<div style="display:grid;grid-template-columns:190px minmax(0,1fr);gap:0 16px;border-top:1px solid var(--edge-6);">' +
         '<div data-pp2="sit-toggle" data-v="' + esc(g.title) + '" role="button" aria-expanded="' + (on ? 'true' : 'false') + '" ' +
-          'style="cursor:pointer;display:flex;align-items:center;gap:10px;height:54px;align-self:start;">' +
-          '<span style="font-size:14.5px;font-weight:700;letter-spacing:-0.01em;color:var(--text);white-space:nowrap;pointer-events:none;">' + esc(g.title) + '</span>' +
+          'style="cursor:pointer;display:flex;align-items:center;gap:10px;height:50px;align-self:start;">' +
+          '<span style="font-size:14px;font-weight:700;letter-spacing:-0.01em;color:var(--text);white-space:nowrap;pointer-events:none;">' + esc(g.title) + '</span>' +
           '<svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="transform:rotate(' + (on ? '90deg' : '0deg') + ');transition:transform .14s ease;flex:none;pointer-events:none;">' +
-            '<path d="M3 1l4 4-4 4" stroke="var(--pp-x-link)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>' +
+            '<path d="M3 1l4 4-4 4" stroke="var(--text-label)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>' +
         '<div style="display:flex;flex-direction:column;margin-bottom:-1px;min-width:0;">' +
         (on ? g.rows.map(function (r) {
-          return '<div data-lt-row="' + esc(r.id) + '" style="display:grid;grid-template-columns:' + LT_COLS + ';gap:0 20px;align-items:center;height:54px;border-bottom:1px solid var(--edge-6);"' +
+          return '<div data-lt-row="' + esc(r.id) + '" style="display:grid;grid-template-columns:' + LT_COLS + ';gap:0 16px;align-items:center;height:50px;border-bottom:1px solid var(--edge-6);"' +
             (r.why ? ' title="' + esc(r.why) + '"' : '') + '>' +
-            '<span style="display:flex;align-items:baseline;gap:10px;min-width:0;"><span style="font-size:13.5px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' +
+            '<span style="display:flex;align-items:baseline;gap:10px;min-width:0;"><span title="' + esc(r.label) + '" style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' +
               esc(r.label) + '</span>' + (r.note ? '<span style="font-size:11.5px;color:var(--text-label);white-space:nowrap;">' + esc(r.note) + '</span>' : '') + '</span>' +
-            '<span style="' + LT_MONO + 'font-size:13px;color:var(--text-label);text-align:right;white-space:nowrap;">' + esc(r.rec) + '</span>' +
-            '<span style="' + LT_MONO + 'font-size:14px;font-weight:700;color:' + r.rateColor + ';text-align:right;">' + esc(r.rateTxt) + '</span>' +
+            '<span style="' + LT_MONO + 'font-size:12.5px;color:var(--pp-x-text-soft);text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums;">' + esc(r.rec) + '</span>' +
+            '<span style="' + LT_MONO + 'font-size:13.5px;font-weight:700;color:' + r.rateColor + ';text-align:center;font-variant-numeric:tabular-nums;">' + esc(r.rateTxt) + '</span>' +
             ltGapHtml(r.N) + ltGapHtml(r.T) + '</div>';
         }).join('') : '') + '</div></div>';
     }).join('');
-    return '<div data-lt="card" style="display:flex;flex-direction:column;background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;overflow:hidden;padding:24px 24px 10px;">' +
+    return '<div data-lt="card" style="display:flex;flex-direction:column;background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;overflow:hidden;padding:22px 24px 10px;">' +
       '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px;"><span style="display:inline-flex;align-items:center;gap:10px;position:relative;">' +
         '<span data-sit="head" title="' + esc(noteTip) + '" style="font-size:18px;font-weight:800;letter-spacing:-0.01em;color:var(--text);">Record by situation</span>' +
         infoIcon('lt-sit', ltInfoSpec(p, M), 'About these figures') + '</span></div>' +
@@ -16318,9 +16447,10 @@
         '<span style="font-size:11.5px;color:var(--text-soft);white-space:nowrap;">' + esc(sub) + '</span></div>';
     }
     function edgeCol(c) { return c.edge == null || c.edge === 0 ? 'var(--text-label)' : c.edge > 0 ? 'var(--pos)' : 'var(--neg)'; }
+    var FD = ltSpotRoles(M, r);
     var tiles = tile('Record', r.held ? r.w + ' of ' + r.n : DASH, 'times it happened') +
       tile('Rate', r.rateTxt, r.held ? 'of ' + r.n : '') +
-      tile('Vs his norm', r.N.txt, r.N.base ? 'his norm ' + r.N.base : 'no norm defined', edgeCol(r.N)) +
+      tile('Favourite ' + MIDDOT + ' underdog', FD.value, FD.sub) +
       tile('Vs tour', r.T.txt, r.T.base ? 'tour ' + r.T.base : 'no tour rate', edgeCol(r.T));
     var pills = '<div style="display:flex;gap:3px;background:var(--pp-x-track);border:1.25px solid var(--edge-6);border-radius:9px;padding:2px;width:fit-content;margin-bottom:12px;">' +
       [['all', 'All'], ['yes', 'Happened'], ['no', 'Did not']].map(function (s) {
@@ -16368,6 +16498,21 @@
           esc(r.label) + '</span><span style="font-size:12.5px;color:var(--text-label);">' + esc(scope) + '</span></div>' + LT_CLOSE('lt-close') + '</div>' +
       '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:14px;">' + tiles + '</div>' +
       (r.src === 'set' ? pills : '') + list + '</div>', 'lt-scrim');
+  }
+  // final 2026-11-26: the spot's rate as favourite · as underdog (shorter / longer closing price, ltRoleOf); a rate needs 5
+  // cases, else a dash; pbp rows keep no match list, so both read a dash. Matches with no closing pair are in neither.
+  function ltSpotRoles(M, r) {
+    if (r.src !== 'set' || !r.held) return { value: DASH + ' ' + MIDDOT + ' ' + DASH, sub: r.src !== 'set' ? 'no match list for this row' : '' };
+    var c = { fav: [0, 0], dog: [0, 0] };
+    M.rows.forEach(function (m) {
+      var role = ltRoleOf(m), hit = null;
+      if (!role) return;
+      (ltEvents(m) || []).forEach(function (e) { if (e[0] === r.id) hit = e[1]; });
+      if (hit == null) return;
+      c[role][1]++; if (hit) c[role][0]++;
+    });
+    var pc = function (x) { return x[1] >= 5 ? Math.round(100 * x[0] / x[1]) + '%' : DASH; };
+    return { value: pc(c.fav) + ' ' + MIDDOT + ' ' + pc(c.dog), sub: c.fav[0] + ' of ' + c.fav[1] + ' ' + MIDDOT + ' ' + c.dog[0] + ' of ' + c.dog[1], c: c };
   }
   function ltAppliedTxt(M) {
     if (!M.filtered) return '';
@@ -16698,7 +16843,7 @@
     state.tournQuery = ''; state.tournOpen = null;
     state.calTab = 'calendar'; state.calSurface = 'all'; state.calCell = null; state.cal26Month = null;
     state.calWin = 'career'; state.calSurf = 'all'; state.calView = 'swing'; state.calCellV2 = null;
-    state.calSpeed = 'all'; state.calFmt = 'all'; state.calBand = 'all'; state.calArch = 'all'; state.calOpp = 'all'; state.calCtry = 'all'; state.mkOpp = 'all';
+    state.calSpeed = 'all'; state.calFmt = 'all'; state.calBand = 'all'; state.calArch = 'all'; state.calOpp = 'all'; state.mkOpp = 'all';
     state.speedSurf = 'all'; state.speedBand = null;
     // v4 §5 · a new player opens Court speed on Career, no filters
     state.spdSurf = 'all'; state.spdBand = null; state.spdWin = 'career'; state.spdLvl = 'all'; state.spdRole = 'all'; state.spdAlt = 'all'; state.spdArch = 'all'; state.fmSel = null;
@@ -16900,7 +17045,11 @@
       state.careerDrill = (cur && cur.kind === 'cell' && cur.year === want.year &&
         cur.surf === want.surf) ? null : want;
     }
-    else if (kind === 'career-drill-close') state.careerDrill = null;
+    else if (kind === 'career-drill-close') { state.careerDrill = null; state.drillRole = null; }
+    else if (kind === 'drill-role') {
+      var dk0 = el.getAttribute('data-k'), cr = state.drillRole;
+      state.drillRole = cr && cr.key === dk0 && cr.role === v ? null : { key: dk0, role: v };
+    }
     else if (kind === 'split-scope') { state.splitScope = el.getAttribute('data-scope'); state.drawPage = 0; }
     else if (kind === 'split-tab') state.splitTab = el.getAttribute('data-tab');
     // Founder 2026-10-13 · the Draw record drill-in. Opening a row asks the host for his match file (and the price
@@ -16925,6 +17074,7 @@
     else if (kind === 'market-side') state.marketSide = el.getAttribute('data-side');
     else if (kind === 'market-surf') state.marketSurf = el.getAttribute('data-surf');
     else if (kind === 'tourn-level') { state.tourLevel = v; state.tournOpen = null; }
+    else if (kind === 'tourn-reset') { state.tourLevel = 'ATP'; state.tourSurf = 'all'; state.tournQuery = ''; state.tournOpen = null; }
     else if (kind === 'tourn-surf') { state.tourSurf = v; state.tournOpen = null; }
     else if (kind === 'tourn-sort') {
       var cur = state.tourSort || { k: 'wl', d: -1 };
@@ -17441,6 +17591,9 @@
       tournBackingFailed: tournBackingFailed,
       get TOURN_TILE_SUMMED_UNITS() { return TOURN_TILE_SUMMED_UNITS; },
       set TOURN_TILE_SUMMED_UNITS(v) { TOURN_TILE_SUMMED_UNITS = !!v; },
+      ltSpotRoles: ltSpotRoles, ltCardHtml: ltCardHtml, ltSpotBoxHtml: ltSpotBoxHtml, drillRoleRow: drillRoleRow, hdTxt: hdTxt,
+      evSpeedChip: evSpeedChip, tournShownText: tournShownText, calHeadRow: calHeadRow, dnaBoxHtml: dnaBoxHtml, careerTabsHtml: careerTabsHtml,
+      woChipHtml: woChipHtml,
       state: state
     }
   };

@@ -1723,7 +1723,7 @@ const CAL_P = {
 const CAL_EXPECT = { grid: 25, spine: 27, gap: 2, priced: 13, seasons: 2 };
 
 const TXT = h => String(h).replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ');
-const CAL_FM = ['calSpeed', 'calFmt', 'calBand', 'calArch', 'calCtry'];
+const CAL_FM = ['calSpeed', 'calFmt', 'calBand', 'calArch'];
 function withCal(fn) {
   const savedCh = W.careerHistory;
   const savedMk = W.marketEdge;
@@ -1892,13 +1892,13 @@ check('profile v2 · a grid cell opens the drill box (founder 2026-11-10: a box,
   assert(/data-pp2-cal-drill="1"/.test(html), 'the drawer did not open');
   const d = html.slice(html.indexOf('data-pp2-drawer="cal"'));
   assert(/data-pp2-drillbox="1"/.test(d) && !/position:fixed;top:0;right:0;bottom:0/.test(d), 'the cell opened a side panel, not the box');
-  assert(/· 8–4 · 12 matches</.test(d), 'the box record is not 8–4');
-  assert.strictEqual((d.match(/data-pp2-drill-row="W"/g) || []).length, 8, 'eight wins listed');
+  assert(/data-pp2-caltiles2="1"[\s\S]*?>Record<\/span>[^]*?>8–4<\/span>[^]*?12 matches</.test(d), 'the box record is not 8–4');   // final 2026-11-26: the record is the first tile
+  assert.strictEqual((d.match(/data-pp2-calsets="1" style="[^"]*color:var\(--pos\)/g) || []).length, 8, 'eight wins listed');
   assert(/\+0\.00u/.test(d) && /12 priced/.test(d), "the box P&L is not +0.00u over 12 priced");
   I.state.calCellV2 = 'sw|aus|2026';
   html = I.renderSeasonModal(CAL_P);
   const d2 = html.slice(html.indexOf('data-pp2-drawer="cal"'));
-  assert(/· 3–9 · 12 matches</.test(d2) && !/priced/.test(d2.slice(0, d2.indexOf('grouped by tournament'))), 'the unpriced 2026 cell is not 3–9 with no priced clause');
+  assert(/>Record<\/span>[^]*?>3–9<\/span>/.test(d2) && /0 priced · needs 5/.test(d2) && />Profit at 1u flat<\/span>[^]*?>—</.test(d2), 'the unpriced 2026 cell is not 3–9 with dashed yield and profit');
   I.state.calCellV2 = null;
 }));
 // profile v2 (founder 2026-11-09): the Calendar record is the export's swing grid + Streaks.
@@ -4704,7 +4704,7 @@ check('item 13 · ledger rows align on center and the name span sets its own 12.
   const html = ledgerHtmlFor(ZVEREV);
   const row = html.slice(html.indexOf('class="pp2-ledger-row"'));
   assert(/align-items:center/.test(row.slice(0, 600)), 'the row still aligns on baseline');
-  assert(/<span style="font-size:12\.5px;font-weight:600;color:var\(--text\);min-width:0;overflow:hidden/.test(html),
+  assert(/<span style="font-size:12\.5px;font-weight:600;color:var\(--text\);min-width:0;display:flex/.test(html),
     'the name span does not set 12.5px, so it inherits the card size');
 });
 mustFail('the row-alignment check would catch a baseline row', () => {
@@ -5839,7 +5839,7 @@ check('item 18-19 · drill rows open the match sheet and reuse the LEDGER\'s pri
   // the drill card itself
   // founder 2026-11-10: the drill is the export's box (drillModal) — an 820px card on --edge-16, r14, over a 72% scrim
   // v5 §11 (2026-11-20): max-width about 900, 9% ring, r16, over --pp-x-backdrop, four tiles over the list
-  assert(/max-width:900px;background:var\(--card\);border:1px solid var\(--pp-x-edge-9\);border-radius:16px;/.test(html), 'the drill box is not the export\'s');
+  assert(/max-width:820px;background:var\(--card\);border:1px solid var\(--edge-16\);border-radius:14px;/.test(html), 'the drill box is not the export\'s');   // final 2026-11-26: the export's drillModal
   assert(/data-pp2-drilltiles="1"/.test(html), 'the history box lost its four tiles');
   assert(/grid-template-columns:52px 12px minmax\(0,1\.15fr\) 40px 44px minmax\(0,1\.35fr\) 52px 52px/.test(html),
     'the drill grid tracks are not the file\'s');
@@ -6017,10 +6017,10 @@ check('§5.3 item 5 · the search field is the reference\'s compact control + 14
     'the 14px magnifier is missing');
   // v4 §4 (handoff 2026-11-14): the field is transparent on an 8% ring, r8, 6/12, flex:none beside the pills.
   // v5 §4 (2026-11-19): the search is a well, 38 high, radius 10
-  assert(/<label style="display:flex;align-items:center;gap:9px;width:220px;height:38px;box-sizing:border-box;flex:none;background:var\(--inner\);border:1px solid color-mix\(in srgb, var\(--text\) 8%, transparent\);border-radius:10px;padding:0 12px;/.test(T_HTML),
+  assert(/<label style="display:flex;align-items:center;gap:9px;width:210px;height:34px;box-sizing:border-box;flex:none;background:var\(--inner\);border:1px solid color-mix\(in srgb, var\(--text\) 8%, transparent\);border-radius:10px;padding:0 12px;/.test(T_HTML),
     'the field is not the v5 well');
   assert(/placeholder="Search a tournament"/.test(T_HTML), 'the placeholder drifted');
-  assert(/data-pp2="tourn-search"[^>]*font-size:13px/.test(T_HTML), 'the input is not 13px');
+  assert(/data-pp2="tourn-search"[^>]*font-size:12\.5px/.test(T_HTML), 'the input is not 12.5px');   // final 2026-11-26
 });
 mustFail('[neg] the search check would catch the retired full-width field', () => {
   const shipped = '<label style="display:flex;align-items:center;gap:12px;background:var(--inner);' +
@@ -6042,7 +6042,7 @@ check('§5.3 items 6-7 · seven columns on the v2 grid, with SURFACE, the bar an
   ['name', 'wl', 'pct', 'roi'].forEach(k => assert(T_HTML.indexOf('data-pp2="tourn-sort" data-v="' + k + '"') > 0, `the ${k} head is not sortable`));
   // v5 §4 / §0.5 / §0.6: rows 60 on a straight 6% hairline, a 4px bar on a 7% track with a 1x12 tick at 50%, the 55% blue
   // resting bar (blue only on the open tournament), hover = the hover tone, radius 10, the hairline hidden.
-  assert(/min-height:60px;padding:0 10px;border-radius:0px;cursor:pointer;border-top:1px solid var\(--edge-6\)/.test(T_HTML), 'the row height, padding or hairline drifted');
+  assert(/min-height:54px;padding:0 10px;border-radius:0px;cursor:pointer;border-top:1px solid var\(--edge-6\)/.test(T_HTML), 'the row height, padding or hairline drifted');
   assert(/data-pp2-tbar="1"[^>]*height:4px;border-radius:2px;background:var\(--pp-x-track-7\);/.test(T_HTML), 'the 4px bar track is missing');
   assert(/left:50%;top:-4px;width:1px;height:12px;background:color-mix\(in srgb, var\(--text\) 35%, transparent\)/.test(T_HTML), 'the 50% tick is missing');
   assert(/background:var\(--pp-x-bar-55\);/.test(T_HTML), 'a closed row\'s bar is not the 55% blue');
@@ -6254,7 +6254,7 @@ check('§5.3 items 16-18 · the match grid is the file\'s, with DATE, SET SCORES
   // v4 §4: no column gap, cells padded 10px left, the grid pulled 10px left
   assert(open.indexOf('grid-template-columns:58px 22px minmax(0,1.1fr) 46px 50px ' +
     'minmax(0,1.3fr) 56px 56px;gap:0;align-items:center;margin-left:-10px;') > 0, 'the match grid tracks are not the v4 file\'s');
-  ['Date', 'Opponent', 'Rd', 'Sets', 'Set scores', 'H', 'A'].forEach((h) => {
+  ['Date', 'Opponent', 'Rd', 'Sets', 'Set scores', 'Opp'].forEach((h) => {   // final 2026-11-26: H = his avatar, A = Opp
     assert(open.indexOf('>' + h + '</span>') > 0, `the ${h} match column head is missing`);
   });
   // TEN-376: the sticky head paints the modal --card surface (was --popup); W/L squares are --pos / --neg.
@@ -6339,8 +6339,8 @@ mustFail('[neg] the ordering check would catch a draw-order list', () => {
 const V4_TOURN_OPEN = (() => { I.state.tournOpen = 'Australian Open'; const h = I.renderTournModal(ZVEREV); I.state.tournOpen = null; return h; })();
 function v4TournChrome(html) {
   // v5 §4: the filter card is --card on the 6% card ring, r16, padded 22px 24px
-  assert(/data-pp2-band="v5" style="[^"]*padding:22px 24px;background:var\(--card\);border:1\.25px solid var\(--edge-6\);border-radius:16px;/.test(html),
-    'the filter band is not the v5 filter card');
+  assert(/data-pp2-band="v5" data-pp2-tournbar="1" style="[^"]*padding:12px 14px 12px 18px;background:var\(--card\);border:1\.25px solid var\(--edge-6\);border-radius:16px;/.test(html),
+    'the filter band is not the compact toolbar (final 2026-11-26)');
   // §4: header + list in ONE --card card: the head is its top (no bottom edge, r16 top), the list its bottom (no top edge, r16 bottom)
   assert(/data-pp2-tourn-head="1"[^>]*background:var\(--card\);border:1\.25px solid var\(--edge-6\);border-bottom:0;border-radius:16px 16px 0 0;/.test(html),
     'the column header is not the top of the one --card card');
@@ -6350,7 +6350,7 @@ function v4TournChrome(html) {
   const head = html.slice(html.indexOf('data-pp2-tourn-head="1"'), html.indexOf('data-pp2-tourn-list="1"'));
   assert(!/border-bottom:1px/.test(head), 'the column header still draws its own rule');
   // v5 §4: W–L 13 mono grey
-  assert(/font-size:13px;color:var\(--text-label\);text-align:right;white-space:nowrap;">\d+–\d+</.test(html), 'the W–L is not 13 grey');
+  assert(/font-size:13px;color:var\(--pp-x-text-soft\);text-align:right;white-space:nowrap;">\d+–\d+</.test(html), 'the W–L is not 13 soft');   // final 2026-11-26: #c6ccdb
 }
 check('v4 §4 · Record per tournament: band, one card, no header rule, W–L soft ink', () => v4TournChrome(T_HTML));
 mustFail('[neg] the v4 §4 check would catch the v3 standalone header and --inner band', () => {
