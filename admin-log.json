@@ -1,16 +1,7 @@
 {
  "schema": 1,
- "updated": "2026-11-26T08:23:08.491Z",
+ "updated": "2026-11-26T08:40:49.015Z",
  "runs": [
-  {
-   "ts": "2026-10-19T12:06:27.218Z",
-   "run": "39247492627",
-   "priced": 36,
-   "logged": 1322,
-   "flagged": 14,
-   "newlyLogged": 2,
-   "newlyFrozen": 0
-  },
   {
    "ts": "2026-10-19T12:25:31.066Z",
    "run": "39248676818",
@@ -18000,6 +17991,15 @@
    "logged": 1578,
    "flagged": 2,
    "newlyLogged": 0,
+   "newlyFrozen": 0
+  },
+  {
+   "ts": "2026-11-26T08:40:49.015Z",
+   "run": "45782261768",
+   "priced": 5,
+   "logged": 1580,
+   "flagged": 2,
+   "newlyLogged": 2,
    "newlyFrozen": 0
   }
  ],
@@ -40997,7 +40997,7 @@
    "status": "finished",
    "finalScore": "6-2, 3-6, 6-2",
    "modelFairLast": 0.7189,
-   "lastSeen": "2026-11-26T08:23:08.491Z"
+   "lastSeen": "2026-11-26T08:40:49.015Z"
   },
   "12182496": {
    "key": "12182496",
@@ -41018,7 +41018,7 @@
    "status": "finished",
    "finalScore": "7-6(4), 6-2",
    "modelFairLast": 0.4928,
-   "lastSeen": "2026-11-26T08:23:08.491Z"
+   "lastSeen": "2026-11-26T08:40:49.015Z"
   },
   "12182774": {
    "key": "12182774",
@@ -41039,7 +41039,37 @@
    "status": "finished",
    "finalScore": "6-3, 6-7(3), 6-7(5)",
    "modelFairLast": 0.6281,
-   "lastSeen": "2026-11-26T08:23:08.491Z"
+   "lastSeen": "2026-11-26T08:40:49.015Z"
+  },
+  "12182952": {
+   "key": "12182952",
+   "date": "2026-11-26",
+   "p1": "C. Norrie",
+   "p2": "J-L. Struff",
+   "surface": "hard",
+   "tour": "ATP Davis Cup - World Group",
+   "modelFairEntry": 0.5268,
+   "valueSnapshot": null,
+   "firstSeen": "2026-11-26T08:40:49.015Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.5268,
+   "lastSeen": "2026-11-26T08:40:49.015Z"
+  },
+  "12182953": {
+   "key": "12182953",
+   "date": "2026-11-26",
+   "p1": "A. Fery",
+   "p2": "A. Zverev",
+   "surface": "hard",
+   "tour": "ATP Davis Cup - World Group",
+   "modelFairEntry": 0.2084,
+   "valueSnapshot": null,
+   "firstSeen": "2026-11-26T08:40:49.015Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.2084,
+   "lastSeen": "2026-11-26T08:40:49.015Z"
   },
   "e81136d8af2867898952ce896f71662f": {
    "key": "e81136d8af2867898952ce896f71662f",
