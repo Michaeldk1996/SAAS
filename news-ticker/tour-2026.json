@@ -2,8 +2,89 @@
  "tournament": "ATP Tour",
  "tournamentKey": "tour",
  "season": "2026",
- "updatedAt": "2026-11-26T06:28:05.543Z",
+ "updatedAt": "2026-11-26T07:13:19.218Z",
  "items": [
+  {
+   "id": "digest-8c342461fe77c1",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2382",
+   "player": "C. Alcaraz",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-26T06:30:18.164Z",
+   "members": [
+    "quote-611a6472c5f726",
+    "quote-dc0060806592c0",
+    "quote-f19182b3e4a3e0",
+    "quote-f6ea1aa15d4ca2",
+    "quote-f8e9bc79d4870a"
+   ],
+   "memberHash": "1f9a1de05a1ed4bb",
+   "digestedAt": "2026-11-26T06:38:02.291Z",
+   "blocks": [
+    {
+     "label": "on missing Jannik sinner on tour",
+     "text": "Obviously I'm going to say tennis misses him. I miss him. We haven't seen each other since April.",
+     "from": [
+      "quote-f19182b3e4a3e0"
+     ]
+    },
+    {
+     "label": "on Sinner's knee surgery and comeback",
+     "text": "The decision of making the surgery, I think his team made a good decision. He's young, has a lot of years ahead of him. I'm sure he's going to come back even stronger, even better. I can't wait to see him practising, stepping back on court. I wish him the best, speedy recovery, and hopefully see him around on the tour and talk to him.",
+     "from": [
+      "quote-f8e9bc79d4870a",
+      "quote-611a6472c5f726",
+      "quote-dc0060806592c0"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "d068274e3ab8e54c",
+   "publishedAt": "2026-11-26T05:09:53.468Z",
+   "revisedAt": "2026-11-26T07:13:19.218Z",
+   "revision": 1
+  },
+  {
+   "id": "quote-f6ea1aa15d4ca2",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": null,
+   "player": "C. Alcaraz",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-26T06:30:18.164Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "I miss him, tennis needs him",
+   "originalText": "Il me manque, le tennis a besoin de lui",
+   "language": "fr",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "La DH Les Sports+",
+   "sourceUrl": "https://www.dhnet.be/sports/tennis/2026/11/26/open-daustralie-sinner-forfait-pour-lopen-daustralie-apres-son-operation-du-genou-HRBUUS2G2VE2PDUINRV54GNRVA/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On Jannik Sinner's prolonged absence from tennis",
+   "settingTried": true,
+   "sourceHash": "f1bfee957aba3b9b",
+   "publishedAt": "2026-11-26T02:48:24.212Z",
+   "revisedAt": "2026-11-26T07:13:19.218Z",
+   "revision": 1
+  },
   {
    "id": "digest-a7a98c888fe3a0",
    "type": "digest",
@@ -23,30 +104,26 @@
     "quote-0ee6b1e1c93196",
     "quote-459f81dcb3cf4b",
     "quote-797d7f3bddbbe3",
-    "quote-bd4eee4e495eae"
+    "quote-bd4eee4e495eae",
+    "quote-e07e715b2d4034"
    ],
-   "memberHash": "d560ffd1793d80cc",
-   "digestedAt": "2026-11-26T06:08:10.320Z",
+   "memberHash": "5cf1bc410b11734b",
+   "digestedAt": "2026-11-26T06:38:02.291Z",
    "blocks": [
     {
-     "label": "on his chronic right ankle pain",
+     "label": "on Jannik Sinner's recovery from knee surgery",
+     "text": "He's mentally strong. We know that he's mentally strong. I hope that he takes every step seriously and that, in three, four months' time, he can be back to 100 per cent and be back playing. Even though, of course, he's one of my biggest competitors, one of the most difficult players for me to play, I still wish for him to come back to the tour because I've been there, I know what injury feels like, and I don't wish injury upon anyone.",
+     "from": [
+      "quote-459f81dcb3cf4b",
+      "quote-e07e715b2d4034",
+      "quote-bd4eee4e495eae"
+     ]
+    },
+    {
+     "label": "on his chronic right ankle pain and his season",
      "text": "Since what happened in Paris. They come and go, I'll have to live with them until the end of my career. But, considering that I've played more than anyone, I should be satisfied with how this year has gone.",
      "from": [
       "quote-797d7f3bddbbe3"
-     ]
-    },
-    {
-     "label": "on Jannik Sinner's recovery from knee surgery",
-     "text": "He's mentally strong. We know that he's mentally strong. I hope that he takes every step seriously and that in three, four months he can be back to 100 per cent and be back playing.",
-     "from": [
-      "quote-459f81dcb3cf4b"
-     ]
-    },
-    {
-     "label": "on wishing an injured rival back On tour",
-     "text": "Even though, of course, he's one of my biggest competitors, one of the most difficult players for me to play, I still wish for him to come back to the tour because I've been there, I know what injury feels like, and I don't wish injury upon anyone.",
-     "from": [
-      "quote-bd4eee4e495eae"
      ]
     },
     {
@@ -58,10 +135,10 @@
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "8c04466d1fa10159",
+   "sourceHash": "9f4d8d4133bb4515",
    "publishedAt": "2026-11-26T05:09:53.468Z",
-   "revisedAt": "2026-11-26T06:28:05.543Z",
-   "revision": 1
+   "revisedAt": "2026-11-26T07:13:19.218Z",
+   "revision": 2
   },
   {
    "id": "quote-797d7f3bddbbe3",
@@ -93,6 +170,99 @@
    "settingTried": true,
    "sourceHash": "3c5d96d09e0abbb8",
    "publishedAt": "2026-11-26T06:28:05.543Z"
+  },
+  {
+   "id": "quote-611a6472c5f726",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": null,
+   "player": "C. Alcaraz",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-26T05:45:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "He's young, has a lot of years ahead of him. I'm sure he's going to come back even stronger, even better.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Sky Sports",
+   "sourceUrl": "https://www.skysports.com/tennis/news/12110/13616625/jannik-sinner-to-miss-australian-open-former-world-no-1-wont-play-first-grand-slam-of-2027-after-knee-surgery",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On Sinner's knee surgery and comeback",
+   "settingTried": true,
+   "sourceHash": "8449c3f5d1c32f61",
+   "publishedAt": "2026-11-26T07:13:19.218Z"
+  },
+  {
+   "id": "quote-e07e715b2d4034",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-26T05:45:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "We know that he's mentally strong. I hope that he takes every step serious and that, in three, four months' time, he can be back to 100 per cent and be back playing.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Sky Sports",
+   "sourceUrl": "https://www.skysports.com/tennis/news/12110/13616625/jannik-sinner-to-miss-australian-open-former-world-no-1-wont-play-first-grand-slam-of-2027-after-knee-surgery",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On Sinner's recovery from knee surgery",
+   "settingTried": true,
+   "sourceHash": "c2982293951b12a9",
+   "publishedAt": "2026-11-26T07:13:19.218Z"
+  },
+  {
+   "id": "quote-f8e9bc79d4870a",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": null,
+   "player": "C. Alcaraz",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-26T05:45:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Injuries",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "The decision of making the surgery, I think his team made a good decision,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Sky Sports",
+   "sourceUrl": "https://www.skysports.com/tennis/news/12110/13616625/jannik-sinner-to-miss-australian-open-former-world-no-1-wont-play-first-grand-slam-of-2027-after-knee-surgery",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On Sinner's decision to have knee surgery",
+   "settingTried": true,
+   "sourceHash": "6b846193c200fbbd",
+   "publishedAt": "2026-11-26T07:13:19.218Z"
   },
   {
    "id": "quote-18b69e30cb96c6",
@@ -155,41 +325,6 @@
    "setting": "in his press conference at the Davis Cup Finals in Bologna",
    "sourceHash": "e30d0900a2a22acc",
    "publishedAt": "2026-11-26T04:09:42.809Z"
-  },
-  {
-   "id": "digest-8c342461fe77c1",
-   "type": "digest",
-   "version": 1,
-   "playerId": "2382",
-   "player": "C. Alcaraz",
-   "opponentId": null,
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "eventKey": null,
-   "context": null,
-   "category": "Quotes",
-   "timestamp": "2026-11-26T03:15:22.384Z",
-   "members": [
-    "quote-dc0060806592c0",
-    "quote-f19182b3e4a3e0"
-   ],
-   "memberHash": "c5e11dcc9948aa3e",
-   "digestedAt": "2026-11-26T04:37:22.465Z",
-   "blocks": [
-    {
-     "label": "on Sinner's absence after knee surgery",
-     "text": "Obviously I'm going to say tennis misses him. I miss him. We haven't seen each other since April. I can't wait to see him practising, stepping back on court. I wish him the best, speedy recovery, and hopefully see him around on the tour and talk to him.",
-     "from": [
-      "quote-f19182b3e4a3e0",
-      "quote-dc0060806592c0"
-     ]
-    }
-   ],
-   "model": "claude-opus-5-5",
-   "sourceHash": "0af832f5cb17186a",
-   "publishedAt": "2026-11-26T05:09:53.468Z"
   },
   {
    "id": "quote-459f81dcb3cf4b",
@@ -460,18 +595,25 @@
    "eventKey": null,
    "context": null,
    "category": "Quotes",
-   "timestamp": "2026-11-25T21:20:51.856Z",
+   "timestamp": "2026-11-25T18:10:21.000Z",
    "members": [
     "quote-0228478d3f331e",
     "quote-09837707aa63ba",
     "quote-58baf32f06cb0e",
     "quote-6f9ca4d511ef0e",
-    "quote-dec95bdf3c02f6",
-    "quote-f6ea1aa15d4ca2"
+    "quote-dec95bdf3c02f6"
    ],
-   "memberHash": "36fc7d533037ec68",
-   "digestedAt": "2026-11-26T02:06:51.017Z",
+   "memberHash": "aab0f06449bc477e",
+   "digestedAt": "2026-11-26T06:38:02.291Z",
    "blocks": [
+    {
+     "label": "on the toll of playing every week",
+     "text": "I probably could have done things differently. I'm not going to lie. Pushing yourself to play every week ends up taking its toll; in the end, you're killing yourself. But I think it is what it is. I think we have to learn from these experiences. We just have to make mistakes in our career to learn from them, then be better. From now on, I will learn and I will do things a little bit differently. I think everybody is going to be like that.",
+     "from": [
+      "quote-0228478d3f331e",
+      "quote-6f9ca4d511ef0e"
+     ]
+    },
     {
      "label": "on his recovery and whether he will play",
      "text": "I haven't hit a ball yet. Tomorrow will be the first time. In the end, it is about how I feel, and we'll see how things go. I don't want to take anything for granted, but what I can say is that I feel a little better every day and I can see more clearly that I'm recovering. On Thursday, once everything has settled and I've trained, when the day comes, Ferrer will speak.",
@@ -480,63 +622,25 @@
      ]
     },
     {
-     "label": "on playing too many tournaments",
-     "text": "I probably could have done things differently. I'm not going to lie. Pushing yourself to play every week, eventually you're killing yourself. But I think it is what it is. I think we have to learn from these experiences. We just have to make mistakes in our career to learn from them, then be better. From now on, I will learn and I will do things a little bit differently. I think everybody is going to be like that.",
-     "from": [
-      "quote-0228478d3f331e",
-      "quote-6f9ca4d511ef0e"
-     ]
-    },
-    {
-     "label": "on Jannik Sinner's absence",
-     "text": "I miss him, tennis needs him. He will come back even stronger and as a better player.",
-     "from": [
-      "quote-f6ea1aa15d4ca2",
-      "quote-58baf32f06cb0e"
-     ]
-    },
-    {
      "label": "on winning the Davis Cup for Spain",
      "text": "The Davis Cup is a goal as well. I really wanted to achieve that for my country, for Spain. I set some other goals for the season, and I will try to be ready to get those goals.",
      "from": [
       "quote-dec95bdf3c02f6"
      ]
+    },
+    {
+     "label": "on Sinner's return after knee surgery",
+     "text": "He will come back even stronger and as a better player.",
+     "from": [
+      "quote-58baf32f06cb0e"
+     ]
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "0d17adc905c7a472",
-   "publishedAt": "2026-11-26T02:48:24.212Z"
-  },
-  {
-   "id": "quote-f6ea1aa15d4ca2",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": null,
-   "player": "C. Alcaraz",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-25T21:20:51.856Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "I miss him, tennis needs him",
-   "originalText": "Il me manque, le tennis a besoin de lui",
-   "language": "fr",
-   "translated": true,
-   "translationModel": "claude-opus-5-5",
-   "sourceName": "La DH Les Sports+",
-   "sourceUrl": "https://www.dhnet.be/sports/tennis/2026/11/25/carlos-alcaraz-declare-sa-flamme-a-jannik-sinner-il-me-manque-le-tennis-a-besoin-de-lui-ZAXUNUVOF5B6LISESEVYOKIR4Y/",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On Jannik Sinner's prolonged absence from tennis",
-   "settingTried": true,
-   "sourceHash": "6bb9b05b33c704a1",
-   "publishedAt": "2026-11-26T02:48:24.212Z"
+   "sourceHash": "47b93fd5ccb9f05d",
+   "publishedAt": "2026-11-26T02:48:24.212Z",
+   "revisedAt": "2026-11-26T07:13:19.218Z",
+   "revision": 1
   },
   {
    "id": "quote-58baf32f06cb0e",
