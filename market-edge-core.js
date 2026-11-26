@@ -29,6 +29,7 @@
   // up to 1.50 and lose to it from 1.51, underdogs are fair to 2.99 and lose to it from 3.00), half-open [lo, hi) in
   // thousandths, so no price can fall between two bands (1.205 is in 1.01 – 1.20; 1.21 is in 1.21 – 1.35).
   // Favourite = price < 2.00; 2.00 is underdog.
+  // founder 2026-11-26: Near coin-flip ends at 1.94, Slight underdog starts at 1.95 (measured on 82,574 priced sides: 33 favourites at 1.95+ and 12 underdogs under 1.95 sit across the line, 45 in all, against 888 underdogs under 2.00 at the old cut).
   // `mid` is the design's midpoint (label ends averaged, 6.00 + = 7.5) — kept only for the
   // §4.2 comparison, never rendered.
   const BANDS = [
@@ -36,8 +37,8 @@
     { gk: 'fav', label: '1.21 – 1.35', lo: 1210, hi: 1360, mid: (1.21 + 1.35) / 2 },
     { gk: 'fav', label: '1.36 – 1.50', lo: 1360, hi: 1510, mid: (1.36 + 1.50) / 2 },
     { gk: 'fav', label: '1.51 – 1.70', lo: 1510, hi: 1710, mid: (1.51 + 1.70) / 2 },
-    { gk: 'fav', label: '1.71 – 1.99', lo: 1710, hi: 2000, mid: (1.71 + 1.99) / 2 },
-    { gk: 'dog', label: '2.00 – 2.49', lo: 2000, hi: 2500, mid: (2.00 + 2.49) / 2 },
+    { gk: 'fav', label: '1.71 – 1.94', lo: 1710, hi: 1950, mid: (1.71 + 1.94) / 2 },
+    { gk: 'dog', label: '1.95 – 2.49', lo: 1950, hi: 2500, mid: (1.95 + 2.49) / 2 },
     { gk: 'dog', label: '2.50 – 2.99', lo: 2500, hi: 3000, mid: (2.50 + 2.99) / 2 },
     { gk: 'dog', label: '3.00 – 3.99', lo: 3000, hi: 4000, mid: (3.00 + 3.99) / 2 },
     { gk: 'dog', label: '4.00 – 5.99', lo: 4000, hi: 6000, mid: (4.00 + 5.99) / 2 },
@@ -51,7 +52,9 @@
     for (let i = 0; i < BANDS.length; i++) if (m >= BANDS[i].lo && m < BANDS[i].hi) return i;
     return -1;
   }
-  const isFavPrice = (price) => price != null && milli(price) < 2000;
+  // founder 2026-11-26: the role a price alone implies follows the ladder's fav / dog edge (1.95: 99.96% of 1.95+ sides are
+  // the underdog). Only a row with no opponent price is ever read this way.
+  const isFavPrice = (price) => price != null && milli(price) < 1950;
 
   /** Founder ruling 2026-10-22 (ruling 4; replaces TEN-325's "settled on the official ATP result"): every priced
    *  retirement settles on Pinnacle's rule, whichever book supplied the price. Every surface that counts retirements in

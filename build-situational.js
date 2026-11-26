@@ -248,14 +248,17 @@ function main() {
   }
   if (maxDate === '0000-00-00') { console.error('build-situational: cache empty; no shard.'); return; }
   const windowStart = windowStartFrom(maxDate);
+  // founder 2026-11-26: the same rows over the last 52 weeks (364 days before the anchor), per player (`w52`) and pooled
+  // (`tour52`), so the profile's Record by situation fills its point-by-point rows on Last 52 weeks too.
+  const w52Start = (() => { const d = new Date(maxDate + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() - 364); return d.toISOString().slice(0, 10); })();
 
-  const players = new Map();      // key -> {name, rows, matches}
-  const pooled = emptyRows();
+  const players = new Map();      // key -> {name, rows, matches, w52: {rows, matches}}
+  const pooled = emptyRows(), pooled52 = emptyRows();
   const stats = { matches: 0, minDate: '9999', maxDate: '0000' };
 
   function bucket(key, name) {
     let p = players.get(key);
-    if (!p) { p = { name: name || null, rows: emptyRows(), matches: 0 }; players.set(key, p); }
+    if (!p) { p = { name: name || null, rows: emptyRows(), matches: 0, w52: { rows: emptyRows(), matches: 0 } }; players.set(key, p); }
     else if (name && !p.name) p.name = name;
     return p;
   }
@@ -279,14 +282,22 @@ function main() {
     const scratch = { 'First Player': emptyRows(), 'Second Player': emptyRows() };
     if (!foldMatch(pbp, scratch, r.scores)) continue;
 
+    const in52 = r.event_date >= w52Start;
     for (const [side, target] of [['First Player', p1], ['Second Player', p2]]) {
       for (const id of ROW_IDS) {
         target.rows[id].w += scratch[side][id].w;
         target.rows[id].l += scratch[side][id].l;
         pooled[id].w += scratch[side][id].w;
         pooled[id].l += scratch[side][id].l;
+        if (in52) {
+          target.w52.rows[id].w += scratch[side][id].w;
+          target.w52.rows[id].l += scratch[side][id].l;
+          pooled52[id].w += scratch[side][id].w;
+          pooled52[id].l += scratch[side][id].l;
+        }
       }
       target.matches += 1;
+      if (in52) target.w52.matches += 1;
     }
     stats.matches += 1;
     if (r.event_date < stats.minDate) stats.minDate = r.event_date;
@@ -297,28 +308,36 @@ function main() {
   for (const [k, v] of players) {
     if (!/^\d+$/.test(k)) continue;
     playersOut[k] = { name: v.name, matches: v.matches, rows: v.rows };
+    if (v.w52.matches) playersOut[k].w52 = { matches: v.w52.matches, rows: v.w52.rows };
   }
 
-  const tour = {};
-  for (const id of ROW_IDS) {
-    const t = pooled[id].w + pooled[id].l;
-    tour[id] = { w: pooled[id].w, l: pooled[id].l, pct: t ? Math.round((pooled[id].w / t) * 1000) / 10 : null };
-  }
+  const tourOf = (acc) => {
+    const out = {};
+    for (const id of ROW_IDS) {
+      const t = acc[id].w + acc[id].l;
+      out[id] = { w: acc[id].w, l: acc[id].l, pct: t ? Math.round((acc[id].w / t) * 1000) / 10 : null };
+    }
+    return out;
+  };
+  const tour = tourOf(pooled), tour52 = tourOf(pooled52);
 
   const shard = {
     meta: {
       builtAt: new Date().toISOString(),
       windowMonths: WINDOW_MONTHS,
+      w52Start,
       sampleFloor: SAMPLE_FLOOR,
       rows: ROW_IDS,
       coverage: { matches: stats.matches, from: stats.minDate, to: stats.maxDate },
       players: Object.keys(playersOut).length,
     },
     tour,
+    tour52,
     players: playersOut,
   };
 
-  fs.writeFileSync(OUT_PATH, JSON.stringify(shard));
+  fs.writeFileSync(OUT_PATH + '.tmp', JSON.stringify(shard));
+  fs.renameSync(OUT_PATH + '.tmp', OUT_PATH);   // atomic: never a half-written live file
   console.log(`build-situational: wrote ${OUT_PATH}`);
   console.log(`  window=${WINDOW_MONTHS}M start=${windowStart} anchor=${maxDate}`);
   console.log(`  matches=${stats.matches} players=${shard.meta.players} coverage=${stats.minDate}..${stats.maxDate}`);

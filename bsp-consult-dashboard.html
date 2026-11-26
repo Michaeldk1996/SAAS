@@ -19849,10 +19849,9 @@ function renderPlayers(filter){
     // next match reads "—" (absent, never a stale or invented price).
     const priced = !!(odds && odds.price);
     const price = priced ? Number(odds.price).toFixed(2) : '—';
-    // No price: "—" plus a grey note, as the profile's "no fixture on record".
+    // founder 2026-11-26: the price badge shows only when there is a price — no "— no price" pill.
     // TEN-384: the book name in the house style (mxBookLabel), never the feed's key ("Pncl", "WilliamHill").
-    const book = priced ? (odds.bookmaker ? `<span class="pc-book">${pesc(mxBookLabel(odds.bookmaker))}</span>` : '')
-                        : '<span class="pc-book">no price</span>';
+    const book = priced && odds.bookmaker ? `<span class="pc-book">${pesc(mxBookLabel(odds.bookmaker))}</span>` : '';
     // The player's photo (playerPhotoImg, the one resolver) over the initials; a failed load
     // removes it and the initials show through.
     const photo = playerPhotoImg(p.key, p.name);
@@ -19873,9 +19872,9 @@ function renderPlayers(filter){
         <span class="pc-elo"><span class="pc-elo-lab">ELO</span><b>${eloVal}</b></span>
       </div>
       <div class="pc-foot">
-        <span class="pc-odds" title="Best odds to win">
-          <span class="pc-price">${price}</span>${book}${priced ? `<span class="pc-ext">${PG_EXT_SVG}</span>` : ''}
-        </span>
+        ${priced ? `<span class="pc-odds" title="Best odds to win">
+          <span class="pc-price">${price}</span>${book}<span class="pc-ext">${PG_EXT_SVG}</span>
+        </span>` : '<span class="pc-odds-none"></span>'}
         <span class="pc-view"${hasProfile ? ' role="link"' : ''}>View profile →</span>
       </div>
     </div>`;
@@ -20176,6 +20175,22 @@ async function loadHoldbreak(){
   if (_ppView && typeof ppState !== 'undefined' && ppState && ppState.key
       && playerProfiles[String(ppState.key)] && _ppView.style.display !== 'none') ppRepaint();
 }
+// founder 2026-11-26: the profile heatmap's Last 52 weeks — holdbreak-52w.json (build-holdbreak.js, same shape and
+// roster, the last 364 days). Fetched only when the profile asks for that window; undefined = not asked, null = no file.
+let holdbreak52;
+let _hb52Inflight = null;
+function pp2HoldbreakNeed52(){
+  if (holdbreak52 !== undefined || _hb52Inflight) return;
+  _hb52Inflight = fetch('./holdbreak-52w.json', { cache: 'no-cache' })
+    .then(res => res.ok ? res.json() : null).catch(() => null)
+    .then(j => {
+      holdbreak52 = j; window.holdbreak52 = j; _hb52Inflight = null;
+      const _ppView = document.getElementById('playerProfileView');
+      if (_ppView && typeof ppState !== 'undefined' && ppState && ppState.key
+          && playerProfiles[String(ppState.key)] && _ppView.style.display !== 'none') ppRepaint();
+    });
+}
+window.pp2HoldbreakNeed52 = pp2HoldbreakNeed52;
 // TEN-206 item 3 Situational — situational.json (build-situational.js output),
 // rebuilt by the daily styles job off the same point-by-point cache the
 // hold/break rollup uses: { meta, tour, players:{ key:{ name, matches, rows } } }.
@@ -28908,10 +28923,11 @@ window.DatabaseTab = (function(){
   // (measured 16 Nov: 0 favourites at 2.00 or more, 0 underdogs under 1.71). Printed From / To are the design's words.
   var DB2_BANDS={
     fav:[['Heavy favourite','1.01','1.20',1.01,1.21],['Clear favourite','1.21','1.35',1.21,1.36],['Favourite','1.36','1.50',1.36,1.51],
-         ['Slight favourite','1.51','1.70',1.51,1.71],['Near coin-flip','1.71','1.99',1.71,2.00]],
+         ['Slight favourite','1.51','1.70',1.51,1.71],['Near coin-flip','1.71','1.94',1.71,1.95]],
     // founder 2026-11-19: Near coin-flip (1.71–1.99) is a favourite band only; the underdog bands start at 2.00. An underdog
     // priced under 2.00 (a near-even match) counts in the side's total and in no band row (the "?" says how many).
-    dog:[['Slight underdog','2.00','2.49',2.00,2.50],['Underdog','2.50','2.99',2.50,3.00],
+    // founder 2026-11-26: Near coin-flip ends at 1.94, Slight underdog starts at 1.95 (measured on 82,574 priced sides: 33 favourites at 1.95+ and 12 underdogs under 1.95 sit across the line, 45 in all, against 888 underdogs under 2.00 at the old cut).
+    dog:[['Slight underdog','1.95','2.49',1.95,2.50],['Underdog','2.50','2.99',2.50,3.00],
          ['Big underdog','3.00','3.99',3.00,4.00],['Long underdog','4.00','5.99',4.00,6.00],['Longshot','6.00','+',6.00,Infinity]]
   };
   function db2InBand(B, p){ return p>=B[3]-1e-9 && p<B[4]-1e-9; }

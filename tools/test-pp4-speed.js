@@ -55,7 +55,7 @@ const checks = {
   // the popover: Level · Price role · Altitude · Opponent archetype; every count = the banded rows the filter keeps
   popover(html) {
     const t = T(html);
-    assert(/Price role/.test(t) && /Altitude/.test(t) && /Opponent archetype/.test(t), 'a group is missing');
+    assert(/Price role/.test(t) && /Altitude/.test(t), 'a group is missing');
     // founder 2026-11-20: Court speed is ATP only, so there is no Level filter
     assert(!/data-g="spdLvl"/.test(html) && !/>Level</.test(html), 'a Level filter is back');
     assert(t.includes('Altitude = venues at ' + PP4.ALT_CUT_M + ' m or higher.'), 'the altitude hint does not name PP4.ALT_CUT_M');
@@ -67,10 +67,9 @@ const checks = {
       assert.strictEqual(+m[1], n, g + '=' + v + ': count ' + m[1] + ' is not the ' + n + ' rows it keeps');
     }));
   },
-  archOpen(html) {
-    const names = (html.match(/data-g="spdArch" data-v="([^"]+)"/g) || []).map(x => x.replace(/.*data-v="([^"]+)"/, '$1'));
-    assert.deepStrictEqual(names, ['all', 'Big Server', 'Big Server + First Strike', 'Big Server + Complete Baseliner', 'Attacking Baseliner',
-      'Solid Baseliner', 'Counterpuncher', 'Solid Defender', 'All Court Elite'], 'the archetype drop-down is not the eight names');
+  // founder 2026-11-26: the Opponent archetype filter is gone from Court speed
+  archGone(html) {
+    assert(!/data-g="spdArch"|Opponent archetype/.test(html), 'the Opponent archetype filter is back on Court speed');
   },
   // a hidden filter on: "Filters · 1" lifted (never blue), a lifted Applied chip + Clear all, the gap vs unfiltered
   filterOn(html, title) {
@@ -98,9 +97,9 @@ H.check('1 · the v5 filter card (Window · Surface · Filters), no Applied row 
   assert(!/data-pp2-applied=/.test(html), 'an Applied row with no hidden filter on');
   assert.strictEqual((I.MODAL_TITLE_COUNT || {}).speed(p), I.spdPool(p).length + ' matches', 'the unfiltered title sample');
 });
-H.check('2 · the Filters popover: Price role, Altitude, archetype (no Level, ATP only); every count = the rows it keeps', () => {
+H.check('2 · the Filters popover: Price role, Altitude (no archetype, no Level, ATP only); every count = the rows it keeps', () => {
   checks.popover(render({ fmOpen: 'spd' }));
-  checks.archOpen(render({ fmOpen: 'spd', fmSel: 'spd|spdArch' }));
+  checks.archGone(render({ fmOpen: 'spd' }));
 });
 H.check('3 · a hidden filter on: "Filters · 1" lifted, Applied chip, "n of m" title, gap vs unfiltered', () => {
   checks.filterOn(render({ spdRole: 'fav' }), (I.MODAL_TITLE_COUNT || {}).speed(p));
@@ -166,8 +165,24 @@ H.check('8 · Clear all resets Level, Window and Surface; Reset filters clears t
   const src = fs.readFileSync(process.env.PP4_SRC || path.join(L.ROOT, 'player-profile-v2.js'), 'utf8');
   assert(/kind === 'spd-clearall'\) \{ state\.spdLvl = 'all'; state\.spdRole = 'all'; state\.spdAlt = 'all'; state\.spdArch = 'all'; state\.spdWin = 'career'; state\.spdSurf = 'all';/.test(src), 'spd-clearall does not reset everything');
   render();
-  assert.deepStrictEqual(I.SPD_FM_KEYS, ['spdRole', 'spdAlt', 'spdArch'], 'the hidden filters are not Price role · Altitude · archetype');
+  assert.deepStrictEqual(I.SPD_FM_KEYS, ['spdRole', 'spdAlt'], 'the hidden filters are not Price role · Altitude');
 });
+// founder 2026-11-26: a venue at PP4.ALT_FAST_M or higher is Fast, as a rule (Kitzbühel, Munich, Madrid, Geneva …)
+H.check('9 · altitude venues are Fast: every rated row at ' + PP4.ALT_FAST_M + ' m+ bands fast; Geneva 375 m included', () => {
+  I.resetState(KEY);
+  const high = I.speedRows(p).filter(r => r.venue && I.spdAltOf(r) != null && I.spdAltOf(r) >= PP4.ALT_FAST_M);
+  assert(high.length > 0, 'no altitude row in the fixture — this check never ran');
+  high.forEach(r => assert.strictEqual(I.spdBandOfRow(r), 'fast', r.venue + ' (' + I.spdAltOf(r) + ' m) is not Fast'));
+  assert(PP4.ALT_FAST_M <= 375, 'the cut leaves Geneva (375 m) out');
+  // the rule moved something: at least one high venue reads medium / slow on its speed reading alone
+  const moved = high.filter(r => I.spdBandOf(I.spdEditionGap(r)) !== 'fast');
+  assert(moved.length > 0, 'no altitude row would have been non-fast — the rule is not exercised');
+});
+H.mustFail('CONTROL · the reading-only band (pre-rule) fails the altitude check', () => {
+  const high = I.speedRows(p).filter(r => r.venue && I.spdAltOf(r) != null && I.spdAltOf(r) >= PP4.ALT_FAST_M);
+  high.forEach(r => assert.strictEqual(I.spdBandOf(I.spdEditionGap(r)), 'fast', r.venue));
+});
+H.mustFail('CONTROL · the archetype filter, painted, fails the gone check', () => checks.archGone('<span data-g="spdArch" data-v="all">All</span>'));
 // ── CONTROL: the v4 drawer's markers, fed to the same checks, must go red (each check is not vacuous)
 const V4 = '<div data-pp2-band="standalone-card" style="padding:20px 24px;"><span data-pp2="spd-win" data-v="l52">L</span><span data-pp2="spd-win" data-v="career" aria-pressed="true">C</span>' +
   '<span data-pp2="spd-surf" data-v="all">All</span><span data-pp2="fm-toggle" data-v="spd" class="pp2-fmtrig" style="margin-left:auto">Filters</span></div><div data-pp2-spd="summary"></div>';

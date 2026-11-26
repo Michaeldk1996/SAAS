@@ -6,7 +6,7 @@
  *   The player-profile Market edge uses the Match analysis Market edge tab's rules ("Both use this
  *   tab's rules"): every figure — headline, role cards, price bands, the cumulative curve and the tour
  *   baseline — is struck on Pinnacle close, else Bet365 close (one book per match); favourite = price
- *   under 2.00; a row's band is decided by its own price on the half-open ladder of market-edge-core.js.
+ *   under 1.95 (founder 2026-11-26); a row's band is decided by its own price on the half-open ladder of market-edge-core.js.
  *
  * Rule 5: a ruling applied without a lock is not applied. Reads the COMMITTED shards (the floor that
  * ships if the pipeline's builder fails), so this fails if someone reverts the builder AND if someone
@@ -61,8 +61,8 @@ function checkShard(name, s) {
     // row is rounded to 2dp and the band stamp comes from the unrounded price, so the role is checked
     // against the stamp, and the stamp against the rounded price everywhere but at the 2.00 edge.
     const expectRole = m.band ? (m.band[0] === 'f' ? 'fav' : 'dog') : null;
-    if (m.band == null || m.role !== expectRole) { bad.push(`${name}: row ${m.date} price ${m.price} role ${m.role} band ${m.band} — role must follow the band (price < 2.00 = favourite)`); break; }
-    if (Math.abs(m.price - 2.0) > 0.006 && (m.price < 2.0) !== (m.role === 'fav')) { bad.push(`${name}: row ${m.date} price ${m.price} is ${m.role} — favourite is price < 2.00`); break; }
+    if (m.band == null || m.role !== expectRole) { bad.push(`${name}: row ${m.date} price ${m.price} role ${m.role} band ${m.band} — role must follow the band (price < 1.95 = favourite)`); break; }
+    if (Math.abs(m.price - 1.95) > 0.006 && (m.price < 1.95) !== (m.role === 'fav')) { bad.push(`${name}: row ${m.date} price ${m.price} is ${m.role} — favourite is price < 1.95`); break; }
     // the stamp is the core's band for the price (rows at a band edge may differ only by the 2dp rounding)
     const ids = ['f101_120', 'f121_135', 'f136_150', 'f151_170', 'f171_199', 'd200_249', 'd250_299', 'd300_399', 'd400_599', 'd600_up'];
     const EDGES = [1.21, 1.36, 1.51, 1.71, 2.0, 2.5, 3.0, 4.0, 6.0];
@@ -97,7 +97,7 @@ function checkIndex(idx) {
 }
 
 // ── run ──────────────────────────────────────────────────────────────────────
-console.log('TEN-310 · Market edge is struck on Pinnacle, else Bet365 closing; favourite = price < 2.00');
+console.log('TEN-310 · Market edge is struck on Pinnacle, else Bet365 closing; favourite = price < 1.95');
 
 if (!fs.existsSync(DIR) || !fs.existsSync(INDEX)) {
   console.error('market-edge/ or market-edge-index.json missing — nothing to check');
@@ -305,4 +305,4 @@ console.log('build stamp');
 }
 
 if (failures) { console.error(`\n${failures} check(s) FAILED`); process.exit(1); }
-console.log('\nTEN-310 locked: Market edge is Pinnacle, else Bet365 closing (favourite = price < 2.00), and every assertion has a control that fails without it.');
+console.log('\nTEN-310 locked: Market edge is Pinnacle, else Bet365 closing (favourite = price < 1.95), and every assertion has a control that fails without it.');

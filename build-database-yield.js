@@ -875,7 +875,8 @@ const TB = baselinesOf(dbList, BOOK_COUNTS);
 // fixed bands of a side's OWN closing price — both sides of every figure row (the same rows as the yields above).
 // Bands (founder 2026-11-14, the ten): [1.01,1.21) [1.21,1.36) [1.36,1.51) [1.51,1.71) [1.71,2.00) [2.00,2.50) [2.50,3.00)
 // [3.00,4.00) [4.00,6.00) [6.00,∞) (modal-market-edge.md). Each entry carries lo / hi; the page matches on them.
-const BAND8 = [[1.01, 1.21], [1.21, 1.36], [1.36, 1.51], [1.51, 1.71], [1.71, 2.00], [2.00, 2.50], [2.50, 3.00], [3.00, 4.00], [4.00, 6.00], [6.00, Infinity]];
+// founder 2026-11-26: Near coin-flip ends at 1.94, Slight underdog starts at 1.95 (measured on 82,574 priced sides: 33 favourites at 1.95+ and 12 underdogs under 1.95 sit across the line, 45 in all, against 888 underdogs under 2.00 at the old cut)
+const BAND8 = [[1.01, 1.21], [1.21, 1.36], [1.36, 1.51], [1.51, 1.71], [1.71, 1.95], [1.95, 2.50], [2.50, 3.00], [3.00, 4.00], [4.00, 6.00], [6.00, Infinity]];
 function band8Of(list) {
   const acc = BAND8.map(() => ({ n: 0, w: 0, pl: 0 }));
   const add = (p, w) => {

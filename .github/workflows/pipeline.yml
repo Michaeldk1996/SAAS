@@ -1261,6 +1261,7 @@ jobs:
           # cron from the harvested pbp cache. Committed but not copied = silent
           # 404. Best-effort copy so an absent shard never blocks the deploy.
           cp holdbreak.json _site/ 2>/dev/null || true
+          cp holdbreak-52w.json _site/ 2>/dev/null || true   # the profile heatmap's Last 52 weeks (founder 2026-11-26)
           # TEN-206 item 3 Situational rows (build-situational.js, daily styles job).
           cp situational.json _site/ 2>/dev/null || true
           # entry_lists.json (protennislive draw half, Mac cron) is RETIRED — founder ruling 2026-10-20: the Entry list

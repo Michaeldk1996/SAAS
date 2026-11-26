@@ -38,8 +38,6 @@
   // ─── Profile v4 (handoff 2026-11-14) · the cut-offs Michael sets, in ONE place ──────────────────────────────
   // Placeholder values from the handoff; every drawer reads them from here, never a literal of its own.
   var PP4 = {
-    STK_MINP: 30,          // Streaks: priced matches a run state needs before it earns a verdict
-    STK_EDGE: 1,           // Streaks: yield gap (pp) beyond which a state is Back him / Fade him
     CAL_MIN: 5,            // Calendar: priced matches before a rate shows
     CAL_THIN: 10,          // Calendar: below this a shown rate is a thin sample
     CAL_PICK_MIN: 20,      // Calendar: matches played before a swing / month can be best or worst (founder 2026-11-19)
@@ -47,6 +45,7 @@
     SPEED_BAND_GAP: 0.08,  // Court speed: fast above +0.08 / slow below -0.08 against its SURFACE's average (founder 2026-11-19)
     SPEED_YEAR_MIN: 5,     // Court speed: venues a season needs on a surface before that season's own average is used
     ALT_CUT_M: 500,        // Court speed: venue altitude (m) at or above which a match is "Altitude"
+    ALT_FAST_M: 350,       // Court speed: a venue at or above this height (m) is Fast, whatever its reading (founder 2026-11-26)
     SPL_MINB: 15,          // Level & round: matches a row needs to be a summary box / coloured vs tour
     HB_MIN: 10,            // Live trading heatmap: games a cell needs before it shows a rate and a colour
     MTO_WINDOW_MONTHS: 12, // MTO badge: medical time-outs within this many months
@@ -386,6 +385,10 @@
     // TEN-384: clickable tile hover = --tile-hover + --edge-16; ribbon chip hover = --edge-24.
     // v4 reference: a tile's hover lifts its ring to 16% only (style-hover border-color), no background change
     '.pp2-box:hover{border-color:var(--edge-16)!important;}' +
+    // founder 2026-11-26: every clickable box shows a hover outline — the Recent form W/L squares and the ledger rows
+    // had none. One 1px inset ring, 70% ink on the tinted squares so it reads on green / red.
+    '.pp2-strip-cell[data-pp2]:hover{box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--text) 70%, transparent);}' +
+    '.pp2-ledger-row[data-pp2]:hover{box-shadow:inset 0 0 0 1px var(--edge-16);}' +
     // v4 §1 · the MTO badge's ring goes full red on hover; the popover's close button goes ink with a 20% ring
     '.pp2-mto:hover{border-color:var(--neg)!important;}' +
     '.pp2-mtox:hover{color:var(--text)!important;border-color:var(--pp-x-edge-20)!important;}' +
@@ -4022,7 +4025,6 @@
   // new one on the next frame (pp2PgThumb in repaint).
   var PAGE_SWITCH = {
     career: function () { return { hook: 'career-tab', tabs: [['record', 'Record'], ['ratings', 'Ratings']], cur: state.careerTab === 'ratings' ? 'ratings' : 'record' }; },
-    season: function () { return { hook: 'cal-tab', tabs: [['calendar', 'Calendar'], ['streaks', 'Streaks']], cur: state.seasonTab === 'streaks' ? 'streaks' : 'calendar' }; },
     styles: function () { return { hook: 'sty-tab', tabs: [['record', 'Record'], ['grid', 'Playing styles']], cur: state.styTab === 'grid' ? 'grid' : 'record' }; },
     market: function () { return { hook: 'market-tab', tabs: [['winner', 'Match winner'], ['lines', 'Derived lines']], cur: state.marketTab === 'lines' ? 'lines' : 'winner' }; },
     splits: function () { return { hook: 'spl-view', tabs: [['results', 'Results'], ['sets', 'Sets & games'], ['service', 'Service']],
@@ -6668,7 +6670,7 @@
   function renderTournModal(p) {
     var views = tournViews(p);
     var q = String(state.tournQuery || '').toLowerCase();
-    var lvl = state.tourLevel || 'all', sf = state.tourSurf || 'all';
+    var lvl = state.tourLevel || 'ATP', sf = state.tourSurf || 'all';   // founder 2026-11-26: ATP is the default level
     var shown = tournSorted(views.filter(function (t) {
       if (q && !(t.display.toLowerCase().indexOf(q) >= 0 || t.name.toLowerCase().indexOf(q) >= 0 ||
         tournLevelMeta(t.level).toLowerCase().indexOf(q) >= 0)) return false;
@@ -8509,7 +8511,7 @@
     function roleOf(r) {
       if (!((r.cents != null || r.joinRole) && r.price != null && r.price >= 1.01)) return null;
       if (r.oppPrice != null && r.oppPrice >= 1.01 && r.oppPrice !== r.price) return r.price < r.oppPrice ? 'fav' : 'dog';
-      return (MEC ? MEC.isFavPrice(r.price) : r.price < 2) ? 'fav' : 'dog';
+      return (MEC ? MEC.isFavPrice(r.price) : r.price < 1.95) ? 'fav' : 'dog';
     }
     for (var i = 0; i < scope.length; i++) {
       var r = scope[i];
@@ -8691,7 +8693,7 @@
     var out = { all: { n: 0, w: 0 }, fav: { n: 0, w: 0 }, dog: { n: 0, w: 0 }, none: { n: 0, w: 0 }, b365: 0, priced: 0, rows: rows };
     rows.forEach(function (r) {
       var priced = (r.cents != null || r.joinRole) && r.price != null && r.price >= 1.01;
-      var k = priced ? ((MEC ? MEC.isFavPrice(r.price) : r.price < 2) ? 'fav' : 'dog') : 'none';
+      var k = priced ? ((MEC ? MEC.isFavPrice(r.price) : r.price < 1.95) ? 'fav' : 'dog') : 'none';
       out.all.n++; out[k].n++;
       if (r.won) { out.all.w++; out[k].w++; }
       if (priced) { out.priced++; if (/bet365|^b$/i.test(String(r.book || ''))) out.b365++; }
@@ -8727,7 +8729,7 @@
   // shared drill box. Colour by sign only (Vs field and its bar); every other figure white.
   var LC_FM_KEYS = ['lcFmt', 'lcSpeed', 'lcTier', 'lcBandF', 'lcArch'];
   var LC_BAND_OPTS = [['all', 'All prices'], ['b0', 'Heavy fav 1.01–1.20'], ['b1', 'Clear fav 1.21–1.35'], ['b2', 'Fav 1.36–1.50'],
-    ['b3', 'Slight fav 1.51–1.70'], ['b4', 'Coin-flip fav 1.71–1.99'], ['b5', 'Slight dog 2.00–2.49'], ['b6', 'Dog 2.50–2.99'],
+    ['b3', 'Slight fav 1.51–1.70'], ['b4', 'Coin-flip fav 1.71–1.94'], ['b5', 'Slight dog 1.95–2.49'], ['b6', 'Dog 2.50–2.99'],
     ['b7', 'Big dog 3.00–3.99'], ['b8', 'Long dog 4.00–5.99'], ['b9', 'Longshot 6.00+']];
   var LC_INFO1 = { what: 'How often his matches landed on each derived line, from the set scores on record.', defs: [
     ['Line', 'A games handicap, set handicap or total built from the final score, not a bet he placed.'],
@@ -9395,8 +9397,9 @@
   var MK_BANDS = [
     ['fav', '1.01 \u2013 1.20', 'Heavy favourite', 1.01, 1.21], ['fav', '1.21 \u2013 1.35', 'Clear favourite', 1.21, 1.36],
     ['fav', '1.36 \u2013 1.50', 'Favourite', 1.36, 1.51], ['fav', '1.51 \u2013 1.70', 'Slight favourite', 1.51, 1.71],
-    ['fav', '1.71 \u2013 1.99', 'Near coin-flip', 1.71, 2.00],
-    ['dog', '2.00 \u2013 2.49', 'Slight underdog', 2.00, 2.50], ['dog', '2.50 \u2013 2.99', 'Underdog', 2.50, 3.00],
+    // founder 2026-11-26: Near coin-flip ends at 1.94, Slight underdog starts at 1.95 (measured on 82,574 priced sides: 33 favourites at 1.95+ and 12 underdogs under 1.95 sit across the line, 45 in all, against 888 underdogs under 2.00 at the old cut)
+    ['fav', '1.71 \u2013 1.94', 'Near coin-flip', 1.71, 1.95],
+    ['dog', '1.95 \u2013 2.49', 'Slight underdog', 1.95, 2.50], ['dog', '2.50 \u2013 2.99', 'Underdog', 2.50, 3.00],
     ['dog', '3.00 \u2013 3.99', 'Big underdog', 3.00, 4.00], ['dog', '4.00 \u2013 5.99', 'Long underdog', 4.00, 6.00],
     ['dog', '6.00 +', 'Longshot', 6.00, Infinity]];
   var MK_FIRST_DOG = 5;   // index of the 2.00 band: the dashed hairline sits above it
@@ -11084,7 +11087,7 @@
       if (!careerHistorySettled(p.key)) return calHeadRow(p) + speedEmptyBox('The career match store has not loaded, so the calendar cannot be drawn yet.');
       return calHeadRow(p) + calEmpty('No dated career match rows on record, so there is no match to place in a calendar.');
     }
-    return state.seasonTab === 'streaks' ? calHeadRow(p) + renderStreaksV2(p) : renderCalendarV2(p);
+    return renderCalendarV2(p);   // founder 2026-11-26: Streaks removed; the Calendar record is Calendar only
   }
   function renderCalendarV2(p) {
     FM_KEYS.cal = CAL_FM_KEYS;
@@ -11100,8 +11103,11 @@
     var view = state.calView === 'month' ? 'month' : 'swing';
     var years = []; W0.forEach(function (x) { if (years.indexOf(x.r.year) < 0) years.push(x.r.year); });
     years.sort(function (a, b) { return String(b).localeCompare(String(a)); });
+    // founder 2026-11-26: a swing he never played in this selection gets no column (grid and By swing alike)
+    var swShown = CAL_SW.filter(function (s) { return M.some(function (x) { return x.sw === s.k; }); });
+    if (!swShown.length) swShown = CAL_SW;
     var cols = view === 'swing'
-      ? CAL_SW.map(function (s) { return { key: 'sw|' + s.k, label: s.name, hover: s.hover, code: s.code, sub: s.team ? 'mixed' : s.surf.toLowerCase(), muted: !!s.team,
+      ? swShown.map(function (s) { return { key: 'sw|' + s.k, label: s.name, hover: s.hover, code: s.code, sub: s.team ? 'mixed' : s.surf.toLowerCase(), muted: !!s.team,
         pred: function (x) { return x.sw === s.k; }, title: function (y) { return s.name + ' ' + MIDDOT + ' ' + y; } }; })
       : CAL_MON.map(function (m, i) { return { key: 'm|' + i, label: CAL_MONF[i], code: m.toUpperCase(), sub: CAL_MDOM[i].toLowerCase(), muted: false,
         pred: function (x) { return x.r.mon === i; }, title: function (y) { return CAL_MONF[i] + ' ' + y; } }; });
@@ -11117,19 +11123,26 @@
       var ms = M.filter(function (x) { return x.sw === s.k; }), st = calStat(ms);
       var oth = calStat(M.filter(function (x) { return x.sw !== s.k && x.sw !== 'team'; }));
       var ss = seasonsOf(ms);
-      return { s: s, ms: ms, st: st, pp: st.y != null && oth.y != null ? st.y - oth.y : null, played: ss.played, above: ss.above };
+      return { s: s, ms: ms, st: st, pp: st.y != null && oth.y != null ? st.y - oth.y : null, wp: st.n && oth.n ? st.pct - oth.pct : null, played: ss.played, above: ss.above };
     });
-    // Best / worst swing and month = win rate, among those with CAL_PICK_MIN matches played (founder 2026-11-19).
-    var rated = pend ? [] : swStats.filter(function (x) { return x.st.n >= CAL_PICK_MIN; });
+    // Best / worst swing and month = win rate. founder 2026-11-26: the CAL_PICK_MIN floor is Career's only, and a tile is
+    // never a dash while the window holds a match: the floor steps down (Career PICK_MIN → CAL_MIN → 1) until one qualifies.
+    var pickFloors = calWinOf() === 'career' ? [CAL_PICK_MIN, CAL_MIN, 1] : [CAL_MIN, 1];
+    var ladder = function (list, floors) {
+      var fl = floors || pickFloors;
+      for (var k = 0; k < fl.length; k++) { var q = list.filter(function (x) { return x.st.n >= fl[k]; }); if (q.length) return q; }
+      return [];
+    };
+    var rated = pend ? [] : ladder(swStats);
     var pickOf = function (list, dir) { return list.slice().sort(function (a, b) { return dir * (b.st.pct - a.st.pct) || b.st.n - a.st.n; })[0]; };
     // month view: the same picks over calendar months (team events out, as the swings)
     var moStats = CAL_MON.map(function (m, i) {
       var ms = M.filter(function (x) { return x.r.mon === i && x.sw !== 'team'; }), st = calStat(ms);
       var oth = calStat(M.filter(function (x) { return x.r.mon !== i && x.sw !== 'team'; }));
       var ss = seasonsOf(ms);
-      return { name: CAL_MONF[i], st: st, pp: st.y != null && oth.y != null ? st.y - oth.y : null, played: ss.played, above: ss.above };
+      return { name: CAL_MONF[i], st: st, pp: st.y != null && oth.y != null ? st.y - oth.y : null, wp: st.n && oth.n ? st.pct - oth.pct : null, played: ss.played, above: ss.above };
     });
-    var moRated = pend ? [] : moStats.filter(function (x) { return x.st.n >= CAL_PICK_MIN; });
+    var moRated = pend ? [] : ladder(moStats);
     var opener = [], rest = [], r1 = [], later = [];
     years.forEach(function (y) {
       nonTeam.forEach(function (s) {
@@ -11151,7 +11164,8 @@
       var ms = SP.filter(function (x) { return x.surf === sf; }), o = calStat(SP.filter(function (x) { return x.surf !== sf; }));
       var st = calStat(ms);
       return { sf: sf, st: st, pp: st.n && o.n ? st.pct - o.pct : null };
-    }).filter(function (x) { return x.st.n >= CAL_MIN; }).sort(function (a, b) { return b.st.pct - a.st.pct; });
+    });
+    sStats = ladder(sStats, [CAL_MIN, 1]).sort(function (a, b) { return b.st.pct - a.st.pct || b.st.n - a.st.n; });
     var wordPct = function (v) { return Math.round(v) + '%'; };
     var ppTxt = function (v) { return v == null ? '' : signed(Math.round(v * 10) / 10, 1, 'pp'); };
     var yieldTxt = function (st) { return st.priced >= CAL_MIN && st.y != null ? signed(st.y, 1, '%') : DASH; };
@@ -11164,17 +11178,17 @@
     var restSt = calStat(rest), laterSt = calStat(later);
     var tiles = [
       bs ? tile('Best surface', bs.sf, bs.st, bs.pp == null ? '' : signed(Math.round(bs.pp * 10) / 10, 1, 'pp') + ' win rate vs other surfaces')
-        : tile('Best surface', DASH, null, 'no surface with ' + CAL_MIN + ' matches')];
+        : tile('Best surface', DASH, null, 'no matches in this selection')];
     if (view === 'swing') {
       var bw = pickOf(rated, 1), ww = pickOf(rated, -1);
-      tiles.push(bw ? tile('Best swing', bw.s.name, bw.st, seasonsLine(bw)) : tile('Best swing', DASH, null, 'no swing with ' + CAL_PICK_MIN + ' matches'));
-      tiles.push(ww ? tile('Worst swing', ww.s.name, ww.st, seasonsLine(ww)) : tile('Worst swing', DASH, null, 'no swing with ' + CAL_PICK_MIN + ' matches'));
+      tiles.push(bw ? tile('Best swing', bw.s.name, bw.st, seasonsLine(bw)) : tile('Best swing', DASH, null, 'no matches in this selection'));
+      tiles.push(ww ? tile('Worst swing', ww.s.name, ww.st, seasonsLine(ww)) : tile('Worst swing', DASH, null, 'no matches in this selection'));
       tiles.push(tile('Swing opener', 'First event of a swing', opener.length ? calStat(opener) : null,
         restSt.n ? 'rest of the swing: ' + wordPct(restSt.pct) + ' win rate' + (restSt.priced >= CAL_MIN && restSt.y != null ? ' ' + MIDDOT + ' ' + signed(restSt.y, 1, '%') + ' yield' : '') : ''));
     } else {
       var bm = pickOf(moRated, 1), wm = pickOf(moRated, -1);
-      tiles.push(bm ? tile('Best month', bm.name, bm.st, seasonsLine(bm)) : tile('Best month', DASH, null, 'no month with ' + CAL_PICK_MIN + ' matches'));
-      tiles.push(wm ? tile('Worst month', wm.name, wm.st, seasonsLine(wm)) : tile('Worst month', DASH, null, 'no month with ' + CAL_PICK_MIN + ' matches'));
+      tiles.push(bm ? tile('Best month', bm.name, bm.st, seasonsLine(bm)) : tile('Best month', DASH, null, 'no matches in this selection'));
+      tiles.push(wm ? tile('Worst month', wm.name, wm.st, seasonsLine(wm)) : tile('Worst month', DASH, null, 'no matches in this selection'));
       tiles.push(tile('Round 1 record', 'First match at an event', r1.length ? calStat(r1) : null,
         laterSt.n ? 'later rounds: ' + wordPct(laterSt.pct) + ' win rate' + (laterSt.priced >= CAL_MIN && laterSt.y != null ? ' ' + MIDDOT + ' ' + signed(laterSt.y, 1, '%') + ' yield' : '') : ''));
     }
@@ -11243,16 +11257,13 @@
       tilesHtml +
       '<div data-pp2-calsc="a" style="overflow-x:auto;"><div style="display:grid;grid-template-columns:' + GCOLS + ';gap:0 4px;align-items:center;min-width:' + MINW + 'px;">' + heads + body + foot + '</div></div></div>';
     // ── By swing (v3 D3) — one aligned table with the season grid in the Swing view ──
-    var maxPP = Math.max.apply(null, [1].concat(rated.map(function (x) { return Math.abs(x.pp); })));
     var swingV = view === 'swing';
-    var nC = swingV ? CAL_SW.length : 12;
+    var nC = swingV ? swShown.length : 12;
     var TCA = '128px repeat(' + nC + ',minmax(0,1fr)) 72px', IN = 'repeat(' + nC + ',minmax(0,1fr))';
-    var moRatedPP = moStats.filter(function (x) { return x.st.priced >= CAL_MIN && x.pp != null; });
-    if (!swingV) maxPP = Math.max.apply(null, [1].concat(moRatedPP.map(function (x) { return Math.abs(x.pp); })));
     var rowsT = !swingV ? moStats.map(function (x, i) {
       return { s: { k: 'm' + i, name: CAL_MONF[i], code: CAL_MON[i].toUpperCase(), hover: CAL_MONF[i] }, x: x, m: x.st,
         ok: x.st.priced >= CAL_MIN && x.pp != null, n: x.st.priced, played: x.played, above: x.above };
-    }) : CAL_SW.map(function (s) {
+    }) : swShown.map(function (s) {
       if (s.team) {
         var ms = M.filter(function (x) { return x.sw === 'team'; }), ss = seasonsOf(ms), t = calStat(ms);
         return { s: s, team: true, m: t, played: ss.played, above: ss.above };
@@ -11262,13 +11273,19 @@
     });
     var LAB = 'font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);grid-column:1;';
     var RULE = 'border-top:1px solid var(--line);';
+    // founder 2026-11-26: the bars are WIN RATE vs the other swings (months), not yield — a swing he wins 87% of is never
+    // red. A bar shows from CAL_MIN matches played; the scale is the largest bar DRAWN, so no bar can outgrow its 96px plot
+    // (the l52 bug: the scale came from the 20-match picks while every 5-priced swing drew, so −31.8 on a scale of 1 ran
+    // the height of the table).
+    var barOk = function (r) { return !r.team && r.x && r.x.wp != null && r.m.n >= CAL_MIN; };
+    var maxPP = Math.max.apply(null, [1].concat(rowsT.filter(barOk).map(function (r) { return Math.abs(r.x.wp); })));
     var bars = rowsT.map(function (r) {
-      var ok = !r.team && r.ok, thin = ok && r.n < CAL_THIN;
-      var up = ok && r.x.pp > 0 ? r.x.pp / maxPP * 100 : 0, dn = ok && r.x.pp < 0 ? -r.x.pp / maxPP * 100 : 0;
-      var col = ok ? signColour(r.x.pp) : 'transparent', op = thin ? 0.3 : 1;
+      var ok = barOk(r), thin = ok && r.m.n < CAL_THIN, wp = ok ? r.x.wp : 0;
+      var up = wp > 0 ? Math.min(100, wp / maxPP * 100) : 0, dn = wp < 0 ? Math.min(100, -wp / maxPP * 100) : 0;
+      var col = ok ? signColour(Math.round(wp * 10) / 10) : 'transparent', op = thin ? 0.3 : 1;
       return '<span style="position:relative;display:flex;flex-direction:column;align-items:center;height:100%;">' +
         '<span style="flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center;"><span style="width:12px;height:' + up.toFixed(1) + '%;background:' + col + ';opacity:' + op + ';border-radius:2px 2px 0 0;"></span></span>' +
-        '<span style="flex:1;width:100%;display:flex;align-items:flex-start;justify-content:center;">' + (!r.team && !r.ok ? '<span style="width:5px;height:5px;margin-top:-2px;border-radius:50%;background:var(--text-label);opacity:0.6;"></span>' : '') +
+        '<span style="flex:1;width:100%;display:flex;align-items:flex-start;justify-content:center;">' + (!r.team && !ok ? '<span style="width:5px;height:5px;margin-top:-2px;border-radius:50%;background:var(--text-label);opacity:0.6;"></span>' : '') +
           '<span style="width:12px;height:' + dn.toFixed(1) + '%;background:' + col + ';opacity:' + op + ';border-radius:0 0 2px 2px;"></span></span></span>';
     }).join('');
     var FAINT = 'color-mix(in srgb, var(--text-label) 60%, transparent)';
@@ -11399,250 +11416,9 @@
       empty: '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:40px 32px;text-align:center;">' +
         '<span style="font-size:13.5px;font-weight:700;color:var(--text);">No matches here</span>' +
         '<span style="font-size:12.5px;color:var(--text-label);line-height:1.5;">He did not play this part of the calendar in ' + esc(y) + '. Try another season, or widen the surface filter.</span></div>'
-    }).replace('class="pp2-drillbox"', 'class="pp2-drillbox" data-pp2-drawer="cal" data-pp2-cal-drill="1"');
-  }
-
-  // ── Streaks (v3 D4, founder 2026-11-12) — runs over his played matches in date order, read on the Calendar band's
-  // Window + Surface only (the Calendar page's Filters do not reach it). Cut-offs are named constants Michael sets:
-  // a state needs STK_MINP priced matches, and a yield gap beyond STK_EDGE pp, to earn a verdict.
-  var STK_MINP = PP4.STK_MINP, STK_EDGE = PP4.STK_EDGE;
-  var STK_NAMES = { W1: 'After 1 win', W2: 'After 2 wins', 'W3+': 'After 3+ wins', L1: 'After 1 loss', L2: 'After 2 losses', 'L3+': 'After 3+ losses' };
-  var STK_NEXT = { W1: 'W2', W2: 'W3', 'W3+': 'W4+', L1: 'L2', L2: 'L3', 'L3+': 'L4+' };
-  var RUN_INFO1 = { what: 'When to back him, when to fade him, and his longest winning and losing runs.', defs: [
-    ['Run', 'Consecutive wins or losses, across tournaments. A walkover does not break or extend a run.'],
-    ['Back him', 'The state after which backing him in the next match has paid best against backing him in every match.'],
-    ['Fade him', 'The state after which it has paid worst.'],
-    ['Longest', 'The longest run of its kind on record, with where it started and ended.']] };
-  var RUN_INFO2 = { what: 'What usually happens in the match right after a run.', defs: [
-    ['State', 'The run he was on going into the match: after 1, 2, 3 or more wins or losses.'],
-    ['Next match', 'His record in the match that followed that state.'],
-    ['Chance', 'How often the run went on: another win after wins, another loss after losses. The tick marks 50%.'],
-    ['Yield', 'Flat 1u on him in those next matches at the closing price, priced matches only.'],
-    ['Verdict', 'Back him when that yield is more than ' + STK_EDGE + 'pp above the yield of backing him in every priced match, fade him when more than ' +
-      STK_EDGE + 'pp below. Needs ' + STK_MINP + ' priced matches.']] };
-  function streakSeq(p) {
-    return calRows(p).filter(function (x) { return calInWindow(x) && (calSurfOf() === 'all' || x.surf === calSurfOf()); })
-      .slice().sort(function (a, b) { return String(a.r.date).localeCompare(String(b.r.date)) || a.i - b.i; });
-  }
-  function streakRuns(seq) {
-    var runs = [];
-    for (var i = 0; i < seq.length;) {
-      var j = i;
-      while (j < seq.length && seq[j].r.won === seq[i].r.won) j++;
-      runs.push({ won: seq[i].r.won, len: j - i, start: i, end: j - 1 });
-      i = j;
-    }
-    return runs;
-  }
-  // The whole model: states, each state's next matches, its verdict against the window's every-priced-match yield.
-  function stkModel(p) {
-    var seq = streakSeq(p), runs = streakRuns(seq), base = calStat(seq), after = {};
-    var runLen = 0, runWon = null;
-    seq.forEach(function (x) {
-      if (runWon != null) {
-        var k = (runWon ? 'W' : 'L') + (runLen >= 3 ? '3+' : String(runLen));
-        (after[k] = after[k] || []).push(x);
-      }
-      if (runWon === x.r.won) runLen++; else { runWon = x.r.won; runLen = 1; }
-    });
-    var vd = {};
-    Object.keys(STK_NAMES).forEach(function (k) {
-      var st = calStat(after[k] || []);
-      var vs = st.priced && st.y != null && base.y != null ? Math.round((st.y - base.y) * 10) / 10 : null;
-      var v = st.priced < STK_MINP || vs == null ? 'few' : vs > STK_EDGE ? 'back' : vs < -STK_EDGE ? 'fade' : 'none';
-      vd[k] = { k: k, st: st, vs: vs, v: v, label: { few: 'Too few matches', back: 'Back him', fade: 'Fade him', none: 'No edge' }[v],
-        color: v === 'back' ? 'var(--pos)' : v === 'fade' ? 'var(--neg)' : 'var(--text-label)',
-        note: v === 'few' ? st.priced + ' priced' : signed(vs, 1, 'pp') + ' yield' };
-    });
-    return { seq: seq, runs: runs, base: base, after: after, vd: vd };
-  }
-  function stkSpan(seq, run) {
-    var a = seq[run.start].r, b = seq[run.end].r, ma = CAL_MON[a.mon], mb = CAL_MON[b.mon];
-    return a.year === b.year ? (ma === mb ? ma : ma + ENDASH + mb) + ' ' + a.year : ma + ' ' + a.year + ENDASH + mb + ' ' + b.year;
-  }
-  function renderStreaksV2(p) {
-    var M_ = 'font-family:\'IBM Plex Mono\',monospace;';
-    var S = stkModel(p), seq = S.seq, runs = S.runs, n = seq.length, pend = shardPending(p);
-    var scope = (calWinOf() === 'career' ? 'career' : 'last 52 weeks') + (calSurfOf() === 'all' ? '' : ' ' + MIDDOT + ' ' + calSurfOf().toLowerCase());
-    if (!n) return calEmpty('No matches in this window and surface.');
-    var maxRun = runs.reduce(function (a, x) { return Math.max(a, x.len); }, 1);
-    var bestOf = function (won) { return runs.filter(function (x) { return x.won === won; }).sort(function (a, b) { return b.len - a.len || b.start - a.start; })[0]; };
-    var bw = bestOf(true), bl = bestOf(false);
-    // ── the four tiles: Back him / Fade him = the state whose next-match yield sits furthest above / below the window's ──
-    var pickT = function (dir) {
-      if (pend) return { value: '&nbsp;', fig: '', sub: '&nbsp;' };
-      var c = Object.keys(S.vd).map(function (k) { return S.vd[k]; }).filter(function (x) { return x.v !== 'few'; })
-        .sort(function (a, b) { return (b.vs - a.vs) * dir; })[0];
-      if (!c || c.vs * dir <= STK_EDGE) return { value: DASH, faint: true, fig: '', sub: 'no state stands out' };
-      return { value: esc(STK_NAMES[c.k]), fig: signed(c.vs, 1, 'pp'), figColor: dir > 0 ? 'var(--pos)' : 'var(--neg)', sub: 'yield vs ' + (calWinOf() === 'career' ? 'career' : 'the window') };
-    };
-    var secHead = function (title, sub) { return '<span style="display:flex;flex-direction:column;gap:4px;min-width:0;"><span style="font-size:18px;font-weight:800;color:var(--text);line-height:1.2;">' + title + '</span>' +
-      '<span style="font-size:13px;color:var(--text-label);line-height:1.4;">' + sub + '</span></span>'; };
-    var tLab = function (cap) { return '<span style="font-size:11.5px;font-weight:600;color:var(--text-label);">' + cap + '</span>'; };
-    var TILE = 'background:var(--card);border:1px solid var(--pp-x-edge-9);border-radius:11px;padding:14px 12px 13px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px;min-width:0;';
-    var wordTile = function (cap, t) {
-      return '<div style="' + TILE + '">' + tLab(cap) +
-        '<span style="font-size:16px;font-weight:700;line-height:20px;color:' + (t.faint ? 'var(--text-label)' : 'var(--text)') + ';">' + t.value + '</span>' +
-        '<span style="font-size:11.5px;color:var(--text-label);line-height:19px;white-space:nowrap;">' +
-          (t.fig ? '<span style="' + M_ + 'font-weight:600;color:' + t.figColor + ';">' + t.fig + '</span> ' : '') + t.sub + '</span></div>';
-    };
-    var runTile = function (cap, run, letter) {
-      return '<div style="' + TILE + '">' + tLab(cap) +
-        '<span style="' + M_ + 'font-size:20px;font-weight:700;line-height:20px;color:' + (run ? 'var(--text)' : 'var(--text-label)') + ';">' + (run ? letter + run.len : DASH) + '</span>' +
-        '<span style="font-size:11.5px;color:var(--text-label);line-height:19px;">' + (run ? esc(stkSpan(seq, run)) : DASH) + '</span></div>';
-    };
-    var tiles = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-bottom:22px;">' +
-      wordTile('Back him', pickT(1)) + wordTile('Fade him', pickT(-1)) + runTile('Longest win run', bw, 'W') + runTile('Longest losing run', bl, 'L') + '</div>';
-    // ── the run timeline: one 6px bar per run, 1px apart; height = run ÷ longest × 68 (min 3); wins up, losses down ──
-    var RW = 7, specW = runs.length * RW - 1;
-    var barsHtml = runs.map(function (x, i) {
-      var hh = Math.max(3, Math.round(x.len / maxRun * 68));
-      var up = x.won ? 68 - hh : 68, dn = x.won ? 68 : 68 - hh;
-      return '<span data-pp2="run-sel" data-pp2-run="' + i + '" data-v="' + i + '" data-tip="' + (x.won ? 'W' : 'L') + x.len + '|' + esc(stkSpan(seq, x)) + '" ' +
-        'style="width:6px;flex:none;height:100%;display:flex;flex-direction:column;cursor:pointer;">' +
-        '<span style="display:block;height:' + up + 'px;pointer-events:none;"></span>' +
-        '<span class="pp2-runbar" data-won="' + (x.won ? 1 : 0) + '" style="display:block;height:' + hh + 'px;background:' +
-          (x.won ? 'color-mix(in srgb, var(--pos) 62%, transparent)' : 'color-mix(in srgb, var(--neg) 55%, transparent)') + ';border-radius:1px;box-shadow:none;pointer-events:none;"></span>' +
-        '<span style="display:block;height:' + dn + 'px;pointer-events:none;"></span></span>';
-    }).join('');
-    // the year axis: each year's width = the runs that start in it; too narrow (< 34px) for a label = blank
-    var yrs = [];
-    runs.forEach(function (x) { var y = seq[x.start].r.year, last = yrs[yrs.length - 1]; if (last && last.y === y) last.n++; else yrs.push({ y: y, n: 1 }); });
-    var yearsHtml = yrs.map(function (s) {
-      var w = s.n * RW;
-      return '<span style="width:' + w + 'px;flex:none;box-sizing:border-box;border-left:1px solid var(--edge-6);font-family:var(--font-words);font-size:10.5px;' +
-        'font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);padding:6px 0 0 5px;overflow:hidden;white-space:nowrap;">' + (w >= 34 ? esc(s.y) : '') + '</span>';
-    }).join('');
-    var firstYear = seq[0].r.year;
-    var timeline = '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 14px;padding-top:22px;border-top:1px solid var(--edge-6);">' +
-        secHead('Run timeline', 'One bar per run ' + MIDDOT + ' click a bar for its matches') +
-        '<span style="display:inline-flex;gap:16px;font-size:12px;color:var(--text-label);">' +
-          '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:6px;height:6px;border-radius:50%;background:var(--pos);"></span>Wins up</span>' +
-          '<span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:6px;height:6px;border-radius:50%;background:var(--neg);"></span>Losses down</span></span></div>' +
-      '<div style="display:grid;grid-template-columns:28px minmax(0,1fr);gap:0 8px;margin-bottom:22px;">' +
-        '<span style="position:relative;height:140px;margin-top:30px;' + M_ + 'font-size:9.5px;color:var(--text-label);"><span style="position:absolute;right:0;top:0;">' + maxRun + '</span>' +
-          '<span style="position:absolute;right:0;top:50%;transform:translateY(-50%);">0</span><span style="position:absolute;right:0;bottom:0;">' + maxRun + '</span></span>' +
-        '<div style="position:relative;min-width:0;">' +
-          '<div data-pp2-runsc="1" data-specw="' + specW + '" style="overflow-x:auto;padding-bottom:4px;"><div style="position:relative;width:' + specW + 'px;padding-top:30px;">' +
-            // the hover tip: one element, filled and moved by the pointer handler (no repaint), hidden until a bar is under it
-            '<span data-pp2-runtip="1" style="display:none;position:absolute;top:0;left:0;transform:translateX(-50%);z-index:2;pointer-events:none;white-space:nowrap;' +
-              'background:var(--pp-x-lifted);border:1px solid ' + EDGE_14 + ';border-radius:8px;padding:6px 10px;box-shadow:var(--shadow-menu);' +
-              M_ + 'font-size:11px;color:var(--text-soft);"></span>' +
-            '<div data-pp2-runbars="1" style="position:relative;display:flex;align-items:center;gap:1px;height:140px;">' +
-              '<span style="position:absolute;left:0;right:0;top:50%;height:1px;background:color-mix(in srgb, var(--text) 18%, transparent);"></span>' + barsHtml + '</div>' +
-            '<div style="display:flex;border-top:1px solid var(--edge-6);">' + yearsHtml + '</div></div></div>' +
-          // while not at the start: a 72px fade and the chip that scrolls back by 80% of the width (shown by onRunScroll)
-          '<span data-pp2-runfade="1" style="display:none;position:absolute;left:0;top:30px;height:140px;width:72px;pointer-events:none;' +
-            'background:linear-gradient(90deg, var(--card) 0%, color-mix(in srgb, var(--card) 0%, transparent) 100%);"></span>' +
-          '<span data-pp2="run-earlier" class="pp2-runchip" style="display:none;position:absolute;left:0;top:0;cursor:pointer;white-space:nowrap;background:var(--pp-x-lifted);' +
-            'border:1px solid ' + EDGE_14 + ';border-radius:8px;padding:6px 11px;font-size:12px;font-weight:600;color:var(--text-soft);">' +
-            '← Scroll for earlier years ' + MIDDOT + ' back to ' + esc(firstYear) + '</span>' +
-        '</div></div>';
-    // ── what follows a run: two ladders ──
-    var ladRow = function (k, i) {
-      var v = S.vd[k], st = v.st, win = k.charAt(0) === 'W';
-      var ch = st.n ? (win ? st.pct : 100 - st.pct) : null;
-      return '<div style="display:flex;flex-direction:column;gap:8px;padding:12px 0;border-top:1px solid ' + (i ? 'var(--line)' : 'transparent') + ';">' +
-        '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;">' +
-          '<span style="' + M_ + 'font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;">' + k + ' <span style="color:var(--text-label);font-weight:400;">→</span> ' + STK_NEXT[k] + '</span>' +
-          '<span style="' + M_ + 'font-size:18px;font-weight:700;line-height:1;color:' + (ch == null ? 'var(--text-label)' : 'var(--text)') + ';">' + (ch == null ? DASH : ch.toFixed(1) + '%') + '</span></div>' +
-        '<span style="position:relative;display:block;height:4px;border-radius:2px;background:var(--pp-x-track-7);">' +
-          (ch == null ? '' : '<span style="position:absolute;left:0;top:0;bottom:0;width:' + ch.toFixed(1) + '%;background:' +
-            (win ? 'color-mix(in srgb, var(--pos) 62%, transparent)' : 'color-mix(in srgb, var(--neg) 55%, transparent)') + ';border-radius:2px;"></span>') +
-          '<span style="position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:color-mix(in srgb, var(--text) 32%, transparent);"></span></span>' +
-        '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">' +
-          '<span style="' + M_ + 'font-size:11.5px;color:var(--text-label);white-space:nowrap;">' + (st.n ? recordText(st.w, st.l) : DASH) + ' next match</span>' +
-          '<span style="display:flex;align-items:center;gap:8px;white-space:nowrap;">' +
-            (pend ? '&nbsp;' : '<span style="' + M_ + 'font-size:10.5px;color:var(--text-label);">' + v.note + '</span>' +
-              '<span style="font-size:11.5px;font-weight:600;color:' + v.color + ';">' + v.label + '</span>') + '</span></div></div>';
-    };
-    var ladder = function (title, keys) {
-      return '<div style="background:var(--card);border:1px solid var(--pp-x-edge-9);border-radius:11px;padding:16px 18px 4px;min-width:0;">' +
-        '<div style="font-size:14px;font-weight:700;color:var(--text);padding-bottom:12px;border-bottom:1px solid var(--edge-6);">' + title + '</div>' + keys.map(ladRow).join('') + '</div>';
-    };
-    var follows = '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;padding-top:22px;border-top:1px solid var(--edge-6);">' +
-        secHead('What follows a run', 'How often he wins the next match, against 50%') + '<span style="position:relative;z-index:3;display:inline-flex;">' + infoIcon('run2', Object.assign({ align: 'right', width: 420 }, RUN_INFO2)) + '</span></div>' +
-      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:8px;">' +
-        ladder('After a win', ['W1', 'W2', 'W3+']) + ladder('After a loss', ['L1', 'L2', 'L3+']) + '</div>';
-    var card = '<div style="position:relative;background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;padding:24px 24px 22px;">' +
-      infoCorner('run1', RUN_INFO1).replace('top:14px;right:14px', 'top:26px;right:24px') +
-      '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;padding-right:32px;">' +
-        secHead('Runs', esc(scope.charAt(0).toUpperCase() + scope.slice(1)) + ' ' + MIDDOT + ' ' + runs.length + ' runs ' + MIDDOT + ' longest ' + maxRun) + '</div>' +
-      tiles + timeline + follows + '</div>';
-    return card + stkRunBox(p, S, scope);
-  }
-  // The run box (a bar's click): the float-box chrome, six centred tiles, one read line, the run's matches.
-  function stkRunBox(p, S, scope) {
-    var idx = state.runSel, run = idx != null ? S.runs[idx] : null;
-    if (!run) return '';
-    var seq = S.seq, pend = shardPending(p), L = run.won ? 'W' : 'L';
-    var k = L + (run.len >= 3 ? '3+' : run.len), v = S.vd[k], st = v.st, nm = STK_NAMES[k].replace('After ', '');
-    var winWord = calWinOf() === 'career' ? 'career' : 'the window';
-    var base = S.base, dd = st.n && base.pct != null ? Math.round((st.pct - base.pct) * 10) / 10 : null;
-    var same = S.runs.filter(function (x) { return x.won === run.won && x.len >= run.len; }), went = same.filter(function (x) { return x.len > run.len; }).length;
-    var nxt = S.runs[idx + 1], endM = nxt ? seq[nxt.start] : null, endR = endM ? endM.r : null;
-    var col = function (x) { return x > 0 ? 'var(--pos)' : x < 0 ? 'var(--neg)' : 'var(--text-label)'; };
-    var few = v.v === 'few';
-    var tiles = [
-      { label: 'Run', fig: L + run.len, figColor: run.won ? 'var(--pos)' : 'var(--neg)', sub: stkSpan(seq, run),
-        tail: run.len === 1 ? (run.won ? 'a single win' : 'a single loss') : run.len + (run.won ? ' wins in a row' : ' losses in a row') },
-      { label: 'Runs this long', fig: String(same.length), sub: (same.length === 1 ? 'run of ' : 'runs of ') + L + run.len + '+', tail: went + ' went on to ' + L + (run.len + 1) },
-      !endR ? { label: 'How the run ended', fig: 'Still on', sub: 'the run he carries into his next match', tail: '' }
-        : { label: 'How the run ended', fig: (endR.won ? 'Won' : 'Lost') + (endR.price != null ? ' at ' + Number(endR.price).toFixed(2) : ''),
-          figColor: endR.won ? 'var(--pos)' : 'var(--neg)',
-          sub: endR.opp ? (endR.won ? 'beat ' : 'to ') + initialSurname(endR.opp) + (endR.round ? ' ' + MIDDOT + ' ' + endR.round : '') : 'match not on record',
-          tail: endR.opp ? [tournDisplayName(endR.event, null) || endR.event, CAL_MON[endR.mon] + ' ' + endR.year].filter(Boolean).join(' ' + MIDDOT + ' ') : '' },
-      { label: 'Next match after ' + nm, fig: st.n ? st.pct.toFixed(1) + '%' : DASH, sub: st.n ? recordText(st.w, st.l) : DASH,
-        tail: dd == null ? '' : signed(dd, 1, 'pp') + ' vs ' + winWord + ' ' + base.pct.toFixed(1) + '%' },
-      { label: 'Yield after ' + nm, fig: pend ? '&nbsp;' : st.priced && st.y != null ? signed(st.y, 1, '%') : DASH, figColor: few || !st.priced ? 'var(--text-label)' : col(st.y),
-        sub: pend ? '&nbsp;' : st.priced + ' priced', tail: pend || v.vs == null ? '' : signed(v.vs, 1, 'pp') + ' vs ' + winWord, tailColor: few ? 'var(--text-label)' : col(v.vs) },
-      { label: 'Verdict', fig: pend ? '&nbsp;' : few ? 'Too few' : v.label, figColor: v.color, sub: few ? 'matches to judge' : 'in the match after ' + nm, tail: few || pend ? '' : v.note }];
-    var read = pend ? '' : few ? 'Only ' + st.priced + ' priced matches after ' + nm + ', too few to judge.'
-      : 'Backing him in the match after ' + nm + ' has returned ' + (Math.abs(v.vs) <= STK_EDGE ? 'about the same as'
-        : Math.abs(v.vs).toFixed(1) + 'pp ' + (v.vs > 0 ? 'more' : 'less') + ' than') + ' backing him in every match.';
-    var M_ = 'font-family:\'IBM Plex Mono\',monospace;';
-    var tilesHtml = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-bottom:14px;">' + tiles.map(function (t) {
-      return '<div style="background:var(--card);border:1.25px solid var(--edge-6);border-radius:12px;padding:13px 12px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px;min-width:0;">' +
-        '<span style="font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(t.label) + '</span>' +
-        '<span style="' + M_ + 'font-size:21px;font-weight:700;line-height:1;color:' + (t.figColor || 'var(--text)') + ';">' + (t.fig === '&nbsp;' ? t.fig : esc(t.fig)) + '</span>' +
-        '<span style="font-size:11.5px;color:var(--text-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">' + (t.sub === '&nbsp;' ? t.sub : esc(t.sub || '')) + '&nbsp;</span>' +
-        '<span style="' + M_ + 'font-size:10px;color:' + (t.tailColor || 'var(--text-label)') + ';line-height:1.4;white-space:normal;text-wrap:pretty;">' + esc(t.tail || '') + '&nbsp;</span></div>';
-    }).join('') + '</div>';
-    // the run's matches: result square · Date · Opponent · Event · Rd · Score · Price · Opp · P&L; a row opens the match sheet
-    var GRID = 'display:grid;grid-template-columns:12px 64px minmax(0,1fr) minmax(0,0.8fr) 36px minmax(128px,auto) 46px 46px 54px;gap:0 10px;align-items:center;';
-    var heads = [['', 'left'], ['Date', 'left'], ['Opponent', 'left'], ['Event', 'left'], ['Rd', 'left'], ['Score', 'left'], ['Price', 'right'], ['Opp', 'right'], ['P&L', 'right']].map(function (h) {
-      return '<span style="position:sticky;top:0;background:var(--card);font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;' +
-        'color:var(--text-label);text-align:' + h[1] + ';padding-bottom:8px;border-bottom:1px solid color-mix(in srgb, var(--text) 12%, transparent);">' + esc(h[0]) + '</span>';
-    }).join('');
-    var rows = seq.slice(run.start, run.end + 1).map(function (x) {
-      var r = x.r, plc = calPlCell(r, pend), hook = sheetHook(r.sheetId);
-      var c = function (h, s) { return '<span ' + hook + 'style="cursor:pointer;padding:7px 0;border-top:1px solid var(--line);' + s + '">' + h + '</span>'; };
-      return c('<span style="display:block;width:8px;height:8px;border-radius:2px;margin-top:4px;background:' + (r.won ? 'var(--pos)' : 'var(--neg)') + ';"></span>', 'display:block;height:100%;box-sizing:border-box;') +
-        c(esc(CAL_MON[r.mon] + ' ' + r.year), M_ + 'font-size:11px;color:var(--text-label);white-space:nowrap;') +
-        c(esc(initialSurname(r.opp || '') || DASH), 'font-size:12.5px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;') +
-        c(esc(tournDisplayName(r.event, null) || r.event || DASH), 'font-size:12px;color:var(--text-label);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;') +
-        c(esc(r.round || DASH), M_ + 'font-size:10.5px;color:var(--text-label);') +
-        c(esc(String(r.score || DASH).replace(/,\s*/g, ' ')), M_ + 'font-size:11px;color:var(--text-label);white-space:nowrap;') +
-        c(r.price != null ? Number(r.price).toFixed(2) : pend ? '' : DASH, M_ + 'font-size:11px;color:var(--text-soft);text-align:right;') +
-        c(r.oppPrice != null ? Number(r.oppPrice).toFixed(2) : pend ? '' : DASH, M_ + 'font-size:11px;color:var(--text-label);text-align:right;') +
-        c(plc.t, M_ + 'font-size:11px;text-align:right;color:' + plc.c + ';');
-    }).join('');
-    return '<div class="pp2-fb" data-pp2="run-scrim" style="position:fixed;inset:0 0 0 var(--sf-side, 0px);z-index:64;' +
-      'background:var(--backdrop);display:flex;align-items:flex-start;justify-content:center;padding:40px 24px;overflow-y:auto;clip-path:inset(0);">' +
-      '<div data-pp2="card" style="position:relative;width:100%;max-width:900px;max-height:calc(calc(100vh / var(--sf-z, 1)) - 80px);overflow-y:auto;background:var(--card);' +
-        'border:1px solid var(--edge-16);border-radius:14px;padding:20px 22px 22px;min-width:0;box-shadow:var(--shadow-modal);box-sizing:border-box;">' +
-        '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px;">' +
-          '<div style="display:flex;flex-direction:column;gap:4px;min-width:0;">' +
-            '<span style="font-size:16px;font-weight:800;letter-spacing:-0.01em;color:var(--text);white-space:nowrap;">' + (run.won ? 'Winning run' : 'Losing run') + ' ' + MIDDOT + ' ' +
-              run.len + (run.len === 1 ? ' match' : ' matches') + '</span>' +
-            '<span style="font-size:12.5px;color:var(--text-label);">' + esc(stkSpan(seq, run) + ' ' + MIDDOT + ' ' + scope) + '</span></div>' +
-          '<span data-pp2="run-close" role="button" aria-label="Close" style="flex:none;width:32px;height:32px;border-radius:9px;background:var(--wash-5);border:1.25px solid var(--edge-6);' +
-            'color:var(--text-label);cursor:pointer;display:flex;align-items:center;justify-content:center;box-sizing:border-box;"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" ' +
-            'style="pointer-events:none;"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg></span></div>' +
-        tilesHtml +
-        (read ? '<div style="font-size:11.5px;color:var(--text-label);line-height:1.5;margin:-6px 0 12px;">' + esc(read) + '</div>' : '') +
-        '<div style="max-height:320px;overflow-y:auto;padding-right:12px;"><div style="' + GRID + '">' + heads + rows + '</div></div>' +
-      '</div></div>';
+    }).replace('class="pp2-drillbox"', 'class="pp2-drillbox" data-pp2-drawer="cal" data-pp2-cal-drill="1"')
+      // founder 2026-11-26: a calendar record opens in the middle of the screen, not 40px from the top
+      .replace('display:flex;align-items:flex-start;justify-content:center;', 'display:flex;align-items:safe center;justify-content:center;');
   }
 
   function renderSeasonModal(p) {
@@ -12653,7 +12429,7 @@
     ['Signed figure', 'Units won or lost at 1 unit on him, closing price, on his priced matches in that band.'],
     ['ATP only', 'Court speed covers ATP matches only (founder 2026-11-20): Tennis Abstract rates tour venues only, so Challenger and ITF matches are left out.'],
     ['Click a row', 'Opens its tiles and every match in it. A second click closes it.'],
-    ['Filters', 'Window and surface sit in the bar. Price role, altitude and opponent archetype sit behind Filters. Every figure follows them, and the gap then compares with his unfiltered rate in that band.'],
+    ['Filters', 'Window and surface sit in the bar. Price role and altitude sit behind Filters. Every figure follows them, and the gap then compares with his unfiltered rate in that band.'],
     ['Thin sample', 'A band with fewer than ' + PP4.SPEED_FLOOR + ' matches shows a dash and the count, never a rate.'],
     ['Bar', 'His win rate from 0 to 100%. The tick marks 50%.']] };
   var SPD_INFO2 = { what: 'The selected band in detail.', defs: [
@@ -12724,7 +12500,9 @@
     var mean = yl && yl.length >= PP4.SPEED_YEAR_MIN ? spdMean(yl) : spdMean(o.cur);
     return mean == null ? null : sp - mean;
   }
-  function spdBandOfRow(r) { return spdBandOf(spdEditionGap(r)); }
+  // founder 2026-11-26: thin air plays fast — a venue at ALT_FAST_M or higher (Kitzbühel 762, Madrid 650, Munich 520,
+  // Geneva 375 …; COURT_CONDITIONS altitude) is Fast as a rule, never by a one-off list. A rated venue only (spdAltOf needs one).
+  function spdBandOfRow(r) { var a = spdAltOf(r); return a != null && a >= PP4.ALT_FAST_M ? 'fast' : spdBandOf(spdEditionGap(r)); }
   // Level (founder 2026-11-19): ATP (main draw + qualifying) · Challenger · ITF, as Market edge reads a row's level.
   // Only ATP venues carry a court speed reading (Tennis Abstract rates tour events only), so a Challenger or ITF row is
   // never banded: it is counted out loud as unrated, never read off an ATP venue that shares its city.
@@ -12787,7 +12565,7 @@
   var SPD_ROLES = [['all', 'All'], ['fav', 'As favourite'], ['dog', 'As underdog']];
   var SPD_ALTS = [['all', 'All'], ['sea', 'Sea level'], ['alt', 'Altitude']];
   var SPD_LVLS = [['all', 'All'], ['atp', 'ATP'], ['ch', 'Challenger'], ['itf', 'ITF']];
-  var SPD_FM_KEYS = ['spdRole', 'spdAlt', 'spdArch'];
+  var SPD_FM_KEYS = ['spdRole', 'spdAlt'];
   // v4 §5 · the drawer title's sample: "n of m matches" when anything narrows it, else "m matches".
   function spdTitleCount(p) {
     if (!speedRows(p).length) return '';
@@ -12832,14 +12610,11 @@
       var g = Object.assign({}, F); g[k] = v;
       return pool.filter(function (r) { return spdIsAtp(r) && spdRowOk(r, g, cut); }).length;
     };
-    var archOpts = [['all', 'All archetypes']].concat(STYLE_AXIS.map(function (a) { return [a.label, a.label]; }));
     var groups = [
       { key: 'spdRole', title: 'Price role', cur: F.role, options: SPD_ROLES, count: function (v) { return countOf('role', v); } },
       { key: 'spdAlt', title: 'Altitude', cur: F.alt, options: SPD_ALTS, count: function (v) { return countOf('alt', v); },
-        hint: 'Altitude = venues at ' + PP4.ALT_CUT_M + ' m or higher.' },
-      { key: 'spdArch', title: 'Opponent archetype', cur: F.arch, options: archOpts, count: function (v) { return countOf('arch', v); },
-        select: true, chipPrefix: 'Opponent: ' }
-    ];
+        hint: 'Altitude = venues at ' + PP4.ALT_CUT_M + ' m or higher.' }
+    ];   // founder 2026-11-26: no Opponent archetype filter on Court speed
     var filterCard = '<div data-pp2-band="v5" style="display:flex;align-items:center;gap:12px 10px;flex-wrap:wrap;margin-bottom:16px;padding:22px 24px;' +
         'background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;">' +
         v5Seg('spd-win', [['l52', 'Last 52 weeks'], ['career', 'Career']], F.win) +
@@ -15629,14 +15404,22 @@
   var HB_SHOW_SURF = false;
 
   function hbEngine() { return window.HoldBreakHeatmap || null; }
-  function hbStore() { return window.holdbreak || null; }
+  // founder 2026-11-26: the Live trading drawer's Last 52 weeks reads its own shard (holdbreak-52w.json, asked for on
+  // first use); every other caller (no S) reads the 24-month holdbreak.json, as before.
+  function hbStore(S) {
+    if (S && S.win === 'w52') {
+      if (window.holdbreak52 === undefined && typeof window.pp2HoldbreakNeed52 === 'function') window.pp2HoldbreakNeed52();
+      return window.holdbreak52 || null;
+    }
+    return window.holdbreak || null;
+  }
 
   // Provenance for the modal footer. Returns null when we hold nothing for this
   // player, so the caller can say "no per-game data" rather than print a zero.
-  function hbCoverage(p) {
+  function hbCoverage(p, S) {
     var E = hbEngine();
     if (!E) return null;
-    var c = E.coverageFor(hbStore(), p.key);
+    var c = E.coverageFor(hbStore(S), p.key);
     return c && c.held ? c : null;
   }
 
@@ -16221,9 +16004,9 @@
   function ltBaseTxt(v) { return v == null ? '' : (Math.round(v * 10) / 10) + '%'; }
   function ltPP(v) { var r = Math.round(v * 10) / 10; return (r > 0 ? '+' : r < 0 ? MINUS : '') + Math.abs(r).toFixed(1) + 'pp'; }
   /** His hold / break over the heatmap store at a surface node: { hold: {w,n,pct}, brk: {w,n,pct} } or null. */
-  function ltHoldBreak(p, node) {
-    var E = hbEngine(), HB = hbStore();
-    if (!E || !HB || !hbCoverage(p)) return null;
+  function ltHoldBreak(p, node, S) {
+    var E = hbEngine(), HB = hbStore(S);
+    if (!E || !HB || !hbCoverage(p, S)) return null;
     function one(metric) {
       var st = hbStripModel(E.heatFor(HB, p.key, metric, HB_BEST_OF, node));
       return st.n ? { w: st.won, n: st.n, pct: 100 * st.won / st.n, model: st } : null;
@@ -16231,7 +16014,7 @@
     return { hold: one('HOLD'), brk: one('BREAK') };
   }
   function ltHeatNode(S) {
-    if (S.win !== 'm24' || ltFiltersOn(S)) return null;
+    if ((S.win !== 'm24' && S.win !== 'w52') || ltFiltersOn(S)) return null;   // founder 2026-11-26: Last 52 weeks too
     return S.surf === 'all' || S.surf === 'clay' || S.surf === 'grass' ? S.surf : null;
   }
 
@@ -16246,11 +16029,16 @@
     rows.forEach(function (r) {
       r.setGames.forEach(function (s) { if (s.p == null || s.o == null || s.p === s.o) return; sp++; if (s.p > s.o) sw++; });
     });
-    var pbp = sitPbpFor(p);
-    var pbpOk = !!pbp && S.win === 'm24' && S.surf === 'all' && !ltFiltersOn(S);
+    // founder 2026-11-26 (Kecmanovic, Last 52 weeks, every pbp row a dash): situational.json held the point-by-point rows
+    // for 24 months only, so Last 52 weeks could never honour them. It now carries a 52-week node per player (`w52`)
+    // and pooled (`tour52`); a file built before it (no w52) still dashes Last 52 weeks with the reason.
+    var pbpRec = sitPbpFor(p), sit = sitStore();
+    var pbp = !pbpRec ? null : S.win === 'w52' ? (pbpRec.w52 && pbpRec.w52.rows ? pbpRec.w52 : null) : S.win === 'm24' ? pbpRec : null;
+    var pbpTour = S.win === 'w52' ? (sit && sit.tour52) || null : null;
+    var pbpOk = !!pbp && S.surf === 'all' && !ltFiltersOn(S);
     var hbNode = ltHeatNode(S);
     // His hold / break norm: the pbp rows are all-surfaces, so the all-surfaces node is their norm.
-    var hb = pbpOk ? ltHoldBreak(p, 'all') : null;
+    var hb = pbpOk ? ltHoldBreak(p, 'all', S) : null;
     var NORM = {
       sets: sp ? { word: 'sets won', v: 100 * sw / sp } : null,
       hold: hb && hb.hold ? { word: 'hold', v: hb.hold.pct } : null,
@@ -16270,15 +16058,15 @@
     // his career-history (until it has answered they stay, dashed: loading claims nothing); pbp rows need his pbp record.
     var hasSet = !settled || calSpine(p).some(function (r) { return r.setGames && r.setGames.length && !r.notCounted; });
     var groups = SIT_GROUPS.map(function (g) {
-      var out = g[1].filter(function (r) { return r[2] === 'set' ? hasSet : !!pbp; }).map(function (r) {
+      var out = g[1].filter(function (r) { return r[2] === 'set' ? hasSet : !!pbpRec; }).map(function (r) {
         var id = r[0], label = r[1], src = r[2], spec = LT_ROW[id] || [null, {}], f = spec[1];
         var held = src === 'set' ? settled : pbpOk;
         var rec = !held ? null : src === 'set' ? (set.rows[id] || { w: 0, l: 0 }) : (pbp.rows[id] || null);
         var w = rec ? rec.w : 0, n = rec ? rec.w + rec.l : 0;
         var rate = n ? 100 * w / n : null, hard = n < 5, thin = n < 10;
         var nm = spec[0] ? NORM[spec[0]] : null;
-        var tv = tour.rows[id] == null ? null : tour.rows[id];
-        var why = src === 'pbp' && !pbpOk ? 'Point-by-point rows are held for the last 24 months, all surfaces, with no filter' : null;
+        var tv = src === 'pbp' && pbpTour ? (pbpTour[id] && pbpTour[id].pct != null ? pbpTour[id].pct : null) : tour.rows[id] == null ? null : tour.rows[id];
+        var why = src === 'pbp' && !pbpOk ? 'Point-by-point rows are held for the last 52 weeks and the last 24 months, all surfaces, with no filter' : null;
         var N = gapCell(!held || hard || !nm ? null : rate - nm.v, f.inv, !!f.hb, nm ? ltBaseTxt(nm.v) : '', thin,
           why || (nm ? 'His ' + nm.word + ' rate: ' + ltBaseTxt(nm.v) : spec[0] ? 'No norm held for this scope' : 'No norm defined for this row'));
         var T = gapCell(!held || hard || tv == null ? null : rate - tv, f.inv, !f.hb, tv == null ? '' : ltBaseTxt(tv), thin,
@@ -16297,11 +16085,11 @@
       return { title: g[0], rows: out };
     }).filter(function (g) { return g.rows.length; });
     var srt = cand.slice().sort(function (a, b) { return b.key.edge - a.key.edge || b.n - a.n; });
-    var heat = hbNode ? ltHoldBreak(p, hbNode) : null;
+    var heat = hbNode ? ltHoldBreak(p, hbNode, S) : null;
     var nAll = scoped.length, nIn = rows.length;
     return { S: S, settled: settled, scoped: scoped, rows: rows, set: set, pbp: pbp, pbpOk: pbpOk, groups: groups,
       best: srt.length > 1 ? srt[0] : null, worst: srt.length > 1 ? srt[srt.length - 1] : null,
-      hbNode: hbNode, heat: heat, cov: hbCoverage(p), nAll: nAll, nIn: nIn, filtered: ltFiltersOn(S) };
+      hbNode: hbNode, heat: heat, cov: hbCoverage(p, S), nAll: nAll, nIn: nIn, filtered: ltFiltersOn(S) };
   }
   function ltScopeTxt(S) {
     return LT_WIN.filter(function (t) { return t[0] === S.win; })[0][1] + ' ' + MIDDOT + ' ' +
@@ -16426,8 +16214,8 @@
   }
   function ltHeatTileHtml(p, M) {
     var sn = shortName(p);
-    if (!hbEngine() || !hbStore() || !M.cov) {
-      var why = !hbEngine() || !hbStore() ? 'Hold/break data is not loaded.'
+    if (!hbEngine() || !hbStore(M.S) || !M.cov) {
+      var why = !hbEngine() || !hbStore(M.S) ? (M.S.win === 'w52' && window.holdbreak52 === undefined ? 'Loading the last 52 weeks of hold/break data.' : 'Hold/break data is not loaded.')
         : sn + ' has no point-by-point data on record, so holds and breaks by game cannot be shown.';
       return '<div title="' + esc(why) + '" style="' + LT_TILE + 'cursor:default;">' +
         '<span style="' + LT_LAB + '">Hold / break heatmap</span>' +
@@ -16436,7 +16224,7 @@
     }
     var h = M.heat && M.heat.hold, b = M.heat && M.heat.brk, picked = state.ltPicked === 'heat';
     var pct = h ? h.pct.toFixed(1) + '%' : DASH;
-    return '<div data-pp2="heat" class="pp2-lttile" style="' + LT_TILE + '"' + (h ? '' : ' title="Held for the last 24 months only, on all surfaces, clay or grass, with no other filter"') + '>' +
+    return '<div data-pp2="heat" class="pp2-lttile" style="' + LT_TILE + '"' + (h ? '' : ' title="Held for the last 52 weeks and the last 24 months, on all surfaces, clay or grass, with no other filter"') + '>' +
       '<span style="display:flex;justify-content:space-between;gap:8px;pointer-events:none;"><span style="' + LT_LAB + '">Hold / break heatmap</span>' +
         LT_GO + '</span>' +
       '<span style="font-size:15px;font-weight:700;letter-spacing:-0.01em;color:var(--text);pointer-events:none;">By game pair, set by set</span>' +
@@ -16463,10 +16251,10 @@
     return { width: 400, pad: '14px 16px 16px', gap: 8, what: 'What each record is counted on.', defs: [
       ['Record', 'Times it happened, out of the times it could have: "45 of 53" = held 45 of the 53 service games where the score came up.'],
       ['Set outcomes', 'Counted per match with set scores, in the window, surface and filters chosen.'],
-      ['Break of serve', 'Counted per match, per break or per time he was broken, depending on the row, over his last 24 months with point-by-point data' +
+      ['Break of serve', 'Counted per match, per break or per time he was broken, depending on the row, over his last 24 months (or 52 weeks) with point-by-point data' +
         (pbpN ? ' (' + pbpN + ' matches)' : '') + '.'],
       ['After set one', 'Counted per match that reached that state.'],
-      ['Serving for the set', 'Counted per service game where the score came up, over the same 24 months.'],
+      ['Serving for the set', 'Counted per service game where the score came up, over the same window.'],
       ['Vs his norm', 'His rate in the situation minus his own usual rate: sets won for set rows, hold / break for serve rows. Dash = no norm for that row.'],
       ['Vs tour', 'His rate minus the same rate across the players we hold this data for, not the ATP field.'],
       ['Colour', 'Green is good for him, red is bad, whatever the sign.']] };
@@ -16620,21 +16408,21 @@
   // Every cell = rate over "n of m"; under PP4.HB_MIN games = the count only, no rate, no colour; Set 4 / Set 5 heads say
   // "best of 5 only"; the gap sits in the hover title. The colour band is the engine's (founder TEN-417: neutral within
   // ±3 inclusive, green from +4, red from −4) — this renderer only reads its `tag`.
-  function ltHeatCounts(p, mode, node) {
-    var HB = hbStore(), pl = HB && HB.players ? HB.players[String(p.key)] : null;
+  function ltHeatCounts(p, mode, node, S) {
+    var HB = hbStore(S), pl = HB && HB.players ? HB.players[String(p.key)] : null;
     var side = pl ? pl[mode === 'break' ? 'return' : 'serve'] : null;
     return side ? side[node] || null : null;
   }
   function renderHeatSheet(p) {
     if (!state.heat) return '';
-    var E = hbEngine(), HB = hbStore();
     var mode = state.hbMode === 'break' ? 'break' : 'hold';
     var M = ltModel(p), S = M.S, node = M.hbNode;
+    var E = hbEngine(), HB = hbStore(S);
     var sn = shortName(p), MIN = PP4.HB_MIN;
-    var cov = E && HB ? hbCoverage(p) : null;
+    var cov = E && HB ? hbCoverage(p, S) : null;
     var model = E && HB && cov && node ? E.heatFor(HB, p.key, mode === 'break' ? 'BREAK' : 'HOLD', HB_BEST_OF, node) : null;
     var st = model ? hbStripModel(model) : null;
-    var counts = model ? ltHeatCounts(p, mode, node) : null;
+    var counts = model ? ltHeatCounts(p, mode, node, S) : null;
     var games = st ? st.n : null;
     var covTip = cov ? 'Parsed from ' + cov.matches + ' of ' + sn + '’s matches ' + MIDDOT + ' ' + cov.svcGames + ' service games' +
       (cov.from && cov.to ? ' ' + MIDDOT + ' ' + cov.from + ' ' + ENDASH + ' ' + cov.to : '') : '';
@@ -16648,7 +16436,7 @@
         ' has no point-by-point data on record, so holds and breaks by game cannot be shown.' +
         (rosterN && winN ? '<br>The rollup covers ' + rosterN + ' players over the last ' + winN + ' months.' : '') + '</div>';
     } else if (!model) {
-      body = '<div style="padding:26px;text-align:center;font-size:13px;color:var(--text-label);line-height:1.6;">The heatmap is held for the last 24 months only, ' +
+      body = '<div style="padding:26px;text-align:center;font-size:13px;color:var(--text-label);line-height:1.6;">The heatmap is held for the last 52 weeks and the last 24 months, ' +
         'on all surfaces, clay or grass, with no other filter.</div>';
     } else {
       var tile = function (cap, value, sub) {
@@ -16816,7 +16604,7 @@
     // Profile v2 (2026-11-09): the open (?) popover id, the open Filters menu id, the open drill box, the
     // Compare-with popover and its query. Each is one value, so only one of each can be open.
     info: null, fmOpen: null, fb: null, cmpOpen: false, cmpQ: '', mtoOpen: false,
-    tourLevel: 'all', tourSurf: 'all', tourSort: { k: 'wl', d: -1 },
+    tourLevel: 'ATP', tourSurf: 'all', tourSort: { k: 'wl', d: -1 },
     stySurf: 'all', styWin: 'career', styTab: 'record', psOpen: null, stySort: { k: 'pct', d: -1 },
     mkSurf: 'all', mkWin: 'career', mkRole: 'all', mkFmt: 'all', mkSpeed: 'all', mkLvl: 'all', mkArch: 'all',
     lcBandF: 'all', lcArch: 'all', spdSurf: 'all', spdBand: null,
@@ -16911,7 +16699,7 @@
     state.drawDrill = null; state.drawFilter = 'all'; state.drawPage = 0;
     state.tournQuery = ''; state.tournOpen = null;
     state.calTab = 'calendar'; state.calSurface = 'all'; state.calCell = null; state.cal26Month = null;
-    state.seasonTab = 'calendar'; state.calWin = 'career'; state.calSurf = 'all'; state.calView = 'swing'; state.calCellV2 = null; state.runSel = null; state.runScroll = null;
+    state.calWin = 'career'; state.calSurf = 'all'; state.calView = 'swing'; state.calCellV2 = null;
     state.calSpeed = 'all'; state.calFmt = 'all'; state.calBand = 'all'; state.calArch = 'all'; state.calOpp = 'all'; state.calCtry = 'all'; state.mkOpp = 'all';
     state.speedSurf = 'all'; state.speedBand = null;
     // v4 §5 · a new player opens Court speed on Career, no filters
@@ -16951,9 +16739,6 @@
     if (mounted.classList && !mounted.classList.contains('pp2-x')) mounted.classList.add('pp2-x');   // the export's palette (tokens.css --pp-x-*)
     mounted.innerHTML = PP2_PALETTE_CSS + build(p);
     pp2PgThumb(mounted);
-    _runHov = null;
-    var rsc = mounted.querySelector('[data-pp2-runsc]');
-    if (rsc) { rsc.scrollLeft = state.runScroll == null ? rsc.scrollWidth : state.runScroll; runScrollUi(rsc); }
     if (hadSearch) {
       var next = mounted.querySelector('[data-pp2="tourn-search"]');
       if (next) {
@@ -16964,15 +16749,8 @@
   }
 
   // v3 D3 · the season grid and By swing sit in their own horizontal scrollers and scroll together.
-  function runScrollUi(sc) {
-    var notStart = sc.scrollLeft >= 8 && +sc.getAttribute('data-specw') > 760, wrap = sc.parentNode;
-    var chip = wrap && wrap.querySelector('[data-pp2="run-earlier"]'), fade = wrap && wrap.querySelector('[data-pp2-runfade]');
-    if (chip) chip.style.display = notStart ? 'inline-block' : 'none';
-    if (fade) fade.style.display = notStart ? 'block' : 'none';
-  }
   function onCalSync(e) {
     var t = e.target;
-    if (t && t.getAttribute && t.getAttribute('data-pp2-runsc')) { state.runScroll = t.scrollLeft; runScrollUi(t); return; }
     var k = t && t.getAttribute ? t.getAttribute('data-pp2-calsc') : null;
     if (!k || !mounted) return;
     var o = mounted.querySelector('[data-pp2-calsc="' + (k === 'a' ? 'b' : 'a') + '"]');
@@ -16997,27 +16775,6 @@
     if (inp) { inp.focus(); try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch (e) { /* ok */ } }
   }
   // The (?) icons open on hover too (the export's onMouseEnter); one open at a time.
-  // v3 D4 · a timeline bar under the pointer: that bar only goes full colour with a 1px 85% ring, and the tip above it
-  // names the run and its months. Painted in place: a repaint would throw away the timeline's scroll.
-  var _runHov = null;
-  function runHover(bar) {
-    if (_runHov === bar) return;
-    if (_runHov && _runHov.isConnected) {
-      var ob = _runHov.querySelector('.pp2-runbar');
-      if (ob) { ob.style.background = ob.getAttribute('data-won') === '1' ? 'color-mix(in srgb, var(--pos) 62%, transparent)' : 'color-mix(in srgb, var(--neg) 55%, transparent)'; ob.style.boxShadow = 'none'; }
-    }
-    _runHov = bar;
-    var sc = mounted && mounted.querySelector('[data-pp2-runsc]'), tip = sc && sc.querySelector('[data-pp2-runtip]');
-    if (!bar) { if (tip) tip.style.display = 'none'; return; }
-    var b = bar.querySelector('.pp2-runbar'), won = b && b.getAttribute('data-won') === '1';
-    if (b) { b.style.background = won ? 'var(--pos)' : 'var(--neg)'; b.style.boxShadow = '0 0 0 1px color-mix(in srgb, var(--text) 85%, transparent)'; }
-    if (tip) {
-      var t = (bar.getAttribute('data-tip') || '').split('|'), i = +bar.getAttribute('data-pp2-run'), specW = +sc.getAttribute('data-specw');
-      tip.innerHTML = '<span style="font-weight:700;color:' + (won ? 'var(--pos)' : 'var(--neg)') + ';">' + esc(t[0]) + '</span> ' + MIDDOT + ' ' + esc(t[1] || '');
-      tip.style.left = Math.max(70, Math.min(Math.max(70, specW - 70), i * 7 + 3)) + 'px';
-      tip.style.display = 'block';
-    }
-  }
   // v4 §7 · Match-up record: hovering a dot (or its code) gives that point the selected look, no repaint.
   function styHover(e) {
     if (!mounted) return;
@@ -17032,8 +16789,6 @@
   function onOver(e) {
     styHover(e);
     psGridHover(e);
-    var bar = e.target && e.target.closest ? e.target.closest('[data-pp2-run]') : null;
-    if (bar || _runHov) runHover(bar && mounted && mounted.contains(bar) ? bar : null);
     var el = e.target && e.target.closest ? e.target.closest('[data-pp2="info"]') : null;
     if (!el || !mounted || !mounted.contains(el)) return;
     var v = el.getAttribute('data-v');
@@ -17066,13 +16821,6 @@
     if (kind === 'info') { state.info = state.info === v ? null : v; repaint(); return; }
     if (kind === 'info-close') { state.info = null; repaint(); return; }
     if (kind === 'fb-close' || (kind === 'fb-scrim' && e.target === el)) { state.fb = null; repaint(); return; }
-    if (kind === 'run-close' || (kind === 'run-scrim' && e.target === el)) { state.runSel = null; repaint(); return; }
-    if (kind === 'run-scrim') return;
-    if (kind === 'run-earlier') {   // back by 80% of the visible width; no repaint
-      var rsc = mounted.querySelector('[data-pp2-runsc]');
-      if (rsc) { if (rsc.scrollBy) rsc.scrollBy({ left: -rsc.clientWidth * 0.8, behavior: 'smooth' }); else rsc.scrollLeft -= rsc.clientWidth * 0.8; }
-      return;
-    }
     if (kind === 'fb-scrim') return;
     if (kind === 'fb-open') { state.fb = { box: el.getAttribute('data-box'), v: v }; state.info = null; state.fmOpen = null; state.lcDrillRes = null; repaint(); return; }
     if (kind === 'mto-toggle') { state.mtoOpen = !state.mtoOpen; repaint(); return; }
@@ -17204,12 +16952,10 @@
     else if (kind === 'spd-clearall') { state.spdLvl = 'all'; state.spdRole = 'all'; state.spdAlt = 'all'; state.spdArch = 'all'; state.spdWin = 'career'; state.spdSurf = 'all'; state.spdBand = null; state.fmOpen = null; state.fmSel = null; }
     else if (kind === 'spd-band') { state.spdBand = el.getAttribute('data-open') === '1' ? 'none' : v; }
     else if (kind === 'spl-view') { state.splView = v; }
-    else if (kind === 'cal-tab') { state.seasonTab = v === 'streaks' ? 'streaks' : 'calendar'; state.calCellV2 = null; state.runSel = null; state.runScroll = null; }
-    else if (kind === 'cal-win') { state.calWin = v === 'l52' ? 'l52' : 'career'; state.calCellV2 = null; state.runSel = null; state.runScroll = null; }
-    else if (kind === 'cal-surf') { state.calSurf = v; state.calCellV2 = null; state.runSel = null; state.runScroll = null; }
+    else if (kind === 'cal-win') { state.calWin = v === 'l52' ? 'l52' : 'career'; state.calCellV2 = null; }
+    else if (kind === 'cal-surf') { state.calSurf = v; state.calCellV2 = null; }
     else if (kind === 'cal-view') { state.calView = v === 'month' ? 'month' : 'swing'; state.calCellV2 = null; }
     else if (kind === 'cal-cell2') { state.calCellV2 = v && state.calCellV2 !== v ? v : null; }
-    else if (kind === 'run-sel') { state.runSel = +v; _runHov = null; }
     else if (kind === 'tourn-row') { state.tournOpen = toggleVal(state.tournOpen, el.getAttribute('data-t')); tournNeedJoin(); }
     else if (kind === 'tourn-close' || (kind === 'tourn-scrim' && e.target === el)) { state.tournOpen = null; }
     else if (kind === 'cal-tab') { state.calTab = v; state.calCell = null; }
@@ -17378,7 +17124,7 @@
     _internals: {
       PP4: PP4, pp4Bar: pp4Bar, mtoRowsFor: mtoRowsFor, renderMto: renderMto, renderAvatar: renderAvatar, splTourFor: splTourFor,
       // Profile v2 (2026-11-09): the shared drill box, its per-box builders and the Match-up model
-      FB_BUILD: FB_BUILD, floatBoxHtml: floatBoxHtml, OPP_LEVELS: OPP_LEVELS, oppLevelOf: oppLevelOf, calRows: calRows, calSwingOf: calSwingOf, CAL_SW: CAL_SW, calCountryOf: calCountryOf, renderSeasonModalV2: renderSeasonModalV2, streakSeq: streakSeq, streakRuns: streakRuns, splModel: splModel, splRoundKeyer: splRoundKeyer, spdData: spdData, renderSpeedModalV2: renderSpeedModalV2, PP4: PP4, spdTitleCount: spdTitleCount, spdFilter: spdFilter, spdRowOk: spdRowOk, spdAltOf: spdAltOf, spdPool: spdPool, spdEditionGap: spdEditionGap, spdSurfMeans: spdSurfMeans, spdBandOfRow: spdBandOfRow, spdLvlOf: spdLvlOf, SPD_FM_KEYS: SPD_FM_KEYS, pp4FilterBar: pp4FilterBar, MODAL_TITLE_COUNT: MODAL_TITLE_COUNT, renderSplitsModalV2: renderSplitsModalV2, styData: styData, renderStylesModalV2: renderStylesModalV2,
+      FB_BUILD: FB_BUILD, floatBoxHtml: floatBoxHtml, OPP_LEVELS: OPP_LEVELS, oppLevelOf: oppLevelOf, calRows: calRows, mkCut: mkCut, calSwingOf: calSwingOf, CAL_SW: CAL_SW, calCountryOf: calCountryOf, renderSeasonModalV2: renderSeasonModalV2, splModel: splModel, splRoundKeyer: splRoundKeyer, spdData: spdData, renderSpeedModalV2: renderSpeedModalV2, PP4: PP4, spdTitleCount: spdTitleCount, spdFilter: spdFilter, spdRowOk: spdRowOk, spdAltOf: spdAltOf, spdPool: spdPool, spdEditionGap: spdEditionGap, spdSurfMeans: spdSurfMeans, spdBandOfRow: spdBandOfRow, spdBandOf: spdBandOf, spdLvlOf: spdLvlOf, SPD_FM_KEYS: SPD_FM_KEYS, pp4FilterBar: pp4FilterBar, MODAL_TITLE_COUNT: MODAL_TITLE_COUNT, renderSplitsModalV2: renderSplitsModalV2, styData: styData, renderStylesModalV2: renderStylesModalV2,
       mkBandIdx: mkBandIdx, MK_BANDS: MK_BANDS, mkTourBand: mkTourBand, styleArchetypeOf: styleArchetypeOf, renderLinesTabV2: renderLinesTabV2, renderMarketWinnerV2: renderMarketWinnerV2,
       recordRowsOf: recordRowsOf,
       countedSpine: countedSpine,

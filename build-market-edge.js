@@ -130,10 +130,10 @@ const FAV_BANDS = [
   { id: 'f121_135', label: '1.21 – 1.35' },
   { id: 'f136_150', label: '1.36 – 1.50' },
   { id: 'f151_170', label: '1.51 – 1.70' },
-  { id: 'f171_199', label: '1.71 – 1.99' },
+  { id: 'f171_199', label: '1.71 – 1.94' },   // ids kept stable; edges moved to 1.95 (founder 2026-11-26)
 ];
 const DOG_BANDS = [
-  { id: 'd200_249', label: '2.00 – 2.49' },
+  { id: 'd200_249', label: '1.95 – 2.49' },
   { id: 'd250_299', label: '2.50 – 2.99' },
   { id: 'd300_399', label: '3.00 – 3.99' },
   { id: 'd400_599', label: '4.00 – 5.99' },

@@ -17,11 +17,11 @@ function loadProfile(src) {
 }
 const PROFILE_SRC = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
 const W = loadProfile(PROFILE_SRC), I = W.PlayerProfileV2._internals;
-const EDGES = [1.01, 1.21, 1.36, 1.51, 1.71, 2.0, 2.5, 3.0, 4.0, 6.0, Infinity];
+const EDGES = [1.01, 1.21, 1.36, 1.51, 1.71, 1.95, 2.5, 3.0, 4.0, 6.0, Infinity];
 const coreEdges = core.BANDS.map((b) => b.lo / 1000).concat([Infinity]);
 
 check('the core ladder is the ruled ten bands', () => assert.deepStrictEqual(coreEdges, EDGES));
-check('the profile table (MK_BANDS) has the same edges and five favourite bands before 2.00', () => {
+check('the profile table (MK_BANDS) has the same edges and five favourite bands before 1.95', () => {
   assert.deepStrictEqual(I.MK_BANDS.map((b) => b[3]).concat([Infinity]), EDGES);
   assert.deepStrictEqual(I.MK_BANDS.map((b) => b[0]), core.BANDS.map((b) => b.gk));
   assert.deepStrictEqual(I.MK_BANDS.map((b) => b[1]), core.BANDS.map((b) => b.label));
@@ -29,7 +29,7 @@ check('the profile table (MK_BANDS) has the same edges and five favourite bands 
 check('the shard builder gives every price the core band', () => {
   const ids = B.PRICE_BANDS.fav.concat(B.PRICE_BANDS.dog);
   assert.strictEqual(ids.length, core.BANDS.length);
-  for (const p of [1.01, 1.205, 1.21, 1.355, 1.36, 1.505, 1.51, 1.705, 1.71, 1.999, 2.0, 2.499, 2.5, 2.999, 3.0, 3.999, 4.0, 5.999, 6.0, 40]) {
+  for (const p of [1.01, 1.205, 1.21, 1.355, 1.36, 1.505, 1.51, 1.705, 1.71, 1.945, 1.949, 1.95, 1.999, 2.0, 2.499, 2.5, 2.999, 3.0, 3.999, 4.0, 5.999, 6.0, 40]) {
     const i = core.bandOf(p), bf = B.bandFor(p);
     assert.strictEqual(bf.band.id, ids[i].id, 'price ' + p); assert.strictEqual(bf.band.label, core.BANDS[i].label, 'label ' + p);
     assert.strictEqual(I.mkBandIdx(p), i, 'profile index ' + p);
@@ -49,9 +49,9 @@ check('new baselines: each band gets its own entry', () => {
   I.MK_BANDS.forEach((b, i) => assert.strictEqual(I.mkTourBand(b).n, 100 + i));
 });
 check('old (eight-band) baselines: only bands with identical edges get a figure, the rest none', () => {
-  W.tourBaselines = { bands8: tb([1.01, 1.21, 1.41, 1.65, 2.0, 2.5, 3.5, 6.0, Infinity]) };
+  W.tourBaselines = { bands8: tb([1.01, 1.21, 1.41, 1.65, 1.95, 2.5, 3.5, 6.0, Infinity]) };
   const got = I.MK_BANDS.map((b) => (I.mkTourBand(b) ? I.mkTourBand(b).lo : null));
-  assert.deepStrictEqual(got, [1.01, null, null, null, null, 2.0, null, null, null, 6.0]);
+  assert.deepStrictEqual(got, [1.01, null, null, null, null, 1.95, null, null, null, 6.0]);
 });
 check('CONTROL: reading the tour figure by index would hand 1.21 – 1.35 the old 1.21 – 1.40 entry', () => {
   const mut = PROFILE_SRC.replace('    var tb = mkTourBand(B);', '    var tb = window.tourBaselines && window.tourBaselines.bands8 ? window.tourBaselines.bands8[i] : null;');

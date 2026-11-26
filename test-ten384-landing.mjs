@@ -166,7 +166,8 @@ test('ruling Q9: whole draw per event, losers kept, ordered by rank, header = wh
   assert.match(card('C. Alcaraz'), /pc-price">1\.11</);
   assert.match(card('T. Fritz'), /pc-price">6\.70</, 'Fritz still has the pending Alcaraz match priced');
   for (const n of ['L. Darderi', 'Casper Ruud', 'N. Djokovic', 'A. Zverev']) {
-    assert.match(card(n), /pc-price">—<\/span><span class="pc-book">no price<\/span>\s*<\/span>/, `${n}: no pre-match price → "—" + note`);
+    // founder 2026-11-26: no price → no price badge at all (no "—", no "no price" note)
+    assert.ok(!/pc-odds"|pc-price|no price/.test(card(n)) && /pc-odds-none/.test(card(n)), `${n}: no pre-match price → no badge`);
     assert.ok(!/pc-ext/.test(card(n)), `${n}: no arrow`);
   }
 });

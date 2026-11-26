@@ -26,8 +26,10 @@ function cal(view) {
   return T(I.renderSeasonModal(p));
 }
 // the season grid's Career row: one W–L per swing column, in head order (team last, left out of the picks)
+// founder 2026-11-26: a swing he never played gets no column, so the grid holds only the swings his rows reach
+const shownN = () => I.CAL_SW.filter(s => I.calRows(p).some(x => x.sw === s.k)).length;
 function careerRow(t) {
-  const n = I.CAL_SW.length;
+  const n = shownN();
   const m = new RegExp('Career ((?:(?:\\d+–\\d+|—) ){' + n + '})').exec(t);
   assert(m, 'no Career row in the season grid');
   return m[1].trim().split(' ').slice(0, n - 1).map(x => { const r = /(\d+)–(\d+)/.exec(x); return r ? { w: +r[1], l: +r[2], wl: x } : null; });
@@ -43,7 +45,7 @@ H.check('cal · Best / Worst swing = highest / lowest win rate among swings with
   assert.strictEqual(tileWL(t, 'Best swing'), best.wl, 'Best swing is not the highest win rate');
   assert.strictEqual(tileWL(t, 'Worst swing'), worst.wl, 'Worst swing is not the lowest win rate');
   // CONTROL: the old rule (yield gap) would name another worst swing here
-  const y = /Yield ((?:(?:[+−]\d+\.\d%|—) ){11})/.exec(t.slice(t.indexOf('By swing')));
+  const y = new RegExp('Yield ((?:(?:[+−]\\d+\\.\\d%|—) ){' + (shownN() - 3) + '})').exec(t.slice(t.indexOf('By swing')));
   assert(y, 'no By swing yield row');
   const ys = y[1].trim().split(' ').map(v => v === '—' ? null : parseFloat(v.replace('−', '-')));
   const all = careerRow(t), lowY = all.map((c, i) => ({ c, y: ys[i] })).filter(x => x.c && x.y != null).sort((a, b) => a.y - b.y)[0];

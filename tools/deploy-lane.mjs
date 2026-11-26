@@ -164,7 +164,7 @@ export const DATA_FILES = new Set([
   'radar-calibration.json', 'style-radar.json',                                   // style-radar.yml writes both
   'atp-entry-harvest-state.json', 'atp-entry-harvest-queue.json',
   'career-splits-tour.json', 'splits-matches-index.json',                         // refresh-career-splits.sh / career-splits.yml (TEN-391)
-  'playing-styles.json', 'matchup-matrix.json', 'holdbreak.json', 'situational.json', 'style-meetings-index.json', // refresh-playing-styles.sh
+  'playing-styles.json', 'matchup-matrix.json', 'holdbreak.json', 'holdbreak-52w.json', 'situational.json', 'style-meetings-index.json', // refresh-playing-styles.sh
   'entry_lists.json', 'entry_lists_advance.json',                                 // refresh-entry-lists*.sh
   'dna-apitennis-ratings.json',                                                   // dna-ratings.yml (TEN-319)
   'te-history-index.json', 'te-refresh-log.jsonl',                               // te-refresh.yml (TEN-443)

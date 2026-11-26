@@ -42,8 +42,11 @@ const path = require('path');
 // (own roster, rank<=400, NO TML exclusion, rolling 24M). Decoupled from the
 // archetype style cache (apitennis-styles-cache) so widening this window can
 // never perturb classify-styles.js. build-holdbreak still applies the 24M clip.
-const CACHE_DIR = path.join(__dirname, 'apitennis-holdbreak-cache');
-const OUT_PATH = path.join(__dirname, 'holdbreak.json');
+const CACHE_DIR = process.env.HOLDBREAK_CACHE_DIR || path.join(__dirname, 'apitennis-holdbreak-cache');
+const OUT_PATH = process.env.HOLDBREAK_OUT || path.join(__dirname, 'holdbreak.json');
+// founder 2026-11-26: the profile's heatmap also reads Last 52 weeks — a sibling shard, same shape, same roster, the
+// last 364 days of the same cache (holdbreak.json itself, which the Live page reads, is unchanged).
+const OUT_PATH_52W = process.env.HOLDBREAK_OUT_52W || path.join(__dirname, 'holdbreak-52w.json');
 const WINDOW_MONTHS = 24;
 const SAMPLE_FLOOR = 20;              // recommended display DESATURATION threshold; data keeps n
 const FINAL_STATUSES = new Set(['Finished', 'Retired', 'Walk Over']);
@@ -194,7 +197,13 @@ function finalize(grid, mode) {
   return out;
 }
 
-function main() {
+function writeAtomic(p, body) { const tmp = p + '.tmp'; fs.writeFileSync(tmp, body); fs.renameSync(tmp, p); }
+function daysBefore(iso, days) { const d = new Date(iso + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() - days); return d.toISOString().slice(0, 10); }
+
+// opts.weeks: a W-week window (the 52-week sibling) instead of WINDOW_MONTHS; opts.roster: the keys it may hold.
+function main(opts) {
+  opts = opts || {};
+  const outPath = opts.out || OUT_PATH;
   if (!fs.existsSync(CACHE_DIR)) {
     console.error(`build-holdbreak: ${CACHE_DIR} missing — skipping (no shard written).`);
     return;
@@ -216,7 +225,7 @@ function main() {
     }
   }
   if (maxDate === '0000-00-00') { console.error('build-holdbreak: cache empty; no shard.'); return; }
-  const windowStart = windowStartFrom(maxDate);
+  const windowStart = opts.weeks ? daysBefore(maxDate, opts.weeks * 7) : windowStartFrom(maxDate);
 
   const pooledServe = emptyGrid();
   const pooledReturn = emptyGrid();
@@ -314,7 +323,7 @@ function main() {
     const numeric = /^\d+$/.test(key);
     const rankQual = rank != null && rank <= RANK_MAX;
     const sampleQual = svcGames >= MIN_SERVICE_GAMES;
-    const qualifies = numeric && (rankQual || sampleQual);
+    const qualifies = numeric && (opts.roster ? opts.roster.has(key) : (rankQual || sampleQual));
     const rec = { key, name: p.name || null, rank, svcGames, matches: p.eks.size, rankQual, sampleQual };
     if (!qualifies) { rosterOut.push(rec); continue; }
     rosterIn.push(rec);
@@ -334,7 +343,8 @@ function main() {
     meta: {
       feature: 'holdbreak-heatmap',
       ruling: 'TEN-107 2026-09-01: window=24M, axis=bucketed',
-      windowMonths: WINDOW_MONTHS,
+      windowMonths: opts.weeks ? null : WINDOW_MONTHS,
+      windowWeeks: opts.weeks || null,
       windowStart,
       anchorDate: maxDate,
       sampleFloor: SAMPLE_FLOOR,
@@ -350,7 +360,7 @@ function main() {
       },
       sets: SETS,
       surfaces: SURFACES,
-      rosterRule: `numeric key AND (rank<=${RANK_MAX} OR serviceGames>=${MIN_SERVICE_GAMES}) in ${WINDOW_MONTHS}M window`,
+      rosterRule: opts.roster ? `the ${WINDOW_MONTHS}M shard's roster` : `numeric key AND (rank<=${RANK_MAX} OR serviceGames>=${MIN_SERVICE_GAMES}) in ${WINDOW_MONTHS}M window`,
       coverage: { matches: stats.matches, serviceGames: stats.serviceGames, from: stats.minDate, to: stats.maxDate },
       players: Object.keys(playersOut).length,
     },
@@ -358,21 +368,25 @@ function main() {
     players: playersOut,
   };
 
-  fs.writeFileSync(OUT_PATH, JSON.stringify(shard));
+  writeAtomic(outPath, JSON.stringify(shard));
   // Roster in/out report (founder evidence; not served — dev artifact next to shard).
-  try {
-    fs.writeFileSync(path.join(__dirname, 'holdbreak-roster-report.json'), JSON.stringify({
+  if (!opts.weeks) try {
+    fs.writeFileSync(path.join(path.dirname(outPath), 'holdbreak-roster-report.json'), JSON.stringify({
       rule: shard.meta.rosterRule,
       rankMax: RANK_MAX, minServiceGames: MIN_SERVICE_GAMES,
       inCount: rosterIn.length, outCount: rosterOut.length,
       in: rosterIn, out: rosterOut,
     }, null, 1));
   } catch (_) {}
-  console.log(`build-holdbreak: wrote ${OUT_PATH}`);
-  console.log(`  window=${WINDOW_MONTHS}M start=${windowStart} anchor=${maxDate}`);
+  console.log(`build-holdbreak: wrote ${outPath}`);
+  console.log(`  window=${opts.weeks ? opts.weeks + 'W' : WINDOW_MONTHS + 'M'} start=${windowStart} anchor=${maxDate}`);
   console.log(`  matches=${stats.matches} serviceGames=${stats.serviceGames} coverage=${stats.minDate}..${stats.maxDate}`);
   console.log(`  roster: ${rosterIn.length} in / ${rosterOut.length} out (rule: ${shard.meta.rosterRule})`);
+  return shard;
 }
 
-if (require.main === module) main();
-module.exports = { main, bucketFor, setKey, surfaceOf, windowStartFrom };
+if (require.main === module) {
+  const s24 = main();
+  if (s24) main({ weeks: 52, out: OUT_PATH_52W, roster: new Set(Object.keys(s24.players)) });
+}
+module.exports = { main, daysBefore, OUT_PATH_52W, bucketFor, setKey, surfaceOf, windowStartFrom };

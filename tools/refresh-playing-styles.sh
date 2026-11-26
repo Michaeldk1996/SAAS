@@ -144,7 +144,7 @@ if ! node -e "
   if (withPrimary.length > 0) { console.error('REGRESSION: retired primary field still set on '+withPrimary.length+' players'); process.exit(1); }
 "; then STATUS="regression"; exit 1; fi
 
-if git diff --quiet -- playing-styles.json matchup-matrix.json holdbreak.json; then
+if git diff --quiet -- playing-styles.json matchup-matrix.json holdbreak.json holdbreak-52w.json; then
   echo "no change; nothing to publish"; STATUS="no-op"; exit 0
 fi
 
@@ -152,6 +152,7 @@ fi
 cp playing-styles.json /tmp/bsp-styles.json
 cp matchup-matrix.json /tmp/bsp-matrix.json
 cp holdbreak.json /tmp/bsp-holdbreak.json 2>/dev/null || true
+cp holdbreak-52w.json /tmp/bsp-holdbreak-52w.json 2>/dev/null || true   # founder 2026-11-26: the profile's Last 52 weeks heatmap
 pushed=0
 for attempt in 1 2 3; do
   git fetch --quiet origin main
@@ -159,11 +160,13 @@ for attempt in 1 2 3; do
   cp /tmp/bsp-styles.json playing-styles.json
   cp /tmp/bsp-matrix.json matchup-matrix.json
   cp /tmp/bsp-holdbreak.json holdbreak.json 2>/dev/null || true
-  if git diff --quiet -- playing-styles.json matchup-matrix.json holdbreak.json; then echo "matched remote; no-op"; STATUS="no-op"; exit 0; fi
+  cp /tmp/bsp-holdbreak-52w.json holdbreak-52w.json 2>/dev/null || true
+  if git diff --quiet -- playing-styles.json matchup-matrix.json holdbreak.json holdbreak-52w.json; then echo "matched remote; no-op"; STATUS="no-op"; exit 0; fi
   # build-matchup-matrix.js also (re)wrote the per-player CAREER meeting shards
   # (TEN-88 option B); they survive the mixed reset above as working-tree changes,
   # so stage them alongside. -A picks up shards deleted when a player drops out.
   git add playing-styles.json matchup-matrix.json holdbreak.json situational.json
+  [ -f holdbreak-52w.json ] && git add holdbreak-52w.json
   git add -A style-meetings-index.json style-meetings
   ELAPSED_NOW=$(( $(date +%s) - START_EPOCH ))
   HUMAN_NOW=$(printf '%dm%02ds' $(( ELAPSED_NOW / 60 )) $(( ELAPSED_NOW % 60 )))
