@@ -207,7 +207,7 @@ function pathOf(M, F, key) {
       const sc = (c.match.score || []).map(p => (mine ? [p[1], p[0]] : p)).map(p => p[0] + '-' + p[1]).join('  ');
       if (!won) outAt = r;
       return Object.assign(base, { state: won ? 'won' : 'lost', opp: o ? 'v ' + nameOf(o) + (tagOf(o) ? ' ' + tagOf(o) : '') : DASH, oppKey: keyOf(o),
-        cands: o ? [o] : [], known: true, fig: won ? 'Won' : 'Lost', figColor: won ? C.white : C.muted, sub: sc, score: sc });
+        cands: o ? [o] : [], known: true, match: c.match, fig: won ? 'Won' : 'Lost', figColor: won ? C.white : C.muted, sub: sc, score: sc });
     }
     // not played yet: the opponent is known when the other side of his cell is decided; else every player still alive
     // in the opposite half (ordered by seed, then draw position — the draw's own order, never a chance)
@@ -405,7 +405,7 @@ const pctS = v => (v == null || !isFinite(v) ? DASH : v >= 1 ? '100%' : v <= 0 ?
 // fair odds = 1 / chance, two decimals; no fair price at 0 or 100%
 const fairS = v => (v != null && v > 0 && v < 1 ? (1 / v).toFixed(2) : DASH);
 const pairBasis = (a, b) => (CH && CH.src.get(a < b ? a + '|' + b : b + '|' + a) === 'model' ? 'Stennisfy Model price for this match (Today’s Matches)' : 'Stennisfy: the model’s Elo base (overall + surface)');
-const NO_CH = 'No chance: a player in this part of the draw has no Elo rating in the Tennis Abstract report';
+const NO_CH = 'No chance: a player in this part of the draw has no Elo rating in our weekly Elo list';
 // the Bookmakers figure: shown only when at least one pairing used a bookmaker price, else a dash
 const NO_BK = 'No match in this draw has a bookmaker price on Today’s Matches yet';
 const bkOn = () => !!(CHB && CHB.hasModel());
@@ -503,11 +503,15 @@ function statsModel(ev, M) {
   const base = hev && hip.baseline ? hip.baseline[hev.baseline] : null;
   const by = base && base.years || [];
   const baseWords = hev ? `ATP ${hev.indoor ? 'indoor' : 'outdoor'} hard, best of three, ${by[0]}${NDASH}${by[by.length - 1]}` : '';
+  // past editions, one figure per season at or above the floor (founder 2026-11-26: "vs 2025" / "vs past five")
+  const byYear = (k, mul) => { const o = {}, nn = {}; Object.entries((hev && hev.byYear) || {}).forEach(([y, sl]) => {
+    const m = sl && sl.metrics && sl.metrics[k]; if (+y < cy && m && m.value != null && m.n >= hfloor) { o[y] = m.value * mul; nn[y] = m.n; } });
+    return { o, nn }; };
   const speed = SPEED.map(([label, k, mul, unit]) => {
-    const mc = cur && cur.metrics[k], mb = base && base.metrics && base.metrics[k];
-    return { label, unit, sign: false, v: mc ? mc.value * mul : null, tour: mb ? mb.value * mul : null, series: {},
+    const mc = cur && cur.metrics[k], mb = base && base.metrics && base.metrics[k], by = byYear(k, mul);
+    return { label, unit, sign: false, v: mc ? mc.value * mul : null, tour: mb ? mb.value * mul : null, series: by.o, seriesN: by.nn,
       vTitle: mc ? `${cur.n} matches, ${ev.city} ${cy} main draw (our box scores)` : (hev ? `No ${cy} figure for ${ev.city} (fewer than ${hfloor} matches with box scores)` : `${ev.city}: no How it plays figures (hard courts only)`),
-      tourTitle: mb ? `${baseWords}, ${base.n} matches (Sackmann 2016${NDASH}24 under CC BY-NC-SA, our box scores 2025)` : 'No tour average for this court' };
+      tourTitle: mb ? `${baseWords}, ${base.n} matches (our match archive 2016${NDASH}24 and box scores 2025)` : 'No tour average for this court' };
   });
   // the Speed group's empty state: no figure for this edition (or no How it plays figures for this court at all)
   const speedEmpty = speed.every(t => t.v == null)
@@ -523,20 +527,24 @@ function statsModel(ev, M) {
   const cyF = sf[cy] || null, sets = live ? setFacts(M, bestOf(ev)) : { n: 0, dec: 0, cb: 0 };
   const role = k => (tb && tb.roles && tb.roles[k] && tb.roles[k].yield != null ? tb.roles[k] : null);
   const series = k => { const o = {}; Object.keys(sf).forEach(y => { if (+y < cy && sf[y][k] != null) o[y] = sf[y][k]; }); return o; };
+  const seriesN = k => { const o = {}; Object.keys(sf).forEach(y => { if (+y < cy && sf[y][k] != null) o[y] = k === 'fav' ? sf[y].favN : sf[y].betN; }); return o; };
   const mkt = [
-    { key: 'fav', label: 'Favourites won', unit: '%', sign: false, v: fCur ? pctOf(fCur) : cyF ? cyF.fav : null, tour: pctOf(fBase), series: series('fav'),
+    { key: 'fav', label: 'Favourites won', unit: '%', sign: false, v: fCur ? pctOf(fCur) : cyF ? cyF.fav : null, tour: pctOf(fBase), series: series('fav'), seriesN: seriesN('fav'),
       vTitle: fCur ? `${fCur.fav} of ${fCur.n} priced matches won by the shorter price, the price every page shows for the match (${fCur.n - (fCur.approx || 0) - (fCur.b365 || 0)} Pinnacle closes, ${fCur.approx || 0} Pinnacle (approx.), ${fCur.b365 || 0} Bet365; ties and walkovers out)` : cyF ? `${cyF.favW} of ${cyF.favN} priced matches won by the shorter closing price (Database rows, retirements count)` : `No ${cy} favourites figure`,
       tourTitle: fBase ? `ATP ${String(fe.court).toLowerCase()}, ${(fB.years || []).join(NDASH)}, ${fBase.n} matches` : '' },
-    { key: 'favY', label: 'Backing favourites', unit: '%', sign: true, v: cyF ? cyF.favY : null, tour: role('favourite') ? role('favourite').yield * 100 : null, series: series('favY'),
+    { key: 'favY', label: 'Backing favourites', unit: '%', sign: true, v: cyF ? cyF.favY : null, tour: role('favourite') ? role('favourite').yield * 100 : null, series: series('favY'), seriesN: seriesN('favY'),
       vTitle: cyF ? `1 unit on every favourite, ${cyF.betN} priced matches (retirements settle on Pinnacle rules)` : `No ${cy} priced matches`,
       tourTitle: role('favourite') ? `Tour yield, ${role('favourite').n} matches, ${(tb.dateRange || []).join(NDASH)}` : '' },
-    { key: 'dogY', label: 'Backing underdogs', unit: '%', sign: true, v: cyF ? cyF.dogY : null, tour: role('underdog') ? role('underdog').yield * 100 : null, series: series('dogY'),
+    { key: 'dogY', label: 'Backing underdogs', unit: '%', sign: true, v: cyF ? cyF.dogY : null, tour: role('underdog') ? role('underdog').yield * 100 : null, series: series('dogY'), seriesN: seriesN('dogY'),
       vTitle: cyF ? `1 unit on every underdog, ${cyF.betN} priced matches (retirements settle on Pinnacle rules)` : `No ${cy} priced matches`,
       tourTitle: role('underdog') ? `Tour yield, ${role('underdog').n} matches, ${(tb.dateRange || []).join(NDASH)}` : '' },
-    { key: 'dec', label: 'Matches going to a decider', unit: '%', sign: false, v: sets.n >= FLOOR ? 100 * sets.dec / sets.n : null, tour: null, series: {},
-      vTitle: sets.n ? `${sets.dec} of ${sets.n} completed matches` : 'No completed match yet', tourTitle: 'No tour figure on file (needs past set scores)' },
-    { key: 'cb', label: 'Won from a set down', unit: '%', sign: false, v: sets.n >= FLOOR ? 100 * sets.cb / sets.n : null, tour: null, series: {},
-      vTitle: sets.n ? `${sets.cb} of ${sets.n} completed matches` : 'No completed match yet', tourTitle: 'No tour figure on file (needs past set scores)' },
+    ...[['dec', 'Matches going to a decider', 'decider', 'dec'], ['cb', 'Won from a set down', 'comeback', 'cb']].map(([key, label, hk, sk]) => {
+      // tour = the same court's How it plays baseline (completed best-of-3 main-draw matches with set scores, founder 2026-11-26)
+      const mb = base && base.metrics && base.metrics[hk], by = byYear(hk, 100), tourOk = mb && mb.value != null && mb.n >= hfloor;
+      return { key, label, unit: '%', sign: false, v: sets.n >= FLOOR ? 100 * sets[sk] / sets.n : null, tour: tourOk ? mb.value * 100 : null, series: by.o, seriesN: by.nn,
+        vTitle: sets.n ? `${sets[sk]} of ${sets.n} completed matches` : 'No completed match yet',
+        tourTitle: tourOk ? `${baseWords}, ${mb.num} of ${mb.n} completed matches with set scores` : (hev ? 'No tour figure for this court' : `${ev.city}: no tour figure (hard courts only)`) };
+    }),
   ];
   [speed, mkt].forEach(g => g.forEach(t => {
     const held = Object.keys(t.series).map(Number).sort((a, b) => a - b);
@@ -557,7 +565,10 @@ function statsModel(ev, M) {
     const all = vals.concat([t.tour]).filter(x => x != null), lo = Math.min.apply(null, all), hi = Math.max.apply(null, all);
     const ch = x => 18 + (hi > lo ? (x - lo) / (hi - lo) : 0.5) * 82;
     t.tourB = t.tour != null ? ch(t.tour) + '%' : null;
-    t.cols = ys.map((y, j) => ({ y, now: j === 5, v: vals[j], h: vals[j] != null ? ch(vals[j]) + '%' : '0%' }));
+    t.cols = ys.map((y, j) => ({ y, now: j === 5, v: vals[j], n: j === 5 ? null : (t.seriesN || {})[y], h: vals[j] != null ? ch(vals[j]) + '%' : '0%' }));
+    const nOf = y => ((t.seriesN || {})[y] != null ? `, n = ${t.seriesN[y]} matches` : '');
+    t.lastTitle = t.series[cy - 1] != null ? `Against ${cy - 1} (${(t.sign && t.series[cy - 1] > 0 ? '+' : '') + f1(t.series[cy - 1])}${t.unit}${nOf(cy - 1)})` : `No ${cy - 1} edition on file with ${FLOOR}+ matches`;
+    t.fiveTitle = t.avg5 != null ? `Against the average of ${five.join(', ')} (${f1(t.avg5)}${t.unit})` : `Needs five past editions on file (${held.length} held)`;
     t.fig = t.v == null ? DASH : (t.sign && t.v > 0 ? '+' : t.v < 0 ? MINUS : '') + f1(t.v) + t.unit;
     t.figColor = t.sign && t.v != null ? (t.v > 0 ? C.green : t.v < 0 ? C.red : C.white) : C.white;
   }));
@@ -647,23 +658,32 @@ function ptsModel(ev, F) {
   const e = P && P.events ? Object.values(P.events).find(x => x && String(x.atpId) === String(ev.id) && String(x.season) === String(ev.start).slice(0, 4)) : null;
   if (!e) return null;
   const idx = standings(), byKey = new Map((idx || []).map(r => [String(r.key), r]));
+  // ATP 52-week rule (founder 2026-11-26): last year's points leave the ranking 52 weeks after they were earned
+  // (the builder's dropDate). An edition that moved later starts after that date: nothing is left to defend, and
+  // today's ranking already counts without those points, so they are never taken off a second time.
+  const dropped = !!(e.dropDate && ev.start && String(e.dropDate) < String(ev.start).slice(0, 10));
+  // what a first-round loss earns (ATP points table): 250 / 500 nothing, Masters 1000 and Grand Slams 10
+  const r1 = /grand slam|1000/i.test(String(e.category || ev.draw.category || '')) ? 10 : 0;
   const num = x => (x == null || x === '' ? null : Number.isFinite(+x) ? +x : Number.isFinite(parseInt(x, 10)) ? parseInt(x, 10) : null);
   const mk = r => {
     const k = String(r.playerKey), ix = byKey.get(k), pts = num(r.points), mine = ix ? num(ix.points) : null;
     const today = ix && num(ix.rank) != null ? num(ix.rank) : num(r.rank);
     let would = null;
-    if (idx && mine != null && pts != null && today != null) {
-      const left = mine - pts;
+    if (dropped && today != null) would = today;
+    else if (idx && mine != null && pts != null && today != null) {
+      const left = mine - Math.max(0, pts - r1);
       would = Math.max(today, 1 + idx.filter(o => String(o.key) !== k && num(o.points) != null && num(o.points) > left).length);   // never above today's rank
     }
     const drop = would != null && today != null ? Math.max(0, would - today) : null;
     const slot = F.byKey.get(k);
-    return { k, n: r.apiName || r.name, full: r.name, tag: slot ? tagOf(slot) : '', pts, last: lastWords(r.resultBadge) + (r.ll ? ' · LL' : ''), today, would, drop, inDraw: !!slot, status: r.status || '',
+    return { k, n: r.apiName || r.name, full: r.name, tag: slot ? tagOf(slot) : '', pts: dropped ? null : pts, earned: pts, last: lastWords(r.resultBadge) + (r.ll ? ' · LL' : ''), today, would, drop, inDraw: !!slot, status: r.status || '',
       whyRank: mine == null ? 'No ranking points on file for him' : pts == null ? 'The points he defends here are not known' : '' };
   };
-  const rows = (e.rows || []).map(mk).concat((e.dashRows || []).map(mk));
-  const frees = (e.zeroRows || []).map(mk);
-  return { e, rows, frees, total: rows.reduce((a, r) => a + (r.pts || 0), 0), idx };
+  // only players in THIS year's draw, main draw or qualifying (founder 2026-11-26: Korda did not play Stockholm 2026)
+  const inThisDraw = r => r.inDraw || /^playing/i.test(r.status);
+  const rows = (e.rows || []).map(mk).concat((e.dashRows || []).map(mk)).filter(inThisDraw);
+  const frees = (e.zeroRows || []).map(mk).filter(inThisDraw);
+  return { e, rows, frees, dropped, total: rows.reduce((a, r) => a + (r.pts || 0), 0), idx };
 }
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
@@ -1069,10 +1089,10 @@ function compareTable(M, A, Bp, meet) {
 // opens the opponent he actually faced.
 const OPP = {};   // "me|opp" → { h2h, arch, archK, last5 } (loaded once per pair)
 const newsName = (key, fb) => { try { return typeof newsPlayerName === 'function' ? newsPlayerName(key, fb) : fb; } catch (e) { return fb; } };
-function oppFacts(meKey, meName, o) {
-  const ok = String(o.playerKey), id = meKey + '|' + ok;
+function oppFacts(meKey, meName, o, city) {
+  const ok = String(o.playerKey), id = meKey + '|' + ok + '|' + (city || '');
   if (OPP[id]) return OPP[id];
-  const f = OPP[id] = { h2h: null, arch: null, archK: 'Playing style', last5: null };
+  const f = OPP[id] = { h2h: null, arch: null, archK: 'Playing style', last5: null, court: null };
   if (typeof loadCareerHistory === 'function') {
     Promise.all([loadCareerHistory(meKey), loadCareerHistory(ok)]).then(([a, b]) => {
       try {
@@ -1089,6 +1109,11 @@ function oppFacts(meKey, meName, o) {
             .slice().sort((x, y) => String(y.date).localeCompare(String(x.date))).slice(0, 5).reverse();
           f.last5 = rows.map(x => (x.won ? 'W' : 'L'));
         }
+        // "On this court" = each player's played record at this event, every edition on file (career-history)
+        if (ansA && ansB && city) {
+          const cl = lc(city), at = rs => { const r = (rs || []).filter(x => x && !x.walkover && !x.unconfirmed && lc(x.tournament || '').includes(cl)); return { w: r.filter(x => x.won).length, n: r.length }; };
+          f.court = { me: at(a), opp: at(b) };
+        }
       } catch (e) { /* stays a dash */ }
       repaint();
     });
@@ -1102,19 +1127,77 @@ function oppFacts(meKey, meName, o) {
   }
   return f;
 }
+// a played match's prices from its card (matches.json / the draw store): the card book's close and that book's open,
+// oriented to the player; dominance ratio = his return points won % / his opponent's (the progression's point counts)
+function playedFacts(ev, c, meKey) {
+  const id = analysisId(ev, c.match), row = id && typeof matchById === 'function' ? matchById(id) : null;
+  const me1 = row ? String(row.p1Key) === String(meKey) : true, W = me1 ? ['p1', 'p2'] : ['p2', 'p1'];
+  const px = (fn, w) => { try { const v = row && typeof fn === 'function' ? fn(row, w) : null; return typeof v === 'number' && v >= 1.01 ? v : null; } catch (e) { return null; } };
+  const cp = px(typeof _mcCardCloseOf !== 'undefined' ? _mcCardCloseOf : null, W[0]), co = px(typeof _mcCardCloseOf !== 'undefined' ? _mcCardCloseOf : null, W[1]);
+  let op = px(typeof _openAnchorOf !== 'undefined' ? _openAnchorOf : null, W[0]), src = 'card';
+  // the card state has expired (a stored row): the match's Pinnacle close (odds.md "The board close"), and only
+  // Pinnacle's own open beside it — never another book's open (one book per match)
+  const pc = row && row.pinClose;
+  if ((cp == null || co == null) && pc && pc[W[0]] >= 1.01 && pc[W[1]] >= 1.01) {
+    const oc = pc.oddspapiClose && pc.oddspapiClose.open;
+    return Object.assign(rest(), { cp: pc[W[0]], co: pc[W[1]], op: oc && oc[W[0]] >= 1.01 ? oc[W[0]] : null, src: 'pinnacle' });
+  }
+  function rest() {
+  const pm = ev.entry && Array.isArray(ev.entry.matches) ? ev.entry.matches.find(x => String(x.eventKey) === String(c.match.eventKey)) : null;
+  const side = pm ? (String(pm.p1 && pm.p1.playerKey) === String(meKey) ? pm.p1 : pm.p2) : null, oth = pm ? (side === pm.p1 ? pm.p2 : pm.p1) : null;
+  const rp = x => (x && x.returnPoints && x.returnPoints.total > 0 ? x.returnPoints.won / x.returnPoints.total : null);
+  const dr = rp(side) != null && rp(oth) > 0 ? rp(side) / rp(oth) : null;
+  return { id, dr, drN: side && oth ? side.returnPoints.total + oth.returnPoints.total : 0 };
+  }
+  return Object.assign(rest(), { cp, co, op, src });
+}
+// the card of a FINISHED round (design 2026-11-26): the pre-match layout with the result, no chance bar, four rows
+function playedCard(ev, c, P, o, f, nm) {
+  const ok = String(o.playerKey), won = c.state === 'won', pf = playedFacts(ev, c, P.key);
+  const r2 = v => Math.round(v * 100) / 100;
+  const dog = pf.cp != null && pf.co != null ? (r2(pf.cp) > r2(pf.co) ? true : r2(pf.cp) < r2(pf.co) ? false : null) : null;
+  const flag = dog == null ? '' : won === dog ? (won ? 'Upset' : 'Upset loss') : 'As priced', flagC = flag === 'Upset loss' ? C.red : flag === 'Upset' ? C.white : C.muted;
+  const why = dog == null ? 'No closing price on record for this match' : `${nm} ${won ? 'won' : 'lost'} as the ${dog ? 'underdog' : 'favourite'} at the close.`;
+  const sets = (c.score || '').split(/\s+/).filter(Boolean).map(x => x.split('-').map(Number)), sw = sets.filter(g => g[0] > g[1]).length;
+  let mv = DASH, mvT = pf.src === 'pinnacle' ? "No Pinnacle opening price on record for this match (the open on file is another book's)" : 'Needs the opening and the closing price of the same book';
+  if (pf.cp != null && pf.op != null) { const a = r2(pf.op), b = r2(pf.cp), d = b - a;
+    mv = Math.abs(d) < 0.005 ? 'No move' : `Opened ${a.toFixed(2)} · ${d > 0 ? 'drifted +' : 'shortened ' + MINUS}${(Math.abs(d) / a * 100).toFixed(1)}%`;
+    mvT = 'Move from his opening price to his closing price, as a share of the opening price, on the prices shown'; }
+  const h2h = f.h2h ? `${f.h2h.a}${NDASH}${f.h2h.b}` : DASH;
+  const fa = [['Closing price', pf.cp != null && pf.co != null ? `${pf.cp.toFixed(2)} · Opp ${pf.co.toFixed(2)}` : DASH, pf.cp != null ? (pf.src === 'pinnacle' ? "Pinnacle's closing price, the last price before the start" : "The match card's closing price, one book for both players") : 'No closing price on record for this match'],
+    ['Price move', mv, mvT],
+    ['Dominance ratio', pf.dr != null ? pf.dr.toFixed(2) : DASH, pf.dr != null ? `His return points won % ÷ his opponent's (our box score, n = ${pf.drN} return points)` : 'No box score with point counts for this match'],
+    ['Head to head now', h2h, f.h2h ? `${f.h2h.n} meetings, this match included (ATP head-to-head population)` : 'Loading the head to head']];
+  const stats = pf.id ? `<span data-oppstats="1" class="tt-draw-hov" onclick="${on(() => openMatch(pf.id))}" title="Open the match statistics" style="display:flex; flex:none; margin-left:auto; cursor:pointer; align-items:center; gap:8px; height:30px; box-sizing:border-box; padding:0 11px; border-radius:9px; background:${C.lifted}; border:1px solid ${W(14)}; font-size:12.5px; font-weight:700; white-space:nowrap; color:${C.white};">Match statistics <span style="color:${C.blue};">›</span></span>` : '';
+  return `<div style="background:${C.inset}; border:1px solid ${W(6)}; border-radius:12px; padding:16px 18px 8px; display:flex; flex-direction:column; min-width:0;">
+      <div style="display:flex; align-items:center; gap:10px;">${avatar(ok, nameOf(o), 36, W(14), 12)}<div style="display:flex; flex-direction:column; gap:2px; min-width:0;"><span class="tt-draw-plink" onclick="${on(() => goH2H(P.key, ok, P.me.ioc, o.ioc))}" title="Open head to head" style="cursor:pointer; font-size:14.5px; font-weight:700;">${esc(nameOf(o))}</span><span style="font-size:12px; color:${C.muted};">Finished</span></div>${stats}</div>
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-top:16px;"><span style="${MONO} font-size:26px; font-weight:700; line-height:1; color:${won ? C.white : C.muted};">${won ? 'Won' : 'Lost'}</span><span title="${esc(why)}" style="font-size:12px; font-weight:700; white-space:nowrap; color:${flagC};">${flag}</span></div>
+      <div style="font-size:12px; color:${C.muted}; margin-top:6px;">${sets.length ? `${sw}${NDASH}${sets.length - sw} in sets · ` : ''}<span style="${MONO} font-size:12.5px; font-weight:700; font-variant-numeric:tabular-nums; white-space:pre; color:${C.white};">${esc(c.score || '')}</span></div>
+      <div style="margin-top:12px;">${fa.map(([k, v, t]) => `<div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:10px 0; border-top:1px solid ${W(6)};"><span style="font-size:12.5px; color:${C.muted};">${esc(k)}</span><span${t ? ` title="${esc(t)}"` : ''} style="font-size:13px; font-weight:600; text-align:right; white-space:pre; color:${k === 'Closing price' ? C.white : C.text};">${esc(v)}</span></div>`).join('')}</div></div>`;
+}
 function oppReport(ev, M, F, P, r) {
   const c = P.cells[r]; if (!c || !c.cands.length) return '';
   const nm = nameOf(P.me);
+  const done = c.state === 'won' || c.state === 'lost';
   const cards = c.cands.map(o => {
-    const f = oppFacts(P.key, newsName(P.key, nm), o);
+    const f = oppFacts(P.key, newsName(P.key, nm), o, ev.city);
     const h2h = f.h2h ? `${f.h2h.a}${NDASH}${f.h2h.b}${f.h2h.last ? ' · ' + f.h2h.last : ''}` : DASH;
     const A = f.arch && f.arch.state === 'ready' ? f.arch : null;
     const ar = A ? (A.n === 0 ? DASH : A.n < 5 ? `${A.w}${NDASH}${A.l}` : `wins ${Math.round(100 * A.w / A.n)}%`) : DASH;
     const arT = A ? `${nm} v ${A.oppLab}: ${A.w}${NDASH}${A.l} in ${A.n} meetings (classified players, walkovers out)` : '';
     const l5 = f.last5 && f.last5.length ? f.last5.join(' ') : DASH;
-    const fa = [['Opening price', DASH, 'No source yet'], ['Head to head', h2h, f.h2h ? `${f.h2h.n} meetings (ATP head-to-head population)` : ''], [f.archK, ar, arT], ['On this court', DASH, 'No source yet'], ['Last five', l5, f.last5 && f.last5.length ? `${nameOf(o)}: last ${f.last5.length} played matches, oldest first` : '']];
+    const ok0 = String(o.playerKey);
+    const bp = !done ? boardPrice(ev, P.me, o) : null;
+    let opRow = null; if (bp) { const bm = ev.board.find(x => [String(x.p1Key), String(x.p2Key)].sort().join('|') === [String(P.key), ok0].sort().join('|'));
+      if (bm) { const me1 = String(bm.p1Key) === String(P.key); try { opRow = [_openAnchorOf(bm, me1 ? 'p1' : 'p2'), _openAnchorOf(bm, me1 ? 'p2' : 'p1')]; } catch (e) { opRow = null; } } }
+    const opV = opRow && opRow[0] >= 1.01 && opRow[1] >= 1.01 ? `${opRow[0].toFixed(2)} · Opp ${opRow[1].toFixed(2)}` : DASH;
+    const opT = opV !== DASH ? `The match card's first recorded price${bp && bp.book ? ' (' + bp.book + ')' : ''}` : 'Not on Today\'s Matches yet: no price recorded';
+    const ct = f.court, rate = x => (x.n >= 5 ? Math.round(100 * x.w / x.n) + '%' : x.w + NDASH + (x.n - x.w));
+    const ocV = ct && (ct.me.n || ct.opp.n) ? `${rate(ct.opp)} · his ${rate(ct.me)}` : DASH;
+    const ocT = ct ? `Record at ${ev.city}, every edition on file: ${nameOf(o)} ${ct.opp.w}${NDASH}${ct.opp.n - ct.opp.w} (n = ${ct.opp.n}), ${nm} ${ct.me.w}${NDASH}${ct.me.n - ct.me.w} (n = ${ct.me.n}); a rate from 5 matches` : 'Loading';
+    const fa = [['Opening price', opV, opT], ['Head to head', h2h, f.h2h ? `${f.h2h.n} meetings (ATP head-to-head population)` : ''], [f.archK, ar, arT], ['On this court', ocV, ocT], ['Last five', l5, f.last5 && f.last5.length ? `${nameOf(o)}: last ${f.last5.length} played matches, oldest first` : '']];
     const ok = String(o.playerKey);
-    const done = c.state === 'won' || c.state === 'lost';
+    if (done) return playedCard(ev, c, P, o, f, nm);
     const likely = done ? 'Played' : c.known ? 'Confirmed' : pctS(CH ? CH.reach(r, ok) : null) + ' likely';
     const wp = done || !CH ? null : CH.pw(P.key, ok);
     const wTip = done ? 'Played: see the result in the draw' : wp == null ? (CH ? NO_CH : 'Not modelled for this draw') : `Chance ${nm} beats ${nameOf(o)} · ${pairBasis(P.key, ok)}`;
@@ -1128,7 +1211,7 @@ function oppReport(ev, M, F, P, r) {
   const close = on(() => { S.opp = null; repaint(); });
   return `<div class="tt-draw-ovl" onclick="${close}" style="position:fixed; inset:0; z-index:70; background:${C.scrim62}; display:flex; align-items:center; justify-content:center; padding:24px;">
     <div onclick="event.stopPropagation()" style="box-sizing:border-box; width:860px; max-width:100%; max-height:100%; overflow-y:auto; background:${C.card}; border:1px solid ${W(12)}; border-radius:14px; padding:26px 28px 28px; box-shadow:${C.shOverlay};">
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:16px;"><div style="display:flex; align-items:center; gap:12px; min-width:0;">${avatar(P.key, nm, 40, W(14), 13)}<div style="display:flex; flex-direction:column; gap:3px; min-width:0;"><span style="font-size:18px; font-weight:800; color:${C.white};">${esc(nm)}</span><span style="font-size:12.5px; color:${C.muted};">${esc(c.rd + (c.cands.length > 1 ? ' · who he could play' : ' · his opponent'))}</span></div></div>${closeBtn(close)}</div>
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:16px;"><div style="display:flex; align-items:center; gap:12px; min-width:0;">${avatar(P.key, nm, 40, W(14), 13)}<div style="display:flex; flex-direction:column; gap:3px; min-width:0;"><span style="font-size:18px; font-weight:800; color:${C.white};">${esc(nm)}</span><span style="font-size:12.5px; color:${C.muted};">${esc(c.rd + (done ? ' · finished' : c.cands.length > 1 ? ' · who he could play' : ' · his opponent'))}</span></div></div>${closeBtn(close)}</div>
       <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px; margin-top:22px;">${cards}</div></div></div>`;
 }
 
@@ -1201,19 +1284,20 @@ function ptsHtml(ev, M, F, pm, finished) {
   const prior = pm.e.prior && pm.e.prior.season ? pm.e.prior.season : (+String(ev.start).slice(0, 4) - 1);
   const dd = pm.e.dropDate ? new Date(pm.e.dropDate + 'T00:00:00Z') : null;
   const dropW = dd && isFinite(dd) ? `${dd.getUTCDate()} ${MON[dd.getUTCMonth()]}` : DASH;
-  const sub = finished ? `Points won here in ${prior}, dropped when this edition ended` : `Points won here in ${prior} drop off on ${dropW}`;
+  const sub = pm.dropped ? `Points won here in ${prior} already dropped on ${dropW}, 52 weeks after they were earned · nothing left to defend`
+    : finished ? `Points won here in ${prior}, dropped when this edition ended` : `Points won here in ${prior} drop off on ${dropW}`;
   const byD = S.ptSort === 'drop';
   const L = pm.rows.slice().sort((x, y) => byD ? (y.drop == null ? -1 : y.drop) - (x.drop == null ? -1 : x.drop) || (y.pts || 0) - (x.pts || 0) : (y.pts || 0) - (x.pts || 0) || (y.drop == null ? -1 : y.drop) - (x.drop == null ? -1 : x.drop));
-  const tp = pm.rows.slice().sort((x, y) => (y.pts || 0) - (x.pts || 0) || (y.drop == null ? -1 : y.drop) - (x.drop == null ? -1 : x.drop))[0];
-  const td = pm.rows.filter(r => r.drop != null).sort((x, y) => y.drop - x.drop || (y.pts || 0) - (x.pts || 0))[0];
+  const tp = pm.dropped ? null : pm.rows.slice().sort((x, y) => (y.pts || 0) - (x.pts || 0) || (y.drop == null ? -1 : y.drop) - (x.drop == null ? -1 : x.drop))[0];
+  const td = pm.dropped ? null : pm.rows.filter(r => r.drop != null).sort((x, y) => y.drop - x.drop || (y.pts || 0) - (x.pts || 0))[0];
   const mxP = Math.max.apply(null, L.map(r => r.pts || 0).concat([1])), mxD = Math.max.apply(null, L.map(r => r.drop || 0).concat([1]));
   const rk = v => (v == null ? DASH : 'No. ' + v);
   const tile = (title, r, isOn, k, right, rightC, under) => `<div class="tt-draw-edge" data-tt="pt-${k}" onclick="${on(() => { S.ptSort = k; repaint(); })}" title="Sort the list" style="cursor:pointer; background:${C.card}; border:1px solid ${isOn ? W(22) : W(6)}; border-radius:11px; padding:16px 18px; display:flex; align-items:center; justify-content:space-between; gap:14px; min-width:0;">
       <div style="display:flex; align-items:center; gap:12px; min-width:0;">${r ? avatar(r.k, r.n, 36, W(14), 12) : ''}<div style="display:flex; flex-direction:column; gap:5px; min-width:0;"><span style="display:flex; gap:6px; ${LBL} white-space:nowrap;"><span>${title}</span><span style="color:${C.blue}; font-weight:700;">${isOn ? '↓' : '›'}</span></span><span title="${esc(r ? r.full : '')}" style="font-size:15px; font-weight:700; color:${C.white}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(r ? r.n : DASH)}</span><span style="font-size:12px; color:${C.muted}; white-space:nowrap;${under && under.mono ? ' ' + MONO : ''}">${esc(under ? under.t : '')}</span></div></div>
       <span style="flex:none; ${MONO} font-size:26px; font-weight:700; line-height:1; color:${rightC};">${esc(right)}</span></div>`;
   const tiles = `<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:8px; margin-top:18px;">`
-    + tile('Most points to defend', tp, !byD, 'pts', tp && tp.pts != null ? String(tp.pts) : DASH, C.white, tp ? { t: `${tp.last} in ${prior}` } : null)
-    + tile('Biggest drop if out first round', td, byD, 'drop', td ? (td.drop ? MINUS + td.drop : '0') : DASH, td && td.drop ? C.red : C.muted, td ? { t: `${rk(td.today)} → ${rk(td.would)}`, mono: true } : { t: 'Needs ranking points on file' })
+    + tile('Most points to defend', tp, !byD, 'pts', tp && tp.pts != null ? String(tp.pts) : DASH, C.white, tp ? { t: `${tp.last} in ${prior}` } : { t: pm.dropped ? `Dropped on ${dropW}` : 'No points on file' })
+    + tile('Biggest drop if out first round', td, byD, 'drop', td ? (td.drop ? MINUS + td.drop : '0') : DASH, td && td.drop ? C.red : C.muted, td ? { t: `${rk(td.today)} → ${rk(td.would)}`, mono: true } : { t: pm.dropped ? 'Already out of his ranking' : 'Needs ranking points on file' })
     + `</div>`;
   const G = 'grid-template-columns:minmax(130px,190px) 96px minmax(40px,1fr) 52px 130px 44px; gap:0 12px;';
   const thead = `<div style="display:grid; ${G} align-items:end; margin-top:20px; padding:0 8px 10px; ${LBL} white-space:nowrap;"><span>Player</span><span>${prior} here</span><span></span><span style="text-align:right; color:${byD ? C.muted : C.white};">Points</span><span style="display:flex; flex-direction:column; gap:5px;"><span style="text-align:center; padding-bottom:5px; border-bottom:1px solid ${W(10)};">If out first round</span><span style="display:grid; grid-template-columns:56px 18px 56px;"><span style="text-align:right;">Today</span><span></span><span style="text-align:right;">Would be</span></span></span><span style="text-align:right; color:${byD ? C.white : C.muted};">Places</span></div>`;
@@ -1226,7 +1310,7 @@ function ptsHtml(ev, M, F, pm, finished) {
       <span title="${esc(r.full)}" style="display:flex; align-items:center; gap:10px; min-width:0;">${avatar(r.k, r.n, 26, W(10), 9.5)}<span style="min-width:0; font-size:13.5px; font-weight:600; color:${C.white}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(r.n)}</span><span style="flex:none; ${MONO} font-size:10px; color:${C.muted};">${esc(r.tag)}</span></span>
       <span style="display:flex;">${chip(r.last)}</span>
       <div style="height:4px; border-radius:2px; background:${W(7)};"><div style="height:100%; width:${bar}%; border-radius:2px; background:${full ? C.blue : BAR55};"></div></div>
-      <span style="text-align:right; ${MONO} font-size:13.5px; font-weight:700; color:${r.pts == null ? C.muted : C.white};">${r.pts == null ? DASH : r.pts}</span>
+      <span${pm.dropped && r.earned != null ? ` title="${esc(r.earned + ' points won here in ' + prior + ', dropped on ' + dropW + ' (52 weeks after they were earned)')}"` : ''} style="text-align:right; ${MONO} font-size:13.5px; font-weight:700; color:${r.pts == null ? C.muted : C.white};">${r.pts == null ? DASH : r.pts}</span>
       <span${r.whyRank ? ` title="${esc(r.whyRank)}"` : ''} style="display:grid; grid-template-columns:56px 18px 56px; align-items:baseline; ${MONO} font-size:12.5px; font-weight:600; white-space:nowrap;"><span style="text-align:right; color:${C.soft};">${rk(r.today)}</span><span style="text-align:center; font-size:11px; color:${C.muted};">→</span><span style="text-align:right; color:${r.would == null ? C.muted : C.white};">${rk(r.would)}</span></span>
       <span style="text-align:right; ${MONO} font-size:13.5px; font-weight:700; color:${r.drop ? C.red : C.muted};">${r.drop == null ? DASH : r.drop ? MINUS + r.drop : '0'}</span></div></div>`;
   }).join('');
@@ -1240,13 +1324,13 @@ function statsHtml(ev, M, st) {
     const isOpen = gi === 0 ? S.ed === i : S.stat === t.key;
     const click = gi === 0 ? !!st.hev && t.v != null : st.live && !!t.key;
     const onc = click ? on(() => { if (gi === 0) S.ed = S.ed === i ? null : i; else S.stat = S.stat === t.key ? null : t.key; repaint(); }) : '';
-    const cols = t.cols.map(c => `<div title="${esc(c.y + (c.now && st.live ? ' so far' : '') + ' · ' + st.fm(t, c.v))}" style="height:${c.h}; border-radius:3px 3px 0 0; background:${c.v == null ? 'transparent' : c.now ? C.blue : BAR55};"></div>`).join('');
+    const cols = t.cols.map(c => `<div title="${esc(c.y + (c.now && st.live ? ' so far' : '') + ' · ' + st.fm(t, c.v) + (c.n != null ? ' · n = ' + c.n + ' matches' : ''))}" style="height:${c.h}; border-radius:3px 3px 0 0; background:${c.v == null ? 'transparent' : c.now ? C.blue : BAR55};"></div>`).join('');
     const yrs = t.cols.map(c => `<span style="display:flex; justify-content:center; white-space:nowrap; color:${c.now ? C.text : C.muted}; font-weight:${c.now ? 700 : 400};">${String(c.y).slice(2)}</span>`).join('');
     const gl = (lab, title, v, d) => `<span title="${esc(title)}" style="display:flex; align-items:baseline; justify-content:space-between; gap:6px; white-space:nowrap;"><span>${lab}</span><span style="${MONO} font-size:12.5px; font-weight:700; color:${sgnC(d)};">${v}</span></span>`;
     return `<div class="${click ? 'tt-draw-tile' : ''}" onclick="${onc}" style="position:relative; cursor:${click ? 'pointer' : 'default'}; background:${C.card}; border:1px solid ${isOpen ? W(22) : W(6)}; border-radius:11px; padding:16px 16px 14px; display:flex; flex-direction:column; gap:10px; min-width:0;">
       <span style="display:flex; justify-content:space-between; gap:8px; font-size:12.5px; font-weight:600; line-height:16px; min-height:32px; color:${C.soft};"><span style="text-wrap:balance;">${esc(t.label)}</span><span style="flex:none; color:${C.blue}; font-weight:700;">${click ? '›' : ''}</span></span>
       <div style="display:flex; align-items:baseline; justify-content:space-between; gap:5px 10px; flex-wrap:wrap;"><span title="${esc(t.vTitle)}" style="${MONO} font-size:26px; font-weight:700; line-height:1; color:${t.figColor};">${esc(t.fig)}</span>
-        <span style="flex:0 0 100%; display:flex; flex-direction:column; gap:5px; margin-top:8px; font-size:12px; color:${C.muted};">${gl('vs tour', 'Against the tour average' + (t.tourTitle ? ' · ' + t.tourTitle : ''), t.gapN, t.dN)}${gl(t.gapLL, 'Against the past edition', t.gapL, t.dL)}${gl('vs past five', 'Against the average of the five editions before', t.gapP, t.dP)}</span></div>
+        <span style="flex:0 0 100%; display:flex; flex-direction:column; gap:5px; margin-top:8px; font-size:12px; color:${C.muted};">${gl('vs tour', 'Against the tour average' + (t.tourTitle ? ' · ' + t.tourTitle : ''), t.gapN, t.dN)}${gl(t.gapLL, t.lastTitle, t.gapL, t.dL)}${gl('vs past five', t.fiveTitle, t.gapP, t.dP)}</span></div>
       <div style="position:relative; height:56px; margin-top:4px;"><div style="position:absolute; inset:0; display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:5px; align-items:end;">${cols}</div>${t.tourB ? `<div title="${esc(t.tourTitle)}" style="position:absolute; left:-4px; right:-4px; bottom:${t.tourB}; border-top:1.5px dashed ${W(75)};"></div>` : ''}</div>
       <div style="display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:5px; ${MONO} font-size:10px;">${yrs}</div></div>`;
   };
@@ -1275,7 +1359,7 @@ const tHead = (GRID, cells) => `<div style="display:grid; ${GRID} padding-bottom
 function edBox(st, t) {
   const fm = x => st.fm(t, x);
   const nowL = st.cy + (st.live ? ' so far' : '');
-  const past = t.cols.slice(0, 5).map(c => ({ y: c.y, v: t.series[c.y] != null ? t.series[c.y] : null })).reverse();
+  const past = t.cols.slice(0, 5).map(c => ({ y: c.y, v: t.series[c.y] != null ? t.series[c.y] : null, n: c.n })).reverse();
   const known = past.filter(p => p.v != null).concat(t.v != null ? [{ y: nowL, v: t.v }] : []);
   const hi = known.slice().sort((a, b) => b.v - a.v)[0], lo = known.slice().sort((a, b) => a.v - b.v)[0];
   const tiles = [{ label: 'This edition', fig: fm(t.v), sub: nowL, title: t.vTitle },
@@ -1288,7 +1372,7 @@ function edBox(st, t) {
   const rows = rowsAll.map(r => { const d = r.v != null && t.v != null ? r.v - t.v : null, bw = d == null ? 0 : Math.abs(d) / sp * 50, dt = r.v != null && t.tour != null ? r.v - t.tour : null;
     return `<div style="display:grid; ${GRID} align-items:center; padding:13px 0; border-bottom:1px solid ${W(6)};">
       <span style="font-size:13.5px; font-weight:${r.now ? 700 : 500}; color:${r.now ? C.white : C.soft}; white-space:nowrap;">${esc(r.y)}</span>
-      <span style="text-align:right; ${MONO} font-size:14.5px; font-weight:700; color:${r.now ? C.white : C.soft};">${fm(r.v)}</span>
+      <span title="${esc(r.now ? t.vTitle : r.n != null ? 'n = ' + r.n + ' matches' : 'No edition on file with ' + FLOOR + '+ matches')}" style="text-align:right; ${MONO} font-size:14.5px; font-weight:700; color:${r.now ? C.white : C.soft};">${fm(r.v)}</span>
       <span style="text-align:right; ${MONO} font-size:13px; font-weight:700; color:${sgnC(dt)};">${dt != null ? sg(dt) : DASH}</span>
       <span style="text-align:right; ${MONO} font-size:13px; font-weight:700; color:${r.now ? C.muted : sgnC(d)};">${r.now || d == null ? DASH : sg(d)}</span>
       <div style="position:relative; height:12px;"><div style="position:absolute; left:0; right:0; top:4px; height:4px; border-radius:2px; background:${W(7)};"></div>${d != null && !r.now ? `<div style="position:absolute; left:${d >= 0 ? 50 : 50 - bw}%; top:4px; height:4px; border-radius:2px; width:${bw}%; background:${BAR55};"></div>` : ''}<div title="This edition" style="position:absolute; top:0; left:50%; width:2px; height:12px; margin-left:-1px; border-radius:1px; background:${C.white};"></div></div></div>`; }).join('');

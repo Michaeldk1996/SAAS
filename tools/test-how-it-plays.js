@@ -278,6 +278,24 @@ else {
     for (const b of ['indoorHard', 'outdoorHard']) { const s = real.baseline[b]; if (!s || s.n < 3000 || s.years.length !== 10) throw new Error(`${b}: ${s && s.n} / ${s && s.years}`); }
   });
 }
+// founder 2026-11-26: deciders / comebacks counted from per-set winners; a level set count is no result
+check('decider = 3-set matches, comeback = winner lost set 1, over completed matches with set scores', () => {
+  let S = H.emptySums();
+  S = H.addRec(S, { completed: true, partial: false, stats: null, sets: [{ tb: 0, nonStd: false }, { tb: 0, nonStd: false }], setWin: [1, 1] });
+  S = H.addRec(S, { completed: true, partial: false, stats: null, sets: [{}, {}, {}], setWin: [2, 1, 1] });
+  S = H.addRec(S, { completed: true, partial: false, stats: null, sets: [{}, {}, {}], setWin: [1, 2, 1] });
+  S = H.addRec(S, { completed: false, partial: false, stats: null, sets: [{}], setWin: [2] });
+  S = H.addRec(S, { completed: true, partial: false, stats: null, sets: [{}, {}], setWin: [1, 2] });
+  const m = H.metricsOf(S);
+  if (S.dm !== 3 || S.dec !== 2 || S.cb !== 1) throw new Error(JSON.stringify({ dm: S.dm, dec: S.dec, cb: S.cb }));
+  if (Math.abs(m.decider.value - 2 / 3) > 1e-9 || Math.abs(m.comeback.value - 1 / 3) > 1e-9) throw new Error('metrics');
+});
+check('each event carries one slice per past edition (byYear)', () => {
+  const ed = JSON.parse(fs.readFileSync(histPath, 'utf8')).editions.find(e => e.sums && e.sums.dm > 0);
+  if (!ed) throw new Error('the history file holds no decider counts (rebuild tools/build-how-it-plays-history.js)');
+  if (!/byYear: Object\.fromEntries/.test(fs.readFileSync(process.env.HOWPLAYS_BUILDER || path.join(ROOT, 'build-how-it-plays.js'), 'utf8'))) throw new Error('no byYear in the events');
+});
+
 // the history file is reproducible from the pinned Sackmann copy — local only (the copy is not in CI)
 const SACK = path.join(os.homedir(), 'stennisfy-te-store', 'sackmann');
 if (process.env.HOWPLAYS_BUILDER) { skip++; console.log('  SKIP  history reproducibility — mutant run'); }

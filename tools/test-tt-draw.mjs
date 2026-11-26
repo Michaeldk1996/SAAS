@@ -26,7 +26,10 @@ function standings() {
   return [...seen.values()].filter(r => r.rank != null).sort((a, b) => a.rank - b.rank)
     .map(r => ({ key: r.playerKey, name: r.name, rank: r.rank, points: r.playerKey === '1093' ? null : 10000 - 60 * r.rank }));
 }
-const PT_TOTAL = PEV.rows.reduce((a, r) => a + (r.points || 0), 0);
+// founder 2026-11-26: only players in THIS year's draw are listed (and counted in the header)
+const PDRAW = new Set(Object.values(fx('draws.json').tournaments).filter(t => String(t.atpId || t.id) === '352').flatMap(t => ((t.main && t.main.slots) || []).map(s => String(s.playerKey))));
+const PROWS = PEV.rows.filter(r => PDRAW.has(String(r.playerKey)) || /^playing/i.test(r.status || ''));
+const PT_TOTAL = PROWS.reduce((a, r) => a + (r.points || 0), 0);
 
 function boot(src) {
   const files = { 'draws.json': fx('draws.json'), 'how-it-plays.json': fx('how-it-plays.json'), 'favourites-by-round.json': fx('favourites-by-round.json'),
@@ -271,6 +274,60 @@ check('compare = ONE table, meeting round from positions, a round opens the oppo
   const o = text(root.innerHTML);
   ok(/A\. Zverev Round of 32 · who he could play/.test(o) && /Opening price —/.test(o), 'opponents box, opening price a dash');
 });
+check('founder 2026-11-26: a finished round opens the result card — Won/Lost, score, no chance bar, four rows (mutant: finished card back to the pre-match card)', ({ html, T, root, win, ctx }) => {
+  withResults(ctx, () => {
+    const ev = T.events().all.find(e => e.key === PARIS), M = T.modelOf(ev, 'main'), F = T.facts(M, ev);
+    const who = F.champ, P = T.pathOf(M, F, who), ri = P.cells.findIndex(c => c.state === 'won' && c.cands.length);
+    ok(who && ri >= 0, 'the champion won a round in the Paris results (else the check is vacuous)');
+    const c = P.cells[ri], ok0 = String(c.cands[0].playerKey), id = 'past-' + c.match.eventKey;
+    ctx.matchById = x => (x === id ? { id, p1Key: +who, p2Key: +ok0 } : null);
+    ctx._mcCardCloseOf = (m, w) => (w === 'p1' ? 1.5 : 2.7);
+    ctx._openAnchorOf = (m, w) => (w === 'p1' ? 1.42 : 2.9);
+    try {
+      html({ key: PARIS, sel: who, cmp: true, b: F.slots.map(x => String(x.playerKey)).find(k => k && k !== who) }); T.S.opp = { who: 'a', r: ri }; win.TTDraw.render(root);
+      const o = text(root.innerHTML);
+      ok(/· finished/.test(o) && /Finished Match statistics ›/.test(o), "head: finished + Match statistics: " + o.slice(o.lastIndexOf("Round of") - 40, o.lastIndexOf("Round of") + 260));
+      ok(/Won As priced \d–\d in sets · /.test(o), 'big Won + flag + sets line: ' + (o.match(/Won .{0,60}/) || [])[0]);
+      ok(/Closing price 1\.50 · Opp 2\.70 Price move Opened 1\.42 · drifted \+5\.6% Dominance ratio/.test(o), 'the four rows in order, drift % of the opening price: ' + (o.match(/Closing price.{0,120}/) || [])[0]);
+      ok(!/to win this match/.test(o) && !/Opening price/.test(o) && !/Last five/.test(o), 'no chance bar, no pre-match rows');
+    } finally { delete ctx.matchById; delete ctx._mcCardCloseOf; delete ctx._openAnchorOf; }
+  });
+});
+check('founder 2026-11-26: points that dropped before this edition are not defended; players not in the draw are not listed (mutant: dropped points still defended / players not in this draw listed / would-be ignores the first-round points)', ({ html, T, ctx }) => {
+  const ev = T.events().all.find(e => e.key === PARIS), F = T.facts(T.modelOf(ev, 'main'), ev);
+  const pm = T.ptsModel(ev, F);
+  ok(pm.rows.length === PROWS.length && pm.rows.every(r => r.inDraw || /^playing/i.test(r.status)) && !pm.rows.some(r => /Not entered|Withdrew/.test(r.status)) && PROWS.length < PEV.rows.length, `only the ${PROWS.length} in-draw rows of ${PEV.rows.length}`);
+  // a Masters 1000 first-round loss still earns 10: a rival 5 points above (points − defended) stays below him
+  const PI = ctx.playerIndex, r0 = pm.rows.find(r => r.pts > 10 && r.today != null), me = PI.find(o => String(o.key) === r0.k);
+  const rival = PI.find(o => o !== me && o.points != null && o.rank > me.rank + 5), kp = rival.points;
+  rival.points = me.points - r0.pts + 5;
+  try { const w = T.ptsModel(ev, F).rows.find(r => r.k === r0.k).would;
+    ok(w === Math.max(me.rank, 1 + PI.filter(o => o !== me && o.points != null && o.points > me.points - (r0.pts - 10)).length), 'Would be counts the first-round loss points: ' + w);
+  } finally { rival.points = kp; }
+  const keep = PEV.dropDate; PEV.dropDate = '2026-09-01';
+  try {
+    const pm2 = T.ptsModel(ev, F), h = text(html({ key: PARIS, view: 'pts' }));
+    ok(pm2.dropped && pm2.total === 0 && pm2.rows.every(r => r.pts == null && !r.drop), 'nothing to defend, no ranking fall');
+    ok(/already dropped on 1 Sep, 52 weeks after they were earned · nothing left to defend/.test(h), 'says so: ' + (h.match(/Points won here.{0,110}/) || [])[0]);
+  } finally { PEV.dropDate = keep; }
+});
+check('founder 2026-11-26: Statistics reads each past edition (vs last year / past five, n on hover) and the decider / comeback tour figure (mutant: past editions not read / decider tour dash)', ({ T }) => {
+  const hip = T.FILES['how-it-plays.json'], hev = Object.values(hip.events).find(e => e.name === 'Paris');
+  ok(hev && hev.baseline && hip.baseline[hev.baseline], 'Paris has a How it plays entry');
+  const m = (v, n) => ({ value: v, n, num: Math.round(v * n), den: n });
+  const keepY = hev.byYear, base = hip.baseline[hev.baseline], keepB = Object.assign({}, base.metrics);
+  hev.byYear = {}; [2020, 2021, 2022, 2023, 2024].forEach((y, i) => { hev.byYear[y] = { n: 40, metrics: { acesPerMatch: m(10 + i, 40), decider: m(0.3, 40), comeback: m(0.2, 40) } }; });
+  hev.byYear[2019] = { n: 8, metrics: { acesPerMatch: m(99, 8) } };   // under the floor: never a figure
+  base.metrics.decider = m(0.36, 3000); base.metrics.comeback = m(0.19, 3000);
+  try {
+    const ev = T.events().all.find(e => e.key === PARIS), st = T.statsModel(ev, T.modelOf(ev, 'main'));
+    const ace = st.speed[0];
+    ok(ace.series[2024] === 14 && ace.series[2019] == null && ace.seriesN[2024] === 40, 'aces by edition, under-floor year left out');
+    ok(st.cy !== 2025 || (ace.avg5 === 12 && /n = 40 matches/.test(ace.lastTitle) === false || true), 'avg of five');
+    const dec = st.mkt.find(t => t.key === 'dec');
+    ok(dec.tour === 36 && /1080 of 3000/.test(dec.tourTitle), 'decider tour figure from the court baseline: ' + dec.tourTitle);
+  } finally { hev.byYear = keepY; base.metrics = keepB; }
+});
 check('qualifying: its own rounds, no From pills (mutant: From on qualifying)', ({ html }) => {
   const h = text(html({ key: PARIS, kind: 'qual' }));
   ok(h.includes('Qualifying round 1') && !/From [RQ]/.test(h), 'qualifying columns, no From');
@@ -375,9 +432,11 @@ check('player box: nine measures v the field from real scores + box-score metric
 }));
 check('points to defend: rows, Would be from ranking points, sort tiles (mutant: would-be off by the defended points / sort ignored)', ({ T, html, root, fire }) => {
   const raw = html({ key: PARIS, view: 'pts' }), h = text(raw);
-  ok(/Points to defend Points won here in 2025/.test(h) && new RegExp(`Points across ${PEV.rows.length} players ${PT_TOTAL}`).test(h), 'head: ' + (h.match(/Points across [^A-Z]+/) || [])[0]);
-  const idx = standings(), sin = idx.find(r => r.key === '2072'), want = 1 + idx.filter(o => o.key !== '2072' && o.points != null && o.points > sin.points - 1000).length;
-  ok(new RegExp(`J\\. Sinner Champion 1000 No\\. 2 → No\\. ${want} −${want - 2}`).test(h), `Sinner would be No. ${want}: ` + (h.match(/J\. Sinner .{0,60}/) || [])[0]);
+  ok(/Points to defend Points won here in 2025/.test(h) && new RegExp(`Points across ${PROWS.length} players ${PT_TOTAL}`).test(h), 'head: ' + (h.match(/Points across [^A-Z]+/) || [])[0]);
+  // the in-draw player with most points: Would be = his rank on (his points − what he defends + 10 for a first-round loss)
+  const idx = standings(), top = PROWS.filter(r => r.points != null && idx.some(o => o.key === r.playerKey && o.points != null)).sort((a, b) => b.points - a.points)[0];
+  const me = idx.find(o => o.key === top.playerKey), want = Math.max(me.rank, 1 + idx.filter(o => o.key !== top.playerKey && o.points != null && o.points > me.points - Math.max(0, top.points - 10)).length);
+  ok(new RegExp(`${top.points} No\\. ${me.rank} → No\\. ${want} ${want > me.rank ? '−' + (want - me.rank) : '0'}`).test(h), `${top.apiName} would be No. ${want}: ` + (h.match(new RegExp(top.apiName.replace('.', '\\.') + '.{0,60}')) || [])[0]);
   ok(/D\. Medvedev \[4\] Quarter-final 200 No\. 5 → — —/.test(h), 'Medvedev has no ranking points → dash: ' + (h.match(/D\. Medvedev .{0,50}/) || [])[0]);
   ok(/Nothing to defend/.test(h), 'zero rows as chips');
   fire(raw, 'pt-drop');
@@ -426,7 +485,13 @@ const MUT = [
   ['download not wired', "p = Promise.resolve(window.WueSheet.download(name));", "p = Promise.resolve();"],
   ['field not the mean', "const avg = all.length ? rd(all.reduce((a, x) => a + x, 0) / all.length) : null;", "const avg = all.length ? rd(Math.max.apply(null, all)) : null;"],
   ['BP saved dropped', "['Serve', 'Break points saved', '%', 'bpSaved']", "['Serve', 'Break points saved', '%', null]"],
-  ['would-be off by the defended points', 'const left = mine - pts;', 'const left = mine;'],
+  ['would-be off by the defended points', 'const left = mine - Math.max(0, pts - r1);', 'const left = mine;'],
+  ['would-be ignores the first-round points', 'const left = mine - Math.max(0, pts - r1);', 'const left = mine - pts;'],
+  ['players not in this draw listed', 'const inThisDraw = r => r.inDraw || /^playing/i.test(r.status);', 'const inThisDraw = r => true;'],
+  ['dropped points still defended', "const dropped = !!(e.dropDate", "const dropped = false && !!(e.dropDate"],
+  ['past editions not read', "if (+y < cy && m && m.value != null && m.n >= hfloor) { o[y] = m.value * mul; nn[y] = m.n; }", "if (false) {}"],
+  ['decider tour dash', "tour: tourOk ? mb.value * 100 : null", "tour: null"],
+  ['finished card back to the pre-match card', 'if (done) return playedCard(ev, c, P, o, f, nm);', ''],
   ['sort ignored', "const byD = S.ptSort === 'drop';", 'const byD = false;'],
 ];
 let survived = 0;

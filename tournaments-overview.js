@@ -89,7 +89,7 @@ function speedYearOf(name, y){
 const CPI_EVENTS = [['Indian Wells', 'Hard'], ['Miami', 'Hard'], ['Monte Carlo', 'Clay'], ['Madrid', 'Clay'], ['Rome', 'Clay'],
   ['Canadian Open', 'Hard'], ['Cincinnati', 'Hard'], ['Shanghai', 'Hard'], ['Paris', 'Indoor hard']];
 const CPI_KEY = n => (n === 'Montreal' || n === 'Toronto' ? 'Canadian Open' : n);
-const CPI_CREDIT = 'Court Pace Index, courtspeed.com (an on-court measurement of surface friction and bounce; higher is faster)';
+const CPI_CREDIT = 'Court Pace Index (an on-court measurement of surface friction and bounce; higher is faster)';
 const cpiBand = v => (v < 30 ? 'Slow' : v < 35 ? 'Medium-slow' : v < 40 ? 'Medium' : v < 45 ? 'Medium-fast' : 'Fast');
 const isM1000 = c => !!c && /^ATP (Masters )?1000$/.test(String(c.category || ''));
 // { year: reading } for one CPI event, or null
@@ -118,7 +118,7 @@ function logoFileOf(name){
   return L[name] || L[LOGO_ALIAS[name]] || (tn && L[tn]) || null;
 }
 const logoCode = n => String(n || '').normalize('NFD').replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase() || DASH;
-const SPEED_CREDIT = "Tennis Abstract's court-speed rating (tennisabstract.com)";
+const SPEED_CREDIT = 'Court-speed index (1.00 is the tour average; higher is faster)';   // founder 2026-11-26: never name the source on the page
 // The design's 4-band label (founder ruling 1, 2026-11-15: "the 4-band speed label").
 const speedLabel = s => (s >= 1.1 ? 'Fast' : s >= 0.95 ? 'Medium' : s >= 0.82 ? 'Medium-slow' : 'Slow');
 function speedStats(){
@@ -327,6 +327,10 @@ const CSS = [
   `${P}.tt-ov-kv.cpi{ border-bottom:1px solid ${W(6)}; }`,
   `${P}.tt-ov-kv.cpi + .tt-ov-kv{ border-top:0; }`,
   `${P}.tt-ov-kv.cpi:hover{ box-shadow:inset 0 0 0 999px ${W(3)}; }`,
+  `${P}.tt-ov-kv.ctx{ gap:6px; }`,
+  `${P}.tt-ov-kv.ctx .k{ align-items:center; gap:6px 4px; min-width:0; white-space:nowrap; }`,
+  `${P}.tt-ov-ctx{ display:inline-flex; align-items:baseline; gap:3px; padding:2px 5px; border-radius:6px; background:var(--tt-lifted); border:1px solid ${W(10)}; font-size:11px; font-weight:600; letter-spacing:-0.01em; color:var(--tt-muted); white-space:nowrap; }`,
+  `${P}.tt-ov-ctx b{ ${MONO} font-weight:700; color:var(--tt-white); }`,
   `${P}.tt-ov-kv .k{ display:inline-flex; align-items:baseline; gap:6px 10px; flex-wrap:wrap; font-size:13.5px; font-weight:600; color:var(--tt-soft); }`,
   `${P}.tt-ov-kv .v{ display:inline-flex; align-items:baseline; gap:5px; }`,
   `${P}.tt-ov-kv .n{ ${MONO} font-size:20px; font-weight:700; line-height:1; }`,
@@ -495,6 +499,18 @@ function headHtml(c){
       <div style="min-width:0;"><div class="tt-ov-ttl"><span class="tt-ov-name">${esc(c.name)}</span>${c.status === 'Completed' ? '<span class="tt-ov-pchip">Completed</span>' : ''}</div><div class="tt-ov-sub">${esc(c.category || DASH)} · ${esc(cap(c.surface || ''))} court</div></div></div>`;
 }
 
+// The surface median chip (design 2026-11-26, [data-ovctx]): the median of the printed whole-% figure over every
+// tournament of the open event's surface that has one (never the tour-wide median); the rank lives in the hover only.
+function surfCtx(c, key, fn){
+  const surf = String(c.surface || '').toLowerCase(), me = fn(c);
+  if (!surf || !me) return null;
+  const vs = events().filter(t => String(t.surface || '').toLowerCase() === surf).map(t => fn(t)).filter(Boolean).map(x => Math.round(x.pct)).sort((a, b) => a - b);
+  if (vs.length < 2) return null;
+  const med = Math.round((vs[(vs.length - 1) >> 1] + vs[vs.length >> 1]) / 2), v = Math.round(me.pct);
+  const cap = surf.charAt(0).toUpperCase() + surf.slice(1) + ' median';
+  return { key, cap, med, title: `${ord(1 + vs.filter(x => x > v).length)} highest of ${vs.length} ${surf} tournaments · ${surf} median ${med}%` };
+}
+
 // ---------------------------------------------------------------- render: court speed card
 function speedCardHtml(c){
   const sp = speedOf(c.name), S2 = speedStats();
@@ -504,7 +520,7 @@ function speedCardHtml(c){
   const rank = sp != null ? ord(1 + S2.rated.filter(v => v > sp).length) : DASH;
   const alt = c.altitude != null ? c.altitude : null;
   const fs = firstServeOf(c), hd = holdOf(c), cpi = cpiOf(c);
-  const kv = (k, v, unit, tip) => `<div class="tt-ov-kv"><span class="k">${k}</span><span class="v" title="${esc(tip)}"><span class="n${v == null ? ' tt-ov-dash' : ''}">${v == null ? DASH : v}</span><span class="u">${unit}</span></span></div>`;
+  const kv = (k, v, unit, tip, cx) => `<div class="tt-ov-kv${cx ? ' ctx' : ''}"><span class="k"${cx ? ` data-ovctx="${cx.key}" title="${esc(cx.title)}"` : ''}>${k}${cx ? `<span class="tt-ov-ctx">${esc(cx.cap)} <b>${cx.med}%</b></span>` : ''}</span><span class="v" title="${esc(tip)}"><span class="n${v == null ? ' tt-ov-dash' : ''}">${v == null ? DASH : v}</span><span class="u">${unit}</span></span></div>`;
   const fsTip = fs ? `1st serve points won at ${c.name}: ${fmtN(fs.num)} of ${fmtN(fs.den)} points (n = ${fmtN(fs.den)} points, ${fmtN(fs.n)} matches, ${fs.span}), both players, main draw. ${cap(fs.src)}.`
     : (holdData() === undefined || st.hip === undefined ? 'Loading' : `No 1st-serve count on file for ${c.name}.`);
   const hdTip = hd ? `Service hold at ${c.name}: ${fmtN(hd.held)} of ${fmtN(hd.games)} service games held (n = ${fmtN(hd.games)}, ${fmtN(hd.matches)} matches, ${hd.span}), both players, main draw. Our own box scores.`
@@ -512,21 +528,21 @@ function speedCardHtml(c){
   let cpiRow = '';
   if (cpi) {
     const ys = Object.keys(cpi).map(Number).sort((a, b) => a - b), ly = ys[ys.length - 1], lv = cpi[ly];
-    cpiRow = `<div class="tt-ov-kv cpi tt-ov-seg" data-tt-cpi="1" onclick="TTOverview.metric('cpi')" title="${esc(CPI_CREDIT + '. Click to see it year by year.')}"><span class="k">Court Pace Index<span class="tt-ov-lab">${cpiBand(lv)} · ${ly}</span></span><span class="v"><span class="n">${lv.toFixed(1)}</span><span class="u go">›</span></span></div>`;
+    cpiRow = `<div class="tt-ov-kv cpi tt-ov-seg" data-tt-cpi="1" onclick="TTOverview.metric('cpi');TTOverview.openSpeeds()" title="${esc(CPI_CREDIT + '. Click to compare every Masters 1000, year by year.')}"><span class="k">Court Pace Index<span class="tt-ov-lab">${cpiBand(lv)} · ${ly}</span></span><span class="v"><span class="n">${lv.toFixed(1)}</span><span class="u go">›</span></span></div>`;
   }
   return `<div class="tt-ov-card tt-ov-speed">
       <div class="tt-ov-sl">
         <div class="tt-ov-hd"><span class="tt-ov-t16">Court speed</span><span class="tt-ov-btn tt-ov-seg" onclick="TTOverview.openSpeeds()">Compare all ${chev('var(--tt-blue)')}</span></div>
         <div class="tt-ov-fig"><span class="tt-ov-fig48${sp == null ? ' tt-ov-dash' : ''}"${credit}>${sp == null ? DASH : sp.toFixed(2)}</span><span class="tt-ov-band${sp == null ? ' tt-ov-dash' : ''}">${sp == null ? DASH : speedLabel(sp)}</span></div>
-        <div class="tt-ov-track tt-ov-seg" onclick="TTOverview.openSpeeds()" title="Abstract court speed. The tick marks the tour median.">${sp != null ? `<span class="fill" style="width:${pos(sp)};"></span>` : ''}${S2.med != null ? `<span class="med" style="left:${pos(S2.med)};"></span>` : ''}${sp != null ? `<span class="knob" style="left:${pos(sp)};"></span>` : ''}</div>
+        <div class="tt-ov-track tt-ov-seg" onclick="TTOverview.openSpeeds()" title="Court-speed index. The tick marks the tour median.">${sp != null ? `<span class="fill" style="width:${pos(sp)};"></span>` : ''}${S2.med != null ? `<span class="med" style="left:${pos(S2.med)};"></span>` : ''}${sp != null ? `<span class="knob" style="left:${pos(sp)};"></span>` : ''}</div>
         <div class="tt-ov-scale"><span>Slow</span><span>Medium</span><span>Fast</span></div>
         <div class="tt-ov-rank"><span class="m">${rank}</span> fastest of <span class="m">${S2.n || DASH}</span> · tour median <span class="m">${S2.med != null ? S2.med.toFixed(2) : DASH}</span></div>
       </div>
       <div class="tt-ov-sr">
         ${cpiRow}
         ${kv('Altitude', alt, 'm', alt != null ? `Venue altitude, ${alt} m.` : 'No altitude on file.')}
-        ${kv('1st serve points won', fs ? Math.round(fs.pct) : null, '%', fsTip)}
-        ${kv('Service hold', hd ? Math.round(hd.pct) : null, '%', hdTip)}
+        ${kv('1st serve points won', fs ? Math.round(fs.pct) : null, '%', fsTip, surfCtx(c, 'serve1', firstServeOf))}
+        ${kv('Service hold', hd ? Math.round(hd.pct) : null, '%', hdTip, surfCtx(c, 'hold', holdOf))}
       </div>
     </div>`;
 }
@@ -572,7 +588,7 @@ function conditionsText(c){
   const fs = firstServeOf(c);
   if (fs) parts.push(`They won ${Math.round(fs.pct)}% of their first-serve points (${fs.span}).`);
   const sp = speedOf(c.name);
-  if (sp != null) parts.push(`Tennis Abstract rates the court ${speedLabel(sp).toLowerCase()} at ${sp.toFixed(2)}.`);
+  if (sp != null) parts.push(`The court plays ${speedLabel(sp).toLowerCase()}, a speed index of ${sp.toFixed(2)}.`);
   return parts.join(' ');
 }
 
@@ -743,7 +759,7 @@ function quotesBoxHtml(){
   }).join('');
   return `<div class="tt-ov-scrim" data-tourx-scrim="1"><div class="tt-ov-sheet" role="dialog" aria-modal="true" aria-label="What players say" style="max-width:860px;">
       <div class="tt-ov-shd q"><div class="tt-ov-shrow"><div style="flex:1;min-width:0;"><div class="tt-ov-sht">What players say</div><div class="tt-ov-shs">${esc(c.name)} · ${shown.length} ${shown.length === 1 ? 'quote' : 'quotes'} about the courts and conditions</div></div>${closeBtn(true)}</div>
-        <div class="tt-ov-pills" title="${esc('AS = ' + SPEED_CREDIT + ' that season')}">${pill('all', 'All years')}${years.map(y => pill(y, `${y} · AS ${as(y)}`)).join('')}</div></div>
+        <div class="tt-ov-pills" title="${esc('Speed = the ' + SPEED_CREDIT.charAt(0).toLowerCase() + SPEED_CREDIT.slice(1) + ' that season')}">${pill('all', 'All years')}${years.map(y => pill(y, `${y} · Speed ${as(y)}`)).join('')}</div></div>
       <div class="tt-ov-qbody">${rows}</div>
     </div></div>`;
 }

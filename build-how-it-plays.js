@@ -119,7 +119,7 @@ function excludedSackmannRow(r) {
 }
 
 // ── sums ─────────────────────────────────────────────────────────────────────────────────────────────────────────
-function emptySums() { return { m: 0, held: 0, sg: 0, fw: 0, fi: 0, sw: 0, sp: 0, ace: 0, tm: 0, tb: 0, sets: 0, nonStd: 0, partial: 0, unknown: 0, incomplete: 0 }; }
+function emptySums() { return { m: 0, held: 0, sg: 0, fw: 0, fi: 0, sw: 0, sp: 0, ace: 0, tm: 0, tb: 0, sets: 0, nonStd: 0, partial: 0, unknown: 0, incomplete: 0, dm: 0, dec: 0, cb: 0 }; }
 function addSums(a, b) { const o = Object.assign({}, a); for (const k of Object.keys(b)) o[k] = (o[k] || 0) + b[k]; return o; }
 
 // rec = { completed: true|false|null, partial: bool, stats: {held,sg,fw,fi,sw,sp,ace}|null, sets: [{tb, nonStd}]|null }
@@ -135,6 +135,12 @@ function addRec(S, rec) {
     if (rec.sets.some(x => x.nonStd)) S.nonStd++;
     else { S.tm++; S.sets += rec.sets.length; S.tb += rec.sets.filter(x => x.tb).length; }
   }
+  // deciders / comebacks (founder 2026-11-26): set winners per set (1 | 2); a level count is no result and is skipped
+  const w = rec.setWin, nonStd = rec.sets && rec.sets.some(x => x.nonStd);
+  if (Array.isArray(w) && w.length >= 2 && !nonStd) {
+    const n1 = w.filter(x => x === 1).length, n2 = w.length - n1;
+    if (n1 !== n2) { S.dm++; if (w.length === 3) S.dec++; if (w[0] !== (n1 > n2 ? 1 : 2)) S.cb++; }
+  }
   return S;
 }
 
@@ -146,6 +152,8 @@ function metricsOf(S) {
     secondServeWon: metric(S.sw, S.sp, S.m),
     acesPerMatch: metric(S.ace, S.m, S.m),
     tiebreaksPerSet: metric(S.tb, S.sets, S.tm),
+    decider: metric(S.dec || 0, S.dm || 0, S.dm || 0),
+    comeback: metric(S.cb || 0, S.dm || 0, S.dm || 0),
   };
 }
 
@@ -166,7 +174,7 @@ function sackmannRec(r) {
   const stats = w && l ? { held: w.held + l.held, sg: w.sg + l.sg, fw: w.fw + l.fw, fi: w.fi + l.fi, sw: w.sw + l.sw, sp: w.sp + l.sp, ace: w.ace + l.ace } : null;
   const ss = parseSetScores(score);
   const sets = ss ? ss.map(s => ({ tb: (s.p === 7 && s.o === 6) || (s.p === 6 && s.o === 7), nonStd: Math.max(s.p, s.o) >= 10 })) : null;
-  return { completed, partial: false, stats, sets };
+  return { completed, partial: false, stats, sets, setWin: ss ? ss.map(s => (s.p > s.o ? 1 : 2)) : null };
 }
 
 // ── api-tennis box-score entry → rec ─────────────────────────────────────────────────────────────────────────────
@@ -229,7 +237,8 @@ function boxRec(e, tdComment) {
   else completed = completedFromSets(perSetScores(e));   // true or null — never a guessed false
   const sgTot = rawOf(ms.p1, SG) && rawOf(ms.p2, SG) ? rawOf(ms.p1, SG).total + rawOf(ms.p2, SG).total : null;
   const partial = stats != null && sgTot != null && pbpRegularGames(e) - sgTot >= PARTIAL_GAP;
-  return { completed, partial, stats, sets: pbpSets(e) };
+  const ps = completed ? perSetScores(e) : null;
+  return { completed, partial, stats, sets: pbpSets(e), setWin: ps ? ps.map(([x, y]) => (x > y ? 1 : 2)) : null };
 }
 
 // ── tournament-progression.json match → rec ──────────────────────────────────────────────────────────────────────
@@ -253,7 +262,7 @@ function progressionRecs(ev) {
     const sets = sc.length ? sc.map(([x, y]) => ({ tb: (x === 7 && y === 6) || (x === 6 && y === 7), nonStd: Math.max(x, y) >= 10 })) : null;
     const regular = sc.reduce((t, [x, y]) => t + Math.min(x + y, 12), 0);
     const partial = stats != null && sc.length > 0 && regular - stats.sg >= PARTIAL_GAP;
-    out.push({ ek: m.eventKey != null ? String(m.eventKey) : null, date: m.date || null, rec: { completed: m.status === 'finished', partial, stats, sets } });
+    out.push({ ek: m.eventKey != null ? String(m.eventKey) : null, date: m.date || null, rec: { completed: m.status === 'finished', partial, stats, sets, setWin: sc.length ? sc.map(([x, y]) => (x > y ? 1 : 2)) : null } });
   }
   return out;
 }
@@ -460,6 +469,9 @@ function buildHowItPlays(inp) {
       surface: 'hard', indoor: ind, courtSource: ind === null ? null : 'tournament-surfaces.json courts',
       baseline: ind === null ? null : ind ? 'indoorHard' : 'outdoorHard',
       past, current,
+      // one slice per past edition, for the Draw Statistics "vs last year" / "vs past five" (founder 2026-11-26)
+      byYear: Object.fromEntries([...new Set(pastParts.map(p => p.season))].sort((a, b) => a - b)
+        .map(y => [y, slice(pastParts.filter(p => p.season === y))]).filter(x => x[1])),
       excludedPartial: (past ? past.excludedPartial : 0) + (current ? current.excludedPartial : 0),
     };
   }

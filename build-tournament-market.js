@@ -99,7 +99,7 @@ const ALIAS = {
   'Marseille': ['Open 13'],
   'Montpellier': ['Open Sud de France'],
   'Metz': ['Open de Moselle'],
-  'Stockholm': ['Stockholm Open'],
+  'Stockholm': ['Stockholm Open', 'Nordic Open'],   // BNP Paribas Nordic Open = Stockholm 2023–25 (same venue)
   'Gstaad': ['Suisse Open Gstaad', 'Allianz Suisse Open', 'Crédit Agricole Suisse Open Gstaad'],
   'Munich': ['BMW Open'],
   'Bastad': ['SkiStar Swedish Open', 'Catella Swedish Open', 'Nordea Open', 'Swedish Open', 'Synsam Swedish Open'],

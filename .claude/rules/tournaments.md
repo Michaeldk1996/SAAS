@@ -31,6 +31,37 @@ Rationale: `BUILD-NOTES.md` "2026-11-15 — Tournaments tab rebuild".
   page; 2026-11-20: it is the Draw tab's Points to defend view, see Draw). **Test:** `tools/test-tournament-page.js` (no Stats tab), the builders' own `tools/test-how-it-plays.js`,
   `tools/test-favourites-by-round.js`, `tools/test-points-to-defend.js`.
 
+## Founder rulings 2026-11-26 (final export `design_handoff_tournaments_final_2026-11-26/`, locked) — each a test
+- **The final export is the design** (`site/Tournaments.dc.html`, Part 1 of its `decisions/tournaments.md`); it changes two
+  things over 11-20: the Overview surface median chip and the Draw finished-match card.
+- **Never name a speed source on this page** (visible text or hover): no "Tennis Abstract", "tennisabstract", "courtspeed".
+  The figure is "the court-speed index"; the CPI is "Court Pace Index". **Test:** `tools/test-tt-overview.mjs` (court speed,
+  CPI). Our own back-end attribution (code comments, builders) is unchanged.
+- **The Court Pace Index row opens a box:** Compare all on CPI. **Test:** `tools/test-tt-overview.mjs` "CPI".
+- **Surface median chip** on 1st serve points won and Service hold: the median of the printed whole-% figure over every
+  tournament of the open event's surface that has one; rank in the hover only; no green / red.
+- **Statistics reads each past edition:** `how-it-plays.json` `events[k].byYear` (one slice per edition, Sackmann 2016–24 +
+  our box scores 2025, hard courts) fills "vs <last year>", "vs past five" and the past bars, an edition counting from 15
+  matches, n on hover. **Matches going to a decider / Won from a set down** take their tour figure from the same court
+  baseline (completed best-of-3 main-draw matches with set scores: `decider` / `comeback` in `metricsOf`) and their past
+  editions from `byYear`. **Test:** `tools/test-tt-draw.mjs` "Statistics reads each past edition", `tools/test-how-it-plays.js`.
+- **Stockholm 2023–25 is "Nordic Open" in the Database** (sponsor name, same venue): `build-tournament-market.js` ALIAS.
+- **Points to defend follows the ATP 52-week rule:** points leave the ranking 52 weeks after they were earned (the builder's
+  `dropDate`). An edition that starts after that date (moved later in the calendar) has nothing left to defend: the line says
+  "already dropped on <date>, 52 weeks after they were earned", the total is 0, no player falls, and today's ranking is never
+  reduced a second time (the cause of Rune's "−250" at Stockholm 2026). Otherwise Would be = his rank on (points − defended
+  + what a first-round loss earns: 10 at a Masters 1000 / Grand Slam, 0 at a 250 / 500). "Places" counts ranking places, not
+  points. **Only players in this year's draw are listed** (main draw or qualifying; "Not entered" / "Withdrew" never), and
+  the header count follows. **Test:** `tools/test-tt-draw.mjs` "points that dropped before this edition".
+- **Opponents box, finished round** = the pre-match card layout with the result: Finished + "Match statistics ›" (the one
+  Match analysis), Won / Lost + As priced / Upset / Upset loss, "a–b in sets · score", no chance bar, rows Closing price ·
+  Price move · Dominance ratio · Head to head now only. Prices = the match card's close and that same book's open; a stored
+  row whose card state expired takes the match's Pinnacle close (`pinClose`) and only Pinnacle's own open — never another
+  book's (else Price move is a dash with that reason). Dominance ratio = his return points won % ÷ his opponent's (the
+  progression's point counts). Unplayed cards: Opening price = the card's first recorded price; On this court = each
+  player's record at this event (a rate from 5 matches). **Test:** `tools/test-tt-draw.mjs` "a finished round opens the
+  result card".
+
 ## Colour, scope, theme
 - **Colours = the export's exact values, through tokens.** `tournaments-tab.css` remaps `--card --inner --selected --text
   --text-soft --text-label --pos --neg --link` to `--tt-*` inside `.tabpage[data-page="tournaments"]`; every other export

@@ -139,7 +139,8 @@ const CHECKS = {
     const c = B2.I.events().find(t => t.name === 'Wimbledon'), as = B2.cc.Wimbledon.abstractSpeed;
     const card = B2.I.speedCardHtml(c);
     if (!card.includes('>' + as.toFixed(2) + '<')) return 'figure is not COURT_CONDITIONS.abstractSpeed';
-    if (!/title="Tennis Abstract/.test(card)) return 'no Tennis Abstract credit on hover';
+    if (!/title="Court-speed index/.test(card)) return 'no court-speed hover';
+    if (/Tennis Abstract|tennisabstract|courtspeed/i.test(card)) return 'the speed source is named on the page (founder 2026-11-26: never)';
     if (!new RegExp('>' + B2.I.speedLabel(as) + '<').test(card)) return 'band word is not the 4-band label';
     return null;
   },
@@ -206,7 +207,7 @@ const CHECKS = {
     const none = B.I.quotesCardHtml({ name: 'Basel' });
     if (/onclick/.test(none) || !none.includes('—')) return 'a quote-less event must show a dash card without a click';
     B.ts.quotesPanel = true; const box = B.I.quotesBoxHtml(); B.ts.quotesPanel = false;
-    if (!/All years/.test(box) || !/· AS (\d\.\d\d|—)/.test(box)) return 'quotes box: year pills must carry the AS reading or a dash';
+    if (!/All years/.test(box) || !/· Speed (\d\.\d\d|—)/.test(box)) return 'quotes box: year pills must carry the speed reading or a dash';
     return null;
   },
   'CSS: every selector page-scoped, the export borders kept'(B){
@@ -237,7 +238,8 @@ const CHECKS = {
     const want = Object.assign({}, CSH.cpi.Montreal, CSH.cpi.Toronto);
     if (JSON.stringify(mo) !== JSON.stringify(to) || Object.keys(want).some(y => mo[y] !== want[y])) return 'Canadian Open is not Montreal + Toronto merged';
     const card = B.I.speedCardHtml(ev('Madrid'));
-    if (!/data-tt-cpi="1"/.test(card) || !/courtspeed\.com/.test(card)) return 'no CPI row with the courtspeed.com credit';
+    if (!/data-tt-cpi="1"/.test(card) || /courtspeed/i.test(card)) return 'no CPI row, or the CPI source named on the page';
+    if (!/data-tt-cpi="1"[^>]*onclick="[^"]*openSpeeds\(\)/.test(card)) return 'the CPI row opens no box (founder 2026-11-26: it opens Compare all on CPI)';
     if (/data-tt-cpi/.test(B.I.speedCardHtml(ev('Wimbledon')))) return 'CPI row on a Slam';
     B.T.select('Madrid'); B.T.metric('cpi');
     const h = B.I.speedYearsHtml(ev('Madrid')); B.T.metric('speed');
