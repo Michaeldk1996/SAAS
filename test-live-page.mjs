@@ -251,29 +251,36 @@ test('hover boxes close when the pointer moves anywhere else (the body re-render
   assert.match(h, /if \(\(S\.momK \|\| S\.momDot\) && !\/\^\(dot\|row\):\/\.test\(k\)\)/);
 });
 
-// founder 2026-11-26: the in-play price = Bet105 (kibl_live_ml), pushed; shown only while the stream is in line with Bet105
-test('in-play price: Bet105, each player placed by Kibl\'s name order; dash when behind, suspended or ambiguous', async () => {
+// founder 2026-11-26: the in-play price = Bet105 (kibl_live_ml), pushed, shown whatever the feed's delay; a closed market
+// reads "Suspended" as on Bet105; only a stream worker that stopped writing leaves the price out
+test('in-play price: Bet105, each player placed by Kibl\'s name order; Suspended as Bet105 shows it; no guess between fixtures', async () => {
   const T = Date.now(), iso = ms => new Date(ms).toISOString();
-  const state = (o = {}) => ({ now: iso(T), pos: { ins: iso(T - 1000 - (o.lag || 0)), rcv: iso(T - 900) },
+  const state = (o = {}) => ({ now: iso(T), pos: { ins: iso(T - 1000 - (o.lag || 0) - (o.dead || 0)), rcv: iso(T - 900 - (o.dead || 0)) },
     fx: [{ id: 5, name: '777 Lorenzo Musetti vs Yibing Zhou', league: 19, start: '2026-10-09T08:00:00Z',
-      sides: [{ pid: 100, price: 1.4, st: o.st || 1, ins: iso(T - 20000) }, { pid: 101, price: 2.9, st: 1, ins: iso(T - 20000) }] }]
+      sides: [{ pid: 100, price: 1.4, st: o.st || 1, ins: iso(T - 1200000) }, { pid: 101, price: 2.9, st: 1, ins: iso(T - 1200000) }] }]
       .concat(o.twin ? [{ id: 6, name: '12 Lorenzo Musetti vs Yibing Zhou', league: 19, start: '2026-10-09T09:00:00Z',
         sides: [{ pid: 7, price: 1.5, st: 1, ins: iso(T - 5000) }, { pid: 8, price: 2.6, st: 1, ins: iso(T - 5000) }] }] : []) });
   const run = (src, o) => { const c = boot(src); c.LivePage._lp.apply(state(o)); c.LivePage._lp.LP.readAt = T; return c; };
   await both('players swapped', s => s.replace('hits.push({ f, a: hi, b: lo })', 'hits.push({ f, a: lo, b: hi })'), src => {
     const c = run(src), m = c.LivePage._vm(board()[0], 0);        // Y. Zhou v L. Musetti: Kibl lists Musetti first
-    assert.equal(JSON.stringify(m.lp.v), '[2.9,1.4]');
+    assert.equal(JSON.stringify(m.lp.v), '[2.9,1.4]', 'a side unchanged for 20 min is still Bet105\'s price');
     const h = c.LivePage._html.card({ m, sig: c.LivePage._sig(m) });
     assert.match(h, />2\.90</); assert.match(h, />1\.40</); assert.match(h, /Bet105 in-play/);
     const mh = c.LivePage._html.modalHead(m); assert.match(mh, />2\.90</); assert.match(mh, />1\.40</);
   });
-  await both('lag check dropped', s => s.replace('return rcv - ins <= LIVE_CONST.LP_LAG_MAX_MS && ', 'return '), src => {
-    const m = run(src, { lag: 8000 }).LivePage._vm(board()[0], 0);
-    assert.equal(JSON.stringify(m.lp.v), '[null,null]', 'worker 8 s behind Kibl = no price');
+  await both('delay gate back', s => s.replace('return lpNow() - rcv <= LIVE_CONST.LP_DEAD_MS;', 'return rcv - ins <= 5000 && lpNow() - rcv <= LIVE_CONST.LP_DEAD_MS;'), src => {
+    const m = run(src, { lag: 60000 }).LivePage._vm(board()[0], 0);
+    assert.equal(JSON.stringify(m.lp.v), '[2.9,1.4]', 'a worker a minute behind Kibl still shows Bet105\'s price');
   });
-  await both('suspension ignored', s => s.replace('(x.st == null || Number(x.st) === 1)', 'true'), src => {
-    const m = run(src, { st: 2 }).LivePage._vm(board()[0], 0);
-    assert.equal(JSON.stringify(m.lp.v), '[null,null]'); assert.match(m.lp.tip, /suspended/);
+  await both('stopped worker ignored', s => s.replace('return lpNow() - rcv <= LIVE_CONST.LP_DEAD_MS;', 'return true;'), src => {
+    const m = run(src, { dead: 180000 }).LivePage._vm(board()[0], 0);
+    assert.equal(JSON.stringify(m.lp.v), '[null,null]', 'nothing written for 3 min = no price');
+  });
+  await both('suspension shown as a price', s => s.replace('(x.st == null || Number(x.st) === 1)', 'true'), src => {
+    const c = run(src, { st: 2 }), m = c.LivePage._vm(board()[0], 0);
+    assert.equal(m.lp.susp, true);
+    assert.match(c.LivePage._html.card({ m, sig: c.LivePage._sig(m) }), />Suspended</);
+    assert.match(c.LivePage._html.modalHead(m), />Suspended</);
   });
   await both('two fixtures picked anyway', s => s.replace('return hits.length === 1 ? hits[0] : null;', 'return hits[0] || null;'), src => {
     const m = run(src, { twin: true }).LivePage._vm(board()[0], 0);

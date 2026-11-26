@@ -33610,9 +33610,10 @@ window.DatabaseTab = (function(){
     HEAT_NEUTRAL: 3,           // Heatmap: neutral within ±3 points
     PRICE_MOVE_NO_BREAK: null, // "Price moved, no break": no threshold ruled — not built
     // In-play price = Bet105 (Kibl), pushed (founder 2026-11-26: "the one that updates the fastest and is in line with Bet105").
-    // A price shows only while the stream is in line with Bet105: the worker at most LP_LAG_MAX_MS behind Kibl (the live
-    // arbitrage worker's rule), its position read at most LP_POS_MAX_MS old, each side re-priced within LP_SIDE_MAX_MS.
-    LP_LAG_MAX_MS: 5000, LP_POS_MAX_MS: 20000, LP_SIDE_MAX_MS: 600000, LP_READ_MS: 10000, LP_OVER_MAX: 1.20,
+    // Bet105's price is shown as Bet105 shows it, whatever the feed's delay (founder 2026-11-26: "better to show a price";
+    // the score feed runs behind too); a market Bet105 has closed reads "Suspended", as on Bet105. Only a stream worker
+    // that has stopped writing (nothing processed for LP_DEAD_MS) leaves the price out: its last price would be stale.
+    LP_DEAD_MS: 120000, LP_READ_MS: 10000,
     CARD_MOMENTS_CAP: 5, TIMELINE_CAP: 6, AVG_MIN_MATCHES: 10,
   });
   window.LIVE_CONST = LIVE_CONST;
@@ -33701,10 +33702,10 @@ window.DatabaseTab = (function(){
     LP.fx = next;
   }
   // the stream is in line with Bet105: the worker's position read recently and close behind Kibl
-  function lpStreamOk() {
+  function lpStreamAlive() {
     const p = LP.pos; if (!p) return false;
     const rcv = lpMs(p.rcv), ins = lpMs(p.ins); if (rcv == null || ins == null) return false;
-    return rcv - ins <= LIVE_CONST.LP_LAG_MAX_MS && p.at - rcv <= LIVE_CONST.LP_LAG_MAX_MS && lpNow() - p.at <= LIVE_CONST.LP_POS_MAX_MS;
+    return lpNow() - rcv <= LIVE_CONST.LP_DEAD_MS;   // the worker is still writing (its delay behind Kibl is not a reason)
   }
   function lpFixtureOf(m) {
     const same = window.KiblJoin && window.KiblJoin.same; if (typeof same !== 'function') return null;
@@ -33725,12 +33726,12 @@ window.DatabaseTab = (function(){
     if (!lpCfg()) return none('No in-play price feed on this page');
     const h = lpFixtureOf(m);
     if (!h) return none(LP.readAt ? 'Bet105 lists no in-play price for this match' : LP.err ? 'In-play prices unavailable' : 'Loading in-play prices');
-    if (!lpStreamOk()) return none('Bet105 feed behind — price not shown');
-    const A = h.f.sides.get(h.a), B = h.f.sides.get(h.b), now = lpNow();
-    const ok = x => x && x.price >= 1.01 && (x.st == null || Number(x.st) === 1) && lpMs(x.ins) != null && now - lpMs(x.ins) <= LIVE_CONST.LP_SIDE_MAX_MS;
-    if (!ok(A) || !ok(B)) return none('Bet105 market suspended');
-    const over = 1 / A.price + 1 / B.price;
-    if (over < 0.99 || over > LIVE_CONST.LP_OVER_MAX) return none('Bet105 market suspended');
+    if (!lpStreamAlive()) return none('Bet105 feed not updating');
+    const A = h.f.sides.get(h.a), B = h.f.sides.get(h.b);
+    if (!A || !B) return none('Bet105 lists no in-play price for this match');
+    // Bet105 closed the market (Kibl's market status other than open, or its 0.000 marker): "Suspended", as Bet105 shows it
+    const open = x => x.price >= 1.01 && (x.st == null || Number(x.st) === 1);
+    if (!open(A) || !open(B)) return { v: [null, null], susp: true, tip: 'Suspended on Bet105' };
     const t = Math.max(lpMs(A.ins), lpMs(B.ins));
     return { v: [A.price, B.price], tip: 'Bet105 in-play · ' + timeOf(t) };
   }
@@ -33779,9 +33780,6 @@ window.DatabaseTab = (function(){
       if (msg.event !== 'postgres_changes') return;
       const d = msg.payload && msg.payload.data, rec = d && (d.record || d.new);
       if (!rec) return;
-      // a pushed row written while the worker was behind Kibl is not in line with Bet105: hold it out until the next read
-      const lag = (lpMs(rec.received_at) ?? 0) - (lpMs(rec.kibl_inserted_on) ?? 0);
-      if (lag > LIVE_CONST.LP_LAG_MAX_MS && LP.pos) LP.pos = { ...LP.pos, at: -Infinity };
       if (lpPut(rec)) paint();
     };
     sock.onclose = () => {
@@ -34076,7 +34074,7 @@ window.DatabaseTab = (function(){
     const rows = [0, 1].map(s => { const p = s ? m.B : m.A, lead = sc(s) > sc(1 - s), lvl = sc(s) === sc(1 - s);
       return `<div style="display:flex; align-items:center;"><span style="flex:1; display:flex; align-items:center; gap:8px; min-width:0;">${ava(p, 26, { fs: '9.5px', cb: true })}<span title="${esc(p.name)}" style="font-size:14px; font-weight:${lead ? 700 : lvl ? 600 : 500}; color:${lead || lvl ? C.text : C.soft}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(p.name)}</span><span style="width:7px; height:7px; border-radius:50%; background:${m.live && m.serving === s ? C.text : 'transparent'}; flex:none;"></span></span>
         <span style="width:36px; flex:none; text-align:center; ${MONO} font-variant-numeric:tabular-nums; font-size:14px; font-weight:500; color:${C.soft};">${esc(m.point ? m.point[s] : D)}</span><span style="width:36px; flex:none; text-align:center; ${MONO} font-variant-numeric:tabular-nums; font-size:14px; font-weight:700; color:${C.text};">${sw(s)}</span><span style="width:42px; flex:none; text-align:center; ${MONO} font-variant-numeric:tabular-nums; font-size:14px; font-weight:500; color:${C.grey};">${m.sets[cur][s]}</span>${div(20)}<span${m.pre.tip ? ` title="${esc(m.pre.tip)}"` : ''} style="width:40px; flex:none; text-align:center; ${MONO} font-variant-numeric:tabular-nums; font-size:13px; color:${C.grey};">${px(m.pre.v[s])}</span></div>`; }).join('');
-    const box = s => `<span style="flex:1; min-width:0; display:flex; align-items:center; justify-content:space-between; height:34px; box-sizing:border-box; padding:0 10px; border-radius:8px; background:${C.card}; border:1px solid ${wa(8)};"><span style="font-size:12.5px; color:${C.grey};">${s + 1}</span><span title="${esc(m.lp.tip || '')}" style="${MONO} font-variant-numeric:tabular-nums; font-size:14px; font-weight:700; color:${C.text};">${px(m.lp.v[s])}</span></span>`;
+    const box = s => `<span style="flex:1; min-width:0; display:flex; align-items:center; justify-content:space-between; height:34px; box-sizing:border-box; padding:0 10px; border-radius:8px; background:${C.card}; border:1px solid ${wa(8)};"><span style="font-size:12.5px; color:${C.grey};">${s + 1}</span>${m.lp.susp ? `<span title="${esc(m.lp.tip)}" style="font-size:12.5px; font-weight:600; color:${C.grey}; white-space:nowrap;">Suspended</span>` : `<span title="${esc(m.lp.tip || '')}" style="${MONO} font-variant-numeric:tabular-nums; font-size:14px; font-weight:700; color:${C.text};">${px(m.lp.v[s])}</span>`}</span>`;
     const btn = !mj ? '' : n ? `<span data-act="mom:${m.ek}" style="flex:none; display:inline-flex; align-items:center; gap:6px; height:34px; padding:0 8px; border-radius:8px; font-size:12px; font-weight:600; color:${open ? C.text : C.grey}; background:${open ? C.lifted : 'transparent'}; white-space:nowrap; cursor:pointer; transition:color .14s, background .14s;" class="lv-mbtn">${n === 1 ? '1 moment' : n + ' moments'}<span style="font-size:9px; transform:${open ? 'rotate(180deg)' : 'none'}; transition:transform .14s;">▼</span></span>`
       : `<span style="flex:none; display:inline-flex; align-items:center; height:34px; padding:0 8px; font-size:12px; color:${C.grey}; white-space:nowrap;">No moments</span>`;
     const list = !open ? '' : `<div data-stop="1" style="margin:0 14px 12px; padding:6px 0; border-radius:10px; background:${C.card}; border:1px solid ${wa(6)}; display:flex; flex-direction:column; gap:1px; cursor:default;">${mj.slice(0, LIVE_CONST.CARD_MOMENTS_CAP).map(e => `<div class="lv-mrow" style="display:flex; align-items:baseline; gap:8px; min-height:26px; box-sizing:border-box; margin:0 4px; padding:5px 8px; border-radius:7px; transition:background .14s;">
@@ -34186,7 +34184,8 @@ window.DatabaseTab = (function(){
     const nS = m.nSets, setsWon = s => m.sets.slice(0, nS - 1).filter(st => st[s] > st[1 - s]).length, aW = setsWon(0), bW = setsWon(1);
     const cs = m.sets[nS - 1], stC = m.live ? C.text : C.amber;
     const priceLine = s => {
-      const live = `<span title="${esc(m.lp.tip || '')}" style="${MONO} font-size:13px; font-weight:700; color:${C.text}; font-variant-numeric:tabular-nums;">${px(m.lp.v[s])}</span><span style="color:${C.quiet};">${DOT}</span>`;
+      const live = (m.lp.susp ? `<span title="${esc(m.lp.tip)}" style="font-size:12px; font-weight:600; color:${C.grey};">Suspended</span>`
+        : `<span title="${esc(m.lp.tip || '')}" style="${MONO} font-size:13px; font-weight:700; color:${C.text}; font-variant-numeric:tabular-nums;">${px(m.lp.v[s])}</span>`) + `<span style="color:${C.quiet};">${DOT}</span>`;
       const pre = `<span>Pre</span><span title="${esc(m.pre.tip || 'Pre-match price')}" style="${MONO} font-size:12px; font-weight:500; color:${C.grey}; font-variant-numeric:tabular-nums;">${px(m.pre.v[s])}</span>`;
       return `<span style="display:flex; align-items:baseline;${s ? ' justify-content:flex-end;' : ''} gap:2px 6px; flex-wrap:wrap; font-size:11.5px; font-weight:600; color:${C.grey}; white-space:nowrap;">${s ? pre + `<span style="color:${C.quiet};">${DOT}</span>` + live.replace(`<span style="color:${C.quiet};">${DOT}</span>`, '') : live + pre}</span>`;
     };
@@ -34667,7 +34666,7 @@ window.DatabaseTab = (function(){
   if (btn) btn.addEventListener('click', init, true);
   const pg = document.querySelector('.tabpage[data-page="live"]');
   if (pg && pg.classList.contains('active')) init();
-  window.LivePage = { init, LIVE_CONST, _S: S, _vm: vm, _buildPlay: buildPlay, _sig: sigOf, _paint: paint, _open: openModal, _onFeed: onFeed, _side: SIDE, _lp: { LP, apply: lpApply, priceOf: livePriceOf, streamOk: lpStreamOk, names: lpNames },
+  window.LivePage = { init, LIVE_CONST, _S: S, _vm: vm, _buildPlay: buildPlay, _sig: sigOf, _paint: paint, _open: openModal, _onFeed: onFeed, _side: SIDE, _lp: { LP, apply: lpApply, priceOf: livePriceOf, streamAlive: lpStreamAlive, names: lpNames },
     _html: { header: headerHtml, card: cardHtml, momentum: momentumHtml, stats: statsHtml, points: pointsHtml, heat: heatHtml, modalHead: modalHeadHtml, cards: cardsModel } };
 })();
 </script>

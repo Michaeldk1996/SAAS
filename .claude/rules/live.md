@@ -25,9 +25,11 @@ check also runs on a mutated copy and must go red. `tools/test-live-tab-feed.js`
   clock, in-play fixtures with Kibl's names. Between reads each change is pushed, channel filtered to the grid's fixtures.
   A live match takes the ONE Kibl fixture whose two players both match by the stream join's name rule (`KiblJoin.same`
   = drops-page.js `kiblSame`), Kibl's start within 36 h of the match day; the lower participant id = Kibl's first-named
-  player. **Test:** a price shows only when the worker is ≤ `LP_LAG_MAX_MS` 5 s behind Kibl (the arbitrage rule), its
-  position read ≤ `LP_POS_MAX_MS` 20 s old, both sides open (market status 1, ≥ 1.01, overround 0.99–`LP_OVER_MAX` 1.20)
-  and re-priced within `LP_SIDE_MAX_MS` 10 min; else a dash whose hover says why. Never the pre-match price shown as live.
+  player. **Test:** Bet105's price shows whatever the feed's delay behind Kibl and however long since a side moved
+  (founder 2026-11-26: "better to show a price" — the live score runs behind too; this is not the arbitrage worker's 5 s
+  rule). A market Bet105 has closed (Kibl market status other than open, or its 0.000 marker) reads **"Suspended"**, as
+  on Bet105, in the card box and the header. Only a worker that has stopped writing (nothing processed for `LP_DEAD_MS`
+  2 min) or no single matching fixture gives a dash, its hover saying why. Never the pre-match price shown as live.
   The moments' "before → after" stay a dash (the point log has no times to cut the price history at).
   `test-live-page.mjs` "in-play price"; `kibl-stream/test-live-ml.py` (no write grant, history never readable).
 - **Medical timeout:** `mto-matches.json` (published every data run, ~10 min behind the detector). An open MTO = the amber
