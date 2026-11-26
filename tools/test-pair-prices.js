@@ -57,6 +57,20 @@ ok('buildPairs: every pair, every context; the two shards mirror each other; the
   // control: surfaces are different cells (surface Elo moves the base)
   assert.notStrictEqual(ra.H3[1], ra.C3[1]);
 });
+ok('best of 5 (founder 2026-11-26): the 5-set cells are the engine\'s converted figures, model and Elo-only alike', () => {
+  const { bo5FromBo3 } = require(path.join(ROOT, 'h2h-model/model'));
+  const { shards } = B.buildPairs(pl.slice(0, 2), { runModel, shortName: p => p.name, date: '2026-11-16' });
+  const ra = shards[pl[0].key].opp[pl[1].key];
+  for (const s of ['All', 'Hard', 'Clay', 'Grass']) {
+    const r5 = runModel(m(pl[0], pl[1], s), { pairOnly: true, bestOf: 5 }), r3 = runModel(m(pl[0], pl[1], s), { pairOnly: true, bestOf: 3 });
+    const k = s[0];
+    assert.ok(r5.stage2.formatConversion.applied, `${k}5 converted`);
+    assert.strictEqual(ra[k + '5'][0], Math.round(bo5FromBo3(r5.stage2.formatConversion.bo3.adjustedP1) * 1e4));
+    assert.ok(Math.abs(ra[k + '5'][1] - Math.round(bo5FromBo3(r3.stage1.baseP1) * 1e4)) <= 1, `${k}5 Elo-only = converted Bo3 base`);
+    // control: the favourite's 5-set chance is further from 50% than its 3-set one
+    assert.ok(Math.abs(ra[k + '5'][1] - 5000) > Math.abs(ra[k + '3'][1] - 5000), `${k}5 base wider than ${k}3`);
+  }
+});
 ok('buildPairs: a pair the engine cannot run is no row on either side (never a forced 50%)', () => {
   const ghost = { key: '99999999', name: 'Z. Nobody', rank: 999 };
   const { shards, stats } = B.buildPairs([pl[0], ghost], { runModel, shortName: p => p.name, date: '2026-11-16' });

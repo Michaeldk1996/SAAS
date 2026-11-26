@@ -371,7 +371,7 @@ console.log('=== resolvePlayer Elo join: aliases + no-key fallback (TEN-263 foll
   ok('on: the two sides still sum to 1', Math.abs(calibrate(0.3, { enabled: true, temperature: 1.3 }).p1 + calibrate(0.7, { enabled: true, temperature: 1.3 }).p1 - 1) < 1e-12);
   ok('T 1 or a bad T is no calibration', calibrate(0.7, { enabled: true, temperature: 1 }).applied === false && calibrate(0.7, { enabled: true, temperature: 0 }).applied === false);
   const src = require('fs').readFileSync(require('path').join(__dirname, 'model.js'), 'utf8');
-  ok('stage 3 prices the calibrated probability and records the raw one', /const cal = calibrate\(adjustedP1, config\.calibration\);\s*const pricing = priceAndValue\(cal\.p1, match\);/.test(src) && /rawP1: round4\(adjustedP1\)/.test(src));
+  ok('stage 3 prices the calibrated probability and records the raw one', /const cal = calibrate\(adjustedP1, config\.calibration\);\s*const pricing = priceAndValue\(toFormat\(cal\.p1\), match\);/.test(src) && /rawP1: round4\(toFormat\(adjustedP1\)\)/.test(src));
 }
 
 // ---- Stage 3 soft reference: Pinnacle is a sharp book (founder 2026-11-16) ----
@@ -390,6 +390,43 @@ console.log('=== resolvePlayer Elo join: aliases + no-key fallback (TEN-263 foll
   ok('no bookNow: a bestOdds side from Pinnacle gives no soft reference', fb.soft === null, fb.soft);
   const fb2 = pv({ bestOdds: { p1: { price: 2.9, bookmaker: 'bet365' }, p2: { price: 1.5, bookmaker: 'Betano' } } }).soft;
   ok('no bookNow: soft bestOdds still read', fb2 && fb2.price.p1 === 2.9, fb2);
+}
+
+// ---- Best of 3 -> best of 5 set conversion (founder 2026-11-26) ----
+{
+  console.log('\nBest-of-5 set conversion');
+  const M = require('./model');
+  const near4 = (a, b) => Math.abs(a - b) < 5e-4;
+  ok('85% → 90.2%, 76.5% → 81.7%, 50% stays 50%', near4(M.bo5FromBo3(0.85), 0.9023) && near4(M.bo5FromBo3(0.765), 0.8167) && near4(M.bo5FromBo3(0.5), 0.5), M.bo5FromBo3(0.85));
+  ok('the per-set model: p3 = s²(3−2s), p5 = s³(10−15s+6s²) at s 0.7', near4(M.bo5FromBo3(0.49 * 1.6), 0.343 * (10 - 10.5 + 2.94)));
+  ok('symmetric: the two sides still sum to 1', Math.abs(M.bo5FromBo3(0.3) + M.bo5FromBo3(0.7) - 1) < 1e-9);
+  ok('bo3FromBo5 inverts it', [0.2, 0.55, 0.9].every(p => Math.abs(M.bo3FromBo5(M.bo5FromBo3(p)) - p) < 1e-9));
+  ok('a Slam qualifier is best of 3; the main draw best of 5', M.inferBestOf({ tour: 'US Open', qualifying: true }) === 3 && M.inferBestOf({ tour: 'US Open', tournamentRound: 'US Open - Qualification' }) === 3 && M.inferBestOf({ tour: 'US Open', tournamentRound: '1/64-finals' }) === 5);
+  // The engine on two pinned players: a Bo5 pair-estimate is the Bo3 one converted (calibration then conversion).
+  const P = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '..', 'player-profiles.json'), 'utf8')).players || {};
+  const ks = ['1980', '2382', '2072', '1905'].filter(k => P[k]);
+  if (ks.length >= 2) {
+    const mm = { id: 'pair-x', p1Key: ks[0], p2Key: ks[1], p1: P[ks[0]].name, p2: P[ks[1]].name, surface: 'Hard', date: '2026-11-26', tour: '' };
+    const r3 = M.runModel(mm, { pairOnly: true, bestOf: 3 }), r5 = M.runModel(mm, { pairOnly: true, bestOf: 5 });
+    const fc = r5.stage2.formatConversion;
+    ok('runModel Bo5: adjustedP1 = conversion of the Bo3 adjusted figure; base and Elo-only converted too', r3.ok && r5.ok && fc.applied
+      && near4(r5.stage2.adjustedP1, M.bo5FromBo3(fc.bo3.adjustedP1)) && near4(fc.bo3.baseP1, r3.stage1.baseP1)
+      && near4(r5.stage1.baseP1, M.bo5FromBo3(r3.stage1.baseP1)) && near4(r5.stage1.baseState.eloOnlyP1, M.bo5FromBo3(r3.stage1.baseState.eloOnlyP1)), fc);
+    ok('runModel Bo5: the fair price = 1 / converted calibrated probability', near4(r5.stage3.fair.p1.prob, M.bo5FromBo3(fc.bo3.fairP1)) && r5.stage3.fair.p1.prob !== fc.bo3.fairP1, r5.stage3.fair);
+    ok('runModel Bo3: no conversion recorded', r3.stage2.formatConversion.applied === false);
+    ok('Bo5 ceiling = the converted Bo3 ceiling (0.85 → 0.902)', fc.tierCeil === Math.round(M.bo5FromBo3(r5.stage2.rankCeil.ceil) * 1e4) / 1e4);
+    // control: the rollback switch off = the old engine (Bo5 = Bo3 apart from the format layer)
+    cfg.formatConversion.enabled = false;
+    const off = M.runModel(mm, { pairOnly: true, bestOf: 5 });
+    cfg.formatConversion.enabled = true;
+    ok('switch off: no conversion, Bo5 base = Bo3 base', off.stage2.formatConversion.applied === false && off.stage1.baseP1 === r3.stage1.baseP1, off.stage1.baseP1);
+    // state 2: a Bo5 market anchor enters the blend in Bo3 terms (model agrees with the market → fair = market)
+    const pin = { p1: 1.5, p2: 2.8 };
+    const r5m = M.runModel(Object.assign({}, mm, { tour: 'US Open', pinnacleOpen: pin }), {});
+    const v = (1 / pin.p1) / (1 / pin.p1 + 1 / pin.p2);
+    ok('state 2 Bo5: the market anchor is turned into its Bo3 equivalent before the blend', r5m.ok && r5m.stage1.baseState.state === 2
+      && near4(r5m.stage2.formatConversion.bo3.baseP1, cfg.baseState.state2.blendedElo * r5m.stage1.components.elo5050.p1 + cfg.baseState.state2.surfaceElo * r5m.stage1.components.eloSurface.p1 + cfg.baseState.state2.market * M.bo3FromBo5(v)), r5m.stage2.formatConversion);
+  } else console.log('  SKIP engine checks: pinned players missing from player-profiles.json');
 }
 
 console.log(`\nRESULT: ${pass} passed, ${fail} failed`);

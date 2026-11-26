@@ -37,6 +37,10 @@ live calculation (Data below).
   **Test:** Zverev v Sinner, hard, Bo3: Zverev 4.11 – 6.45, Sinner 1.14 – 1.26 from cells 1500 / 2353.
 - **No blue flash on a filter pick** (founder fix 2, 2026-11-26): the prices are white at all times. The design file still
   draws the 520 ms blue (`priceCol`); the founder's word wins over it. **Test:** no `--h2h-blue` on a price after a pick.
+- **Best of 5 is converted by sets** (founder 2026-11-26): every 5-set cell (A5 / H5 / C5 / G5), both ends of the
+  range, is the engine's best-of-3 figure converted (p3 = s²(3 − 2s) → p5 = s³(10 − 15s + 6s²), `stennisfy-model.md`);
+  Zverev v Sinner, hard, best of 5 moves from 17.8% to 12.4% for Zverev. **Test:** `tools/test-pair-prices.js` "best
+  of 5" (the 5-set cells equal the converted figures; the base is further from 50% than in best of 3).
 - **Playing style under the 10-match floor in the last 52 weeks reads the same file's since-March-2024 window** (founder
   fix 4, 2026-11-26: Sinner had 7 grass matches in 52 weeks, every row "—"): the DNA file's `sinceBase` node (same box
   scores and formulas); the "?" says so with both counts; Under pressure stays "—" there (no since-2024 figure). Still

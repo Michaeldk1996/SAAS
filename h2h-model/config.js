@@ -478,6 +478,15 @@ module.exports = {
     temperature: 1.3,
   },
 
+  // ---- Best of 3 -> best of 5 conversion (founder 2026-11-26: "Add the set conversion") ----
+  // The engine prices a best-of-3 probability p3; on a best-of-5 match it becomes p5 through one per-set probability
+  // s (sets independent): p3 = s²(3 − 2s), p5 = s³(10 − 15s + 6s²) (85% -> 90.2%, 76.5% -> 81.6%). A best-of-5 market
+  // anchor is turned into its best-of-3 equivalent before the blend; ceiling and calibration run in best-of-3 terms;
+  // the converted figure is the price (model.js). ONE switch; rollback = enabled false, one commit.
+  formatConversion: {
+    enabled: true,
+  },
+
   // ---- Stage 3: value detection --------------------------------------
   value: {
     // Edge = fairProb - marketImplied (vig-removed). Flag thresholds:

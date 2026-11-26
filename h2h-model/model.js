@@ -31,8 +31,23 @@ const PAIR_SKIP_LAYERS = ['subjective', 'fatigue', 'weather', 'oddsMovement'];
 function inferBestOf(match) {
   const tour = String(match.tour || '');
   const isGS = config.bestOf5Tours.some(t => tour.toLowerCase().includes(t.toLowerCase()));
-  return isGS ? 5 : 3;
+  // Grand Slam qualifying is best of 3 (the feed's qualifying flag, or a round that names it).
+  const qual = match.qualifying === true || /qualif/i.test(String(match.tournamentRound || ''));
+  return isGS && !qual ? 5 : 3;
 }
+
+// ---- Best of 3 -> best of 5 (founder 2026-11-26, "Add the set conversion") ----
+// Sets independent with one per-set win probability s: p3 = s²(3 − 2s), p5 = s³(10 − 15s + 6s²).
+const bo3OfSet = s => s * s * (3 - 2 * s);
+const bo5OfSet = s => s * s * s * (10 - 15 * s + 6 * s * s);
+// Both are increasing on [0, 1], so the per-set probability is found by bisection.
+function setOf(p, f) {
+  let lo = 0, hi = 1;
+  for (let i = 0; i < 60; i++) { const mid = (lo + hi) / 2; if (f(mid) < p) lo = mid; else hi = mid; }
+  return (lo + hi) / 2;
+}
+const bo5FromBo3 = p3 => bo5OfSet(setOf(p3, bo3OfSet));
+const bo3FromBo5 = p5 => bo3OfSet(setOf(p5, bo5OfSet));
 
 /**
  * @param {object} match  a matches.json record (has p1Key/p2Key, odds, etc.)
@@ -65,9 +80,15 @@ function runModel(match, opts = {}) {
   const bw = config.baseState['state' + anchor.state];
   // State 3 carries market weight 0 (weights still sum to 1: 0.5+0.5), so a
   // null market never enters the sum.
+  // Format conversion (config.formatConversion, one switch): the engine works in best-of-3 terms (its Elo and layers
+  // are measured on mostly best-of-3 matches) and a best-of-5 match is converted once, at the end. A best-of-5 market
+  // anchor is a best-of-5 price, so it is turned into its best-of-3 equivalent before the blend.
+  const conv = bestOf === 5 && !!(config.formatConversion && config.formatConversion.enabled === true);
+  const toFormat = p => conv ? bo5FromBo3(p) : p;
+  const market3 = anchor.state === 3 ? null : (conv ? bo3FromBo5(anchor.market) : anchor.market);
   const baseP1 = bw.blendedElo * blendedElo
                + bw.surfaceElo * surfaceElo
-               + (anchor.state === 3 ? 0 : bw.market * anchor.market);
+               + (anchor.state === 3 ? 0 : bw.market * market3);
 
   // ---- Stage 2 ----
   const ctx = {
@@ -133,9 +154,15 @@ function runModel(match, opts = {}) {
   // ---- Stage 3 ----
   // Calibration (config.calibration, one switch, staged off): temperature-scale the adjusted probability toward 50%.
   // Stage 2 keeps the uncalibrated adjustedP1; stage 3 prices the calibrated one and records both.
+  // Order: rank-tier ceiling and calibration in best-of-3 terms, then the best-of-5 conversion. The conversion is
+  // monotone, so the best-of-5 ceiling is the converted best-of-3 one (0.85 -> 0.902, 0.90 -> 0.948).
   const cal = calibrate(adjustedP1, config.calibration);
-  const pricing = priceAndValue(cal.p1, match);
-  pricing.calibration = cal.applied ? { applied: true, temperature: cal.temperature, rawP1: round4(adjustedP1) } : { applied: false };
+  const pricing = priceAndValue(toFormat(cal.p1), match);
+  pricing.calibration = cal.applied ? { applied: true, temperature: cal.temperature, rawP1: round4(toFormat(adjustedP1)) } : { applied: false };
+  const formatConversion = conv
+    ? { applied: true, bestOf: 5, bo3: { baseP1: round4(baseP1), adjustedP1: round4(adjustedP1), fairP1: round4(cal.p1) },
+        setP1: round4(setOf(cal.p1, bo3OfSet)), tierCeil: round4(bo5FromBo3(tierCeil)) }
+    : { applied: false, bestOf };
 
   const appliedCount = adjustments.filter(a => a.applied).length;
   const gatedCount = adjustments.filter(a => a.gated).length;
@@ -145,8 +172,8 @@ function runModel(match, opts = {}) {
     match: matchMeta(match, bestOf),
     players: { p1: playerMeta(p1), p2: playerMeta(p2) },
     stage1: {
-      baseP1: round4(baseP1),
-      baseP2: round4(1 - baseP1),
+      baseP1: round4(toFormat(baseP1)),
+      baseP2: round4(1 - toFormat(baseP1)),
       components: stage1.components,
       note: stage1.note,
       // Model v2.0 STEP 2: which of the three base states priced this match.
@@ -158,14 +185,15 @@ function runModel(match, opts = {}) {
         anchorPrice: anchor.anchorPrice || null,
         pinnacleFrozen: anchor.frozen || false,
         weights: bw,
-        eloOnlyP1: round4(0.5 * blendedElo + 0.5 * surfaceElo),
+        eloOnlyP1: round4(toFormat(0.5 * blendedElo + 0.5 * surfaceElo)),
       },
     },
     stage2: {
       adjustments,
       totalDeltaP1: round4(totalDelta),
-      adjustedP1: round4(adjustedP1),
-      adjustedP2: round4(1 - adjustedP1),
+      adjustedP1: round4(toFormat(adjustedP1)),
+      adjustedP2: round4(1 - toFormat(adjustedP1)),
+      formatConversion,
       appliedCount,
       gatedCount,
       rankCeil: {
@@ -307,4 +335,4 @@ function selectMarketAnchor(match) {
   return { state: 3, market: null, book: null, anchorPrice: null, frozen: false, flag: flags[3] };
 }
 
-module.exports = { runModel, inferBestOf, selectMarketAnchor, calibrate, PAIR_SKIP_LAYERS };
+module.exports = { runModel, inferBestOf, selectMarketAnchor, calibrate, bo5FromBo3, bo3FromBo5, PAIR_SKIP_LAYERS };

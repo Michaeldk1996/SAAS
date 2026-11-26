@@ -39,6 +39,16 @@ Founder rulings: TEN-418 card 7a80b6fe, R1 review and R2 review 73f754f9 (2026-1
   note instead: "Elo-only base, no Pinnacle line yet" (state ≠ 2), "Pinnacle read Xh Ym ago" (read older than
   `EDGE_PIN_STALE_MIN` = 120), "pre-match price, the match has started". Only a match with no model run at all keeps the
   header + book rows + "No model price for this match yet." **Test:** `test-ten418-model.mjs` "never hidden".
+- **Best of 5 = the best-of-3 price converted by sets** (founder 2026-11-26, "Add the set conversion"): the engine
+  prices in best-of-3 terms; on a best-of-5 match (a Grand Slam main draw; Slam qualifying is best of 3) the per-set
+  probability s solves p3 = s²(3 − 2s) and the price is p5 = s³(10 − 15s + 6s²) (85% → 90.2%, 76.5% → 81.7%). Order:
+  a best-of-5 market anchor is first turned into its best-of-3 equivalent; blend, layers, rank-tier ceiling and
+  calibration (T 1.3) run in best-of-3 terms; then the conversion. So the best-of-5 ceiling is the converted best-of-3
+  one (0.85 → 0.902, 0.90 → 0.948). Base, Elo-only, adjusted and fair are shown converted; `stage2.formatConversion`
+  keeps the best-of-3 figures and the per-set probability. The format layer (#13) stays. ONE switch
+  `config.formatConversion.enabled`. Backtest (point-in-time Elo, Slam main draw 2011–2025, n 6,954): log-loss 0.5274
+  as best of 3 → 0.5200 converted. **Test:** `h2h-model/test-h2h.js` "Best-of-5 set conversion",
+  `tools/test-format-conversion-mutants.js` (7 mutants), `h2h-model/backtest-format.js`.
 - **Rail rows:** round · day time; with no round in the feed (ATP Finals groups) the day and time only, never a dash.
 - **No stat header and no Updated on this page** (founder 2026-11-16: "follow the design"); the rail head carries the
   match count, the Value layers pill the active-layer count. Times read `stennisfy.tz`,
