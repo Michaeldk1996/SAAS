@@ -2,8 +2,39 @@
  "tournament": "ATP Tour",
  "tournamentKey": "tour",
  "season": "2026",
- "updatedAt": "2026-11-26T03:28:36.371Z",
+ "updatedAt": "2026-11-26T04:09:42.809Z",
  "items": [
+  {
+   "id": "quote-0ee6b1e1c93196",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-26T03:30:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "No, not at all. It's not a court case. It's a... what is it called?",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "TennisUpToDate",
+   "sourceUrl": "https://tennisuptodate.com/atp/im-not-too-concerned-alexander-zverev-breaks-silence-on-fresh-lawsuit-from-former-partner-brenda-patea",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On Brenda Patea's new legal action against him",
+   "setting": "in his press conference at the Davis Cup Finals in Bologna",
+   "sourceHash": "e30d0900a2a22acc",
+   "publishedAt": "2026-11-26T04:09:42.809Z"
+  },
   {
    "id": "digest-5bb2fa5fbe12c5",
    "type": "digest",
@@ -1047,11 +1078,12 @@
    "sourceUrl": "https://news.rthk.hk/rthk/en/component/k2/1879154-20261125.htm",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "c8de156d09162e95",
+   "topic": "On being unable to compete due to injury",
+   "setting": "in a recent documentary, before his knee surgery in Finland",
+   "sourceHash": "55d1e53795c61cf6",
    "publishedAt": "2026-11-24T16:41:02.730Z",
-   "revisedAt": "2026-11-26T03:06:17.922Z",
-   "revision": 3,
-   "topic": "On being unable to compete due to injury"
+   "revisedAt": "2026-11-26T04:09:42.809Z",
+   "revision": 4
   },
   {
    "id": "quote-9f26375b77790f",
@@ -1079,11 +1111,19 @@
    "sourceUrl": "https://gulfnews.com/sport/tennis/jannik-sinner-undergoes-knee-surgery-australian-open-return-uncertain-1.500759767",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "7592843351f9b73d",
+   "topic": "On respecting protocols and not rushing",
+   "setting": "at a news conference in Milan this month",
+   "alsoReportedBy": [
+    {
+     "sourceName": "Hindustan Times",
+     "sourceUrl": "https://www.hindustantimes.com/sports/tennis/australian-open-says-jannik-sinner-wont-play-the-first-grand-slam-of-2027-101795662656353.html",
+     "language": "en"
+    }
+   ],
+   "sourceHash": "d55bcc47b9cf6648",
    "publishedAt": "2026-11-24T18:26:35.901Z",
-   "revisedAt": "2026-11-26T03:06:17.922Z",
-   "revision": 2,
-   "topic": "On respecting protocols and not rushing"
+   "revisedAt": "2026-11-26T04:09:42.809Z",
+   "revision": 3
   },
   {
    "id": "quote-64a9642ea4ec54",
@@ -1111,11 +1151,12 @@
    "sourceUrl": "https://www.theguardian.com/sport/2026/nov/24/jannik-sinners-australian-open-in-great-doubt-after-he-has-to-have-knee-surgery",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "3679ff462d57acca",
-   "publishedAt": "2026-11-24T19:29:46.405Z",
    "topic": "On his knee surgery on the iliotibial band",
-   "revisedAt": "2026-11-26T03:06:17.922Z",
-   "revision": 1
+   "settingTried": true,
+   "sourceHash": "0b1dd7429d8ff46f",
+   "publishedAt": "2026-11-24T19:29:46.405Z",
+   "revisedAt": "2026-11-26T04:09:42.809Z",
+   "revision": 2
   },
   {
    "id": "digest-2ac74f585d823e",
@@ -1186,11 +1227,12 @@
    "sourceUrl": "https://www.bbc.co.uk/sport/tennis/articles/cxlylr3p4q8mo?at_medium=RSS&at_campaign=rss",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "b76646f30e30e786",
-   "publishedAt": "2026-11-24T18:26:35.901Z",
    "topic": "On the condition of his iliotibial band",
-   "revisedAt": "2026-11-26T03:06:17.922Z",
-   "revision": 1
+   "setting": "in an Instagram post seven weeks before the Australian Open",
+   "sourceHash": "26d8a2dac870003e",
+   "publishedAt": "2026-11-24T18:26:35.901Z",
+   "revisedAt": "2026-11-26T04:09:42.809Z",
+   "revision": 2
   },
   {
    "id": "quote-80a8d3cd9921ea",
@@ -1218,11 +1260,12 @@
    "sourceUrl": "https://www.bbc.co.uk/sport/tennis/articles/cxlylr3p4q8mo?at_medium=RSS&at_campaign=rss",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "60356e17cd1af179",
-   "publishedAt": "2026-11-24T18:26:35.901Z",
    "topic": "On missing tennis and beginning his recovery",
-   "revisedAt": "2026-11-26T03:06:17.922Z",
-   "revision": 1
+   "setting": "in an Instagram post after his knee surgery",
+   "sourceHash": "b82acdadc5341233",
+   "publishedAt": "2026-11-24T18:26:35.901Z",
+   "revisedAt": "2026-11-26T04:09:42.809Z",
+   "revision": 2
   },
   {
    "id": "quote-ef564531466e17",
@@ -1250,11 +1293,12 @@
    "sourceUrl": "https://www.bbc.co.uk/sport/tennis/articles/cxlylr3p4q8mo?at_medium=RSS&at_campaign=rss",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "ecb193380999fa3f",
-   "publishedAt": "2026-11-24T18:26:35.901Z",
    "topic": "On Jannik's absence",
-   "revisedAt": "2026-11-26T03:06:17.922Z",
-   "revision": 1
+   "setting": "after winning the ATP Finals in Turin",
+   "sourceHash": "f6ee722210ec1937",
+   "publishedAt": "2026-11-24T18:26:35.901Z",
+   "revisedAt": "2026-11-26T04:09:42.809Z",
+   "revision": 2
   },
   {
    "id": "quote-f5a2dbd017ea5b",
@@ -1282,11 +1326,12 @@
    "sourceUrl": "https://www.bbc.co.uk/sport/tennis/articles/cxlylr3p4q8mo?at_medium=RSS&at_campaign=rss",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "effb5fff70a3911d",
-   "publishedAt": "2026-11-24T18:26:35.901Z",
    "topic": "On a fellow player's comeback from injury",
-   "revisedAt": "2026-11-26T03:06:17.922Z",
-   "revision": 1
+   "setting": "after winning the ATP Finals in Turin",
+   "sourceHash": "b4bada5949666645",
+   "publishedAt": "2026-11-24T18:26:35.901Z",
+   "revisedAt": "2026-11-26T04:09:42.809Z",
+   "revision": 2
   },
   {
    "id": "quote-5a05fd64bc0e5a",
@@ -2189,8 +2234,11 @@
    "sourceUrl": "https://www.tsn.ca/tennis/article/zverevs-consistency-earned-him-the-no-1-ranking-despite-defeat-to-alcaraz/",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "eadadba053028be6",
-   "publishedAt": "2026-11-24T15:56:36.364Z"
+   "sourceHash": "c5d9614de9cd2947",
+   "publishedAt": "2026-11-24T15:56:36.364Z",
+   "topicTried": true,
+   "revisedAt": "2026-11-26T04:09:42.809Z",
+   "revision": 1
   },
   {
    "id": "quote-f5cdf70e2ec995",
@@ -2218,8 +2266,11 @@
    "sourceUrl": "https://www.tsn.ca/tennis/article/zverevs-consistency-earned-him-the-no-1-ranking-despite-defeat-to-alcaraz/",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "a501b9df23583f83",
-   "publishedAt": "2026-11-24T15:56:36.364Z"
+   "sourceHash": "3c7290d4457bd0ba",
+   "publishedAt": "2026-11-24T15:56:36.364Z",
+   "topic": "On critics who say his result was undeserved",
+   "revisedAt": "2026-11-26T04:09:42.809Z",
+   "revision": 1
   },
   {
    "id": "quote-8a23b6bf6431bb",
@@ -2247,8 +2298,11 @@
    "sourceUrl": "https://www.tennismajors.com/atp/sinner-could-face-knee-surgery-with-three-options-on-the-table-report-867672.html",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "4470e9cc22af4e9c",
-   "publishedAt": "2026-11-22T14:42:24.896Z"
+   "sourceHash": "abc34aa48d0c295e",
+   "publishedAt": "2026-11-22T14:42:24.896Z",
+   "topic": "On his comeback plans for the Australian season",
+   "revisedAt": "2026-11-26T04:09:42.809Z",
+   "revision": 1
   },
   {
    "id": "digest-01d6e5c39883ad",
@@ -2380,8 +2434,11 @@
    "sourceUrl": "https://www.atptour.com/en/news/zverev-nitto-atp-finals-2026-final-reaction",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "sourceHash": "6da7a6e27a6010f3",
-   "publishedAt": "2026-11-24T00:57:38.236Z"
+   "sourceHash": "7e7c5517d326e337",
+   "publishedAt": "2026-11-24T00:57:38.236Z",
+   "topic": "On a 23-year-old rival's already legendary career",
+   "revisedAt": "2026-11-26T04:09:42.809Z",
+   "revision": 1
   },
   {
    "id": "quote-0bb6832f6ad5c1",
@@ -2409,8 +2466,11 @@
    "sourceUrl": "https://www.atptour.com/en/news/zverev-alcaraz-infosys-atp-beyond-the-numbers-nitto-atp-finals-2026",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "sourceHash": "8aae595c7653abfa",
-   "publishedAt": "2026-11-24T22:05:56.886Z"
+   "sourceHash": "fa43d5939eb49abc",
+   "publishedAt": "2026-11-24T22:05:56.886Z",
+   "topic": "On his next opponent's serve and their matches",
+   "revisedAt": "2026-11-26T04:09:42.809Z",
+   "revision": 1
   },
   {
    "id": "quote-1b63b1fe746a33",
@@ -2438,8 +2498,11 @@
    "sourceUrl": "https://www.atptour.com/en/news/sakamoto-blanch-next-gen-atp-finals-2026-qualification",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "sourceHash": "584e4437cd1caca3",
-   "publishedAt": "2026-11-22T16:33:29.860Z"
+   "sourceHash": "a12d87a573e515c5",
+   "publishedAt": "2026-11-22T16:33:29.860Z",
+   "topic": "On trusting his more experienced coaching team",
+   "revisedAt": "2026-11-26T04:09:42.809Z",
+   "revision": 1
   },
   {
    "id": "quote-2ee2d7753b39fd",
@@ -2467,8 +2530,11 @@
    "sourceUrl": "https://www.atptour.com/en/news/alcaraz-zverev-nitto-atp-finals-2026-sunday",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "sourceHash": "6d16a5109fd67968",
-   "publishedAt": "2026-11-24T00:57:38.236Z"
+   "sourceHash": "35ea355a6cc0c314",
+   "publishedAt": "2026-11-24T00:57:38.236Z",
+   "topic": "On his grandfather's three C's of tennis",
+   "revisedAt": "2026-11-26T04:09:42.809Z",
+   "revision": 1
   },
   {
    "id": "quote-52d719f7d01844",
@@ -2496,8 +2562,11 @@
    "sourceUrl": "https://www.atptour.com/en/news/zverev-alcaraz-infosys-atp-beyond-the-numbers-nitto-atp-finals-2026",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "sourceHash": "de88bf5c326598b2",
-   "publishedAt": "2026-11-24T00:57:38.236Z"
+   "sourceHash": "ea0cdb488fd14d46",
+   "publishedAt": "2026-11-24T00:57:38.236Z",
+   "topic": "On how nerves affect his serve",
+   "revisedAt": "2026-11-26T04:09:42.809Z",
+   "revision": 1
   },
   {
    "id": "quote-61b36f14b59acb",
@@ -2525,8 +2594,11 @@
    "sourceUrl": "https://www.atptour.com/en/news/nitto-atp-finals-2026-champion-story",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "sourceHash": "ce207991df6b4ec9",
-   "publishedAt": "2026-11-24T00:57:38.236Z"
+   "sourceHash": "1269b22e85eb9bfe",
+   "publishedAt": "2026-11-24T00:57:38.236Z",
+   "topic": "On managing his physical effort and aggressive play",
+   "revisedAt": "2026-11-26T04:09:42.809Z",
+   "revision": 1
   },
   {
    "id": "quote-a520b291ff9b0e",
@@ -2554,8 +2626,11 @@
    "sourceUrl": "https://www.atptour.com/en/news/nitto-atp-finals-2026-champion-story",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "sourceHash": "392da0899d7931a6",
-   "publishedAt": "2026-11-24T00:57:38.236Z"
+   "sourceHash": "776628ee4ed2723d",
+   "publishedAt": "2026-11-24T00:57:38.236Z",
+   "topic": "On why today's match mattered as a test",
+   "revisedAt": "2026-11-26T04:09:42.809Z",
+   "revision": 1
   },
   {
    "id": "quote-ecac84ecc8dbb6",
@@ -2583,8 +2658,11 @@
    "sourceUrl": "https://www.atptour.com/en/news/alcaraz-nitto-atp-finals-2026-reaction-sunday-final",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "sourceHash": "385745558bef1de3",
-   "publishedAt": "2026-11-24T00:57:38.236Z"
+   "sourceHash": "13221b63d453d2df",
+   "publishedAt": "2026-11-24T00:57:38.236Z",
+   "topic": "On finally winning a tournament he long chased",
+   "revisedAt": "2026-11-26T04:09:42.809Z",
+   "revision": 1
   },
   {
    "id": "quote-f569b2d0d2e16d",
@@ -2612,8 +2690,11 @@
    "sourceUrl": "https://www.atptour.com/en/news/zverev-alcaraz-infosys-atp-beyond-the-numbers-nitto-atp-finals-2026",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "sourceHash": "0e2150d7c6fa9d08",
-   "publishedAt": "2026-11-24T00:57:38.236Z"
+   "sourceHash": "7ce55bbab24baf40",
+   "publishedAt": "2026-11-24T00:57:38.236Z",
+   "topic": "On adjusting his serve during the match",
+   "revisedAt": "2026-11-26T04:09:42.809Z",
+   "revision": 1
   },
   {
    "id": "quote-fc086c87784865",
