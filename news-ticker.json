@@ -1,18 +1,18 @@
 {
- "generatedAt": "2026-11-26T06:04:52.955Z",
+ "generatedAt": "2026-11-26T06:28:05.543Z",
  "tournaments": [
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 211,
+   "items": 212,
    "byType": {
-    "quote": 170,
-    "digest": 41
+    "digest": 41,
+    "quote": 171
    },
-   "latestTimestamp": "2026-11-26T04:35:00.000Z",
-   "updatedAt": "2026-11-26T06:04:52.955Z"
+   "latestTimestamp": "2026-11-26T05:50:00.000Z",
+   "updatedAt": "2026-11-26T06:28:05.543Z"
   },
   {
    "key": "3120",
@@ -70,6 +70,98 @@
  ],
  "latest": [
   {
+   "id": "digest-a7a98c888fe3a0",
+   "type": "digest",
+   "version": 1,
+   "playerId": "1980",
+   "player": "A. Zverev",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-26T05:50:00.000Z",
+   "members": [
+    "quote-0ee6b1e1c93196",
+    "quote-459f81dcb3cf4b",
+    "quote-797d7f3bddbbe3",
+    "quote-bd4eee4e495eae"
+   ],
+   "memberHash": "d560ffd1793d80cc",
+   "digestedAt": "2026-11-26T06:08:10.320Z",
+   "blocks": [
+    {
+     "label": "on his chronic right ankle pain",
+     "text": "Since what happened in Paris. They come and go, I'll have to live with them until the end of my career. But, considering that I've played more than anyone, I should be satisfied with how this year has gone.",
+     "from": [
+      "quote-797d7f3bddbbe3"
+     ]
+    },
+    {
+     "label": "on Jannik Sinner's recovery from knee surgery",
+     "text": "He's mentally strong. We know that he's mentally strong. I hope that he takes every step seriously and that in three, four months he can be back to 100 per cent and be back playing.",
+     "from": [
+      "quote-459f81dcb3cf4b"
+     ]
+    },
+    {
+     "label": "on wishing an injured rival back On tour",
+     "text": "Even though, of course, he's one of my biggest competitors, one of the most difficult players for me to play, I still wish for him to come back to the tour because I've been there, I know what injury feels like, and I don't wish injury upon anyone.",
+     "from": [
+      "quote-bd4eee4e495eae"
+     ]
+    },
+    {
+     "label": "on Brenda Patea's new legal action against him",
+     "text": "No, not at all. It's not a court case. It's a... what is it called?",
+     "from": [
+      "quote-0ee6b1e1c93196"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "8c04466d1fa10159",
+   "publishedAt": "2026-11-26T05:09:53.468Z",
+   "revisedAt": "2026-11-26T06:28:05.543Z",
+   "revision": 1,
+   "file": "news-ticker/tour-2026.json"
+  },
+  {
+   "id": "quote-797d7f3bddbbe3",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-26T05:50:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "since what happened in Paris. They come and go, I'll have to live with them until the end of my career. But, considering that I've played more than anyone, I should be satisfied with how this year has gone",
+   "originalText": "desde lo que pasó en París. Vienen y van, tendré que convivir con ellos hasta el final de mi carrera. Pero, considerando que he jugado más que nadie, debo estar satisfecho por cómo ha ido este año",
+   "language": "es",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "Mundo Deportivo",
+   "sourceUrl": "https://www.mundodeportivo.com/tenis/20261126/1004255533/zverev-jefazo-atp-injusto-no-analgesicos-tomamos-no-avisamos-vez-tomamos.html",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his chronic right ankle pain",
+   "settingTried": true,
+   "sourceHash": "3c5d96d09e0abbb8",
+   "publishedAt": "2026-11-26T06:28:05.543Z",
+   "file": "news-ticker/tour-2026.json"
+  },
+  {
    "id": "quote-18b69e30cb96c6",
    "type": "quote",
    "playerId": "2072",
@@ -98,50 +190,6 @@
    "topic": "On his recovery from right knee surgery",
    "settingTried": true,
    "sourceHash": "40530ff4afdd3a98",
-   "publishedAt": "2026-11-26T05:09:53.468Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "digest-a7a98c888fe3a0",
-   "type": "digest",
-   "version": 1,
-   "playerId": "1980",
-   "player": "A. Zverev",
-   "opponentId": null,
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "eventKey": null,
-   "context": null,
-   "category": "Quotes",
-   "timestamp": "2026-11-26T03:30:00.000Z",
-   "members": [
-    "quote-0ee6b1e1c93196",
-    "quote-459f81dcb3cf4b",
-    "quote-bd4eee4e495eae"
-   ],
-   "memberHash": "8447b5acf023bebf",
-   "digestedAt": "2026-11-26T04:37:22.465Z",
-   "blocks": [
-    {
-     "label": "on Jannik Sinner's recovery from knee surgery",
-     "text": "He's mentally strong. We know that he's mentally strong. I hope that he takes every step seriously and that in three, four months he can be back to 100 per cent and be back playing. Even though, of course, he's one of my biggest competitors, one of the most difficult players for me to play, I still wish for him to come back to the tour because I've been there, I know what injury feels like, and I don't wish injury upon anyone.",
-     "from": [
-      "quote-459f81dcb3cf4b",
-      "quote-bd4eee4e495eae"
-     ]
-    },
-    {
-     "label": "on Brenda Patea's new legal action against him",
-     "text": "No, not at all. It's not a court case. It's a... what is it called?",
-     "from": [
-      "quote-0ee6b1e1c93196"
-     ]
-    }
-   ],
-   "model": "claude-opus-5-5",
-   "sourceHash": "c6f97f69a72ef296",
    "publishedAt": "2026-11-26T05:09:53.468Z",
    "file": "news-ticker/tour-2026.json"
   },
@@ -1538,39 +1586,6 @@
    "revisedAt": "2026-11-26T02:48:24.212Z",
    "revision": 2,
    "topic": "On an event unlike normal tournaments",
-   "file": "news-ticker/3120-2026.json"
-  },
-  {
-   "id": "quote-3dc8df13a975ad",
-   "type": "quote",
-   "playerId": "2981",
-   "opponentId": "3696",
-   "player": "T. Machac",
-   "opponent": "L. Draxl",
-   "tournament": "Davis Cup - World Group",
-   "tournamentKey": "3120",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-24T20:30:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Quotes",
-   "context": "after beating L. Draxl",
-   "eventKey": "12182495",
-   "won": true,
-   "text": "I think every match here is difficult because the crowd is pushing you,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "SuperSport",
-   "sourceUrl": "https://supersport.com/tennis/news/2f98ef77-bdad-4f39-8777-2618f8cf40c4/czechs-down-canada-to-reach-davis-cup-semifinals",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "721d58dfba9828a5",
-   "publishedAt": "2026-11-24T21:20:42.816Z",
-   "revisedAt": "2026-11-26T02:48:24.212Z",
-   "revision": 2,
-   "topic": "On the crowd making every match difficult",
    "file": "news-ticker/3120-2026.json"
   }
  ]
