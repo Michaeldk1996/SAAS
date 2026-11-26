@@ -33630,6 +33630,7 @@ window.DatabaseTab = (function(){
   window.FEATURE_PP2 = true;   // the legacy renderer is retired (2026-10-21): v2 is the only player profile
 </script>
 <script src="live-tab.js" defer></script>
+<script src="live-moments.js" defer></script>
 <!-- TEN-270: Kibl stream -> live "Now". Reads kibl_now_price with the publishable
      key (SELECT-only); window.KiblNow is consulted by _mcNowPair. Absent or dark
      (no creds, no table) = every card stays on the poller, exactly as before. -->
@@ -33771,12 +33772,10 @@ window.DatabaseTab = (function(){
   const LIVE_CONST = Object.freeze({
     HB_MIN_GAMES: 30,          // Break/Hold: a cell under this many games shows its count only, no rate, no colour
     U_GAP: 15, U_N: 20,        // Stats "Unusual": 15+ points from the player's own average with 20+ in the count
-    BP_SAVED_MAJOR: 3,         // 3+ break points saved in one game = a major (card) moment
     DOM_WINDOW_GAMES: 4,       // Dominance: each player's last 4 return games
     DOM_START_GAMES: 4,        // Dominance (Match scope) starts after the first 4 games
     BIG_GAP: 15,               // Stats compare: a gap of 15+ points is bold and coloured
     HEAT_NEUTRAL: 3,           // Heatmap: neutral within ±3 points
-    PRICE_MOVE_NO_BREAK: null, // "Price moved, no break": no threshold ruled — not built
     // In-play price = Bet105 (Kibl), pushed (founder 2026-11-26: "the one that updates the fastest and is in line with Bet105").
     // Bet105's price is shown as Bet105 shows it, whatever the feed's delay (founder 2026-11-26: "better to show a price";
     // the score feed runs behind too); a market Bet105 has closed reads "Suspended", as on Bet105. Only a stream worker
@@ -33971,14 +33970,9 @@ window.DatabaseTab = (function(){
   document.addEventListener('visibilitychange', () => { if (document.hidden) lpClose(); else if (inited && LIVE.length) lpRead(); });
 
   // ── view model, one per live fixture ──────────────────────────────────────────────────────────────────────────
-  const SLAM_RE = /australian open|roland garros|french open|wimbledon|us open/i;
-  const setNo = s => +String(s || '').replace(/[^0-9]/g, '') || 0;
-  function parseSets(f) {
-    const sc = Array.isArray(f.scores) ? f.scores.slice().sort((a, b) => setNo(a.score_set) - setNo(b.score_set)) : [];
-    const g = v => { const m = /^(\d+)/.exec(String(v == null ? '' : v)); return m ? +m[1] : 0; };
-    const sets = sc.map(s => [g(s.score_first), g(s.score_second)]);
-    return sets.length ? sets : [[0, 0]];
-  }
+  // point-log decoding and the moment rules live in live-moments.js (shared with the live poller)
+  const LM = () => window.LiveMoments;
+  const setNo = s => LM().setNo(s), side = v => LM().side(v), ptState = s => LM().ptState(s);
   function roundOf(f) { const r = String(f.tournament_round || ''); const i = r.lastIndexOf(' - '); return (i >= 0 ? r.slice(i + 3) : r).trim(); }
   function tourOf(f) {
     const raw = String(f.tournament_name || '').trim();
@@ -33988,21 +33982,13 @@ window.DatabaseTab = (function(){
     const nm = (k, n) => has('newsPlayerName') ? newsPlayerName(k, n) || n : n;
     const A = { key: f.first_player_key, raw: f.event_first_player, name: nm(f.first_player_key, f.event_first_player) };
     const B = { key: f.second_player_key, raw: f.event_second_player, name: nm(f.second_player_key, f.event_second_player) };
-    const sets = parseSets(f);
+    const cx = LM().ctxOf(f), sets = cx.sets, bo = cx.bo;   // sets (a decided last set starts the next at 0–0), best-of
     const gm = /^\s*(\S+)\s*-\s*(\S+)\s*$/.exec(String(f.event_game_result || ''));
-    const sv = String(f.event_serve || '');
     const isChal = /challenger/i.test(String(f.event_type_type || ''));
-    const qual = /true|1/i.test(String(f.event_qualification || ''));
-    const bo = !isChal && !qual && SLAM_RE.test(String(f.tournament_name || '')) ? 5 : 3;
     const live = !(LF() && LF().isInterrupted(f));
-    // the feed can keep a finished set as the last entry for a poll or two after it ends (measured: "6–4", status
-    // "Set 1", the point score already in set 2): a decided set is never the set in play, so the next one starts at 0–0
-    const setDone = st => (Math.max(st[0], st[1]) >= 6 && Math.abs(st[0] - st[1]) >= 2) || (Math.max(st[0], st[1]) === 7 && Math.min(st[0], st[1]) >= 5);
-    const wonBy = s => sets.filter(st => setDone(st) && st[s] > st[1 - s]).length, need = bo === 5 ? 3 : 2;
-    if (setDone(sets[sets.length - 1]) && wonBy(0) < need && wonBy(1) < need) sets.push([0, 0]);
     const sched = String(f.event_time || ''); // the scheduled clock: the order-of-play sort key only, never a start
     const m = { f, ek: String(f.event_key), i, A, B, names: [A.name, B.name], sets, nSets: sets.length,
-      point: gm ? [gm[1], gm[2]] : null, serving: /first/i.test(sv) ? 0 : /second/i.test(sv) ? 1 : null, bo, live,
+      point: gm ? [gm[1], gm[2]] : null, serving: cx.serving, bo, live,
       tier: isChal ? 'Challenger' : 'ATP', tour: tourOf(f), round: roundOf(f), date: f.event_date, time: sched,
       tKey: f.tournament_key };
     m.schedMs = has('cardStartMs') ? cardStartMs({ date: m.date, time: m.time }) : NaN;   // sort key only
@@ -34037,24 +34023,6 @@ window.DatabaseTab = (function(){
   }
 
   // ── play model from the point log (the prototype's sim() shape, built from live_pbp) ───────────────────────────
-  const PT = { '0': 0, '15': 1, '30': 2, '40': 3, 'A': 4, 'AD': 4 };
-  const ptState = s => { const p = String(s || '').split('-').map(x => PT[x.trim().toUpperCase()]); return p.length === 2 && p[0] != null && p[1] != null ? p : null; };
-  // the side a point went to, from one score to the next (0:0 → 15:0 = A; 40:40 → A:40 = A; A:40 → 40:40 = B)
-  function stepWinner(a, b) {
-    for (const s of [0, 1]) {
-      const me = a[s], op = a[1 - s], n = [a[0], a[1]];
-      if (me <= 2 && op <= 3) n[s] = me + 1; else if (me === 3 && op === 3) n[s] = 4; else if (me === 3 && op === 4) n[1 - s] = 3; else continue;
-      if (n[0] === b[0] && n[1] === b[1]) return s;
-    }
-    return null;
-  }
-  // the receiver is one point from the game (BP rule, live.md): he is on 40 with the server on 30 or less, or on advantage
-  const bpState = (st, srv) => { if (!st) return false; const r = st[1 - srv], s = st[srv]; return r === 4 || (r === 3 && s <= 2); };
-  const side = v => /first/i.test(String(v || '')) ? 0 : /second/i.test(String(v || '')) ? 1 : null;
-  const tbRow = g => /tiebreak/i.test(String(g.set_number || '')) || (!(g.points || []).some(p => /15|30|40|A/.test(String(p.score || ''))) && /^\s*\d+\s*-\s*\d+\s*$/.test(String(g.score || '')) && !(g.points || []).length);
-  const tbSummary = g => /^\s*(7\s*-\s*6|6\s*-\s*7)\s*$/.test(String(g.score || '')) && !(g.points || []).some(p => /15|30|40|A/.test(String(p.score || '')));
-  const decided = g => g.serve_winner != null || g.serve_lost != null;
-
   const PLAY = Object.create(null);   // ek → { at, play }
   function playOf(m) {
     const pe = LF() ? LF().pbpGet(m.ek) : null;
@@ -34065,66 +34033,19 @@ window.DatabaseTab = (function(){
     return play;
   }
   function buildPlay(m, raw) {
-    const P = [], gCells = [], gw = {};
-    const bySet = {};
-    raw.forEach(g => { const n = setNo(g.set_number) || 1; (bySet[n] = bySet[n] || []).push(g); });
-    Object.keys(bySet).map(Number).sort((a, b) => a - b).forEach(n => {
-      const si = n - 1, list = bySet[n].slice().sort((a, b) => (+a.number_game || 0) - (+b.number_game || 0));
-      gw[si] = gw[si] || [0, 0];
-      const games = list.filter(g => !tbRow(g) && !tbSummary(g));
-      const tbs = list.filter(g => tbRow(g)).map(g => ({ g, sc: /^\s*(\d+)\s*-\s*(\d+)\s*$/.exec(String(g.score || '')) })).filter(x => x.sc)
-        .map(x => ({ g: x.g, a: +x.sc[1], b: +x.sc[2] })).sort((x, y) => (x.a + x.b) - (y.a + y.b));
-      games.forEach(g => {
-        const done = decided(g), aServ = side(g.player_served || g.serve_lost || (done ? null : null)) === 0;
-        const srv = side(g.player_served); if (srv == null && done) return;
-        const winner = done ? (g.serve_winner != null ? side(g.serve_winner) : (side(g.serve_lost) === 0 ? 1 : 0)) : null;
-        const chips = (g.points || []).map(p => ({ p, st: ptState(p.score) })).filter(x => x.st);
-        // the feed's garbled tails (live.md): keep the reachable prefix, then walk to the winner's game point
-        const kept = []; let prev = [0, 0], i = 0;
-        if (chips.length && stepWinner(prev, chips[0].st) == null) { prev = chips[0].st; kept.push(chips[0]); i = 1; }
-        while (i < chips.length && stepWinner(prev, chips[i].st) != null) { prev = chips[i].st; kept.push(chips[i]); i++; }
-        const gp = st => { if (winner == null) return true; const me = st[winner], op = st[1 - winner]; return me === 4 || (me === 3 && op <= 2); };
-        for (; i < chips.length && !gp(prev); i++) if (stepWinner(prev, chips[i].st) != null) { prev = chips[i].st; kept.push(chips[i]); }
-        const sIdx = srv == null ? (m.serving == null ? 0 : m.serving) : srv, ga = gw[si][0], gb = gw[si][1], start = P.length;
-        let pre = [0, 0], bp = 0;
-        const pushPt = (w, isBp) => { if (isBp) bp++;
-          const after = done && P.length - start === kept.length ? (ga + (winner === 0 ? 1 : 0)) + EN + (gb + (winner === 1 ? 1 : 0)) : ga + EN + gb;
-          P.push({ g: gCells.length, bp: isBp, sw: w === sIdx, as: sIdx === 0, aWon: w === 0, si, gs: after }); };
-        kept.forEach(x => { const w = stepWinner(pre, x.st); pushPt(w, bpState(pre, sIdx)); pre = x.st; });
-        if (done) pushPt(winner, bpState(pre, sIdx));
-        const cell = { gi: gCells.length, g0: [ga, gb], aServ: sIdx === 0, brk: done ? winner !== sIdx : false, bp, start, end: P.length, si, part: !done };
-        if (done) gw[si][winner]++;
-        cell.gs = gw[si][0] + EN + gw[si][1];
-        gCells.push(cell);
-      });
-      if (tbs.length) {
-        const start = P.length; let prev = [0, 0];
-        tbs.forEach(t => { const w = t.a > prev[0] ? 0 : t.b > prev[1] ? 1 : null; const s = side(t.g.player_served);
-          if (w != null) P.push({ g: gCells.length, bp: false, sw: s == null ? null : w === s, as: s === 0, aWon: w === 0, si, gs: gw[si][0] + EN + gw[si][1], tb: true });
-          prev = [t.a, t.b]; });
-        const last = tbs[tbs.length - 1], over = Math.max(last.a, last.b) >= 7 && Math.abs(last.a - last.b) >= 2;
-        const cell = { gi: gCells.length, g0: gw[si].slice(), aServ: null, brk: false, bp: 0, start, end: P.length, si, tb: true, part: !over };
-        if (over) gw[si][last.a > last.b ? 0 : 1]++;
-        cell.gs = gw[si][0] + EN + gw[si][1];
-        gCells.push(cell);
-      }
-    });
-    return { P, gCells, gw, ml: moments(m, P, gCells) };
+    const play = LM().build(m, raw);   // major = LiveMoments.BP_SAVED_MAJOR (2+ saved, founder 2026-11-26)
+    play.ml = withMto(m, play.ml);
+    return play;
   }
-  // Moments: one line per service game with a break point (the score when that game started, the named player did it),
-  // plus every medical timeout on record. Major (reaches the card) = any break of serve, 3+ break points saved in one
-  // game, a stoppage. (Prototype rule; "Price moved, no break" has no threshold and is not built.)
-  function moments(m, P, gCells) {
-    const NW = ['', 'a break point', 'two break points', 'three break points'], needS = m.bo === 5 ? 3 : 2;
-    const ml = gCells.filter(c => c.bp > 0 && !c.tb).map(c => {
-      const srv = c.aServ ? 0 : 1, ret = 1 - srv, saved = P.slice(c.start, c.end).filter(p => p.bp && p.sw).length;
-      const r1 = c.g0[ret] + 1, s1 = c.g0[srv], won = m.sets.slice(0, c.si).filter(st => st[ret] > st[1 - ret]).length, who = c.brk ? ret : srv;
-      if (c.part && !c.brk && !saved) return null;
-      const t = c.brk ? (r1 >= 6 && r1 - s1 >= 2 ? 'Broke for the set' : r1 >= 5 && r1 > s1 ? (won + 1 >= needS ? 'Broke, serving for match' : 'Broke, serving for set') : 'Broke serve')
-        : 'Saved ' + (NW[saved] || saved + ' break points');
-      return { key: 'g' + c.gi, ord: c.si * 100 + c.g0[0] + c.g0[1], si: c.si, at: 'S' + (c.si + 1) + ' ' + c.g0[0] + EN + c.g0[1], atFull: 'Set ' + (c.si + 1) + ', at ' + c.g0[0] + EN + c.g0[1],
-        t, side: who, tone: null, px: null, brk: c.brk, major: c.brk || saved >= LIVE_CONST.BP_SAVED_MAJOR };
-    }).filter(Boolean);
+  // the card's moments before its point log is loaded: the poller's copy in the feed (founder 2026-11-26, option B),
+  // the same code (live-moments.js) on the same log
+  function feedMl(m) {
+    const fm = m.f && Array.isArray(m.f.stennisfy_moments) ? m.f.stennisfy_moments : null;
+    return fm ? withMto(m, fm.map(e => Object.assign({ tone: null, px: null, major: true }, e))) : null;
+  }
+  // every medical timeout on record joins the game moments (mto-matches.json)
+  function withMto(m, ml) {
+    ml = ml.slice();
     (m.mto || []).forEach((x, k) => {
       const g = Array.isArray(x.games) ? x.games : null, si = g && g[0] ? Math.max(0, g[0].length - 1) : null;
       const sc = si == null ? null : [g[0][si] || 0, (g[1] || [])[si] || 0];
@@ -34166,10 +34087,12 @@ window.DatabaseTab = (function(){
     }
     return breakUp(m);
   }
+  // the match's moments: from its point log once loaded, else the poller's copy in the feed (one rule, live-moments.js)
+  function mlOf(m) { const play = playOf(m); return play ? play.ml : feedMl(m); }
   function breakUp(m) {
-    const play = playOf(m); if (!play) return { has: false };
+    const ml = mlOf(m); if (!ml) return { has: false };
     const si = m.nSets - 1, br = [0, 0];
-    play.gCells.filter(c => c.si === si && c.brk && !c.tb).forEach(c => { br[c.aServ ? 1 : 0]++; });
+    ml.filter(e => e.si === si && e.brk).forEach(e => { br[e.side]++; });
     const d = br[0] - br[1];
     return d ? { has: true, chip: 'Break up', tone: 'key', who: d > 0 ? 0 : 1, text: m.names[d > 0 ? 0 : 1] } : { has: false };
   }
@@ -34212,16 +34135,14 @@ window.DatabaseTab = (function(){
   }
   // order of play: the scheduled start, then the feed's own order
   const ordCmp = (a, b) => ((isFinite(a.schedMs) ? a.schedMs : 9e15) - (isFinite(b.schedMs) ? b.schedMs : 9e15)) || (a.i - b.i);
+  // the shared page header (.sfh, app-shell.md "Page header (35b)"; founder 2026-11-26: "use what other pages have too")
   function headerHtml(all) {
     const ip = all.filter(c => c.m.live).length, itr = all.length - ip, evs = new Set(all.map(c => c.m.tour)).size;
-    const ready = FEED.ready;
-    const fig = (l, v, c) => `<div style="display:flex; flex-direction:column; gap:5px;"><span style="font-size:11.5px; font-weight:600; color:${C.grey};">${l}</span><span style="${MONO} font-size:20px; font-weight:700; color:${c || C.text};">${v}</span></div>`;
-    const upd = FEED.updatedAt ? new Date(FEED.updatedAt) : null;
-    const updTxt = !ready || !upd ? D : (FEED.isStale ? timeOfMs(upd) : 'now');
-    return `<div class="lv-head" style="background:${C.card}; border:1px solid ${wa(6)}; border-radius:16px; padding:22px 24px; display:flex; align-items:center; justify-content:space-between; gap:20px 36px; flex-wrap:wrap;">
-    <div style="flex:1; min-width:220px; display:flex; flex-direction:column; gap:6px;"><div style="font-size:24px; font-weight:800; letter-spacing:-0.015em; line-height:1.1;">Live</div><div style="font-size:13px; color:${C.grey}; text-wrap:pretty;">Singles matches in play right now, point by point.</div></div>
-    <div style="display:flex; gap:16px 36px; flex-wrap:wrap;">${fig('In play', ready ? ip : D)}${fig('Interrupted', ready ? itr : D, ready && itr ? C.amber : C.grey)}${fig('Events', ready ? evs : D)}
-      <div style="display:flex; flex-direction:column; gap:5px;"><span style="font-size:11.5px; font-weight:600; color:${C.grey};">Updated</span><span title="${upd ? esc(upd.toISOString().replace('T', ' ').slice(0, 19) + 'Z') : ''}" style="display:inline-flex; align-items:center; gap:8px; ${MONO} font-size:20px; font-weight:700; color:${C.text};">${ready && upd && !FEED.isStale ? `<span style="width:7px; height:7px; border-radius:50%; background:${C.green}; animation:lvpulse 1.6s ease-in-out infinite;"></span>` : ''}${updTxt}</span></div></div></div>`;
+    const ready = FEED.ready, upd = FEED.updatedAt ? new Date(FEED.updatedAt) : null;
+    const stat = (l, v, mod, color) => `<div class="sfh__stat"><span class="sfh__l">${l}</span><span class="sfh__v${v === D ? ' sfh__v--none' : mod ? ' sfh__v--' + mod : ''}"${color ? ` style="color:${color};"` : ''}>${esc(v)}</span></div>`;
+    const updStat = `<div class="sfh__stat"><span class="sfh__l">Updated</span><span class="sfh__v${ready && upd ? ' sfh__v--soft' : ' sfh__v--none'}"${upd ? ` title="${esc(upd.toISOString().replace('T', ' ').slice(0, 19) + 'Z')}"` : ''}>${ready && upd ? esc(timeOfMs(upd)) : D}</span></div>`;
+    return `<div class="sfh lv-head"><div class="sfh__text"><h1 class="sfh__title">Live</h1><p class="sfh__sub">Singles matches in play right now, point by point.</p></div>`
+      + `<div class="sfh__stats">${stat('In play', ready ? String(ip) : D)}${stat('Interrupted', ready ? String(itr) : D, null, ready && itr ? C.amber : null)}${stat('Events', ready ? String(evs) : D)}${updStat}</div></div>`;
   }
   function timeOfMs(d) { try { return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: has('newsTz') ? newsTz() || undefined : undefined }); } catch (e) { return ''; } }
   function toolbarLeft(all) {
@@ -34236,7 +34157,7 @@ window.DatabaseTab = (function(){
     const m = c.m, sig = c.sig, cur = m.nSets - 1;
     const sw = s => m.sets.slice(0, cur).filter(st => st[s] > st[1 - s]).length, sc = s => sw(s) * 100 + m.sets[cur][s];
     const stC = m.live ? C.text : C.amber;
-    const play = playOf(m), mj = play ? play.ml.filter(e => e.major) : null, n = mj ? mj.length : 0, open = !!S.evOpen[m.ek] && n > 0;
+    const ml = mlOf(m), mj = ml ? ml.filter(e => e.major) : null, n = mj ? mj.length : 0, open = !!S.evOpen[m.ek] && n > 0;
     const head = s => `<span style="width:${s === 'Games' ? 42 : 36}px; flex:none; text-align:center; font-size:11.5px; font-weight:600; color:${C.grey};">${s}</span>`;
     const div = h => `<span style="width:1px; flex:none; height:${h}px; margin:0 8px 0 6px; background:${wa(8)};"></span>`;
     const rows = [0, 1].map(s => { const p = s ? m.B : m.A, lead = sc(s) > sc(1 - s), lvl = sc(s) === sc(1 - s);
@@ -34664,16 +34585,20 @@ window.DatabaseTab = (function(){
 
   // ── Break/Hold tab (prototype heatFor() + template L408–515, on holdbreak.json) ─────────────────────────────────
   const BUCKETS = [['Game 1-2', '1st svc game'], ['Game 3-4', '2nd svc game'], ['Game 5-6', '3rd svc game'], ['Game 7-8', '4th svc game'], ['Game 9-10', '5th svc game'], ['Game 11-12+', '6th+ svc game']];
-  // holdbreak.json does not split best-of-3 from best-of-5 in sets 1–3 (both formats pool there); the brief forbids
-  // mixing them, so those cells are a dash until the builder writes a format key. Sets 4–5 exist only in best-of-5.
-  const HB_FORMAT_SPLIT = false;
+  // Sets 1–3 pool both formats in the main grid; the builder's `fmt` key splits them, and this page reads only the
+  // match's own format there (never mixed). Sets 4–5 exist only in best-of-5.
   function heatFor(key, metric, bo, surf, nowSet, nowBi, marks) {
     const MIN = LIVE_CONST.HB_MIN_GAMES, nS = bo === 3 ? 3 : 5, H = hbData();
     const pl = H && key != null ? H.players[String(key)] : null, node = pl ? pl[metric === 'HOLD' ? 'serve' : 'return'] : null;
     const bySurf = node ? node[surf === 'SURF' ? surf2 : 'all'] : null;
     const of = (n, d) => n + ' of ' + d;
     const raw = BUCKETS.map((b, bi) => Array.from({ length: nS }, (_, i) => { const si = i + 1;
-      if (!HB_FORMAT_SPLIT && si <= 3) return { den: 0, num: 0, mixed: true };
+      // sets 1–3 read the match's own format (build-holdbreak.js fmt, founder 2026-11-26); a file without it stays a dash
+      if (si <= 3) {
+        if (!pl || !pl.fmt) return { den: 0, num: 0, mixed: !!pl };
+        const fx = ((((pl.fmt[String(bo)] || {})[metric === 'HOLD' ? 'serve' : 'return'] || {})[surf === 'SURF' ? surf2 : 'all'] || {})[String(si)] || {})[String(bi + 1)];
+        return fx ? { den: fx[1], num: fx[0] } : { den: 0, num: 0 };
+      }
       const c = bySurf && bySurf[String(si)] ? bySurf[String(si)][String(bi + 1)] : null;
       return c && c.n ? { den: c.n, num: c.won != null ? c.won : Math.round(c.pct / 100 * c.n) } : { den: 0, num: 0 }; }));
     let tn = 0, td = 0;

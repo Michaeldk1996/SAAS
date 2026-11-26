@@ -74,7 +74,7 @@ const STATIC = [   // [page, the header markup's opening, the title]
   // Stennisfy Model left the shared header on 2026-11-16: its handoff (design_handoff_stennisfy_model) draws its own head.
   // Tennis News left it on 2026-11-19: its handoff (design_handoff_news_v2) draws its own header card with stat pills.
   // Dropping Odds left it on 2026-11-23: its handoff (design_handoff_dropping_odds_v2) draws its own header card.
-  // Live left it on 2026-11-25: its locked handoff (design_handoff_live_final) draws its own summary row (test-live-page.mjs).
+  ['live', '<div class="sfh lv-head">', 'Live'],   // back on the shared header, founder 2026-11-26
 ];
 function checkPages(dash, js, css) {
   for (const [page, open, title] of STATIC) {

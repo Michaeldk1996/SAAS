@@ -164,7 +164,7 @@ Each is phrased as a test you can apply. Surface-specific rulings live in `.clau
 - Closing odds are preserved through pipeline rebuilds — never recomputed at display time
 - The Clay surface tag never renders green
 - Confidence percentage: no decimals (88%, not 88.5%), white not orange
-- Player names in match lists are never truncated — use flex-grow
+- Player names in match lists are never truncated — use flex-grow. *Exception (founder 2026-11-26):* a Live page card name too long for its column is cut with "…" and the full name on hover (`.claude/rules/live.md`).
 
 ### Odds — hard invariants
 

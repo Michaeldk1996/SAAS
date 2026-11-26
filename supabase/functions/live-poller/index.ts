@@ -15,6 +15,11 @@
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { fetchFinals, FINALS_EVERY_S, FINALS_MAX_PER_TICK, FINALS_WINDOW_MIN } from "./finals.ts";
+// The Live page's moment rules, one file shared with the page (byte-identical copy of /live-moments.js; a test keeps
+// the two equal). Imported for its side effect: it sets globalThis.LiveMoments.
+import "./live-moments.js";
+// deno-lint-ignore no-explicit-any
+const LiveMoments = (globalThis as any).LiveMoments;
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 // Prefer SB_SERVICE_KEY (set by go-live, and by hand as a stop-gap), else the
@@ -99,6 +104,14 @@ Deno.serve(async (req) => {
     }
     // Shallow clone minus pointbypoint — leaves the original untouched.
     const { pointbypoint: _drop, ...rest } = fix;
+    // Founder 2026-11-26 (option B): every card lists its key moments without the page loading every point log, so the
+    // major moments ride on the pushed row (a few hundred bytes a match). A failure here never fails the tick.
+    try {
+      const mm = LiveMoments.feedMoments(fix);
+      if (mm.length) (rest as Record<string, unknown>).stennisfy_moments = mm;
+    } catch (e) {
+      console.warn("live moments failed:", String(ek), e instanceof Error ? e.message : String(e));
+    }
     return rest;
   });
 

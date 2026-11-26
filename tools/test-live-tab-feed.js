@@ -75,13 +75,13 @@ check(/hbData\(\)/.test(LIVE) && /holdbreak\(\)/.test(LIVE), 'the heat grid read
 console.log('=== source guard: never fabricate ===');
 
 // A game row opens with every field null; read naively it is a game won by player 2. Only DECIDED games are results.
-check(/const decided = g => g\.serve_winner != null \|\| g\.serve_lost != null;/.test(LIVE),
+check(/const decided = g => g\.serve_winner != null \|\| g\.serve_lost != null;/.test(require('fs').readFileSync(require('path').join(__dirname, '..', 'live-moments.js'), 'utf8')),
   'only DECIDED games count as results (serve_winner / serve_lost stamped)');
 check(/const ratio = c => c && c\[1\] > 0 \? pc\(c\[0\], c\[1\]\) : null;/.test(LIVE),
   'a rate over zero attempts dashes rather than printing 0%');
 check(/\(\\d\+\)\\s\*\\\/\\s\*\(\\d\+\)/.test(LIVE),
   'stat_value "X/Y" is parsed when stat_won/stat_total are null (Number(null) is 0)');
-check(/ready \? ip : D/.test(LIVE) && /if \(!FEED\.ready\) return skeletonHtml\(\);/.test(LIVE),
+check(/ready \? String\(ip\) : D/.test(LIVE) && /if \(!FEED\.ready\) return skeletonHtml\(\);/.test(LIVE),
   'before the first snapshot the header dashes and the grid shows the loading skeleton, never "Nothing in play"');
 // founder 2026-11-26: the in-play price is Bet105's (kibl_live_ml, pushed), never the pre-match price passed off as live
 check(/rpc\/live_ml_state/.test(LIVE) && /table: 'kibl_live_ml'/.test(LIVE) && /px\(m\.lp\.v\[s\]\)/.test(LIVE) && !/px\(m\.pre\.v\[s\]\)[^\n]*Bet105 in-play/.test(LIVE),

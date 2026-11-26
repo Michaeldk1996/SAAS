@@ -171,6 +171,21 @@ function addCell(grid, surface, sKey, bucket, held, bpSaved, bpFaced) {
   }
 }
 
+// Founder 2026-11-26: sets 1–3 pool best-of-three and best-of-five matches; the Live page never mixes them. Each player
+// also gets `fmt[bo][serve|return][surface][set][bucket] = [won, n]` for sets 1–3 (sets 4–5 are best-of-five only),
+// non-zero cells only. The best-of rule is the Live page's own (live-moments.js bestOf). `serve` / `return` unchanged.
+const { bestOf } = require('./live-moments.js');
+const FMT_SETS = new Set(['1', '2', '3']);
+function addFmt(p, bo, metric, surface, sKey, bucket, won) {
+  if (!FMT_SETS.has(sKey)) return;
+  for (const su of ['all', surface === 'other' ? null : surface]) {
+    if (!su) continue;
+    const f = ((((p.fmt[bo] = p.fmt[bo] || {})[metric] = p.fmt[bo][metric] || {})[su] = p.fmt[bo][metric][su] || {})[sKey] = p.fmt[bo][metric][su][sKey] || {});
+    const c = f[bucket] = f[bucket] || [0, 0];
+    c[1] += 1; if (won) c[0] += 1;
+  }
+}
+
 function finalize(grid, mode) {
   // mode 'serve' -> report hold% (won/n); 'return' -> break% (won/n) where for
   // return grids `won` already counts breaks. Emit pct rounded, keep n.
@@ -235,7 +250,7 @@ function main(opts) {
 
   function playerBucket(key, name) {
     let p = players.get(key);
-    if (!p) { p = { name, serve: emptyGrid(), return: emptyGrid(), eks: new Set() }; players.set(key, p); }
+    if (!p) { p = { name, serve: emptyGrid(), return: emptyGrid(), fmt: {}, eks: new Set() }; players.set(key, p); }
     else if (name && !p.name) p.name = name;
     return p;
   }
@@ -248,6 +263,7 @@ function main(opts) {
     if (!Array.isArray(pbp) || !pbp.length) continue;
 
     const surface = surfaceOf(r.tournament_key, r.tournament_name);
+    const bo = String(bestOf(r));
     const p1Key = r.first_player_key != null ? String(r.first_player_key) : null;
     const p2Key = r.second_player_key != null ? String(r.second_player_key) : null;
     const p1 = playerBucket(p1Key, r.event_first_player);
@@ -299,6 +315,8 @@ function main(opts) {
       // RETURN grid (returner viewpoint): break? (= !held)
       addCell(pooledReturn, surface, sKey, bucket, !held, 0, 0);
       addCell(returnerP.return, surface, sKey, bucket, !held, 0, 0);
+      addFmt(serverP, bo, 'serve', surface, sKey, bucket, held);
+      addFmt(returnerP, bo, 'return', surface, sKey, bucket, !held);
 
       serverP.eks.add(ek); returnerP.eks.add(ek);
       stats.serviceGames += 1;
@@ -334,6 +352,7 @@ function main(opts) {
       svcGames,
       serve: finalize(p.serve, 'serve'),
       return: finalize(p.return, 'return'),
+      fmt: p.fmt,
     };
   }
   rosterIn.sort((a, b) => (a.rank ?? 9999) - (b.rank ?? 9999) || b.svcGames - a.svcGames);
@@ -360,6 +379,7 @@ function main(opts) {
       },
       sets: SETS,
       surfaces: SURFACES,
+      fmt: 'players[k].fmt[3|5][serve|return][surface][set 1-3][bucket] = [won, n]; best-of = live-moments.js bestOf (founder 2026-11-26)',
       rosterRule: opts.roster ? `the ${WINDOW_MONTHS}M shard's roster` : `numeric key AND (rank<=${RANK_MAX} OR serviceGames>=${MIN_SERVICE_GAMES}) in ${WINDOW_MONTHS}M window`,
       coverage: { matches: stats.matches, serviceGames: stats.serviceGames, from: stats.minDate, to: stats.maxDate },
       players: Object.keys(playersOut).length,

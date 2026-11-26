@@ -14,6 +14,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const HTML = readFileSync(join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
 const LIVETAB = readFileSync(join(HERE, 'live-tab.js'), 'utf8');
 const HOUSE = readFileSync(join(HERE, 'house-ratings.js'), 'utf8');
+const LIVEMOM = readFileSync(join(HERE, 'live-moments.js'), 'utf8');
 const FIX = JSON.parse(readFileSync(join(HERE, 'tools/fixtures/ten417-live.json'), 'utf8'));
 import { createRequire } from 'node:module';
 const KIBL_SAME = createRequire(import.meta.url)('./drops-page.js').kiblSame;   // the stream join's name rule, as shipped
@@ -47,6 +48,7 @@ function boot(block = BLOCK, opts = {}) {
   ctx.window = ctx; ctx.globalThis = ctx;
   vm.createContext(ctx);
   vm.runInContext(HOUSE, ctx);
+  vm.runInContext(opts.moments || LIVEMOM, ctx);
   vm.runInContext(LIVETAB, ctx);
   vm.runInContext(HELPERS, ctx);
   vm.runInContext(`function newsPlayerName(k, n){ return n; } function sfEventName(r){ return String(r || '').replace(/^ATP\\s+/, '') + (/shanghai/i.test(r) ? ' Masters' : ''); }
@@ -67,11 +69,24 @@ async function both(name, mutate, check) {
   assert.ok(red, 'MUTANT survived: ' + name);
 }
 
+// a check holds on the shipped live-moments.js and fails on its mutant (the moment rules live there, shared with the poller)
+async function bothMom(name, mutate, check) {
+  await check(LIVEMOM);
+  const m = mutate(LIVEMOM); assert.notEqual(m, LIVEMOM, 'mutant applies: ' + name);
+  let red = false; try { await check(m); } catch (e) { red = true; }
+  assert.ok(red, 'MUTANT survived: ' + name);
+}
+
 test('constants: the placeholders sit in one place at the prototype values', async () => {
   await both('MIN changed', s => s.replace('HB_MIN_GAMES: 30', 'HB_MIN_GAMES: 20'), src => {
     const c = boot(src).LivePage.LIVE_CONST;
-    assert.equal(c.HB_MIN_GAMES, 30); assert.equal(c.U_GAP, 15); assert.equal(c.U_N, 20); assert.equal(c.BP_SAVED_MAJOR, 3);
-    assert.equal(c.DOM_WINDOW_GAMES, 4); assert.equal(c.BIG_GAP, 15); assert.equal(c.HEAT_NEUTRAL, 3); assert.equal(c.PRICE_MOVE_NO_BREAK, null);
+    assert.equal(c.HB_MIN_GAMES, 30); assert.equal(c.U_GAP, 15); assert.equal(c.U_N, 20);
+    assert.equal(c.DOM_WINDOW_GAMES, 4); assert.equal(c.BIG_GAP, 15); assert.equal(c.HEAT_NEUTRAL, 3);
+    assert.ok(!('PRICE_MOVE_NO_BREAK' in c), '"Price moved, no break" dropped (founder 2026-11-26)');
+  });
+  // founder 2026-11-26: 2+ break points saved in one game is major; one constant, in the file the poller shares
+  await bothMom('3 saved', s => s.replace('const BP_SAVED_MAJOR = 2;', 'const BP_SAVED_MAJOR = 3;'), src => {
+    assert.equal(boot(BLOCK, { moments: src }).LiveMoments.BP_SAVED_MAJOR, 2);
   });
 });
 
@@ -106,8 +121,8 @@ test('card: score, server, Pre = the card state\'s close, live price a dash befo
 });
 
 test('point log → games: a break is named for the player who broke; the score is the score when that game started', async () => {
-  await both('score after the game', s => s.replace("at: 'S' + (c.si + 1) + ' ' + c.g0[0] + EN + c.g0[1]", "at: 'S' + (c.si + 1) + ' ' + c.gs"), async src => {
-    const c = boot(src); await withPbp(c);
+  await bothMom('score after the game', s => s.replace("at: 'S' + (c.si + 1) + ' ' + c.g0[0] + EN + c.g0[1]", "at: 'S' + (c.si + 1) + ' ' + c.gs"), async src => {
+    const c = boot(BLOCK, { moments: src }); await withPbp(c);
     for (const f of board()) {
       const raw = FIX.pbp[String(f.event_key)]; if (!raw) continue;
       const m = c.LivePage._vm(f, 0), play = c.LivePage._buildPlay(m, raw);
@@ -125,16 +140,34 @@ test('point log → games: a break is named for the player who broke; the score 
   });
 });
 
-test('card moments: major kinds only — one saved break point never reaches the card; 3+ saved in a game does', async () => {
-  await both('every save major', s => s.replace('major: c.brk || saved >= LIVE_CONST.BP_SAVED_MAJOR', 'major: true'), async src => {
-    const c = boot(src); await withPbp(c);
-    let saw1 = false;
+test('card moments: major kinds only — one saved break point never reaches the card; 2+ saved in a game does', async () => {
+  await bothMom('every save major', s => s.replace('major: c.brk || saved >= major', 'major: true'), async src => {
+    const c = boot(BLOCK, { moments: src }); await withPbp(c);
+    let saw1 = false, saw2 = false;
     for (const f of board()) { const raw = FIX.pbp[String(f.event_key)]; if (!raw) continue;
       const play = c.LivePage._buildPlay(c.LivePage._vm(f, 0), raw);
       for (const e of play.ml.filter(x => /^Saved/.test(x.t))) { const n = /a break point/.test(e.t) ? 1 : /two/.test(e.t) ? 2 : 3;
-        if (n < 3) { saw1 = true; assert.equal(e.major, false, e.t); } else assert.equal(e.major, true, e.t); }
+        if (n < 2) { saw1 = true; assert.equal(e.major, false, e.t); } else { saw2 = true; assert.equal(e.major, true, e.t); } }
       for (const e of play.ml.filter(x => x.brk)) assert.equal(e.major, true); }
-    assert.ok(saw1, 'the fixture holds a game with fewer than 3 saved break points (the check is not vacuous)');
+    assert.ok(saw1 && saw2, 'the fixture holds a 1-save and a 2+-save game (the check is not vacuous)');
+  });
+});
+
+// founder 2026-11-26 option B: the poller writes each match's major moments into the feed, from the same file
+test('card moments from the feed: the poller runs the page\'s own file; a card lists them before its point log loads', async () => {
+  assert.equal(readFileSync(join(HERE, 'supabase/functions/live-poller/live-moments.js'), 'utf8'), LIVEMOM, 'the poller\'s copy is byte-identical');
+  const POLLER = readFileSync(join(HERE, 'supabase/functions/live-poller/index.ts'), 'utf8');
+  assert.match(POLLER, /import "\.\/live-moments\.js";/);
+  assert.match(POLLER, /rest as Record<string, unknown>\)\.stennisfy_moments = mm;/);
+  const c = boot(); const f = board().find(x => FIX.pbp[String(x.event_key)]);
+  const feed = c.LiveMoments.feedMoments(Object.assign(JSON.parse(JSON.stringify(f)), { pointbypoint: FIX.pbp[String(f.event_key)] }));
+  assert.ok(feed.length > 0 && feed.every(e => e.t && e.at), 'major moments on a real log');
+  const play = c.LivePage._buildPlay(c.LivePage._vm(f, 0), FIX.pbp[String(f.event_key)]);
+  assert.equal(JSON.stringify(feed.map(e => e.key + e.t + e.side)), JSON.stringify(play.ml.filter(e => e.major).map(e => e.key + e.t + e.side)), 'feed = the match view');
+  await both('feed moments ignored', s => s.replace("const fm = m.f && Array.isArray(m.f.stennisfy_moments) ? m.f.stennisfy_moments : null;", "const fm = null;"), src => {
+    const cc = boot(src); const m = cc.LivePage._vm(Object.assign(JSON.parse(JSON.stringify(f)), { stennisfy_moments: feed }), 0);
+    const h = cc.LivePage._html.card({ m, sig: cc.LivePage._sig(m) });
+    assert.match(h, new RegExp(feed.length === 1 ? '1 moment' : feed.length + ' moments'));
   });
 });
 
@@ -197,30 +230,39 @@ test('Break/Hold: under 30 games = count only, no colour; best-of-3 and best-of-
   const cell = (n, won) => ({ n, won, pct: Math.round(won / n * 100) });
   const sets = {}; for (const s of ['1', '2', '3', '4', '5']) { sets[s] = {}; for (const b of ['1', '2', '3', '4', '5', '6']) sets[s][b] = b === '1' ? cell(12, 10) : cell(60, 50); }
   const f = board()[0];
-  const hb = { players: { [String(f.first_player_key)]: { serve: { all: sets }, return: { all: sets } }, [String(f.second_player_key)]: { serve: { all: sets }, return: { all: sets } } } };
-  await both('format mixing allowed', s => s.replace('const HB_FORMAT_SPLIT = false;', 'const HB_FORMAT_SPLIT = true;'), src => {
+  // sets 1–3 by format (build-holdbreak.js fmt): best-of-5 = 40 of 50 per bucket, best-of-3 = 5 of 50 (a mix would read 45/100)
+  const fmtSets = won => { const o = {}; for (const s of ['1', '2', '3']) { o[s] = {}; for (const b of ['1', '2', '3', '4', '5', '6']) o[s][b] = [won, 50]; } return o; };
+  const fmt = { '5': { serve: { all: fmtSets(40) }, return: { all: fmtSets(40) } }, '3': { serve: { all: fmtSets(5) }, return: { all: fmtSets(5) } } };
+  const pl = { serve: { all: sets }, return: { all: sets }, fmt };
+  const hb = { players: { [String(f.first_player_key)]: pl, [String(f.second_player_key)]: pl } };
+  await both('formats pooled', s => s.replace("const fx = ((((pl.fmt[String(bo)] || {})", "const fx = ((((pl.fmt[String(bo === 5 ? 3 : 5)] || {})"), src => {
     const c = boot(src, { hb }); const m = c.LivePage._vm(f, 0); m.bo = 5;
     const h = c.LivePage._html.heat(m);
-    assert.ok(!/data-hbc="full"[^>]*>[\s\S]{0,400}?Set 1</.test(h));
     const cells = [...h.matchAll(/data-hbc="(\w+)"/g)].map(x => x[1]);
     assert.equal(cells.length, 60, 'two players × 6 rows × 5 sets');
-    for (let r = 0; r < 6; r++) for (let si = 0; si < 3; si++) assert.equal(cells[r * 5 + si], 'none', 'sets 1–3 pool both formats: a dash');
+    for (let si = 0; si < 3; si++) assert.equal(cells[5 + si], 'full', 'sets 1–3 read the best-of-5 split');
+    assert.match(h, /40 of 50/); assert.ok(!/5 of 50/.test(h), 'never the best-of-3 games in a best-of-5 match');
     assert.equal(cells[3], 'thin', '12 games in set 4 bucket 1 = count only');
     assert.equal(cells[5 + 3], 'full');
   });
+  // a file built before the split keeps sets 1–3 a dash, never the pooled grid
+  const old = { players: { [String(f.first_player_key)]: { serve: { all: sets }, return: { all: sets } }, [String(f.second_player_key)]: { serve: { all: sets }, return: { all: sets } } } };
+  const c0 = boot(BLOCK, { hb: old }); const m0 = c0.LivePage._vm(f, 0); m0.bo = 5;
+  const cells0 = [...c0.LivePage._html.heat(m0).matchAll(/data-hbc="(\w+)"/g)].map(x => x[1]);
+  for (let si = 0; si < 3; si++) assert.equal(cells0[5 + si], 'none');
 });
 
 test('wiring: the old renderer is gone, the new one owns #lvTab, the page script compiles', () => {
   assert.ok(!/lvEventLabel|momentumSets\(/.test(BLOCK), 'TEN-417 renderer removed');
   assert.doesNotThrow(() => new vm.Script(BLOCK));
   assert.match(HTML, /id="lvTab" style="padding:30px 40px 70px 24px;"/);
-  assert.match(BLOCK, /border-radius:16px; padding:22px 24px; display:flex; align-items:center; justify-content:space-between; gap:20px 36px; flex-wrap:wrap;/, 'the summary row is the design\'s own (not the shared 35b header)');
+  assert.match(BLOCK, /<div class="sfh lv-head"><div class="sfh__text"><h1 class="sfh__title">Live<\/h1>/, 'the shared page header (founder 2026-11-26)');
   assert.match(HTML, /#lvTab \*, #lvOverlay \* \{ box-sizing: content-box; \}/);
 });
 
 test('feed lag: a decided set left as the last entry is not the set in play (no false Set point)', async () => {
-  await both('decided set kept as current', s => s.replace('if (setDone(sets[sets.length - 1]) && wonBy(0) < need && wonBy(1) < need) sets.push([0, 0]);', ''), src => {
-    const c = boot(src); const m = c.LivePage._vm(Object.assign(board()[0], { scores: [{ score_set: '1', score_first: '6', score_second: '4' }], event_game_result: '40 - 15', event_serve: 'First Player', event_status: 'Set 1' }), 0);
+  await bothMom('decided set kept as current', s => s.replace('if (setDone(sets[sets.length - 1]) && wonBy(0) < need && wonBy(1) < need) sets.push([0, 0]);', ''), src => {
+    const c = boot(BLOCK, { moments: src }); const m = c.LivePage._vm(Object.assign(board()[0], { scores: [{ score_set: '1', score_first: '6', score_second: '4' }], event_game_result: '40 - 15', event_serve: 'First Player', event_status: 'Set 1' }), 0);
     assert.equal(m.nSets, 2); assert.equal(JSON.stringify(m.sets[1]), '[0,0]');
     assert.notEqual(c.LivePage._sig(m).chip, 'Set point');
   });

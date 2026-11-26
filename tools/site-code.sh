@@ -20,6 +20,7 @@ mkdir -p "$SITE/assets/brand" && cp assets/brand/google-g.svg assets/brand/apple
 mkdir -p "$SITE/assets/fonts" && cp assets/fonts/*.woff2 assets/fonts/OFL-*.txt "$SITE/assets/fonts/"
 cp house-ratings.js "$SITE/"
 cp live-tab.js "$SITE/"
+cp live-moments.js "$SITE/"
 cp kibl-now-stream.js "$SITE/"
 cp price-history-box.js "$SITE/"
 cp line-prices.js "$SITE/"

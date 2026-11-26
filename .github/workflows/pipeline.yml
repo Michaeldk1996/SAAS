@@ -988,6 +988,7 @@ jobs:
           # missing copy dashes every rating on the site. Required; asserted below.
           cp house-ratings.js _site/
           cp live-tab.js _site/
+          cp live-moments.js _site/
           # TEN-270: the Kibl stream -> live "Now" client. Same public creds as the
           # Live tab; reads kibl_now_price only (SELECT-only policy).
           cp kibl-now-stream.js _site/
