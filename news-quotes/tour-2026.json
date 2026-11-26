@@ -2,7 +2,7 @@
  "tournament": "ATP Tour",
  "tournamentKey": "tour",
  "season": "2026",
- "updatedAt": "2026-11-26T01:06:21.933Z",
+ "updatedAt": "2026-11-26T02:06:51.017Z",
  "items": [
   {
    "id": "quote-6daa8098cf1fd8",
@@ -38,7 +38,8 @@
     }
    ],
    "sourceHash": "2abc06acdb89f1dc",
-   "publishedAt": "2026-11-25T23:35:43.833Z"
+   "publishedAt": "2026-11-25T23:35:43.833Z",
+   "topic": "On his relationship with an elite athlete partner"
   },
   {
    "id": "quote-ae7e8f8802058f",
@@ -74,7 +75,70 @@
     }
    ],
    "sourceHash": "7e00aa9db72c1442",
-   "publishedAt": "2026-11-25T23:35:43.833Z"
+   "publishedAt": "2026-11-25T23:35:43.833Z",
+   "topicTried": true
+  },
+  {
+   "id": "quote-f6ea1aa15d4ca2",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": null,
+   "player": "C. Alcaraz",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-25T21:20:51.856Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "I miss him, tennis needs him",
+   "originalText": "Il me manque, le tennis a besoin de lui",
+   "language": "fr",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "La DH Les Sports+",
+   "sourceUrl": "https://www.dhnet.be/sports/tennis/2026/11/25/carlos-alcaraz-declare-sa-flamme-a-jannik-sinner-il-me-manque-le-tennis-a-besoin-de-lui-ZAXUNUVOF5B6LISESEVYOKIR4Y/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On Jannik Sinner's prolonged absence from tennis",
+   "settingTried": true,
+   "sourceHash": "6bb9b05b33c704a1",
+   "publishedAt": "2026-11-26T02:06:51.017Z"
+  },
+  {
+   "id": "quote-58baf32f06cb0e",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": null,
+   "player": "C. Alcaraz",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-25T18:10:21.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "he will come back even stronger and as a better player",
+   "originalText": "volverá aún más fuerte y siendo mejor jugador",
+   "language": "es",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "RPP Noticias",
+   "sourceUrl": "https://rpp.pe/tenis/mas-tenis/carlos-alcaraz-sobre-jannik-sinner-volvera-aun-mas-fuerte-y-siendo-mejor-jugador-noticia-1719757",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On Sinner's return after knee surgery",
+   "settingTried": true,
+   "sourceHash": "88df92671f240046",
+   "publishedAt": "2026-11-26T02:06:51.017Z"
   },
   {
    "id": "quote-0a81789a3209bc",
@@ -103,7 +167,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "ff28f1df8dda86dd",
-   "publishedAt": "2026-11-25T23:35:43.833Z"
+   "publishedAt": "2026-11-25T23:35:43.833Z",
+   "topic": "On a top rival's injury and comeback hopes"
   },
   {
    "id": "quote-6f9ca4d511ef0e",
@@ -132,7 +197,163 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "6f77e4e645dfdf03",
-   "publishedAt": "2026-11-25T23:35:43.833Z"
+   "publishedAt": "2026-11-25T23:35:43.833Z",
+   "topic": "On the toll of playing every week"
+  },
+  {
+   "id": "quote-c0b40760a6c411",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-25T16:15:32.172Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "The title would be something very special for all of us. But we have to take it match by match. We haven't been given an easy draw",
+   "originalText": "Der Titel wäre für uns alle etwas ganz Besonderes. Aber wir müssen Match für Match gehen. Wir haben kein einfaches Los",
+   "language": "de",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "Sportschau (ARD)",
+   "sourceUrl": "https://www.sportschau.de/tennis/davis-cup/deutschlands-sehnsucht-nach-der-haesslichsten-salatschuessel,davis-cup-dtb-grossbritannien-100.html",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On Germany's hopes of win",
+   "settingTried": true,
+   "sourceHash": "8f52c4b45a62df8f",
+   "publishedAt": "2026-11-26T02:06:51.017Z"
+  },
+  {
+   "id": "quote-02223aea527d8d",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-25T16:06:52.755Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "To be honest, it doesn't worry me much. I think I am innocent. I have talked about it enough. I won't talk about this topic anymore, because it has been five-six years already,",
+   "originalText": "Ak mám byť úprimný, veľmi ma to neznepokojuje. Myslím si, že som nevinný. Hovoril som o tom dosť. Nebudem o tejto téme viac hovoriť, pretože je to už päť-šesť rokov,",
+   "language": "sk",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "Sportnet (SME)",
+   "sourceUrl": "https://sportnet.sme.sk/spravy/tenis-zverev-trva-na-svojej-nevine-aj-po-novej-zalobe-expartnerky/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On the new lawsuit from his ex-partner",
+   "settingTried": true,
+   "sourceHash": "949b07bd853de453",
+   "publishedAt": "2026-11-26T02:06:51.017Z"
+  },
+  {
+   "id": "quote-5c893f9e206467",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-25T15:35:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "Apparently I made a statement that I shouldn't have made. But in my opinion I didn't. My lawyers have issued a statement on it, and I'm not that involved at the moment",
+   "originalText": "Scheinbar habe ich eine Aussage getätigt, die ich nicht hätte machen sollen. Aber meiner Meinung nach habe ich das nicht. Meine Anwälte haben eine Stellungnahme dazu abgegeben, und ich bin im Moment nicht so sehr involviert",
+   "language": "de",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "tennisnet.com",
+   "sourceUrl": "https://www.tennisnet.com/news/alexander-zverev-ueber-klage-nicht-allzu-besorgt",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his ex-girlfriend's new lawsuit against him",
+   "settingTried": true,
+   "sourceHash": "0662851b386a5eba",
+   "publishedAt": "2026-11-26T02:06:51.017Z"
+  },
+  {
+   "id": "quote-eb757983225c2a",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-25T15:35:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "I think I'm innocent … But I've talked about it enough. I'm done talking about it, because it was - I think - five or six years ago.",
+   "originalText": "Ich denke, ich bin unschuldig … Aber ich habe genug darüber gesprochen. Ich bin durch damit, darüber zu sprechen, denn es ist - glaube ich - fünf oder sechs Jahre her.",
+   "language": "de",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "tennisnet.com",
+   "sourceUrl": "https://www.tennisnet.com/news/alexander-zverev-ueber-klage-nicht-allzu-besorgt",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his ex-girlfriend's new lawsuit against him",
+   "settingTried": true,
+   "sourceHash": "b6adbcc26742a752",
+   "publishedAt": "2026-11-26T02:06:51.017Z"
+  },
+  {
+   "id": "quote-0228478d3f331e",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": null,
+   "player": "C. Alcaraz",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-25T15:34:46.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "I probably could have done things differently. I'm not going to lie. Pushing yourself to play every week ends up taking its toll; in the end, you're wrecking yourself",
+   "originalText": "Probablemente podría haber hecho las cosas de otra manera. No voy a mentir. Exigirse jugar cada semana termina pasándote factura; al final, te estás destrozando",
+   "language": "es",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "Mundo Deportivo",
+   "sourceUrl": "https://www.mundodeportivo.com/tenis/20261125/1004255430/alcaraz-escamado-sinner-cometer-errores-aprender.html",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On playing too many tournaments and injuries",
+   "settingTried": true,
+   "sourceHash": "14261eccb4cb568a",
+   "publishedAt": "2026-11-26T02:06:51.017Z"
   },
   {
    "id": "quote-5c87231ec304cf",
@@ -161,7 +382,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "5e76b8e7447585a7",
-   "publishedAt": "2026-11-25T15:40:58.768Z"
+   "publishedAt": "2026-11-25T15:40:58.768Z",
+   "topic": "On his health compared with last year"
   },
   {
    "id": "quote-777d19c2b8dd23",
@@ -190,7 +412,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "e1117877de1df392",
-   "publishedAt": "2026-11-25T15:40:58.768Z"
+   "publishedAt": "2026-11-25T15:40:58.768Z",
+   "topic": "On Gaudenzi's comment about players' painkiller use"
   },
   {
    "id": "quote-ad26b134f7a6bf",
@@ -219,7 +442,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "6a03801e7372ddf6",
-   "publishedAt": "2026-11-25T23:35:43.833Z"
+   "publishedAt": "2026-11-25T23:35:43.833Z",
+   "topic": "On the allegations before an independent tribunal"
   },
   {
    "id": "quote-8295d32f2201b6",
@@ -248,7 +472,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "36f22b7f1452c2cc",
-   "publishedAt": "2026-11-25T11:39:37.446Z"
+   "publishedAt": "2026-11-25T11:39:37.446Z",
+   "topic": "On denying ever taking banned substances"
   },
   {
    "id": "quote-993cfa8aa1a06e",
@@ -277,7 +502,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "37d2797f42f58787",
-   "publishedAt": "2026-11-25T08:38:04.146Z"
+   "publishedAt": "2026-11-25T08:38:04.146Z",
+   "topic": "On reports of his alleged doping test refusal"
   },
   {
    "id": "quote-d0922dd68e56f3",
@@ -306,7 +532,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "3efa982fb6f3230d",
-   "publishedAt": "2026-11-25T08:38:04.146Z"
+   "publishedAt": "2026-11-25T08:38:04.146Z",
+   "topic": "On allegations that he took banned substances"
   },
   {
    "id": "quote-09837707aa63ba",
@@ -335,7 +562,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "3d2f4e6e3a289dc0",
-   "publishedAt": "2026-11-25T05:37:15.896Z"
+   "publishedAt": "2026-11-25T05:37:15.896Z",
+   "topic": "On his recovery and whether he will play"
   },
   {
    "id": "quote-dec95bdf3c02f6",
@@ -364,7 +592,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "ac9b8eac8ac63f96",
-   "publishedAt": "2026-11-25T05:37:15.896Z"
+   "publishedAt": "2026-11-25T05:37:15.896Z",
+   "topic": "On winning the Davis Cup for Spain"
   },
   {
    "id": "quote-025a21fbcc95b2",
@@ -392,8 +621,11 @@
    "sourceUrl": "https://www.atptour.com/en/news/landaluce-meet-the-next-gen-2026",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "sourceHash": "b1527eb8b4c8f04f",
-   "publishedAt": "2026-11-25T23:35:43.833Z"
+   "topic": "On a difficult first month or two mentally",
+   "sourceHash": "1cc5dd77a76e6e92",
+   "publishedAt": "2026-11-25T23:35:43.833Z",
+   "revisedAt": "2026-11-26T02:06:51.017Z",
+   "revision": 1
   },
   {
    "id": "quote-deb5eceee7b44c",
@@ -421,8 +653,11 @@
    "sourceUrl": "https://www.atptour.com/en/news/landaluce-meet-the-next-gen-2026",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "sourceHash": "2a39f888ec230404",
-   "publishedAt": "2026-11-25T23:35:43.833Z"
+   "topic": "On handling pressure on big stages since sixteen",
+   "sourceHash": "ee0d3caece28e39e",
+   "publishedAt": "2026-11-25T23:35:43.833Z",
+   "revisedAt": "2026-11-26T02:06:51.017Z",
+   "revision": 1
   },
   {
    "id": "quote-154b51d19041e6",
@@ -1097,10 +1332,11 @@
    "sourceUrl": "https://www.atptour.com/en/news/sinner-november-2026-surgery",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "sourceHash": "ee3df5230bac5f1d",
+   "topic": "On trying to treat his injury without surgery",
+   "sourceHash": "ca430d22ad0a2ae7",
    "publishedAt": "2026-11-24T18:02:52.840Z",
-   "revisedAt": "2026-11-24T23:04:41.952Z",
-   "revision": 4
+   "revisedAt": "2026-11-26T02:06:51.017Z",
+   "revision": 5
   },
   {
    "id": "quote-420cde4b816820",
@@ -1128,8 +1364,11 @@
    "sourceUrl": "https://www.atptour.com/en/news/jodar-year-end-top-10-record-2026",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "sourceHash": "7eb339beaf0f8278",
-   "publishedAt": "2026-11-24T12:00:12.461Z"
+   "topic": "On his hard work paying off this season",
+   "sourceHash": "62260aeec243a2f5",
+   "publishedAt": "2026-11-24T12:00:12.461Z",
+   "revisedAt": "2026-11-26T02:06:51.017Z",
+   "revision": 1
   },
   {
    "id": "quote-aaca58458cbd9d",
@@ -1157,8 +1396,11 @@
    "sourceUrl": "https://www.atptour.com/en/news/sinner-november-2026-surgery",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "sourceHash": "ba55fbc16391c302",
-   "publishedAt": "2026-11-24T18:02:52.840Z"
+   "topic": "On beginning his recovery and missing the court",
+   "sourceHash": "7d97a34d33729e82",
+   "publishedAt": "2026-11-24T18:02:52.840Z",
+   "revisedAt": "2026-11-26T02:06:51.017Z",
+   "revision": 1
   },
   {
    "id": "quote-26e8c5279a87c0",
@@ -4783,6 +5025,691 @@
    "topic": "On arriving in Turin after his Paris week"
   },
   {
+   "id": "digest-5bb2fa5fbe12c5",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2973",
+   "player": "B. Shelton",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-25T22:15:00.000Z",
+   "members": [
+    "quote-6daa8098cf1fd8",
+    "quote-ae7e8f8802058f"
+   ],
+   "memberHash": "862e4bad89ea5ad8",
+   "digestedAt": "2026-11-26T02:06:51.017Z",
+   "blocks": [
+    {
+     "label": "on his relationship with an elite athlete partner",
+     "text": "Sometimes I leave these tournaments and I'm a bit of a zombie… I'm not the most fun person to be around. But we make a lot of sacrifices for our sport. I'd say both of us are chasing things for our sport. We're not where we want to be yet, we're not in our primes. So this is kind of crunch time… This is going to be the hardest, most grueling time in our relationship, from my perspective. None of it is easy. But being able to have someone to lean on who's such an elite athlete and doing things at a really high level as well, it helps in so many ways.",
+     "from": [
+      "quote-6daa8098cf1fd8"
+     ]
+    },
+    {
+     "label": "on his partner travelling to support him",
+     "text": "She grinded a ridiculous amount to show up for me. She must have flown back and forth six or seven times during the tournament. Probably more, I'm probably under-shooting it.",
+     "from": [
+      "quote-ae7e8f8802058f"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5"
+  },
+  {
+   "id": "digest-a8491be3db77b2",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2382",
+   "player": "C. Alcaraz",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-25T21:20:51.856Z",
+   "members": [
+    "quote-0228478d3f331e",
+    "quote-09837707aa63ba",
+    "quote-58baf32f06cb0e",
+    "quote-6f9ca4d511ef0e",
+    "quote-dec95bdf3c02f6",
+    "quote-f6ea1aa15d4ca2"
+   ],
+   "memberHash": "36fc7d533037ec68",
+   "digestedAt": "2026-11-26T02:06:51.017Z",
+   "blocks": [
+    {
+     "label": "on his recovery and whether he will play",
+     "text": "I haven't hit a ball yet. Tomorrow will be the first time. In the end, it is about how I feel, and we'll see how things go. I don't want to take anything for granted, but what I can say is that I feel a little better every day and I can see more clearly that I'm recovering. On Thursday, once everything has settled and I've trained, when the day comes, Ferrer will speak.",
+     "from": [
+      "quote-09837707aa63ba"
+     ]
+    },
+    {
+     "label": "on playing too many tournaments",
+     "text": "I probably could have done things differently. I'm not going to lie. Pushing yourself to play every week, eventually you're killing yourself. But I think it is what it is. I think we have to learn from these experiences. We just have to make mistakes in our career to learn from them, then be better. From now on, I will learn and I will do things a little bit differently. I think everybody is going to be like that.",
+     "from": [
+      "quote-0228478d3f331e",
+      "quote-6f9ca4d511ef0e"
+     ]
+    },
+    {
+     "label": "on Jannik Sinner's absence",
+     "text": "I miss him, tennis needs him. He will come back even stronger and as a better player.",
+     "from": [
+      "quote-f6ea1aa15d4ca2",
+      "quote-58baf32f06cb0e"
+     ]
+    },
+    {
+     "label": "on winning the Davis Cup for Spain",
+     "text": "The Davis Cup is a goal as well. I really wanted to achieve that for my country, for Spain. I set some other goals for the season, and I will try to be ready to get those goals.",
+     "from": [
+      "quote-dec95bdf3c02f6"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5"
+  },
+  {
+   "id": "digest-e3b74ea6c3bcbe",
+   "type": "digest",
+   "version": 1,
+   "playerId": "1980",
+   "player": "A. Zverev",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-25T17:39:15.000Z",
+   "members": [
+    "quote-02223aea527d8d",
+    "quote-0a81789a3209bc",
+    "quote-5c87231ec304cf",
+    "quote-5c893f9e206467",
+    "quote-777d19c2b8dd23",
+    "quote-c0b40760a6c411",
+    "quote-eb757983225c2a"
+   ],
+   "memberHash": "c0b39eca04ac8f01",
+   "digestedAt": "2026-11-26T02:06:51.017Z",
+   "blocks": [
+    {
+     "label": "on a top rival's injury and comeback hopes",
+     "text": "I'm not a doctor. I'm not a medical expert. I don't know exactly what the recovery looks like for his type of injury. I think he's mentally strong. I hope that he takes every step seriously and that in three, four months' time he can be back to 100% and be back playing. Even though of course he's one of my biggest competitors, one of the most difficult players for me to play, I still wish for him to come back to the tour because I've been there, I know what injury feels like, and I don't wish injury upon anyone. I texted him. I didn't speak to him on the phone.",
+     "from": [
+      "quote-0a81789a3209bc"
+     ]
+    },
+    {
+     "label": "on his ex-girlfriend's new lawsuit against him",
+     "text": "Apparently I made a statement that I shouldn't have made. But in my opinion I didn't. My lawyers have issued a statement on it, and I'm not that involved at the moment. To be honest, it doesn't worry me much. I think I'm innocent. But I've talked about it enough. I'm done talking about it, because it was, I think, five or six years ago.",
+     "from": [
+      "quote-5c893f9e206467",
+      "quote-02223aea527d8d",
+      "quote-eb757983225c2a"
+     ]
+    },
+    {
+     "label": "on his health compared with last year",
+     "text": "I was much healthier this year than I was last year. Last year I was struggling a lot with my back. I had a lot of bone issues as well, which I luckily figured out where they came from, and I could take the medication for it.",
+     "from": [
+      "quote-5c87231ec304cf"
+     ]
+    },
+    {
+     "label": "on Gaudenzi's comment about players' painkiller use",
+     "text": "I think it's an unfair comment from Gaudenzi because he doesn't know how many painkillers we take. It's not like every time we take a painkiller we let him know.",
+     "from": [
+      "quote-777d19c2b8dd23"
+     ]
+    },
+    {
+     "label": "on Germany's title hopes",
+     "text": "The title would be something very special for all of us. But we have to take it match by match. We haven't been given an easy draw.",
+     "from": [
+      "quote-c0b40760a6c411"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5"
+  },
+  {
+   "id": "digest-cd5ffb0fe2fedf",
+   "type": "digest",
+   "version": 1,
+   "playerId": "1902",
+   "player": "A. Rinderknech",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-25T13:12:32.884Z",
+   "members": [
+    "quote-8295d32f2201b6",
+    "quote-993cfa8aa1a06e",
+    "quote-ad26b134f7a6bf",
+    "quote-d0922dd68e56f3"
+   ],
+   "memberHash": "3f58a03e11c2d409",
+   "digestedAt": "2026-11-26T02:06:51.017Z",
+   "blocks": [
+    {
+     "label": "on his alleged test refusal case with the ITIA",
+     "text": "I am aware of the reports regarding my alleged test refusal case with the International Tennis Integrity Agency (ITIA). I will present the full details of the situation to the independent tribunal and will not respond to the allegations publicly at this time.",
+     "from": [
+      "quote-993cfa8aa1a06e",
+      "quote-ad26b134f7a6bf"
+     ]
+    },
+    {
+     "label": "on denying ever taking banned substances",
+     "text": "I have never taken any banned substance, and I am proud of my accomplishments in professional tennis, all of which have been achieved through hard work and with integrity always.",
+     "from": [
+      "quote-d0922dd68e56f3",
+      "quote-8295d32f2201b6"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5"
+  },
+  {
+   "id": "digest-8c90aabee412d8",
+   "type": "digest",
+   "version": 1,
+   "playerId": "39864",
+   "player": "M. Landaluce",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-25T00:00:00.000Z",
+   "members": [
+    "quote-025a21fbcc95b2",
+    "quote-deb5eceee7b44c"
+   ],
+   "memberHash": "2136ad283288e4b5",
+   "digestedAt": "2026-11-26T02:06:51.017Z",
+   "blocks": [
+    {
+     "label": "on handling pressure on big stages since 16",
+     "text": "I've had a lot of opportunities since I was 16 and I've played really big tournaments on really big stages from a young age, so I'm really well adapted … I have no pressure right now because I've handled it over the years. Now I can enjoy it. I'm enjoying myself on and off the court, and that's really important. I think it's the key and that really good things are going to happen in the near future.",
+     "from": [
+      "quote-deb5eceee7b44c"
+     ]
+    },
+    {
+     "label": "on a difficult first month or two mentally",
+     "text": "The first month or two was a bit more difficult because it got into my head.",
+     "from": [
+      "quote-025a21fbcc95b2"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5"
+  },
+  {
+   "id": "digest-614aab8329f898",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2072",
+   "player": "J. Sinner",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-24T23:44:03.000Z",
+   "members": [
+    "quote-009f73c624dd2b",
+    "quote-0dd111a4c2b22d",
+    "quote-154b51d19041e6",
+    "quote-25cc3c4ae15565",
+    "quote-3df7ed26bb8b09",
+    "quote-5d6a8ef4cb8ee0",
+    "quote-64a9642ea4ec54",
+    "quote-80a8d3cd9921ea",
+    "quote-9f26375b77790f",
+    "quote-a28aa374c90e43",
+    "quote-aaca58458cbd9d",
+    "quote-bf5398d6e15566"
+   ],
+   "memberHash": "8adbb818f5016f0b",
+   "digestedAt": "2026-11-26T02:06:51.017Z",
+   "blocks": [
+    {
+     "label": "on undergoing knee surgery",
+     "text": "Over the past few months, together with my team, we've tried everything to treat my injury without surgery. After some very encouraging progress early on, my knee unfortunately didn't respond as we had all hoped, that's why today I underwent a minor surgery to improve the condition of my iliotibial band. I really miss being on court and will now begin my recovery process together with my team. Thank you for all your support. See you soon!",
+     "from": [
+      "quote-64a9642ea4ec54",
+      "quote-0dd111a4c2b22d",
+      "quote-3df7ed26bb8b09",
+      "quote-5d6a8ef4cb8ee0",
+      "quote-009f73c624dd2b",
+      "quote-80a8d3cd9921ea",
+      "quote-aaca58458cbd9d"
+     ]
+    },
+    {
+     "label": "on the hardest part of being injured",
+     "text": "The worst part of this injury for me is that I can't compete, I can't play tennis. Even my life outside tennis is a bit more limited, for the simple reason that I can't do the things I really love, because I want to protect my knee as much as possible.",
+     "from": [
+      "quote-a28aa374c90e43",
+      "quote-154b51d19041e6",
+      "quote-bf5398d6e15566",
+      "quote-25cc3c4ae15565"
+     ]
+    },
+    {
+     "label": "on not rushing his return",
+     "text": "I have to respect the protocols at the moment, because if we rush things we could have more serious problems.",
+     "from": [
+      "quote-9f26375b77790f"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5"
+  },
+  {
+   "id": "digest-2ac74f585d823e",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2382",
+   "player": "C. Alcaraz",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-24T18:00:06.361Z",
+   "members": [
+    "quote-3d25318c31435b",
+    "quote-ef564531466e17",
+    "quote-f5a2dbd017ea5b"
+   ],
+   "memberHash": "2b3fadaf0aa89e93",
+   "digestedAt": "2026-11-26T02:06:51.017Z",
+   "blocks": [
+    {
+     "label": "on missing Jannik sinner",
+     "text": "It's a shame we don't have Jannik. I can't wait to see him fit, healthy. I am pretty sure that he is going to come back even better and stronger.",
+     "from": [
+      "quote-ef564531466e17",
+      "quote-f5a2dbd017ea5b"
+     ]
+    },
+    {
+     "label": "on the tournaments he has left",
+     "text": "I'm really looking forward to trying to complete the tournaments I have left.",
+     "from": [
+      "quote-3d25318c31435b"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5"
+  },
+  {
+   "id": "digest-d8123e107a922b",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2844",
+   "player": "M. Berrettini",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-24T09:11:42.000Z",
+   "members": [
+    "quote-199f3a50138064",
+    "quote-2a9ed9472b6c86",
+    "quote-35e8ef9af1aa60",
+    "quote-fdc139ea090a7d"
+   ],
+   "memberHash": "37842c684362f727",
+   "digestedAt": "2026-11-26T02:06:51.017Z",
+   "blocks": [
+    {
+     "label": "on representing italy in the Davis Cup",
+     "text": "For me, it is always a great honour and pleasure. Since I was a child, representing the national team and playing in the Davis Cup has been the biggest dream a player can have. I am happy to be here for another year.",
+     "from": [
+      "quote-2a9ed9472b6c86"
+     ]
+    },
+    {
+     "label": "on staying ready for the Davis Cup call-up",
+     "text": "When the call-ups were announced, I knew I had to be ready. I continued training and playing because the captain had told us all that the official selections would come later. So I kept preparing as I had in previous years, to be ready to join the team.",
+     "from": [
+      "quote-199f3a50138064"
+     ]
+    },
+    {
+     "label": "on his sidelined teammate's surgery",
+     "text": "I know how difficult it is to be sidelined and to see recovery times getting longer. We are all sorry about the surgery, but we hope he can return to the court as soon as possible.",
+     "from": [
+      "quote-fdc139ea090a7d",
+      "quote-35e8ef9af1aa60"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5"
+  },
+  {
+   "id": "digest-8d2a6dab3b0c5c",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2849",
+   "player": "L. Musetti",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-24T09:11:42.000Z",
+   "members": [
+    "quote-480aa71dc9de96",
+    "quote-608e0da2df75d2"
+   ],
+   "memberHash": "e200ee41abeb2a3c",
+   "digestedAt": "2026-11-26T02:06:51.017Z",
+   "blocks": [
+    {
+     "label": "on Jannik sinner and his return",
+     "text": "Jannik is the driving force behind Italian tennis and, for me, he represents a great source of inspiration because of his ambition and the results he has managed to achieve. I genuinely wish him all the best. He has a very well-organised and professional team behind him, who will know how to help him make the best decisions. I am convinced that he will come back stronger than before.",
+     "from": [
+      "quote-480aa71dc9de96",
+      "quote-608e0da2df75d2"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5"
+  },
+  {
+   "id": "digest-2ae8fddbc35593",
+   "type": "digest",
+   "version": 1,
+   "playerId": "8174",
+   "player": "A. Fery",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-24T08:20:15.000Z",
+   "members": [
+    "quote-15de5c8e4ebcd7",
+    "quote-9019f1f24a242f"
+   ],
+   "memberHash": "058ff25e0a1fef35",
+   "digestedAt": "2026-11-26T02:06:51.017Z",
+   "blocks": [
+    {
+     "label": "on the goal of winning the Davis Cup with GB",
+     "text": "It would be incredible to win the Davis Cup with GB and these guys. We're going to push hard to achieve that. It's the final tournament of the year so we're going to give everything and put it all out there.",
+     "from": [
+      "quote-15de5c8e4ebcd7"
+     ]
+    },
+    {
+     "label": "on keeping the same team together",
+     "text": "I think it's really important to have the same guys.",
+     "from": [
+      "quote-9019f1f24a242f"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5"
+  },
+  {
+   "id": "digest-611de67e592640",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2382",
+   "player": "C. Alcaraz",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-23T13:09:23.293Z",
+   "members": [
+    "quote-26e8c5279a87c0",
+    "quote-67b201eb625d01"
+   ],
+   "memberHash": "e3ec3c64bd63e284",
+   "digestedAt": "2026-11-26T02:06:51.017Z",
+   "blocks": [
+    {
+     "label": "on who deserves to be called world No. 1",
+     "text": "Everybody feels he's the No. 1. Me, Sascha, Jannik, Shelton, I think everybody thinks they are the No. 1 in the world. But the No. 1 is Sascha. We have to give credit to him.",
+     "from": [
+      "quote-67b201eb625d01"
+     ]
+    },
+    {
+     "label": "on the work of Samuel and his brother",
+     "text": "I'm really proud of the job and the work Samuel did the whole year, alongside my brother. I realized how good I have to feel off the court in my life to go and hit the practice court with motivation. They said everything that was really important to me really carefully.",
+     "from": [
+      "quote-26e8c5279a87c0"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5"
+  },
+  {
+   "id": "digest-70f96eb0ae9b8f",
+   "type": "digest",
+   "version": 1,
+   "playerId": "1980",
+   "player": "A. Zverev",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-23T13:09:23.293Z",
+   "members": [
+    "quote-a701a57132c86c",
+    "quote-f5cdf70e2ec995"
+   ],
+   "memberHash": "20b24a0c76e3bd5a",
+   "digestedAt": "2026-11-26T02:06:51.017Z",
+   "blocks": [
+    {
+     "label": "on his season and doubts about whether he deserved it",
+     "text": "Sure, I could point out that Jannik has been injured, or that Carlos was out for a few months. But honestly, I believe what I've achieved this year represents one of the mentally strongest seasons we've ever seen in tennis. Everywhere else I played at least the final. If someone thinks that I didn't deserve it, they're free to have their own opinion.",
+     "from": [
+      "quote-a701a57132c86c",
+      "quote-f5cdf70e2ec995"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5"
+  },
+  {
+   "id": "digest-01d6e5c39883ad",
+   "type": "digest",
+   "version": 1,
+   "playerId": "1980",
+   "player": "A. Zverev",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-22T00:00:00.000Z",
+   "members": [
+    "quote-047c1e9f47f0cc",
+    "quote-0bb6832f6ad5c1"
+   ],
+   "memberHash": "69bb02972d2a86e8",
+   "digestedAt": "2026-11-26T02:06:51.017Z",
+   "blocks": [
+    {
+     "label": "on His opponent's serve and their next meeting",
+     "text": "His serve plus one is absolutely amazing. But the matches that we've played were always very difficult and I look forward to another difficult one. And hopefully it's going to be entertaining.",
+     "from": [
+      "quote-0bb6832f6ad5c1"
+     ]
+    },
+    {
+     "label": "on telling A young rival to relax",
+     "text": "You're an absolute legend at only 23 years old or something like that. If you retire tomorrow, it's okay! Just relax.",
+     "from": [
+      "quote-047c1e9f47f0cc"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5"
+  },
+  {
+   "id": "digest-aaa5d7bec1c39c",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2382",
+   "player": "C. Alcaraz",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-22T00:00:00.000Z",
+   "members": [
+    "quote-2ee2d7753b39fd",
+    "quote-52d719f7d01844",
+    "quote-61b36f14b59acb",
+    "quote-a520b291ff9b0e",
+    "quote-ecac84ecc8dbb6",
+    "quote-f569b2d0d2e16d",
+    "quote-fc086c87784865"
+   ],
+   "memberHash": "ee87d8cd80f8be89",
+   "digestedAt": "2026-11-26T02:06:51.017Z",
+   "blocks": [
+    {
+     "label": "after winning the final",
+     "text": "Today's final, I needed to put the three c's that my grandpa always tells me that I have to give every time that I step on the court for every match and every practice. He's watching at home, so I just want to say I love you to my grandparents. In Spanish it's Cabeza, corazon, cajones, in English it is Head, heart, balls, so I think today that was about it.",
+     "from": [
+      "quote-2ee2d7753b39fd"
+     ]
+    },
+    {
+     "label": "on the emotions of finally winning the title",
+     "text": "It is a tournament that I really wanted to win one year. I was chasing that moment really badly for a really long time. Once I got it, a lot of emotions came to me, came to my team. I was looking at them. They were screaming, they were celebrating, they were everything. My mum was crying. She's an emotional person. Seeing them there and celebrating, giving them hugs and everything was amazing. It was a really difficult two weeks for me, dealing with the pressure, dealing with the physical problems, having team meetings, making really difficult decisions, controlling myself on the court, off the court.",
+     "from": [
+      "quote-ecac84ecc8dbb6",
+      "quote-fc086c87784865"
+     ]
+    },
+    {
+     "label": "on finding his serve by staying relaxed",
+     "text": "After the second set, I realised that I just really need to do a really smooth movement of being relaxed. I'm not a server. I need to win the point from the baseline, so I have to realise that and understand that. Once I got it, I think the serve goes much better. I think from the second set to the third set, that's what happened. I just understand how I should serve, and I think it's just when I'm relaxed, I do a really smooth movement and I accelerate. When I feel the nerves, when I feel nervous, I really want to do more than I should do.",
+     "from": [
+      "quote-f569b2d0d2e16d",
+      "quote-52d719f7d01844"
+     ]
+    },
+    {
+     "label": "on testing himself physically",
+     "text": "Today's match, for me, was an important match because we were testing myself. I try not to go too hard with myself physically. I just tried to play really hard, really strong, and aggressive, and I think I could do it. So I'm just happy about it. I'm looking forward to tomorrow.",
+     "from": [
+      "quote-a520b291ff9b0e",
+      "quote-61b36f14b59acb"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5"
+  },
+  {
+   "id": "digest-a69eadabb7a69d",
+   "type": "digest",
+   "version": 1,
+   "playerId": "1980",
+   "player": "A. Zverev",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-21T21:32:00.000Z",
+   "members": [
+    "quote-90fe87d1bb92e6",
+    "quote-b45a6915b0e12e"
+   ],
+   "memberHash": "f7e185db9fc7c769",
+   "digestedAt": "2026-11-26T02:06:51.017Z",
+   "blocks": [
+    {
+     "label": "on the serve-dominated semi-final",
+     "text": "I felt like today there was not a lot of tennis because both of us were serving unbelievably, so credit to him.",
+     "from": [
+      "quote-90fe87d1bb92e6"
+     ]
+    },
+    {
+     "label": "on finding ways to win this week",
+     "text": "I was finding ways. Even when I was not playing my best from the baseline, I was still finding ways, and I'm very happy with how I served today.",
+     "from": [
+      "quote-b45a6915b0e12e"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5"
+  },
+  {
    "id": "digest-943cf7d0badd57",
    "type": "digest",
    "version": 1,
@@ -5064,6 +5991,39 @@
    "model": "claude-opus-5-5"
   },
   {
+   "id": "digest-b8ab13a17e77bb",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2846",
+   "player": "F. Tiafoe",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-17T08:28:00.000Z",
+   "members": [
+    "quote-611789d4998d31",
+    "quote-a20ad7c6e979e3"
+   ],
+   "memberHash": "2a5d041b1162e6f2",
+   "digestedAt": "2026-11-26T02:06:51.017Z",
+   "blocks": [
+    {
+     "label": "on Carlos Alcaraz's level at the ATP Finals",
+     "text": "He has moments where he's definitely Superman and he's playing pretty insane. But again, it's one of those things, you've got to appreciate greatness.",
+     "from": [
+      "quote-a20ad7c6e979e3",
+      "quote-611789d4998d31"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5"
+  },
+  {
    "id": "digest-6cbe1003021fc6",
    "type": "digest",
    "version": 1,
@@ -5147,6 +6107,45 @@
    "model": "claude-opus-5-5"
   },
   {
+   "id": "digest-66d318bc7e2cf4",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2382",
+   "player": "C. Alcaraz",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-16T15:43:54.954Z",
+   "members": [
+    "quote-1484fc62d72637",
+    "quote-758fd4e2661882"
+   ],
+   "memberHash": "1602bcb2f6f16728",
+   "digestedAt": "2026-11-26T02:06:51.017Z",
+   "blocks": [
+    {
+     "label": "after his opening win over Frances Tiafoe",
+     "text": "I'm just really happy to start the tournament like this.",
+     "from": [
+      "quote-1484fc62d72637"
+     ]
+    },
+    {
+     "label": "on past trouble against Frances Tiafoe",
+     "text": "The trouble that I got every time I have played against Frances made me really focused.",
+     "from": [
+      "quote-758fd4e2661882"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5"
+  },
+  {
    "id": "digest-0523576b41e037",
    "type": "digest",
    "version": 1,
@@ -5218,6 +6217,85 @@
    "model": "claude-opus-5-5"
   },
   {
+   "id": "digest-c1bce3270f993f",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2973",
+   "player": "B. Shelton",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-15T22:45:27.000Z",
+   "members": [
+    "quote-b2f1172a530332",
+    "quote-cb6747ca9b29e9",
+    "quote-f2b49767a36019"
+   ],
+   "memberHash": "c0a714cecf99b5f9",
+   "digestedAt": "2026-11-26T02:06:51.017Z",
+   "blocks": [
+    {
+     "label": "after his win over Fils",
+     "text": "That was really intense, especially in the first set. I don't know that I've played that many rallies out there on tour on a court this fast. So it was physical, really physical. A tough contest.",
+     "from": [
+      "quote-f2b49767a36019"
+     ]
+    },
+    {
+     "label": "on constant questions about coach Juan Carlos Ferrero",
+     "text": "I think that the questions are going to come, it's not something that surprises me and I'm used to it. But yes, there have been many, many questions.",
+     "from": [
+      "quote-cb6747ca9b29e9"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5"
+  },
+  {
+   "id": "digest-277de17a499be5",
+   "type": "digest",
+   "version": 1,
+   "playerId": "1980",
+   "player": "A. Zverev",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-15T15:53:00.000Z",
+   "members": [
+    "quote-5c8fc89fea1cd6",
+    "quote-c97b20550b80b5"
+   ],
+   "memberHash": "31dca0b43f47f574",
+   "digestedAt": "2026-11-26T02:06:51.017Z",
+   "blocks": [
+    {
+     "label": "after his opening ATP Finals win over Jodar",
+     "text": "It wasn't the perfect match, but I'm happy; it's a great start to the tournament for me.",
+     "from": [
+      "quote-5c8fc89fea1cd6"
+     ]
+    },
+    {
+     "label": "on his insulin overdose before the Halle loss",
+     "text": "The meter gave an incorrect reading, which caused me to inject far too much insulin before the match.",
+     "from": [
+      "quote-c97b20550b80b5"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5"
+  },
+  {
    "id": "digest-4b6f6712fedd77",
    "type": "digest",
    "version": 1,
@@ -5251,6 +6329,45 @@
      "text": "It feels nice. I think I've lost a lot of indoor finals, but at the same time I didn't really look too much into it, because when I won Tokyo the one year, the whole tournament was pretty much played indoors, roof closed.",
      "from": [
       "quote-39e909fee82206"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5"
+  },
+  {
+   "id": "digest-a584b992cde267",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2382",
+   "player": "C. Alcaraz",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-14T13:46:19.000Z",
+   "members": [
+    "quote-74899a9a78880b",
+    "quote-91909bb6648e25"
+   ],
+   "memberHash": "631d2375c215fb2f",
+   "digestedAt": "2026-11-26T02:06:51.017Z",
+   "blocks": [
+    {
+     "label": "on practicing with a stringless racket in Turin",
+     "text": "They are exercises to hit, or try to hit, the ball in the sweet spot of the racket, bringing the hand forward … Here the ball travels very fast and you have very little time. If you try to play like on clay, trying to get the ball high over the net, in the end they put you under pressure.",
+     "from": [
+      "quote-74899a9a78880b"
+     ]
+    },
+    {
+     "label": "on seeing former coach Ferrero again",
+     "text": "Well, I'm not going to lie, it's going to be a little bit weird. It's been a really long time without seeing him, but I'm excited and I'm really looking forward to seeing him and talking to him.",
+     "from": [
+      "quote-91909bb6648e25"
      ]
     }
    ],
@@ -5351,20 +6468,18 @@
    "timestamp": "2026-11-12T16:02:02.000Z",
    "members": [
     "quote-0f8a217f7a532d",
-    "quote-25cc3c4ae15565",
     "quote-2f5a805d3deae9",
     "quote-a733179800055d",
     "quote-fbc2b259df30f6"
    ],
-   "memberHash": "d9ff0de0b86ecade",
-   "digestedAt": "2026-11-19T07:17:55.824Z",
+   "memberHash": "def3c695be27b967",
+   "digestedAt": "2026-11-26T02:06:51.017Z",
    "blocks": [
     {
      "label": "on an injury with good and bad days",
      "text": "I had days where I felt nothing and I could play without any problems, and then I had days where I couldn't move at all.",
      "from": [
-      "quote-2f5a805d3deae9",
-      "quote-fbc2b259df30f6"
+      "quote-2f5a805d3deae9"
      ]
     },
     {
@@ -5375,15 +6490,8 @@
      ]
     },
     {
-     "label": "on protecting his knee limiting life outside tennis",
-     "text": "Also my life outside of tennis is a bit more limited because of a simple fact: I cannot do things that I really like, because I want to protect my knee.",
-     "from": [
-      "quote-25cc3c4ae15565"
-     ]
-    },
-    {
      "label": "on spending time off on his F1 simulator",
-     "text": "I don't do anything special. You know that I love playing tennis. Instead I have to deal with long days where I'm at the simulator… I go to the gym and then go back to the simulator. I have a great passion for motorsport.",
+     "text": "I don't do anything special, you know that I love playing tennis. Instead I have to deal with long days where I'm at the simulator… I go to the gym and then go back to the simulator. I have a great passion for motorsport.",
      "from": [
       "quote-0f8a217f7a532d"
      ]

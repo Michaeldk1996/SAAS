@@ -2,7 +2,7 @@
  "tournament": "Davis Cup - World Group",
  "tournamentKey": "3120",
  "season": "2026",
- "updatedAt": "2026-11-25T13:39:48.584Z",
+ "updatedAt": "2026-11-26T02:06:51.017Z",
  "items": [
   {
    "id": "quote-145fe7bfedc7d3",
@@ -33,7 +33,8 @@
    "sourceHash": "cfc167f7e54f2605",
    "publishedAt": "2026-11-24T21:04:56.495Z",
    "revisedAt": "2026-11-24T21:34:33.922Z",
-   "revision": 1
+   "revision": 1,
+   "topic": "On an event unlike normal tournaments"
   },
   {
    "id": "quote-3dc8df13a975ad",
@@ -64,7 +65,8 @@
    "sourceHash": "dae806f0672dc391",
    "publishedAt": "2026-11-24T21:04:56.495Z",
    "revisedAt": "2026-11-24T21:34:33.922Z",
-   "revision": 1
+   "revision": 1,
+   "topic": "On the crowd making every match difficult"
   },
   {
    "id": "quote-158697bb2c6757",
@@ -93,7 +95,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "1943d62f3c66d5c1",
-   "publishedAt": "2026-11-25T13:39:48.584Z"
+   "publishedAt": "2026-11-25T13:39:48.584Z",
+   "topic": "On the gruelling first set"
   },
   {
    "id": "quote-29c6c006273e97",
@@ -122,7 +125,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "8a72720a2a84c21c",
-   "publishedAt": "2026-11-25T13:39:48.584Z"
+   "publishedAt": "2026-11-25T13:39:48.584Z",
+   "topic": "On his loss playing for Team Canada"
   },
   {
    "id": "quote-7942c2e6f316b7",
@@ -151,7 +155,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "dce90567a8aabf16",
-   "publishedAt": "2026-11-25T13:39:48.584Z"
+   "publishedAt": "2026-11-25T13:39:48.584Z",
+   "topic": "On his comeback and eventual three-set defeat"
   },
   {
    "id": "quote-fd1898835d9a97",
@@ -180,7 +185,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "a082116b80e6e07f",
-   "publishedAt": "2026-11-25T13:39:48.584Z"
+   "publishedAt": "2026-11-25T13:39:48.584Z",
+   "topic": "On struggling to come back in his loss"
   },
   {
    "id": "quote-23b0add5e54b6d",
@@ -209,7 +215,8 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "b6beb88fd53dd8b4",
-   "publishedAt": "2026-11-24T15:02:42.201Z"
+   "publishedAt": "2026-11-24T15:02:42.201Z",
+   "topic": "On Felix and his path to the top"
   },
   {
    "id": "quote-e8d792a0345fc9",
@@ -238,7 +245,127 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "sourceHash": "e955d6927599eb41",
-   "publishedAt": "2026-11-24T15:02:42.201Z"
+   "publishedAt": "2026-11-24T15:02:42.201Z",
+   "topicTried": true
+  },
+  {
+   "id": "digest-3c30ede94cc221",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2981",
+   "player": "T. Machac",
+   "opponentId": "3696",
+   "opponent": "L. Draxl",
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "eventKey": "12182495",
+   "context": "after beating L. Draxl",
+   "category": "Quotes",
+   "timestamp": "2026-11-24T20:30:00.000Z",
+   "members": [
+    "quote-145fe7bfedc7d3",
+    "quote-3dc8df13a975ad"
+   ],
+   "memberHash": "14ef70ddf5218e64",
+   "digestedAt": "2026-11-26T02:06:51.017Z",
+   "blocks": [
+    {
+     "label": "after his win over Draxl",
+     "text": "It's different. It's very different compared to normal tournaments.",
+     "from": [
+      "quote-145fe7bfedc7d3"
+     ]
+    },
+    {
+     "label": "on the crowd making every match difficult",
+     "text": "I think every match here is difficult because the crowd is pushing you.",
+     "from": [
+      "quote-3dc8df13a975ad"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5"
+  },
+  {
+   "id": "digest-48aeb468fee778",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2073",
+   "player": "F. Auger-Aliassime",
+   "opponentId": "2959",
+   "opponent": "J. Lehecka",
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "eventKey": "12182496",
+   "context": "after losing to J. Lehecka",
+   "category": "Quotes",
+   "timestamp": "2026-11-24T20:17:02.279Z",
+   "members": [
+    "quote-158697bb2c6757",
+    "quote-29c6c006273e97",
+    "quote-fd1898835d9a97"
+   ],
+   "memberHash": "14b5060e5710da4c",
+   "digestedAt": "2026-11-26T02:06:51.017Z",
+   "blocks": [
+    {
+     "label": "after his loss to lehecka",
+     "text": "It was a gruelling first set. I tried to fight back, but he was pretty locked in. Tough to recover after that.",
+     "from": [
+      "quote-158697bb2c6757",
+      "quote-fd1898835d9a97"
+     ]
+    },
+    {
+     "label": "on losing while playing for Team Canada",
+     "text": "I've had a lot of joy, a lot of luck in the past with Team Canada. I feel like things fell my way a lot of times. It wasn't the case today.",
+     "from": [
+      "quote-29c6c006273e97"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5"
+  },
+  {
+   "id": "digest-07e9f96fde5ded",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2959",
+   "player": "J. Lehecka",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-24T03:30:00.000Z",
+   "members": [
+    "quote-23b0add5e54b6d",
+    "quote-e8d792a0345fc9"
+   ],
+   "memberHash": "26c22a3d084cecb9",
+   "digestedAt": "2026-11-26T02:06:51.017Z",
+   "blocks": [
+    {
+     "label": "on Felix auger-aliassime and his path to the top",
+     "text": "Felix is a great guy. He was a superstar from childhood, the kind of player everyone said would reach the top one day. And he did it. His path to success was a little different; he got there a bit earlier than me.",
+     "from": [
+      "quote-23b0add5e54b6d"
+     ]
+    },
+    {
+     "label": "on the advantage of working with Fred",
+     "text": "I think it can be a great advantage for us. There is nobody in the tennis world who knows Felix better than Fred. He grew up with him, developed him as a tennis player and took him into the world's top five.",
+     "from": [
+      "quote-e8d792a0345fc9"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5"
   }
  ]
 }
