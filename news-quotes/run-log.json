@@ -1,216 +1,6 @@
 {
  "runs": [
   {
-   "at": "2026-11-17T13:02:48.863Z",
-   "activeTournaments": [
-    "Finals - Turin"
-   ],
-   "tournaments": [
-    {
-     "name": "Finals - Turin",
-     "key": "2794",
-     "sources": [],
-     "fromOutlets": 0,
-     "counts": {
-      "candidates": 0,
-      "droppedNotVerbatim": 0,
-      "droppedNoPlayer": 0,
-      "droppedAmbiguous": 0,
-      "notTranslatedNoKey": 0,
-      "notTranslatedApiError": 0,
-      "droppedTranslationCheck": 0,
-      "droppedEnglishExists": 0,
-      "mergedSameQuote": 0,
-      "alreadyHeld": 0,
-      "items": 0,
-      "tokens": {
-       "input": 0,
-       "output": 0
-      },
-      "modelError": null,
-      "retryUrls": 0
-     },
-     "added": 0,
-     "held": 6,
-     "byCategory": {
-      "Quotes": 5,
-      "Injuries": 1
-     },
-     "finishedMatches": 4,
-     "matchesWithWinnerQuote": 2
-    },
-    {
-     "name": "ATP Tour",
-     "key": "tour",
-     "sources": [],
-     "fromOutlets": 22,
-     "counts": {
-      "candidates": 22,
-      "droppedNotVerbatim": 0,
-      "droppedNoPlayer": 0,
-      "droppedAmbiguous": 0,
-      "notTranslatedNoKey": 0,
-      "notTranslatedApiError": 0,
-      "droppedTranslationCheck": 0,
-      "droppedEnglishExists": 0,
-      "mergedSameQuote": 1,
-      "alreadyHeld": 0,
-      "items": 21,
-      "tokens": {
-       "input": 0,
-       "output": 0
-      },
-      "modelError": null,
-      "retryUrls": 0
-     },
-     "added": 0,
-     "held": 143,
-     "byCategory": {
-      "Injuries": 8,
-      "Interviews": 135
-     },
-     "finishedMatches": 0,
-     "matchesWithWinnerQuote": 0
-    }
-   ],
-   "newItems": 0,
-   "tokens": {
-    "input": 0,
-    "output": 0
-   },
-   "press": {
-    "matchesLookedUp": 0,
-    "answers": 0
-   },
-   "ttvInbox": {
-    "held": 69,
-    "routed": 16
-   },
-   "atpInbox": {
-    "held": 18,
-    "routed": 6
-   },
-   "outlets": {
-    "read": 131,
-    "withCandidates": 0,
-    "blocked": [
-     "El Deber: the site refuses a plain request",
-     "Tenniskafe: the site refuses a plain request",
-     "TenisovySvet.cz: the site refuses a plain request",
-     "The Indian Express: the site refuses a plain request",
-     "Israel Tennis Association: unexpected answer",
-     "ESPN México (Tenis): unexpected answer",
-     "AS (Diario AS): the site refuses a plain request",
-     "Aftonbladet: unexpected answer",
-     "ESPN: unexpected answer"
-    ],
-    "articlesFetched": 16,
-    "paywalled": 0,
-    "unnamed": 18,
-    "byOutlet": [
-     {
-      "outlet": "LAOLA1",
-      "country": "Austria",
-      "language": "de",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "TenisBrasil",
-      "country": "Brazil",
-      "language": "pt",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "RedGol",
-      "country": "Chile",
-      "language": "es",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "Gong.bg",
-      "country": "Bulgaria",
-      "language": "bg",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "We Love Tennis",
-      "country": "France",
-      "language": "fr",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "TennisUpToDate",
-      "country": "INT",
-      "language": "en",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "Corriere dello Sport",
-      "country": "Italy",
-      "language": "it",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "Nemzeti Sport",
-      "country": "Hungary",
-      "language": "hu",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "Ubitennis",
-      "country": "Italy",
-      "language": "it",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "SuperTennis (FITP)",
-      "country": "Italy",
-      "language": "it",
-      "fetched": 3,
-      "candidates": 0
-     },
-     {
-      "outlet": "Bola Amarela",
-      "country": "Portugal",
-      "language": "pt",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "Marca",
-      "country": "Spain",
-      "language": "es",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "Mundo Deportivo",
-      "country": "Spain",
-      "language": "es",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "Gulf News",
-      "country": "United Arab Emirates",
-      "language": "en",
-      "fetched": 1,
-      "candidates": 0
-     }
-    ]
-   },
-   "alerts": []
-  },
-  {
    "at": "2026-11-17T13:32:56.207Z",
    "activeTournaments": [
     "Finals - Turin"
@@ -69960,6 +69750,164 @@
       "language": "fr",
       "fetched": 1,
       "candidates": 0
+     }
+    ]
+   },
+   "rehomed": 0,
+   "alerts": []
+  },
+  {
+   "at": "2026-11-26T05:37:42.363Z",
+   "activeTournaments": [
+    "Davis Cup - World Group"
+   ],
+   "tournaments": [
+    {
+     "name": "Davis Cup - World Group",
+     "key": "3120",
+     "sources": [],
+     "fromOutlets": 0,
+     "counts": {
+      "candidates": 0,
+      "droppedNotVerbatim": 0,
+      "droppedNoPlayer": 0,
+      "droppedAmbiguous": 0,
+      "notTranslatedNoKey": 0,
+      "notTranslatedApiError": 0,
+      "droppedTranslationCheck": 0,
+      "droppedEnglishExists": 0,
+      "mergedSameQuote": 0,
+      "alreadyHeld": 0,
+      "items": 0,
+      "tokens": {
+       "input": 0,
+       "output": 0
+      },
+      "modelError": null,
+      "retryUrls": 0
+     },
+     "digests": {
+      "cards": 5,
+      "kept": 4,
+      "made": 0,
+      "failed": 0,
+      "waiting": 0,
+      "single": 1
+     },
+     "added": 0,
+     "held": 14,
+     "byCategory": {
+      "Quotes": 10,
+      "Interviews": 4
+     },
+     "finishedMatches": 4,
+     "matchesWithWinnerQuote": 1
+    },
+    {
+     "name": "ATP Tour",
+     "key": "tour",
+     "sources": [],
+     "fromOutlets": 17,
+     "counts": {
+      "candidates": 17,
+      "droppedNotVerbatim": 0,
+      "droppedNoPlayer": 0,
+      "droppedAmbiguous": 0,
+      "notTranslatedNoKey": 0,
+      "notTranslatedApiError": 0,
+      "droppedTranslationCheck": 0,
+      "droppedEnglishExists": 0,
+      "mergedSameQuote": 0,
+      "alreadyHeld": 0,
+      "items": 17,
+      "tokens": {
+       "input": 4185,
+       "output": 1241
+      },
+      "modelError": null,
+      "retryUrls": 0,
+      "topicsAdded": 6
+     },
+     "digests": {
+      "cards": 76,
+      "kept": 41,
+      "made": 0,
+      "failed": 0,
+      "waiting": 0,
+      "single": 35
+     },
+     "added": 0,
+     "held": 211,
+     "byCategory": {
+      "Injuries": 20,
+      "Interviews": 150,
+      "Quotes": 41
+     },
+     "finishedMatches": 0,
+     "matchesWithWinnerQuote": 0
+    }
+   ],
+   "newItems": 0,
+   "tokens": {
+    "input": 4185,
+    "output": 1241
+   },
+   "press": {
+    "matchesLookedUp": 0,
+    "answers": 0
+   },
+   "ttvInbox": {
+    "held": 106,
+    "routed": 0
+   },
+   "atpInbox": {
+    "held": 70,
+    "routed": 13
+   },
+   "outlets": {
+    "read": 131,
+    "withCandidates": 1,
+    "blocked": [
+     "El Deber: the site refuses a plain request",
+     "Tenniskafe: the site refuses a plain request",
+     "TenisovySvet.cz: the site refuses a plain request",
+     "The Indian Express: the site refuses a plain request",
+     "ESPN México (Tenis): unexpected answer",
+     "Monaco Tribune: the site refuses a plain request",
+     "Aftonbladet: unexpected answer",
+     "ESPN: unexpected answer"
+    ],
+    "articlesFetched": 4,
+    "paywalled": 1,
+    "unnamed": 8,
+    "byOutlet": [
+     {
+      "outlet": "Sportstar (The Hindu)",
+      "country": "India",
+      "language": "en",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "TennisUpToDate",
+      "country": "INT",
+      "language": "en",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Arab News",
+      "country": "Saudi Arabia",
+      "language": "en",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "The National",
+      "country": "United Arab Emirates",
+      "language": "en",
+      "fetched": 1,
+      "candidates": 4
      }
     ]
    },
