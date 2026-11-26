@@ -2,7 +2,7 @@
  "tournament": "Davis Cup - World Group",
  "tournamentKey": "3120",
  "season": "2026",
- "updatedAt": "2026-11-26T02:06:51.017Z",
+ "updatedAt": "2026-11-26T04:37:22.465Z",
  "items": [
   {
    "id": "quote-145fe7bfedc7d3",
@@ -189,6 +189,68 @@
    "topic": "On struggling to come back in his loss"
   },
   {
+   "id": "quote-480aa71dc9de96",
+   "type": "quote",
+   "playerId": "2849",
+   "opponentId": null,
+   "player": "L. Musetti",
+   "opponent": null,
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-24T09:11:42.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "Jannik is the driving force behind Italian tennis and, for me, he represents a great source of inspiration because of his ambition and the results he has managed to achieve. I genuinely wish him all the best,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Ubitennis",
+   "sourceUrl": "https://www.ubitennis.net/2026/11/jannik-sinner-must-not-rush-comeback-from-surgery-warns-berrettini/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On Jannik Sinner ahead of his knee surgery",
+   "settingTried": true,
+   "sourceHash": "ca74ca8e38043030",
+   "publishedAt": "2026-11-26T04:37:22.465Z"
+  },
+  {
+   "id": "quote-608e0da2df75d2",
+   "type": "quote",
+   "playerId": "2849",
+   "opponentId": null,
+   "player": "L. Musetti",
+   "opponent": null,
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-24T09:11:42.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "He has a very well-organised and professional team behind him, who will know how to help him make the best decisions. I am convinced that he will come back stronger than before.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Ubitennis",
+   "sourceUrl": "https://www.ubitennis.net/2026/11/jannik-sinner-must-not-rush-comeback-from-surgery-warns-berrettini/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On Sinner's comeback from knee surgery",
+   "settingTried": true,
+   "sourceHash": "e04df4f5ff5b7a59",
+   "publishedAt": "2026-11-26T04:37:22.465Z"
+  },
+  {
    "id": "quote-23b0add5e54b6d",
    "type": "quote",
    "playerId": "2959",
@@ -323,6 +385,39 @@
      "text": "I've had a lot of joy, a lot of luck in the past with Team Canada. I feel like things fell my way a lot of times. It wasn't the case today.",
      "from": [
       "quote-29c6c006273e97"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5"
+  },
+  {
+   "id": "digest-8d2a6dab3b0c5c",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2849",
+   "player": "L. Musetti",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-24T09:11:42.000Z",
+   "members": [
+    "quote-480aa71dc9de96",
+    "quote-608e0da2df75d2"
+   ],
+   "memberHash": "e200ee41abeb2a3c",
+   "digestedAt": "2026-11-26T04:37:22.465Z",
+   "blocks": [
+    {
+     "label": "on Jannik Sinner ahead of his knee surgery",
+     "text": "Jannik is the driving force behind Italian tennis and, for me, he represents a great source of inspiration because of his ambition and the results he has managed to achieve. I genuinely wish him all the best. He has a very well-organised and professional team behind him, who will know how to help him make the best decisions. I am convinced that he will come back stronger than before.",
+     "from": [
+      "quote-480aa71dc9de96",
+      "quote-608e0da2df75d2"
      ]
     }
    ],
