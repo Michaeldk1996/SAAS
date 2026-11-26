@@ -3273,12 +3273,12 @@ checkCareer('items 5,12,17-21,25,27-29 · the v2 controls, chart, table and dril
     // v5 §6.1 (handoff 2026-11-19, replaces v4 §7): a filter card, ONE card (dot chart over table), the average label in
     // the y gutter, brackets under the axis, the table on the 8-track grid.
     ['filter card', 'data-pp2-band="v5"'],
-    ['one card', 'data-pp2-sty="card" style="position:relative;background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;margin-bottom:16px;"'],
+    ['one card', 'data-pp2-sty="card" style="position:relative;background:var(--card);border:1.25px solid var(--edge-6);border-radius:16px;margin-bottom:12px;"'],   // final 2026-11-26: 12 under the card
     ['his average label', '>avg '],
     ['brackets', '>Serve-first</span>'],
     ['table head', '>Archetype</span>'],
     ['sortable heads', 'data-pp2="sty-sort" data-v="pct"'],
-    ['table tracks', 'grid-template-columns:minmax(0,2.6fr) minmax(0,1fr) 56px 60px 56px 76px 68px 8px;gap:0 12px;'],
+    ['table tracks', 'grid-template-columns:minmax(290px,2.6fr) minmax(48px,1fr) 56px 60px 56px 76px 68px 8px;gap:0 12px;'],
     ['(?) icons', 'data-pp2="info" data-v="sty1"'],
   ];
   assert(html.indexOf('dot size = matches') < 0, `${subject.name}: the v3 unit caption is back (v4 §0.4)`);
