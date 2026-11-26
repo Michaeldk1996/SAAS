@@ -93,6 +93,7 @@ test('fix 3: the career-match and Tournament ledgers mark no row (the price, its
   // the career-match ledger: the row's own price from the one join, unmarked
   const sv = { a: PA, b: PB, styles: { sides: [{ p: PA, R: { state: 'ready', oppLab: 'Big Server', avg: 50, rows: [{ won: true, opponent: 'Lorenzo Musetti', surface: 'clay', tournament: 'Monte Carlo', result: '6-4 6-4', date: '2025-04-07', round: 'SF' }] } },
     { p: PB, R: { state: 'ready', oppLab: 'Big Server', avg: 50, rows: [] } }], arch: ['x', 'y'] } };
+  h.state.psRecWin = 'career';   // dated fixture rows: the Career window (round 7 opens the box on Last 52 weeks)
   const sc = h.call(h.stylesCard, sv);
   assert.match(sc, /<span title="Bet365 closing odds, Pinnacle not available" style="font-family:'IBM Plex Mono',monospace; font-size:11\.5px; color:var\(--h2h-text\); text-align:right;">1\.50<\/span>/, 'the career row priced on the join (Bet365), its hover the book');
   assert.ok(!/<sup|ma-row-mark/.test(sc), 'no row mark on the career-match ledger');
@@ -172,7 +173,7 @@ test('fix 7: records in sentences carry an en dash (U+2013), line names a true m
   const h = page({ loadSetStatsIndex: () => Promise.resolve(new Set()) });
   const rows = [meeting({ date: '2024-06-07', won: true }), meeting({ date: '2025-05-18', won: true }), meeting({ date: '2026-04-12', won: false })];
   const t = text(boxOf(h, rows));
-  assert.match(t, /Meetings 3 on record · Alcaraz leads 2–1/);
+  assert.match(t, /Meetings \? 3 on record · Alcaraz leads 2–1/, "round 7: the \"?\" sits directly after the title");
   assert.match(t, /2024 1–0 · 1 meeting/);
   assert.ok(!/leads \d+-\d+/.test(t), 'no hyphen in the record');
   const defs = new Function(`const FH_H2H_SET1_MIRROR = false;\n${slice('fhH2hLineDefs')}\n${slice('fhFormLineDefs')}\nreturn { fhH2hLineDefs, fhFormLineDefs };`)();

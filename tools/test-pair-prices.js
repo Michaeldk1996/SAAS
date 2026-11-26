@@ -42,7 +42,11 @@ ok('buildPairs: every pair, every context; the two shards mirror each other; the
   assert.strictEqual(stats.pairs, pl.length * (pl.length - 1) / 2);
   const a = pl[0].key, b = pl[1].key;
   const ra = shards[a].opp[b], rb = shards[b].opp[a];
-  assert.deepStrictEqual(Object.keys(ra).sort(), ['C3', 'C5', 'G3', 'G5', 'H3', 'H5']);
+  assert.deepStrictEqual(Object.keys(ra).sort(), ['A3', 'A5', 'C3', 'C5', 'G3', 'G5', 'H3', 'H5']);
+  // All surfaces = no surface adjustment: the engine's base on an unknown surface (overall Elo), never the Hard cell
+  const engA = runModel(m(pl[0], pl[1], 'All'), { pairOnly: true, bestOf: 3 });
+  assert.strictEqual(ra.A3[1], Math.round(engA.stage1.baseP1 * 1e4));
+  assert.ok(!JSON.stringify(engA.stage1).includes('"surfaceAvailable":true'), 'no surface Elo read on All surfaces');
   for (const k of Object.keys(ra)) {
     assert.ok(Math.abs(ra[k][0] + rb[k][0] - 1e4) <= 1, `${k} mirrors`);
     assert.strictEqual(ra[k][2], rb[k][2]);

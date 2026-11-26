@@ -290,6 +290,7 @@ test('TEN-407 review: the sheet head, favourites strip, profile Next match, Play
   const p = { key: '1', short: 'A. One', full: 'A. One', mono: 'AO' }, q = { key: '2', short: 'B. Two', full: 'B. Two', mono: 'BT' };
   const rows = [{ won: true, opponent: 'X Y', surface: 'hard', tournament: 'Shanghai', result: '6-4 6-4', date: '2025-10-05', round: 'R32' },
     { won: true, opponent: 'X Z', surface: 'hard', tournament: 'Beijing', result: '6-4 6-4', date: '2025-09-28', round: 'R32' }];
+  h.state.psRecWin = 'career';   // dated fixture rows: the Career window (round 7 opens the box on Last 52 weeks)
   const card = h.call(h.stylesCard, { a: p, b: q, styles: { sides: [{ p, R: { state: 'ready', oppLab: 'Big Server', avg: 50, rows } }, { p: q, R: { state: 'ready', oppLab: 'Big Server', avg: 50, rows: [] } }], arch: ['x', 'y'] } });
   const titles = [...card.matchAll(/<span style="font-size:13px; font-weight:700; color:var\(--h2h-text\); white-space:nowrap;">([^<]+)<\/span>/g)].map(m => m[1]);
   assert.deepEqual(titles, ['Shanghai Masters', 'China Open'], 'the group titles print the one event name');

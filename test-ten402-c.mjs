@@ -73,10 +73,14 @@ const bandRows = h => h.split(/(?=<div class="(?:seg x-row)?"[^>]*grid-template-
 const iniRings = h => [...h.matchAll(/class="x-ini" style="[^"]*box-shadow:0 0 0 2px ([^;]+);/g)].map(m => m[1]);
 
 // ════════════════════════════════════════ page structure ════════════════════════════════════════
-test('page order (README "Page structure"): Model → Playing style → Head to head record → Record against each style → Tournament → Market edge → News; the old stat / hold-break cards are gone', () => {
+test('page order (README "Page structure"): Model and playing style → Head to head record → Record against each style → Tournament → Market edge → News; the old stat / hold-break cards are gone', () => {
   const body = sliceFrom(h2h, h2h.indexOf('function bodyHTML('));
   const at = s => body.indexOf(s);
-  const order = ['modelCard(v)', 'dnaCard(v)', 'h2hCard(v)', 'stylesCard(v)', 'tourneyCard(v)', 'marketCard(v)', 'newsCard(v)'];
+  // round 7 (final design 2026-11-26): the Playing style block lives INSIDE the Model card, after the price boxes
+  assert.ok(!/dnaCard|dnaBlock/.test(body), 'no separate Playing style card in the body');
+  const mc = sliceFrom(h2h, h2h.indexOf('function modelCard('));
+  assert.ok(mc.indexOf("${D ? dnaBlock(v) : ''}") > mc.indexOf('box(v.a'), 'the style block sits under the price boxes, in the same card');
+  const order = ['modelCard(v)', 'h2hCard(v)', 'stylesCard(v)', 'tourneyCard(v)', 'marketCard(v)', 'newsCard(v)'];
   order.forEach(s => assert.ok(at(s) > 0, s));
   for (let i = 1; i < order.length; i++) assert.ok(at(order[i - 1]) < at(order[i]), order[i - 1] + ' before ' + order[i]);
   assert.ok(!/H2H_SHOW_STAT_CARDS|function holdbreakCard\(|function statCard\(/.test(h2h), 'the retired stat cards and their flag are deleted');
@@ -171,7 +175,7 @@ test('Market edge: 5–9 greyed (small sample), 10+ in the signed colour; A ring
   assert.match(text(card.slice(card.indexOf('L. Large'))), new RegExp(`^L\\. Large 12 priced matches \\+${u.toFixed(1)}% Total return`), 'every return in % (CHANGES 2026-11-17 §4)');
 });
 
-test('Market edge windows: Last 52 weeks (default) · Last 24 months (the same day two years back) · Career, on the one large switch, in the head AND on the chart card (CHANGES 2026-11-17 §4–5)', () => {
+test('Market edge windows (round 7): Last 52 weeks (default) · Last 24 months (the same day two years back) · Career, on the box\'s Window chip; Surface · Format · Court speed chips filter the real matches; no scope switch on the chart card', () => {
   const h = page();
   const A = playerWith(rowsOf([[20, 1.10, true], [500, 1.10, true], [800, 1.10, false], [900, 1.10, true]]));
   const n = S => h.call(h.marketVals, A, A, S).MM[0].priced.length;
@@ -179,16 +183,29 @@ test('Market edge windows: Last 52 weeks (default) · Last 24 months (the same d
   assert.equal(n({ mScope: 'm24' }), 2, 'Last 24 months: 20 and 500 days back, not 800');
   assert.equal(n({ mScope: 'career' }), 4);
   const card = marketOf(h, A, A, { mScope: 'm24' }).html;
-  const sws = [...card.matchAll(/<div class="x-sw x-sw--lg" style="display:inline-flex; gap:3px; background:var\(--h2h-track\); border:1px solid color-mix\(in srgb, var\(--h2h-white\) 10%, transparent\); border-radius:10px; padding:3px;">([\s\S]*?)<\/div>/g)];
-  assert.equal(sws.length, 2, 'the large switch (lg) in the head and again on the chart card');
-  for (const sw of sws) {
-    assert.deepEqual([...sw[1].matchAll(/>([^<]+)<\/span>/g)].map(x => x[1]), ['Last 52 weeks', 'Last 24 months', 'Career']);
-    assert.match(sw[1], /class="seg x-sw__o on"[^>]*padding:6px 14px; border-radius:7px; font-size:13px; font-weight:700; color:var\(--h2h-text\); background:var\(--h2h-raised\); box-shadow:inset 0 0 0 1px color-mix\(in srgb, var\(--h2h-white\) 14%, transparent\);[^>]*>Last 24 months</);
-  }
-  // both switches write the same state (meScope): the n-th tab of each carries the same handler
-  assert.deepEqual([...sws[0][1].matchAll(/data-hid="(\d+)"/g)].map(x => x[1]), [...sws[1][1].matchAll(/data-hid="(\d+)"/g)].map(x => x[1]));
-  assert.doesNotMatch(text(card), /Price sensitivity/, 'the sub-head is gone');
-  assert.match(text(card), /^Market edge Last 24 months · closing prices/);
+  assert.doesNotMatch(card, /class="x-sw/, 'no scope switch in the head or on the chart card');
+  // the head: title, its "?" directly after it, the chips at the right; no scope line under it
+  assert.match(card, /<span style="margin:0; font-size:18px; font-weight:800; letter-spacing:-0\.01em; color:var\(--h2h-text\);">Market edge<\/span><span class="x-help"/);
+  assert.deepEqual([...card.matchAll(/data-frchip="([^"]+)"[^>]*><span>([^<]+)<\/span>/g)].map(x => x[1] + ':' + x[2]), ['Surface:All surfaces', 'Window:Last 24 months', 'Format:All formats', 'Court speed:All speeds']);
+  assert.doesNotMatch(text(card), /closing prices|Price sensitivity/, 'no scope line, no sub-head');
+  // "Return at a flat 1% stake" carries its "?" directly after it
+  assert.match(card, /Return at a flat 1% stake<\/span><span class="x-help"/);
+  // the Window menu: three windows; Last 52 weeks writes the scope 'l52'
+  h.state.frOpen = 'market:Window';
+  const mh = h.call(h.marketCard, { market: h.call(h.marketVals, A, A, h.state), a: A, b: A });
+  const menu = mh.slice(mh.indexOf('data-frmenu="market:Window"'));
+  assert.deepEqual([...menu.matchAll(/data-frmopt="([^"]+)"/g)].map(x => x[1]), ['w52', 'm24', 'career']);
+  const hid = /data-frmopt="w52" class="seg" data-hid="(\d+)"/.exec(menu)[1];
+  h.state.mScope = 'career'; h.X.handlers()[+hid]();
+  assert.equal(h.state.mScope, 'l52'); assert.equal(h.state.frOpen, null);
+  // Surface / Format / Court speed filter the rows (state.meSurf / meFmt / meSpd)
+  const B = playerWith(rowsOf([[20, 1.10, true], [21, 1.10, true], [22, 1.10, false]]).map((r, i) => Object.assign(r, { surface: i ? 'Hard' : 'Clay', tourn: i === 2 ? 'US Open' : 'Basel', round: 'R32' })));
+  B._cSt.rows.win = B._cSt.rows;
+  const nb = S => h.call(h.marketVals, B, B, S).MM[0].priced.length;
+  assert.equal(nb({}), 3);
+  assert.equal(nb({ meSurf: 'Clay' }), 1, 'Surface');
+  assert.equal(nb({ meFmt: 5 }), 1, 'Format: the US Open main draw is best of five');
+  assert.equal(nb({ meFmt: 3 }), 2);
 });
 
 test('Return chart: each line spans that player\'s own matches (cChartModel), A blue / B white 2px, break even the 60% rule, dotted horizontal guides; a band click filters both lines', () => {
@@ -231,15 +248,17 @@ const othRows = (w, n) => Array.from({ length: n }, (_, i) => recRow(30 + i, i <
 // the three tiles (Record · Win rate · Vs other styles, 20 Nov §6) of each player's record card
 const styleCards = h => [...h.matchAll(/<div style="display:grid; grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\) minmax\(0,1\.2fr\);[\s\S]*?(?=<div style="display:flex; flex-direction:column; gap:9px;">)/g)].map(x => text(x[0]));
 
-test('founder ruling 2 (2026-11-16): Record against each style opens on Career; Window = Last 52 weeks (364 days) · Last 24 months · Career', () => {
+test('round 7 (final design 2026-11-26, replaces founder ruling 2\'s Career default): Record against each style opens on Last 52 weeks; Window = Last 52 weeks (364 days) · Last 24 months · Career; chips Surface · Window · Format · Court speed, no Filters panel', () => {
   const h = page({ db: DB });
-  assert.equal(h.state.psRecWin, 'career', 'the page state opens on Career');
+  assert.equal(h.state.psRecWin, 'w52', 'the page state opens on Last 52 weeks');
   const rows = [recRow(20, true), recRow(200, true), recRow(500, false), recRow(1000, true), recRow(1500, true)];
   const card = h.call(h.stylesCard, styleView(rows, []));
-  assert.match(text(card), /^Record against each style Career · all surfaces · all court speeds/);
-  assert.match(styleCards(card)[0], /^Record 4–1 /, 'Career = every row');
-  h.state.psRecWin = 'w52';
-  assert.match(styleCards(h.call(h.stylesCard, styleView(rows, [])))[0], /^Record 2–0 /, 'Last 52 weeks = 364 days');
+  assert.match(text(card), /^Record against each style All surfaces Last 52 weeks All formats All speeds /);
+  assert.deepEqual([...card.matchAll(/data-frchip="([^"]+)"/g)].map(x => x[1]), ['Surface', 'Window', 'Format', 'Court speed']);
+  assert.doesNotMatch(card, /x-filt|Reset filters|>Filters</, 'the Filters button and panel are gone');
+  assert.match(styleCards(card)[0], /^Record 2–0 /, 'Last 52 weeks = 364 days (the default)');
+  h.state.psRecWin = 'career';
+  assert.match(styleCards(h.call(h.stylesCard, styleView(rows, [])))[0], /^Record 4–1 /, 'Career = every row');
   h.state.psRecWin = 'm24';
   assert.match(styleCards(h.call(h.stylesCard, styleView(rows, [])))[0], /^Record 2–1 /, 'Last 24 months = the same day two years back');
 });
@@ -301,7 +320,14 @@ test('Record vs style filters: Window by the row date, Surface by the row surfac
   assert.equal(st({ psRecSurf: 'all', psSpeed: 'fast' }), '1–1', 'Basel only');
   const c = h.call(h.stylesCard, styleView(rows, []));
   assert.match(c, /title="1 with no court-speed rating left out"/, 'Nowhere has no speed rating');
-  assert.match(text(c), /Career · all surfaces · fast courts/);
+  assert.deepEqual([...c.matchAll(/data-frchip="([^"]+)"[^>]*><span>([^<]+)<\/span>/g)].map(x => x[1] + ':' + x[2]), ['Surface:All surfaces', 'Window:Career', 'Format:All formats', 'Court speed:Fast'], 'the chips show the picks');
+  // round 7: Format filters the real matches (a Grand Slam main draw = best of five, xBoOf)
+  const slam = rows.concat([recRow(50, false, { tournament: 'US Open', round: 'R16' }), recRow(60, true, { tournament: 'US Open', round: 'Qualifying' })]);
+  const fm = S => { Object.assign(h.state, S); return /^Record (\S+)/.exec(styleCards(h.call(h.stylesCard, styleView(slam, [])))[0])[1]; };
+  assert.equal(fm({ psRecWin: 'career', psRecSurf: 'all', psSpeed: 'all', psRecFmt: 'all' }), '4–2');
+  assert.equal(fm({ psRecFmt: 5 }), '0–1', 'the US Open main-draw match only');
+  assert.equal(fm({ psRecFmt: 3 }), '4–1', 'qualifying at a Slam is best of three');
+  h.state.psRecFmt = 'all';
 });
 
 // The style-meeting rows are a SYNTHETIC fixture in the shard's shape (the committed style-meetings/*.json is rewritten
@@ -314,7 +340,8 @@ const STYLE_ROWS = () => [
   { won: true, opponent: 'Carlos Alcaraz', surface: 'grass', tournament: 'Wimbledon', result: '4-6 6-4 6-4 6-4', date: '2025-06-30', round: 'F', oddsSelf: 1.85, oddsOpp: 2.07 },
   { won: false, opponent: 'Carlos Alcaraz', surface: 'clay', tournament: 'Roland Garros', result: '6-4 7-6(4) 4-6 6-7(3) 6-7(2)', date: '2025-05-26', round: 'F', oddsSelf: 1.63, oddsOpp: 2.43 },
   { won: false, opponent: 'Carlos Alcaraz', surface: 'clay', tournament: 'Rome Masters', result: '6-7(5) 1-6', date: '2025-05-05', round: 'F', oddsSelf: 1.63, oddsOpp: 2.43 }];
-const styleLedger = (h, rows, p) => { h.state.styleAAll = true; return ledgerRows(h.call(h.stylesCard, styleView(rows, [], { a: p || SIN }))); };
+// the fixture rows are 2023–2025 matches: the Career window (round 7 opens the box on Last 52 weeks)
+const styleLedger = (h, rows, p) => { h.state.styleAAll = true; h.state.psRecWin = 'career'; return ledgerRows(h.call(h.stylesCard, styleView(rows, [], { a: p || SIN }))); };
 test('fix 2: the career-match ledger prices Sinner\'s meetings from the Database — US Open 2025 F 1.81 / 2.12, Roland Garros 2025 F 1.88 / 2.03 (synthetic shard rows)', () => {
   const led = styleLedger(page({ db: DB }), STYLE_ROWS());
   const at = (d, sc) => led.find(t => t.startsWith(d) && t.includes(sc));
@@ -328,7 +355,7 @@ test('fix 2: the career-match ledger prices Sinner\'s meetings from the Database
   assert.ok(led0.every(t => / — — ›$/.test(t)), 'no Database yet → dashes, never the shard\'s prices');
   // Sets = "pS–oS" (en dash, no spaces); the score is never cut (wraps between sets)
   assert.ok(led.filter(t => !/ret\./.test(t)).every(t => / \d–\d /.test(t)) && !led.some(t => /\d - \d/.test(t)));
-  const h = page({ db: DB }); h.state.styleAAll = true;
+  const h = page({ db: DB }); h.state.styleAAll = true; h.state.psRecWin = 'career';
   const c = h.call(h.stylesCard, styleView(STYLE_ROWS(), []));
   const scores = [...c.matchAll(/<span title="[^"]*" style="font-family:'IBM Plex Mono',monospace; font-size:11\.5px; color:var\(--h2h-soft\);([^"]*)">/g)].map(x => x[1]);
   assert.equal(scores.length, 6); scores.forEach(s => { assert.match(s, /white-space:normal;/); assert.doesNotMatch(s, /ellipsis|overflow:hidden|nowrap/); });
@@ -390,14 +417,11 @@ test('Tournament: the record is the profile\'s per-event model (trProfileModel s
 const tmk = o => Object.assign({ wo: false, ret: false, sets: [[6, 4], [6, 4], [6, 4]], pS: 3, oS: 0, src: 'td', surface: 'hard' }, o);
 // one event's per-player model P (trProfileModel's shape) → the column the card draws: { p, state, agg } with agg the
 // shipped xTrAgg over that one event (single mode, Career window)
-const TR_FILTERS = [{ label: 'Window', items: [{ label: 'Last 52 weeks', hid: 11 }, { label: 'Last 24 months', hid: 12 }, { label: 'Career', on: true, hid: 13 }] },
-  { label: 'Surface', items: [{ label: 'All', on: true, hid: 14 }, { label: 'Hard', hid: 15 }, { label: 'Clay', hid: 16 }, { label: 'Grass', hid: 17 }] },
-  { label: 'Court speed', items: [{ label: 'All', on: true, hid: 18 }, { label: 'Slow', hid: 19 }, { label: 'Medium', hid: 20 }, { label: 'Fast', hid: 21 }] }];
 function tourView(P, o, h) {
   const opt = o || {};
   const agg = P && h ? h.call(h.xTrAgg, [{ ev: { name: 'US Open', surface: 'Hard', speed: 'Medium' }, P }], null, false) : null;
   return { a: SIN, b: ALC, tourney: { empty: false, selName: 'US Open', query: '', listOpen: !!opt.listOpen, hSearch: 1, hOpen: 2, noMatch: false, grp: false, gLbl: 'courts', TW: 'career',
-    backLabel: 'Back to US Open', hBack: 9, filters: TR_FILTERS,
+    backLabel: 'Back to US Open', hBack: 9, hClear: 10, selEv: { name: 'US Open', surface: 'Hard', speed: 'Medium' }, chips: { SF: 'all', SPD: 'all', set() {} },
     options: opt.options || [], info: { name: 'US Open', initial: 'U', location: 'New York, USA', surface: 'Hard', meta: [['Level', 'Grand Slam'], ['Draw', '128 · Bo5'], ['Dates', null], ['Court speed', 'Medium']] },
     cols: [{ p: SIN, agg, state: P ? 'ready' : 'loading' }, { p: ALC, agg: null, state: 'none' }] } };
 }
@@ -456,9 +480,16 @@ test('Tournament default (brief 2026-11-16): an event of THIS week whose posted 
 test('Tournament picker: a search input (no <select>) on the design menu — raised, 10% edge, radius 12, max 300, the menu shadow', () => {
   const h = page({ db: null });
   const c = h.call(h.tourneyCard, tourView(null, { listOpen: true, options: [{ name: 'US Open', label: 'US Open', meta: 'Hard · Grand Slam', selected: true, hPick: 5 }, { name: 'Halle', label: 'Halle', meta: '', selected: false, hPick: 6 }] }));
-  assert.match(c, /<input class="h2hin" id="h2h-input-tour"[^>]*placeholder="Search a tournament…"[^>]*style="background:var\(--h2h-inner\); border:1px solid color-mix\(in srgb, var\(--h2h-white\) 6%, transparent\); border-radius:10px;/);
-  assert.match(c, /<div role="listbox" style="position:absolute; top:calc\(100% \+ 6px\); left:0; right:0; z-index:5; background:var\(--h2h-raised\); border:1px solid color-mix\(in srgb, var\(--h2h-white\) 10%, transparent\); border-radius:12px; padding:6px;[^"]*box-shadow:var\(--h2h-shadow-menu\); max-height:300px; overflow:auto;/);
+  assert.match(c, /<input class="h2hin" id="h2h-input-tour"[^>]*placeholder="Search a tournament…"[^>]*style="background:var\(--h2h-inner\); border:1px solid color-mix\(in srgb, var\(--h2h-white\) 6%, transparent\); border-radius:10px; height:28px;/, 'round 7: the search sits in the head, 28px high');
+  assert.match(c, /<div role="listbox" style="position:absolute; top:calc\(100% \+ 6px\); left:0; right:0; min-width:260px; z-index:45; background:var\(--h2h-raised\); border:1px solid color-mix\(in srgb, var\(--h2h-white\) 10%, transparent\); border-radius:12px; padding:6px;[^"]*box-shadow:var\(--h2h-shadow-menu\); max-height:300px; overflow:auto;/);
   assert.match(c, /role="option" aria-selected="true"[^>]*background:var\(--h2h-card\);/);
+  // round 7 (final design 2026-11-26): one head line — title · search · "Clear tournament" · the Surface / Court speed chips,
+  // FIXED by the picked tournament (grey, no caret, not clickable); no Window filter, no filter box
+  assert.match(c, /<span class="seg" data-hid="10" data-tr-clear title="[^"]*" style="[^"]*color:var\(--h2h-blue\);[^"]*">Clear tournament<\/span>/);
+  const chips = [...c.matchAll(/<span data-frchip="([^"]+)" class="([^"]*)"([^>]*)title="([^"]+)" style="([^"]*)"><span>([^<]+)<\/span>(<span[^>]*><\/span>)?<\/span>/g)];
+  assert.deepEqual(chips.map(x => [x[1], x[6], x[2], x[4], !!x[7]]), [['Surface', 'Hard', '', 'Surface · set by the tournament', false], ['Court speed', 'Medium', '', 'Court speed · set by the tournament', false]]);
+  chips.forEach(x => { assert.doesNotMatch(x[3], /data-hid/, 'a fixed chip has no handler'); assert.match(x[5], /color:var\(--h2h-grey\); cursor:default;/); });
+  assert.doesNotMatch(c, /data-frchip="Window"|>Last 24 months</, 'no Window filter: every year on record');
   assert.ok(!/<select/i.test(c) && !/<select/i.test(h2h.slice(h2h.indexOf('==== H2H REBUILD'))), 'no native <select> in the rebuilt page');
 });
 test('Tournament levels read as the ledgers write them: the catalog\'s ATP 1000 = "Masters 1000"', () => {

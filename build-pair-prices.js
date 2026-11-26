@@ -24,7 +24,10 @@ const path = require('path');
 const PAIR_TOP = 200;
 const PAIR_MARGIN = 0.0339;
 const PAIR_MARGIN_N = 442;
-const SURFACES = ['Hard', 'Clay', 'Grass'];
+// 'All' = no surface (founder design 2026-11-26: the Head to Head Model card opens on "All surfaces" = no surface
+// adjustment): the engine's surface Elo key is null there, so its base falls back to overall Elo (h2h-model data.js
+// eloSurfaceKey) and no surface-specific input is read. Context key A3 / A5.
+const SURFACES = ['All', 'Hard', 'Clay', 'Grass'];
 const FORMATS = [3, 5];
 const OUT_DIR = 'pair-prices';
 const INDEX = 'pair-prices-index.json';

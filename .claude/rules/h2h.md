@@ -1,15 +1,74 @@
 # Head to Head page — the design build (founder 2026-11-16, design_handoff_head_to_head)
 
 Applies to `window.H2HPage` in `bsp-consult-dashboard.html` (the block after "H2H REBUILD (design_handoff_head_to_head)")
-and `h2h-page.css`. **Design source:** `design_handoff_head_to_head_2026-11-20/` (repo root, never published; it replaces
-`design_handoff_head_to_head/`): `README.md`, `CHANGELOG_2026-11-20.md` and `reference/Head to Head.dc.html` — the
-reference file wins over the README for every pixel; `reference_options/` are option studies (not built), `history/` the
+and `h2h-page.css`. **Design source (round 7, founder 2026-11-26):** `design_handoff_stennisfy_final/` (repo root, never
+published; the whole site's final lock, it replaces `design_handoff_head_to_head_2026-11-20/`): `HEAD_TO_HEAD.md`,
+`decisions/head-to-head.md` and `site/Head to Head.dc.html` — the design file wins over the docs for every pixel; `reference_options/` are option studies (not built), `history/` the
 older change notes. Night only. **This file
 replaces the TEN-402 look** (white bars, caps section heads, the darker-track rows, the 35b header card): founder brief
 2026-11-16, "the live Head to Head page matches the design … pixel for pixel". A display rebuild: every figure keeps its
 live calculation (Data below).
 
 ## Page
+## Round 7 — the final design (founder 2026-11-26) — each line is a test
+- **No page-level filters.** The sticky bar holds the pickers and the section nav only; each box is filtered by its own
+  chips and a pick in one box never changes another. **Test:** the sticky card has no Surface / Format switch;
+  `test-h2h-r7.mjs` "no page filters".
+- **Section nav marks where you are:** the section in view is a picked choice (`--h2h-raised` + inset 14% edge, white 700,
+  `data-navon="1"`), the others grey 600, white on hover; it follows the scroll (the last section whose top passed the bar
+  + 60px) on the DOM, never a re-render per scroll event, and switches at once on a click; the click scrolls to the
+  section offset by the bar's height + 26px.
+- **Box head = title + its "?" directly after it + the box's chips at the right** (`xBoxHead` + `xChips`); no grey subtitle
+  under a box title (Latest news keeps "Both players · newest first"). **Dropdown chip** (`[data-frchip]`): 28px, padding
+  0/10, r8, 1px 10% edge, no fill, 12/600 white, the value only + a 5px caret; hover edge 24%; open = `--h2h-raised` +
+  14% edge; the menu (`[data-frmenu]`) under it, right-aligned, 6px below, `--h2h-raised`, 14% edge, r10, pad 6, min 170,
+  `--h2h-shadow-chip`, 120ms fade with a 4px rise; caps head 10.5/700 0.06em grey; options 12.5, picked white 700 on a 6%
+  wash. One menu open at a time; a pick, an outside click and Escape close it. A **fixed chip** (Tournament record with a
+  tournament picked) is grey on a 6% edge, no caret, not clickable, titled "… · set by the tournament".
+  **Test:** `test-h2h-r7.mjs` "chips" (+ mutants: two menus open, a fixed chip clickable).
+- **Model and playing style = ONE card** (`#h2h-model`, the playing style block `#h2h-dna` inside it under a 6% hairline,
+  padding-top 18, no head of its own). Chips Surface (**All surfaces** default · Hard · Clay · Grass) · Format (Best of 3
+  default · 5) · Window (Last 52 weeks default · Career). "All surfaces" = no surface adjustment: the pair estimate's
+  `A3` / `A5` cell (`build-pair-prices.js` runs the engine with surface `All`: its surface Elo key is null, so the base is
+  overall Elo) and the DNA file's `All` node.
+- **The likely opening price is a RANGE, low – high, from the Elo-only price to the full model price** (founder fix 1,
+  2026-11-26, his pick "Elo only → full model" of three sourced options; the design's "3.40 – 3.90" is mock-up). Both ends
+  carry the same margin; equal ends print one price; no Elo-only price → the model price alone. The "?" names both ends.
+  **Test:** Zverev v Sinner, hard, Bo3: Zverev 4.11 – 6.45, Sinner 1.14 – 1.26 from cells 1500 / 2353.
+- **No blue flash on a filter pick** (founder fix 2, 2026-11-26): the prices are white at all times. The design file still
+  draws the 520 ms blue (`priceCol`); the founder's word wins over it. **Test:** no `--h2h-blue` on a price after a pick.
+- **Playing style under the 10-match floor in the last 52 weeks reads the same file's since-March-2024 window** (founder
+  fix 4, 2026-11-26: Sinner had 7 grass matches in 52 weeks, every row "—"): the DNA file's `sinceBase` node (same box
+  scores and formulas); the "?" says so with both counts; Under pressure stays "—" there (no since-2024 figure). Still
+  under the floor → dashes with the reason. **Test:** a 7-match last-52 node with a 24-match sinceBase node prints figures.
+- **Head to head record chips:** Surface (All · Hard · Clay · Grass · **Indoor**, each with its meeting count; none = grey
+  `--h2h-dead`, not clickable) · Window (Career default) · Format · Court speed. **Indoor is carved out of the surface**
+  (founder fix 5): a meeting is indoor by career-history's `indoor` flag (api-tennis court type), else its
+  `TOURNAMENT_CATALOG` entry's `indoor`, else unknown (counted under its surface; Cologne 2 2020 has no catalog entry).
+  Paris Masters and Vienna read Indoor, never Hard. A surface with no meeting: "No meetings on grass · n meetings on
+  other surfaces". **Test:** Zverev v Sinner: Indoor holds Paris 2025, Vienna 2025, ATP Finals 2025; Hard no longer does.
+- **Hot lines:** one track Last 5 · All (All default); every count has its label under it (`[data-hotbasis]`: "Bo3 only",
+  "Bo5 only", "all n meetings", "last 5 meetings"); two Bo5 lines Over 3.5 sets / Over 4.5 sets (the latter shown once a
+  meeting covered it); Covered column 112px; a line's meeting rows show the event over "Clay · speed −0.24".
+- **Record box tiles = four, in this order:** Total points won · Went to a deciding set · Sets and tiebreaks · Favourite
+  won ("On <surface>" is gone). Sets and tiebreaks = finished sets only, from player A's side ("Sets 4–11", "Tiebreaks
+  2–3 · Zverev first"). **The two head avatars are the players' photos** (founder fix 6, `xAv` 52px with the side ring); the
+  price-column minis keep their initials. "Meetings" has its "?" directly after it; the event cell is two lines.
+- **Record against each style:** chips Surface · Window (**Last 52 weeks default**, the design's; was Career) · Format
+  (a Grand Slam main draw = Bo5, `xBoOf`) · Court speed; the Filters panel is gone; "against <style>" wraps; each
+  tournament group header ends in the speed chip.
+- **Speed chip** (`xSpeedChip`, the design's site rule): "Speed +0.13" = the event's Tennis Abstract surface speed that
+  season (`COURT_CONDITIONS` `as<year>`) − 1, two decimals, true minus, `--h2h-raised` + 14% edge, r6, pad 2/8, mono 10.5;
+  no reading that season → no chip. Directly after the header text, never at the right end. Speed CLASS (the Court speed
+  filters) stays the site's one scheme (`courtSpeedCategory` 43 / 68, N4).
+- **Tournament record:** no Window (every year on record); head = title · search (28px) · "Clear tournament" · Surface /
+  Court speed chips fixed by the picked event. "Clear tournament" = group mode across every event either player has on
+  record that fits the chips; "Back to <tournament> ›" returns. Year headers carry the speed chip.
+- **Market edge:** chips Surface · Window · Format · Court speed filter the real priced matches (the band rows, tiles and
+  the chart); the window tabs are gone from the head and the chart; "?" directly after each title.
+- **Latest news:** the category track (every choice visible) at the right of the title line; an empty category reads
+  "Nothing under <category> for either player."
+
 - **Colours = the export's own values**, page-scoped tokens `--h2h-*` in `tokens.css` (`--h2h-card` #0E1019,
   `--h2h-layer` #121521, `--h2h-inner` #0C0E16, `--h2h-raised` #121521 (lifted, with a 14% edge), `--h2h-hover` #171B28
   (every hover fill, never a white or blue wash), `--h2h-track` #0A0C13 (every switch track, 10% edge) — 20 Nov §8, `--h2h-text` #E7E9EE, `--h2h-soft` #C6CCDB, `--h2h-grey` #8B96B5,
@@ -46,9 +105,9 @@ live calculation (Data below).
   face-to-face lean, the bullets, the return chart, the sheet's figures and split bars. Green / red only on signed figures
   and results. *Exception (founder 2026-11-16, CLAUDE.md non-negotiables):* the Playing style face-to-face rows print the
   better figure white 800 and the other grey 500, as the export draws it (`H2H_FTF_LEAD_EMPHASIS`).
-- **Order** (README "Page structure"): page head + "?" · sticky picker (pickers, VS + swap, jump links, Surface Hard /
-  Clay / Grass, Format Best of 3 / 5) · empty state with Suggested matchups / loading skeleton · thin-data caveat ·
-  Stennisfy Model · Playing style · Head to head record (Overall box, Hot lines) · Record against each style · Tournament
+- **Order** (HEAD_TO_HEAD.md "Page layout"): title card (the "?" directly after "Head to Head") · sticky picker (pickers,
+  VS + swap, section nav — no filters) · empty state with Suggested matchups / loading skeleton · thin-data caveat ·
+  Model and playing style · Head to head record (Overall box, Hot lines) · Record against each style · Tournament
   record · Market edge · Latest news. The head to head box (z 80) and the match sheet open over it.
 - **Avatars (design change 2026-11-18 §4; founder rulings 6 and 10, 2026-11-18; founder 2026-11-19):** initials (Plex
   Mono 700) in a circle; the photo (the one resolver, `playerPhotoImg`) covers them (`xAv`). **The blue / white ring only
@@ -77,10 +136,8 @@ live calculation (Data below).
 - **Jump links** scroll the window to the section with its top under the sticky picker (never `scrollIntoView`).
 
 ## Sections (what the design build shows, on which live data)
-- **Stennisfy Model:** the pair estimate (Data → Model) in two inner cards; a Surface / Format switch flashes both prices
-  blue for 520 ms. **Each box shows the likely opening price only, as the design draws it** (founder 2026-11-20, replacing
-  the 2026-11-17 "Elo only" line under the price); the **Elo-only price** (the engine's Elo base `cell[1]`, before any
-  layer, on the same margin) is the last line of the head "?": "Elo alone, no model layer: <A> x · <B> y". **The explanation lives in the card head's "?"**
+- **Model and playing style (the model part):** the pair estimate (Data → Model) in two inner cards, each the likely
+  opening price RANGE only (Round 7 above); the "?" names the range's two ends. **The explanation lives in the card head's "?"**
   (founder ruling 7, 2026-11-18): "Win chance A x% · B y% · <surface>, best of N" / "Elo base x% for A, moved by k of 10
   model layers · plus Pinnacle's typical opening margin, m% (n=…) · model run HH:MM". **Test:** the card body holds no
   "Win chance" or "Elo base" text; the "?" title holds both lines.
@@ -121,13 +178,14 @@ live calculation (Data below).
 - **Head to head box:** four tiles, each value with **ONE short sentence under it, on one line, never more** (founder
   ruling 9, 2026-11-18; founder 2026-11-20 "on one line": the subs never wrap, the tiles grow to fit, `x-boxtiles`) —
   Total points won (the meetings' own box scores, `setstats/`, summed; the sub is the OTHER player's share only, "Zverev
-  48.7%" — founder 2026-11-20; the leader and the meetings counted are the tile's hover; none → "—"), On <global surface> ("a–b on clay, c–d on grass"), Went to a
-  deciding set (one: "<Winner> won it 2–1 at <event> <year>"; more: "A won x, B won y"), Favourite won (the shorter
+  48.7%" — founder 2026-11-20; the leader and the meetings counted are the tile's hover; none → "—"), Went to a
+  deciding set (one: "<Winner> won it 2–1 at <event> <year>"; more: "A won x, B won y"), Sets and tiebreaks (Round 7), Favourite won (the shorter
   closing price; "<last underdog winner> won as underdog at <event> <year>", or "The favourite won every one"; the
   count of underdog wins, level-priced and unpriced meetings move to the tile's hover). **Test:** no tile sub holds a
   " · " join of two facts. Then the meetings by year, prices under each player's mini avatar, "X leads a–b".
 - **Record against each style:** each player's record against the other's archetype, filtered for real by Window (Last 52
-  weeks · Last 24 months · Career — **Career by default**, founder 2026-11-16), Surface and Court speed (the profile's one
+  weeks · Last 24 months · Career — **Last 52 weeks by default**, the final design 2026-11-26, replacing the founder's
+  Career default of 2026-11-16), Surface, Format and Court speed (the profile's one
   speed rule, `speedRowOf` → `speedBandForRow`; a venue with no rating leaves a picked speed and the card says how many).
   Win rate from `H2H_STYLE_FLOOR` = 5 matches (= the profile's Match-up record floor), **white at every n it prints, as the
   design draws it** (founder 2026-11-19; the 5–9 "Small sample · n=" is its hover). Three separate tiles (inner tone, 6%
@@ -137,13 +195,11 @@ live calculation (Data below).
   Court speed filters, walkovers out, each side from `H2H_STYLE_FLOOR` matches; the bar's centre tick is that rate and the
   caption reads "He wins x% against all other styles". It keeps its sign colour at 5–9 (founder 2026-11-17). Career match cards: 6 rows,
   "Show n more", opponents by surname, every row opens the sheet. A grey "0 pts" = the two rates print level at whole points.
-- **Tournament record (design change 2026-11-17 §3):** Under each player's record, "x% of n won" is 12.5 / 700 `--h2h-text` (20 Nov §7). a filter box — Tournament search, then Window (Career default ·
-  Last 52 weeks = 364 days back · Last 24 months = the same day two years back, exact dates; a row with no date counts
-  under Career only), Surface, Court speed. Surface or Court speed set = **group mode**: the record over every event
+- **Tournament record (design change 2026-11-17 §3):** Under each player's record, "x% of n won" is 12.5 / 700 `--h2h-text` (20 Nov §7). Every year on record (no Window since Round 7). "Clear tournament" = **group mode**: the record over every event
   either player has on record whose surface (catalog) and speed class fit; the class is the event's ONE rating
   (`COURT_CONDITIONS` speed → `courtSpeedCategory`, Slow ≤ 43 · Medium ≤ 68 · Fast) — the figure the tournament row prints,
   so the two never disagree; an event with no rating is in no speed class (the row's hover counts them). Picking a
-  tournament clears both; "Back to <tournament> ›" clears both. Single event: opens on an event of this week whose posted
+  tournament returns to it; "Back to <tournament> ›" returns. Single event: opens on an event of this week whose posted
   main draw lists both players (`EntryListsTab.currentWeekRows`, by key), else the most recent event both have played,
   else the first listed. Tiles Best result, Sets won, Last played, Backing (flat 1% stake on the one join, Data below)
   over the window (`xTrAgg`); groups per year, or per tournament and year in group mode. **In group mode the Best result

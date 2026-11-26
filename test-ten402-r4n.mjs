@@ -83,6 +83,7 @@ test('r4 fix 2: every score cell on the page wraps (white-space normal) and is n
   const box = h.call(h.h2hBoxHTML, { a: A, b: B, h2h: { F: [r], all: [r], surf: 'all', aS: 'Sinner', bS: 'Alcaraz', aName: 'J. Sinner', bName: 'C. Alcaraz' } });
   cells.push(...[...box.matchAll(/<span style="([^"]*)">(6-7, 7-6, 6-4, 3-6, 7-6)<\/span>/g)].map(m => ['box', m[1]]));
   const sv = { a: A, b: B, styles: { sides: [{ p: A, R: { state: 'ready', oppLab: 'X', avg: 50, rows: [{ won: true, opponent: 'Carlos Alcaraz', surface: 'hard', tournament: 'US Open', result: '6-7 7-6 6-4 3-6 7-6', date: '2025-08-24', round: 'F' }] } }, { p: B, R: { state: 'ready', oppLab: 'X', avg: 50, rows: [] } }], arch: ['x', 'y'] } };
+  h.state.psRecWin = 'career';   // dated fixture rows: the Career window (round 7 opens the box on Last 52 weeks)
   const st = h.call(h.stylesCard, sv);
   cells.push(...[...st.matchAll(/<span title="[^"]*" style="([^"]*)">(6-7, 7-6, 6-4, 3-6, 7-6)<\/span>/g)].map(m => ['styles', m[1]]));
   const agg = h.call(h.xTrAgg, [{ ev: { name: 'US Open', surface: 'Hard', speed: null }, P: { eds: [{ year: '2025', rows: [r] }] } }], null, false);
@@ -117,6 +118,7 @@ test('r4 fix 3: the career-match ledger — "pS–oS" from the real ps2Meeting, 
   const ps2 = new Function([fnSrc('ps2SetDone'), "const FH_DASHC = '—';", fnSrc('ps2Meeting'), 'return ps2Meeting;'].join('\n'))();
   const h = HX.load({ html, globals: { _careerHistoryShards: {}, _sfDbJoinSt: 'loading', _sfDbJoinP: new Promise(() => {}) } });
   const rows = ['2-6 6-3 1-6 4-6', '7-6(4) 7-5', '6-4 3-1 RET'].map((result, i) => ({ won: i !== 0, opponent: 'Carlos Alcaraz', surface: 'hard', tournament: 'Basel', result, date: '2025-0' + (i + 1) + '-10', round: 'F' }));
+  h.state.psRecWin = 'career';   // dated fixture rows: the Career window (round 7 opens the box on Last 52 weeks)
   const card = h.call(h.stylesCard, { a: A, b: B, styles: { sides: [{ p: A, R: { state: 'ready', oppLab: 'X', avg: 50, rows } }, { p: B, R: { state: 'ready', oppLab: 'X', avg: 50, rows: [] } }], arch: ['x', 'y'] } });
   const sets = [...card.matchAll(/justify-self:center; font-family:'IBM Plex Mono',monospace; font-size:11\.5px; font-weight:700; color:[^;]+; background:[^;]+; border-radius:999px; padding:2px 9px; white-space:nowrap;">([^<]*)</g)].map(m => m[1]);
   assert.deepEqual(sets, ['—', '2–0', '1–3'], 'newest first: the retirement (a set already won) "—", then "2–0", "1–3"');

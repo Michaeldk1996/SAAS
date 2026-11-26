@@ -75,6 +75,7 @@ test('R1 review: the Playing styles ledger shows a retirement as the meetings le
   const rows = [{ won: true, opponent: 'Carlos Alcaraz', surface: 'hard', tournament: 'Cincinnati Masters', result: '6-4 5-0 RET', date: '2025-08-07', round: 'F' },
     { won: true, opponent: 'Carlos Alcaraz', surface: 'hard', tournament: 'Basel', result: '6-4 7-5', date: '2024-10-21', round: 'F' }];
   const v = { a: A, b: B, styles: { sides: [{ p: A, R: { state: 'ready', oppLab: 'All Court Elite', avg: 50, rows } }, { p: B, R: { state: 'ready', oppLab: 'Big Server', avg: 50, rows: [] } }], arch: ['x', 'y'] } };
+  h.state.psRecWin = 'career';   // dated fixture rows: the Career window (round 7 opens the box on Last 52 weeks)
   const card = h.call(h.stylesCard, v);
   const led = [...card.matchAll(/<div class="seg x-row"[^>]*grid-template-columns:52px[^>]*>([\s\S]*?)<\/div>/g)].map(m => text(m[1]));
   assert.match(led[0], /^07\.08\. Alcaraz F 6–4, 5–0 ret\. — — — ›$/, 'a retirement after a set won: sets "—", never "1–0"');

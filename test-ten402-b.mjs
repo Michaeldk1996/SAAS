@@ -600,20 +600,38 @@ test('the Head to head record (DF §3): the design card, the overall score 42 mo
   assert.deepEqual(dots, [H2H_A, H2H_B, H2H_A]);
   assert.match(text(c), /Sinner won the last meeting All 3 meetings ›/);
   assert.ok(!/h2hTug|--viz-white-lead|--white-bar/.test(c), 'no white tug bar: the record bar is gone with the rebuild');
-  // the surface tabs: counts from the meetings, a surface with no meeting drawn dead (no handler)
-  assert.match(text(c), /All 3 Hard 3 Clay 0 Grass 0/);
-  assert.match(c, /<span class="" style="display:flex; align-items:baseline; gap:6px; padding:5px 11px; border-radius:8px; font-size:12\.5px; font-weight:600; color:var\(--h2h-dead\);[^>]*><span>Clay<\/span>/);
-  assert.match(c, /<span class="seg" data-hid="\d+" style="[^"]*font-weight:700; color:var\(--h2h-text\); background:var\(--h2h-raised\); border:1px solid color-mix\(in srgb, var\(--h2h-white\) 14%, transparent\);[^"]*"><span>All<\/span>/, '20 Nov §8: the lifted ring is 14%');
-  // a scope: "On hard" and only its meetings
-  h.state.h2hSurf = 'Hard';
-  assert.match(text(h.call(h.h2hCard, h.view())), /Overall|On hard/);
-  assert.match(text(h.call(h.h2hCard, h.view())), /On hard 2 – 1 3 meetings/);
+  // round 7 (final design 2026-11-26): the box's own chips — Surface · Window · Format · Court speed, defaults All surfaces ·
+  // Career · All formats · All speeds; the record's head carries no subtitle
+  assert.deepEqual([...c.matchAll(/data-frchip="([^"]+)"[^>]*><span>([^<]+)<\/span>/g)].map(m => m[1] + ':' + m[2]), ['Surface:All surfaces', 'Window:Career', 'Format:All formats', 'Court speed:All speeds']);
+  assert.doesNotMatch(text(c), /Meetings between the two players/, 'no subtitle under the title');
+  // the Surface menu: counts from the meetings, Indoor carved out of Hard (Basel is an indoor event), a surface with none dead
+  h.state.frOpen = 'rec:Surface';
+  const mc = h.call(h.h2hCard, h.view());
+  const menu = mc.slice(mc.indexOf('data-frmenu="rec:Surface"'));
+  const opt = [...menu.matchAll(/<span data-frmopt="([^"]+)" class="([^"]*)"[^>]*color:([^;]+);[^>]*><span>([^<]+)<\/span><span[^>]*>(\d+)<\/span>/g)].map(m => [m[1], m[2], m[3], m[4], +m[5]]);
+  assert.deepEqual(opt.map(o => o[3] + ' ' + o[4]), ['All surfaces 3', 'Hard 0', 'Clay 0', 'Grass 0', 'Indoor 3'], 'every meeting at Basel is indoor, never "Hard"');
+  assert.deepEqual(opt.filter(o => o[4] === 0).map(o => [o[1], o[2]]), Array(3).fill(['', 'var(--h2h-dead)']), 'a surface with no meeting: greyed, not clickable');
+  assert.doesNotMatch(menu.slice(0, menu.indexOf('data-frmopt="Clay"')), /data-frmopt="Hard"[^>]*data-hid=/, 'no handler on a dead surface');
+  // a pick closes the menu and scopes the record: "Indoor" and only its meetings
+  runH(h, hidOf(menu, 'data-frmopt="Indoor"'));
+  assert.equal(h.state.frOpen, null); assert.equal(h.state.h2hSurf, 'Indoor');
+  assert.match(text(h.call(h.h2hCard, h.view())), /Indoor 2 – 1 3 meetings/);
+  // a surface with no meetings: one grey line naming it and the meetings elsewhere
+  h.state.h2hSurf = 'Clay';
+  assert.match(text(h.call(h.h2hCard, h.view())), /No meetings on clay · 3 meetings on other surfaces$/);
+  // Window / Format / Court speed narrow the meetings the Surface counts read
+  h.state.h2hSurf = 'all'; h.state.hrWin = 'w52';
+  const recent = h.view().h2h.all.map(r => r.date);
+  assert.ok(recent.every(d => d >= h.call(() => h.run('xTrCut'))('w52')), 'Last 52 weeks = the meetings since its cut');
+  h.state.hrWin = 'career'; h.state.hrFmt = 5;
+  assert.equal(h.view().h2h.all.length, 0, 'no best-of-5 meeting at Basel');
+  h.state.hrFmt = 'all';
 });
 
 test('TEN-437 (5): a history that did not load is "could not load" + Retry (H2HPage._h2hRetry), never "never met"; no meetings at all = the design\'s sentence', async () => {
   const h = await pairPage([]);
   const f = text(h.call(h.h2hCard, { a: PA, b: PB, h2h: { failed: true, names: ['C. Alcaraz'] } }));
-  assert.match(f, /^Head to head record Meetings between the two players Head to head could not load: the match history for C\. Alcaraz did not load\. Retry$/);
+  assert.match(f, /^Head to head record Head to head could not load: the match history for C\. Alcaraz did not load\. Retry$/, 'round 7: no subtitle and no chips while it failed');
   assert.match(h.call(h.h2hCard, { a: PA, b: PB, h2h: { failed: true, names: [] } }), /<span class="seg" onclick="H2HPage\._h2hRetry\(\)"[^>]*>Retry<\/span>/);
   assert.match(text(h.call(h.h2hCard, h.view())), / have never played each other\./);
   assert.match(text(h.call(h.h2hCard, { a: PA, b: PB, h2h: { loading: true } })), /Loading head to head…/);
@@ -634,7 +652,7 @@ test('founder ruling 3 (2026-11-18): Hot lines ranked from 2 meetings (H2H_HOT_M
   const famsWant = h.call(() => h.run('FH_HOT_FAM')).filter(f => sc.some(x => famOf(x.L.g) === f[0])).map(f => f[1]);
   assert.ok(famsWant.length >= 2, 'the fixture has lines in two families or more');
   assert.equal(rows.length, famsWant.length, 'the best line of each family at n = 3');
-  rows.forEach(r => assert.equal(r.cols, 'minmax(150px,0.8fr) 56px 72px minmax(234px,1.6fr) 10px', 'the design\'s hot-line grid'));
+  rows.forEach(r => assert.equal(r.cols, 'minmax(150px,0.8fr) 56px 112px minmax(234px,1.6fr) 10px', 'the design\'s hot-line grid (round 7: Covered 112px)'));
   const top = rows.filter(r => /Most covered/.test(r.text));
   assert.equal(top.length, 1, 'one line is marked "Most covered"');
   assert.ok(top[0].text.includes(sc.slice().sort(h.call(() => h.run('fhHotLineRank')))[0].name), 'the ranked first line');
@@ -685,9 +703,12 @@ test('a hot line opens its meetings (newest first) with Covered / Last five / av
   // founder 2026-11-17: under the rate floor (3 meetings) the Covered tile prints the count as its figure and names the
   // meetings it covered — Sinner −1.5 sets covered only the 2023 Swiss Indoors final
   assert.match(text(open), /Covered 1 of 3 At Swiss Indoors 2023 Last five 1 of 3 most recent meetings Average/);
-  const det = [...open.matchAll(/<div class="seg x-row" data-hid="(\d+)" title="Open the match statistics" style="display:grid; grid-template-columns:62px minmax\(0,1\.3fr\) minmax\(0,1fr\) 96px 84px 8px;[^>]*>([\s\S]*?)<\/div>/g)];
-  assert.ok(det.length >= 1);
+  const det = [...open.matchAll(/<div class="seg x-row" data-hid="(\d+)" title="Open the match statistics" style="display:grid; grid-template-columns:62px minmax\(0,1\.9fr\) minmax\(0,1fr\) 96px 84px 8px;[^>]*>([\s\S]*?)<\/div>/g)];
+  assert.ok(det.length >= 1, 'round 7: the detail grid 62px 1.9fr 1fr 96px 84px 8px');
   assert.match(text(det[0][2]), /^25\.10\.25 /, 'newest first');
+  // round 7: the event cell is two lines — the event · round over "<surface> · indoor" (xEvSub, + the season's speed)
+  assert.match(det[0][2], /<span style="display:flex; flex-direction:column; gap:2px; min-width:0;"><span style="font-size:13px; font-weight:600;[^"]*">Swiss Indoors · F<\/span><span style="font-size:11\.5px; color:var\(--h2h-grey\); white-space:nowrap;">Hard · indoor<\/span><\/span>/);
+  assert.match(text(open), /Bo3 only · newest first · click a meeting for its statistics/, 'the detail head names the line\'s basis');
   runH(h, det[0][1]);
   assert.equal(h.sheets.length, 1, 'the row opened the shared sheet (fhOpenSheet)');
   assert.equal(h.sheets[0], h.view().h2h.F[2].mid);
@@ -706,14 +727,18 @@ test('the meetings box: the design grid, newest first by year ("2025 1–0 · 1 
   const box = h.call(h.h2hBoxHTML, h.view());
   const rows = boxRows(box);
   assert.equal(rows.length, 4);
-  rows.forEach(r => assert.equal(r.cols, '48px 12px minmax(0,1.4fr) 36px 40px minmax(0,1.3fr) 46px 46px', 'the design meetings grid'));
+  rows.forEach(r => assert.equal(r.cols, '48px 12px minmax(0,1.8fr) 36px 40px minmax(0,1.1fr) 46px 46px', 'the design meetings grid (round 7)'));
   assert.deepEqual(rows.map(r => r.text.slice(0, 9)), ['25.10. Sw', '07.08. Ci', '25.10. Sw', '25.10. Sw'], 'newest first (2025-10, 2025-08, 2024, 2023)');
   assert.match(text(box), /2025 2–0 · 2 meetings/);
   assert.match(text(box), /2024 0–1 · 1 meeting/);
+  // round 7: Sets and tiebreaks counts finished sets only — the retirement's unfinished 5–0 set is out, and the hover says so
+  assert.match(text(box), /Sets and tiebreaks Sets 5–3 Tiebreaks 2–1 · Sinner first/);
+  assert.match(box, /<div title="Finished sets only in 1 meeting \(retirement\)" style="[^"]*"><span[^>]*>Sets and tiebreaks</);
   const ret = rows.find(r => /ret\./.test(r.text));
   assert.match(ret.text, /^07\.08\. Cincinnati Open Hard F — 5–0 ret\. /, 'a retirement: sets "—", the score en-dashed with "ret."');
   assert.match(rows[0].text, / 2–1 7-6, 6-7, 6-4 /, 'Sets "pS–oS" (en dash, no spaces); set scores in the site\'s "7-6" form');
-  assert.match(rows[3].text, /^25\.10\. Swiss Indoors Hard F 2–0 /, 'the 2023 win, under the event\'s one name');
+  assert.match(rows[3].text, /^25\.10\. Swiss Indoors Hard · indoor F 2–0 /, 'the 2023 win, under the event\'s one name; round 7: the event cell\'s second line = xEvSub');
+  assert.match(rows[3].html, /<span style="display:flex; flex-direction:column; gap:2px; min-width:0;"><span style="font-size:12\.5px;[^"]*">Swiss Indoors<\/span><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:var\(--h2h-grey\); white-space:nowrap;">Hard · indoor<\/span><\/span>/, 'two lines, the event over its surface');
   rows.forEach(r => { const s = /<span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:var\(--h2h-grey\);([^"]*)">[^<]*<\/span>\s*<span title=/.exec(r.html); assert.ok(s, 'score cell'); assert.match(s[1], /white-space:normal;/); assert.doesNotMatch(s[1], /ellipsis|nowrap|overflow:hidden/); });
   // the result square: A's win --h2h-up, a loss --h2h-down (from A's side)
   assert.match(rows[2].html, /border-radius:2px; background:var\(--h2h-down\);/, 'the 2024 loss');
@@ -727,8 +752,11 @@ test('the meetings box: the design grid, newest first by year ("2025 1–0 · 1 
   assert.deepEqual(minis.map(m => m[0]), ['J. Sinner', 'C. Alcaraz']);
   assert.deepEqual(minis.map(m => m[2]), ['JS', 'CA'], 'initials');
   minis.forEach(m => { assert.match(m[1], /width:26px; height:26px; border-radius:50%; border:1px solid color-mix\(in srgb, var\(--h2h-white\) 14%, transparent\);[^"]*font-size:10px;/); assert.doesNotMatch(m[1], /box-shadow/, 'no ring on a mini avatar'); });
-  assert.doesNotMatch(box, /<img/, 'no photo anywhere in the box (its head is initials too, DF L388)');
-  assert.match(text(box), /Meetings 4 on record · Sinner leads 3–1/, 'the record in the sentence: en dash');
+  // round 7 (final design 2026-11-26): the box head's avatars are the players' photos (xAv 52px over the initials), the price
+  // columns keep initials; no photo resolver in this harness, so no <img> — the initials stand
+  assert.deepEqual([...box.matchAll(/class="x-av"[^>]*width:52px; height:52px;/g)].length, 2, 'head avatars = xAv 52px');
+  assert.doesNotMatch(box, /<img/, 'no photo resolver here: the monogram stands');
+  assert.match(text(box), /Meetings \? 4 on record · Sinner leads 3–1/, 'the record in the sentence: en dash; the "?" directly after "Meetings"');
 });
 test('TEN-437 item 4: a Bet365-priced meeting keeps its "B" marker and the hover "Bet365 closing odds, Pinnacle not available"; a Pinnacle meeting carries none', async () => {
   const h = await pairPage(M3, { price: (r, i) => Object.assign(r, i === 0 ? { price: 1.5, oppPrice: 2.7, book: 'B', src: 'td' } : i === 1 ? { price: 1.9, oppPrice: 1.95, book: 'P', src: 'td' } : { price: null, oppPrice: null, book: null }) });
@@ -751,10 +779,15 @@ test('the meetings box tiles: Total points won from the box scores over k of n m
   await new Promise(r => setTimeout(r, 5));
   const t = text(h.call(h.h2hBoxHTML, h.view()));
   // founder ruling 9 (2026-11-18) + 20 Nov: the sub is the other player's share only; the meetings counted move to the hover
-  assert.match(t, /Total points won 52\.3% Alcaraz 47\.7% On hard/, '115 of 220 points from the two box scores on file; the third meeting has none');
+  assert.match(t, /Total points won 52\.3% Alcaraz 47\.7% Went to a deciding set/, '115 of 220 points from the two box scores on file; the third meeting has none');
+  // round 7 (final design "MODAL TILES = FOUR ONLY"): Total points won · Went to a deciding set · Sets and tiebreaks · Favourite won
+  assert.deepEqual([...h.call(h.h2hBoxHTML, h.view()).matchAll(/<span style="font-size:12\.5px; font-weight:600; color:var\(--h2h-grey\);">([^<]+)<\/span><span style="font-family:'IBM Plex Mono',monospace; font-size:23px;/g)].map(m => m[1]),
+    ['Total points won', 'Went to a deciding set', 'Sets and tiebreaks', 'Favourite won'], 'the four tiles in order; no "On <surface>" tile');
+  assert.doesNotMatch(t, /On hard|On clay/);
+  // Sets and tiebreaks: finished sets from A's side (6-4 6-3 · 4-6 7-6 3-6 · 7-6 6-7 6-4 = 5–3), tiebreaks = the 7–6 sets (2–1)
+  assert.match(t, /Sets and tiebreaks Sets 5–3 Tiebreaks 2–1 · Sinner first/);
   assert.match(h.call(h.h2hBoxHTML, h.view()), /<div title="Sinner leads on points over 2 of 3 meetings with a box score" style="flex:1 1 180px; min-width:max-content;[^"]*border:1px solid color-mix\(in srgb, var\(--h2h-white\) 6%, transparent\);[^"]*"><span[^>]*>Total points won</, 'the counted meetings on the tile hover; a flex tile, 6% edge');
   assert.equal((h.call(h.h2hBoxHTML, h.view()).match(/<div class="x-boxtiles" style="display:flex; flex-wrap:wrap; gap:10px;">/g) || []).length, 1, 'the tiles are a wrapping flex row');
-  assert.match(t, /On hard 2–1 0–0 on clay, 0–0 on grass/);
   assert.match(t, /Went to a deciding set 2 of 3 Sinner won 1, Alcaraz won 1/);
   assert.match(t, /Favourite won 1 of 2 Sinner won as underdog at Swiss Indoors 2025 Meetings /, 'an exact tie is no favourite; the underdog win is named — the sentence ends there');
   assert.match(h.call(h.h2hBoxHTML, h.view()), /<div title="1 level-priced, not counted" style="flex:1 1 180px;[^"]*background:var\(--h2h-card\);[^"]*"><span[^>]*>Favourite won</, 'the level-priced meeting is in the hover, not the sentence');
@@ -947,4 +980,35 @@ test('one match listed twice (2026-11-07): the first copy takes the price, the c
   const lm = career.map(x => ({ date: x.date, won: x.won, round: x.round, opp: x.opponent }));
   JM.h2hPriceJoin(lm, { full: 'J. Thompson' }, null, mk(), null, [row(), row()]);
   assert.deepEqual(lm.map(x => x.price ?? null), [null, null], 'MUTANT: both copies dash');
+});
+
+// Round 7 (final design 2026-11-26): Hot lines read over ONE window (Last 5 · All, default All), name it above the table,
+// put the basis under every count, and add the two best-of-5 set lines (Over 4.5 sets only once one meeting covered it).
+test('round 7: Hot lines — Last 5 · All track, the population line, a basis under every count, the Bo5 set lines', async () => {
+  const ms = [2019, 2020, 2021, 2022, 2023].map((y, i) => ({ date: y + '-10-25', won: i % 2 === 0, sets: [[6, 4], [3, 6], [6, 3]] }))
+    .concat([{ date: '2024-09-05', won: true, sets: [[6, 4], [3, 6], [6, 3], [6, 2]], t: 'US Open', round: 'QF' }]);
+  const h = await pairPage(ms);
+  h.state.h2hAllLines = true;
+  const c = h.call(h.h2hCard, h.view());
+  assert.match(c, /<span data-hotpop [^>]*>Best line per family · all meetings · 6 meetings<\/span>/);
+  const win = c.slice(c.indexOf('data-hotwin'));
+  assert.match(win, /font-weight:700; color:var\(--h2h-text\);[^>]*>All<\/span>/, 'All is the default');
+  const rows = hotRows(c);
+  const basis = rows.map(r => (/data-hotbasis[^>]*>([^<]+)</.exec(r.html) || [])[1]);
+  assert.ok(basis.every(Boolean), 'a basis under every count');
+  assert.ok(basis.includes('all 6 meetings') && basis.includes('Bo3 only'), basis.join(' | '));
+  const o35 = rows.find(r => /Over 3\.5 sets/.test(r.text));
+  assert.ok(o35, 'Over 3.5 sets shows: one best-of-5 meeting');
+  assert.match(o35.text, /1 of 1 Bo5 only/, 'the US Open QF went four sets');
+  assert.ok(!rows.some(r => /Over 4\.5 sets/.test(r.text)), 'Over 4.5 sets hidden until a meeting covered it');
+  // Last 5: the window drops the oldest meeting, the population line and the basis follow
+  runH(h, hidOf(win, '>Last 5<'));
+  assert.equal(h.state.hotWin, 'l5');
+  const c5 = h.call(h.h2hCard, h.view());
+  assert.match(c5, /data-hotpop [^>]*>Best line per family · last 5 meetings · 5 meetings</);
+  assert.ok(hotRows(c5).map(r => (/data-hotbasis[^>]*>([^<]+)</.exec(r.html) || [])[1]).includes('last 5 meetings'));
+  // a five-set meeting shows Over 4.5 sets
+  const h5 = await pairPage(ms.concat([{ date: '2025-09-05', won: false, sets: [[6, 4], [3, 6], [6, 3], [2, 6], [4, 6]], t: 'US Open', round: 'F' }]));
+  h5.state.h2hAllLines = true;
+  assert.match(hotRows(h5.call(h5.h2hCard, h5.view())).map(r => r.text).join(' | '), /Over 4\.5 sets[^|]*1 of 2 Bo5 only/);
 });

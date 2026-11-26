@@ -69,13 +69,13 @@ const shard = (a, b) => ({ own: { raw: { 'Points:Total Points Won': { won: a, to
 test('meetings box tiles (founder 2026-11-20): Total points won\'s sub = "<other player> <his share>%" only; its hover ends "N meetings" when every meeting has a box score, else "k of n meetings"', async () => {
   const M2 = [{ date: '2024-10-25', won: true, sets: [[6, 4], [6, 3]] }, { date: '2025-10-25', won: false, sets: [[4, 6], [3, 6]] }];
   const o2 = { statsIx: new Set(['100', '101']), shards: { 100: shard(60, 40), 101: shard(40, 60) } };
-  assert.match(await boxTiles(M2, o2), /^Total points won 50\.0% Alcaraz 50\.0% On /, 'the sub names the other player and his share only');
+  assert.match(await boxTiles(M2, o2), /^Total points won 50\.0% Alcaraz 50\.0% Went to a deciding set/, 'the sub names the other player and his share only');
   assert.equal(await ptsTip(M2, o2), 'Sinner leads on points over 2 meetings with a box score', 'every meeting has a box score: the plain count, in the hover');
   const o1 = { statsIx: new Set(['100']), shards: { 100: shard(60, 40) } };
-  assert.match(await boxTiles(M2, o1), /^Total points won 60\.0% Alcaraz 40\.0% On /);
+  assert.match(await boxTiles(M2, o1), /^Total points won 60\.0% Alcaraz 40\.0% Went to a deciding set/);
   assert.equal(await ptsTip(M2, o1), 'Sinner leads on points over 1 of 2 meetings with a box score', 'one of two: "k of n"');
   const oB = { statsIx: new Set(['100']), shards: { 100: shard(35, 65) } };
-  assert.match(await boxTiles(M2, oB), /^Total points won 65\.0% Sinner 35\.0% On /, 'Alcaraz leads: the sub names Sinner');
+  assert.match(await boxTiles(M2, oB), /^Total points won 65\.0% Sinner 35\.0% Went to a deciding set/, 'Alcaraz leads: the sub names Sinner');
   assert.equal(await ptsTip(M2, oB), 'Alcaraz leads on points over 1 of 2 meetings with a box score');
 });
 test('meetings box tiles (founder 2026-11-17): Went to a deciding set with exactly one decider names it — "<Winner> <x>–<y> <event> <year>"', async () => {
@@ -134,7 +134,7 @@ test('Record against each style (founder 2026-11-17 / 2026-11-19 / 2026-11-20): 
 });
 
 // ── the Stennisfy Model: the likely opening price only; the Elo-only prices live in the head's "?" (founder 2026-11-20) ──
-test('Stennisfy Model (founder 2026-11-20): each box shows the likely opening price only — no "Elo only" line; the Elo-only prices (cell[1], same margin) are the "?" help\'s last line', () => {
+test('Stennisfy Model (founder fix 1, 2026-11-26; replaces 20 Nov): each box shows the likely opening price as a RANGE, Elo only (cell[1], same margin) → full model, low – high; the "?" help\'s last line names both ends', () => {
   const h = HX.load({ html });
   const A = { key: '10', full: 'A. One', short: 'A. One', mono: 'AO' }, B = { key: '20', full: 'B. Two', short: 'B. Two', mono: 'BT' };
   const px = h.X.__eval('_pairPx');
@@ -145,14 +145,26 @@ test('Stennisfy Model (founder 2026-11-20): each box shows the likely opening pr
   assert.deepEqual([m.aPrice, m.bPrice, m.aBase, m.bBase], [f(0.334), f(0.666), f(0.3465), f(0.6535)], 'with the layers / Elo only, both on the 3.39% margin');
   assert.notEqual(m.aBase, m.aPrice, 'the two prices differ when the layers move the price (control: not a copy)');
   const card = h.call(h.modelCard, { model: m, a: A, b: B });
-  assert.doesNotMatch(card.replace(/title="[^"]*"/g, ''), /Elo only|Elo alone/, 'no Elo-only price in the card body');
+  assert.doesNotMatch(card.replace(/title="[^"]*"/g, ''), /Elo only|Elo alone|Elo-only/, 'no explanation in the card body');
   assert.equal((card.match(/>Likely opening price</g) || []).length, 2, 'one likely opening price per box');
+  const lohi = (x, y) => [Math.min(+x, +y), Math.max(+x, +y)].map(v => v.toFixed(2)).join(' – ');
+  assert.deepEqual([m.aRange, m.bRange], [lohi(m.aPrice, m.aBase), lohi(m.bPrice, m.bBase)], 'low – high, whichever end is lower');
+  assert.deepEqual([...card.matchAll(/<span data-h2h-price [^>]*>([^<]+)<\/span>/g)].map(x => x[1]), [m.aRange, m.bRange], 'the boxes print the ranges');
   const tip = (/<span class="x-help" title="([^"]*)"/.exec(card) || [])[1] || '';
-  assert.match(tip, /model layers[^\n]*\nElo alone, no model layer: A\. One (\S+) · B\. Two (\S+)$/, 'the Elo-only prices end the help, after the model line');
-  assert.deepEqual(/Elo alone, no model layer: A\. One (\S+) · B\. Two (\S+)$/.exec(tip).slice(1), [m.aBase, m.bBase]);
-  // control: no base price → no Elo-alone line
-  const m0 = Object.assign({}, m, { aBase: null, bBase: null });
-  assert.doesNotMatch(h.call(h.modelCard, { model: m0, a: A, b: B }), /Elo alone/);
+  const last = /model layers[^\n]*\nThe range runs from the Elo-only price \(no model layer: A\. One (\S+) · B\. Two (\S+)\) to the full model price \(A\. One (\S+) · B\. Two (\S+)\)\.$/.exec(tip);
+  assert.ok(last, 'the help names both ends of the range, after the model line');
+  assert.deepEqual(last.slice(1), [m.aBase, m.bBase, m.aPrice, m.bPrice]);
+  // control: no base price → the model price alone, no range sentence
+  const m0 = Object.assign({}, m, { aBase: null, bBase: null, aRange: null, bRange: null });
+  const c0 = h.call(h.modelCard, { model: m0, a: A, b: B });
+  assert.doesNotMatch(c0, /The range runs/);
+  assert.deepEqual([...c0.matchAll(/<span data-h2h-price [^>]*>([^<]+)<\/span>/g)].map(x => x[1]), [m.aPrice, m.bPrice]);
+  // control: the same price both ways reads as one price, never "2.90 – 2.90"
+  const hs = HX.load({ html }); const ps = hs.X.__eval('_pairPx');
+  ps['10'] = { st: 'ready', at: Date.now(), d: { generatedAt: '2026-11-16T07:19:32Z', margin: 0.0339, opp: { 20: { H3: [3340, 3340, 0] } } } };
+  ps['20'] = { st: 'ready', at: Date.now(), d: { generatedAt: '2026-11-16T07:19:32Z', margin: 0.0339, opp: { 10: { H3: [6660, 6660, 0] } } } };
+  const ms = hs.call(hs.modelVals, A, B, { ctxSurface: 'Hard', ctxFormat: 3 });
+  assert.equal(ms.aRange, ms.aPrice);
 });
 
 // ── Tournament record: group mode (Surface / Court speed), the window, the "Back to" link ──
@@ -207,7 +219,7 @@ function tourHarness(models) {
   return HX.load({ html, preload: ['COURT_CONDITIONS', 'courtSpeedCategory'], globals: { EntryListsTab: null, _sfDbJoinSt: 'ready', _sfDbJoin: { rows: [], names: [], meta: { rounds: [] } },
     trProfileModel: (k, name, t) => models[k + '|' + t.name] || { eds: [] } } });
 }
-test('Tournament record: group mode (a Surface or Court speed set) runs over every fitting event, names the condition, and shows "Back to <tournament> ›" — only in group mode', () => {
+test('Tournament record (round 7): a picked tournament FIXES Surface / Court speed; "Clear tournament" = group mode over every fitting event, naming the condition, with "Back to <tournament> ›"; no Window filter', () => {
   const r = (d, won, round) => tmk(d, won, round, 'X. Opp');
   const models = { '1|Basel': { eds: [{ year: '2025', rows: [r('2025-10-25', true, 'F')] }] }, '1|Monte Carlo': { eds: [{ year: '2025', rows: [r('2025-04-12', false, 'SF')] }] },
     '2|Basel': { eds: [{ year: '2024', rows: [r('2024-10-25', false, 'QF')] }] } };
@@ -216,31 +228,45 @@ test('Tournament record: group mode (a Surface or Court speed set) runs over eve
   const b = Object.assign({}, ALC, { _cSt: { state: 'ready' }, tourHist: [{ name: 'Basel', won: 0, lost: 1, lastYear: 2024 }] });
   const single = h.call(h.tourneyVals, a, b, { tourSel: 'Basel' });
   assert.equal(single.grp, false);
+  assert.equal(single.TW, 'career', 'every year on record, always');
   const cs = h.call(h.tourneyCard, { a, b, tourney: single });
   assert.doesNotMatch(text(cs), /Back to/, 'single tournament: no "Back to" link');
-  assert.match(text(cs), /^Tournament record At one event, or across a surface and court speed Tournament /);
-  assert.deepEqual(J(single.filters.map(f => f.label + ':' + f.items.filter(i => i.on).map(i => i.label))), ['Window:Career', 'Surface:All', 'Court speed:All'], 'the window opens on Career');
-  assert.equal((cs.match(/<div class="x-sw x-sw--lg" style="display:flex;/g) || []).length, 3, 'three filter switches, stretched (xSw fill)');
-  const grp = h.call(h.tourneyVals, a, b, { tourSel: 'Basel', trSurf: 'Hard' });
+  // the head: title · search · "Clear tournament" · Surface / Court speed fixed to the event's own (Basel = hard, fast)
+  assert.match(text(cs), /^Tournament record Clear tournament Hard Fast /);
+  assert.deepEqual([...cs.matchAll(/data-frchip="([^"]+)" class=""[^>]*title="([^"]+)"/g)].map(x => x[1] + ':' + x[2]), ['Surface:Surface · set by the tournament', 'Court speed:Court speed · set by the tournament']);
+  assert.doesNotMatch(cs, /data-frchip="Window"|class="x-sw/, 'no Window filter, no filter switches');
+  // every year header carries that season's court speed (COURT_CONDITIONS as<year> − 1, signed, true minus), never made up
+  const CC = h.call(() => h.run('COURT_CONDITIONS')), sp = y => { const d = Math.round((CC.Basel['as' + y] - 1) * 100) / 100; return (d > 0 ? '+' : d < 0 ? '−' : '') + Math.abs(d).toFixed(2); };
+  assert.equal(typeof CC.Basel.as2025, 'number', 'the fixture event has a 2025 reading');
+  assert.deepEqual([...cs.matchAll(/<span data-spdchip [^>]*>Speed ([^<]+)<\/span>/g)].map(x => x[1]), [sp(2025), sp(2024)], 'Sinner 2025, Alcaraz 2024');
+  const noRead = h.call(h.xSpeedChip, 'Basel', 1990);
+  assert.equal(noRead, '', 'no reading that season → no chip');
+  // a Surface pick no longer leaves the tournament: group mode is "Clear tournament" only
+  assert.equal(h.call(h.tourneyVals, a, b, { tourSel: 'Basel', trSurf: 'Hard' }).grp, false);
+  runH(h, /data-hid="(\d+)" data-tr-clear/.exec(cs)[1]);
+  assert.equal(h.state.tourPick, false);
+  const grp = h.call(h.tourneyVals, a, b, { tourSel: 'Basel', tourPick: false, trSurf: 'Hard' });
   assert.equal(grp.grp, true);
   const cg = h.call(h.tourneyCard, { a, b, tourney: grp });
-  assert.match(text(cg), /^Tournament record At one event, or across a surface and court speed Back to Swiss Indoors › /);
+  assert.match(text(cg), /^Tournament record Back to Swiss Indoors › Hard All speeds /, '"Back to" after the title; the chips are live (Surface Hard, Court speed All)');
+  assert.doesNotMatch(text(cg), /Clear tournament/);
+  assert.ok(/data-frchip="Surface" class="seg frc" data-hid=/.test(cg), 'a live chip in group mode');
   assert.match(text(cg), / 1 Hard courts 1 tournament Swiss Indoors Surface Hard Court speed All /, 'the row names the condition, its events as chips (founder 2026-11-19); Monte Carlo (clay) is out');
   assert.match(cg, /class="seg x-evchip"/, 'each event is a chip that opens it');
   assert.match(text(cg), /Best result QF Swiss Indoors 2024/, 'the best result names its event (founder 2026-11-19)');
   assert.match(text(cg), /J\. Sinner On hard courts · since 2025 1–0 /);
   assert.match(text(cg), /Swiss Indoors 2025 Hard · Fast · 1–0 that year/, 'group heads: event + year, surface · speed');
-  // "Back to" clears both filters (back to the one tournament)
+  // "Back to" returns to the one tournament and clears both filters
   runH(h, grp.hBack);
-  assert.deepEqual([h.state.trSurf, h.state.trSpeed], ['all', 'all']);
+  assert.deepEqual([h.state.tourPick, h.state.trSurf, h.state.trSpeed], [true, 'all', 'all']);
   // Court speed Slow: Monte Carlo (its one rating reads Slow); Alcaraz never played it
-  const slow = text(h.call(h.tourneyCard, { a, b, tourney: h.call(h.tourneyVals, a, b, { tourSel: 'Basel', trSpeed: 'Slow' }) }));
+  const slow = text(h.call(h.tourneyCard, { a, b, tourney: h.call(h.tourneyVals, a, b, { tourSel: 'Basel', tourPick: false, trSpeed: 'Slow' }) }));
   assert.match(slow, / 1 Slow courts 1 tournament Monte-Carlo Masters Surface All Court speed Slow /);
   assert.match(slow, /J\. Sinner On slow courts · since 2025 0–1 .* C\. Alcaraz has no matches on slow courts\.$/);
-  // a condition nothing fits, with a window: "0 tournaments · none on record", the window named in the empty line
-  const grass = text(h.call(h.tourneyCard, { a, b, tourney: h.call(h.tourneyVals, a, b, { tourSel: 'Basel', trSurf: 'Grass', trWin: 'w52' }) }));
+  // a condition nothing fits: "0 tournaments · none on record"; a stale window state is ignored (no Window filter)
+  const grass = text(h.call(h.tourneyCard, { a, b, tourney: h.call(h.tourneyVals, a, b, { tourSel: 'Basel', tourPick: false, trSurf: 'Grass', trWin: 'w52' }) }));
   assert.match(grass, / 0 Grass courts 0 tournaments none on record /);
-  assert.match(grass, /J\. Sinner has no matches on grass courts in the last 52 weeks\./);
+  assert.match(grass, /J\. Sinner has no matches on grass courts\./);
 });
 
 // ── Market edge: every return in %, never "u" ──
@@ -357,7 +383,7 @@ test('ruling 8 + career radar (founder 2026-11-19): Career = surface-ratings car
   assert.deepEqual(J(D.a.vals.map(x => x.pct)), [97.5, 96.1, 93.2, 95, 50], 'the shape = the pool percentile; the peak = its place among every peak (1 of 2 below it)');
   assert.deepEqual(J(D.b.vals.map(x => x.pct)), [93.5, 98.5, 91.6, 92, 0]);
   assert.deepEqual(J(D.extra.a), [64.3, 77.1, 56.2, 89.9, 29.8], 'the rows read the same career node in the 20 Nov order: 1st serve in, 1st / 2nd won, held, return games won = breakPct');
-  const t = text(h.call(h.dnaCard, { a: SIN, b: ALC, dna: D }));
+  const t = text(h.call(h.dnaBlock, { a: SIN, b: ALC, dna: D }));
   assert.match(t, /Elo peak 2341 · 2309/, 'the radar axis names the peak');
   assert.match(t, /Ratings 2341 Elo peak 32 2309 1\.12 Dominance ratio 0\.02 1\.10 301 Serve rating /, 'the row is the peak, its gap on the line; then Dominance ratio, Serve rating (20 Nov §1)');
   assert.match(t, /Serve 64\.3% 1st serve in 2\.3 62\.0% /, '1st serve in reads serve.firstInPct');
@@ -377,7 +403,7 @@ test('ruling 5: a long Tournament list shows its newest 6 rows, then "Show N mor
   const h = HX.load({ html, globals: { _careerHistoryShards: {}, _sfDbJoinSt: 'loading', _sfDbJoinP: new Promise(() => {}) } });
   const rows = Array.from({ length: 10 }, (_, i) => tmk('2025-0' + (1 + (i % 9)) + '-1' + i, i % 2 === 0, 'R32', 'X. Opp' + i));
   const agg = h.call(h.xTrAgg, [{ ev: { name: 'Basel', surface: 'Hard', speed: 'Fast' }, P: { eds: [{ year: '2025', rows }] } }], null, true);
-  const view = { a: SIN, b: ALC, tourney: { empty: false, query: '', listOpen: false, options: [], info: { name: 'Hard courts', initial: '1', meta: [] }, grp: true, gLbl: 'hard courts', TW: 'career', filters: [],
+  const view = { a: SIN, b: ALC, tourney: { empty: false, query: '', listOpen: false, options: [], info: { name: 'Hard courts', initial: '1', meta: [] }, grp: true, gLbl: 'hard courts', TW: 'career', chips: { SF: 'Hard', SPD: 'Fast', set() {} },
     cols: [{ p: SIN, agg, state: 'ready' }, { p: ALC, agg: null, state: 'none' }] } };
   const rowsIn = c => (c.match(/class="seg x-row" data-hid="\d+" title="Open the match statistics"/g) || []).length;
   const c = h.call(h.tourneyCard, view);

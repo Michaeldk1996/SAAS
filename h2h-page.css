@@ -88,7 +88,11 @@
 #h2hRoot .x-change:hover { color: var(--h2h-text) !important; border-color: color-mix(in srgb, var(--h2h-white) 14%, transparent) !important; }
 #h2hRoot .x-swap:hover { color: var(--h2h-text) !important; border-color: color-mix(in srgb, var(--h2h-white) 22%, transparent) !important; }
 #h2hRoot .x-mrow:hover { background: var(--h2h-hover); }
-#h2hRoot .x-nav:hover { color: var(--h2h-text) !important; background: var(--h2h-hover); }
+/* Section nav (final design 2026-11-26): the section in view = a picked choice (raised + inset 14% edge, white 700);
+   the others grey 600, white on hover (no hover fill). */
+#h2hRoot .x-nav { font-weight: 600; color: var(--h2h-grey); background: transparent; box-shadow: inset 0 0 0 1px transparent; }
+#h2hRoot .x-nav:hover { color: var(--h2h-text); }
+#h2hRoot .x-nav[data-navon="1"] { font-weight: 700; color: var(--h2h-text); background: var(--h2h-raised); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--h2h-white) 14%, transparent); }
 #h2hRoot .x-sugg:hover { color: var(--h2h-text) !important; border-color: color-mix(in srgb, var(--h2h-white) 14%, transparent) !important; }
 /* rows and controls (DF style-hover): a row / band / career / tournament / news / line row = the raised tone; the Overall
    box lifts with a 16% edge; a ✕ and the Filters button brighten their ring */
@@ -117,3 +121,9 @@
   --nx-e14: color-mix(in srgb, var(--news-white) 14%, transparent); --nx-mono: 'IBM Plex Mono', monospace; }
 #h2hRoot .x-newsms > .nx-div { display: none; }
 #h2hRoot .x-newsms > .nx-box { max-width: none; flex: 1 1 auto; }
+
+/* ---- Box filter chips (final design 2026-11-26, HEAD_TO_HEAD.md "Dropdown chip"): hover edge 24%; a menu option
+   hovers on a 6% white wash with white words; the menu fades in 120 ms with a 4 px rise. ---- */
+#h2hRoot .frc:hover { border-color: color-mix(in srgb, var(--h2h-white) 24%, transparent) !important; }
+#h2hRoot [data-frmenu] .seg:hover { background: color-mix(in srgb, var(--h2h-white) 6%, transparent) !important; color: var(--h2h-text) !important; }
+@keyframes h2hFrIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }

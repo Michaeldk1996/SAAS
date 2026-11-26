@@ -117,12 +117,12 @@ function checkH2H(dash) {
   // TEN-403 R1 nit (founder 2026-10-09): "a dash means not covered"
   if (!cov || cov[1] !== 'a dash means not covered') return 'h2h: the coverage line reads ' + JSON.stringify(cov && cov[1]);
   const v = { coverageLine: cov[1], aPicked: false, bPicked: false, aSearching: true, bSearching: true, aListOpen: false, bListOpen: false, aQuery: '', bQuery: '',
-    a: {}, b: {}, ctxShow: true, nav: [{ id: 'h2h-model', label: 'Model' }], ctxGroups: [{ label: 'Surface', items: [{ label: 'Hard', on: true, hid: 1 }] }],
+    a: {}, b: {}, ctxShow: true, nav: [{ id: 'h2h-model', label: 'Model' }],
     showEmpty: false, showLoading: false, showBody: false };
   const pg = h.call(h.pageHTML, v);
   const head = pg.slice(0, pg.indexOf('class="x-stick"'));
   // the design's header card (CHANGES 2026-11-18 §2): title 24/800 over one 13px grey sentence, inside the card
-  const m = /<div class="x-hcard" style="[^"]*background:var\(--h2h-card\);[^"]*border-radius:12px; padding:18px 26px;">[\s\S]*?<h1 style="margin:0; font-size:24px; font-weight:800; letter-spacing:-0\.015em; line-height:1\.15;">Head to Head<\/h1>\s*<div style="font-size:13px; color:var\(--h2h-grey\); text-wrap:pretty;">([^<]+)<\/div>/.exec(head);
+  const m = /<div class="x-hcard" style="[^"]*background:var\(--h2h-card\);[^"]*border-radius:12px; padding:18px 26px;">[\s\S]*?<h1 style="margin:0; font-size:24px; font-weight:800; letter-spacing:-0\.015em; line-height:1\.15;">Head to Head<\/h1><span class="x-help"[^>]*>\?<\/span><\/div>\s*<div style="font-size:13px; color:var\(--h2h-grey\); text-wrap:pretty;">([^<]+)<\/div>/.exec(head);
   if (!m) return 'h2h: the page head is not the design\'s (the header card: title 24/800 over one 13px grey sentence)';
   if (m[1].trim().length > 120 || (m[1].match(/[.!?](\s|$)/g) || []).length > 1) return 'h2h: header copy is longer than one sentence';
   if (!new RegExp(`<span class="x-help" title="${cov[1]}"`).test(head)) return 'h2h: the coverage line is not on the head\'s "?"';
@@ -131,7 +131,9 @@ function checkH2H(dash) {
   if (!/^class="x-stick" style="position:sticky; top:0; z-index:30;/.test(bar)) return 'h2h: the picker is not sticky at the top';
   if (!/<div id="h2h-sticky" style="[^"]*box-shadow:var\(--h2h-shadow-sticky\);">/.test(bar)) return 'h2h: the sticky shadow is gone';
   const card = bar.slice(bar.indexOf('id="h2h-sticky"'));
-  if (!/class="x-pick"/.test(card) || !/data-h2h-jump="h2h-model"/.test(card) || !/>Surface</.test(card)) return 'h2h: the pickers / context strip left the sticky card';
+  if (!/class="x-pick"/.test(card) || !/data-h2h-jump="h2h-model"/.test(card) ) return 'h2h: the pickers / section nav left the sticky card';
+  // round 7 (final design 2026-11-26): no page-level filters in the sticky card
+  if (/>Surface<|>Best of 3</.test(card)) return 'h2h: a page-level filter came back in the sticky card';
   if (/class="sfh/.test(pg)) return 'h2h: the 35b card is back on a page that draws its own design head';
   return null;
 }
