@@ -1,31 +1,31 @@
 {
- "generatedAt": "2026-11-26T07:32:08.136Z",
+ "generatedAt": "2026-11-26T09:44:02.184Z",
  "tournaments": [
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 212,
+   "items": 207,
    "byType": {
-    "digest": 41,
-    "quote": 171
+    "quote": 167,
+    "digest": 40
    },
-   "latestTimestamp": "2026-11-26T06:31:24.617Z",
-   "updatedAt": "2026-11-26T07:32:08.136Z"
+   "latestTimestamp": "2026-11-26T08:44:00.000Z",
+   "updatedAt": "2026-11-26T09:44:02.184Z"
   },
   {
    "key": "3120",
    "season": "2026",
    "name": "Davis Cup - World Group",
    "file": "news-ticker/3120-2026.json",
-   "items": 14,
+   "items": 21,
    "byType": {
-    "digest": 4,
-    "quote": 10
+    "digest": 6,
+    "quote": 15
    },
-   "latestTimestamp": "2026-11-24T20:30:00.000Z",
-   "updatedAt": "2026-11-26T05:09:53.468Z"
+   "latestTimestamp": "2026-11-26T03:15:22.384Z",
+   "updatedAt": "2026-11-26T09:44:02.184Z"
   },
   {
    "key": "2794",
@@ -69,6 +69,37 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-8ee985c35b0882",
+   "type": "quote",
+   "playerId": "50323",
+   "opponentId": null,
+   "player": "R. Jodar",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-26T08:44:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "He's very natural. Basically, the way you see him in front of the cameras, he's exactly the same in private. The other day, watching the final, he was dancing on the bench… Honestly, no other player would have thought of that, except Carlitos. It's great, and that's also why he builds such a strong bond with the stands, with the crowd. I remember that two years ago, I was here as a hitting partner and I spent the week with him. He hasn't changed at all. Two years have gone by and he's still the same. Only his haircut has changed",
+   "originalText": "Il est très naturel. Au fond, tel que vous le voyez devant les caméras, il est exac­te­ment pareil en privé. L’autre jour, en regar­dant la finale, il dansait sur le banc… Franchement, aucun autre joueur n’aurait eu cette idée, à part Carlitos. C’est génial et c’est aussi pour cela qu’il crée un lien aussi fort avec les tribunes, avec le public. Je me souviens qu’il y a deux ans, j’étais ici en tant que sparring‐partner et que j’avais passé la semaine avec lui. Il n’a abso­lu­ment pas changé. Deux ans se sont écoulés et il est toujours le même. Seule sa coupe de cheveux a changé",
+   "language": "fr",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "We Love Tennis",
+   "sourceUrl": "https://www.welovetennis.fr/atp/jodar-parle-de-lhumilite-dalcaraz-je-me-souviens-quil-y-a-deux-ans-jetais-ici-en-tant-que-sparring-partner-et-que-javais-passe-la-semaine-avec-lui-il-na-a",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "sourceHash": "d568659db0808c04",
+   "publishedAt": "2026-11-26T09:44:02.184Z",
+   "topic": "On Carlos Alcaraz's unchanged natural personality",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "digest-ca1f408b1165eb",
    "type": "digest",
@@ -248,28 +279,24 @@
    "timestamp": "2026-11-26T05:50:00.000Z",
    "members": [
     "quote-0ee6b1e1c93196",
-    "quote-459f81dcb3cf4b",
     "quote-797d7f3bddbbe3",
-    "quote-bd4eee4e495eae",
     "quote-e07e715b2d4034"
    ],
-   "memberHash": "5cf1bc410b11734b",
-   "digestedAt": "2026-11-26T06:38:02.291Z",
+   "memberHash": "daeea07f5efc96a7",
+   "digestedAt": "2026-11-26T09:08:49.999Z",
    "blocks": [
     {
-     "label": "on Jannik Sinner's recovery from knee surgery",
-     "text": "He's mentally strong. We know that he's mentally strong. I hope that he takes every step seriously and that, in three, four months' time, he can be back to 100 per cent and be back playing. Even though, of course, he's one of my biggest competitors, one of the most difficult players for me to play, I still wish for him to come back to the tour because I've been there, I know what injury feels like, and I don't wish injury upon anyone.",
-     "from": [
-      "quote-459f81dcb3cf4b",
-      "quote-e07e715b2d4034",
-      "quote-bd4eee4e495eae"
-     ]
-    },
-    {
-     "label": "on his chronic right ankle pain and his season",
+     "label": "on his chronic right ankle pain",
      "text": "Since what happened in Paris. They come and go, I'll have to live with them until the end of my career. But, considering that I've played more than anyone, I should be satisfied with how this year has gone.",
      "from": [
       "quote-797d7f3bddbbe3"
+     ]
+    },
+    {
+     "label": "on Sinner's recovery from knee surgery",
+     "text": "We know that he's mentally strong. I hope that he takes every step seriously and that, in three, four months' time, he can be back to 100 per cent and be back playing.",
+     "from": [
+      "quote-e07e715b2d4034"
      ]
     },
     {
@@ -281,10 +308,10 @@
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "9f4d8d4133bb4515",
+   "sourceHash": "24b39badd4d7357a",
    "publishedAt": "2026-11-26T05:09:53.468Z",
-   "revisedAt": "2026-11-26T07:13:19.218Z",
-   "revision": 2,
+   "revisedAt": "2026-11-26T09:44:02.184Z",
+   "revision": 3,
    "file": "news-ticker/tour-2026.json"
   },
   {
@@ -480,14 +507,50 @@
    "file": "news-ticker/tour-2026.json"
   },
   {
+   "id": "digest-a7a98c888fe3a0",
+   "type": "digest",
+   "version": 1,
+   "playerId": "1980",
+   "player": "A. Zverev",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-26T03:15:22.384Z",
+   "members": [
+    "quote-459f81dcb3cf4b",
+    "quote-bd4eee4e495eae"
+   ],
+   "memberHash": "6268054e9816db2e",
+   "digestedAt": "2026-11-26T09:08:49.999Z",
+   "blocks": [
+    {
+     "label": "on Jannik Sinner's recovery from knee surgery",
+     "text": "Even though, of course, he's one of my biggest competitors, one of the most difficult players for me to play, I still wish for him to come back to the tour because I've been there, I know what injury feels like, and I don't wish injury upon anyone. He's mentally strong. We know that he's mentally strong. I hope that he takes every step seriously and that in three, four months he can be back to 100 per cent and be back playing.",
+     "from": [
+      "quote-bd4eee4e495eae",
+      "quote-459f81dcb3cf4b"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "2abedaa750c12e1d",
+   "publishedAt": "2026-11-26T09:44:02.184Z",
+   "file": "news-ticker/3120-2026.json"
+  },
+  {
    "id": "quote-459f81dcb3cf4b",
    "type": "quote",
    "playerId": "1980",
    "opponentId": null,
    "player": "A. Zverev",
    "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
    "season": "2026",
    "round": null,
    "timestamp": "2026-11-26T03:15:22.384Z",
@@ -507,9 +570,9 @@
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "topic": "On Jannik Sinner's recovery from knee surgery",
    "settingTried": true,
-   "sourceHash": "d65f59ea9e856c66",
-   "publishedAt": "2026-11-26T05:09:53.468Z",
-   "file": "news-ticker/tour-2026.json"
+   "sourceHash": "6d0386955c8b5070",
+   "publishedAt": "2026-11-26T09:44:02.184Z",
+   "file": "news-ticker/3120-2026.json"
   },
   {
    "id": "quote-bd4eee4e495eae",
@@ -518,8 +581,8 @@
    "opponentId": null,
    "player": "A. Zverev",
    "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
    "season": "2026",
    "round": null,
    "timestamp": "2026-11-26T03:15:22.384Z",
@@ -539,11 +602,9 @@
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "topic": "On an injured rival's return to the tour",
    "settingTried": true,
-   "sourceHash": "f6f67f5350bc455b",
-   "publishedAt": "2026-11-26T05:09:53.468Z",
-   "revisedAt": "2026-11-26T06:04:52.955Z",
-   "revision": 1,
-   "file": "news-ticker/tour-2026.json"
+   "sourceHash": "40f84cc09ca40016",
+   "publishedAt": "2026-11-26T09:44:02.184Z",
+   "file": "news-ticker/3120-2026.json"
   },
   {
    "id": "quote-dc0060806592c0",
@@ -856,11 +917,10 @@
     "quote-5c87231ec304cf",
     "quote-5c893f9e206467",
     "quote-777d19c2b8dd23",
-    "quote-c0b40760a6c411",
     "quote-eb757983225c2a"
    ],
-   "memberHash": "c0b39eca04ac8f01",
-   "digestedAt": "2026-11-26T02:06:51.017Z",
+   "memberHash": "c9480cddaa04b25f",
+   "digestedAt": "2026-11-26T09:08:49.999Z",
    "blocks": [
     {
      "label": "on a top rival's injury and comeback hopes",
@@ -871,7 +931,7 @@
     },
     {
      "label": "on his ex-girlfriend's new lawsuit against him",
-     "text": "Apparently I made a statement that I shouldn't have made. But in my opinion I didn't. My lawyers have issued a statement on it, and I'm not that involved at the moment. To be honest, it doesn't worry me much. I think I'm innocent. But I've talked about it enough. I'm done talking about it, because it was, I think, five or six years ago.",
+     "text": "Apparently I made a statement that I shouldn't have made. But in my opinion I didn't. My lawyers have issued a statement on it, and I'm not that involved at the moment. To be honest, it doesn't worry me much. I think I am innocent. I have talked about it enough. I won't talk about this topic anymore, because it has been five or six years already.",
      "from": [
       "quote-5c893f9e206467",
       "quote-02223aea527d8d",
@@ -891,18 +951,13 @@
      "from": [
       "quote-777d19c2b8dd23"
      ]
-    },
-    {
-     "label": "on Germany's title hopes",
-     "text": "The title would be something very special for all of us. But we have to take it match by match. We haven't been given an easy draw.",
-     "from": [
-      "quote-c0b40760a6c411"
-     ]
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "a42096fd9a974444",
+   "sourceHash": "e37b491721a75b77",
    "publishedAt": "2026-11-26T02:48:24.212Z",
+   "revisedAt": "2026-11-26T09:44:02.184Z",
+   "revision": 1,
    "file": "news-ticker/tour-2026.json"
   },
   {
@@ -980,8 +1035,8 @@
    "opponentId": null,
    "player": "A. Zverev",
    "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
    "season": "2026",
    "round": null,
    "timestamp": "2026-11-25T16:15:32.172Z",
@@ -1001,9 +1056,9 @@
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "topic": "On Germany's hopes of win",
    "settingTried": true,
-   "sourceHash": "8f52c4b45a62df8f",
-   "publishedAt": "2026-11-26T02:48:24.212Z",
-   "file": "news-ticker/tour-2026.json"
+   "sourceHash": "3bd91e6624909f03",
+   "publishedAt": "2026-11-26T09:44:02.184Z",
+   "file": "news-ticker/3120-2026.json"
   },
   {
    "id": "quote-02223aea527d8d",
@@ -1485,81 +1540,6 @@
    "sourceHash": "e98bc4f159db70ec",
    "publishedAt": "2026-11-25T05:52:04.024Z",
    "topic": "On winning the Davis Cup for Spain",
-   "revisedAt": "2026-11-26T02:48:24.212Z",
-   "revision": 1,
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "digest-8c90aabee412d8",
-   "type": "digest",
-   "version": 1,
-   "playerId": "39864",
-   "player": "M. Landaluce",
-   "opponentId": null,
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "eventKey": null,
-   "context": null,
-   "category": "Quotes",
-   "timestamp": "2026-11-25T00:00:00.000Z",
-   "members": [
-    "quote-025a21fbcc95b2",
-    "quote-deb5eceee7b44c"
-   ],
-   "memberHash": "2136ad283288e4b5",
-   "digestedAt": "2026-11-26T02:06:51.017Z",
-   "blocks": [
-    {
-     "label": "on handling pressure on big stages since 16",
-     "text": "I've had a lot of opportunities since I was 16 and I've played really big tournaments on really big stages from a young age, so I'm really well adapted … I have no pressure right now because I've handled it over the years. Now I can enjoy it. I'm enjoying myself on and off the court, and that's really important. I think it's the key and that really good things are going to happen in the near future.",
-     "from": [
-      "quote-deb5eceee7b44c"
-     ]
-    },
-    {
-     "label": "on a difficult first month or two mentally",
-     "text": "The first month or two was a bit more difficult because it got into my head.",
-     "from": [
-      "quote-025a21fbcc95b2"
-     ]
-    }
-   ],
-   "model": "claude-opus-5-5",
-   "sourceHash": "edaef697bc994041",
-   "publishedAt": "2026-11-26T02:48:24.212Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-025a21fbcc95b2",
-   "type": "quote",
-   "playerId": "39864",
-   "opponentId": null,
-   "player": "M. Landaluce",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-25T00:00:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "The first month or two was a bit more difficult because it got into my head,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "ATP Tour",
-   "sourceUrl": "https://www.atptour.com/en/news/landaluce-meet-the-next-gen-2026",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "topic": "On a difficult first month or two mentally",
-   "sourceHash": "1cc5dd77a76e6e92",
-   "publishedAt": "2026-11-26T00:04:01.813Z",
    "revisedAt": "2026-11-26T02:48:24.212Z",
    "revision": 1,
    "file": "news-ticker/tour-2026.json"
