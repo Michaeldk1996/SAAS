@@ -1,6 +1,19 @@
 {
- "generatedAt": "2026-11-26T14:41:50.085Z",
+ "generatedAt": "2026-11-26T15:44:27.912Z",
  "tournaments": [
+  {
+   "key": "tour",
+   "season": "2026",
+   "name": "ATP Tour",
+   "file": "news-ticker/tour-2026.json",
+   "items": 211,
+   "byType": {
+    "digest": 40,
+    "quote": 171
+   },
+   "latestTimestamp": "2026-11-26T14:46:00.000Z",
+   "updatedAt": "2026-11-26T15:44:27.912Z"
+  },
   {
    "key": "3120",
    "season": "2026",
@@ -13,19 +26,6 @@
    },
    "latestTimestamp": "2026-11-26T12:41:36.426Z",
    "updatedAt": "2026-11-26T13:38:52.872Z"
-  },
-  {
-   "key": "tour",
-   "season": "2026",
-   "name": "ATP Tour",
-   "file": "news-ticker/tour-2026.json",
-   "items": 210,
-   "byType": {
-    "quote": 170,
-    "digest": 40
-   },
-   "latestTimestamp": "2026-11-26T09:44:00.000Z",
-   "updatedAt": "2026-11-26T14:41:50.085Z"
   },
   {
    "key": "2794",
@@ -69,6 +69,77 @@
   }
  ],
  "latest": [
+  {
+   "id": "digest-ca1f408b1165eb",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2072",
+   "player": "J. Sinner",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-26T14:46:00.000Z",
+   "members": [
+    "quote-18b69e30cb96c6",
+    "quote-74d4d33d376bba",
+    "quote-b9b0856511c93f",
+    "quote-df5f58cea4026d"
+   ],
+   "memberHash": "b090a77b21402e89",
+   "digestedAt": "2026-11-26T15:10:56.258Z",
+   "blocks": [
+    {
+     "label": "on his recovery from right knee surgery",
+     "text": "I really miss the court, and now I'm going to begin my recovery process. I have to follow the established procedures, because if we push things too hard, we could face more serious problems.",
+     "from": [
+      "quote-74d4d33d376bba",
+      "quote-df5f58cea4026d"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "f082d5a2aca56661",
+   "publishedAt": "2026-11-26T07:32:08.136Z",
+   "revisedAt": "2026-11-26T15:44:27.912Z",
+   "revision": 2,
+   "file": "news-ticker/tour-2026.json"
+  },
+  {
+   "id": "quote-b9b0856511c93f",
+   "type": "quote",
+   "playerId": "2072",
+   "opponentId": null,
+   "player": "J. Sinner",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-26T14:46:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "When I saw Sinner on Sunday at the Inalpi Arena, I confessed that he really surprised me, because I had no idea how dependent we were on him, … Every week, for decades, I’ve analyzed all the data on our tennis. But his absence has been felt much more than expected; just check the ratings: without him, they’re less than half. … The other Italians are among the best in the world: some like Cobolli because he’s a fighter, aesthetes are in love with [Lorenzo] Musetti, for many Berrettini remains an idol. “But Jannik engages everyone, including those Italians who until three or four years ago knew little about tennis. Is he popular because he wins like Rossi or Tomba? Not only that. “It’s that he’s a popular character: the good red-haired boy from the mountains, a simple and clean family behind him, the sacrifices he’s made, the sportsmanship with which he presents himself. A narrative that clearly captures the attention.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "The Times of India",
+   "sourceUrl": "https://timesofindia.indiatimes.com/sports/tennis/top-stories/can-tennis-hold-its-tv-audience-without-jannik-sinner-a-10-million-italian-viewer-drop-at-this-years-atp-finals-raises-star-power-concerns/articleshow/136192870.cms",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "sourceHash": "c70e47ac4cfd35b2",
+   "publishedAt": "2026-11-26T15:44:27.912Z",
+   "topic": "On Sinner's popularity and Italian tennis TV ratings",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-e7e249e46589d1",
    "type": "quote",
@@ -131,45 +202,6 @@
    "settingTried": true,
    "sourceHash": "2ec2c1aadbde9253",
    "publishedAt": "2026-11-26T10:21:57.287Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "digest-ca1f408b1165eb",
-   "type": "digest",
-   "version": 1,
-   "playerId": "2072",
-   "player": "J. Sinner",
-   "opponentId": null,
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "eventKey": null,
-   "context": null,
-   "category": "Quotes",
-   "timestamp": "2026-11-26T09:13:49.000Z",
-   "members": [
-    "quote-18b69e30cb96c6",
-    "quote-74d4d33d376bba",
-    "quote-df5f58cea4026d"
-   ],
-   "memberHash": "7f33b3120ea7a782",
-   "digestedAt": "2026-11-26T09:39:04.522Z",
-   "blocks": [
-    {
-     "label": "on his recovery from right knee surgery",
-     "text": "I really miss the court, and now I'm going to begin my recovery process. I have to respect the protocols at the moment, because if we rush things we could have more serious problems.",
-     "from": [
-      "quote-74d4d33d376bba",
-      "quote-18b69e30cb96c6"
-     ]
-    }
-   ],
-   "model": "claude-opus-5-5",
-   "sourceHash": "861ea224b9baaaa8",
-   "publishedAt": "2026-11-26T07:32:08.136Z",
-   "revisedAt": "2026-11-26T10:04:33.561Z",
-   "revision": 1,
    "file": "news-ticker/tour-2026.json"
   },
   {
@@ -1506,40 +1538,6 @@
    "topic": "On denying ever taking banned substances",
    "revisedAt": "2026-11-26T02:48:24.212Z",
    "revision": 1,
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-5a05fd64bc0e5a",
-   "type": "quote",
-   "playerId": "2973",
-   "opponentId": null,
-   "player": "B. Shelton",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-25T09:25:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "I think what a lot of people don't see is when we actually do have time or a couple of days off, we're so exhausted that it's tough to do anything. It is tough to make time.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "TennisUpToDate",
-   "sourceUrl": "https://tennisuptodate.com/atp/ben-shelton-warned-of-relationship-struggles-just-weeks-before-reported-trinity-rodman-breakup",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On exhaustion during rare days off on tour",
-   "setting": "in a magazine interview published on September 28",
-   "sourceHash": "b193d1e00d72290d",
-   "publishedAt": "2026-11-24T17:27:45.318Z",
-   "revisedAt": "2026-11-26T04:32:17.224Z",
-   "revision": 2,
    "file": "news-ticker/tour-2026.json"
   }
  ]
