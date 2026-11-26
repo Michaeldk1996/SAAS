@@ -2,7 +2,7 @@
  "tournament": "ATP Tour",
  "tournamentKey": "tour",
  "season": "2026",
- "updatedAt": "2026-11-26T04:09:42.809Z",
+ "updatedAt": "2026-11-26T04:32:17.224Z",
  "items": [
   {
    "id": "quote-0ee6b1e1c93196",
@@ -51,15 +51,16 @@
    "category": "Quotes",
    "timestamp": "2026-11-25T22:15:00.000Z",
    "members": [
+    "quote-5a05fd64bc0e5a",
     "quote-6daa8098cf1fd8",
     "quote-ae7e8f8802058f"
    ],
-   "memberHash": "862e4bad89ea5ad8",
-   "digestedAt": "2026-11-26T02:06:51.017Z",
+   "memberHash": "7ca8afb50997615a",
+   "digestedAt": "2026-11-26T04:07:16.271Z",
    "blocks": [
     {
      "label": "on his relationship with an elite athlete partner",
-     "text": "Sometimes I leave these tournaments and I'm a bit of a zombie… I'm not the most fun person to be around. But we make a lot of sacrifices for our sport. I'd say both of us are chasing things for our sport. We're not where we want to be yet, we're not in our primes. So this is kind of crunch time… This is going to be the hardest, most grueling time in our relationship, from my perspective. None of it is easy. But being able to have someone to lean on who's such an elite athlete and doing things at a really high level as well, it helps in so many ways.",
+     "text": "Sometimes I leave these tournaments and I'm a bit of a zombie. I'm not the most fun person to be around. But we make a lot of sacrifices for our sport. I'd say both of us are chasing things for our sport. We're not where we want to be yet, we're not in our primes. So this is kind of crunch time. This is going to be the hardest, most grueling time in our relationship, from my perspective. None of it is easy. But being able to have someone to lean on who's such an elite athlete and doing things at a really high level as well, it helps in so many ways.",
      "from": [
       "quote-6daa8098cf1fd8"
      ]
@@ -70,11 +71,20 @@
      "from": [
       "quote-ae7e8f8802058f"
      ]
+    },
+    {
+     "label": "on exhaustion during rare days off on tour",
+     "text": "I think what a lot of people don't see is when we actually do have time or a couple of days off, we're so exhausted that it's tough to do anything. It is tough to make time.",
+     "from": [
+      "quote-5a05fd64bc0e5a"
+     ]
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "99126805f0922905",
-   "publishedAt": "2026-11-26T02:48:24.212Z"
+   "sourceHash": "eb2b984adbfc1238",
+   "publishedAt": "2026-11-26T02:48:24.212Z",
+   "revisedAt": "2026-11-26T04:32:17.224Z",
+   "revision": 1
   },
   {
    "id": "quote-6daa8098cf1fd8",
@@ -744,6 +754,39 @@
    "revision": 1
   },
   {
+   "id": "quote-5a05fd64bc0e5a",
+   "type": "quote",
+   "playerId": "2973",
+   "opponentId": null,
+   "player": "B. Shelton",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-25T09:25:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "I think what a lot of people don't see is when we actually do have time or a couple of days off, we're so exhausted that it's tough to do anything. It is tough to make time.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "TennisUpToDate",
+   "sourceUrl": "https://tennisuptodate.com/atp/ben-shelton-warned-of-relationship-struggles-just-weeks-before-reported-trinity-rodman-breakup",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On exhaustion during rare days off on tour",
+   "setting": "in a magazine interview published on September 28",
+   "sourceHash": "b193d1e00d72290d",
+   "publishedAt": "2026-11-24T17:27:45.318Z",
+   "revisedAt": "2026-11-26T04:32:17.224Z",
+   "revision": 2
+  },
+  {
    "id": "quote-993cfa8aa1a06e",
    "type": "quote",
    "playerId": "1902",
@@ -1334,38 +1377,6 @@
    "revision": 2
   },
   {
-   "id": "quote-5a05fd64bc0e5a",
-   "type": "quote",
-   "playerId": "2973",
-   "opponentId": null,
-   "player": "B. Shelton",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-24T17:00:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "I think what a lot of people don't see is when we actually do have time or a couple of days off, we're so exhausted that it's tough to do anything. It is tough to make time.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "TennisUpToDate",
-   "sourceUrl": "https://tennisuptodate.com/atp/ben-shelton-warned-of-relationship-struggles-just-weeks-before-reported-trinity-rodman-breakup",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "758e9ba548f8875d",
-   "publishedAt": "2026-11-24T17:27:45.318Z",
-   "topic": "On exhaustion during rare days off on tour",
-   "revisedAt": "2026-11-26T03:06:17.922Z",
-   "revision": 1
-  },
-  {
    "id": "quote-3df7ed26bb8b09",
    "type": "quote",
    "playerId": "2072",
@@ -1424,10 +1435,18 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "topic": "On protecting the knee limiting life outside tennis",
-   "sourceHash": "fbd13fce174a550b",
+   "setting": "in a recent video before his knee surgery",
+   "alsoReportedBy": [
+    {
+     "sourceName": "Gulf Times",
+     "sourceUrl": "https://www.gulf-times.com/article/738938/sport/tennis/sinner-at-risk-of-missing-australian-open-after-confirming-knee-surgery",
+     "language": "en"
+    }
+   ],
+   "sourceHash": "2f8b81ec77783bcf",
    "publishedAt": "2026-11-12T16:27:56.516Z",
-   "revisedAt": "2026-11-24T22:49:48.891Z",
-   "revision": 4
+   "revisedAt": "2026-11-26T04:32:17.224Z",
+   "revision": 5
   },
   {
    "id": "quote-5d6a8ef4cb8ee0",
@@ -1455,11 +1474,19 @@
    "sourceUrl": "https://supersport.com/tennis/news/cfa3675a-b903-4cdd-8c88-d3f6770b2743/sinner-at-risk-of-missing-australian-open-after-knee-surgery",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "d8dacfabacfb7eb8",
-   "publishedAt": "2026-11-24T22:49:48.891Z",
    "topic": "On his minor knee surgery on the iliotibial band",
-   "revisedAt": "2026-11-26T03:06:17.922Z",
-   "revision": 1
+   "setting": "in a statement on Tuesday announcing his knee surgery",
+   "alsoReportedBy": [
+    {
+     "sourceName": "Gulf Times",
+     "sourceUrl": "https://www.gulf-times.com/article/738938/sport/tennis/sinner-at-risk-of-missing-australian-open-after-confirming-knee-surgery",
+     "language": "en"
+    }
+   ],
+   "sourceHash": "f07fb4582bd891ba",
+   "publishedAt": "2026-11-24T22:49:48.891Z",
+   "revisedAt": "2026-11-26T04:32:17.224Z",
+   "revision": 2
   },
   {
    "id": "quote-bf5398d6e15566",
@@ -1967,10 +1994,22 @@
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
    "topic": "On trying to treat his injury without surgery",
-   "sourceHash": "ca430d22ad0a2ae7",
+   "alsoReportedBy": [
+    {
+     "sourceName": "SuperSport",
+     "sourceUrl": "https://supersport.com/tennis/news/cfa3675a-b903-4cdd-8c88-d3f6770b2743/sinner-at-risk-of-missing-australian-open-after-knee-surgery",
+     "language": "en"
+    },
+    {
+     "sourceName": "Gulf Times",
+     "sourceUrl": "https://www.gulf-times.com/article/738938/sport/tennis/sinner-at-risk-of-missing-australian-open-after-confirming-knee-surgery",
+     "language": "en"
+    }
+   ],
+   "sourceHash": "d44750fe12da8655",
    "publishedAt": "2026-11-24T18:26:35.901Z",
-   "revisedAt": "2026-11-26T02:48:24.212Z",
-   "revision": 5
+   "revisedAt": "2026-11-26T04:32:17.224Z",
+   "revision": 6
   },
   {
    "id": "quote-420cde4b816820",
@@ -2722,8 +2761,11 @@
    "sourceUrl": "https://www.atptour.com/en/news/alcaraz-nitto-atp-finals-2026-reaction-sunday-final",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "sourceHash": "afb0a4f75c0a4e14",
-   "publishedAt": "2026-11-24T00:57:38.236Z"
+   "sourceHash": "bb866309e51dcc8c",
+   "publishedAt": "2026-11-24T00:57:38.236Z",
+   "topic": "On celebrating with his team after tough fortnight",
+   "revisedAt": "2026-11-26T04:32:17.224Z",
+   "revision": 1
   },
   {
    "id": "digest-a69eadabb7a69d",
