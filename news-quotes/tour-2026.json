@@ -2,8 +2,39 @@
  "tournament": "ATP Tour",
  "tournamentKey": "tour",
  "season": "2026",
- "updatedAt": "2026-11-26T09:08:49.999Z",
+ "updatedAt": "2026-11-26T09:39:04.522Z",
  "items": [
+  {
+   "id": "quote-74d4d33d376bba",
+   "type": "quote",
+   "playerId": "2072",
+   "opponentId": null,
+   "player": "J. Sinner",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-26T09:13:49.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "I really miss the court, and now I'm going to begin my recovery process",
+   "originalText": "Echo mucho de menos la pista y ahora voy a comenzar mi proceso de recuperación",
+   "language": "es",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "Hoy",
+   "sourceUrl": "https://www.vssports.com.py/hoy/2026/11/26/jannik-sinner-se-pierde-el-abierto-de-australia-tras-cirugia-de-rodilla/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his recovery after right knee surgery",
+   "settingTried": true,
+   "sourceHash": "8ae3d1260be69a4c",
+   "publishedAt": "2026-11-26T09:39:04.522Z"
+  },
   {
    "id": "quote-8ee985c35b0882",
    "type": "quote",
@@ -30,9 +61,11 @@
    "sourceUrl": "https://www.welovetennis.fr/atp/jodar-parle-de-lhumilite-dalcaraz-je-me-souviens-quil-y-a-deux-ans-jetais-ici-en-tant-que-sparring-partner-et-que-javais-passe-la-semaine-avec-lui-il-na-a",
    "verbatimCheck": "passed",
    "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "8ee25a77e78fb128",
+   "topic": "On Carlos Alcaraz's unchanged natural personality",
+   "sourceHash": "d568659db0808c04",
    "publishedAt": "2026-11-26T09:08:49.999Z",
-   "topic": "On Carlos Alcaraz's unchanged natural personality"
+   "revisedAt": "2026-11-26T09:39:04.522Z",
+   "revision": 1
   },
   {
    "id": "quote-df5f58cea4026d",
@@ -5204,18 +5237,20 @@
    "eventKey": null,
    "context": null,
    "category": "Quotes",
-   "timestamp": "2026-11-26T06:31:24.617Z",
+   "timestamp": "2026-11-26T09:13:49.000Z",
    "members": [
     "quote-18b69e30cb96c6",
+    "quote-74d4d33d376bba",
     "quote-df5f58cea4026d"
    ],
-   "memberHash": "db911f32068023c4",
-   "digestedAt": "2026-11-26T07:08:11.520Z",
+   "memberHash": "7f33b3120ea7a782",
+   "digestedAt": "2026-11-26T09:39:04.522Z",
    "blocks": [
     {
-     "label": "on recovering from his right knee surgery",
-     "text": "I have to respect the protocols at the moment, because if we rush things we could have more serious problems.",
+     "label": "on his recovery from right knee surgery",
+     "text": "I really miss the court, and now I'm going to begin my recovery process. I have to respect the protocols at the moment, because if we rush things we could have more serious problems.",
      "from": [
+      "quote-74d4d33d376bba",
       "quote-18b69e30cb96c6"
      ]
     }
