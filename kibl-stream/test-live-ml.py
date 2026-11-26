@@ -105,12 +105,28 @@ sql = open(os.path.join(HERE, "now-schema.sql")).read()
 blk = sql[sql.index("create table if not exists public.kibl_live_ml"):]
 check("primary key (fixture_id, fixture_participant_id)" in blk, "one row per player")
 check("alter table public.kibl_live_ml enable row level security" in blk and "revoke all on public.kibl_live_ml from anon, authenticated" in blk,
-      "server-side only (mutant: browser can read)")
+      "RLS on, every default grant revoked first")
+# founder 2026-11-26: the Live page reads the latest in-play prices (SELECT only, pushed over Realtime); never a write
+check("grant select on public.kibl_live_ml to anon, authenticated;" in blk
+      and 'on public.kibl_live_ml for select to anon, authenticated using (true)' in blk,
+      "the browser may SELECT the latest prices (mutant: policy dropped → the Live page reads nothing)")
+check(not re.search(r"^\s*grant\s+(insert|update|delete|all)[^;]*public\.kibl_live_ml\b", sql, re.I | re.M)
+      and not re.search(r"on public\.kibl_live_ml for (insert|update|delete|all)", sql, re.I),
+      "no write grant or policy for the browser (mutant: grant all)")
+check("tablename = 'kibl_live_ml') then\n    alter publication supabase_realtime add table public.kibl_live_ml;" in sql,
+      "pushed over Realtime")
+st = sql[sql.index("function public.live_ml_state()"):]
+st = st[:st.index("$$;", st.index("$$") + 2)]
+check("security definer" in st and "set search_path = public" in st and "fixture_id <> 0" in st
+      and "grant execute on function public.live_ml_state() to anon, authenticated;" in sql,
+      "live_ml_state: execute-only, the position row never listed as a fixture")
 check("new.kibl_inserted_on <= old.kibl_inserted_on" in blk, "newer-only in the database too")
 hist = sql[sql.index("create table if not exists public.kibl_live_ml_history"):]
 check("unique (fixture_id, fixture_participant_id, kibl_inserted_on)" in hist, "history: one row per change, a retry never doubles it")
 check("alter table public.kibl_live_ml_history enable row level security" in hist and "revoke all on public.kibl_live_ml_history from anon, authenticated" in hist,
       "history is server-side only")
+check(not re.search(r"^\s*grant\b[^;]*public\.kibl_live_ml_history", sql, re.I | re.M) and "on public.kibl_live_ml_history for" not in sql,
+      "history: no grant or policy for the browser (mutant: history readable)")
 fl = src[src.index("def flush_live"):src.index("def prune")]
 check(fl.index("LM.HISTORY") < fl.index("LM.TABLE}?on_conflict"), "every batch goes to the history first, then the latest (mutant: history skipped)")
 check("resolution=ignore-duplicates" in fl and "live.requeue(rows)" in fl, "a failed batch is retried whole (history idempotent)")

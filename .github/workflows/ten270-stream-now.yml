@@ -226,6 +226,29 @@ jobs:
                         f"stream {len(d.get('stream') or [])}, gaps {len(d.get('gaps') or [])}, "
                         f"sweep_gaps {len(d.get('sweep_gaps') or [])}")
                   if st != 200: bad.append(f"price_history {st}")
+              # Live page in-play prices (founder 2026-11-26): latest rows readable, never writable; history never;
+              # the one read (live_ml_state) answers with the page's key. Measured bytes per call.
+              st, r = call(f"{url}/rest/v1/kibl_live_ml?select=fixture_id&limit=1", key=pk)
+              print(f"[publishable] SELECT kibl_live_ml -> HTTP {st}  (want 200)")
+              if st != 200: bad.append(f"live prices not readable ({st})")
+              st, r = call(f"{url}/rest/v1/kibl_live_ml", "POST",
+                           [{"fixture_id": -1, "fixture_participant_id": -1, "price": 2, "kibl_inserted_on": "2026-01-01T00:00:00Z"}], key=pk)
+              print(f"[publishable] INSERT kibl_live_ml -> HTTP {st}  (want 401/403)")
+              if st not in (401, 403):
+                  bad.append(f"publishable key could INSERT a live price ({st})")
+                  call(f"{url}/rest/v1/kibl_live_ml?fixture_id=eq.-1", "DELETE", key=os.environ["SUPABASE_SECRET_KEY"])
+              st, r = call(f"{url}/rest/v1/kibl_live_ml_history?select=id&limit=1", key=pk)
+              n_h = len(json.loads(r)) if st == 200 and r.strip().startswith("[") else -1
+              print(f"[publishable] SELECT kibl_live_ml_history -> HTTP {st}, {n_h} row(s)  (want 401/403, or 200 with 0 rows)")
+              if st not in (401, 403) and not (st == 200 and n_h == 0): bad.append(f"live price history readable ({st})")
+              st, r = call(f"{url}/rest/v1/rpc/live_ml_state", "POST", {}, key=pk)
+              try:
+                  d = json.loads(r) if st == 200 else {}
+              except ValueError:
+                  d = {}
+              print(f"[publishable] rpc live_ml_state -> HTTP {st}, {len(r)} bytes, fixtures {len(d.get('fx') or [])}, "
+                    f"position {'yes' if d.get('pos') else 'no'}")
+              if st != 200: bad.append(f"live_ml_state {st}")
               st, r = call(f"{url}/rest/v1/kibl_now_history?select=id&limit=1", key=pk)
               print(f"[publishable] SELECT kibl_now_history -> HTTP {st}  (want 401/403)")
               if st not in (401, 403): bad.append(f"history readable ({st})")

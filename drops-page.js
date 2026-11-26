@@ -543,6 +543,8 @@
     dayBands: dayBands, ENDPOINT: ENDPOINT, AMBER_AFTER_S: AMBER_AFTER_S, DISCONNECTED_AFTER_S: DISCONNECTED_AFTER_S,
     TIERS: TIERS, WINDOWS: WINDOWS, MIN: MIN, MVL: MVL };
   if (typeof module === 'object' && module.exports) module.exports = PURE;
+  // the Kibl name rule, shared with the Live page's in-play price join (founder 2026-11-26)
+  if (typeof window === 'object' && window) window.KiblJoin = { same: kiblSame };
   if (typeof document === 'undefined') return;
 
   // ─── the page ───────────────────────────────────────────────────────────────

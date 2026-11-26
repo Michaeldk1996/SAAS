@@ -387,3 +387,45 @@ create table if not exists public.kibl_live_ml_history (
 create index if not exists kibl_live_ml_history_written_idx on public.kibl_live_ml_history (written_at);
 alter table public.kibl_live_ml_history enable row level security;
 revoke all on public.kibl_live_ml_history from anon, authenticated;
+
+-- Live page (founder 2026-11-26: "the one that updates the fastest and is in line with Bet105"): members' browsers read
+-- Bet105's in-play match-winner prices. kibl_live_ml (latest row per player, written by the stream worker) gets a
+-- SELECT-only policy and joins supabase_realtime, so each price change is pushed to the open Live page; the page filters
+-- the channel to the live fixtures it shows (fixture_id=in.(…)), so the stream-position row (fixture 0) is never pushed.
+-- kibl_live_ml_history stays server-side only. Nothing here changes what the worker writes or how.
+drop policy if exists "public read kibl_live_ml" on public.kibl_live_ml;
+create policy "public read kibl_live_ml"
+    on public.kibl_live_ml for select to anon, authenticated using (true);
+grant select on public.kibl_live_ml to anon, authenticated;
+do $$
+begin
+  if not exists (select 1 from pg_publication_tables
+                 where pubname = 'supabase_realtime' and schemaname = 'public'
+                   and tablename = 'kibl_live_ml') then
+    alter publication supabase_realtime add table public.kibl_live_ml;
+  end if;
+end $$;
+
+-- live_ml_state() — the Live page's one read (on open and every ~10 s with the live feed): the stream position (how far
+-- behind Kibl the worker is), the server clock (the page judges ages on it, never on the viewer's clock), and every
+-- fixture with an in-play row in the last 6 h: Kibl's own name ("1200 Carl Emil Overbeck vs Jason Kubler" — the page
+-- places each player by the stream join's name rule, lower participant id = first-named) and both sides' rows.
+-- security definer: EXECUTE only; no SELECT on kibl_fixtures for the browser.
+create or replace function public.live_ml_state() returns jsonb
+language sql stable security definer set search_path = public as $$
+  select jsonb_build_object(
+    'now', now(),
+    'pos', (select jsonb_build_object('ins', l.kibl_inserted_on, 'rcv', l.received_at)
+              from public.kibl_live_ml l where l.fixture_id = 0 and l.fixture_participant_id = 0),
+    'fx', coalesce((select jsonb_agg(jsonb_build_object(
+              'id', f.fixture_id, 'name', f.name, 'league', f.league_id, 'start', f.scheduled_start,
+              'sides', (select jsonb_agg(jsonb_build_object('pid', l.fixture_participant_id, 'price', l.price,
+                                 'st', l.market_status_id, 'ins', l.kibl_inserted_on, 'rcv', l.received_at)
+                                 order by l.fixture_participant_id)
+                          from public.kibl_live_ml l where l.fixture_id = f.fixture_id)))
+            from public.kibl_fixtures f
+           where f.fixture_id in (select l.fixture_id from public.kibl_live_ml l
+                                   where l.fixture_id <> 0 and l.kibl_inserted_on > now() - interval '6 hours')), '[]'::jsonb));
+$$;
+revoke all on function public.live_ml_state() from public;
+grant execute on function public.live_ml_state() to anon, authenticated;
