@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-26T13:38:52.872Z",
+ "generatedAt": "2026-11-26T14:41:50.085Z",
  "tournaments": [
   {
    "key": "3120",
@@ -19,13 +19,13 @@
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 209,
+   "items": 210,
    "byType": {
-    "quote": 169,
+    "quote": 170,
     "digest": 40
    },
    "latestTimestamp": "2026-11-26T09:44:00.000Z",
-   "updatedAt": "2026-11-26T10:21:57.287Z"
+   "updatedAt": "2026-11-26T14:41:50.085Z"
   },
   {
    "key": "2794",
@@ -380,11 +380,19 @@
    "members": [
     "quote-0ee6b1e1c93196",
     "quote-797d7f3bddbbe3",
+    "quote-9fa5c737f7678d",
     "quote-e07e715b2d4034"
    ],
-   "memberHash": "daeea07f5efc96a7",
-   "digestedAt": "2026-11-26T09:08:49.999Z",
+   "memberHash": "ff92f935c53b1ec9",
+   "digestedAt": "2026-11-26T14:10:39.373Z",
    "blocks": [
+    {
+     "label": "on finishing the season as year-end No 1",
+     "text": "It's a great honour to be holding this trophy, to be part of this celebration. Last year, playing this tournament, I thought: Maybe I can win a Grand Slam. Maybe I can do well during the year. But I didn't imagine I could be standing here holding this trophy. To be the Year-End No 1 is the most special thing. It's the biggest achievement of my career.",
+     "from": [
+      "quote-9fa5c737f7678d"
+     ]
+    },
     {
      "label": "on his chronic right ankle pain",
      "text": "Since what happened in Paris. They come and go, I'll have to live with them until the end of my career. But, considering that I've played more than anyone, I should be satisfied with how this year has gone.",
@@ -408,10 +416,10 @@
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "24b39badd4d7357a",
+   "sourceHash": "c728d9640d6a6fbe",
    "publishedAt": "2026-11-26T05:09:53.468Z",
-   "revisedAt": "2026-11-26T09:44:02.184Z",
-   "revision": 3,
+   "revisedAt": "2026-11-26T14:41:50.085Z",
+   "revision": 4,
    "file": "news-ticker/tour-2026.json"
   },
   {
@@ -768,6 +776,37 @@
    "settingTried": true,
    "sourceHash": "e6b460e472a5aab5",
    "publishedAt": "2026-11-26T05:09:53.468Z",
+   "file": "news-ticker/tour-2026.json"
+  },
+  {
+   "id": "quote-9fa5c737f7678d",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-26T00:00:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "It's a great honour to be holding this trophy, to be part of this celebration, … Last year, playing this tournament I thought, 'Maybe I can win a Grand Slam. Maybe I can do well during the year'. But I didn't imagine I could be standing here holding this trophy. To be the Year-End No 1 is the most special thing. It's the biggest achievement of my career.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "ATP Tour",
+   "sourceUrl": "https://www.atptour.com/en/news/zverev-70-wins-record-2026",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
+   "sourceHash": "956d6096cc65d0d1",
+   "publishedAt": "2026-11-26T14:41:50.085Z",
+   "topic": "On finishing the season as year-end No 1",
    "file": "news-ticker/tour-2026.json"
   },
   {
@@ -1500,40 +1539,6 @@
    "sourceHash": "b193d1e00d72290d",
    "publishedAt": "2026-11-24T17:27:45.318Z",
    "revisedAt": "2026-11-26T04:32:17.224Z",
-   "revision": 2,
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-993cfa8aa1a06e",
-   "type": "quote",
-   "playerId": "1902",
-   "opponentId": null,
-   "player": "A. Rinderknech",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-25T08:29:22.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "I am aware of the reports regarding my alleged test refusal case with the International Tennis Integrity Agency (“ITIA",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "Ubitennis",
-   "sourceUrl": "https://www.ubitennis.net/2026/11/arthur-rinderknech-maintains-innocence-over-allegedly-refusing-doping-test/",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On reports of his alleged doping test refusal",
-   "setting": "in an Instagram statement after reports of his test refusal case",
-   "sourceHash": "9a049dbdd7731582",
-   "publishedAt": "2026-11-25T09:03:52.414Z",
-   "revisedAt": "2026-11-26T03:28:36.371Z",
    "revision": 2,
    "file": "news-ticker/tour-2026.json"
   }
