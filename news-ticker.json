@@ -1,6 +1,19 @@
 {
- "generatedAt": "2026-11-26T22:45:35.695Z",
+ "generatedAt": "2026-11-27T08:43:29.957Z",
  "tournaments": [
+  {
+   "key": "tour",
+   "season": "2026",
+   "name": "ATP Tour",
+   "file": "news-ticker/tour-2026.json",
+   "items": 214,
+   "byType": {
+    "quote": 174,
+    "digest": 40
+   },
+   "latestTimestamp": "2026-11-27T08:00:46.000Z",
+   "updatedAt": "2026-11-27T08:43:29.957Z"
+  },
   {
    "key": "3120",
    "season": "2026",
@@ -13,19 +26,6 @@
    },
    "latestTimestamp": "2026-11-26T21:20:07.000Z",
    "updatedAt": "2026-11-26T22:45:35.695Z"
-  },
-  {
-   "key": "tour",
-   "season": "2026",
-   "name": "ATP Tour",
-   "file": "news-ticker/tour-2026.json",
-   "items": 213,
-   "byType": {
-    "digest": 40,
-    "quote": 173
-   },
-   "latestTimestamp": "2026-11-26T14:46:00.000Z",
-   "updatedAt": "2026-11-26T16:28:46.158Z"
   },
   {
    "key": "2794",
@@ -69,6 +69,38 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-d4d04575434575",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": null,
+   "player": "A. Zverev",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-27T08:00:46.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "It's about a statement I supposedly made. But I never said anything like that. As far as I know, my lawyers have already issued an appropriate statement on this matter. I'm not paying much attention to it at the moment, so I don't know many details. To be honest, I'm really not worried about it. I maintain that I am innocent,",
+   "originalText": "Ide o výrok, ktorý som vraj povedal. Nič také som však nepovedal. Pokiaľ viem, moji právnici už v tejto veci vydali príslušné stanovisko. Momentálne sa tomu príliš nevenujem, takže nepoznám veľa podrobností. Pravdupovediac, naozaj sa tým netrápim. Trvám na tom, že som nevinný,",
+   "language": "sk",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "Sport Aktuality",
+   "sourceUrl": "https://sport.aktuality.sk/sport-extra/clanok/zverev-opat-celi-zalobe-od-byvalej-partnerky-som-nevinny-2026112612030461039",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his former girlfriend's new lawsuit against him",
+   "settingTried": true,
+   "sourceHash": "fb9f3f108fa4014b",
+   "publishedAt": "2026-11-27T08:43:29.957Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-6daaa897edf747",
    "type": "quote",
@@ -1496,40 +1528,6 @@
    "settingTried": true,
    "sourceHash": "14261eccb4cb568a",
    "publishedAt": "2026-11-26T02:48:24.212Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-5c87231ec304cf",
-   "type": "quote",
-   "playerId": "1980",
-   "opponentId": null,
-   "player": "A. Zverev",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-25T15:21:53.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "I was much healthier this year than I was last year. Last year I was struggling a lot with my back. I had a lot of bone issues, as well, which I luckily figured out where it came from and I could take the medication for it.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "Ubitennis",
-   "sourceUrl": "https://www.ubitennis.net/2026/11/alexander-zverev-challenges-gaudenzis-painkiller-claim-downplays-former-partners-legal-action/",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On his health compared with last year",
-   "settingTried": true,
-   "sourceHash": "300138fd7cf17c84",
-   "publishedAt": "2026-11-25T16:16:08.308Z",
-   "revisedAt": "2026-11-26T03:06:17.922Z",
-   "revision": 2,
    "file": "news-ticker/tour-2026.json"
   }
  ]
