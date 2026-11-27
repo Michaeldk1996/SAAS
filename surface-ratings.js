@@ -576,6 +576,7 @@ if (require.main === module) (async () => {
   // 2) Resolve each pool player → api-tennis player_key (surname-suffix aligned).
   const candidates = [];
   const candSeen = new Set();
+  const extraOnlyNames = new Set();
   let resolved = 0, unresolved = 0;
   // ── TEN-254 · the HAND-CONFIRMED map, founder ruling 3 (2026-09-23) ────────
   // api-tennis scrambles name order in get_standings — R. A. Burruchaga is listed as
@@ -610,7 +611,11 @@ if (require.main === module) (async () => {
         resolved++; mappedUsed++;
         continue;
       }
-      unresolved++; continue;
+      unresolved++;
+      // Founder 2026-11-27: an unresolved player is still fetched by his own profile key (api-tennis keyed) — for the
+      // model's Under-pressure list only (extraOnly): the board's figures and challResolved stay as they were.
+      if (meta.key && !candSeen.has(String(meta.key))) { candSeen.add(String(meta.key)); candidates.push({ playerKey: meta.key, name: meta.name, extraOnly: true }); extraOnlyNames.add(meta.name); }
+      continue;
     }
     // prefer an exact full-token match, else the first surname-suffix match
     const exact = hits.find(e => e.tokens.length === (meta.surname.length + 1) &&
@@ -634,14 +639,20 @@ if (require.main === module) (async () => {
   // TEN-254: name -> the api-tennis player_key we will actually fetch for him. This is
   // the ONLY place the two are tied together, and it is what makes challResolved
   // answerable per player later.
-  const candKeyByName = new Map(candidates.map(c => [c.name, String(c.playerKey)]));
+  const candKeyByName = new Map(candidates.filter(c => !c.extraOnly).map(c => [c.name, String(c.playerKey)]));
 
   // 4) Fetch Challenger contributions and populate challById (keyed by api:<player_key>).
   const dateStop = new Date().toISOString().slice(0, 10);
-  const challResult = await fetchChallengerContribs(candidates, {
+  const challResult = await fetchChallengerContribs(candidates.filter(c => !c.extraOnly), {
     apiKey, fromYear: CHALL_FROM_YEAR, dateStop, surfaceMap, concurrency: 8, log: console.log,
   });
-  const challContribs = challResult.contribs;
+  // The by-key fetches (extraOnly, the model's Under-pressure list) are fetched apart and never gate the store: a player
+  // api-tennis has nothing for must not stop the board's refresh. Their refusals are logged.
+  const extraCands = candidates.filter(c => c.extraOnly);
+  const extraResult = extraCands.length ? await fetchChallengerContribs(extraCands, {
+    apiKey, fromYear: CHALL_FROM_YEAR, dateStop, surfaceMap, concurrency: 8, log: console.log,
+  }) : { contribs: [] };
+  const challContribs = challResult.contribs.concat(extraResult.contribs);
 
   // ── TEN-254 · FAIL LOUD, founder ruling 2026-09-23 ─────────────────────────
   // "If api-tennis refuses, errors or returns empty for a meaningful share of the
@@ -807,6 +818,8 @@ if (require.main === module) (async () => {
       continue;
     }
     if (!aTml && !fill.length) continue;
+    // a by-key fetch (extraOnly) feeds the Under-pressure list only, never the board: a rated player drops its sample
+    if (extraOnlyNames.has(meta.name)) for (const surf of [...SURFACES, 'All']) { chall.career[surf] = newBucket(); chall.last52[surf] = newBucket(); }
 
     const surfaces = {};
     for (const surf of [...SURFACES, 'All']) {
