@@ -340,10 +340,10 @@ const MUTANTS = [
   // founder 2026-11-19 (review of the live page)
   ["2026-11-19: the picker avatars ringed again", "eager: true, noRing: true });", "eager: true });"],
   ["2026-11-19: the Market edge avatar ringed again", "padding:20px 22px 18px; min-width:0;\">${xAv(p, sd, 38, { fs: 13, noRing: true })}", "padding:20px 22px 18px; min-width:0;\">${xIni(p, sd, 38, 13)}"],
-  ["2026-11-19: the win rate greys at 5–9 again", "line-height:1; color:${!rated ? 'var(--h2h-grey)' : 'var(--h2h-white)'};\">${E(rateTxt)}", "line-height:1; color:${!rated || muted ? 'var(--h2h-grey)' : 'var(--h2h-white)'};\">${E(rateTxt)}"],
+  ["2026-11-19: the win rate greys at 5–9 again", "line-height:1; color:${!t.rated ? 'var(--h2h-grey)' : 'var(--h2h-white)'};\">${E(t.rateTxt)}", "line-height:1; color:${!t.rated || t.n < 10 ? 'var(--h2h-grey)' : 'var(--h2h-white)'};\">${E(t.rateTxt)}"],
   // the 20 Nov 2026 design package + founder rulings (test-ten402-c.mjs, test-h2h-1117.mjs, test-ten402-b.mjs)
   ["20 Nov §6: Vs other styles back on the tour matrix average", "avg = on >= H2H_STYLE_FLOOR ? Math.round(ow / on * 100) : null;", "avg = R.avg != null ? Math.round(R.avg) : null;"],
-  ["20 Nov §6: other styles ignore the filters", "const O = ready && x.oth ? xStyleFilter(x.oth, S).rows : []", "const O = ready && x.oth ? x.oth : []"],
+  ["20 Nov §6: other styles ignore the filters", "const O = ready && x.oth ? xStyleFilter(x.oth, S2).rows : []", "const O = ready && x.oth ? x.oth : []"],
   ["20 Nov §6: other styles include the opponent's own style", "Object.keys(vsAll).filter(k => k !== R.oppLab)", "Object.keys(vsAll)"],
   ["20 Nov §6: other styles keep the walkovers", ".filter(r => !(typeof ps2IsWalkover === 'function' && ps2IsWalkover(r))) : null;", " : null;"],
   ["20 Nov §6: other styles rated under the 5-match floor", "avg = on >= H2H_STYLE_FLOOR ?", "avg = on >= 1 ?"],
