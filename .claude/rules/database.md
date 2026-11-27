@@ -256,8 +256,15 @@ inside every mount (`[data-db-root]`). Ratings and Lines rules: `ratings.md`, `l
 - "Which players should I bet against in this round?" Sixth tab, after Player; opening it with no round chosen presets
   Round = 1st Round. The Tour filter bar. **Every figure is the Database's own rows** under those filters (Pinnacle closing):
   per player, a flat 1% stake on his opponent (To fade) or on him (To back), All · As favourite · As underdog by the shorter
-  price of the match. **The list = players with a Database match in the 24 months to the archive's end** (the export lists the
-  current tour; built 2026-11-18, the founder to confirm); his whole filtered record counts. **A player is listed from
+  price of the match. **The list = current players only** (founder 2026-11-27: "Huesler retired and he is there, we should have
+  about recent players who played"; replaces "a Database match in the 24 months to the archive's end"): a Database match in
+  the **12 months** to the archive's end AND no entry in `retired-players.json` (joined by surname + first initial, so the
+  Tennis-Data "Huesler M.A." meets "M. Huesler"; M. Huesler added there the same day). His whole filtered record still
+  counts. Measured 27 Nov on the 41,287 matches (default view: 1st Round, 5+ matches): 257 listed at 24 months → 215 at 12
+  months → 210 with the retired list (18 months 240 / 233, 6 months 194 / 189); the 12-month cut drops players whose last
+  ATP main-draw match is older (Gasquet, Fognini, Schwartzman, Huesler, Pouille, Klizan …), not current players who simply
+  had a quiet month. If the retired list does not load, the card says "Retired players could not be excluded just now, so
+  this list may include them." — never a silent fallback. **Test:** `test-database-v2.mjs` "fadeCurrent" (+ mutants). **A player is listed from
   FADE_MIN = 5 matches under the filters, and every listed player is ranked** (founder 2026-11-20: "a sample start of 5
   matches … not list players with 1 match"; replaces the unranked under-30 block). **24 months** = the same filters over the
   24 months to the archive's last match. **Vs price** = the backed side's win rate minus the mean implied chance of its

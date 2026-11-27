@@ -3,7 +3,8 @@
 // only; these cuts need the Database price join, the archetype table and the tournament catalogue, which live in the page.
 // So this runs the PAGE'S OWN tally (DatabaseTab.lnCutTally) in headless Chrome over the same roster build-lines-field.js
 // uses (surface-ratings.json minus retired-players.json, name -> key by exact player-profiles.json name), and writes
-// lines-field-cuts.json: cuts["fmt|surf|scope|P|X"][line] = [median rate, field size], a player in a line's field from
+// lines-field-cuts.json: cuts["fmt|surf|scope|P|X"][line] = [median rate, field size] (X = - / a:i / l:j / a:i+l:j, the last
+// = archetype and level together, founder 2026-11-27), a player in a line's field from
 // LN_MIN_N matches on it (the page's rate gate). The page loads it only while such a filter is on.
 // Usage: node tools/build-lines-field-cuts.mjs --site _site [--out _site/lines-field-cuts.json] [--base URL] [--limit N]
 import { createServer } from 'node:http';
@@ -98,7 +99,7 @@ try {
 try { ch.kill('SIGKILL'); } catch (e) { /* gone */ } if (!LIVE) server.close();
 // a shard that fails to load shifts every median: fail, as build-lines-field.js does
 if (res.failed.length) die(res.failed.length + ' roster player(s) not tallied: ' + res.failed.slice(0, 5).join('; '));
-const body = JSON.stringify({ _doc: 'Lines field under the side / price band / opponent archetype / level filters. cuts["fmt|surf|scope|P|X"][line] = [median cover %, field size]. Built by tools/build-lines-field-cuts.mjs from the page\'s own DatabaseTab.lnCutTally.',
+const body = JSON.stringify({ _doc: 'Lines field under the side / price band / opponent archetype / level filters. cuts["fmt|surf|scope|P|X"][line] = [median cover %, field size]; X = - / a:i / l:j / a:i+l:j. Built by tools/build-lines-field-cuts.mjs from the page\'s own DatabaseTab.lnCutTally.',
   builtAt: new Date().toISOString(), l52Cutoff: res.l52Cutoff, minN: res.minN, dogBands: res.dogBands, players: res.players, cuts: res.cuts });
 writeFileSync(OUT + '.tmp', body); renameSync(OUT + '.tmp', OUT);
 console.log(`lines-field-cuts: ${res.players} players · ${Object.keys(res.cuts).length} cuts · ${body.length} B raw, ${gzipSync(body).length} B gzip -> ${OUT}`);

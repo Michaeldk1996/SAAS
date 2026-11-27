@@ -20,7 +20,11 @@ Applies to the Database tab's Lines view (`renderLines`, `db2Ln*`, `db3LineBox` 
   page's own `DatabaseTab.lnCutTally` (the one price join, the archetype table, the catalogue) over the lines-field roster in
   headless Chrome by `tools/build-lines-field-cuts.mjs`, a pipeline step after the price guard (best-effort; a failed build
   ships no file and the field reads a dash under those filters). Cut key `fmt|surf|scope|P|X` (P = fav / dog / fav:i / dog:i,
-  X = - / a:i / l:i); **archetype and level together have no cut** (a dash). A player is in a cut's field from LN_MIN_N (5)
+  X = - / a:i / l:j / **a:i+l:j**). **Archetype and level together have their own cut** (founder 2026-11-27, "Build it!";
+  replaces "no cut, a dash"): `db2LnCutTally` writes the `a:i+l:j` key for every match that has both, `db2LnCutKey` reads
+  it. Measured 27 Nov (203 players): 910 → 1,360 cuts (539 of them archetype + level), 128 → 170 KB gzip (741 → 1,095 KB
+  raw), build about 1 minute longer (warm local run 37 → 96 s); these fields are small (median 4 players, max 162), the n
+  on every hover as for any cut. A player is in a cut's field from LN_MIN_N (5)
   matches on that line; **the field size n is on every Field figure's hover** and in the line box. The file is loaded only
   while such a filter is on (measured 18 Nov: 168 players, 824 cuts, 112 KB gzip, 3:54 to build), so no view loads slower.
 - **Comparison works on a small sample** (founder review 2026-11-18): Edge prints from 5 matches (muted 5–9), and the two

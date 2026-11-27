@@ -96,7 +96,9 @@ const CHECKS = {
     const st = { lnFmt: 'bo3', lnSurf: 'All', lnScope: 'l52', lnSide: 'fav', lnBand: null, lnArch: null, lnLevel: null };
     if (k(st, ['A'], ['L']) !== 'bo3|All|l52|fav|-') return 'side cut key ' + k(st, ['A'], ['L']);
     if (k(Object.assign({}, st, { lnBand: 'dog|2', lnArch: 'A' }), ['A'], ['L']) !== 'bo3|All|l52|dog:2|a:0') return 'band + archetype cut key';
-    if (k(Object.assign({}, st, { lnArch: 'A', lnLevel: 'L' }), ['A'], ['L']) !== null) return 'archetype and level together have a field';
+    // founder 2026-11-27 ("Build it!"): archetype + level together have their own cut
+    if (k(Object.assign({}, st, { lnArch: 'A', lnLevel: 'L' }), ['A'], ['L']) !== 'bo3|All|l52|fav|a:0+l:0') return 'no archetype + level cut key';
+    if (!/if\(ai>=0 && li>=0\) Xs\.push\('a:'\+ai\+'\+l:'\+li\);/.test(fnSource(src, 'db2LnCutTally'))) return 'the tally writes no archetype + level cut';
     return null;
   },
   // LN_LADDERS stays a literal (build-lines-field.js slices it) and carries the design's ladders.
@@ -234,7 +236,7 @@ const CHECKS = {
   fadeLocked(src) {
     const m = fnSource(src, 'db3FadeModel'), r = fnSource(src, 'renderFade');
     if (!/if\(state\.view==='fade'\) zR\.appendChild\(trigger\('Rank'/.test(src)) return 'no Rank trigger in the Fade finder bar';
-    if (/All ranks'\]/.test(r) || /Plays today/.test(r) || /12 months/.test(r)) return 'the old rank / plays switches or 12 months are back';
+    if (/All ranks'\]/.test(r) || /Plays today/.test(r) || /\['l12'/.test(r)) return 'the old rank / plays switches or the 12 months column are back';
     if (!/return P\[nm\]\.n>=minN;/.test(m) || !/parseInt\(state\.fadeMin,10\)/.test(m)) return 'Min. matches does not remove players';
     if (!/placeholder='Any'/.test(r) || !/replace\(\/\\D\/g,''\)\.slice\(0,4\)/.test(r)) return 'Min. matches is not a typed number field';
     if (!/var sortK=SK\[state\.fadeSort\]\?state\.fadeSort:'y';/.test(m)) return 'the heads do not sort';
@@ -242,6 +244,20 @@ const CHECKS = {
     if (!/grid-template-columns:26px minmax\(128px,1\.1fr\) minmax\(94px,1\.3fr\) 88px 126px 78px 78px 14px; gap:0 8px;/.test(src)) return 'not the locked grid';
     if (!/No players match these filters/.test(r)) return 'no empty state';
     if (!/--db2-dim:\s*#5D6680;/.test(TOKENS)) return 'no --db2-dim token';
+    return null;
+  },
+  // founder 2026-11-27: the Fade finder lists current players only: a match in the 12 months to the archive's end and
+  // not on retired-players.json (surname + first initial: "Huesler M.A." meets "M. Huesler").
+  fadeCurrent(src) {
+    if (!/if\(DB3_RETIRED && DB3_RETIRED\[db3NameKey\(nm, true\)\]\) return false;/.test(src)) return 'retired players are listed';
+    if (!/for\(var i=rs\.length-1;i>=0;i--\) if\(rs\[i\]\.d>cut12\) return true;/.test(fnSource(src, 'db3FadeModel'))) return 'the window is not 12 months';
+    const f = new Function(fnSource(src, 'db3Fold') + fnSource(src, 'db3TdSur') + fnSource(src, 'db3CarSur') + fnSource(src, 'db3NameKey') + '\nreturn db3NameKey;')();
+    if (f('Huesler M.A.', true) !== f('M. Huesler', false)) return 'Huesler M.A. does not meet M. Huesler';
+    if (f('Bautista Agut R.', true) !== f('R. Bautista-Agut', false)) return 'a hyphenated surname does not meet';
+    if (f('Zverev M.', true) === f('A. Zverev', false)) return 'two brothers share a key';
+    if (!/Retired players could not be excluded just now/.test(fnSource(src, 'renderFade'))) return 'a failed retired list is silent';
+    const R = JSON.parse(readFileSync(new URL('./retired-players.json', import.meta.url), 'utf8')).retired.map(r => r.name);
+    if (!R.includes('M. Huesler')) return 'Huesler is not on retired-players.json';
     return null;
   },
   // Locked design 2026-11-26, Ratings: sort marks, a median chip under every head (no median row), no bold column, centred.
@@ -281,6 +297,8 @@ const MUTANTS = [
   ['median row back', 'ratingsLocked', s => s.replace("    t.appendChild(hd);\n    rows.forEach", "    t.appendChild(hd); t.appendChild(el('div','db2-rmed'));\n    rows.forEach")],
   ['bold sorted column', 'ratingsLocked', s => s.replace("var v=db2RatOverVal(p,c[0]), s=el('span','db2-rv'+(v==null?' dash':'')", "var v=db2RatOverVal(p,c[0]), s=el('span','db2-rv'+(key===c[0]?' on':'')+(v==null?' dash':'')")],
   ['no sort mark', 'ratingsLocked', s => s.replace("(sorted?(dir==='asc'?'\\u2191':'\\u2193'):'\\u2195')", "(sorted?(dir==='asc'?'\\u2191':'\\u2193'):'')")],
+  ['fade window back at 24 months', 'fadeCurrent', s => s.replace("if(rs[i].d>cut12) return true;", "if(rs[i].d>cut24) return true;")],
+  ['retired players listed', 'fadeCurrent', s => s.replace("if(DB3_RETIRED && DB3_RETIRED[db3NameKey(nm, true)]) return false;", "")],
   ['terciles back', 'bands', s => s.replace("['Clear favourite','1.21','1.35',1.21,1.36]", "['Firm favourite','1.21','1.35',1.21,1.36]")],
   ['dates back', 'dates', s => s.replace("{ N:n, seasons:db3Seasons(ordered.map(function(r){ return r[0]; }))", "{ N:n, xs:ordered.map(function(r){ return db2Ms(r[0]); }), seasons:db3Seasons(ordered.map(function(r){ return r[0]; }))")],
   ['hard gate dashes again', 'yieldColour', s => s.replace("var hard=!g || !g.n,", "var hard=!g || g.n<HARD_GATE,")],
@@ -288,7 +306,8 @@ const MUTANTS = [
   ['tour column withheld', 'tourUnderFilters', s => s.replace("var baseKnown = isPl ? (opts.baseKnown!==false) : true;", "var baseKnown = isPl ? (opts.baseKnown!==false) : baselineAllowed();")],
   ['tour index unfiltered', 'tourUnderFilters', s => s.replace("if(tbFiltered()) rows=rows.filter", "if(false) rows=rows.filter")],
   ['no field under a cut', 'fieldCuts', s => s.replace(" : db2LnCutStats(spec[0]);", " : null;")],
-  ['field for archetype + level', 'fieldCuts', s => s.replace("    if(state.lnArch && state.lnLevel) return null;\n", "")],
+  ['no archetype + level key', 'fieldCuts', s => s.replace("var X = ak && lk ? ak+'+'+lk : ak || lk || '-';", "var X = ak && lk ? null : ak || lk || '-'; if(X===null) return null;")],
+  ['no archetype + level tally', 'fieldCuts', s => s.replace(" if(ai>=0 && li>=0) Xs.push('a:'+ai+'+l:'+li);", "")],
   ['ticks off 1 January', 'dates', s => s.replace("var x=(Date.UTC(y,0,1)-t0)/(t1-t0);", "var x=(Date.UTC(y,6,1)-t0)/(t1-t0);")],
   ['ladder computed', 'ladders', s => s.replace("  var LN_LADDERS = {", "  var LN_LADDERS = (function(){ return {").replace("  var LN_GROUPS = ['Games", "  var LN_GROUPS_X = 1; var LN_GROUPS = ['Games")],
   ['match shape back', 'ladders', s => s.replace("var LN_GROUPS = ['Games handicap','Set handicap','Total games'];", "var LN_GROUPS = ['Games handicap','Set handicap','Total games','Match shape'];")],
