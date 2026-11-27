@@ -54,8 +54,9 @@ ok('buildPairs: every pair, every context; the two shards mirror each other; the
   const eng = runModel(m(pl[0], pl[1], 'Clay'), { pairOnly: true, bestOf: 5 });
   assert.strictEqual(ra.C5[0], Math.round(eng.stage2.adjustedP1 * 1e4));
   assert.strictEqual(ra.C5[1], Math.round(eng.stage1.baseP1 * 1e4));
-  // control: surfaces are different cells (surface Elo moves the base)
-  assert.notStrictEqual(ra.H3[1], ra.C3[1]);
+  // control: surfaces are different cells (surface Elo moves the base). Across all three: two surfaces can carry the
+  // same Elo gap (27 Nov refresh: Sinner − Alcaraz = 64 on hard and on clay), all three never do unless it is ignored
+  assert.ok(new Set([ra.H3[1], ra.C3[1], ra.G3[1]]).size > 1, 'surface Elo moves the base');
 });
 ok('best of 5 (founder 2026-11-26): the 5-set cells are the engine\'s converted figures, model and Elo-only alike', () => {
   const { bo5FromBo3 } = require(path.join(ROOT, 'h2h-model/model'));
