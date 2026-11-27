@@ -1,16 +1,16 @@
 {
- "generatedAt": "2026-11-27T17:42:01.034Z",
+ "generatedAt": "2026-11-27T19:51:43.784Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (the earlier of Oddspapi trueStart and the card-state start: Oddspapi, the live-flip lower bound, the Bet105 switch or the first point — founder 2026-11-08; a cut at Oddspapi start before a verified start counts at the verified start only when the same tick, seen within 60 min and within 1.5pp of the Bet105 close, else it stays held back); both sides required; dropped when no unique actual start. seenAt = our last capture read before the start that confirmed the close (founder 2026-10-28); age = start - (seenAt or at)",
  "scannedThrough": {
-  "commit": "6a444fccfc64555f840949b26aa58098a1970376",
-  "at": "2026-11-27T16:05:53Z"
+  "commit": "779e9c4baed70e9a301dc0d6217cbde7fc863c72",
+  "at": "2026-11-27T19:38:18Z"
  },
- "commitsScanned": 7237,
+ "commitsScanned": 7240,
  "lastRun": {
   "from": "2026-11-27T16:05:53Z",
-  "snapshots": 2,
-  "added": 1,
+  "snapshots": 4,
+  "added": 0,
   "replaced": 0,
   "seenBackfilled": 0,
   "earlierCutBackfilled": 0,
@@ -16637,7 +16637,7 @@
    "o1": 1.909,
    "o2": 2,
    "oAt": "2026-11-27T14:32:37.950Z",
-   "winner": null
+   "winner": "p1"
   },
   {
    "eventKey": 12183130,
@@ -16658,7 +16658,7 @@
    "o1": 3.12,
    "o2": 1.411,
    "oAt": "2026-11-27T14:33:01.651Z",
-   "winner": null,
+   "winner": "p2",
    "seenAt": "2026-11-27T16:05:03.000Z"
   }
  ]
