@@ -673,7 +673,7 @@ test('a Bet365-priced meeting: "B" marker kept, hover "Bet365 closing odds, Pinn
 test('H2H page: no captured step — every meeting reads the master\'s join only (ruling 5)', () => {
   assert.equal(html.indexOf('function h2hCapPinnacle('), -1, 'the captured step is removed from the page');
   const page = slice('h2hPairFor');
-  assert.match(page, /if \(_h2hDbSt === 'ready'\) h2hPriceJoin\(S\.rows, a, b, _h2hDb, null, S\.chA\);\n\s*S\.priced = /, 'the join is the last price step');
+  assert.match(page, /if \(_h2hDbSt === 'ready'\) \{ h2hPriceJoin\(S\.rows, a, b, _h2hDb, null, S\.chA\); S\.rows\.forEach\(r => \{ if \(r\.indoor == null\) r\.indoor = h2hDbIndoor\(_h2hDb, r\.dbi\); \}\); \}\n\s*S\.priced = /, 'the join is the last price step');
   assert.doesNotMatch(page, /fhCloseFor|\.cap\b/, 'no closes-shard price on this page');
   // our archive's closes ('cap' captured, 'hist' from Pinnacle history) and, on the ATP main draw, Tennis Explorer's close
   // ('tec', founder 2026-11-16) still name their source on the join's rows
