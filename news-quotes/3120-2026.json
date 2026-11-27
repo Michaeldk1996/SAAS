@@ -2,8 +2,39 @@
  "tournament": "Davis Cup - World Group",
  "tournamentKey": "3120",
  "season": "2026",
- "updatedAt": "2026-11-26T22:12:57.292Z",
+ "updatedAt": "2026-11-27T13:18:04.882Z",
  "items": [
+  {
+   "id": "quote-d4f8706a874180",
+   "type": "quote",
+   "playerId": "1980",
+   "opponentId": "8174",
+   "player": "A. Zverev",
+   "opponent": "A. Fery",
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-27T12:40:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating A. Fery",
+   "eventKey": "12182953",
+   "won": true,
+   "text": "I think that I am the number one in the world … These discussions are being had by people who were never in tennis",
+   "originalText": "Ich finde, dass ich die Nummer eins der Welt bin … Diese Diskussionen führen Leute, die im Tennis nie waren",
+   "language": "de",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "tennisnet.com",
+   "sourceUrl": "https://www.tennisnet.com/news/davis-cup-nach-zverevs-verpasster-kroenung-dtb-team-vor-dem-umbruch",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On critics doubting his world number one ranking",
+   "setting": "in Bologna during the Davis Cup Finals",
+   "sourceHash": "b8e2b8f3d748db9c",
+   "publishedAt": "2026-11-27T13:18:04.882Z"
+  },
   {
    "id": "quote-6daaa897edf747",
    "type": "quote",
@@ -610,20 +641,28 @@
    "eventKey": "12182953",
    "context": "after beating A. Fery",
    "category": "Quotes",
-   "timestamp": "2026-11-26T19:00:00.000Z",
+   "timestamp": "2026-11-27T12:40:00.000Z",
    "members": [
     "quote-4e60d0454393e6",
+    "quote-d4f8706a874180",
     "quote-e7e249e46589d1"
    ],
-   "memberHash": "16a1719ca3a02300",
-   "digestedAt": "2026-11-26T19:12:05.500Z",
+   "memberHash": "3152c7c0fd18e5e8",
+   "digestedAt": "2026-11-27T13:18:04.882Z",
    "blocks": [
     {
      "label": "after his win over Fery",
-     "text": "The team needed me today and I'm glad that I could deliver. I'm happy with the match.",
+     "text": "I'm happy with the match. The team needed me today and I'm glad that I could deliver.",
      "from": [
-      "quote-4e60d0454393e6",
-      "quote-e7e249e46589d1"
+      "quote-e7e249e46589d1",
+      "quote-4e60d0454393e6"
+     ]
+    },
+    {
+     "label": "on critics doubting his world number one ranking",
+     "text": "I think that I am the number one in the world … These discussions are being had by people who were never in tennis.",
+     "from": [
+      "quote-d4f8706a874180"
      ]
     }
    ],
