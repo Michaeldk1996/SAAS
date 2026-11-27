@@ -331,7 +331,8 @@ console.log('=== resolvePlayer Elo join: aliases + no-key fallback (TEN-263 foll
   W('style-radar.json',{players:{}}); W('playing-styles.json',[]);
   const upS=(i,c)=>({ career:{ underPressure:{ index:i, rating:150+i, components:c } } });
   W('surface-ratings.json',{ players:[ { key:'47', name:'J. Sinner', surfaces:{ All:upS(80,4), Hard:upS(85,4), Clay:upS(70,3) } },
-    { key:'796', name:'Y. Bu', surfaces:{ Hard:upS(40,4) } } ] });
+    { key:'796', name:'Y. Bu', surfaces:{ Hard:upS(40,4) } } ],
+    underPressureExtra:[ { key:'32558', name:'J. Schwaerzler', surfaces:{ All:upS(30,3), Clay:upS(35,4) } } ] });
   const D=require(path.join(root,'h2h-model','data.js'));
   const R=(k,n)=>D.resolvePlayer(k,n);
   ok('alias by key: Y. Bu (796) -> yunchaokete|b', R('796','Y. Bu').elo && R('796','Y. Bu').elo.all.rating===1700, R('796','Y. Bu').eloKey);
@@ -351,6 +352,7 @@ console.log('=== resolvePlayer Elo join: aliases + no-key fallback (TEN-263 foll
     ok('under pressure: surface-ratings career index by key, per surface, 3 components = med', c && c.clutchIndex===80 && c.bySurface.Hard.clutchIndex===85 && c.bySurface.Clay.confidence==='med' && !c.bySurface.Grass, c); }
   ok('under pressure: no All-surfaces index → no row (the layer stays silent)', R('796','Y. Bu').clutch===null);
   ok('under pressure: a key the file lacks → no row', R('999','Juncheng Shang').clutch===null);
+  ok('under pressure: a player under the board gate is read from underPressureExtra', R('32558','J. Schwaerzler').clutch && R('32558','J. Schwaerzler').clutch.clutchIndex===30 && R('32558','J. Schwaerzler').clutch.bySurface.Clay.clutchIndex===35);
   W('elo-ratings.json',{ elo:{ 'shang|j':rec(1750) } });   // a store from before names were recorded
   delete require.cache[require.resolve(path.join(root,'h2h-model','data.js'))];
   const D2=require(path.join(root,'h2h-model','data.js'));

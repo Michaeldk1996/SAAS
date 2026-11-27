@@ -729,6 +729,7 @@ if (require.main === module) (async () => {
   const l52Floors = { minMatches: L52_MIN_MATCHES, minSvpt: L52_MIN_SVPT, minBpFaced: 20, minBpChance: 20, minTb: 4, minDec: 3 };
 
   const rows = [];
+  const upExtra = [];   // under-the-gate players: career Under pressure only, never in the pool
   for (const meta of pool) {
     // candidates share the first-initial + last surname token; then verify the
     // full surname suffix aligns (handles hyphens, middle initials, multi-word surnames).
@@ -739,7 +740,6 @@ if (require.main === module) (async () => {
     // Tour contributions = TML up to tmlEnd + the api-tennis fill after it, one source per
     // match. A player with no TML rows (a 2026 breakout) is rated from the fill alone.
     const fill = tourFill.byKey.get(String(meta.key)) || [];
-    if (!aTml && !fill.length) continue;
     const tourContribs = mergeTourContribs(aTml ? aTml.contribs : [], fill, tmlEnd);
     let tourLatest = 0;
     for (const c of tourContribs) if (c.date && c.date > tourLatest) tourLatest = c.date;
@@ -795,7 +795,18 @@ if (require.main === module) (async () => {
     }
     // inclusion gate: rate anyone with MORE THAN 10 career ATP-level matches.
     // (career-All reliability is still computed below, only as a confidence flag.)
-    if (scopes.career.All.matches < INCLUDE_MIN_MATCHES) continue;
+    // Founder 2026-11-26: a player under the gate (a Challenger regular) still gets a career
+    // Under-pressure figure for the model, from his tour + discounted Challenger sample, kept
+    // OUT of the pool and the board (upExtra, indexed against the pool below).
+    if (scopes.career.All.matches < INCLUDE_MIN_MATCHES) {
+      if (ac) {
+        const surfaces = {};
+        for (const surf of [...SURFACES, 'All']) surfaces[surf] = { career: { underPressure: computeRatings(scopes.career[surf], careerFloors, chall.career[surf]).underPressure } };
+        if (surfaces.All.career.underPressure.rating != null) upExtra.push({ key: meta.key, name: meta.name, surfaces });
+      }
+      continue;
+    }
+    if (!aTml && !fill.length) continue;
 
     const surfaces = {};
     for (const surf of [...SURFACES, 'All']) {
@@ -857,6 +868,7 @@ if (require.main === module) (async () => {
         const pcts = UP_COMPONENTS.map(comp => u[comp] != null ? pctOf(compSorted[comp], u[comp]) : null).filter(v => v != null);
         u.index = pcts.length ? +(pcts.reduce((a, c) => a + c, 0) / pcts.length).toFixed(1) : null;
       }
+      if (scope === 'career') upExtraIndex(upExtra, surf, compSorted, UP_COMPONENTS);
     }
   }
 
@@ -901,12 +913,26 @@ if (require.main === module) (async () => {
     // which now asserts the serialisation names it.
     // `key` (founder 2026-10-22): the player ID the Ratings board resolves its photo by — named here or it never ships.
     players: rows.map(r => ({ key: r.key, name: r.name, rank: r.rank, challResolved: r.challResolved, surfaces: r.surfaces })),
+    // Founder 2026-11-26: Under pressure for players under the inclusion gate, read by the model
+    // only (h2h-model/data.js). Index = the same component percentiles against the pool above.
+    underPressureExtra: upExtra,
   };
   const dest = path.join(__dirname, 'surface-ratings.json');
   const tmp = dest + '.tmp';
   fs.writeFileSync(tmp, JSON.stringify(out, null, 2));
   fs.renameSync(tmp, dest);
-  console.log(`\nWrote surface-ratings.json (${rows.length} players).`);
+  console.log(`\nWrote surface-ratings.json (${rows.length} players, ${upExtra.length} more with Under pressure only).`);
 })();
 
-module.exports = { buildPool, computeRatings, newBucket };
+// Index under-the-gate players against the pool's own sorted components (they never enter
+// the pool, so no pool player's index moves).
+function upExtraIndex(extra, surf, compSorted, comps) {
+  for (const r of extra) {
+    const u = r.surfaces[surf] && r.surfaces[surf].career.underPressure;
+    if (!u || u.rating == null) continue;
+    const pcts = comps.map(c => u[c] != null && compSorted[c].length ? pctOf(compSorted[c], u[c]) : null).filter(v => v != null);
+    u.index = pcts.length ? +(pcts.reduce((a, c) => a + c, 0) / pcts.length).toFixed(1) : null;
+  }
+}
+
+module.exports = { buildPool, computeRatings, newBucket, upExtraIndex };

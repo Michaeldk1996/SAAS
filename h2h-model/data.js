@@ -47,9 +47,12 @@ function splitsFor(idStr) {
 // replaces clutch-rating.json, whose 183-player pool left most of the tour (A. Fery) unrated.
 function underPressureRow(idStr) {
   if (!idStr) return null;
-  let arr;
-  try { arr = playersOf(load('surface-ratings.json')); } catch (e) { return null; }
-  const p = (Array.isArray(arr) ? arr : Object.values(arr || {})).find(x => x && String(x.key) === idStr);
+  let file;
+  try { file = load('surface-ratings.json'); } catch (e) { return null; }
+  const arr = playersOf(file);
+  // A player under the board's inclusion gate (a Challenger regular) is in underPressureExtra.
+  const p = (Array.isArray(arr) ? arr : Object.values(arr || {})).find(x => x && String(x.key) === idStr)
+    || (file.underPressureExtra || []).find(x => x && String(x.key) === idStr);
   if (!p || !p.surfaces) return null;
   const up = (s) => {
     const u = p.surfaces[s] && p.surfaces[s].career && p.surfaces[s].career.underPressure;
