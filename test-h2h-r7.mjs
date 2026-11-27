@@ -233,3 +233,27 @@ test('Market edge: chips in the head, no window tabs left in the head or on the 
   assert.doesNotMatch(src, /m\.tabs/);
   assert.match(src, /xBoxHead\('Market edge', bandHelp, xChips\('market', m\.chips\)\)/);
 });
+
+test('founder 2026-11-27: a meeting the catalog does not know reads its court from the Database row it priced on (Tennis-Data\'s Court column, meta.indoor)', () => {
+  const h = HX.load({ html });
+  const f = h.X.__eval('h2hDbIndoor');
+  const db = { rows: [[20201019, 0, 0, 0, 126, 1.88, 2.04, 1, 0], [20210601, 0, 0, 0, 126, 1.5, 2.5, 1, 0]], meta: { indoor: { 126: [2020] } } };
+  assert.equal(f(db, 0), true, 'Cologne 2020: indoor on Tennis-Data');
+  assert.equal(f(db, 1), null, 'another year: not promoted');
+  assert.equal(f(db, null), null, 'no Database row: unknown');
+  assert.equal(f({ rows: db.rows, meta: {} }, 0), null, 'no court record: unknown');
+  // wired after the price join, only for a court still unknown
+  assert.match(html, /h2hPriceJoin\(S\.rows, a, b, _h2hDb, null, S\.chA\); S\.rows\.forEach\(r => \{ if \(r\.indoor == null\) r\.indoor = h2hDbIndoor\(_h2hDb, r\.dbi\); \}\);/);
+});
+
+test('founder 2026-11-27 ("both"): every Record against each style card shows Last 52 weeks AND Career, each with its own three tiles', () => {
+  const h = HX.load({ html });
+  const now = Date.now(), iso = d => new Date(now - d * 864e5).toISOString().slice(0, 10);
+  const row = (ago, won) => ({ won, opponent: 'P' + ago, surface: 'hard', tournament: 'Basel', result: won ? '6-4 6-4' : '4-6 4-6', date: iso(ago), round: 'R32' });
+  const rows = [row(20, true), row(30, true), row(500, false), row(900, false), row(1000, false)];
+  const side = p => ({ p, oth: null, R: { state: 'ready', oppLab: 'Big Server', avg: 50, rows } });
+  const card = h.call(h.stylesCard, { a: ZV, b: SN, styles: { sides: [side(ZV), side(SN)], arch: ['x', 'y'] } });
+  const blocks = [...card.matchAll(/data-style-win="([^"]+)"[\s\S]*?(?=data-style-win=|<\/div>\s*<\/div>\s*<\/div>`|$)/g)].map(x => text(x[0]));
+  assert.deepEqual([...card.matchAll(/data-style-win="([^"]+)"/g)].map(x => x[1]), ['Last 52 weeks', 'Career', 'Last 52 weeks', 'Career']);
+  assert.match(blocks[0], /Record 2–0/); assert.match(blocks[1], /Record 2–3/);
+});

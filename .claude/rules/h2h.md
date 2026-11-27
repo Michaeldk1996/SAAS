@@ -51,7 +51,9 @@ live calculation (Data below).
 - **Head to head record chips:** Surface (All · Hard · Clay · Grass · **Indoor**, each with its meeting count; none = grey
   `--h2h-dead`, not clickable) · Window (Career default) · Format · Court speed. **Indoor is carved out of the surface**
   (founder fix 5): a meeting is indoor by career-history's `indoor` flag (api-tennis court type), else its
-  `TOURNAMENT_CATALOG` entry's `indoor`, else unknown (counted under its surface; Cologne 2 2020 has no catalog entry).
+  `TOURNAMENT_CATALOG` entry's `indoor`, else (founder 2026-11-27, Cologne 2 2020) the Database row it priced on —
+  Tennis-Data's Court column, `meta.indoor` (tournament → indoor years), which only ever promotes an unknown court to
+  indoor (`h2hDbIndoor`); with none of the three it stays under its surface.
   Paris Masters and Vienna read Indoor, never Hard. A surface with no meeting: "No meetings on grass · n meetings on
   other surfaces". **Test:** Zverev v Sinner: Indoor holds Paris 2025, Vienna 2025, ATP Finals 2025; Hard no longer does.
 - **Hot lines:** one track Last 5 · All (All default); every count has its label under it (`[data-hotbasis]`: "Bo3 only",
@@ -62,7 +64,10 @@ live calculation (Data below).
   2–3 · Zverev first"). **The two head avatars are the players' photos** (founder fix 6, `xAv` 52px with the side ring); the
   price-column minis keep their initials. "Meetings" has its "?" directly after it; the event cell is two lines.
 - **Record against each style:** chips Surface · Window (**Last 52 weeks default**, the design's; was Career) · Format
-  (a Grand Slam main draw = Bo5, `xBoOf`) · Court speed; the Filters panel is gone; "against <style>" wraps; each
+  (a Grand Slam main draw = Bo5, `xBoOf`) · Court speed. **Each player's card shows BOTH windows** (founder 2026-11-27,
+  "both"): a Last 52 weeks block and a Career block (`data-style-win`), each its own Record · Win rate · Vs other styles,
+  bar and caption, stacked under a 6% hairline, under the box's Surface / Format / Court speed; the Window chip sets the
+  match list only. **Test:** `test-h2h-r7.mjs` "both" (+ mutants: one window again, both blocks reading the chip); the Filters panel is gone; "against <style>" wraps; each
   tournament group header ends in the speed chip.
 - **Speed chip** (`xSpeedChip`, the design's site rule): "Speed +0.13" = the event's Tennis Abstract surface speed that
   season (`COURT_CONDITIONS` `as<year>`) − 1, two decimals, true minus, `--h2h-raised` + 14% edge, r6, pad 2/8, mono 10.5;

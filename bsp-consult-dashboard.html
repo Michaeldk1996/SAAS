@@ -25738,7 +25738,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
       });
       S.woN = S.rows.filter(r => r.wo).length;                   // a walkover is not a completed meeting
       S.rows = S.rows.filter(r => !r.wo);
-      if (_h2hDbSt === 'ready') h2hPriceJoin(S.rows, a, b, _h2hDb, null, S.chA);
+      if (_h2hDbSt === 'ready') { h2hPriceJoin(S.rows, a, b, _h2hDb, null, S.chA); S.rows.forEach(r => { if (r.indoor == null) r.indoor = h2hDbIndoor(_h2hDb, r.dbi); }); }
       S.priced = S.rows.filter(r => r.price != null).length;
       S.dbAt = _h2hDbSt;
       S.firstYear = [S.chA, S.chB].map(ch => (Array.isArray(ch) && ch.length ? Math.min(...ch.filter(x => x && String(x.level || '').toLowerCase() === 'atp').map(x => +String(x.date || '').slice(0, 4)).filter(Boolean)) : null));
@@ -25858,10 +25858,19 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
 
   // A meeting's court: career-history's own indoor flag (api-tennis court type, 2021 on), else the event's catalog entry
   // (TOURNAMENT_CATALOG `indoor`, the Tournaments page's), else unknown (null: counted under its surface).
+  // (founder 2026-11-27, "fix what's needed": Cologne 2 2020 read Hard) then, for a meeting the catalog does not know,
+  // the Database row it priced on: Tennis-Data's own Court column, `meta.indoor` (tournament → the years it was played
+  // indoors). Only ever promotes an unknown court to indoor; a meeting with neither stays under its surface.
   function h2hIndoorOf(x) {
     if (x && typeof x.indoor === 'boolean') return x.indoor;
     const cat = cTourCat(x && x.tournament);
     return cat && typeof cat.indoor === 'boolean' ? cat.indoor : null;
+  }
+  function h2hDbIndoor(db, i) {
+    const row = db && Array.isArray(db.rows) && i != null ? db.rows[i] : null, ind = db && db.meta && db.meta.indoor;
+    if (!row || !ind) return null;
+    const ys = ind[row[4]] || ind[String(row[4])];
+    return Array.isArray(ys) && ys.includes(Math.floor(row[0] / 10000)) ? true : null;
   }
   function h2hSurfOf(r) { return r.indoor ? 'Indoor' : r.surface; }
   function xEvSub(r) { return [r.surface ? r.surface + (r.indoor ? ' · indoor' : '') : '—', xSpeedTxt(r.tournRaw || r.tourn, String(r.date || '').slice(0, 4))].filter(Boolean).join(' · '); }
@@ -27742,36 +27751,43 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
       const R = x.R, sd = i ? 'b' : 'a', p = x.p, who = p.short;
       const vs = R.oppLab ? R.oppLab + 's' : 'this style';
       const ready = R.state === 'ready';
-      const F = ready ? xStyleFilter(R.rows || [], S) : { rows: [], noSpeed: 0 };
-      const n = F.rows.length, w = F.rows.filter(r => r.won).length, l = n - w;
-      const rated = ready && n >= H2H_STYLE_FLOOR, muted = rated && n < 10;
-      // 20 Nov §6: the centre tick and "Vs other styles" = HIS win rate against every other playing style, same filters
-      const O = ready && x.oth ? xStyleFilter(x.oth, S).rows : [], on = O.length, ow = O.filter(r => r.won).length;
-      const pct = rated ? Math.round(w / n * 100) : null, avg = on >= H2H_STYLE_FLOOR ? Math.round(ow / on * 100) : null;
-      const dd = pct != null && avg != null ? pct - avg : null;
-      // founder 2026-11-17: "put the vs style average in green always" — a filter that drops the sample to 5–9 keeps the
-      // sign colour (only the win rate greys); under H2H_STYLE_FLOOR there is no rate, so no deviation.
-      const dC = dd == null || dd === 0 ? 'var(--h2h-grey)' : dd > 0 ? 'var(--h2h-up)' : 'var(--h2h-down)';
-      const gw = dd == null ? 0 : Math.min(46, Math.abs(dd) / 40 * 46);
-      const rec = !ready ? '—' : n ? w + '–' + l : '—';
-      const rateTxt = !ready || !n ? '—' : rated ? pct + '%' : '—';
-      const rateTip = ready && n && !rated ? n + (n === 1 ? ' match' : ' matches') + ': under ' + H2H_STYLE_FLOOR + ', no rate' : muted ? 'Small sample · n=' + n : '';
-      const dTxt = dd == null ? '—' : dd === 0 ? '0 pts' : (dd > 0 ? '+' : '−') + Math.abs(dd) + ' pts';
-      const avgTxt = R.state === 'loading' ? 'Loading career meetings…' : R.state === 'unclassified' ? (R.self ? who + '’s playing style is not classified' : 'Playing style not classified')
-        : avg != null ? 'He wins ' + avg + '% against all other styles' : 'Too few matches against other styles for a rate';
-      // 20 Nov §6: three separate tiles (inner tile, 6% edge, r11, 14/8), label 11.5/600 grey, figure 20 mono 700
+      const F = ready ? xStyleFilter(R.rows || [], S) : { rows: [], noSpeed: 0 };   // the match list below: the Window chip
+      // founder 2026-11-27 ("both"): each card shows Last 52 weeks AND Career side by side, each its own Record / Win rate /
+      // Vs other styles + bar, under the box's Surface / Format / Court speed chips; the Window chip sets the match list only.
+      const statOf = win => {
+        const S2 = Object.assign({}, S, { psRecWin: win });
+        const Fw = ready ? xStyleFilter(R.rows || [], S2) : { rows: [], noSpeed: 0 };
+        const n = Fw.rows.length, w = Fw.rows.filter(r => r.won).length, l = n - w;
+        const rated = ready && n >= H2H_STYLE_FLOOR, muted = rated && n < 10;
+        // 20 Nov §6: the centre tick and "Vs other styles" = HIS win rate against every other playing style, same filters
+        const O = ready && x.oth ? xStyleFilter(x.oth, S2).rows : [], on = O.length, ow = O.filter(r => r.won).length;
+        const pct = rated ? Math.round(w / n * 100) : null, avg = on >= H2H_STYLE_FLOOR ? Math.round(ow / on * 100) : null;
+        const dd = pct != null && avg != null ? pct - avg : null;
+        // founder 2026-11-17: the deviation keeps its sign colour at 5–9 (only the win rate greys); under the floor, none
+        const dC = dd == null || dd === 0 ? 'var(--h2h-grey)' : dd > 0 ? 'var(--h2h-up)' : 'var(--h2h-down)';
+        return { n, rated, dd, dC, gw: dd == null ? 0 : Math.min(46, Math.abs(dd) / 40 * 46),
+          rec: !ready ? '—' : n ? w + '–' + l : '—', rateTxt: !ready || !n ? '—' : rated ? pct + '%' : '—',
+          rateTip: ready && n && !rated ? n + (n === 1 ? ' match' : ' matches') + ': under ' + H2H_STYLE_FLOOR + ', no rate' : muted ? 'Small sample · n=' + n : '',
+          dTxt: dd == null ? '—' : dd === 0 ? '0 pts' : (dd > 0 ? '+' : '−') + Math.abs(dd) + ' pts',
+          avgTxt: R.state === 'loading' ? 'Loading career meetings…' : R.state === 'unclassified' ? (R.self ? who + '’s playing style is not classified' : 'Playing style not classified')
+            : avg != null ? 'He wins ' + avg + '% against all other styles' : 'Too few matches against other styles for a rate' };
+      };
       const fig = (k, val, extra, tip) => `<div${tip ? ` title="${E(tip)}"` : ''} style="display:flex; flex-direction:column; align-items:center; text-align:center; gap:7px; background:var(--h2h-inner); border:1px solid color-mix(in srgb, var(--h2h-white) 6%, transparent); border-radius:11px; padding:14px 8px; min-width:0;${extra || ''}"><span style="font-size:11.5px; font-weight:600; color:var(--h2h-grey);">${k}</span>${val}</div>`;
+      const block = (lbl, t) => `<div data-style-win="${lbl}" style="display:flex; flex-direction:column; gap:10px; min-width:0;">
+          <span style="font-size:11.5px; font-weight:600; color:var(--h2h-grey); text-align:center;">${E(lbl)}</span>
+          <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.2fr); gap:8px;">
+            ${fig('Record', `<span style="font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:700; line-height:1; white-space:nowrap; color:${t.rec === '—' ? 'var(--h2h-grey)' : 'var(--h2h-white)'};">${E(t.rec)}</span>`)}
+            ${fig('Win rate', `<span style="font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:700; line-height:1; color:${!t.rated ? 'var(--h2h-grey)' : 'var(--h2h-white)'};">${E(t.rateTxt)}</span>`, '', t.rateTip)}
+            ${fig(`<span title="${E(help)}" style="cursor:help;">Vs other styles</span>`, `<span style="font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:700; line-height:1; white-space:nowrap; color:${t.dC};">${E(t.dTxt)}</span>`)}
+          </div>
+          <div style="display:flex; flex-direction:column; gap:9px;">
+            <span style="position:relative; display:block; height:14px;"><span style="position:absolute; left:0; right:0; top:5px; height:4px; border-radius:2px; background:color-mix(in srgb, var(--h2h-white) 6%, transparent);"></span>${t.gw ? `<span style="position:absolute; top:4px; height:6px; border-radius:2px; background:${t.dC}; left:${(t.dd >= 0 ? 50 : 50 - t.gw).toFixed(1)}%; width:${t.gw.toFixed(1)}%;"></span>` : ''}<span style="position:absolute; left:50%; top:0; width:1.5px; margin-left:-0.75px; height:14px; background:var(--h2h-soft);"></span></span>
+            <span style="font-size:12px; color:var(--h2h-grey); text-align:center;">${E(t.avgTxt)}</span>
+          </div>
+        </div>`;
       const card = `<div style="background:var(--h2h-card); border:1px solid color-mix(in srgb, var(--h2h-white) 14%, transparent); border-radius:12px; padding:20px 20px 18px; display:flex; flex-direction:column; gap:16px; min-width:0;">
         <div style="display:flex; align-items:center; justify-content:center; gap:12px; min-width:0;">${xAv(p, sd, 38)}<div style="min-width:0; display:flex; flex-direction:column; gap:2px;"><span style="font-size:15px; font-weight:800; letter-spacing:-0.01em; white-space:normal; overflow-wrap:anywhere;">${E(who)}</span><span style="font-size:12.5px; color:var(--h2h-grey); white-space:normal; overflow-wrap:anywhere;">against ${E(vs)}</span></div></div>
-        <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.2fr); gap:8px;">
-          ${fig('Record', `<span style="font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:700; line-height:1; white-space:nowrap; color:${rec === '—' ? 'var(--h2h-grey)' : 'var(--h2h-white)'};">${E(rec)}</span>`)}
-          ${fig('Win rate', `<span style="font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:700; line-height:1; color:${!rated ? 'var(--h2h-grey)' : 'var(--h2h-white)'};">${E(rateTxt)}</span>`, '', rateTip)}
-          ${fig(`<span title="${E(help)}" style="cursor:help;">Vs other styles</span>`, `<span style="font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:700; line-height:1; white-space:nowrap; color:${dC};">${E(dTxt)}</span>`)}
-        </div>
-        <div style="display:flex; flex-direction:column; gap:9px;">
-          <span style="position:relative; display:block; height:14px;"><span style="position:absolute; left:0; right:0; top:5px; height:4px; border-radius:2px; background:color-mix(in srgb, var(--h2h-white) 6%, transparent);"></span>${gw ? `<span style="position:absolute; top:4px; height:6px; border-radius:2px; background:${dC}; left:${(dd >= 0 ? 50 : 50 - gw).toFixed(1)}%; width:${gw.toFixed(1)}%;"></span>` : ''}<span style="position:absolute; left:50%; top:0; width:1.5px; margin-left:-0.75px; height:14px; background:var(--h2h-soft);"></span></span>
-          <span style="font-size:12px; color:var(--h2h-grey); text-align:center;">${E(avgTxt)}</span>
-        </div>
+        <div style="display:flex; flex-direction:column; gap:16px;">${block('Last 52 weeks', statOf('w52'))}<div style="height:1px; background:color-mix(in srgb, var(--h2h-white) 6%, transparent);"></div>${block('Career', statOf('career'))}</div>
       </div>`;
       // the career match card
       const all = !!(i ? S.styleBAll : S.styleAAll);

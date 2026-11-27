@@ -26,6 +26,10 @@ const MUTANTS = [
   ['fix 4: no wider window under the floor', "if (d && d.inPool && !d.ok && W.scope === 'last52') {", "if (false) {"],
   ['the speed chip from the current reading', "const y = year != null ? cc['as' + String(year).slice(0, 4)] : null, v = typeof y === 'number' ? y : null;", "const v = typeof cc.abstractSpeed === 'number' ? cc.abstractSpeed : null;"],
   ['Market edge window tabs back in the head', "    const head = xBoxHead('Market edge', bandHelp, xChips('market', m.chips));", "    const head = xBoxHead('Market edge', bandHelp, xSw(m.tabs || [], 'lg'));"],
+  ['27 Nov: no Database court for unknown meetings', "S.rows.forEach(r => { if (r.indoor == null) r.indoor = h2hDbIndoor(_h2hDb, r.dbi); });", ""],
+  ['27 Nov: the Database court promotes any year', "return Array.isArray(ys) && ys.includes(Math.floor(row[0] / 10000)) ? true : null;", "return Array.isArray(ys) && ys.length ? true : null;"],
+  ['27 Nov: one window per card again', "${block('Last 52 weeks', statOf('w52'))}<div style=\"height:1px; background:color-mix(in srgb, var(--h2h-white) 6%, transparent);\"></div>${block('Career', statOf('career'))}", "${block('Last 52 weeks', statOf('w52'))}"],
+  ['27 Nov: both blocks read the Window chip', "const S2 = Object.assign({}, S, { psRecWin: win });", "const S2 = S;"],
 ];
 const CSS_MUTANTS = [
   ['the section in view not marked', '#h2hRoot .x-nav[data-navon="1"] { font-weight: 700; color: var(--h2h-text); background: var(--h2h-raised);', '#h2hRoot .x-nav[data-navon="1"] { font-weight: 600; color: var(--h2h-grey); background: transparent;'],

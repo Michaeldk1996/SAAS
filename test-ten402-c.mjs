@@ -256,11 +256,13 @@ test('round 7 (final design 2026-11-26, replaces founder ruling 2\'s Career defa
   assert.match(text(card), /^Record against each style All surfaces Last 52 weeks All formats All speeds /);
   assert.deepEqual([...card.matchAll(/data-frchip="([^"]+)"/g)].map(x => x[1]), ['Surface', 'Window', 'Format', 'Court speed']);
   assert.doesNotMatch(card, /x-filt|Reset filters|>Filters</, 'the Filters button and panel are gone');
-  assert.match(styleCards(card)[0], /^Record 2–0 /, 'Last 52 weeks = 364 days (the default)');
-  h.state.psRecWin = 'career';
-  assert.match(styleCards(h.call(h.stylesCard, styleView(rows, [])))[0], /^Record 4–1 /, 'Career = every row');
+  // founder 2026-11-27 ("both"): every card shows Last 52 weeks (block 0) AND Career (block 1); the Window chip sets the list
+  assert.match(styleCards(card)[0], /^Record 2–0 /, 'Last 52 weeks = 364 days');
+  assert.match(styleCards(card)[1], /^Record 4–1 /, 'Career = every row, in the same card');
+  assert.deepEqual([...card.matchAll(/data-style-win="([^"]+)"/g)].map(x => x[1]), ['Last 52 weeks', 'Career', 'Last 52 weeks', 'Career']);
+  assert.match(text(card), /Showing 2 of 2/, 'the list follows the Window chip (Last 52 weeks)');
   h.state.psRecWin = 'm24';
-  assert.match(styleCards(h.call(h.stylesCard, styleView(rows, [])))[0], /^Record 2–1 /, 'Last 24 months = the same day two years back');
+  assert.match(text(h.call(h.stylesCard, styleView(rows, []))), /Showing 3 of 3/, 'Last 24 months = the same day two years back');
 });
 
 test('Record vs style (20 Nov §6): three tiles; under 5 no rate, 5–9 the rate white with a "small sample" hover, 10+ white; Vs other styles = his win % v this style − HIS OWN win % v every other style (same filters, walkovers out, 5+ each), signed, a bar from the centre', () => {
@@ -281,7 +283,7 @@ test('Record vs style (20 Nov §6): three tiles; under 5 no rate, 5–9 the rate
   assert.match(c10, /font-size:20px; font-weight:700; line-height:1; color:var\(--h2h-white\);">70%</, '10+: white');
   assert.match(c10, /color:var\(--h2h-up\);">\+20 pts</);
   // the tiles: inner tone, 6% edge, r11, 14/8; labels 11.5/600 grey; the record figure white
-  assert.equal((c10.match(/background:var\(--h2h-inner\); border:1px solid color-mix\(in srgb, var\(--h2h-white\) 6%, transparent\); border-radius:11px; padding:14px 8px;/g) || []).length, 6, 'three tiles per card, two cards');
+  assert.equal((c10.match(/background:var\(--h2h-inner\); border:1px solid color-mix\(in srgb, var\(--h2h-white\) 6%, transparent\); border-radius:11px; padding:14px 8px;/g) || []).length, 12, 'three tiles per window, two windows per card, two cards');
   assert.match(c10, /<span style="font-size:11\.5px; font-weight:600; color:var\(--h2h-grey\);">Record<\/span><span style="[^"]*color:var\(--h2h-white\);">7–3</);
   assert.match(c10, /border:1px solid color-mix\(in srgb, var\(--h2h-white\) 14%, transparent\); border-radius:12px; padding:20px 20px 18px;/, 'the record card edge 14%');
   // the bar: from the centre tick, width = |gap| / 40 × 46%, capped at 46%
@@ -290,10 +292,9 @@ test('Record vs style (20 Nov §6): three tiles; under 5 no rate, 5–9 the rate
   assert.match(lose, /background:var\(--h2h-down\); left:4\.0%; width:46\.0%;/, '17% − 60% = −43 pts: capped at 46%, toward the left');
   // the other-styles rows follow the same filters: a Last 52 weeks window drops the 400-day half
   const Ow = othRows(10, 10).concat(Array.from({ length: 10 }, (_, i) => recRow(400 + i, false, { opponent: 'Old ' + i })));
-  h.state.psRecWin = 'w52';
-  assert.match(text(h.call(h.stylesCard, styleView(ten, [], { othA: Ow }))), /Vs other styles −30 pts[\s\S]*He wins 100% against all other styles/, 'the window cuts both sides');
-  h.state.psRecWin = 'career';
-  assert.match(text(h.call(h.stylesCard, styleView(ten, [], { othA: Ow }))), /Vs other styles \+20 pts/);
+  const cw = styleCards(h.call(h.stylesCard, styleView(ten, [], { othA: Ow })));
+  assert.match(cw[0], /Vs other styles −30 pts/, 'Last 52 weeks cuts both sides');
+  assert.match(cw[1], /Vs other styles \+20 pts/, 'Career reads every row');
   // fewer than 5 against other styles → no rate, no gap
   const c4 = h.call(h.stylesCard, styleView(ten, [], { othA: othRows(3, 4) }));
   assert.equal(styleCards(c4)[0], 'Record 7–3 Win rate 70% Vs other styles —');
@@ -313,7 +314,7 @@ test('Record vs style filters: Window by the row date, Surface by the row surfac
   const ppv2 = { speedRowOf: r => r, speedBandForRow: r => (r.event === 'Basel' ? { key: 'fast', label: 'Fast' } : r.event === 'Rome' ? { key: 'slow', label: 'Slow' } : null) };
   const h = page({ db: DB, ppv2 });
   const rows = [recRow(20, true), recRow(30, true, { surface: 'clay', tournament: 'Rome' }), recRow(400, false), recRow(40, true, { tournament: 'Nowhere' })];
-  const st = S => { Object.assign(h.state, S); return /^Record (\S+)/.exec(styleCards(h.call(h.stylesCard, styleView(rows, [])))[0])[1]; };
+  const st = S => { Object.assign(h.state, S); return /^Record (\S+)/.exec(styleCards(h.call(h.stylesCard, styleView(rows, [])))[h.state.psRecWin === 'career' ? 1 : 0])[1]; };
   assert.equal(st({ psRecWin: 'career', psRecSurf: 'all', psSpeed: 'all' }), '3–1');
   assert.equal(st({ psRecWin: 'w52' }), '3–0', 'Last 52 weeks drops the 400-day row');
   assert.equal(st({ psRecWin: 'career', psRecSurf: 'clay' }), '1–0');
@@ -323,7 +324,7 @@ test('Record vs style filters: Window by the row date, Surface by the row surfac
   assert.deepEqual([...c.matchAll(/data-frchip="([^"]+)"[^>]*><span>([^<]+)<\/span>/g)].map(x => x[1] + ':' + x[2]), ['Surface:All surfaces', 'Window:Career', 'Format:All formats', 'Court speed:Fast'], 'the chips show the picks');
   // round 7: Format filters the real matches (a Grand Slam main draw = best of five, xBoOf)
   const slam = rows.concat([recRow(50, false, { tournament: 'US Open', round: 'R16' }), recRow(60, true, { tournament: 'US Open', round: 'Qualifying' })]);
-  const fm = S => { Object.assign(h.state, S); return /^Record (\S+)/.exec(styleCards(h.call(h.stylesCard, styleView(slam, [])))[0])[1]; };
+  const fm = S => { Object.assign(h.state, S); return /^Record (\S+)/.exec(styleCards(h.call(h.stylesCard, styleView(slam, [])))[h.state.psRecWin === 'career' ? 1 : 0])[1]; };
   assert.equal(fm({ psRecWin: 'career', psRecSurf: 'all', psSpeed: 'all', psRecFmt: 'all' }), '4–2');
   assert.equal(fm({ psRecFmt: 5 }), '0–1', 'the US Open main-draw match only');
   assert.equal(fm({ psRecFmt: 3 }), '4–1', 'qualifying at a Slam is best of three');
