@@ -28,7 +28,7 @@ const MUTANTS = [
   ['conversion never on', 'const conv = bestOf === 5 &&', 'const conv = false &&'],
   ['p5 formula wrong (Bo3 formula)', 'const bo5OfSet = s => s * s * s * (10 - 15 * s + 6 * s * s);', 'const bo5OfSet = s => s * s * (3 - 2 * s);'],
   ['market anchor not turned into Bo3', '(conv ? bo3FromBo5(anchor.market) : anchor.market)', 'anchor.market'],
-  ['convert before calibration', 'const cal = calibrate(adjustedP1, config.calibration);', 'const cal = calibrate(toFormat(adjustedP1), config.calibration);'],
+  ['convert before calibration', ': calibrate(adjustedP1, config.calibration);', ': calibrate(toFormat(adjustedP1), config.calibration);'],
   ['qualifying read as best of 5', 'return isGS && !qual ? 5 : 3;', 'return isGS ? 5 : 3;'],
   ['stage 2 shows the Bo3 figure', 'adjustedP1: round4(toFormat(adjustedP1)),\n', 'adjustedP1: round4(adjustedP1),\n'],
   ['base shown in Bo3 terms', 'baseP1: round4(toFormat(baseP1)),', 'baseP1: round4(baseP1),'],
