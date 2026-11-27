@@ -1,16 +1,7 @@
 {
  "schema": 1,
- "updated": "2026-11-27T15:45:49.649Z",
+ "updated": "2026-11-27T16:02:47.770Z",
  "runs": [
-  {
-   "ts": "2026-10-21T06:45:56.937Z",
-   "run": "39553755017",
-   "priced": 42,
-   "logged": 1343,
-   "flagged": 19,
-   "newlyLogged": 0,
-   "newlyFrozen": 0
-  },
   {
    "ts": "2026-10-21T07:15:29.494Z",
    "run": "39556829446",
@@ -18001,6 +17992,15 @@
    "flagged": 3,
    "newlyLogged": 0,
    "newlyFrozen": 0
+  },
+  {
+   "ts": "2026-11-27T16:02:47.770Z",
+   "run": "46026931624",
+   "priced": 9,
+   "logged": 1584,
+   "flagged": 4,
+   "newlyLogged": 0,
+   "newlyFrozen": 1
   }
  ],
  "flags": {
@@ -40997,7 +40997,7 @@
    "status": "finished",
    "finalScore": "6-2, 3-6, 6-2",
    "modelFairLast": 0.7189,
-   "lastSeen": "2026-11-27T15:45:49.649Z"
+   "lastSeen": "2026-11-27T16:02:47.770Z"
   },
   "12182496": {
    "key": "12182496",
@@ -41018,7 +41018,7 @@
    "status": "finished",
    "finalScore": "7-6(4), 6-2",
    "modelFairLast": 0.4928,
-   "lastSeen": "2026-11-27T15:45:49.649Z"
+   "lastSeen": "2026-11-27T16:02:47.770Z"
   },
   "12182774": {
    "key": "12182774",
@@ -41039,7 +41039,7 @@
    "status": "finished",
    "finalScore": "6-3, 6-7(3), 6-7(5)",
    "modelFairLast": 0.6281,
-   "lastSeen": "2026-11-27T15:45:49.649Z"
+   "lastSeen": "2026-11-27T16:02:47.770Z"
   },
   "12182952": {
    "key": "12182952",
@@ -41054,7 +41054,7 @@
    "status": "finished",
    "finalScore": "6-3, 3-6, 6-2",
    "modelFairLast": 0.528,
-   "lastSeen": "2026-11-27T15:45:49.649Z"
+   "lastSeen": "2026-11-27T16:02:47.770Z"
   },
   "12182953": {
    "key": "12182953",
@@ -41069,7 +41069,7 @@
    "status": "finished",
    "finalScore": "3-6, 2-6",
    "modelFairLast": 0.2084,
-   "lastSeen": "2026-11-27T15:45:49.649Z"
+   "lastSeen": "2026-11-27T16:02:47.770Z"
   },
   "12183004": {
    "key": "12183004",
@@ -41084,7 +41084,7 @@
    "status": "finished",
    "finalScore": "4-6, 4-6",
    "modelFairLast": 0.1558,
-   "lastSeen": "2026-11-27T15:45:49.649Z"
+   "lastSeen": "2026-11-27T16:02:47.770Z"
   },
   "12183005": {
    "key": "12183005",
@@ -41105,7 +41105,7 @@
    "status": "finished",
    "finalScore": "6-2, 0-6, 1-6",
    "modelFairLast": 0.2229,
-   "lastSeen": "2026-11-27T15:45:49.649Z"
+   "lastSeen": "2026-11-27T16:02:47.770Z"
   },
   "12183129": {
    "key": "12183129",
@@ -41120,7 +41120,7 @@
    "status": "live",
    "finalScore": null,
    "modelFairLast": 0.5304,
-   "lastSeen": "2026-11-27T15:45:49.649Z"
+   "lastSeen": "2026-11-27T16:02:47.770Z"
   },
   "12183130": {
    "key": "12183130",
@@ -41130,12 +41130,18 @@
    "surface": "hard",
    "tour": "ATP Davis Cup - World Group",
    "modelFairEntry": 0.2983,
-   "valueSnapshot": null,
+   "valueSnapshot": {
+    "fairP1": 0.3112,
+    "fairP2": 0.6888,
+    "edgeVsPinnacleP1": 0.0049,
+    "edgeVsPinnacleP2": -0.0049,
+    "ts": "2026-11-27T15:47:39.612Z"
+   },
    "firstSeen": "2026-11-27T14:37:11.830Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.2983,
-   "lastSeen": "2026-11-27T15:45:49.649Z"
+   "modelFairLast": 0.3112,
+   "lastSeen": "2026-11-27T16:02:47.770Z"
   },
   "e81136d8af2867898952ce896f71662f": {
    "key": "e81136d8af2867898952ce896f71662f",
