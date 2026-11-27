@@ -1,18 +1,18 @@
 {
- "generatedAt": "2026-11-27T08:43:29.957Z",
+ "generatedAt": "2026-11-27T10:12:31.448Z",
  "tournaments": [
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 214,
+   "items": 215,
    "byType": {
-    "quote": 174,
+    "quote": 175,
     "digest": 40
    },
-   "latestTimestamp": "2026-11-27T08:00:46.000Z",
-   "updatedAt": "2026-11-27T08:43:29.957Z"
+   "latestTimestamp": "2026-11-27T09:43:00.000Z",
+   "updatedAt": "2026-11-27T10:12:31.448Z"
   },
   {
    "key": "3120",
@@ -69,6 +69,37 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-0bf6cd9df4323f",
+   "type": "quote",
+   "playerId": "39864",
+   "opponentId": null,
+   "player": "M. Landaluce",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-27T09:43:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "At the end of last year, we had a great discussion about the aspects of my game that I needed to improve and those he considered my strengths. I really appreciated that conversation, as well as the ones we have had over the past few years. They helped me enormously. Last year, I didn't perform well at the Next Gen ATP Finals. So when I had the opportunity to discuss it with Rafa, it helped me enormously",
+   "originalText": "À la fin de l’année dernière, nous avons eu une belle discus­sion sur les aspects de mon jeu que je devais améliorer et ceux qu’il consi­dé­rait comme mes points forts. J’ai beau­coup apprécié cette conver­sa­tion, ainsi que celles que nous avons eues ces dernières années. Elles m’ont énor­mé­ment aidé. L’année dernière, je n’ai pas réalisé de bonnes perfor­mances lors des Next Gen ATP Finals. Alors, lorsque j’ai eu l’occasion d’en discuter avec Rafa, cela m’a énor­mé­ment aidé",
+   "language": "fr",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "We Love Tennis",
+   "sourceUrl": "https://www.welovetennis.fr/atp/landaluce-veut-remercier-rafael-nadal-pour-son-aide-a-la-fin-de-lannee-derniere-nous-avons-eu-une-belle-discussion-sur-les-aspects-de-mon-jeu-que-je-devais-ameliorer-et-ceux-qui",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "sourceHash": "adfdb898338dc9f7",
+   "publishedAt": "2026-11-27T10:12:31.448Z",
+   "topic": "On advice from Rafael Nadal about his game",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-d4d04575434575",
    "type": "quote",
@@ -1495,38 +1526,6 @@
    "topic": "On his ex-girlfriend's new lawsuit against him",
    "settingTried": true,
    "sourceHash": "b6adbcc26742a752",
-   "publishedAt": "2026-11-26T02:48:24.212Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-0228478d3f331e",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": null,
-   "player": "C. Alcaraz",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-25T15:34:46.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "I probably could have done things differently. I'm not going to lie. Pushing yourself to play every week ends up taking its toll; in the end, you're wrecking yourself",
-   "originalText": "Probablemente podría haber hecho las cosas de otra manera. No voy a mentir. Exigirse jugar cada semana termina pasándote factura; al final, te estás destrozando",
-   "language": "es",
-   "translated": true,
-   "translationModel": "claude-opus-5-5",
-   "sourceName": "Mundo Deportivo",
-   "sourceUrl": "https://www.mundodeportivo.com/tenis/20261125/1004255430/alcaraz-escamado-sinner-cometer-errores-aprender.html",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On playing too many tournaments and injuries",
-   "settingTried": true,
-   "sourceHash": "14261eccb4cb568a",
    "publishedAt": "2026-11-26T02:48:24.212Z",
    "file": "news-ticker/tour-2026.json"
   }
