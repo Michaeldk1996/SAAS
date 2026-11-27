@@ -10,8 +10,9 @@ column draws a 7px `--pos` live dot before its clock (`app-shell.md` "Page heade
 - **Status lines are text only (S3), site-wide:** "Live · updated …" text lines, the News feed line (Dropping Odds has
   none since TEN-427 r3: its Updated stat carries the read) — no dot, no colour (the one exception: the Today's Matches header live column above). `--text-label`; a stale / aging state may step up to `--text-soft` so the age stands out (News "Feed
   not live"). The age is carried by the words ("updated 12 min ago"). The only *status* dots on
-  the site are the lime serve dot and the Live page's match status dots (founder TEN-417: card 5px — white pulsing for
-  Live, `--amber` for Interrupted; sheet head 6px, same colours; `.claude/rules/live.md`). Data marks — chart end dots,
+  the site are the lime serve dot, the Live page's match status dots (founder TEN-417: card 5px — white pulsing for
+  Live, `--amber` for Interrupted; sheet head 6px, same colours; `.claude/rules/live.md`) and the Match analysis Weather
+  tab's severity dots (founder 2026-11-28, `modal-weather.md`). Data marks — chart end dots,
   the date strip's Today marker — are not status.
 
 ## Tests

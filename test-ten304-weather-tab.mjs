@@ -517,11 +517,9 @@ test('TEN-380: no legend row, no "Forecast updated" stamp on a fresh forecast', 
   assert.ok(!/Forecast updated/.test(textOf(html)), 'no fresh stamp on a 2 h old forecast');
 });
 
-// (was a renderer gap: TEN-380 review item 2 "no dots" — now on the founder conflict list, design kept; see below)
-// design's dots are drawn in the grey tones pending founder question 4, which has not superseded the ruling): maWeatherV2
-// draws an 8px round dot in the head chip (chipDot), on every day card's status line and in the opened day's chip.
-// TEN-380 review item 2 ("no status dots") is on the founder conflict list: the founder's 2026-11-23 design draws them and
-// is kept meanwhile (coordinator 2026-11-23). What still holds is R4: a dot carries no hue — only the grey severity ladder.
+// founder 2026-11-28 "keep the dots": the design's status dots replace TEN-380 review item 2 ("no dots")
+// maWeatherV2 draws an 8px round dot in the head chip (chipDot), on every day card's status line and in the opened day's
+// chip, in the severity's colour (Concern red since 2026-11-27, else the grey ladder).
 test('status dots as the 2026-11-23 design draws them: red for a Concern (founder 2026-11-27), else the grey ladder (never amber / green / blue)', () => {
   const LADDER = new Set(['var(--ma2-red)', 'var(--ma2-soft)', 'var(--ma2-grey)', 'var(--ma2-quiet)']);   // Concern red (founder 2026-11-27)
   let n = 0;
