@@ -103,7 +103,7 @@ Rationale: `BUILD-NOTES.md` "2026-11-15 — Tournaments tab rebuild".
   writes nothing. A finished draw's statistics are keyed by the progression's own `tournamentKey` once its board cards
   expire (`draw-matches.json` keeps 16 days). The Draw player box's Break points saved = the progression's `bpSaved`
   (api-tennis Service / Break Points Saved, won / total, summed over his matches; founder 2026-11-20). **CPI shows for Masters 1000 only** (speed card first row, trend Speed index · CPI switch, Compare all CPI
-  table; the Canadian Open = Montreal + Toronto by year), credited to courtspeed.com on hover.
+  table; the Canadian Open = Montreal + Toronto by year), its source never named on the page (2026-11-26).
 - **One speed figure on every page** (founder 2026-11-20, "fix both"): `COURT_CONDITIONS` `abstractSpeed` /
   `abstractSpeedYear` (both copies: bsp-pipeline.js and the dashboard) = the LATEST season reading in
   `court-speed-history.json`, written by `tools/refresh-court-conditions-speed.mjs` (run after the history builder). The
@@ -115,7 +115,7 @@ Rationale: `BUILD-NOTES.md` "2026-11-15 — Tournaments tab rebuild".
 - **Court speed = the Tennis Abstract readings we hold** (founder 2026-11-16, "we have court speed data"; replaces the
   2026-11-15 dashes). The figure, its band word, the rank line and the Court speed box read `COURT_CONDITIONS`
   (`abstractSpeed`) — the same figures
-  Match analysis, Key factors and the profile print — credited on hover, with the 4-band label (≥ 1.10 Fast · ≥ 0.95 Medium
+  Match analysis, Key factors and the profile print — called the court-speed index, its source never named on the page (2026-11-26), with the 4-band label (≥ 1.10 Fast · ≥ 0.95 Medium
   · ≥ 0.82 Medium-slow · Slow). ONE switch `TT_SPEED_SOURCE` (`tournaments-overview.js`; `'ta'` default, `'own'` = every
   figure a dash). **Test:** `tools/test-tt-overview.mjs` "court speed defaults to the Tennis Abstract figure" + "court
   speed 'own'" (mutant: the default back on `'own'`).
@@ -200,8 +200,8 @@ Rationale: `BUILD-NOTES.md` "2026-11-15 — Tournaments tab rebuild".
   the opponent, names another registry event and not its own (`tourxQuoteOtherEvent`), or is on `TOURX_QUOTE_EXCLUDE` (hand-
   reviewed, a reason per entry) is not traceable. A note prints the player's words only (`tourxQuoteClean`: no dateline, no
   "said X", the lead-in goes to the meta line; words never rewritten); the CSV and `tournament-quotes.json` stay verbatim.
-  An event with no traceable note shows the card with "—" and no click. The box's year pills carry the abstract speed
-  ("AS —" in a year with no reading). **Test:** `test-ten401-f1a.mjs` f1.1 + "hand-reviewed exclusions", `test-ten242-rulings.mjs`
+  An event with no traceable note shows the card with "—" and no click. The box's year pills carry the speed index
+  ("Speed —" in a year with no reading). **Test:** `test-ten401-f1a.mjs` f1.1 + "hand-reviewed exclusions", `test-ten242-rulings.mjs`
   "TEN-401 Data 3 / L3", `tools/test-quote-speaker.js`, `tools/test-tt-overview.mjs` "quotes".
 - **Overlays:** Court speed box (four courts side by side), What players say box, Betting market detail (mounts
   `DatabaseTab` with the event's `archiveFilter`). Scrim covers the rail; backdrop click and ✕ close them.
@@ -261,10 +261,10 @@ Rationale: `BUILD-NOTES.md` "2026-11-15 — Tournaments tab rebuild".
   `tools/test-wue-fixes.js`, `tools/test-wue-rounds.js`.
 - **How it plays may be shown to members** (founder 2026-11-16: we have an agreement covering the Sackmann data it is
   built from, 2016–24), on the Overview's 1st serve points won and the Draw Statistics Speed tiles.
-- **Statistics:** Speed tiles = `how-it-plays.json` (this edition + tour average; "vs 2025", "vs past five" and the past
-  bars "—" where How it plays holds only the pooled figure). Favourites and underdogs = `favourites-by-round.json`
+- **Statistics:** Speed tiles = `how-it-plays.json` (this edition, tour average, and each past edition from
+  `byYear` for "vs <last year>", "vs past five" and the past bars — 2026-11-26 rulings above). Favourites and underdogs = `favourites-by-round.json`
   (Favourites won) + this event's `database-yield.json` rows + retRows through `settlement.js` (yields, the match box) +
-  `tour-baselines.json`; decider / comeback from this edition's scores. **Test:** `tools/test-tt-draw.mjs` "statistics".
+  `tour-baselines.json`; decider / comeback from this edition's scores, their tour figure from the How it plays court baseline. **Test:** `tools/test-tt-draw.mjs` "statistics".
 - **Favourites won prices every match on the price every page shows** (founder 2026-11-16, "we need these prices,
   everywhere"): `build-favourites-by-round.js` takes each match's `database-yield-master.json` price whatever its book —
   Pinnacle close, else Pinnacle (approx.) (api-tennis, Tennis Explorer, early cut), else Bet365 — and counts the approx.
