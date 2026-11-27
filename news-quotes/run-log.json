@@ -1,118 +1,6 @@
 {
  "runs": [
   {
-   "at": "2026-11-19T02:15:54.081Z",
-   "activeTournaments": [
-    "Finals - Turin"
-   ],
-   "tournaments": [
-    {
-     "name": "Finals - Turin",
-     "key": "2794",
-     "sources": [],
-     "fromOutlets": 33,
-     "counts": {
-      "candidates": 33,
-      "droppedNotVerbatim": 0,
-      "droppedNoPlayer": 0,
-      "droppedAmbiguous": 0,
-      "notTranslatedNoKey": 0,
-      "notTranslatedApiError": 0,
-      "droppedTranslationCheck": 0,
-      "droppedEnglishExists": 0,
-      "mergedSameQuote": 0,
-      "alreadyHeld": 0,
-      "items": 33,
-      "tokens": {
-       "input": 0,
-       "output": 0
-      },
-      "modelError": null,
-      "retryUrls": 0
-     },
-     "added": 0,
-     "held": 134,
-     "byCategory": {
-      "Quotes": 95,
-      "Interviews": 33,
-      "Injuries": 6
-     },
-     "finishedMatches": 6,
-     "matchesWithWinnerQuote": 6
-    },
-    {
-     "name": "ATP Tour",
-     "key": "tour",
-     "sources": [],
-     "fromOutlets": 6,
-     "counts": {
-      "candidates": 6,
-      "droppedNotVerbatim": 0,
-      "droppedNoPlayer": 0,
-      "droppedAmbiguous": 0,
-      "notTranslatedNoKey": 0,
-      "notTranslatedApiError": 0,
-      "droppedTranslationCheck": 0,
-      "droppedEnglishExists": 0,
-      "mergedSameQuote": 0,
-      "alreadyHeld": 0,
-      "items": 6,
-      "tokens": {
-       "input": 1360,
-       "output": 529
-      },
-      "modelError": null,
-      "retryUrls": 0,
-      "topicsAdded": 6
-     },
-     "added": 6,
-     "held": 100,
-     "byCategory": {
-      "Interviews": 91,
-      "Injuries": 9
-     },
-     "finishedMatches": 0,
-     "matchesWithWinnerQuote": 0
-    }
-   ],
-   "newItems": 6,
-   "tokens": {
-    "input": 1360,
-    "output": 529
-   },
-   "press": {
-    "matchesLookedUp": 0,
-    "answers": 0
-   },
-   "ttvInbox": {
-    "held": 83,
-    "routed": 27
-   },
-   "atpInbox": {
-    "held": 24,
-    "routed": 6
-   },
-   "outlets": {
-    "read": 131,
-    "withCandidates": 0,
-    "blocked": [
-     "El Deber: the site refuses a plain request",
-     "Tenniskafe: the site refuses a plain request",
-     "TenisovySvet.cz: the site refuses a plain request",
-     "The Indian Express: the site refuses a plain request",
-     "ESPN México (Tenis): unexpected answer",
-     "Aftonbladet: unexpected answer",
-     "ESPN: unexpected answer"
-    ],
-    "articlesFetched": 0,
-    "paywalled": 0,
-    "unnamed": 0,
-    "byOutlet": []
-   },
-   "rehomed": 6,
-   "alerts": []
-  },
-  {
    "at": "2026-11-19T02:46:05.561Z",
    "activeTournaments": [
     "Finals - Turin"
@@ -70432,6 +70320,165 @@
       "outlet": "Expressen",
       "country": "Sweden",
       "language": "sv",
+      "fetched": 1,
+      "candidates": 0
+     }
+    ]
+   },
+   "rehomed": 0,
+   "alerts": []
+  },
+  {
+   "at": "2026-11-27T18:50:09.328Z",
+   "activeTournaments": [
+    "Davis Cup - World Group"
+   ],
+   "tournaments": [
+    {
+     "name": "Davis Cup - World Group",
+     "key": "3120",
+     "sources": [],
+     "fromOutlets": 6,
+     "counts": {
+      "candidates": 6,
+      "droppedNotVerbatim": 0,
+      "droppedNoPlayer": 0,
+      "droppedAmbiguous": 0,
+      "notTranslatedNoKey": 0,
+      "notTranslatedApiError": 0,
+      "droppedTranslationCheck": 1,
+      "droppedEnglishExists": 0,
+      "mergedSameQuote": 0,
+      "alreadyHeld": 0,
+      "items": 5,
+      "tokens": {
+       "input": 4730,
+       "output": 442
+      },
+      "modelError": null,
+      "retryUrls": 0,
+      "topicsAdded": 3
+     },
+     "digests": {
+      "cards": 13,
+      "kept": 7,
+      "made": 1,
+      "failed": 0,
+      "waiting": 0,
+      "single": 5
+     },
+     "added": 3,
+     "held": 32,
+     "byCategory": {
+      "Injuries": 2,
+      "Quotes": 22,
+      "Interviews": 8
+     },
+     "finishedMatches": 9,
+     "matchesWithWinnerQuote": 4
+    },
+    {
+     "name": "ATP Tour",
+     "key": "tour",
+     "sources": [],
+     "fromOutlets": 11,
+     "counts": {
+      "candidates": 11,
+      "droppedNotVerbatim": 0,
+      "droppedNoPlayer": 0,
+      "droppedAmbiguous": 0,
+      "notTranslatedNoKey": 0,
+      "notTranslatedApiError": 0,
+      "droppedTranslationCheck": 0,
+      "droppedEnglishExists": 0,
+      "mergedSameQuote": 0,
+      "alreadyHeld": 0,
+      "items": 11,
+      "tokens": {
+       "input": 3145,
+       "output": 794
+      },
+      "modelError": null,
+      "retryUrls": 0,
+      "topicsAdded": 7
+     },
+     "digests": {
+      "cards": 78,
+      "kept": 40,
+      "made": 0,
+      "failed": 0,
+      "waiting": 0,
+      "single": 38
+     },
+     "added": 0,
+     "held": 216,
+     "byCategory": {
+      "Interviews": 156,
+      "Injuries": 20,
+      "Quotes": 40
+     },
+     "finishedMatches": 0,
+     "matchesWithWinnerQuote": 0
+    }
+   ],
+   "newItems": 3,
+   "tokens": {
+    "input": 8913,
+    "output": 1586
+   },
+   "press": {
+    "matchesLookedUp": 0,
+    "answers": 0
+   },
+   "ttvInbox": {
+    "held": 106,
+    "routed": 0
+   },
+   "atpInbox": {
+    "held": 68,
+    "routed": 13
+   },
+   "outlets": {
+    "read": 131,
+    "withCandidates": 1,
+    "blocked": [
+     "El Deber: the site refuses a plain request",
+     "Tenniskafe: the site refuses a plain request",
+     "TenisovySvet.cz: the site refuses a plain request",
+     "The Indian Express: the site refuses a plain request",
+     "ESPN México (Tenis): unexpected answer",
+     "Aftonbladet: unexpected answer",
+     "ESPN: unexpected answer"
+    ],
+    "articlesFetched": 5,
+    "paywalled": 0,
+    "unnamed": 7,
+    "byOutlet": [
+     {
+      "outlet": "iSport.cz",
+      "country": "Czech Republic",
+      "language": "cs",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "CT sport",
+      "country": "Czech Republic",
+      "language": "cs",
+      "fetched": 1,
+      "candidates": 4
+     },
+     {
+      "outlet": "Ubitennis",
+      "country": "Italy",
+      "language": "it",
+      "fetched": 2,
+      "candidates": 0
+     },
+     {
+      "outlet": "Bola Amarela",
+      "country": "Portugal",
+      "language": "pt",
       "fetched": 1,
       "candidates": 0
      }
