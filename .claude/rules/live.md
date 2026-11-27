@@ -58,7 +58,7 @@ dropped (founder 2026-11-26: not needed).
   saved break point never reaches the card. Latest 5, then "All moments in match view".
 - **Every card lists its moments** (founder 2026-11-26, option B): the live poller runs `live-moments.js` (a byte-identical
   copy in `supabase/functions/live-poller/`) on each match's point log every tick and writes the major moments into the
-  snapshot row (`stennisfy_moments`); the page decodes the full log with the same file once a match is opened. **Test:**
+  snapshot row (`stennisfy_moments`; an empty list when the log has none, so the card reads "No moments" before it is opened — founder 2026-11-28; no log = no field); the page decodes the full log with the same file once a match is opened. **Test:**
   the copies are identical; the feed's majors = the match view's majors on a real log; a card lists them with no log
   loaded. Majors only; the named side; the start-of-game score.
 

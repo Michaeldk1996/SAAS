@@ -107,8 +107,11 @@ Deno.serve(async (req) => {
     // Founder 2026-11-26 (option B): every card lists its key moments without the page loading every point log, so the
     // major moments ride on the pushed row (a few hundred bytes a match). A failure here never fails the tick.
     try {
-      const mm = LiveMoments.feedMoments(fix);
-      if (mm.length) (rest as Record<string, unknown>).stennisfy_moments = mm;
+      // a match with a point log always carries the list, empty included, so its card reads "No moments" before it is
+      // opened (founder 2026-11-28); no log = no field (the card then shows nothing: unknown, never "none")
+      if (Array.isArray(fix?.pointbypoint) && (fix.pointbypoint as unknown[]).length) {
+        (rest as Record<string, unknown>).stennisfy_moments = LiveMoments.feedMoments(fix);
+      }
     } catch (e) {
       console.warn("live moments failed:", String(ek), e instanceof Error ? e.message : String(e));
     }

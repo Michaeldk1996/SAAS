@@ -158,7 +158,8 @@ test('card moments from the feed: the poller runs the page\'s own file; a card l
   assert.equal(readFileSync(join(HERE, 'supabase/functions/live-poller/live-moments.js'), 'utf8'), LIVEMOM, 'the poller\'s copy is byte-identical');
   const POLLER = readFileSync(join(HERE, 'supabase/functions/live-poller/index.ts'), 'utf8');
   assert.match(POLLER, /import "\.\/live-moments\.js";/);
-  assert.match(POLLER, /rest as Record<string, unknown>\)\.stennisfy_moments = mm;/);
+  assert.match(POLLER, /rest as Record<string, unknown>\)\.stennisfy_moments = LiveMoments\.feedMoments\(fix\);/);
+  assert.ok(!/if \(mm\.length\)/.test(POLLER), 'an empty list is written too (founder 2026-11-28: "No moments" before opening)');
   const c = boot(); const f = board().find(x => FIX.pbp[String(x.event_key)]);
   const feed = c.LiveMoments.feedMoments(Object.assign(JSON.parse(JSON.stringify(f)), { pointbypoint: FIX.pbp[String(f.event_key)] }));
   assert.ok(feed.length > 0 && feed.every(e => e.t && e.at), 'major moments on a real log');
@@ -168,6 +169,11 @@ test('card moments from the feed: the poller runs the page\'s own file; a card l
     const cc = boot(src); const m = cc.LivePage._vm(Object.assign(JSON.parse(JSON.stringify(f)), { stennisfy_moments: feed }), 0);
     const h = cc.LivePage._html.card({ m, sig: cc.LivePage._sig(m) });
     assert.match(h, new RegExp(feed.length === 1 ? '1 moment' : feed.length + ' moments'));
+  });
+  // a log with no major moment: the feed carries [], the card says "No moments" without its log loaded
+  await both('empty feed list ignored', s => s.replace("const fm = m.f && Array.isArray(m.f.stennisfy_moments) ? m.f.stennisfy_moments : null;", "const fm = m.f && Array.isArray(m.f.stennisfy_moments) && m.f.stennisfy_moments.length ? m.f.stennisfy_moments : null;"), src => {
+    const cc = boot(src); const m = cc.LivePage._vm(Object.assign(JSON.parse(JSON.stringify(f)), { stennisfy_moments: [] }), 0);
+    assert.match(cc.LivePage._html.card({ m, sig: cc.LivePage._sig(m) }), />No moments</);
   });
 });
 
