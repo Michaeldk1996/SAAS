@@ -1,6 +1,19 @@
 {
- "generatedAt": "2026-11-27T13:50:53.723Z",
+ "generatedAt": "2026-11-27T16:33:31.358Z",
  "tournaments": [
+  {
+   "key": "tour",
+   "season": "2026",
+   "name": "ATP Tour",
+   "file": "news-ticker/tour-2026.json",
+   "items": 216,
+   "byType": {
+    "quote": 176,
+    "digest": 40
+   },
+   "latestTimestamp": "2026-11-27T15:54:53.000Z",
+   "updatedAt": "2026-11-27T16:33:31.358Z"
+  },
   {
    "key": "3120",
    "season": "2026",
@@ -13,19 +26,6 @@
    },
    "latestTimestamp": "2026-11-27T12:40:00.000Z",
    "updatedAt": "2026-11-27T13:50:53.723Z"
-  },
-  {
-   "key": "tour",
-   "season": "2026",
-   "name": "ATP Tour",
-   "file": "news-ticker/tour-2026.json",
-   "items": 215,
-   "byType": {
-    "quote": 175,
-    "digest": 40
-   },
-   "latestTimestamp": "2026-11-27T09:43:00.000Z",
-   "updatedAt": "2026-11-27T12:50:35.382Z"
   },
   {
    "key": "2794",
@@ -69,6 +69,38 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-ea6d167b70f9a1",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": null,
+   "player": "C. Alcaraz",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-27T15:54:53.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "I tried to learn from him, and I think I managed to. As I said, the way he did things inspired me so much: the way he fought, the way he came back, never giving up, setback after setback, disappointment after disappointment",
+   "originalText": "J’ai essayé d’ap­prendre de lui, et je pense que j’y suis parvenu. Comme je l’ai dit, la manière dont il a fait les choses m’a telle­ment inspiré : la manière dont il s’est battu, la manière dont il est revenu, sans jamais aban­donner, revers après revers, décep­tion après décep­tion",
+   "language": "fr",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "We Love Tennis",
+   "sourceUrl": "https://www.welovetennis.fr/atp/carlos-alcaraz-apres-lannonce-de-la-retraite-dune-legende-du-sport-jai-essaye-dapprendre-de-lui-et-je-pense-que-jy-suis-parvenu",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On Marc Marquez announcing his retirement",
+   "settingTried": true,
+   "sourceHash": "bc39eb67a13688a0",
+   "publishedAt": "2026-11-27T16:33:31.358Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "digest-4be9bee741c766",
    "type": "digest",
@@ -1507,38 +1539,6 @@
    "topic": "On the new lawsuit from his ex-partner",
    "settingTried": true,
    "sourceHash": "949b07bd853de453",
-   "publishedAt": "2026-11-26T02:48:24.212Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-5c893f9e206467",
-   "type": "quote",
-   "playerId": "1980",
-   "opponentId": null,
-   "player": "A. Zverev",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-25T15:35:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "Apparently I made a statement that I shouldn't have made. But in my opinion I didn't. My lawyers have issued a statement on it, and I'm not that involved at the moment",
-   "originalText": "Scheinbar habe ich eine Aussage getätigt, die ich nicht hätte machen sollen. Aber meiner Meinung nach habe ich das nicht. Meine Anwälte haben eine Stellungnahme dazu abgegeben, und ich bin im Moment nicht so sehr involviert",
-   "language": "de",
-   "translated": true,
-   "translationModel": "claude-opus-5-5",
-   "sourceName": "tennisnet.com",
-   "sourceUrl": "https://www.tennisnet.com/news/alexander-zverev-ueber-klage-nicht-allzu-besorgt",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On his ex-girlfriend's new lawsuit against him",
-   "settingTried": true,
-   "sourceHash": "0662851b386a5eba",
    "publishedAt": "2026-11-26T02:48:24.212Z",
    "file": "news-ticker/tour-2026.json"
   }
