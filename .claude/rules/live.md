@@ -81,7 +81,8 @@ dropped (founder 2026-11-26: not needed).
   match never shows best-of-3 games), `tools/test-holdbreak-format.js` (the builder, main grid unchanged, mutant).
 
 ## Points
-- The locked Match Stats point by point, reused (`fhPbpSetModel` + `fhSheetPbpHtmlMa2`), fed the live point log as received.
+- The locked Match Stats point by point, reused (`fhPbpSetModel` + `fhSheetPbpHtmlMa2`), fed the live point log as received;
+  its BP marks are read off the score and the server (founder 2026-11-27, `modal-match-stats.md`).
 
 ## Look
 - **Long names** (founder 2026-11-26): a name too long for the card column is cut with "…" and the full name on hover,

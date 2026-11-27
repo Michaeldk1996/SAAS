@@ -67,3 +67,8 @@ found at restore time are marked inline.
 See also: CLAUDE.md "Match-detail view toggle" (Stats | Point by point, no Summary);
 `modal-form-h2h.md` "Match stats popup and every match-detail panel" (set control, rates with counts, bars,
 Serve/Return rating, point by point follows the header); `modal-analysis.md` "Match stats sheet — every tab".
+- **BP is read off the score and the server, never the feed's flag** (founder 2026-11-27): a point carries BP exactly when
+  the receiver is one point from the game at that score (on 40 with the server on 30 or less, or on advantage; never 40:40)
+  — the Live page's rule; api-tennis's `break_point` flag lands one score early. One model (`fhPbpSetModel`), so Match
+  Stats, every match sheet and the Live page's Points tab read the same marks. **Test:** `test-ten338-match-stats.mjs`
+  (the flag on 30:0 ignored; deuce / advantage sequence) + two mutants.

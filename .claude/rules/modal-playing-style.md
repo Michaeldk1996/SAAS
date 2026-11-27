@@ -45,16 +45,14 @@ Applies to the Playing style tab of the Match analysis modal (`buildStyleSection
   no meetings). H / A = the Database join's price for the row (founder 2026-10-17 round 2 item 5:
   `sfDbPxRows` on the player's career history, the join's hover), blank while the join loads, "—" where it holds no row
   or failed to load — never the shard's `oddsSelf` / `oddsOpp`. No price figure is summed here, so no retirement note applies.
-- **DNA** = `dna-apitennis-ratings.json` (TEN-319, rebuilt twice daily). Axes Serve, Return, Under pressure (copied from
-  surface-ratings, TEN-328), Dominance ratio, Surface Elo. Windows **"Last 52 weeks" | "Since Mar 2024"** — never
-  "Career" (D6). **Surface Elo is the current rating on both views**, labelled "current" (the radar label "Surface Elo ·
-  current"; the profile row prints "current" in its Δ slot). Percentiles are the file's **true percentiles**; every axis's
-  tooltip states each player's raw value and percentile, and the population **and its n** (`_meta.percentiles` /
-  `eloPercentiles`). **On the since view, Under pressure is "—"** (founder Q14, 2026-09-30, TEN-312 5262e790) with the
-  tooltip "No since-Mar-2024 figure yet; see the career view." — surface-ratings has no since-Mar-2024 scope, and a career
-  number never sits under a since-2024 label; no shape point, no percentile, no Δ for that axis there. **Test:** DNA
-  checks + since-view Under pressure reads "—" with that tooltip for both players; mutation: falling back to the career
-  scope prints a number.
+- **DNA** = two windows, **"Last 52 weeks" | "Career"** (founder 2026-11-27 "say career", replacing D6's "Since Mar 2024"
+  and Q14's dashed Under pressure). Last 52 weeks = `dna-apitennis-ratings.json` `last52` (TEN-319). Career = the H2H
+  page's (ruling 8): `surface-ratings.json` `career` (2010–now, the Database → Ratings figures) — Serve, Return, Under
+  pressure, Dominance ratio and their pool-percentile `index`, the node's own match count for the 10-match floor, the
+  comparison rows from the same node (return games won = `breakPct`). **Surface Elo is the current rating on both views**,
+  labelled "current". Every axis's tooltip states each player's raw value and percentile and the population **and its n**
+  (Career: the players in the Database → Ratings career pool with that index). **Test:** `test-ten340-playing-style.mjs`
+  "DNA (Career)" (never the since-Mar-2024 node; an axis with no figure is no shape point) + mutants.
 - **Δ vs 2024–now** only on the 52-week view; none on Elo, none on Under pressure (its baseline is the career scope). A
   player with fewer than 10 matches in the window on the match's surface draws **no shape** and the card says why under
   the file's foot (DESIGN GAP G31); no rating on file → the same line.

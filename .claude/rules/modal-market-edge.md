@@ -157,3 +157,7 @@ Applies to the TEN-310 block in `bsp-consult-dashboard.html` (`me*` functions, `
   its edition nor the match (same result, an opponent sharing a surname token, within the event's −2…+16 days).
   **Test:** `tools/test-ten310-hole-fill.js` — the same match under another event name or a hyphenated
   surname is never added; the index meta publishes `holeFill` (offered / kept / players).
+- **Derived lines: the bet105 line price is a visible "Today" column** (founder 2026-11-27, "add a visible column"): Line ·
+  Today · In band against all · All · In band · Diff; the cell = the H2H hot lines' Today chip (`h2LinePx`: the price, or
+  "Close x.xx" after the start, its age under it, the source in its hover); no price = a grey dash. **Test:**
+  `test-line-prices.mjs` 7.

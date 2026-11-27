@@ -180,7 +180,7 @@ this file wins.
 - **Surface Elo:** there is no 52-week or career Surface Elo (`ratings.md`). The DNA radar's Surface Elo axis
   shows the **current** surface Elo on both views, labelled "current". **Test:** switching the DNA window does not
   change the Elo axis value.
-- **DNA "Career" is renamed "Since Mar 2024"** (the data starts 2024-03-06).
+- **DNA windows: Last 52 weeks · Career** (founder 2026-11-27; Career = surface-ratings `career`, as the H2H page — `modal-playing-style.md`).
 - **DNA percentiles are true percentiles** (rank within the stated population), not the p2–p98 linear rescale;
   a tooltip states the population and n. **Test:** exactly one player per axis/scope/surface sits at the top
   rank, and the tooltip's n equals the population size.
