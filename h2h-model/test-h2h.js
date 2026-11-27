@@ -373,7 +373,7 @@ console.log('=== resolvePlayer Elo join: aliases + no-key fallback (TEN-263 foll
   ok('on: the two sides still sum to 1', Math.abs(calibrate(0.3, { enabled: true, temperature: 1.3 }).p1 + calibrate(0.7, { enabled: true, temperature: 1.3 }).p1 - 1) < 1e-12);
   ok('T 1 or a bad T is no calibration', calibrate(0.7, { enabled: true, temperature: 1 }).applied === false && calibrate(0.7, { enabled: true, temperature: 0 }).applied === false);
   const src = require('fs').readFileSync(require('path').join(__dirname, 'model.js'), 'utf8');
-  ok('stage 3 prices the calibrated probability and records the raw one', /const cal = calibrate\(adjustedP1, config\.calibration\);\s*const pricing = priceAndValue\(toFormat\(cal\.p1\), match\);/.test(src) && /rawP1: round4\(toFormat\(adjustedP1\)\)/.test(src));
+  ok('stage 3 prices the calibrated probability and records the raw one', /const cal = skipCal \? \{ p1: adjustedP1, applied: false \} : calibrate\(adjustedP1, config\.calibration\);\s*const pricing = priceAndValue\(toFormat\(cal\.p1\), match\);/.test(src) && /rawP1: round4\(toFormat\(adjustedP1\)\)/.test(src));
 }
 
 // ---- Stage 3 soft reference: Pinnacle is a sharp book (founder 2026-11-16) ----
@@ -428,6 +428,22 @@ console.log('=== resolvePlayer Elo join: aliases + no-key fallback (TEN-263 foll
     const v = (1 / pin.p1) / (1 / pin.p1 + 1 / pin.p2);
     ok('state 2 Bo5: the market anchor is turned into its Bo3 equivalent before the blend', r5m.ok && r5m.stage1.baseState.state === 2
       && near4(r5m.stage2.formatConversion.bo3.baseP1, cfg.baseState.state2.blendedElo * r5m.stage1.components.elo5050.p1 + cfg.baseState.state2.surfaceElo * r5m.stage1.components.eloSurface.p1 + cfg.baseState.state2.market * M.bo3FromBo5(v)), r5m.stage2.formatConversion);
+    // founder 2026-11-27: a ceiling-capped price is not calibrated again, and its underdog gets no value flag
+    // a low ceiling (test only) makes this pair a capped match
+    const ceil0 = [cfg.probCeilBothTop50, cfg.probCeilOneTop50, cfg.probCeil];
+    cfg.probCeilBothTop50 = cfg.probCeilOneTop50 = 0.52;
+    const capM = Object.assign({}, mm, { tour: '', bookNow: { '1xBet': { p1: 30, p2: 30 } } });
+    const rc = M.runModel(capM, { bestOf: 3 });
+    const dog = rc.stage2.adjustedP1 >= 0.5 ? 'p2' : 'p1';
+    ok('capped: no calibration, fair = the ceiling, underdog flag dropped', rc.ok && rc.stage2.rankCeil.clamped
+      && rc.stage3.calibration.applied === false && /capped/.test(rc.stage3.calibration.skipped || '')
+      && near4(Math.max(rc.stage3.fair.p1.prob, rc.stage3.fair.p2.prob), rc.stage2.rankCeil.ceil)
+      && !rc.stage3.flags.some(f => f.side === dog) && rc.stage3.cappedUnderdog && rc.stage3.cappedUnderdog.side === dog, rc.stage3);
+    cfg.calibration.skipCapped = false; cfg.value.noCappedUnderdogFlag = false;
+    const rcOff = M.runModel(capM, { bestOf: 3 });
+    cfg.calibration.skipCapped = true; cfg.value.noCappedUnderdogFlag = true;
+    [cfg.probCeilBothTop50, cfg.probCeilOneTop50, cfg.probCeil] = ceil0;
+    ok('control: switches off = calibrated and the underdog flagged', rcOff.stage3.calibration.applied === true && rcOff.stage3.flags.some(f => f.side === dog), rcOff.stage3.flags);
   } else console.log('  SKIP engine checks: pinned players missing from player-profiles.json');
 }
 

@@ -162,6 +162,12 @@ ok('prediction market: Polymarket else Kalshi, ask as decimal odds, open = first
   assert.strictEqual(v.p1.t, 'Sharp value', 'a Pinnacle flag reads first');
   v = mk(null)(e([]), {});
   assert.strictEqual(v.p1.t, 'No value', 'no prediction market = the bookmaker verdict alone');
+  // founder 2026-11-27: a ceiling-capped match gives its underdog no prediction-market verdict (p2 is the dog here)
+  const capE = Object.assign(e([]), { stage2: { adjustedP1: 0.85, rankCeil: { clamped: true } } });
+  capE.stage3.fair = { p1: { prob: 0.40 }, p2: { prob: 0.60 } };          // p2 beats the market by 10pp, but he is the capped dog
+  assert.notStrictEqual(mk(pm(2, 2))(capE, {}).p2.t, 'Prediction market value', 'capped underdog: no verdict');
+  capE.stage2.rankCeil.clamped = false;
+  assert.strictEqual(mk(pm(2, 2))(capE, {}).p2.t, 'Prediction market value', 'control: not capped, the verdict stands');
   // Key factors (rebuild 2026-11-23, brief item a): the Model box prints the Model page's own verdict words (edgeVerdicts),
   // so "Prediction market value" reaches it through the function checked above.
   const ma = require('fs').readFileSync(path.join(ROOT, 'match-analysis-v2.js'), 'utf8');

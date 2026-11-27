@@ -476,6 +476,9 @@ module.exports = {
   calibration: {
     enabled: true,
     temperature: 1.3,
+    // Founder 2026-11-27: a price the rank-tier ceiling capped is not calibrated again (model.js). Backtest, 693 settled
+    // matches 23 Jul – 26 Nov: the 30 capped ones won ~88%; log-loss on them 0.3989 -> 0.3922, overall 0.6333 -> 0.6330.
+    skipCapped: true,
   },
 
   // ---- Best of 3 -> best of 5 conversion (founder 2026-11-26: "Add the set conversion") ----
@@ -494,6 +497,9 @@ module.exports = {
     softEdge: 0.05,    // >= 5% edge vs best soft book price   => Soft Book Value
     // Books treated as "sharp" for the fair-market reference
     sharpBooks: ['Pinnacle', 'Pncl'],
+    // Founder 2026-11-27: on a match the rank-tier ceiling capped, the underdog gets no value flag (model.js) — his chance
+    // there is the ceiling's leftover, not a measurement (A. Fery 4.80 v A. Zverev 1.26, 26 Nov, flagged at 11.00).
+    noCappedUnderdogFlag: true,
   },
 
   // ---- Stage 4: AI match summary (Claude) ----------------------------

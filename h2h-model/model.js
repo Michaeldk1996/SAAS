@@ -156,9 +156,21 @@ function runModel(match, opts = {}) {
   // Stage 2 keeps the uncalibrated adjustedP1; stage 3 prices the calibrated one and records both.
   // Order: rank-tier ceiling and calibration in best-of-3 terms, then the best-of-5 conversion. The conversion is
   // monotone, so the best-of-5 ceiling is the converted best-of-3 one (0.85 -> 0.902, 0.90 -> 0.948).
-  const cal = calibrate(adjustedP1, config.calibration);
+  // Founder 2026-11-27 (backtest of 693 settled matches): a price the rank-tier ceiling capped is not calibrated a second
+  // time (capped favourites won ~88%; T 1.3 took 85% down to 79%), and its UNDERDOG carries no value flag: on a capped
+  // match the underdog's chance is the ceiling's leftover, not a measurement. Two switches, config.calibration.skipCapped
+  // and config.value.noCappedUnderdogFlag; rollback = false, one commit.
+  const capped = round4(adjustedP1) !== round4(baselineP1);
+  const skipCal = capped && config.calibration && config.calibration.skipCapped === true;
+  const cal = skipCal ? { p1: adjustedP1, applied: false } : calibrate(adjustedP1, config.calibration);
   const pricing = priceAndValue(toFormat(cal.p1), match);
-  pricing.calibration = cal.applied ? { applied: true, temperature: cal.temperature, rawP1: round4(toFormat(adjustedP1)) } : { applied: false };
+  pricing.calibration = cal.applied ? { applied: true, temperature: cal.temperature, rawP1: round4(toFormat(adjustedP1)) }
+    : skipCal ? { applied: false, skipped: 'capped by the rank-tier ceiling' } : { applied: false };
+  if (capped && config.value && config.value.noCappedUnderdogFlag === true) {
+    const dog = adjustedP1 >= 0.5 ? 'p2' : 'p1';
+    const dropped = pricing.flags.filter(f => f.side === dog);
+    if (dropped.length) { pricing.flags = pricing.flags.filter(f => f.side !== dog); pricing.cappedUnderdog = { side: dog, flagsDropped: dropped.map(f => f.type) }; }
+  }
   const formatConversion = conv
     ? { applied: true, bestOf: 5, bo3: { baseP1: round4(baseP1), adjustedP1: round4(adjustedP1), fairP1: round4(cal.p1) },
         setP1: round4(setOf(cal.p1, bo3OfSet)), tierCeil: round4(bo5FromBo3(tierCeil)) }

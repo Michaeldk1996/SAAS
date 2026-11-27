@@ -123,6 +123,19 @@ Founder rulings: TEN-418 card 7a80b6fe, R1 review and R2 review 73f754f9 (2026-1
   visit returns to following the board). No board yet = "Loading the match board…"; a failed board load or no upcoming
   match says so, with the model run time. **Test:** `test-ten418-model.mjs` "empty view" / "empty board".
 
+- **Ceiling and calibration (founder 2026-11-27, "Do it!").** The rank-tier ceiling stays (both top 50: 85%; one: 90%)
+  and so does calibration (T 1.3), but **a price the ceiling capped is not calibrated again** (`calibration.skipCapped`)
+  and **its underdog carries no value flag or verdict** (`value.noCappedUnderdogFlag`; the page's `edgeVerdicts` drops the
+  prediction-market verdict too). The Fair price card adds a "Capped at N%" pill. Backtest, 693 settled matches 23 Jul –
+  26 Nov: capped favourites won ~88% (n 30); log-loss on them 0.3989 → 0.3922, overall 0.6333 → 0.6330; favourites the
+  model put at 80%+ won 81.1% (raw 85.2%, as priced 79.4%, Pinnacle 80.4%, n 111). Measured case: A. Fery v A. Zverev
+  (Davis Cup, 26 Nov) was 4.80 / 1.26 with a Soft book value on Fery at 11.00; now 6.67 / 1.18, no flag. **Test:**
+  `h2h-model/test-h2h.js` "capped" (+ switches-off control), `tools/test-model-layers-1119.js` (capped underdog).
+- **Under pressure (layer #15)** reads `surface-ratings.json` (the site's one rating) by api-tennis key; a player under the
+  board's inclusion gate is read from its `underPressureExtra` list (career tour + discounted Challenger sample, indexed
+  against the pool). Founder 2026-11-26 / 27. **Test:** `h2h-model/test-h2h.js` "under pressure",
+  `tools/test-surface-ratings-up-extra.js`.
+
 ## Stennisfy Analysis
 - **Switch:** `h2h-model/config.js` `summary.enabled`; the pipeline writes it into `model-output.json` as `analysisOn`.
   **OFF (founder 2026-10-10). Test:** with `analysisOn` not true the page draws no Analysis section for anyone and the

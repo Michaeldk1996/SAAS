@@ -12169,7 +12169,10 @@ function edgePredEdge(m, prob, s){
 }
 function edgeVerdicts(e, m){
   const st3 = e.stage3 || {}, flags = st3.flags || [], fair = st3.fair || {};
-  const pred = s => { const g = edgePredEdge(m, fair[s] && fair[s].prob, s); return g != null && g >= EDGE_PRED_EDGE; };
+  // Founder 2026-11-27: on a match the rank-tier ceiling capped, the underdog carries no value verdict (the model drops
+  // its flags too — h2h-model config value.noCappedUnderdogFlag).
+  const s2 = e.stage2 || {}, dog = s2.rankCeil && s2.rankCeil.clamped && s2.adjustedP1 != null ? (s2.adjustedP1 >= 0.5 ? 'p2' : 'p1') : null;
+  const pred = s => { if (s === dog) return false; const g = edgePredEdge(m, fair[s] && fair[s].prob, s); return g != null && g >= EDGE_PRED_EDGE; };
   const by = s => { const f = flags.filter(x => x.side === s); return f.find(x => /sharp/i.test(x.type)) ? 'Sharp value' : pred(s) ? 'Prediction market value' : (f.find(x => /soft/i.test(x.type)) ? 'Soft book value' : null); };
   const v = { p1: by('p1'), p2: by('p2') };
   if (v.p1 || v.p2){
@@ -12222,11 +12225,16 @@ function edgeFairHtml(m, e, names, keys){
   const b105Gap = s => { const g = edgeB105Gap(b105, s, prob(s)); return `<span class="sm-ep ${g.c}" id="emB105-g-${s}">${g.t}</span>`; };
   const surf = edgeCap((m && m.surface) || (e.match && e.match.surface) || '');
   const pctOf = s => prob(s) != null ? (prob(s) * 100).toFixed(1) + '%' : '—';
+  // Founder 2026-11-27: a price the rank-tier ceiling capped says so — the layers beyond the cap did not move it.
+  const rc = (e.stage2 && e.stage2.rankCeil) || {}, fcv = e.stage2 && e.stage2.formatConversion;
+  const capAt = rc.clamped && rc.ceil != null ? (fcv && fcv.applied && fcv.tierCeil != null ? fcv.tierCeil : rc.ceil) : null;
+  const capPill = capAt != null ? `<span class="sm-pill">Capped at <span class="sm-mono b">${(capAt * 100).toFixed(1)}%</span></span>` : '';
+  const capHelp = capAt != null ? ` Capped: a favourite between two top-50 players is held at ${(capAt * 100).toFixed(1)}% (one top-50 player: higher), so layers past that point do not move the price, and the underdog carries no value verdict.` : '';
   const help = 'Gap = adjusted fair probability minus the probability implied by the book price. Green means the book pays more than our fair price. The Best soft, Pinnacle and Prediction market odds are fields: type another price to see its gap to our fair price; the verdict is the model’s own and does not change. Bet105 is shown with its margin removed and is not editable.';
   return `
     <div class="sm-card sm-fp">
       ${smHead('Fair price &amp; value', `Adjusted model price against the market${surf ? ' · ' + edgeEsc(surf) : ''}`,
-        `<span class="sm-pill">Net adjustment <span class="sm-mono b">${netZero ? '0.0pp' : '+' + Math.abs(netPP).toFixed(1) + 'pp'}</span>${netZero ? '' : ` toward <span class="w">${edgeEsc(netWho)}</span>`}</span>${smQ(help)}`)}
+        `<span class="sm-pill">Net adjustment <span class="sm-mono b">${netZero ? '0.0pp' : '+' + Math.abs(netPP).toFixed(1) + 'pp'}</span>${netZero ? '' : ` toward <span class="w">${edgeEsc(netWho)}</span>`}</span>${capPill}${smQ(help + capHelp)}`)}
       <div class="sm-ic"><div class="sm-scroll">
         <div class="sm-ich">${head('p1')}<div class="sm-ich-c"><span class="sm-caps">Adjusted fair</span><span class="sm-mono">${pctOf('p1')}</span><span class="sm-mono">${pctOf('p2')}</span></div>${head('p2')}</div>
         <div class="sm-cs"><span></span><span title="Adjusted fair probability minus the probability implied by the book price">Gap</span><span>Odds</span><span>Book</span><span>Odds</span><span>Gap</span><span></span></div>
