@@ -1,24 +1,24 @@
 {
- "generatedAt": "2026-11-26T21:20:34.230Z",
+ "generatedAt": "2026-11-27T15:48:58.267Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (the earlier of Oddspapi trueStart and the card-state start: Oddspapi, the live-flip lower bound, the Bet105 switch or the first point — founder 2026-11-08; a cut at Oddspapi start before a verified start counts at the verified start only when the same tick, seen within 60 min and within 1.5pp of the Bet105 close, else it stays held back); both sides required; dropped when no unique actual start. seenAt = our last capture read before the start that confirmed the close (founder 2026-10-28); age = start - (seenAt or at)",
  "scannedThrough": {
-  "commit": "3d3f1a48ba4dc93b21881aaf408fc4eeec710e48",
-  "at": "2026-11-26T20:55:02Z"
+  "commit": "d399ce9337c1fc62fd3c35b824c96f128d439662",
+  "at": "2026-11-27T10:34:33Z"
  },
- "commitsScanned": 7233,
+ "commitsScanned": 7234,
  "lastRun": {
-  "from": "2026-11-26T18:37:13Z",
-  "snapshots": 3,
-  "added": 3,
-  "replaced": 0,
+  "from": "2026-11-26T20:55:02Z",
+  "snapshots": 2,
+  "added": 0,
+  "replaced": 1,
   "seenBackfilled": 0,
   "earlierCutBackfilled": 0,
   "series": 7,
   "kept": 7,
   "bySource": {
-   "first-point": 5,
-   "oddspapi": 2
+   "first-point": 4,
+   "oddspapi": 3
   },
   "byBook": {
    "Pinnacle +30s": 7
@@ -16595,19 +16595,27 @@
    "p2Key": 50323,
    "p1Name": "J. Rodionov",
    "p2Name": "R. Jodar",
-   "p1": 7.33,
-   "p2": 1.132,
-   "at": "2026-11-26T18:15:07.190Z",
-   "trueStart": "2026-11-26T18:15:09.000Z",
-   "startSource": "first-point",
+   "p1": 7.24,
+   "p2": 1.114,
+   "at": "2026-11-26T18:13:24.494Z",
+   "trueStart": "2026-11-26T18:14:43.000Z",
+   "startSource": "oddspapi",
    "book": "Pinnacle +30s",
-   "round": null,
+   "round": "",
    "qualifying": false,
    "event": "ATP Davis Cup - World Group",
    "o1": 6.66,
    "o2": 1.134,
    "oAt": "2026-11-26T16:23:21.429Z",
-   "winner": "p2"
+   "winner": "p2",
+   "earlierCutCheck": {
+    "verifiedStart": "2026-11-26T18:15:09.000Z",
+    "verifiedSource": "first-point",
+    "failed": [
+     "tick between the two starts"
+    ],
+    "b105GapPP": 0
+   }
   }
  ]
 }
