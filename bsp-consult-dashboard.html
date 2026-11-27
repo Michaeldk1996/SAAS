@@ -16490,7 +16490,10 @@ function fhPbpSetModel(st, ctx){
     const pre = sc[0] != null && (g.winner === 'p1' || g.winner === 'p2') ? [sc[0] - (g.winner === 'p1' ? 1 : 0), sc[1] - (g.winner === 'p2' ? 1 : 0)] : null;
     const setPt = s => { if (!pre) return false; const own = s === 'p1' ? pre[0] + 1 : pre[1] + 1, oth = s === 'p1' ? pre[1] : pre[0]; return own >= 6 && own - oth >= 2; };
     return Object.assign({ gA: sc[0], gB: sc[1], points: (g.points || []).map(p => { const s = gpSide(p.s);
-      return { txt: String(p.s || '').replace(/\s*-\s*/, ':'), bp: !!p.bp, mp: !!s && setPt(s) && isMp(s) === true }; }) }, side(g, g.winner)); });
+      // BP = the receiver is one point from the game at this score (on 40 with the server on 30 or less, or on advantage;
+      // never 40:40) — read off the score and the server, the Live page's rule (founder 2026-11-27), never the feed's
+      // break_point flag, which lands one score early (live.md).
+      return { txt: String(p.s || '').replace(/\s*-\s*/, ':'), bp: !!s && (g.server === 'p1' || g.server === 'p2') && s !== g.server, mp: !!s && setPt(s) && isMp(s) === true }; }) }, side(g, g.winner)); });
   let tb = null;
   if (tbPts.length){
     tb = { label: 'Tiebreak · Set ' + st.set, pts: tbPts.map(p => {

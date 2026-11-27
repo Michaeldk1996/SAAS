@@ -120,7 +120,8 @@ test('D2: every % in the sheet goes through tourxSampleGate on its own count; n 
 // Point-by-point fixture: api-tennis shard shape, set 1 = 6-6 then a 7-point tiebreak A wins 7-5.
 function tbSet(set, games, pts) {
   const g = []; let a = 0, b = 0, n = 0;
-  for (const [srv, win] of games) { if (win === 'p1') a++; else b++; g.push({ g: ++n, server: srv, winner: win, score: a + ' - ' + b, points: [{ n: 1, s: '15 - 0' }, { n: 2, s: '30 - 0', bp: srv === 'p2' && win === 'p1' }] }); }
+  // BP is read off the score; a feed flag is ignored (founder 2026-11-27)
+  for (const [srv, win] of games) { if (win === 'p1') a++; else b++; g.push({ g: ++n, server: srv, winner: win, score: a + ' - ' + b, points: [{ n: 1, s: '15 - 0' }, srv === 'p2' && win === 'p1' ? { n: 2, s: '40 - 15' } : { n: 2, s: '30 - 0', bp: true }] }); }
   let x = 0, y = 0;
   for (const [srv, win] of pts) { if (win === 'p1') x++; else y++; g.push({ g: ++n, server: srv, winner: win, score: x + ' - ' + y, points: [] }); }
   return { set, games: g };
@@ -136,7 +137,11 @@ test('point by point is the file\'s shape: "SET n · a-b", games with LOST SERVE
   assert.equal(M.label, 'SET 1 · 7-6');
   assert.equal(M.games.length, 12);
   assert.deepEqual([M.games[3].bLost, M.games[3].aWon, M.games[4].aLost], [true, true, true]);
-  assert.equal(M.games[3].points[1].bp, true); assert.equal(M.games[0].points[0].txt, '15:0');
+  assert.equal(M.games[3].points[1].bp, true, 'B serving, A on 40 v 15: a break point (the score, founder 2026-11-27)');
+  assert.equal(M.games[0].points[1].bp, false, 'the feed\'s break_point flag on 30:0 is not read (it lands one score early, live.md)');
+  assert.equal(M.games[0].points[0].txt, '15:0');
+  const deuce = S.fhPbpSetModel({ set: 2, games: [{ g: 1, server: 'p1', winner: 'p2', score: '0 - 1', points: [{ s: '40 - 40' }, { s: '40 - A' }, { s: 'A - 40' }, { s: '15 - 40' }] }] });
+  assert.deepEqual(deuce.games[0].points.map(p => p.bp), [false, true, false, true], 'BP exactly where the receiver is one point away; never 40:40');
   assert.equal(M.tb.label, 'Tiebreak · Set 1');
   const sp = M.tb.pts.filter(p => p.spA || p.spB).map(p => p.a + '-' + p.b);
   assert.deepEqual(sp, ['6-5', '7-6', '8-7'], 'SP whenever the leader can win the set on the next point, past 6-6 too');
