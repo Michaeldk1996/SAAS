@@ -1,18 +1,18 @@
 {
- "generatedAt": "2026-11-27T19:20:54.661Z",
+ "generatedAt": "2026-11-27T20:20:58.190Z",
  "tournaments": [
   {
    "key": "3120",
    "season": "2026",
    "name": "Davis Cup - World Group",
    "file": "news-ticker/3120-2026.json",
-   "items": 32,
+   "items": 33,
    "byType": {
     "digest": 8,
-    "quote": 24
+    "quote": 25
    },
    "latestTimestamp": "2026-11-27T18:38:30.000Z",
-   "updatedAt": "2026-11-27T19:20:54.661Z"
+   "updatedAt": "2026-11-27T20:20:58.190Z"
   },
   {
    "key": "tour",
@@ -390,6 +390,37 @@
    "sourceHash": "fb9f3f108fa4014b",
    "publishedAt": "2026-11-27T08:43:29.957Z",
    "file": "news-ticker/tour-2026.json"
+  },
+  {
+   "id": "quote-9e643d6ddd8d5d",
+   "type": "quote",
+   "playerId": "2959",
+   "opponentId": "372",
+   "player": "J. Lehecka",
+   "opponent": "F. Cobolli",
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-27T00:00:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating F. Cobolli",
+   "eventKey": "12183130",
+   "won": true,
+   "text": "For me to come back from [trailing] 0-1 in the tie, it's never easy, but I trusted in my game, … The way I played this whole week and the way I am feeling on this court, it is quite good. I'm super happy with how it went. The second set was difficult as Flavio improved so much. It was super tough for me to come back, but I tried my best.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "ATP Tour",
+   "sourceUrl": "https://www.atptour.com/en/news/italy-czechia-davis-cup-finals-2026-sf",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
+   "sourceHash": "2751cbf0693e769e",
+   "publishedAt": "2026-11-27T20:20:58.190Z",
+   "topicTried": true,
+   "file": "news-ticker/3120-2026.json"
   },
   {
    "id": "quote-c299fd4f16c688",
@@ -1489,38 +1520,6 @@
    "publishedAt": "2026-11-26T02:48:24.212Z",
    "revisedAt": "2026-11-26T16:28:46.158Z",
    "revision": 2,
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-58baf32f06cb0e",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": null,
-   "player": "C. Alcaraz",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-25T18:10:21.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "he will come back even stronger and as a better player",
-   "originalText": "volverá aún más fuerte y siendo mejor jugador",
-   "language": "es",
-   "translated": true,
-   "translationModel": "claude-opus-5-5",
-   "sourceName": "RPP Noticias",
-   "sourceUrl": "https://rpp.pe/tenis/mas-tenis/carlos-alcaraz-sobre-jannik-sinner-volvera-aun-mas-fuerte-y-siendo-mejor-jugador-noticia-1719757",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On Sinner's return after knee surgery",
-   "settingTried": true,
-   "sourceHash": "88df92671f240046",
-   "publishedAt": "2026-11-26T02:48:24.212Z",
    "file": "news-ticker/tour-2026.json"
   }
  ]
