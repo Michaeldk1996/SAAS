@@ -372,11 +372,11 @@
     const tip = 'The bar is the share of matches priced in the band where the line covered, and the grey tick is the same line over all his priced matches. The lifted row is today’s price band. Click a band for its matches.';
     return card(cardHead('Cover rate by price band', tip, 'How often the picked line covered in each closing price band · ' + scopeLbl(S), '<div style="margin-left:auto;">' + scopeTrack(S) + '</div>') + body, ' data-lfcard="" class="me-card me-cover"');
   }
-  const LCOLS = 'minmax(120px,1fr) minmax(90px,1.4fr) 52px 60px 52px';
+  // founder 2026-11-27: the bet105 line price is a visible Today column (its age under it), as the H2H hot lines draw it
+  const LCOLS = 'minmax(120px,1fr) 62px minmax(90px,1.4fr) 52px 60px 52px';
   function meLinesBox(E, i, M) {
     const core = root.MarketEdgeCore, k = i ? 'b' : 'a';
     const L = M.state === 'ready' ? M.lines : null;
-    const pxCtx = typeof fhLinePxCtx === 'function' ? fhLinePxCtx(E.m, () => { if (typeof _me !== 'undefined' && _me && _me.m === E.m) meRender(); }) : null;
     let body;
     if (M.state !== 'ready') body = meNoHist(M);
     else if (!L) body = meMsg('Derived lines need today’s price.');
@@ -389,11 +389,14 @@
         const d = r.diff, dSmall = aR.mode === 'small' || bR.mode === 'small';
         const bThin = !(r.bN >= core.ME_THIN_FLOOR);
         const bar = maGateBar(r.bC, r.bN, 'var(--ma2-text)');
-        const pxTxt = pxCtx && typeof fhLinePxCell === 'function' ? String(fhLinePxCell({ name: r.label, px: r.px ? (r.px.who === 'self' ? Object.assign({}, r.px, { who: i ? 'B' : 'A' }) : r.px) : null }, pxCtx)).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
-        const tip = r.label + ': in band ' + r.bC + ' of ' + r.bN + ', all ' + r.aC + ' of ' + r.aN + (pxTxt ? ' · ' + pxTxt : '');
+        const px = typeof fhLinePxCtx !== 'function' ? { txt: DASH, price: null, title: 'No line price' } : h2LinePx({ name: r.label, px: r.px ? (r.px.who === 'self' ? Object.assign({}, r.px, { who: i ? 'B' : 'A' }) : r.px) : null }, E.m,
+          () => { if (typeof _me !== 'undefined' && _me && _me.m === E.m) meRender(); });
+        const tip = r.label + ': in band ' + r.bC + ' of ' + r.bN + ', all ' + r.aC + ' of ' + r.aN;
         return '<div class="seg ma2-row me-row" data-nopanel="" onclick="meSet({meLine:\'' + k + '|' + r.li + '\', meLineScope:\'all\'})" data-me-line="' + k + '|' + r.li + '" title="' + esc(tip) + '"'
           + ' style="display:grid; grid-template-columns:' + LCOLS + '; gap:0 10px; align-items:center; cursor:pointer; margin:0 8px; padding:8px 10px; border-radius:8px; background:transparent;">'
           + '<span style="font-size:12.5px; font-weight:600; color:var(--ma2-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + esc(r.label) + '</span>'
+          + '<span data-me-linepx="" style="justify-self:start; display:flex; flex-direction:column; gap:2px;"><span title="' + esc(px.title) + '" style="' + MONO + ' font-size:12px; font-weight:700; color:' + (px.price ? 'var(--ma2-text)' : 'var(--ma2-quiet)') + '; background:var(--ma2-track); border:1px solid ' + W(14) + '; border-radius:6px; padding:2px 6px; white-space:nowrap;">' + esc(px.txt) + '</span>'
+          + (px.age != null ? '<span style="' + MONO + ' font-size:10.5px; color:var(--ma2-grey); white-space:nowrap;">' + px.age + 'm ago</span>' : '') + '</span>'
           + meBar(bar.w, aR.mode === 'full' || aR.mode === 'small' ? r.aC / r.aN * 100 : null, bar.color)
           + '<span style="' + MONO + ' font-size:12px; font-weight:400; color:' + meGrey + '; text-align:right; white-space:nowrap;">' + (RATE(r.aC, r.aN, { text: r.aPct == null ? null : r.aPct + '%', nopct: DASH, note: 'title', color: meGrey }) || DASH) + '</span>'
           + '<span style="' + MONO + ' font-size:12.5px; font-weight:700; color:' + (bThin ? meQuiet : 'var(--ma2-white)') + '; text-align:right; white-space:nowrap;">' + (bThin ? DASH : RATE(r.bC, r.bN, { text: r.bPct == null ? null : r.bPct + '%', nopct: DASH, note: 'title', color: 'var(--ma2-white)' })) + '</span>'
@@ -401,7 +404,7 @@
       }).join('')).join('');
     }
     const sub = L ? (L.inBand.length + ' in today’s band · ' + L.all.length + ' priced matches') : M.state === 'loading' ? 'Loading…' : DASH;
-    return mePlayerBox(E, i, sub, 'Today’s band', L && L.tb >= 0 ? core.BANDS[L.tb].label : DASH, 15, colHead(LCOLS, ['Line', 'In band against all', 'All', 'In band', 'Diff'], 2) + body);
+    return mePlayerBox(E, i, sub, 'Today’s band', L && L.tb >= 0 ? core.BANDS[L.tb].label : DASH, 15, colHead(LCOLS, ['Line', 'Today', 'In band against all', 'All', 'In band', 'Diff'], 3) + body);
   }
   function meLinesCard(E, MM) {
     const S = E.S, core = root.MarketEdgeCore, fmt = core.matchFormat(E.m), noPrice = MM[0].today == null && MM[1].today == null;

@@ -260,10 +260,10 @@ test('7: wiring — line prices only in the match card: the H2H tab, Key factors
   // the Head to Head page's own hot lines (design build 2026-11-16): xHotHTML, then the record card around it
   const page = html.slice(html.indexOf('  function xHotHTML('), html.indexOf('  function h2hBoxHTML('));
   assert.ok(page.length > 200 && !/price:|fhLinePx|LinePrices/.test(page), 'the Head-to-head page shows no line price (founder 2026-10-26: tied to no match)');
-  // Derived lines (match-analysis-v2.js meLinesBox): each line's bet105 price (fhLinePxCell, this column's player) in the row's
-  // hover — the design draws no Price column there (STEP1 Q5, founder pending; the old Line · Price · All · In band · Diff grid)
-  assert.match(v2fn('meLinesBox'), /fhLinePxCell\(\{ name: r\.label, px: r\.px \? \(r\.px\.who === 'self' \? Object\.assign\(\{\}, r\.px, \{ who: i \? 'B' : 'A' \}\) : r\.px\) : null \}, pxCtx\)/, 'Match analysis → Market edge → Derived lines prices each line (this column\'s player)');
-  assert.match(v2fn('meLinesBox'), /const tip = [^\n]*\(pxTxt \? ' · ' \+ pxTxt : ''\)/, 'Derived lines: the price in the row\'s hover');
+  // Derived lines (match-analysis-v2.js meLinesBox): each line's bet105 price (h2LinePx, this column's player) is a visible
+  // Today column with its age under it (founder 2026-11-27: "add a visible column")
+  assert.match(v2fn('meLinesBox'), /h2LinePx\(\{ name: r\.label, px: r\.px \? \(r\.px\.who === 'self' \? Object\.assign\(\{\}, r\.px, \{ who: i \? 'B' : 'A' \}\) : r\.px\) : null \}, E\.m,/, 'Match analysis → Market edge → Derived lines prices each line (this column\'s player)');
+  assert.match(v2fn('meLinesBox'), /\['Line', 'Today', 'In band against all', 'All', 'In band', 'Diff'\]/, 'a visible Today column');
   // founder 2026-10-26 (close brief item 2): the price has its own column before the rate; Covered is the rate + count only
   const ln = hot.slice(hot.indexOf('const line = (x, fam) => {'), hot.indexOf('if (open) {'));
   assert.ok(ln.indexOf('esc(px.txt)') > 0 && ln.indexOf('esc(px.txt)') < ln.indexOf('data-ma-gate="'), 'the Today (price) column sits before Covered (mutant: price in Covered)');
