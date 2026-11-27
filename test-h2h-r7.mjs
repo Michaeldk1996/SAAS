@@ -40,6 +40,20 @@ test('fix 1: the likely opening price is a range from the Elo-only price to the 
   assert.equal(one.call(one.modelVals, ZV, SN, { ctxSurface: 'Hard', ctxFormat: 3 }).aRange, '1.93');
 });
 
+test('founder 2026-11-27: a price end below 1.01 is a dash, never a sub-1.01 price', () => {
+  // Sinner v Marozsan, best of 5 (live 26 Nov): full model 94.5%, Elo-only 98.1% → 1.02 and 0.98
+  const h = modelPage({ A5: [550, 190, 9] });
+  const m = h.call(h.modelVals, ZV, SN, { ctxSurface: 'all', ctxFormat: 5 });
+  assert.equal(m.bBase, '—');
+  assert.equal(m.bRange, '— – 1.02');
+  assert.equal(m.aRange, '17.59 – 50.91');
+  // both ends under the floor → one dash; 1.01 itself is a real price
+  const both = modelPage({ A5: [100, 90, 9] });
+  assert.equal(both.call(both.modelVals, ZV, SN, { ctxSurface: 'all', ctxFormat: 5 }).bRange, '—');
+  const floor = modelPage({ A5: [434, 434, 9] });   // 1 / (0.9566 × 1.0339) = 1.011
+  assert.equal(floor.call(floor.modelVals, ZV, SN, { ctxSurface: 'all', ctxFormat: 5 }).bRange, '1.01');
+});
+
 test('the card opens on All surfaces and reads the estimate\'s no-surface cell (A3), never the Hard cell', () => {
   const h = modelPage(LIVE);
   assert.equal(h.state.ctxSurface, 'all');

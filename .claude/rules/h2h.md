@@ -35,6 +35,9 @@ live calculation (Data below).
   2026-11-26, his pick "Elo only → full model" of three sourced options; the design's "3.40 – 3.90" is mock-up). Both ends
   carry the same margin; equal ends print one price; no Elo-only price → the model price alone. The "?" names both ends.
   **Test:** Zverev v Sinner, hard, Bo3: Zverev 4.11 – 6.45, Sinner 1.14 – 1.26 from cells 1500 / 2353.
+- **A price end that prints below 1.01 is a dash** (founder 2026-11-27, "Show a dash"; the site's price floor): the range
+  reads "— – 1.02" (Sinner v Marozsan, best of 5), both ends under 1.01 = "—"; 1.01 itself prints. **Test:** `test-h2h-r7.mjs`
+  "below 1.01" (+ mutant "no price floor on the range").
 - **No blue flash on a filter pick** (founder fix 2, 2026-11-26): the prices are white at all times. The design file still
   draws the 520 ms blue (`priceCol`); the founder's word wins over it. **Test:** no `--h2h-blue` on a price after a pick.
 - **Best of 5 is converted by sets** (founder 2026-11-26): every 5-set cell (A5 / H5 / C5 / G5), both ends of the

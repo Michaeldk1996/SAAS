@@ -8,6 +8,7 @@ const CSS_SRC = fs.readFileSync(path.join(ROOT, 'h2h-page.css'), 'utf8');
 const MUTANTS = [
   ['fix 1: the model price alone, no range', "out.aRange = rng(out.aPrice, out.aBase); out.bRange = rng(out.bPrice, out.bBase);", "out.aRange = out.aPrice; out.bRange = out.bPrice;"],
   ['fix 1: the range high – low', "const lo = Math.min(+x, +y), hi = Math.max(+x, +y);", "const hi = Math.min(+x, +y), lo = Math.max(+x, +y);"],
+  ['2026-11-27: no price floor on the range', "return +v < 1.01 ? '—' : v; };", "return v; };"],
   ['fix 2: the blue flash back', "function setCtx(patch) { setState(patch); }", "function setCtx(patch) { setState(Object.assign({ flash: true }, patch)); }"],
   ['fix 2: a blue price', `<span data-h2h-price style="font-family:'IBM Plex Mono',monospace; font-size:clamp(20px,calc(2.2vw / var(--sf-z, 1)),28px); font-weight:800; color:var(--h2h-text);`, `<span data-h2h-price style="font-family:'IBM Plex Mono',monospace; font-size:clamp(20px,calc(2.2vw / var(--sf-z, 1)),28px); font-weight:800; color:var(--h2h-blue);`],
   ['the card opens on Hard', "ctxSurface: 'all', ctxRound: 'QF',", "ctxSurface: 'Hard', ctxRound: 'QF',"],

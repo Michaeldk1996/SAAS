@@ -10,7 +10,7 @@ const MUTANTS = [
   ['H5: last week\'s draws suggested', "      if (!(d >= lo && d <= hi)) return;\n", ''],
   ['H6: back to the surname-anywhere filter (a Sinner story chipped as Alcaraz)', '      if (!name || !mine(x.player_key != null ? x.player_key : null, name)) return;', "      if (!new RegExp(full.split(' ').pop(), 'i').test((x.title || '') + ' ' + (x.content || ''))) return;"],
   ['H6: A and B no longer interleaved', '[fa[i], fb[i]].forEach(', '[fa[i]].forEach('],
-  ['Model: the opening margin dropped (a fair price shown as the opening line)', "    out.aPrice = (1 / (pA * (1 + m))).toFixed(2);", "    out.aPrice = (1 / pA).toFixed(2);"],
+  ['Model: the opening margin dropped (a fair price shown as the opening line)', "const v = (1 / (p * (1 + m))).toFixed(2);", "const v = (1 / p).toFixed(2);"],
   ['Model: the Surface / Format toggles ignored', "    const cell = row && row[surface[0] + bestOf];", "    const cell = row && row.H3;"],
   ['Model: B\'s price from A\'s probability', "    const pA = cell[0] / 1e4, pB = 1 - pA;", "    const pA = cell[0] / 1e4, pB = pA;"],
   ['Model: a failed load reads as not covered', "    if (sa.st === 'failed' || sb.st === 'failed') { out.emptyText = 'The estimate couldn’t load. It will try again.'; return out; }\n", ""],

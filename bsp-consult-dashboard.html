@@ -26355,15 +26355,17 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
     if (!(m >= 0 && m < 0.2)) { out.emptyText = 'The estimate file carries no margin, so no price is shown.'; return out; }
     const pA = cell[0] / 1e4, pB = 1 - pA;
     out.priced = true;
-    out.aPrice = (1 / (pA * (1 + m))).toFixed(2);
-    out.bPrice = (1 / (pB * (1 + m))).toFixed(2);
+    // founder 2026-11-27 ("Show a dash"): a price printing below 1.01 is suppressed (the site's price floor) — that end is "—"
+    const px = p => { const v = (1 / (p * (1 + m))).toFixed(2); return +v < 1.01 ? '—' : v; };
+    out.aPrice = px(pA);
+    out.bPrice = px(pB);
     // founder 2026-11-17: "show the price without the layers and with the layers" — the Elo-only price (the engine's base,
     // cell[1], before any layer) on the same margin, so the layers' effect on the opening price reads directly.
     const bA = cell[1] / 1e4;
-    if (bA > 0 && bA < 1) { out.aBase = (1 / (bA * (1 + m))).toFixed(2); out.bBase = (1 / ((1 - bA) * (1 + m))).toFixed(2); }
+    if (bA > 0 && bA < 1) { out.aBase = px(bA); out.bBase = px(1 - bA); }
     // founder fix 1 (2026-11-26, his pick "Elo only → full model"): the likely opening price is a RANGE, from the Elo-only
     // price (the engine's base, no layer) to the full model price, low – high. No base → the model price alone.
-    const rng = (x, y) => { if (y == null) return x; const lo = Math.min(+x, +y), hi = Math.max(+x, +y); return lo === hi ? x : lo.toFixed(2) + ' – ' + hi.toFixed(2); };
+    const rng = (x, y) => { if (y == null || x === y) return x; if (x === '—' || y === '—') return '— – ' + (x === '—' ? y : x); const lo = Math.min(+x, +y), hi = Math.max(+x, +y); return lo === hi ? x : lo.toFixed(2) + ' – ' + hi.toFixed(2); };
     out.aRange = rng(out.aPrice, out.aBase); out.bRange = rng(out.bPrice, out.bBase);
     const pct = x => String(Math.round(x * 100));
     out.foot = { aShort: a.short, bShort: b.short, aPct: pct(pA), bPct: pct(pB), surface: surface === 'All' ? 'all surfaces' : surface, bestOf,
