@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-27T14:07:07.241Z",
+  "generatedAt": "2026-11-27T15:52:20.372Z",
   "source": "Self-derived — tour-level from Jeff Sackmann tennis_atp schema (Tennismylife/TML-Database) to 2026-01-17 and from api-tennis ATP singles box scores (event_type 265, main draw, Finished/Retired) after that date, one source per match, with a Challenger fallback sourced LIVE from api-tennis event_type_key=281 (Challenger Men Singles, dense 2024+, refreshed weekly) folded into serve, return AND under-pressure for players thin at tour level, Challenger success discounted x0.9 — no ATP/Infosys data",
   "scopes": {
     "career": "2010-2026 all qualifying matches",
@@ -146902,14 +146902,14 @@
         "Clay": {
           "career": {
             "underPressure": {
-              "bpSavedPct": 50.6,
-              "bpConvPct": 42.1,
-              "tbWinPct": 49.5,
-              "decWinPct": 47,
+              "bpSavedPct": 50.7,
+              "bpConvPct": 42,
+              "tbWinPct": 50.5,
+              "decWinPct": 46,
               "rating": 189.2,
               "components": 4,
               "inclChallenger": true,
-              "index": 44
+              "index": 45
             }
           }
         },
@@ -146929,14 +146929,14 @@
         "All": {
           "career": {
             "underPressure": {
-              "bpSavedPct": 50.6,
-              "bpConvPct": 42.1,
-              "tbWinPct": 49.5,
-              "decWinPct": 47,
+              "bpSavedPct": 50.7,
+              "bpConvPct": 42,
+              "tbWinPct": 50.5,
+              "decWinPct": 46,
               "rating": 189.2,
               "components": 4,
               "inclChallenger": true,
-              "index": 47.7
+              "index": 48
             }
           }
         }
@@ -153201,14 +153201,14 @@
         "Clay": {
           "career": {
             "underPressure": {
-              "bpSavedPct": 47.2,
-              "bpConvPct": 36.8,
-              "tbWinPct": 37.5,
-              "decWinPct": 55.4,
+              "bpSavedPct": 48,
+              "bpConvPct": 36.4,
+              "tbWinPct": 34.6,
+              "decWinPct": 57.9,
               "rating": 176.9,
               "components": 4,
               "inclChallenger": true,
-              "index": 28.5
+              "index": 29.1
             }
           }
         },
@@ -153228,14 +153228,14 @@
         "All": {
           "career": {
             "underPressure": {
-              "bpSavedPct": 49.3,
-              "bpConvPct": 40.1,
-              "tbWinPct": 37.9,
-              "decWinPct": 65,
-              "rating": 192.4,
+              "bpSavedPct": 49.8,
+              "bpConvPct": 39.8,
+              "tbWinPct": 36,
+              "decWinPct": 66.3,
+              "rating": 191.9,
               "components": 4,
               "inclChallenger": true,
-              "index": 46
+              "index": 44.5
             }
           }
         }
@@ -153589,13 +153589,13 @@
           "career": {
             "underPressure": {
               "bpSavedPct": 53,
-              "bpConvPct": 38.1,
-              "tbWinPct": 30.9,
-              "decWinPct": 38.2,
-              "rating": 160.1,
+              "bpConvPct": 37.9,
+              "tbWinPct": 30,
+              "decWinPct": 37.1,
+              "rating": 157.9,
               "components": 4,
               "inclChallenger": true,
-              "index": 19.5
+              "index": 18.1
             }
           }
         }
