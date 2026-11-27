@@ -18844,11 +18844,16 @@ const PS2_AXES = [
   // Δ slot, which Elo never uses: the 128px label column would wrap the long label onto a second line).
   { key: 'elo', label: 'Surface Elo · current', short: 'Surface Elo', dp: 0 },
 ];
-const PS2_WIN = { w52: { scope: 'last52', label: 'Last 52 weeks', lc: 'last 52 weeks' }, since: { scope: 'sinceBase', label: 'Since Mar 2024', lc: 'since Mar 2024' } };
-// Founder Q14 (TEN-312 5262e790): surface-ratings has no since-Mar-2024 scope, so on that view Under pressure is "—" for
-// both players (no shape point, percentile or Δ) — a career number never sits under a since-2024 label.
-const PS2_UP_SINCE_TIP = 'No since-Mar-2024 figure yet; see the career view.';
-const ps2UpDashed = (W, ax) => W.scope === 'sinceBase' && ax.key === 'underPressure';
+// Founder 2026-11-27 ("say career", replacing D6's "Since Mar 2024" and Q14's dashed Under pressure): the second window is
+// Career, the H2H page's (ruling 8): surface-ratings.json `career` (2010–now, the Database → Ratings figures) for Serve,
+// Return, Under pressure and Dominance ratio, their pool-percentile `index` for the shape, the node's own match count for
+// the 10-match floor. Surface Elo stays the current rating on both views (D6).
+const PS2_WIN = { w52: { scope: 'last52', label: 'Last 52 weeks', lc: 'last 52 weeks' }, career: { scope: 'career', label: 'Career', lc: 'career', career: true } };
+const PS2_CAREER_AX = ['serve', 'return', 'underPressure', 'dominance'];   // PS2_AXES order, Elo last
+function ps2CareerNode(key, surface){
+  const rec = key == null ? null : (surfaceRatings.players || []).find(x => x && x.key != null && String(x.key) === String(key));
+  return (rec && rec.surfaces && rec.surfaces[surface] && rec.surfaces[surface].career) || null;
+}
 
 let _ps2 = null;
 function ps2StateFor(m){
@@ -18923,18 +18928,32 @@ function ps2Pop(scope, surface, key){
 const PS2_MEET_COLS = ['date', 'sq', 'opp', 'rd', 'sets', 'scores', 'h', 'oppPrice'];
 const PS2_MEET_GRID = '42px 10px minmax(0,1fr) 34px 36px minmax(0,1.15fr) 36px 36px';
 
-// 4 · Playing style DNA (DF L618–664): seg Last 52 weeks | Since Mar 2024 (D6), the overlaid five-axis radar (true
+// 4 · Playing style DNA (DF L618–664): seg Last 52 weeks | Career (founder 2026-11-27), the overlaid five-axis radar (true
 // percentiles on the match's surface), the "Show player profile" drop-down. The population and n of every percentile
 // ride on the modal's one tooltip (data-aotip). Both players white (bars neutral: open question, see the rules file).
 function ps2DnaModel(m, S){
   const W = PS2_WIN[S.win] || PS2_WIN.w52, surface = mdnaSurface(m);
+  const careerSide = (key, name) => {
+    const e = mdnaRadarFor(key, surface, 'last52', name), nd = ps2CareerNode(key, surface);   // Elo: the current rating (D6)
+    const num = v => (typeof v === 'number' && isFinite(v) ? v : null), matches = (nd && nd.sample && nd.sample.matches) || 0, ok = matches >= MDNA_FLOOR;
+    const ratings = PS2_CAREER_AX.map(k => num(nd && nd[k] && nd[k].rating)).concat([e.ratings ? e.ratings[4] : null]);
+    const pcts = PS2_CAREER_AX.map(k => num(nd && nd[k] && nd[k].index)).concat([e.pcts ? e.pcts[4] : null]);
+    const d = { inPool: !!nd, ok, matches, ratings, pcts, career: true };
+    const vals = PS2_AXES.map((ax, i) => { const has = ratings[i] != null && (ax.key === 'elo' || ok); return { raw: has ? ratings[i] : null, pct: has ? pcts[i] : null, delta: null }; });
+    return { d, vals, name, key };
+  };
+  if (W.career){
+    const loading = !_mdna || !(surfaceRatings.players && surfaceRatings.players.length);
+    if (loading && typeof loadSurfaceRatings === 'function' && !ps2DnaModel._srAsked){ ps2DnaModel._srAsked = true; loadSurfaceRatings().then(() => { if (_ps2) ps2Set({}); }); }
+    return { W, surface, a: careerSide(m.p1Key, m.p1), b: careerSide(m.p2Key, m.p2), loading };
+  }
   const side = (key, name) => {
     const d = mdnaRadarFor(key, surface, W.scope, name);
     const vals = PS2_AXES.map((ax, i) => {
       const elo = ax.key === 'elo';
-      const has = ps2UpDashed(W, ax) ? false : elo ? !!d.ratings && d.ratings[i] != null : d.ok && !!d.ratings && d.ratings[i] != null;
+      const has = elo ? !!d.ratings && d.ratings[i] != null : d.ok && !!d.ratings && d.ratings[i] != null;
       return { raw: has ? d.ratings[i] : null, pct: has && d.pcts ? d.pcts[i] : null,
-        delta: has && W.scope === 'last52' && d.deltas ? d.deltas[i] : null };   // no Δ on the since-Mar-2024 view (DF L3582)
+        delta: has && W.scope === 'last52' && d.deltas ? d.deltas[i] : null };
     });
     return { d, vals, name, key };
   };
@@ -18943,8 +18962,10 @@ function ps2DnaModel(m, S){
 function ps2AxisTip(D, i){
   if (D.loading) return 'Loading DNA…';
   const ax = PS2_AXES[i];
-  if (ps2UpDashed(D.W, ax)) return fhEsc(PS2_UP_SINCE_TIP);
-  const pop = ps2Pop(D.W.scope, D.surface, ax.key);
+  // Career ranks in the Database → Ratings career pool (the players whose node carries that rating's index)
+  const pop = D.W.career && ax.key !== 'elo'
+    ? { n: (surfaceRatings.players || []).filter(x => { const nd = x && x.surfaces && x.surfaces[D.surface] && x.surfaces[D.surface].career; return nd && nd[PS2_CAREER_AX[i]] && nd[PS2_CAREER_AX[i]].index != null; }).length, words: 'players in the Database → Ratings career pool (2010–now)' }
+    : ps2Pop(D.W.scope, D.surface, ax.key);
   const fmtP = p => (p == null ? 'no percentile' : 'percentile ' + (+p).toFixed(1));
   const line = s => {
     const v = s.vals[i], nm = fhSurname(s.name);

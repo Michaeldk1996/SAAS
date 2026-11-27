@@ -5,7 +5,7 @@
 //   · style matchup: the matrix cell in p1's direction, the lean, the three surface tiles; a mirror = the 50/50 copy (G5)
 //   · personal record = the meetings shard vs the opponent's archetype, walkovers out (N2), every rate through the D2 gate
 //   · career meetings = the shared rows (maMatchRowsHtml), 8 shown + the G18 control, every row opens the shared sheet
-//   · DNA: true percentiles with the population and n on the shared tooltip; "Since Mar 2024", never "Career"; Surface Elo
+//   · DNA: true percentiles with the population and n on the shared tooltip; Last 52 weeks · Career (founder 2026-11-27); Surface Elo
 //     current on both views; no Δ on the since view; a player below the floor draws no shape; on the since view Under
 //     pressure is "—" for both players with the founder's tooltip (Q14, TEN-312 5262e790)
 //   · both players white (D4 / the file's palette `cur`); no tab-local row or tooltip renderer (DoD 8); no sample data
@@ -40,7 +40,8 @@ const S = new Function(`
     head: { appendChild(){} }, createElement(){ return { set textContent(v){} }; } };
   const console = { warn(){}, log(){} };
   const playerProfiles = {};
-  let playerStyles = { byKey: { x: 1 } }, psMatrixData = null;
+  let playerStyles = { byKey: { x: 1 } }, psMatrixData = null, surfaceRatings = { players: [] };
+  function loadSurfaceRatings(){ return Promise.resolve(); }
   const STY = {};
   function styleKey(n){ return n; }
   function ppStyleFor(n){ return STY[n] || null; }
@@ -63,7 +64,7 @@ const S = new Function(`
   const maStyleV2 = __MA2.maStyleV2;
   return { buildStyleSection, ps2Record, ps2Edge: typeof ps2Edge === 'function' ? ps2Edge : null, ps2Meeting, ps2IsWalkover, ps2StateFor, _maRowReg, STY, ELO,
     click(code){ return eval(code); },   // runs a rendered onclick inside the page block's own scope (_ps2, ps2Set)
-    set matrix(v){ psMatrixData = v; }, set dna(v){ _mdna = v; }, set styles(v){ playerStyles = v; }, get tips(){ return tips; } };
+    set matrix(v){ psMatrixData = v; }, set dna(v){ _mdna = v; }, set sr(v){ surfaceRatings = v; }, set styles(v){ playerStyles = v; }, get tips(){ return tips; } };
 `)();
 const text = h => h.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&#39;/g, "'").replace(/\s+/g, ' ').trim();
 // TEN-380: the DNA card comes first; its own markup ends where the personal-record card starts.
@@ -235,38 +236,42 @@ const axisTip = (h, name) => { const x = new RegExp(`<span title="([^"]*)"[^>]*>
 const dnaCard = h => h.slice(0, h.indexOf('>Record against each style<'));
 const polys = h => [...h.matchAll(/<polygon points="([^"]*)"[^>]*stroke="var\(--ma2-(blue|text)\)"/g)].map(x => ({ who: x[2] === 'blue' ? 'a' : 'b', pts: x[1].trim().split(/\s+/) }));
 
-// Mutation: the hover drops the population / n (or states the wrong one); the window label back to "Career".
-test('DNA: true percentiles with the population and n on the axis hover; "Since Mar 2024", never "Career"', () => {
+// Founder 2026-11-27 ("say career"): the second window is Career, read from surface-ratings `career` (the H2H page's
+// ruling 8) — never the DNA file's since-Mar-2024 scope under a career label. Surface Elo stays current.
+const srCareer = (key, sv, rt, up, dr, n) => ({ key, surfaces: { Hard: { career: { serve: { rating: sv, index: 90, firstInPct: 66, firstWonPct: 76, secondWonPct: 55, holdPct: 88 },
+  return: { rating: rt, index: 80, breakPct: 28 }, underPressure: { rating: up, index: 85 }, dominance: { rating: dr, index: 95 }, sample: { matches: n } } } } });
+// Mutation: the hover drops the population / n; the window label back to "Since Mar 2024".
+test('DNA: true percentiles with the population and n on the axis hover; "Last 52 weeks · Career"', () => {
   setup(); S.dna = dna(); S.ELO['J. Sinner'] = 2234; S.ELO['C. Alcaraz'] = 2071;
+  S.sr = { players: [srCareer(1, 285.4, 160.2, 240.1, 1.41, 320), srCareer(2, 270.0, 150.5, 210.7, 1.22, 180)] };
   const m = match('J. Sinner', 'C. Alcaraz');
   let h = S.buildStyleSection(m);
   assert.match(axisTip(h, 'Serve'), /Sinner: 304 · percentile 99\.0 .*Rank among 178 rated ATP main-tour players with &gt;= 10 matches \(Hard, last 52 weeks\)/);
   assert.match(axisTip(h, 'Surface Elo'), /current Tennis Abstract rating, the same on both views .*Rank among 272 /);
-  assert.match(text(dnaCard(h)), /Last 52 weeks Since Mar 2024/); assert.doesNotMatch(text(dnaCard(h)), /\bCareer\b/);
-  S.ps2StateFor(m).win = 'since';
+  assert.match(text(dnaCard(h)), /Last 52 weeks Career/); assert.doesNotMatch(text(dnaCard(h)), /Since Mar 2024/);
+  S.ps2StateFor(m).win = 'career';
   h = S.buildStyleSection(m);
-  assert.match(axisTip(h, 'Serve'), /since Mar 2024 .*Rank among 210 /);
-  assert.equal(axisTip(h, 'Under pressure'), 'No since-Mar-2024 figure yet; see the career view.', 'founder Q14: the since view dashes Under pressure');
+  assert.match(axisTip(h, 'Serve'), /Hard · career .*Sinner: 285 · percentile 90\.0 .*Rank among 2 players in the Database → Ratings career pool/);
+  S.sr = { players: [] };
 });
 
-// Founder Q14 (TEN-312 5262e790). Mutation: falling back to the career scope prints a number.
-// RENDERER GAP: the rebuilt radar draws the since-view Under pressure vertex at the centre (a 0th-percentile point);
-// Q14 = no shape point for that axis.
-test('DNA (Q14): on the since view Under pressure is "—" for both players — no number, no shape point', () => {
-  setup();
-  const D = dna(); D.byKey[2].surfaces.Hard.last52.sample.matches = 40; S.dna = D;
+// Founder 2026-11-27: on the Career view Under pressure is the career rating (Q14's dash is retired); a player under the
+// 10-match floor there draws no shape and dashes his figures. Mutation: the career view reads the since-Mar-2024 node.
+test('DNA (Career): every axis from surface-ratings career, Under pressure included; the floor reads the career sample', () => {
+  setup(); S.dna = dna();
+  S.sr = { players: [srCareer(1, 285.4, 160.2, 240.1, 1.41, 320), srCareer(2, 270.0, 150.5, 210.7, 1.22, 6)] };
   const m = match('J. Sinner', 'C. Alcaraz');
   const lab = h => text(new RegExp('<span title="[^"]*"[^>]*>\\s*<span[^>]*>Under pressure</span>[\\s\\S]*?</span></span></span>').exec(h)[0]);
-  const cmp = h => { const i = h.lastIndexOf('>Under pressure</span>'); return text(h.slice(h.lastIndexOf('<div style="display:grid; grid-template-columns:66px', i), h.indexOf('</div></div></div>', i))); };
-  let h = S.buildStyleSection(m);
-  assert.match(lab(h), /Under pressure 319\.0 · 245\.5/);
-  assert.deepEqual(polys(h).map(p => p.pts.length), [5, 5]);
-  S.ps2StateFor(m).win = 'since';
-  h = S.buildStyleSection(m);
-  assert.match(lab(h), /Under pressure — · —$/, 'both players dashed on the radar label');
-  assert.match(cmp(h), /^— Under pressure — —(?: |$)/, 'no number in the comparison row: ' + cmp(h));
-  const ctr = '210.0,150.0';
-  assert.ok(polys(h).every(p => !p.pts.includes(ctr)), 'no Under pressure shape point (a vertex at the centre reads 0th percentile)');
+  S.ps2StateFor(m).win = 'career';
+  const h = S.buildStyleSection(m);
+  assert.match(lab(h), /Under pressure 240\.1 · —$/, 'career Under pressure for Sinner; Alcaraz under the floor (6 matches)');
+  assert.deepEqual(polys(h).map(p => [p.who, p.pts.length]), [['a', 5]], 'only the player over the floor draws a shape');
+  assert.doesNotMatch(text(dnaCard(h)), /271\.7/, 'never the since-Mar-2024 node');
+  // an axis with no career figure is no shape point (a vertex at the centre would read the 0th percentile)
+  const one = srCareer(1, 285.4, 160.2, 240.1, 1.41, 320); one.surfaces.Hard.career.underPressure = null;
+  S.sr = { players: [one, srCareer(2, 270.0, 150.5, 210.7, 1.22, 6)] };
+  assert.deepEqual(polys(S.buildStyleSection(m)).map(p => p.pts.length), [4], 'four points: Under pressure has none');
+  S.sr = { players: [] };
 });
 
 // Mutation: the Elo axis read from the window's node (a windowed Elo — D6 says none exists).
@@ -275,8 +280,10 @@ test('DNA (D6): Surface Elo is the current rating on both views', () => {
   const m = match('J. Sinner', 'C. Alcaraz');
   const elo = h => text(new RegExp('<span title="[^"]*"[^>]*>\\s*<span[^>]*>Surface Elo[^<]*</span>[\\s\\S]*?</span></span></span>').exec(h)[0]);
   const a = elo(S.buildStyleSection(m));
-  S.ps2StateFor(m).win = 'since';
+  S.sr = { players: [srCareer(1, 285.4, 160.2, 240.1, 1.41, 320), srCareer(2, 270.0, 150.5, 210.7, 1.22, 180)] };
+  S.ps2StateFor(m).win = 'career';
   const b = elo(S.buildStyleSection(m));
+  S.sr = { players: [] };
   assert.equal(a, b); assert.match(a, /2234 · 2071/, 'the live rating, not the file\'s 2200 / 2050');
 });
 // RENDERER GAP (D6 / modal-playing-style.md: "labelled 'current' (the radar label 'Surface Elo · current')"): the rebuilt

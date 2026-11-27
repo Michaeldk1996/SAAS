@@ -441,16 +441,18 @@ test('Escape with a tooltip up is consumed by the tooltip (ranked above the pop-
 });
 
 // ── colours: tokens only (TEN-376), on the 2026-11-23 design's --ma2-* tokens (tokens.css). The TEN-376 WX_C role map is
-// dropped: the rebuilt tab does not read WX_C (only the loading line does). Severity keeps the R4 grey ladder — CONCERN
-// --ma2-text, WATCH --ma2-soft, calm --ma2-grey, never red, never amber (founder R4, U3) — and the MATCH tag is neutral
+// dropped: the rebuilt tab does not read WX_C (only the loading line does). Severity: CONCERN red (founder 2026-11-27, "use red"), the rest the R4 grey ladder —
+// (CONCERN was --ma2-text), WATCH --ma2-soft, calm --ma2-grey, never red, never amber (founder R4, U3) — and the MATCH tag is neutral
 // (founder Q1: no blue). Mutations: CONCERN on the red, WATCH on amber, the match tag blue, a literal colour.
 const WX_SRC = (() => { const a = V2.indexOf('  // WEATHER (LOCKED'), b = V2.indexOf('root.maWeatherV2 = maWeatherV2;'); assert.ok(a > 0 && b > a, 'Weather block found'); return V2.slice(a, b); })();
 test('Weather colours are tokens (no literal) resolving in tokens.css; the severity ladder is grey; the MATCH tag neutral; borders 1px', () => {
   assert.ok(!/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/.test(WX_SRC), 'no literal colour in the Weather renderer');
   for (const t of new Set(WX_SRC.match(/--ma2-[\w-]+/g))) assert.ok(/^#|^RGBA/.test(resolveToken(`var(${t})`)), t + ' resolves (Night)');
-  assert.match(WX_SRC, /const WX_SEV = \{ r: \['Concern', 'var\(--ma2-text\)'\], a: \['Watch', 'var\(--ma2-soft\)'\], n: \['No concern', 'var\(--ma2-grey\)'\], u: \['Unavailable', 'var\(--ma2-quiet\)'\] \};/, 'R4 grey ladder');
+  assert.match(WX_SRC, /const WX_SEV = \{ r: \['Concern', 'var\(--ma2-red\)'\], a: \['Watch', 'var\(--ma2-soft\)'\], n: \['No concern', 'var\(--ma2-grey\)'\], u: \['Unavailable', 'var\(--ma2-quiet\)'\] \};/, 'Concern red (founder 2026-11-27), the rest the R4 grey ladder');
   const flagged = render(file((d, h) => d === '2026-09-27' && h === 16 ? { gusts: 40, feels: 36, rainChance: 70 } : {}));
-  assert.ok(!/--ma2-(red|green|blue)|--amber|--neg|--pos|--bar\b|--link/.test(flagged), 'no meaning colour or blue on the tab');
+  assert.ok(!/--ma2-(green|blue)|--amber|--neg|--pos|--bar\b|--link/.test(flagged), 'no other meaning colour or blue on the tab');
+  assert.match(flagged, /--ma2-red/, 'a Concern-level factor is red (founder 2026-11-27)');
+  assert.doesNotMatch(render(file(() => ({}))), /--ma2-red/, 'no red without a Concern');
   const md = dayOf(flagged, '2026-09-27');
   assert.match(md, /color:var\(--ma2-text\); min-height:15px; white-space:nowrap;">Match 16:00</, 'MATCH tag neutral white');
   assert.ok(!/border:(?!1px)[\d.]+px/.test(flagged), 'every border 1px');
@@ -520,12 +522,14 @@ test('TEN-380: no legend row, no "Forecast updated" stamp on a fresh forecast', 
 // draws an 8px round dot in the head chip (chipDot), on every day card's status line and in the opened day's chip.
 // TEN-380 review item 2 ("no status dots") is on the founder conflict list: the founder's 2026-11-23 design draws them and
 // is kept meanwhile (coordinator 2026-11-23). What still holds is R4: a dot carries no hue — only the grey severity ladder.
-test('status dots as the 2026-11-23 design draws them, in the R4 grey ladder only (never red / amber / green / blue)', () => {
-  const LADDER = new Set(['var(--ma2-text)', 'var(--ma2-soft)', 'var(--ma2-grey)', 'var(--ma2-quiet)']);
+test('status dots as the 2026-11-23 design draws them: red for a Concern (founder 2026-11-27), else the grey ladder (never amber / green / blue)', () => {
+  const LADDER = new Set(['var(--ma2-red)', 'var(--ma2-soft)', 'var(--ma2-grey)', 'var(--ma2-quiet)']);   // Concern red (founder 2026-11-27)
   let n = 0;
   for (const h of [render(file((d, h) => d === '2026-09-27' && h === 16 ? { gusts: 40, wind: 22 } : {})), render(file(() => ({})))])
     for (const m of h.matchAll(/width:8px; height:8px; border-radius:50%; background:([^;"]+);/g)) { n++; assert.ok(LADDER.has(m[1].trim()), 'dot colour ' + m[1]); }
   assert.ok(n > 0, 'the design draws the dots');
+  const watch = render(file((d, h) => d === '2026-09-27' && h === 16 ? { gusts: 28, wind: 15 } : {}));
+  assert.doesNotMatch(watch, /border-radius:50%; background:var\(--ma2-red\)/, 'red only for a Concern: a Watch dot stays grey');
 });
 
 // TEN-380 review item 3 + founder review 2 (2026-10-04): the court pace never says "usual"; calm rain and heat → "PLAYS AT

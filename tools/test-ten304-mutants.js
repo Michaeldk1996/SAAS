@@ -60,7 +60,7 @@ const MUTANTS = [
   // the 2026-11-23 renderer (maWeatherV2): tokens, the R4 grey severity ladder, the neutral MATCH tag (the TEN-376 WX_C
   // mutants are gone with WX_C's use: the rebuilt tab does not read it)
   ['indoor early return removed', 'if (vm.indoor) return wrap(', 'if (false) return wrap(', 'v2'],
-  ['CONCERN back to a red severity colour (founder R4: no severity colour)', "r: ['Concern', 'var(--ma2-text)']", "r: ['Concern', 'var(--ma2-red)']", 'v2'],
+  ['CONCERN back to white (founder 2026-11-27: Concern is red)', "r: ['Concern', 'var(--ma2-red)']", "r: ['Concern', 'var(--ma2-text)']", 'v2'],
   ['WATCH on amber (amber is Model + Trading Report only, TEN-376 U3)', "a: ['Watch', 'var(--ma2-soft)']", "a: ['Watch', 'var(--amber)']", 'v2'],
   ['a literal colour in the Weather renderer', "n: ['No concern', 'var(--ma2-grey)']", "n: ['No concern', '#8B96B5']", 'v2'],
   ['Q1: the MATCH tag on the blue', "(d.isMatch ? 'var(--ma2-text)' : 'var(--ma2-quiet)') + '; min-height:15px", "(d.isMatch ? 'var(--ma2-blue)' : 'var(--ma2-quiet)') + '; min-height:15px", 'v2'],

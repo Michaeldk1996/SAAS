@@ -956,7 +956,7 @@
     const axes = PS2_AXES.map((ax, i) => { const c = Math.cos(ang(i)), sn = Math.sin(ang(i)), side = i === 1 || i === 4;
       const lp = (((side ? (c > 0 ? 365 : 55) : CX + (RR + 12) * c) - 55) / 310 * 100).toFixed(2) + '%', tp = ((side ? 52 : CY + (RR + 12) * sn + (sn < -0.9 ? -4 : sn > 0.5 ? 6 : 0)) / 270 * 100).toFixed(2) + '%';
       const tx = 'translate(' + (Math.abs(c) < 0.2 ? '-50%' : (c > 0) !== side ? '0' : '-100%') + ', ' + (sn < -0.9 ? '-80%' : '-50%') + ')', al = Math.abs(c) < 0.2 ? 'center' : (c > 0) !== side ? 'flex-start' : 'flex-end';
-      const up = ps2UpDashed(WIN, ax), tip = up ? PS2_UP_SINCE_TIP : typeof ps2AxisTip === 'function' ? ps2AxisTip(D, i) : '';
+      const tip = typeof ps2AxisTip === 'function' ? ps2AxisTip(D, i) : '';
       return '<span' + (tip ? ' title="' + esc(tip) + '"' : '') + ' style="position:absolute; left:' + lp + '; top:' + tp + '; transform:' + tx + '; display:flex; flex-direction:column; align-items:' + al + '; gap:3px;">'
         + '<span style="font-size:11.5px; font-weight:600; color:var(--ma2-grey); white-space:nowrap;">' + esc((ax.short || ax.label) + (/elo/i.test(ax.key || ax.label) ? ' · current' : '')) + '</span><span style="' + MONO + ' font-size:11.5px; font-weight:700; white-space:nowrap;"><span style="color:var(--ma2-blue);">' + fmtR(D.a.vals[i].raw, ax.dp) + '</span><span style="color:var(--ma2-grey); font-weight:400;"> · </span><span style="color:var(--ma2-text);">' + fmtR(D.b.vals[i].raw, ax.dp) + '</span></span></span>'; }).join('');
     const poly = (P, ok) => ok ? PS2_AXES.map((ax, i) => P.vals[i].pct == null ? null : pt(i, P.vals[i].pct / 100)).filter(Boolean).join(' ') : null;   // Q14: no point for an axis with no figure
@@ -970,7 +970,9 @@
       + dots(D.b, shapeB, false) + dots(D.a, shapeA, true) + '</svg>';
     const why = [[D.a, shapeA], [D.b, shapeB]].filter(x => !x[1]).map(x => fhSurname(x[0].name) + ': ' + (x[0].d.inPool === false ? 'no rating on file' : 'fewer than ' + MDNA_FLOOR + ' matches ' + WIN.lc + ' on ' + (surf === 'All' ? 'all surfaces' : surf.toLowerCase()) + (x[0].d.matches != null ? ' (' + x[0].d.matches + ')' : '')));
     // the comparison list: the DNA file's raw figures (rating nodes + their components), same surface and window
-    const nA = psNode(m.p1Key, surf, WIN.scope), nB = psNode(m.p2Key, surf, WIN.scope);
+    // the Career window reads the same store as its shape (surface-ratings `career`; its return games won = breakPct)
+    const nA = WIN.career ? ps2CareerNode(m.p1Key, surf) : psNode(m.p1Key, surf, WIN.scope), nB = WIN.career ? ps2CareerNode(m.p2Key, surf) : psNode(m.p2Key, surf, WIN.scope);
+    const rgw = WIN.career ? ['return', 'breakPct'] : ['return', 'returnGamesWonPct'];
     const g = (n, path) => { let v = n; for (const k of path) v = v == null ? null : v[k]; return v == null ? null : +v; };
     const rows = [
       ['Ratings', 'Elo on ' + (surf === 'All' ? 'all surfaces' : surf.toLowerCase()), D.a.vals[4].raw, D.b.vals[4].raw, 0],
@@ -978,7 +980,7 @@
       ['', 'Under pressure', D.a.vals[2].raw, D.b.vals[2].raw, 1],
       ['Serve', '1st serve in', g(nA, ['serve', 'firstInPct']), g(nB, ['serve', 'firstInPct']), 3], ['', '1st serve points won', g(nA, ['serve', 'firstWonPct']), g(nB, ['serve', 'firstWonPct']), 3],
       ['', '2nd serve points won', g(nA, ['serve', 'secondWonPct']), g(nB, ['serve', 'secondWonPct']), 3], ['', 'Service games held', g(nA, ['serve', 'holdPct']), g(nB, ['serve', 'holdPct']), 3],
-      ['Return', 'Return games won', g(nA, ['return', 'returnGamesWonPct']), g(nB, ['return', 'returnGamesWonPct']), 3]];
+      ['Return', 'Return games won', g(nA, rgw), g(nB, rgw), 3]];
     const fmtC = (v, k) => v == null ? DASH : k === 0 ? String(Math.round(v)) : k === 2 ? v.toFixed(2) : k === 3 ? v.toFixed(1) + '%' : v.toFixed(1);
     const cmp = rows.map(r => { const x = r[2], y = r[3], both = x != null && y != null, ld = !both || x === y ? 0 : x > y ? 1 : -1, d = both ? Math.abs(x - y) : 0, w = ld ? Math.min(46, 14 + d / Math.max(x, y) * 400) : 0;
       const lc = ld > 0 ? 'var(--ma2-blue)' : ld < 0 ? 'var(--ma2-text)' : 'var(--ma2-grey)', gap = !both ? DASH : ld ? (r[4] === 0 ? String(Math.round(d)) : r[4] === 2 ? d.toFixed(2) : d.toFixed(1)) : 'Level';
@@ -1466,7 +1468,8 @@
   // WEATHER (LOCKED 2026-11-23): At match time (factor boxes Wind · Heat · Rain by severity, then Court speed) →
   // Tournament week (day boxes; a picked day opens inside the card). Data = wxModel (Open-Meteo files, venue time, archive
   // for started matches, WX_CONFIG cut-offs). Severity stays the grey ladder (R4) until the founder rules on the design's red.
-  const WX_SEV = { r: ['Concern', 'var(--ma2-text)'], a: ['Watch', 'var(--ma2-soft)'], n: ['No concern', 'var(--ma2-grey)'], u: ['Unavailable', 'var(--ma2-quiet)'] };
+  // founder 2026-11-27 ("use red"): Concern is red, as the design draws it; Watch and below keep the grey ladder
+  const WX_SEV = { r: ['Concern', 'var(--ma2-red)'], a: ['Watch', 'var(--ma2-soft)'], n: ['No concern', 'var(--ma2-grey)'], u: ['Unavailable', 'var(--ma2-quiet)'] };
   root.ma2WxPick = i => { if (typeof _aWx !== 'undefined' && _aWx) { _aWx.sel = i; renderWeatherSection(); } };
   function wxBox(f, lead, o) {
     o = o || {}; const S = WX_SEV[f.sev] || WX_SEV.u;
