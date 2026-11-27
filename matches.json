@@ -1,7 +1,7 @@
 [
   {
     "id": "past-12182495",
-    "day": "daymin2",
+    "day": "daymin3",
     "date": "2026-11-24",
     "time": "16:20",
     "p1": "T. Machac",
@@ -17,7 +17,7 @@
       "p1": 1.21,
       "p2": 3.84,
       "bookmaker": "Marathon",
-      "seenAt": "2026-11-26T20:10:24.008Z"
+      "seenAt": "2026-11-27T02:40:42.974Z"
     },
     "bestOdds": {
       "p1": {
@@ -28,7 +28,7 @@
         "price": 3.9,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-11-26T20:10:24.008Z"
+      "seenAt": "2026-11-27T02:40:42.974Z"
     },
     "tournamentRound": "",
     "qualifying": false,
@@ -3264,7 +3264,7 @@
   },
   {
     "id": "past-12182496",
-    "day": "daymin2",
+    "day": "daymin3",
     "date": "2026-11-24",
     "time": "18:40",
     "p1": "J. Lehecka",
@@ -3280,7 +3280,7 @@
       "p1": 1.61,
       "p2": 2.2,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-26T20:10:24.008Z"
+      "seenAt": "2026-11-27T02:40:42.974Z"
     },
     "bestOdds": {
       "p1": {
@@ -3291,7 +3291,7 @@
         "price": 2.39,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-26T20:10:24.008Z"
+      "seenAt": "2026-11-27T02:40:42.974Z"
     },
     "tournamentRound": "",
     "qualifying": false,
@@ -7286,7 +7286,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-26T20:10:44.594Z"
+      "seenAt": "2026-11-27T02:40:59.734Z"
     },
     "pinClose": {
       "p1": 1.675,
@@ -7320,7 +7320,7 @@
   },
   {
     "id": "past-12182773",
-    "day": "yesterday",
+    "day": "daymin2",
     "date": "2026-11-25",
     "time": "16:20",
     "p1": "L. Musetti",
@@ -9707,7 +9707,11 @@
       "startBasis": "oddspapi trueStart (Oddspapi's own close, founder 2026-11-09)",
       "ageRefTs": "2026-11-25T15:18:57+00:00",
       "archiveId": 14299,
-      "captured": null,
+      "captured": {
+        "p1": 1.012,
+        "p2": 28.39,
+        "source": "Pinnacle +30s (Oddspapi)"
+      },
       "oddspapiClose": true,
       "open": {
         "p1": 1.01,
@@ -9718,7 +9722,7 @@
   },
   {
     "id": "past-12182774",
-    "day": "yesterday",
+    "day": "daymin2",
     "date": "2026-11-25",
     "time": "18:15",
     "p1": "F. Cobolli",
@@ -9734,7 +9738,7 @@
       "p1": 1.4,
       "p2": 2.75,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-26T20:10:30.286Z"
+      "seenAt": "2026-11-27T02:40:48.097Z"
     },
     "bestOdds": {
       "p1": {
@@ -9745,7 +9749,7 @@
         "price": 3.67,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-26T20:10:30.286Z"
+      "seenAt": "2026-11-27T02:40:48.097Z"
     },
     "tournamentRound": "",
     "qualifying": false,
@@ -12256,30 +12260,30 @@
     "extraStats": {
       "last52Weeks": {
         "p1": {
-          "matchCount": 66,
+          "matchCount": 65,
           "stats": {
             "Service:Aces": 6.3,
-            "Service:Double Faults": 2.7,
-            "Service:1st Serve Points Won": 72.2,
-            "Service:2nd Serve Points Won": 51.8,
-            "Service:Break Points Saved": 61.5,
-            "Return:Break Points Converted": 36.8,
-            "Points:Service Points Won": 63.4,
-            "Points:Return Points Won": 35.9,
-            "Points:Total Points Won": 49.7,
+            "Service:Double Faults": 2.8,
+            "Service:1st Serve Points Won": 71.9,
+            "Service:2nd Serve Points Won": 51.9,
+            "Service:Break Points Saved": 61,
+            "Return:Break Points Converted": 36.9,
+            "Points:Service Points Won": 63.2,
+            "Points:Return Points Won": 36,
+            "Points:Total Points Won": 49.6,
             "Points:Winners": 26.4,
             "Points:Unforced Errors": 31.2
           },
           "samples": {
-            "Service:Aces": 66,
-            "Service:Double Faults": 66,
-            "Service:1st Serve Points Won": 3168,
-            "Service:2nd Serve Points Won": 2447,
-            "Service:Break Points Saved": 400,
-            "Return:Break Points Converted": 391,
-            "Points:Service Points Won": 5613,
-            "Points:Return Points Won": 5584,
-            "Points:Total Points Won": 11197,
+            "Service:Aces": 65,
+            "Service:Double Faults": 65,
+            "Service:1st Serve Points Won": 3082,
+            "Service:2nd Serve Points Won": 2395,
+            "Service:Break Points Saved": 395,
+            "Return:Break Points Converted": 388,
+            "Points:Service Points Won": 5475,
+            "Points:Return Points Won": 5469,
+            "Points:Total Points Won": 10944,
             "Points:Winners": 58,
             "Points:Unforced Errors": 58
           }
@@ -13532,7 +13536,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-11-26T20:10:44.594Z"
+      "seenAt": "2026-11-27T02:40:59.734Z"
     },
     "pinClose": {
       "p1": 1.318,
@@ -13572,7 +13576,7 @@
   },
   {
     "id": "past-12182952",
-    "day": "past",
+    "day": "yesterday",
     "date": "2026-11-26",
     "time": "10:15",
     "p1": "C. Norrie",
@@ -13588,7 +13592,7 @@
       "p1": 2.16,
       "p2": 1.75,
       "bookmaker": "Pncl",
-      "seenAt": "2026-11-26T20:10:35.185Z"
+      "seenAt": "2026-11-27T02:40:52.184Z"
     },
     "bestOdds": {
       "p1": {
@@ -13599,7 +13603,7 @@
         "price": 1.83,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-11-26T20:10:35.185Z"
+      "seenAt": "2026-11-27T02:40:52.184Z"
     },
     "tournamentRound": "",
     "qualifying": false,
@@ -18191,7 +18195,7 @@
   },
   {
     "id": "past-12182953",
-    "day": "past",
+    "day": "yesterday",
     "date": "2026-11-26",
     "time": "12:10",
     "p1": "A. Fery",
@@ -18207,7 +18211,7 @@
       "p1": 12.34,
       "p2": 1.05,
       "bookmaker": "Pncl",
-      "seenAt": "2026-11-26T20:10:35.185Z"
+      "seenAt": "2026-11-27T02:40:52.184Z"
     },
     "bestOdds": {
       "p1": {
@@ -18218,9 +18222,9 @@
         "price": 1.06,
         "bookmaker": "Betfair"
       },
-      "seenAt": "2026-11-26T20:10:35.185Z"
+      "seenAt": "2026-11-27T02:40:52.184Z"
     },
-    "tournamentRound": null,
+    "tournamentRound": "",
     "qualifying": false,
     "boardQualifying": false,
     "qualifyingRound": null,
@@ -22366,7 +22370,7 @@
   },
   {
     "id": "past-12183004",
-    "day": "past",
+    "day": "yesterday",
     "date": "2026-11-26",
     "time": "17:35",
     "p1": "J. J. Schwaerzler",
@@ -22382,7 +22386,7 @@
       "p1": 3.56,
       "p2": 1.24,
       "bookmaker": "Marathon",
-      "seenAt": "2026-11-26T20:10:35.185Z"
+      "seenAt": "2026-11-27T02:40:52.184Z"
     },
     "bestOdds": {
       "p1": {
@@ -22393,9 +22397,9 @@
         "price": 1.24,
         "bookmaker": "Marathon"
       },
-      "seenAt": "2026-11-26T20:10:35.185Z"
+      "seenAt": "2026-11-27T02:40:52.184Z"
     },
-    "tournamentRound": null,
+    "tournamentRound": "",
     "qualifying": false,
     "boardQualifying": false,
     "qualifyingRound": null,
@@ -24752,7 +24756,6 @@
       }
     },
     "tournamentKey": "3120",
-    "finishedAt": "2026-11-26T20:10:44.487Z",
     "oddsMovement": {
       "chart": {
         "books": {
@@ -25062,6 +25065,7 @@
         }
       }
     },
+    "finishedAt": "2026-11-26T20:10:44.487Z",
     "pinClose": {
       "p1": 4.4,
       "p2": 1.246,
@@ -25072,7 +25076,11 @@
       "startBasis": "oddspapi trueStart (Oddspapi's own close, founder 2026-11-09)",
       "ageRefTs": "2026-11-26T16:32:32+00:00",
       "archiveId": 14340,
-      "captured": null,
+      "captured": {
+        "p1": 4.5,
+        "p2": 1.24,
+        "source": "Pinnacle +30s (Oddspapi)"
+      },
       "oddspapiClose": true,
       "open": {
         "p1": 3.89,
@@ -25083,7 +25091,7 @@
   },
   {
     "id": "past-12183005",
-    "day": "past",
+    "day": "yesterday",
     "date": "2026-11-26",
     "time": "19:15",
     "p1": "J. Rodionov",
@@ -25099,7 +25107,7 @@
       "p1": 5.5,
       "p2": 1.12,
       "bookmaker": "bet365",
-      "seenAt": "2026-11-26T20:10:35.185Z"
+      "seenAt": "2026-11-27T02:40:52.184Z"
     },
     "bestOdds": {
       "p1": {
@@ -25110,9 +25118,9 @@
         "price": 1.16,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-11-26T20:10:35.185Z"
+      "seenAt": "2026-11-27T02:40:52.184Z"
     },
-    "tournamentRound": null,
+    "tournamentRound": "",
     "qualifying": false,
     "boardQualifying": false,
     "qualifyingRound": null,
@@ -27557,7 +27565,7 @@
           "stats": {
             "Service:Aces": 6.9,
             "Service:Double Faults": 2.6,
-            "Service:1st Serve Points Won": 72.3,
+            "Service:1st Serve Points Won": 72.2,
             "Service:2nd Serve Points Won": 50.3,
             "Service:Break Points Saved": 66.1,
             "Return:Break Points Converted": 46.6,
@@ -27570,8 +27578,8 @@
           "samples": {
             "Service:Aces": 29,
             "Service:Double Faults": 29,
-            "Service:1st Serve Points Won": 1259,
-            "Service:2nd Serve Points Won": 935,
+            "Service:1st Serve Points Won": 1258,
+            "Service:2nd Serve Points Won": 934,
             "Service:Break Points Saved": 180,
             "Return:Break Points Converted": 176,
             "Points:Winners": 18,
@@ -27586,8 +27594,8 @@
           "stats": {
             "Service:Aces": 4.6,
             "Service:Double Faults": 2,
-            "Service:1st Serve Points Won": 70.1,
-            "Service:2nd Serve Points Won": 53,
+            "Service:1st Serve Points Won": 70,
+            "Service:2nd Serve Points Won": 53.1,
             "Service:Break Points Saved": 60.7,
             "Return:Break Points Converted": 42.4,
             "Points:Winners": 25.2,
@@ -27600,7 +27608,7 @@
             "Service:Aces": 78,
             "Service:Double Faults": 78,
             "Service:1st Serve Points Won": 3859,
-            "Service:2nd Serve Points Won": 2154,
+            "Service:2nd Serve Points Won": 2151,
             "Service:Break Points Saved": 412,
             "Return:Break Points Converted": 514,
             "Points:Winners": 68,
@@ -27711,11 +27719,11 @@
         "Service:Aces": 3,
         "Service:Double Faults": 2,
         "Service:1st serve percentage": 52,
-        "Service:1st serve points won": 60.6,
-        "Service:2nd serve points won": 38.7,
+        "Service:1st serve points won": 56.3,
+        "Service:2nd serve points won": 40,
         "Service:Break Points Saved": 44.4,
         "Return:1st return points won": 30.6,
-        "Return:2nd return points won": 40,
+        "Return:2nd return points won": 33.3,
         "Return:Break Points Converted": 40,
         "Points:Total Points Won": 41.4,
         "Points:Service Points Won": 47.6,
@@ -27724,12 +27732,12 @@
         "Games:Return games won": 18.2,
         "raw": {
           "Service:1st serve points won": {
-            "won": 20,
-            "total": 33
+            "won": 18,
+            "total": 32
           },
           "Service:2nd serve points won": {
             "won": 12,
-            "total": 31
+            "total": 30
           },
           "Service:Break Points Saved": {
             "won": 4,
@@ -27740,8 +27748,8 @@
             "total": 36
           },
           "Return:2nd return points won": {
-            "won": 12,
-            "total": 30
+            "won": 9,
+            "total": 27
           },
           "Return:Break Points Converted": {
             "won": 2,
@@ -27772,12 +27780,12 @@
       "p2": {
         "Service:Aces": 7,
         "Service:Double Faults": 3,
-        "Service:1st serve percentage": 55,
-        "Service:1st serve points won": 72.2,
-        "Service:2nd serve points won": 60,
+        "Service:1st serve percentage": 57,
+        "Service:1st serve points won": 66.7,
+        "Service:2nd serve points won": 66.7,
         "Service:Break Points Saved": 60,
-        "Return:1st return points won": 45.5,
-        "Return:2nd return points won": 61.3,
+        "Return:1st return points won": 43.8,
+        "Return:2nd return points won": 60,
         "Return:Break Points Converted": 55.6,
         "Points:Total Points Won": 58.6,
         "Points:Service Points Won": 64.6,
@@ -27786,24 +27794,24 @@
         "Games:Return games won": 50,
         "raw": {
           "Service:1st serve points won": {
-            "won": 26,
+            "won": 24,
             "total": 36
           },
           "Service:2nd serve points won": {
             "won": 18,
-            "total": 30
+            "total": 27
           },
           "Service:Break Points Saved": {
             "won": 3,
             "total": 5
           },
           "Return:1st return points won": {
-            "won": 15,
-            "total": 33
+            "won": 14,
+            "total": 32
           },
           "Return:2nd return points won": {
-            "won": 19,
-            "total": 31
+            "won": 18,
+            "total": 30
           },
           "Return:Break Points Converted": {
             "won": 5,
@@ -27838,12 +27846,12 @@
         "p1": {
           "Service:Aces": 3,
           "Service:Double Faults": 1,
-          "Service:1st serve percentage": 60,
+          "Service:1st serve percentage": 63,
           "Service:1st serve points won": 73.3,
-          "Service:2nd serve points won": 60,
+          "Service:2nd serve points won": 66.7,
           "Service:Break Points Saved": null,
           "Return:1st return points won": 46.7,
-          "Return:2nd return points won": 57.1,
+          "Return:2nd return points won": 50,
           "Return:Break Points Converted": 100,
           "Points:Total Points Won": 59.6,
           "Points:Service Points Won": 68,
@@ -27857,15 +27865,15 @@
             },
             "Service:2nd serve points won": {
               "won": 6,
-              "total": 10
+              "total": 9
             },
             "Return:1st return points won": {
               "won": 7,
               "total": 15
             },
             "Return:2nd return points won": {
-              "won": 4,
-              "total": 7
+              "won": 3,
+              "total": 6
             },
             "Return:Break Points Converted": {
               "won": 2,
@@ -27896,12 +27904,12 @@
         "p2": {
           "Service:Aces": 2,
           "Service:Double Faults": 1,
-          "Service:1st serve percentage": 68,
+          "Service:1st serve percentage": 71,
           "Service:1st serve points won": 53.3,
-          "Service:2nd serve points won": 42.9,
+          "Service:2nd serve points won": 50,
           "Service:Break Points Saved": 0,
-          "Return:1st return points won": 33.3,
-          "Return:2nd return points won": 40,
+          "Return:1st return points won": 26.7,
+          "Return:2nd return points won": 33.3,
           "Return:Break Points Converted": null,
           "Points:Total Points Won": 40.4,
           "Points:Service Points Won": 50,
@@ -27915,19 +27923,19 @@
             },
             "Service:2nd serve points won": {
               "won": 3,
-              "total": 7
+              "total": 6
             },
             "Service:Break Points Saved": {
               "won": 0,
               "total": 2
             },
             "Return:1st return points won": {
-              "won": 5,
+              "won": 4,
               "total": 15
             },
             "Return:2nd return points won": {
-              "won": 4,
-              "total": 10
+              "won": 3,
+              "total": 9
             },
             "Points:Total Points Won": {
               "won": 19,
@@ -27956,9 +27964,9 @@
         "p1": {
           "Service:Aces": 0,
           "Service:Double Faults": 0,
-          "Service:1st serve percentage": 65,
-          "Service:1st serve points won": 40,
-          "Service:2nd serve points won": 25,
+          "Service:1st serve percentage": 61,
+          "Service:1st serve points won": 42.9,
+          "Service:2nd serve points won": 22.2,
           "Service:Break Points Saved": 50,
           "Return:1st return points won": 12.5,
           "Return:2nd return points won": 25,
@@ -27971,11 +27979,11 @@
           "raw": {
             "Service:1st serve points won": {
               "won": 6,
-              "total": 15
+              "total": 14
             },
             "Service:2nd serve points won": {
               "won": 2,
-              "total": 8
+              "total": 9
             },
             "Service:Break Points Saved": {
               "won": 3,
@@ -28015,11 +28023,11 @@
           "Service:Aces": 1,
           "Service:Double Faults": 0,
           "Service:1st serve percentage": 50,
-          "Service:1st serve points won": 87.5,
+          "Service:1st serve points won": 75,
           "Service:2nd serve points won": 75,
           "Service:Break Points Saved": null,
-          "Return:1st return points won": 53.3,
-          "Return:2nd return points won": 75,
+          "Return:1st return points won": 57.1,
+          "Return:2nd return points won": 77.8,
           "Return:Break Points Converted": 50,
           "Points:Total Points Won": 71.1,
           "Points:Service Points Won": 80,
@@ -28028,7 +28036,7 @@
           "Games:Return games won": 100,
           "raw": {
             "Service:1st serve points won": {
-              "won": 7,
+              "won": 6,
               "total": 8
             },
             "Service:2nd serve points won": {
@@ -28037,11 +28045,11 @@
             },
             "Return:1st return points won": {
               "won": 8,
-              "total": 15
+              "total": 14
             },
             "Return:2nd return points won": {
-              "won": 6,
-              "total": 8
+              "won": 7,
+              "total": 9
             },
             "Return:Break Points Converted": {
               "won": 3,
@@ -28074,12 +28082,12 @@
         "p1": {
           "Service:Aces": 0,
           "Service:Double Faults": 1,
-          "Service:1st serve percentage": 19,
-          "Service:1st serve points won": 100,
-          "Service:2nd serve points won": 30.8,
+          "Service:1st serve percentage": 20,
+          "Service:1st serve points won": 33.3,
+          "Service:2nd serve points won": 33.3,
           "Service:Break Points Saved": 33.3,
           "Return:1st return points won": 23.1,
-          "Return:2nd return points won": 40,
+          "Return:2nd return points won": 30.8,
           "Return:Break Points Converted": 0,
           "Points:Total Points Won": 32.6,
           "Points:Service Points Won": 33.3,
@@ -28088,12 +28096,12 @@
           "Games:Return games won": 0,
           "raw": {
             "Service:1st serve points won": {
-              "won": 3,
+              "won": 1,
               "total": 3
             },
             "Service:2nd serve points won": {
               "won": 4,
-              "total": 13
+              "total": 12
             },
             "Service:Break Points Saved": {
               "won": 1,
@@ -28104,8 +28112,8 @@
               "total": 13
             },
             "Return:2nd return points won": {
-              "won": 6,
-              "total": 15
+              "won": 4,
+              "total": 13
             },
             "Return:Break Points Converted": {
               "won": 0,
@@ -28136,12 +28144,12 @@
         "p2": {
           "Service:Aces": 4,
           "Service:Double Faults": 2,
-          "Service:1st serve percentage": 46,
-          "Service:1st serve points won": 84.6,
-          "Service:2nd serve points won": 60,
+          "Service:1st serve percentage": 50,
+          "Service:1st serve points won": 76.9,
+          "Service:2nd serve points won": 69.2,
           "Service:Break Points Saved": 100,
           "Return:1st return points won": 66.7,
-          "Return:2nd return points won": 69.2,
+          "Return:2nd return points won": 66.7,
           "Return:Break Points Converted": 66.7,
           "Points:Total Points Won": 67.4,
           "Points:Service Points Won": 67.9,
@@ -28150,12 +28158,12 @@
           "Games:Return games won": 66.7,
           "raw": {
             "Service:1st serve points won": {
-              "won": 11,
+              "won": 10,
               "total": 13
             },
             "Service:2nd serve points won": {
               "won": 9,
-              "total": 15
+              "total": 13
             },
             "Service:Break Points Saved": {
               "won": 3,
@@ -28166,8 +28174,8 @@
               "total": 3
             },
             "Return:2nd return points won": {
-              "won": 9,
-              "total": 13
+              "won": 8,
+              "total": 12
             },
             "Return:Break Points Converted": {
               "won": 2,
@@ -28198,16 +28206,6 @@
       }
     },
     "tournamentKey": "3120",
-    "finishedAt": "2026-11-26T20:10:44.487Z",
-    "apiTennisClose": {
-      "p1": 5.5,
-      "p2": 1.12,
-      "book": "bet365",
-      "src": "api-tennis",
-      "noTimestamp": true,
-      "noLagCheck": true,
-      "seenAt": "2026-11-26T20:10:44.594Z"
-    },
     "oddsMovement": {
       "chart": {
         "books": {
@@ -28911,12 +28909,15 @@
         }
       }
     },
-    "valueSnapshot": {
-      "fairP1": 0.2229,
-      "fairP2": 0.7771,
-      "edgeVsPinnacleP1": 0.0535,
-      "edgeVsPinnacleP2": -0.0535,
-      "ts": "2026-11-26T20:10:44.487Z"
+    "finishedAt": "2026-11-26T20:10:44.487Z",
+    "apiTennisClose": {
+      "p1": 5.5,
+      "p2": 1.12,
+      "book": "bet365",
+      "src": "api-tennis",
+      "noTimestamp": true,
+      "noLagCheck": true,
+      "seenAt": "2026-11-27T02:40:59.734Z"
     },
     "pinClose": {
       "p1": 7.24,
@@ -28928,13 +28929,24 @@
       "startBasis": "oddspapi trueStart (Oddspapi's own close, founder 2026-11-09)",
       "ageRefTs": "2026-11-26T18:14:43+00:00",
       "archiveId": 14341,
-      "captured": null,
+      "captured": {
+        "p1": 7.33,
+        "p2": 1.132,
+        "source": "Pinnacle +30s (Oddspapi)"
+      },
       "oddspapiClose": true,
       "open": {
         "p1": 6.66,
         "p2": 1.134,
         "ts": "2026-11-26T16:23:21.429Z"
       }
+    },
+    "valueSnapshot": {
+      "fairP1": 0.2229,
+      "fairP2": 0.7771,
+      "edgeVsPinnacleP1": 0.0535,
+      "edgeVsPinnacleP2": -0.0535,
+      "ts": "2026-11-26T20:10:44.487Z"
     }
   }
 ]
