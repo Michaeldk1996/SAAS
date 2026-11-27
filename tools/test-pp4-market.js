@@ -140,7 +140,7 @@ H.check('8.2 grids: role strip minmax(0,1fr) minmax(0,1fr) 340px, body minmax(0,
   const h = lines();
   assert(/grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\) 340px;/.test(h), 'strip grid');
   assert(/grid-template-columns:minmax\(0,1fr\) 340px;/.test(h), 'body grid');
-  assert(/top:26px;right:364px;/.test(h), '(?) placement');   // v5 §9: both columns pad 24, the (?) beside the 18/800 head
+  assert(/top:27px;right:364px;/.test(h), '(?) placement');   // v5 §9: both columns pad 24, the (?) beside the 18/800 head
   assert(!/have no closing price|Retirements are left out of every line\./.test(T(h)), 'a foot note');
   return 'grids';
 });

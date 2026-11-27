@@ -640,3 +640,13 @@ Supersedes the v3 values it restates. Reference = `Player Stat Boxes.dc.html` / 
   Record per tournament: "N tournaments · W–L" in grey mono after the "?"; heads Hanken 11.5/600 not caps; rows 54px,
   name 14, surface and W–L soft, chevron grey; empty = "No tournaments match these filters" + "Back to ATP · all
   surfaces" (resets level, surface and search). Court speed band heads Hanken 11.5/600 not caps.
+- **Market edge and Derived lines (review 2026-11-27, Michael "do it!"):** "Cumulative return" and its sub line ("All
+  matches · N matches") share one baseline, gap 12. Derived lines: the role strip labels are Hanken 13/700 sentence
+  case ("All matches", white when picked), the record and "matches" mono 12, the sub line Hanken 11.5; the "Cover rate by
+  line" meta is "N matches · R retired, not counted" only — the scope (format · window · surface · speed · N matches) is
+  the lifted chip inside its "?"; a line results box prints the event with its year ("Halle 2026") and lets the
+  Reliability tail wrap, never cut. **Kept over the export (rulings):** money in units, never a yield % (founder
+  2026-11-14: tiles, chart axis, band P&L); an exact price tie is neither favourite nor underdog (2026-11-15); the ten
+  price bands with the fav / dog edge at 1.95 (`modal-market-edge.md` Bands; the export draws eight at 2.00); the band
+  box's closing-price heads are the avatar + Opp (the README site rule, over the file's "Price"); the band foot names our
+  tour population (every priced ATP main-tour match since 2010). **Test:** `tools/test-pp7.js` derived / market.

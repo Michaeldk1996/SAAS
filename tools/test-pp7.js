@@ -246,4 +246,31 @@ const toolbarOk = X => {
 H.check('toolbar · compact bars (Court speed, Record per tournament, Calendar, Career record), the count and the reset', () => toolbarOk(I));
 H.mustFail('CONTROL · the pre-ruling tall Court speed bar fails', () => toolbarOk(mutant([["data-pp2-spdbar=\"1\" style=\"display:flex;align-items:center;gap:12px 10px;flex-wrap:wrap;margin-bottom:12px;padding:12px 14px;",
   "data-pp2-spdbar=\"1\" style=\"display:flex;align-items:center;gap:12px 10px;flex-wrap:wrap;margin-bottom:16px;padding:22px 24px;"]])));
+// ── derived lines + market edge (Michael 2026-11-27: the README review for these two boxes too) ─────────────
+const lcOk = X => {
+  reset(X, { modal: 'market', marketTab: 'lines' });
+  const h = X.renderLinesTabV2(p);
+  const labels = [...h.matchAll(/data-pp2-lcrole-label="1" style="([^"]*)">([^<]*)</g)];
+  assert.deepStrictEqual(labels.map(x => x[2]), ['All matches', 'As favourite', 'As underdog'], 'role labels');
+  labels.forEach(x => assert(/font-size:13px;font-weight:700;/.test(x[1]) && !/uppercase/.test(x[1]), 'a caps role label'));
+  const meta = /data-pp2-lcmeta="1"[^>]*>([^<]*)</.exec(h);
+  assert(meta && /^\d+ matches( · \d+ retired, not counted)?$/.test(meta[1]), 'the table meta carries scope words: ' + (meta && meta[1]));
+  reset(X, { modal: 'market', marketTab: 'lines', info: 'ln1' });
+  assert(/best of 3 · career · \d+ matches/.test(T(X.renderLinesTabV2(p))), 'the scope is not in the "?" chip');
+  const rows = [].concat(...X.lineCoverage(p, 'bo3', 'all', { win: 'career', tier: 'all' }).groups.map(g => g.rows)).filter(r => r.n >= 5);
+  reset(X, { marketTab: 'lines', lcFmt: 'bo3', lcRole: 'all', lcWin: 'career', lcTier: 'all' });
+  const b = X.FB_BUILD.lcline(p, rows[0].label);
+  assert(b.tailWrap === true, 'the Reliability tail is cut');
+  assert(/ 20\d\d$/.test(b.rows[0].cells[3].html), 'the event has no year: ' + b.rows[0].cells[3].html);
+};
+H.check('derived · role labels sentence case 13/700, table meta = matches · retired (scope in the "?"), line box event + year, tail wraps', () => lcOk(I));
+H.mustFail('CONTROL · the pre-ruling scope words beside the title fail', () => lcOk(mutant([[
+  "'<span data-pp2-lcmeta=\"1\" style=\"font-size:13px;color:var(--text-label);white-space:nowrap;\">' + total + ' matches'",
+  "'<span data-pp2-lcmeta=\"1\" style=\"font-size:13px;color:var(--text-label);white-space:nowrap;\">' + esc(lcScopeTxt(d, fmt)) + ' · ' + total + ' matches'"]])));
+H.mustFail('CONTROL · caps role labels fail', () => lcOk(mutant([[
+  "'<span data-pp2-lcrole-label=\"1\" style=\"font-family:\\'Hanken Grotesk\\',sans-serif;font-size:13px;font-weight:700;",
+  "'<span data-pp2-lcrole-label=\"1\" style=\"font-family:\\'Hanken Grotesk\\',sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;"]])));
+const mkOk = src => assert(/data-mk-charthead="1" style="display:inline-flex;align-items:baseline;gap:12px;/.test(src), 'the chart sub line is not on the title line');
+H.check('market · "Cumulative return" and its sub line share one baseline (gap 12)', () => mkOk(SRC));
+H.mustFail('CONTROL · the stacked chart head fails', () => mkOk(SRC.replace('data-mk-charthead="1" style="display:inline-flex;align-items:baseline;gap:12px;', 'data-mk-charthead="1" style="display:flex;flex-direction:column;gap:5px;')));
 H.done();

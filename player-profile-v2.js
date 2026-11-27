@@ -3777,7 +3777,7 @@
           (t.figColor || 'var(--text)') + ';">' + (t.fig == null ? DASH : t.fig) + '</span>' +
         '<span style="font-size:11.5px;color:var(--text-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (t.sub || '&nbsp;') + '</span>' +
         '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;color:' + (t.tailColor || 'var(--text-label)') + ';' +
-          'line-height:1.4;' + (tRing ? 'white-space:normal;text-wrap:pretty;' : 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;') + '">' + (t.tail || '&nbsp;') + '</span>' +
+          'line-height:1.4;' + (tRing || fb.tailWrap ? 'white-space:normal;text-wrap:pretty;' : 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;') + '">' + (t.tail || '&nbsp;') + '</span>' +
         '</div>';
     }).join('');
     var pills = fb.pills && fb.pills.length ? '<div style="display:flex;gap:3px;background:var(--card);border:1.25px solid var(--edge-6);' +
@@ -9060,11 +9060,12 @@
         'background:' + (on ? 'var(--selected)' : 'transparent') + ';border-right:' + (i < 2 ? '1px solid var(--edge-6)' : '0') + ';' +
         'box-shadow:inset 0 -2px 0 ' + (on ? 'var(--bar)' : 'transparent') + ';padding:20px 24px;display:flex;flex-direction:column;gap:10px;min-width:0;">' +
         '<span style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;pointer-events:none;">' +
-          '<span style="' + MK_CAPS + 'white-space:nowrap;color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';">' + c[1] + '</span>' +
-          '<span style="' + M + 'font-size:11px;color:var(--text-label);white-space:nowrap;">' + (ms.length ? recordText(w, ms.length - w) : DASH) + '</span></span>' +
+          // final 2026-11-26 (export lineCov.cards): label Hanken 13/700 sentence case, record mono 12, "matches" mono 12, sub Hanken 11.5
+          '<span data-pp2-lcrole-label="1" style="font-family:\'Hanken Grotesk\',sans-serif;font-size:13px;font-weight:700;white-space:nowrap;color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';">' + c[1] + '</span>' +
+          '<span style="' + M + 'font-size:12px;color:var(--text-label);white-space:nowrap;">' + (ms.length ? recordText(w, ms.length - w) : DASH) + '</span></span>' +
         '<span style="display:flex;align-items:baseline;gap:10px;pointer-events:none;"><span style="' + M + 'font-size:26px;font-weight:700;' +
-          'line-height:1;color:var(--text);">' + c[2] + '</span><span style="' + M + 'font-size:11px;color:var(--text-label);">matches</span></span>' +
-        '<span style="' + M + 'font-size:11px;color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;">' + esc(c[3]) + '</span>' +
+          'line-height:1;color:var(--text);">' + c[2] + '</span><span style="' + M + 'font-size:12px;color:var(--text-label);">matches</span></span>' +
+        '<span style="font-size:11.5px;color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;">' + esc(c[3]) + '</span>' +
         '</div>';
     }).join('');
     var model = lcLineModel(d, fmt);
@@ -9073,12 +9074,13 @@
       '<div data-lc-v4 style="position:relative;background:var(--card);border:1.25px solid var(--edge-6);border-top:0;border-radius:0 0 16px 16px;min-width:0;">' +
         '<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 340px;border-bottom:1px solid var(--edge-6);">' + cards + '</div>' +
         '<div style="position:relative;min-width:0;">' +
-          '<span style="position:absolute;top:26px;right:364px;z-index:3;display:flex;">' + infoIcon('ln1', Object.assign({ width: 400, align: 'right' }, LC_INFO1_V4)) + '</span>' +
+          // final 2026-11-26: the scope (format · window · surface · speed) lives in the "?" as its lifted chip, not beside the title
+          '<span style="position:absolute;top:27px;right:364px;z-index:3;display:flex;">' + infoIcon('ln1', Object.assign({ width: 400, align: 'right', v4: true, scopeChip: lcScopeTxt(d, fmt) + ' ' + MIDDOT + ' ' + total + ' matches' }, LC_INFO1_V4)) + '</span>' +
           '<div style="display:grid;grid-template-columns:minmax(0,1fr) 340px;">' +
             '<div style="display:flex;flex-direction:column;min-width:0;padding:24px;">' +
               '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:22px;flex-wrap:wrap;padding-right:28px;">' +
                 '<span style="font-size:18px;font-weight:800;color:var(--text);line-height:1.2;">Cover rate by line</span>' +
-                '<span style="font-size:13px;color:var(--text-label);white-space:nowrap;">' + esc(lcScopeTxt(d, fmt)) + ' ' + MIDDOT + ' ' + total + ' matches' + (retN ? ' ' + MIDDOT + ' ' + retN + ' retired, not counted' : '') + '</span></div>' +
+                '<span data-pp2-lcmeta="1" style="font-size:13px;color:var(--text-label);white-space:nowrap;">' + total + ' matches' + (retN ? ' ' + MIDDOT + ' ' + retN + ' retired, not counted' : '') + '</span></div>' +
               lcGridHtml(model, fmt) +
             '</div>' + lcPanelHtml(model, fmt) +
           '</div></div></div>';
@@ -9152,7 +9154,8 @@
         { html: '<span style="display:block;width:8px;height:8px;border-radius:2px;margin-top:4px;background:' + RES[x.res][1] + ';"></span>' },
         { html: fbDate(r.date), style: M + 'font-size:11px;color:var(--text-label);white-space:nowrap;' },
         { html: esc(initialSurname(r.opp || '') || DASH), style: 'font-size:12.5px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' },
-        { html: esc(tournDisplayName(r.event, null) || DASH), style: 'font-size:12px;color:var(--text-label);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' },
+        // final 2026-11-26 (export line box): the event carries its year ("Halle 2026")
+        { html: esc((tournDisplayName(r.event, null) || DASH) + (r.date ? ' ' + String(r.date).slice(0, 4) : '')), style: 'font-size:12px;color:var(--text-label);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' },
         { html: esc(r.round || DASH), style: M + 'font-size:10.5px;color:var(--text-label);' },
         { html: (won ? 'W ' : 'L ') + esc(lcScoreOf(m)), style: M + 'font-size:11px;color:var(--text-label);white-space:nowrap;' },
         { html: mgTxt, style: M + 'font-size:11px;color:var(--text-soft);text-align:right;' },
@@ -9163,7 +9166,7 @@
     return { name: famTitle + ' ' + MIDDOT + ' ' + label, code: lcScopeTxt(d, fmt),
       meta: (rn ? recOf(rated) + (thin ? '' : ' ' + MIDDOT + ' ' + row.rate.toFixed(1) + '%') + ' ' + MIDDOT + ' ' + rn + ' matches' : 'no completed match') +
         (n.void ? ' ' + MIDDOT + ' ' + n.void + ' pushed' : '') + (n.retired ? ' ' + MIDDOT + ' ' + n.retired + ' retired' : ''),
-      tiles: tiles, pills: pills, cols: FB_LIST_COLS,
+      tiles: tiles, pills: pills, cols: FB_LIST_COLS, tailWrap: true,   // the Reliability tail wraps, never cut (export)
       head: [{ label: '' }, { label: 'Date' }, { label: 'Opponent' }, { label: 'Event' }, { label: 'Rd' }, { label: 'Score' },
         { label: isT ? 'Total' : 'Margin', align: 'right' }, { label: 'Line', align: 'right' }, { label: 'Result', align: 'right' }],
       rows: rows, empty: 'No matches' };
@@ -9663,8 +9666,9 @@
     }
     var roleWord = filt === 'fav' ? 'as favourite' : filt === 'dog' ? 'as underdog' : 'all matches';
     var chart = '<div data-mk-chart style="padding:24px 24px 20px;min-width:0;">' +
-      '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap;">' +
-        '<span style="display:flex;flex-direction:column;gap:5px;min-width:0;">' +
+      '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:22px;flex-wrap:wrap;">' +
+        // final 2026-11-26 (export chartTitle / chartSub): the sub line sits on the title's line, baseline, gap 12
+        '<span data-mk-charthead="1" style="display:inline-flex;align-items:baseline;gap:12px;flex-wrap:wrap;min-width:0;">' +
           '<span style="font-size:18px;font-weight:800;letter-spacing:-0.01em;color:var(--text);">Cumulative return</span>' +
           '<span style="font-size:13px;color:var(--text-label);">' + roleWord.charAt(0).toUpperCase() + roleWord.slice(1) + ' ' + MIDDOT + ' ' + pool.length + ' matches</span></span>' +
         '<span data-mk-total style="' + M + 'font-size:26px;font-weight:700;line-height:1;color:' + (pool.length ? signColour(last) : 'var(--text-label)') + ';">' +
