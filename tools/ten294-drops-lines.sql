@@ -107,17 +107,22 @@ live_from as (
      and t.event_status is distinct from 'pending'
    group by 1
 ),
+mv as (   -- one row per (selection, vendor event): odds-api.io's and our Polymarket recorder's, each joined on its own
+          -- (an OR in the join made the ticks scan skip its event index: 13.8 s a read on 28 Nov, rolled back)
+  select m.k1, m.k2, m.ks, m.kev eid, false pm from m where m.kev is not null
+  union all select m.k1, m.k2, m.ks, m.kpm, true from m where m.kpm is not null
+),
 tk as (
-  select m.k1, m.k2, m.ks, case when t.event_id = m.kpm then 'Polymarket' else t.book end book, t.id::text id, t.book_updated_at at, t.seen_at seen,
-         case when drops_api.nk(e.home) = m.ks then t.back_home when drops_api.nk(e.away) = m.ks then t.back_away end ps,
-         case when drops_api.nk(e.home) = m.ks then t.back_away when drops_api.nk(e.away) = m.ks then t.back_home end po
-    from m
-    join ten287_rec.ticks t on t.event_id = m.kev or t.event_id = m.kpm
+  select v.k1, v.k2, v.ks, case when v.pm then 'Polymarket' else t.book end book, t.id::text id, t.book_updated_at at, t.seen_at seen,
+         case when drops_api.nk(e.home) = v.ks then t.back_home when drops_api.nk(e.away) = v.ks then t.back_away end ps,
+         case when drops_api.nk(e.home) = v.ks then t.back_away when drops_api.nk(e.away) = v.ks then t.back_home end po
+    from mv v
+    join ten287_rec.ticks t on t.event_id = v.eid
     join ten287_rec.events e on e.event_id = t.event_id
-    left join live_from lf on lf.event_id = t.event_id
+    left join live_from lf on lf.event_id = v.eid
    where t.market = 'ML' and t.event_status = 'pending' and t.book_updated_at is not null
-     and ((t.event_id = m.kev and t.book not like 'Polymarket%' and exists (select 1 from ten287_rec.config c where c.id and t.book = any (c.books)))
-       or (t.event_id = m.kpm and t.book = (select pc.book from polyrec.config pc)))
+     and ((not v.pm and t.book not like 'Polymarket%' and exists (select 1 from ten287_rec.config c where c.id and t.book = any (c.books)))
+       or (v.pm and t.book = (select pc.book from polyrec.config pc)))
      and (lf.at is null or t.book_updated_at < lf.at)
      and drops_api.nk(e.home) <> drops_api.nk(e.away)
 ),
@@ -142,6 +147,7 @@ kt as (
     join kalshi_rec.markets km on km.event_ticker = m.kkx
     join kalshi_rec.ticks t on t.ticker = km.ticker
    where t.status = 'active' and t.yes_ask > 0 and t.yes_ask < 1
+     and t.seen_at >= now() - make_interval(hours => p_hours + 24)   -- the window only (the recorder keeps 14 days)
 ),
 pts as (   -- one stream of (selection, book, which side, time, price)
   select k1, k2, ks, book, id, at, seen, 's' w, ps px from tk where ps >= 1.01
