@@ -34,22 +34,46 @@ export function bigStep(series) {
   let best = null;
   for (let i = 1; i < series.length; i++) {
     const a = r2(series[i - 1].v), b = r2(series[i].v);
-    if (b < a && (!best || (a - b) / a > best.p)) best = { p: (a - b) / a, from: a, to: b, t: series[i].t };
+    if (b < a && (!best || (a - b) / a > best.p)) best = { p: (a - b) / a, from: a, to: b, t: series[i].t, fromT: series[i - 1].t };
   }
   return best;
+}
+// the drawn line: recorded prices only, at most `max` points, always keeping the first, the last and the biggest step's two
+export function thin(series, step, max = 24) {
+  if (series.length <= max) return series;
+  const keep = new Set([0, series.length - 1]);
+  if (step) series.forEach((p, i) => { if (p.t === step.t || p.t === step.fromT) keep.add(i); });
+  const room = max - keep.size, every = (series.length - 2) / Math.max(1, room);
+  for (let k = 1; k <= room; k++) keep.add(Math.min(series.length - 2, Math.round(k * every)));
+  return series.filter((_, i) => keep.has(i));
+}
+// the soft line: at each soft tick, the average of the soft books' last prices (books with two prices, once both posted)
+export function softAvgSeries(lists) {
+  const ev = lists.flatMap((l, i) => l.map((p) => ({ t: p.t, i, v: p.v }))).sort((a, b) => a.t - b.t);
+  const last = new Array(lists.length).fill(null), out = [];
+  for (const e of ev) {
+    last[e.i] = e.v;
+    if (last.some((x) => x == null)) continue;
+    const v = r2(last.reduce((a, x) => a + r2(x), 0) / last.length), z = out[out.length - 1];
+    if (z && z.t === e.t) { z.v = v; continue; }
+    if (z && z.v === v) continue;
+    out.push({ t: e.t, v });
+  }
+  return out;
 }
 // one book's reading: first recorded price, close (verified start only), biggest step
 function bookReading(series, verified) {
   if (!series.length) return null;
   const f = series[0], z = series[series.length - 1];
-  return { o: r2(f.v), oAt: f.t, c: verified ? r2(z.v) : null, cAt: verified ? z.t : null, n: r2(z.v), step: bigStep(series), two: series.length > 1 };
+  return { o: r2(f.v), oAt: f.t, c: verified ? r2(z.v) : null, cAt: verified ? z.t : null, n: r2(z.v), step: bigStep(series), two: series.length > 1, series };
 }
 const ms = (t) => (t == null ? null : new Date(t).toISOString());
 function out(rd) {
   if (!rd) return null;
   const last = rd.c != null ? rd.c : rd.n;
   return { o: rd.o, oAt: ms(rd.oAt), c: rd.c, cAt: ms(rd.cAt), drop: r1((rd.o - last) / rd.o * 100), pts: r1(r1(100 / last) - r1(100 / rd.o)),
-    mv: rd.step ? { from: rd.step.from, to: rd.step.to, at: ms(rd.step.t), pct: r1(rd.step.p * 100) } : null };
+    mv: rd.step ? { from: rd.step.from, to: rd.step.to, at: ms(rd.step.t), fromAt: ms(rd.step.fromT), pct: r1(rd.step.p * 100) } : null,
+    line: rd.series ? thin(rd.series, rd.step).map((p) => [ms(p.t), r2(p.v)]) : [] };
 }
 // the score from the side's point of view, from api-tennis's per-set scores ("6-4  7-6" style); null when not sent
 export function scoreOf(fixture, sideFirst) {
@@ -71,7 +95,7 @@ export function summarise(rec, fixture) {
     const avg = (k) => (soft.some((x) => x.r[k] == null) ? null : r2(soft.reduce((a, x) => a + x.r[k], 0) / soft.length));
     const best = soft.reduce((m, x) => (x.r.step && (!m || x.r.step.p > m.r.step.p) ? x : m), null);
     softR = { o: avg('o'), oAt: Math.min(...soft.map((x) => x.r.oAt)), c: avg('c'), cAt: verified ? Math.max(...soft.map((x) => x.r.cAt)) : null, n: avg('n'),
-      step: best ? best.r.step : null, two: true, book: soft.length === 1 ? soft[0].b : 'avg' };
+      step: best ? best.r.step : null, two: true, book: soft.length === 1 ? soft[0].b : 'avg', series: softAvgSeries(soft.map((x) => x.r.series)) };
   }
   const sh = sharp && sharp.two ? out(sharp) : null, so = softR ? out(softR) : null;
   if (so) so.book = softR.book;

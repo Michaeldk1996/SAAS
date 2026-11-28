@@ -34,7 +34,9 @@ await t('Bet105 without its margin = the live page\'s rule, point for point (dro
 await t('a record: sharp (Bet105 no margin) and soft (the average of the soft books with two prices), drop / pts on the 2 dp prices, the soft delay', () => {
   const r = summarise(REC, { event_status: 'Finished', scores: [{ score_first: '6', score_second: '4' }, { score_first: '7.7', score_second: '6.5' }] });
   assert.equal(r.sharp.o, 2.17); assert.equal(r.sharp.c, 1.67); assert.equal(r.sharp.drop, 23); assert.equal(r.sharp.pts, 13.8);
-  assert.equal(JSON.stringify(r.sharp.mv), JSON.stringify({ from: 2.17, to: 1.89, at: at(3), pct: 12.9 }), 'the largest single step');
+  assert.equal(JSON.stringify(r.sharp.mv), JSON.stringify({ from: 2.17, to: 1.89, at: at(3), fromAt: at(0), pct: 12.9 }), 'the largest single step');
+  assert.equal(JSON.stringify(r.sharp.line), JSON.stringify([[at(0), 2.17], [at(3), 1.89], [at(6), 1.67]]), 'the drawn line = the recorded prices');
+  assert.equal(JSON.stringify(r.soft.line), JSON.stringify([[at(1), 2.15], [at(4), 2.05], [at(5), 1.85], [at(7), 1.75]]), 'the soft line = the average of the soft books\' last prices');
   assert.equal(r.soft.o, 2.15); assert.equal(r.soft.c, 1.75); assert.equal(r.soft.book, 'avg');
   assert.equal(r.soft.mv.from, 2.2); assert.equal(r.soft.mv.to, 1.8, 'the largest step at any soft book');
   assert.equal(r.lagMin, 120, 'the soft books\' biggest step came 2 h after the sharp one');
