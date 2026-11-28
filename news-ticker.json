@@ -1,18 +1,18 @@
 {
- "generatedAt": "2026-11-28T11:28:28.953Z",
+ "generatedAt": "2026-11-28T11:53:16.706Z",
  "tournaments": [
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 212,
+   "items": 213,
    "byType": {
-    "quote": 172,
+    "quote": 173,
     "digest": 40
    },
-   "latestTimestamp": "2026-11-28T10:15:34.000Z",
-   "updatedAt": "2026-11-28T11:28:28.953Z"
+   "latestTimestamp": "2026-11-28T10:49:00.000Z",
+   "updatedAt": "2026-11-28T11:53:16.706Z"
   },
   {
    "key": "3120",
@@ -69,6 +69,38 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-73e723d801bc2d",
+   "type": "quote",
+   "playerId": "2981",
+   "opponentId": null,
+   "player": "T. Machac",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-28T10:49:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "I don't want to think about it anymore, because it's very painful",
+   "originalText": "Ich möchte nicht mehr darüber nachdenken, weil es sehr schmerzhaft ist",
+   "language": "de",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "tennisnet.com",
+   "sourceUrl": "https://www.tennisnet.com/news/berdych-nach-aus-sauer-so-funktioniert-der-davis-cup-nicht",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On the missed chances in the deciding doubles",
+   "settingTried": true,
+   "sourceHash": "44877f46ada40346",
+   "publishedAt": "2026-11-28T11:53:16.706Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "quote-b4f2be9799ca70",
    "type": "quote",
@@ -1445,38 +1477,6 @@
    "settingTried": true,
    "sourceHash": "40f84cc09ca40016",
    "publishedAt": "2026-11-26T09:44:02.184Z",
-   "file": "news-ticker/3120-2026.json"
-  },
-  {
-   "id": "quote-dc0060806592c0",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": null,
-   "player": "C. Alcaraz",
-   "opponent": null,
-   "tournament": "Davis Cup - World Group",
-   "tournamentKey": "3120",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-26T03:15:22.384Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "I can't wait to see him practising, stepping back on court. I wish him the best, speedy recovery, and hopefully see him around on the tour and talk to him.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "The National",
-   "sourceUrl": "https://www.thenationalnews.com/sport/tennis/2026/11/26/davis-cup-finals-carlos-alcaraz-and-alexander-zverev-send-messages-of-support-to-injured-jannik-sinner/",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On Sinner's recovery from knee surgery",
-   "settingTried": true,
-   "sourceHash": "598b648c659138cc",
-   "publishedAt": "2026-11-28T11:28:28.953Z",
    "file": "news-ticker/3120-2026.json"
   }
  ]
