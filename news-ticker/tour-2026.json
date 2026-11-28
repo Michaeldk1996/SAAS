@@ -2,7 +2,7 @@
  "tournament": "ATP Tour",
  "tournamentKey": "tour",
  "season": "2026",
- "updatedAt": "2026-11-28T10:42:52.590Z",
+ "updatedAt": "2026-11-28T11:28:28.953Z",
  "items": [
   {
    "id": "quote-b4f2be9799ca70",
@@ -351,36 +351,33 @@
    "timestamp": "2026-11-26T06:30:18.164Z",
    "members": [
     "quote-611a6472c5f726",
-    "quote-dc0060806592c0",
-    "quote-f19182b3e4a3e0",
     "quote-f6ea1aa15d4ca2",
     "quote-f8e9bc79d4870a"
    ],
-   "memberHash": "1f9a1de05a1ed4bb",
-   "digestedAt": "2026-11-26T06:38:02.291Z",
+   "memberHash": "870c3146b4c0af00",
+   "digestedAt": "2026-11-28T10:55:14.105Z",
    "blocks": [
     {
-     "label": "on missing Jannik sinner on tour",
-     "text": "Obviously I'm going to say tennis misses him. I miss him. We haven't seen each other since April.",
+     "label": "on Sinner's knee surgery and comeback",
+     "text": "The decision of making the surgery, I think his team made a good decision. He's young, has a lot of years ahead of him. I'm sure he's going to come back even stronger, even better.",
      "from": [
-      "quote-f19182b3e4a3e0"
+      "quote-f8e9bc79d4870a",
+      "quote-611a6472c5f726"
      ]
     },
     {
-     "label": "on Sinner's knee surgery and comeback",
-     "text": "The decision of making the surgery, I think his team made a good decision. He's young, has a lot of years ahead of him. I'm sure he's going to come back even stronger, even better. I can't wait to see him practising, stepping back on court. I wish him the best, speedy recovery, and hopefully see him around on the tour and talk to him.",
+     "label": "on Sinner's prolonged absence from tennis",
+     "text": "I miss him, tennis needs him.",
      "from": [
-      "quote-f8e9bc79d4870a",
-      "quote-611a6472c5f726",
-      "quote-dc0060806592c0"
+      "quote-f6ea1aa15d4ca2"
      ]
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "d068274e3ab8e54c",
+   "sourceHash": "2a8adc67f8a7a0a8",
    "publishedAt": "2026-11-26T05:09:53.468Z",
-   "revisedAt": "2026-11-26T07:13:19.218Z",
-   "revision": 1
+   "revisedAt": "2026-11-28T11:28:28.953Z",
+   "revision": 2
   },
   {
    "id": "quote-f6ea1aa15d4ca2",
@@ -661,68 +658,6 @@
    "publishedAt": "2026-11-26T04:09:42.809Z"
   },
   {
-   "id": "quote-dc0060806592c0",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": null,
-   "player": "C. Alcaraz",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-26T03:15:22.384Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "I can't wait to see him practising, stepping back on court. I wish him the best, speedy recovery, and hopefully see him around on the tour and talk to him.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "The National",
-   "sourceUrl": "https://www.thenationalnews.com/sport/tennis/2026/11/26/davis-cup-finals-carlos-alcaraz-and-alexander-zverev-send-messages-of-support-to-injured-jannik-sinner/",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On Sinner's recovery from knee surgery",
-   "settingTried": true,
-   "sourceHash": "ef8b0ae038ba06ac",
-   "publishedAt": "2026-11-26T05:09:53.468Z"
-  },
-  {
-   "id": "quote-f19182b3e4a3e0",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": null,
-   "player": "C. Alcaraz",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-26T03:15:22.384Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "Obviously I'm going to say tennis misses him. I miss him. We haven't seen each other since April,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "The National",
-   "sourceUrl": "https://www.thenationalnews.com/sport/tennis/2026/11/26/davis-cup-finals-carlos-alcaraz-and-alexander-zverev-send-messages-of-support-to-injured-jannik-sinner/",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On Sinner's absence after knee surgery",
-   "settingTried": true,
-   "sourceHash": "e6b460e472a5aab5",
-   "publishedAt": "2026-11-26T05:09:53.468Z"
-  },
-  {
    "id": "quote-9fa5c737f7678d",
    "type": "quote",
    "playerId": "1980",
@@ -898,53 +833,37 @@
    "timestamp": "2026-11-25T18:10:21.000Z",
    "members": [
     "quote-0228478d3f331e",
-    "quote-09837707aa63ba",
     "quote-271cd972c66536",
     "quote-58baf32f06cb0e",
     "quote-6f9ca4d511ef0e",
-    "quote-be27f8fec7f451",
-    "quote-dec95bdf3c02f6"
+    "quote-be27f8fec7f451"
    ],
-   "memberHash": "2ecf0434785bed92",
-   "digestedAt": "2026-11-26T16:11:39.244Z",
+   "memberHash": "1ed87e8558fbb0ac",
+   "digestedAt": "2026-11-28T10:55:14.105Z",
    "blocks": [
     {
      "label": "on the toll of playing every week",
-     "text": "I probably could have done things differently. I'm not going to lie. Pushing yourself to play every week ends up taking its toll; in the end, you're killing yourself. But I think it is what it is. I think we have to learn from these experiences. You just have to make mistakes in your career to learn from them, then be better. From now on, I will learn and I will do things a little bit differently. I think everybody is going to be like that.",
+     "text": "I probably could have done things differently. I'm not going to lie. Pushing yourself to play every week, eventually you're killing yourself. But I think it is what it is. I think we have to learn from these experiences. We just have to make mistakes in our career to learn from them, then be better. From now on, I will learn and I will do things a little bit differently. I think everybody is going to be like that.",
      "from": [
       "quote-0228478d3f331e",
       "quote-6f9ca4d511ef0e"
      ]
     },
     {
-     "label": "on his recovery and whether he will play",
-     "text": "I haven't hit a ball yet. Tomorrow will be the first time. In the end, it is about how I feel, and we'll see how things go. I don't want to take anything for granted, but what I can say is that I feel a little better every day and I can see more clearly that I'm recovering. On Thursday, once everything has settled and I've trained, when the day comes, Ferrer will speak.",
-     "from": [
-      "quote-09837707aa63ba"
-     ]
-    },
-    {
      "label": "on missing Sinner after his knee surgery",
-     "text": "I'm going to say tennis misses him. I miss him. We haven't seen each other since April. Can't wait to see him practising, stepping back on court. I wish him the best, a speedy recovery, and hopefully see him around on the tour and talk to him. He will come back even stronger and as a better player.",
+     "text": "I'm going to say tennis misses him. I miss him. We haven't seen each other since April. I can't wait to see him practising, stepping back on court. I wish him the best, a speedy recovery, and hopefully I'll see him around on the tour and talk to him. He will come back even stronger and as a better player.",
      "from": [
       "quote-be27f8fec7f451",
       "quote-271cd972c66536",
       "quote-58baf32f06cb0e"
      ]
-    },
-    {
-     "label": "on winning the Davis Cup for Spain",
-     "text": "The Davis Cup is a goal as well. I really wanted to achieve that for my country, for Spain. I set some other goals for the season, and I will try to be ready to get those goals.",
-     "from": [
-      "quote-dec95bdf3c02f6"
-     ]
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "ff90ea2803930f1b",
+   "sourceHash": "151e181d92f62b56",
    "publishedAt": "2026-11-26T02:48:24.212Z",
-   "revisedAt": "2026-11-26T16:28:46.158Z",
-   "revision": 2
+   "revisedAt": "2026-11-28T11:28:28.953Z",
+   "revision": 3
   },
   {
    "id": "quote-58baf32f06cb0e",
@@ -1575,70 +1494,6 @@
    "revision": 2
   },
   {
-   "id": "quote-09837707aa63ba",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": null,
-   "player": "C. Alcaraz",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-25T05:30:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "I haven't hit a ball yet. Tomorrow will be the first time, … In the end, it is about how I feel, and we'll see how things go. I don't want to take anything for granted, but what I can say is that I feel a little better every day and I can see more clearly that I'm recovering. On Thursday, once everything has settled and I've trained, when the day comes, Ferrer will speak.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "TennisUpToDate",
-   "sourceUrl": "https://tennisuptodate.com/atp/i-havent-hit-a-ball-yet-carlos-alcaraz-casts-doubt-over-davis-cup-return-after-atp-finals-triumph",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "914b914493547b7e",
-   "publishedAt": "2026-11-25T05:52:04.024Z",
-   "topic": "On his recovery and whether he will play",
-   "revisedAt": "2026-11-26T02:48:24.212Z",
-   "revision": 1
-  },
-  {
-   "id": "quote-dec95bdf3c02f6",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": null,
-   "player": "C. Alcaraz",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-25T05:30:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "The Davis Cup is a goal as well. I really wanted to achieve that for my country, for Spain, … I set up some other goals for the season, and I will try to be ready for, or to try to get those goals.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "TennisUpToDate",
-   "sourceUrl": "https://tennisuptodate.com/atp/i-havent-hit-a-ball-yet-carlos-alcaraz-casts-doubt-over-davis-cup-return-after-atp-finals-triumph",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "e98bc4f159db70ec",
-   "publishedAt": "2026-11-25T05:52:04.024Z",
-   "topic": "On winning the Davis Cup for Spain",
-   "revisedAt": "2026-11-26T02:48:24.212Z",
-   "revision": 1
-  },
-  {
    "id": "digest-8c90aabee412d8",
    "type": "digest",
    "version": 1,
@@ -1932,32 +1787,32 @@
    "category": "Quotes",
    "timestamp": "2026-11-24T18:00:06.361Z",
    "members": [
-    "quote-3d25318c31435b",
     "quote-ef564531466e17",
     "quote-f5a2dbd017ea5b"
    ],
-   "memberHash": "2b3fadaf0aa89e93",
-   "digestedAt": "2026-11-26T02:06:51.017Z",
+   "memberHash": "edd4a43d14790049",
+   "digestedAt": "2026-11-28T10:55:14.105Z",
    "blocks": [
     {
-     "label": "on missing Jannik sinner",
-     "text": "It's a shame we don't have Jannik. I can't wait to see him fit, healthy. I am pretty sure that he is going to come back even better and stronger.",
+     "label": "on Jannik's absence",
+     "text": "It's a shame we don't have Jannik.",
      "from": [
-      "quote-ef564531466e17",
-      "quote-f5a2dbd017ea5b"
+      "quote-ef564531466e17"
      ]
     },
     {
-     "label": "on the tournaments he has left",
-     "text": "I'm really looking forward to trying to complete the tournaments I have left.",
+     "label": "on a fellow player's comeback from injury",
+     "text": "I can't wait to see him fit, healthy. I am pretty sure that he is going to come back even better and stronger.",
      "from": [
-      "quote-3d25318c31435b"
+      "quote-f5a2dbd017ea5b"
      ]
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "a839d6520e04f99f",
-   "publishedAt": "2026-11-26T02:48:24.212Z"
+   "sourceHash": "aa6a810a976f099a",
+   "publishedAt": "2026-11-26T02:48:24.212Z",
+   "revisedAt": "2026-11-28T11:28:28.953Z",
+   "revision": 1
   },
   {
    "id": "quote-009f73c624dd2b",
@@ -2265,38 +2120,6 @@
    "publishedAt": "2026-11-24T14:23:24.868Z",
    "topic": "On his knee injury keeping him from tennis",
    "revisedAt": "2026-11-26T03:06:17.922Z",
-   "revision": 1
-  },
-  {
-   "id": "quote-3d25318c31435b",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": null,
-   "player": "C. Alcaraz",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-24T13:00:15.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "I’m really looking forward to trying to complete the tournaments I have left,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "Tennis365",
-   "sourceUrl": "https://www.tennis365.com/tennis-news/carlos-alcarazs-davis-cup-finals-plans-could-miss-spain-quarter-final",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "sourceHash": "616336854698d619",
-   "publishedAt": "2026-11-24T14:23:24.868Z",
-   "topic": "On completing his remaining tournaments this season",
-   "revisedAt": "2026-11-26T03:28:36.371Z",
    "revision": 1
   },
   {

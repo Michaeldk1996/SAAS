@@ -1,31 +1,31 @@
 {
- "generatedAt": "2026-11-28T10:42:52.590Z",
+ "generatedAt": "2026-11-28T11:28:28.953Z",
  "tournaments": [
   {
    "key": "tour",
    "season": "2026",
    "name": "ATP Tour",
    "file": "news-ticker/tour-2026.json",
-   "items": 217,
+   "items": 212,
    "byType": {
-    "quote": 177,
+    "quote": 172,
     "digest": 40
    },
    "latestTimestamp": "2026-11-28T10:15:34.000Z",
-   "updatedAt": "2026-11-28T10:42:52.590Z"
+   "updatedAt": "2026-11-28T11:28:28.953Z"
   },
   {
    "key": "3120",
    "season": "2026",
    "name": "Davis Cup - World Group",
    "file": "news-ticker/3120-2026.json",
-   "items": 38,
+   "items": 45,
    "byType": {
-    "digest": 9,
-    "quote": 29
+    "digest": 11,
+    "quote": 34
    },
    "latestTimestamp": "2026-11-28T08:55:00.000Z",
-   "updatedAt": "2026-11-28T09:56:49.007Z"
+   "updatedAt": "2026-11-28T11:28:28.953Z"
   },
   {
    "key": "2794",
@@ -996,36 +996,33 @@
    "timestamp": "2026-11-26T06:30:18.164Z",
    "members": [
     "quote-611a6472c5f726",
-    "quote-dc0060806592c0",
-    "quote-f19182b3e4a3e0",
     "quote-f6ea1aa15d4ca2",
     "quote-f8e9bc79d4870a"
    ],
-   "memberHash": "1f9a1de05a1ed4bb",
-   "digestedAt": "2026-11-26T06:38:02.291Z",
+   "memberHash": "870c3146b4c0af00",
+   "digestedAt": "2026-11-28T10:55:14.105Z",
    "blocks": [
     {
-     "label": "on missing Jannik sinner on tour",
-     "text": "Obviously I'm going to say tennis misses him. I miss him. We haven't seen each other since April.",
+     "label": "on Sinner's knee surgery and comeback",
+     "text": "The decision of making the surgery, I think his team made a good decision. He's young, has a lot of years ahead of him. I'm sure he's going to come back even stronger, even better.",
      "from": [
-      "quote-f19182b3e4a3e0"
+      "quote-f8e9bc79d4870a",
+      "quote-611a6472c5f726"
      ]
     },
     {
-     "label": "on Sinner's knee surgery and comeback",
-     "text": "The decision of making the surgery, I think his team made a good decision. He's young, has a lot of years ahead of him. I'm sure he's going to come back even stronger, even better. I can't wait to see him practising, stepping back on court. I wish him the best, speedy recovery, and hopefully see him around on the tour and talk to him.",
+     "label": "on Sinner's prolonged absence from tennis",
+     "text": "I miss him, tennis needs him.",
      "from": [
-      "quote-f8e9bc79d4870a",
-      "quote-611a6472c5f726",
-      "quote-dc0060806592c0"
+      "quote-f6ea1aa15d4ca2"
      ]
     }
    ],
    "model": "claude-opus-5-5",
-   "sourceHash": "d068274e3ab8e54c",
+   "sourceHash": "2a8adc67f8a7a0a8",
    "publishedAt": "2026-11-26T05:09:53.468Z",
-   "revisedAt": "2026-11-26T07:13:19.218Z",
-   "revision": 1,
+   "revisedAt": "2026-11-28T11:28:28.953Z",
+   "revision": 2,
    "file": "news-ticker/tour-2026.json"
   },
   {
@@ -1315,6 +1312,42 @@
    "file": "news-ticker/tour-2026.json"
   },
   {
+   "id": "digest-8c342461fe77c1",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2382",
+   "player": "C. Alcaraz",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-26T03:15:22.384Z",
+   "members": [
+    "quote-dc0060806592c0",
+    "quote-f19182b3e4a3e0"
+   ],
+   "memberHash": "c5e11dcc9948aa3e",
+   "digestedAt": "2026-11-28T10:55:14.105Z",
+   "blocks": [
+    {
+     "label": "on Sinner's absence and recovery from knee surgery",
+     "text": "Obviously I'm going to say tennis misses him. I miss him. We haven't seen each other since April. I can't wait to see him practising, stepping back on court. I wish him the best, a speedy recovery, and hopefully I'll see him around on the tour and talk to him.",
+     "from": [
+      "quote-f19182b3e4a3e0",
+      "quote-dc0060806592c0"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "65f9585be0cb1295",
+   "publishedAt": "2026-11-28T11:28:28.953Z",
+   "file": "news-ticker/3120-2026.json"
+  },
+  {
    "id": "digest-a7a98c888fe3a0",
    "type": "digest",
    "version": 1,
@@ -1421,8 +1454,8 @@
    "opponentId": null,
    "player": "C. Alcaraz",
    "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
    "season": "2026",
    "round": null,
    "timestamp": "2026-11-26T03:15:22.384Z",
@@ -1442,41 +1475,9 @@
    "verbatimCheckedOn": "the original-language text of the fetched page",
    "topic": "On Sinner's recovery from knee surgery",
    "settingTried": true,
-   "sourceHash": "ef8b0ae038ba06ac",
-   "publishedAt": "2026-11-26T05:09:53.468Z",
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-f19182b3e4a3e0",
-   "type": "quote",
-   "playerId": "2382",
-   "opponentId": null,
-   "player": "C. Alcaraz",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-26T03:15:22.384Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "Obviously I'm going to say tennis misses him. I miss him. We haven't seen each other since April,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "The National",
-   "sourceUrl": "https://www.thenationalnews.com/sport/tennis/2026/11/26/davis-cup-finals-carlos-alcaraz-and-alexander-zverev-send-messages-of-support-to-injured-jannik-sinner/",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On Sinner's absence after knee surgery",
-   "settingTried": true,
-   "sourceHash": "e6b460e472a5aab5",
-   "publishedAt": "2026-11-26T05:09:53.468Z",
-   "file": "news-ticker/tour-2026.json"
+   "sourceHash": "598b648c659138cc",
+   "publishedAt": "2026-11-28T11:28:28.953Z",
+   "file": "news-ticker/3120-2026.json"
   }
  ]
 }
