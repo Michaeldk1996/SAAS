@@ -238,6 +238,9 @@ ALLOWED = {
     'tools/test-sharp-drops-sql.py': {
         "return {'event_key': ek, 'event_date': t.strftime('%Y-%m-%d'), 'event_time': t.strftime('%H:%M'), 'first': a, 'second': b,",  # stub api-tennis fixture fed to the real drops_scope_ingest for the sharp-drop engine's join; never read as a start (sharp drops 2026-11-14)
     },
+    'tools/test-drops-archive-sql.py': {
+        "fx = lambda k, a, b, status, winner: {'event_key': k, 'event_date': DAY, 'event_time': '12:00', 'first': a, 'second': b,",  # stub api-tennis fixture fed to the real drops_scope_ingest so the archive collector can find a decided match; the scheduled time only files a record under its day, never a start (Dropping Odds archive 2026-11-28)
+    },
     'tools/test-poly-recorder-sql.py': {
         "{'event_key': 7001, 'event_date': DAY, 'event_time': '12:00', 'first': 'A. Molcan', 'second': 'T. Droguet',",  # stub api-tennis fixture fed to the real drops_scope_ingest so our Polymarket recorder can tier a match; never read as a start (Polymarket recorder 2026-11-04)
     },
