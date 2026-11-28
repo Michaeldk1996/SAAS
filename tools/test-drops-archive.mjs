@@ -54,6 +54,8 @@ await t('orientation: the score and the result follow the side; a retirement is 
   assert.equal(scoreOf(f, false), '3-6  1-2 ret.');
   const r = summarise({ ...REC, side: 'Bruno Beta', side_first: false, winner_first: true }, f);
   assert.equal(r.won, false); assert.equal(r.opp, 'Alan Alpha');
+  const q = summarise({ ...REC, player_a: 'Bruno Beta', player_b: 'Alan Alpha', side: 'Alan Alpha', side_first: true }, f);
+  assert.equal(q.opp, 'Bruno Beta', 'the opponent is the other feed player, whatever api-tennis\'s order (the first live rows named the side twice)');
   assert.equal(scoreOf({ scores: [{ score_first: '', score_second: '4' }] }, true), null, 'a set without games is no score');
 });
 

@@ -7,6 +7,7 @@
 // A close is the last price before the VERIFIED start only (records.start_at); with none it is null, never a snapshot.
 
 export const SOFT_BOOKS = ['Superbet', 'Napoleon Sports BE'];
+const sk = (n) => String(n || '').split(',')[0].trim().split(/\s+/).pop().toLowerCase().replace(/[^a-z]/g, '');
 const r1 = (x) => Math.sign(x) * Math.round(Math.abs(x) * 10 + 1e-9) / 10;
 const r2 = (x) => Math.sign(x) * Math.round(Math.abs(x) * 100 + 1e-9) / 100;
 
@@ -101,7 +102,7 @@ export function summarise(rec, fixture) {
   if (so) so.book = softR.book;
   const lagMin = sh && so && sh.mv && so.mv ? Math.round((Date.parse(so.mv.at) - Date.parse(sh.mv.at)) / 60000) : null;
   return { key: rec.key, eventKey: rec.event_key, playerA: rec.player_a, playerB: rec.player_b, side: rec.side,
-    opp: rec.side_first ? rec.player_b : rec.player_a, tier: tierOf(rec.event_type), event: rec.tournament || null, round: rec.round || null,
+    opp: sk(rec.side) === sk(rec.player_a) ? rec.player_b : rec.player_a,   // the feed's own pair (api-tennis's order is side_first) tier: tierOf(rec.event_type), event: rec.tournament || null, round: rec.round || null,
     scheduledAt: rec.scheduled_at || null, startAt: rec.start_at || null, won: rec.side_first === rec.winner_first, status: rec.status,
     score: scoreOf(fixture, rec.side_first), sharp: sh, soft: so, lagMin: lagMin != null && lagMin >= 0 ? lagMin : null };
 }
