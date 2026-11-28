@@ -95,8 +95,8 @@ try:
     q("update drops_archive.records set scheduled_at = now() - interval '91 days' where key = '2|gamma'")
     q("delete from public.lines_stub")
     q("insert into public.lines_stub values ('[]'::jsonb)")
-    rc, out = q("select drops_archive.collect(), (select count(*) from drops_archive.records)")
-    check('a record older than 90 days goes', out == '0|2', out)
+    rc, out = q("select drops_archive.collect()"); rc2, out2 = q("select count(*) from drops_archive.records")
+    check('a record older than 90 days goes', (out, out2) == ('0', '2'), (rc, out, rc2, out2))
 finally:
     pg.close()
 print(f'test-drops-archive-sql: {passed} passed, {failed} failed')
