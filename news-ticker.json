@@ -1,6 +1,19 @@
 {
- "generatedAt": "2026-11-28T11:53:16.706Z",
+ "generatedAt": "2026-11-28T15:13:35.190Z",
  "tournaments": [
+  {
+   "key": "3120",
+   "season": "2026",
+   "name": "Davis Cup - World Group",
+   "file": "news-ticker/3120-2026.json",
+   "items": 46,
+   "byType": {
+    "quote": 35,
+    "digest": 11
+   },
+   "latestTimestamp": "2026-11-28T14:28:00.000Z",
+   "updatedAt": "2026-11-28T15:13:35.190Z"
+  },
   {
    "key": "tour",
    "season": "2026",
@@ -13,19 +26,6 @@
    },
    "latestTimestamp": "2026-11-28T10:49:00.000Z",
    "updatedAt": "2026-11-28T11:53:16.706Z"
-  },
-  {
-   "key": "3120",
-   "season": "2026",
-   "name": "Davis Cup - World Group",
-   "file": "news-ticker/3120-2026.json",
-   "items": 45,
-   "byType": {
-    "digest": 11,
-    "quote": 34
-   },
-   "latestTimestamp": "2026-11-28T08:55:00.000Z",
-   "updatedAt": "2026-11-28T11:28:28.953Z"
   },
   {
    "key": "2794",
@@ -69,6 +69,38 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-76012288c599b2",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": null,
+   "player": "C. Alcaraz",
+   "opponent": null,
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-28T14:28:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "It is a great privilege for me to be here",
+   "originalText": "Es ist ein großes Privileg für mich, hier zu sein",
+   "language": "de",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "tennisnet.com",
+   "sourceUrl": "https://www.tennisnet.com/news/davis-cup-carlos-alcaraz-fixiert-traumfinale-gegen-italien",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On playing for Spain at the Davis Cup Finals",
+   "setting": "after beating Fery in the Davis Cup semifinal in Bologna",
+   "sourceHash": "4327c6ada9522a46",
+   "publishedAt": "2026-11-28T15:13:35.190Z",
+   "file": "news-ticker/3120-2026.json"
+  },
   {
    "id": "quote-73e723d801bc2d",
    "type": "quote",
@@ -1444,38 +1476,6 @@
    "topic": "On Jannik Sinner's recovery from knee surgery",
    "settingTried": true,
    "sourceHash": "6d0386955c8b5070",
-   "publishedAt": "2026-11-26T09:44:02.184Z",
-   "file": "news-ticker/3120-2026.json"
-  },
-  {
-   "id": "quote-bd4eee4e495eae",
-   "type": "quote",
-   "playerId": "1980",
-   "opponentId": null,
-   "player": "A. Zverev",
-   "opponent": null,
-   "tournament": "Davis Cup - World Group",
-   "tournamentKey": "3120",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-26T03:15:22.384Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Injuries",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "Even though, of course, he's one of my biggest competitors, one of the most difficult players for me to play, I still wish for him to come back to the tour because I've been there, I know what injury feels like, and I don't wish injury upon anyone.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "The National",
-   "sourceUrl": "https://www.thenationalnews.com/sport/tennis/2026/11/26/davis-cup-finals-carlos-alcaraz-and-alexander-zverev-send-messages-of-support-to-injured-jannik-sinner/",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On an injured rival's return to the tour",
-   "settingTried": true,
-   "sourceHash": "40f84cc09ca40016",
    "publishedAt": "2026-11-26T09:44:02.184Z",
    "file": "news-ticker/3120-2026.json"
   }
