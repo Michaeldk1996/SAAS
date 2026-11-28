@@ -953,8 +953,8 @@ check('career modal total row = career box headline', () => {
     I.state.careerScope = 'career';   // profile v2 opens on Last 52 weeks; the footer under test is the Career window's
     const html = I.renderCareerModal(p, {});
     // The footer "Career" row prints W/L; it must be the same pair as the tile.
-    assert(html.includes('>' + t.won + '/' + t.lost + '<'),
-      `${p.name}: career modal footer does not carry ${t.won}/${t.lost}`);
+    assert(html.includes('>' + t.won + '–' + t.lost + '<'),   // founder 2026-11-28: the en dash in the season table too
+      `${p.name}: career modal footer does not carry ${t.won}–${t.lost}`);
   }
 });
 
@@ -2322,15 +2322,16 @@ check('the rendered grid shows the Indoors column and the dash, in the DOM', () 
     I.state.careerScope = 'career';
     const html = I.renderCareerModal(IND_PLAYER, { archetype: null });
     assert(html.includes('Indoors'), 'the header has no Indoors column');
-    // auto + one track per data column: six with "Surface not known", five for a player whose every match has a surface
-    // (founder 2026-11-14) — the track count always equals the head count
-    const heads = (html.match(/>Surface not known<\/div>/) ? 6 : 5);
+    // auto + one track per data column: always five — "Surface not known" is a line under the table, never a column
+    // (founder 2026-11-28, was a sixth column since 2026-11-14)
+    assert(!/>Surface not known<\/div>/.test(html), '"Surface not known" is a column again');
+    const heads = 5;
     assert(new RegExp('repeat\\(' + heads + ',minmax\\(0,1fr\\)\\)').test(html),
       'the grid track count does not match its ' + heads + ' data columns');
     // the carved hard cell (7/7) must be painted, and the raw 11/9 must NOT be
-    assert(html.includes('>7/7<'), 'the carved Hard cell is not in the DOM');
-    assert(!html.includes('>11/9<'), 'the DOM still shows the uncarved Hard record');
-    assert(html.includes('>5/3<'), 'the Indoors cell is not in the DOM');
+    assert(html.includes('>7–7<'), 'the carved Hard cell is not in the DOM');
+    assert(!html.includes('>11–9<'), 'the DOM still shows the uncarved Hard record');
+    assert(html.includes('>5–3<'), 'the Indoors cell is not in the DOM');
     // the pre-window row must paint a dash in the Indoors column
     assert(html.includes('2015'), 'the pre-window row is missing');
     // coverage must be stated, not implied

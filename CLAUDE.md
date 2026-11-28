@@ -150,6 +150,14 @@ Each is phrased as a test you can apply. Surface-specific rulings live in `.clau
 
 - **Expandable panels** must have a visible close control. **Charts** are preferred over tables for comparison views.
 
+- **Usability rules, every surface (founder 2026-11-28; they post-date the export and win over it).** First applied to the Career record drawer (`.claude/rules/player-profile.md` → "Drawer usability rulings"); apply them to any popup, table or list you build or touch.
+  - **A popup's head stays in view.** Title, page switch / tabs and Close never scroll away: the head is sticky at the top of whatever scrolls (or the body scrolls under a fixed head). **Test:** scroll a popup taller than the window to its foot; Close is still on screen. The card is `role="dialog" aria-modal="true"`, labelled by its title.
+  - **Anything that opens something is reachable and looks it.** A figure, cell or row that opens a list, drill or popup is a real `<button>` / `<a>`, or carries `tabindex="0" role="button"` and answers Enter and Space; it shows a focus ring (`--edge-16`), and under the pointer or focus a figure turns `--link` on top of the hover fill. Focus returns to it after a redraw. **Test:** Tab reaches it and Enter opens it; a cell with `cursor:pointer` and no keyboard path is wrong.
+  - **One record format.** Wins and losses read `70–19` with the en dash (`recordText`), never `70/19` or a hyphen, in every table, tile, drill and popup.
+  - **No column of dashes.** A column that is empty in nearly every row is not a column: its few values go in one line under the table, each still opening what the cell opened.
+  - **A name once per view.** A popup's title, its first section title and a filter button never repeat the same word (was "Career" three times): the section is named for what it shows, the period sits in its sub-line.
+  - **Night only.** The app has one theme; no Night / Day / Auto switch (`.claude/rules/foundation.md`). Where this file still describes Day or Auto, that text is history.
+
 ---
 
 ## Non-negotiables

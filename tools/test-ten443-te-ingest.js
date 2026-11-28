@@ -433,7 +433,9 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
     assert.deepStrictEqual(sc.map((r) => r.event || r.tournament), ['Davis Cup']);
     I.state.careerDrill = null;
     const head = I.renderCareerModal(Object.assign({ key: KEY }, on.p));
-    assert.ok(/>Surface not known</.test(head) && /repeat\(6,minmax\(0,1fr\)\)/.test(head), 'the sixth column paints');
+    // founder 2026-11-28: no sixth column — the season is listed in the line under the table and still opens its match
+    assert.ok(!/>Surface not known<\/div>/.test(head) && /repeat\(5,minmax\(0,1fr\)\)/.test(head) &&
+      /data-pp2-unknown="1"[^>]*>Surface not known, counted in Total only: <span[^>]*data-v="2023\|unknown"[^>]*>2023 0–1<\/span>/.test(head), 'the Surface not known line lists 2023 0–1');
     // TEN-449 · Record by season's hover: the counting rule, + "as of" until the first refresh, only on a TE record
     const NOTE = 'Counted as Tennis Explorer counts, minus exhibitions, club matches, national championships and pro series.';
     sb.careerRecordMeta = { asOf: '2026-10-18', refreshedAt: null };

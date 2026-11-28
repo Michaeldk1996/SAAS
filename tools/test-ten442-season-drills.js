@@ -109,7 +109,7 @@ function audit(I, p) {
         I.state.careerDrill = { kind: 'cell', year: s.key, surf: c };
         const html = I.renderCareerModal(p);
         // The cell as painted in the table ("W/L") — read back, not recomputed.
-        const m = new RegExp('data-v="' + s.key + '\\|' + c + '"[^>]*>(\\d+)/(\\d+)<').exec(html);
+        const m = new RegExp('data-v="' + s.key + '\\|' + c + '"[^>]*>(\\d+)–(\\d+)<').exec(html);   // founder 2026-11-28: the en dash
         if (!m) { bad.push(`${tier} ${s.key} ${c || 'total'}: the cell is not painted as a link`); continue; }
         if (+m[1] !== rec.won || +m[2] !== rec.lost) { bad.push(`${tier} ${s.key} ${c || 'total'}: painted ${m[1]}/${m[2]}`); continue; }
         const w = (html.match(/data-pp2-drill-row="W"/g) || []).length;

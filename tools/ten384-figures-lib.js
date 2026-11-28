@@ -83,13 +83,13 @@ function readers(I) {
       () => text(I.renderCareerModal(p, {})));
   }
   function readCareer(p) {
-    // v5 §1 (2026-11-20): "Career" 18/800 over "All tiers · 981 matches", record 26 + rate on the right
-    const m = /Career All tiers · ([\d,]+) matches/i.exec(careerModal(p, 'career'));
+    // founder 2026-11-28: "Record by surface" 18/800 over "All time · All tiers · 981 matches", record 26 + rate on the right
+    const m = /Record by surface All time · All tiers · ([\d,]+) matches/i.exec(careerModal(p, 'career'));
     return { total: m ? num(m[1]) : null };
   }
   function readL52(p) {
     const t = careerModal(p, 'l52');
-    const rec = /Last 52 weeks All tiers · [\d,—]+(?: matches)? (\d+)–(\d+)/i.exec(t);
+    const rec = /Record by surface Last 52 weeks · All tiers · [\d,—]+(?: matches)? (\d+)–(\d+)/i.exec(t);
     const und = /(\d[\d,]*) (?:matches carry no dated match row|match carries no dated match row|undated rows?)/.exec(t);
     return { won: rec ? +rec[1] : null, lost: rec ? +rec[2] : null, undated: und ? num(und[1]) : 0, t };
   }

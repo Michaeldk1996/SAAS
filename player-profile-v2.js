@@ -5990,7 +5990,9 @@
         var u = tierGridCells(y, tier).unknown;
         return cellCan(u) ? '<span' + cellAttrs(true, String(y.year) + '|unknown') + ' style="' + MONO + 'font-weight:600;' +
           'color:var(--text-soft);padding:2px 6px;cursor:pointer;white-space:nowrap;">' + esc(String(y.year)) + ' ' + recordText(u.won, u.lost) + '</span>' : '';
-      }).filter(Boolean).join(' ' + MIDDOT + ' ') + '</div>';
+      }).filter(Boolean).concat(years.filter(function (y) { return cellCan(tierGridCells(y, tier).unknown); }).length > 1 && cellCan(cf.unknown)
+        ? ['<span' + cellAttrs(true, 'career|unknown') + ' style="' + MONO + 'font-weight:700;color:var(--text);padding:2px 6px;cursor:pointer;' +
+          'white-space:nowrap;">Career ' + recordText(cf.unknown.won, cf.unknown.lost) + '</span>'] : []).join(' ' + MIDDOT + ' ') + '</div>';
     // profile v2: every methodology line lives in the season panel's (?) — no helper sentence, no foot note
     var cr2Notes = noteBits.slice(1).map(function (t) {   // the popover escapes: plain text, a hover's reason kept as its 2nd sentence
       return String(t).replace(/<span title="([^"]*)">([^<]*)<\/span>/g, function (_, why, what) { return what + '. ' + why.replace(/&rsquo;|&#39;/g, '’'); })
@@ -16462,6 +16464,8 @@
       'background:var(--pp-x-backdrop);display:flex;align-items:flex-start;justify-content:center;padding:40px 24px;' +
       'overflow-y:auto;box-sizing:border-box;font-family:var(--font-words);line-height:normal;color:var(--text);clip-path:inset(0);">' + inner + '</div>';
   }
+  // founder 2026-11-28: the head row of a scrim-scrolled box stays in view (the scrim pads 40px; the card pads 20px 22px)
+  var LT_STICKY_HEAD = 'position:sticky;top:-40px;z-index:5;background:var(--card);margin:-20px -22px 0;padding:20px 22px 12px;border-radius:13px 13px 0 0;';
   var LT_CLOSE = function (hook) {
     return '<span data-pp2="' + hook + '" role="button" aria-label="Close" class="pp2-ltx" style="flex:none;width:32px;height:32px;border-radius:9px;' +
       'background:var(--wash-5);border:1.25px solid var(--edge-6);color:var(--text-label);cursor:pointer;display:flex;align-items:center;' +
@@ -16526,8 +16530,8 @@
     }
     var scope = ltScopeTxt(S) + ltAppliedTxt(M);
     return ltBoxShell('<div data-pp2="card" data-lt-box="spot" style="position:relative;width:860px;max-width:100%;background:var(--card);border:1px solid var(--edge-16);' +
-      'border-radius:14px;padding:20px 22px 22px;box-sizing:border-box;box-shadow:var(--pp-x-shadow-box);cursor:default;">' +
-      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px;">' +
+      'border-radius:14px;padding:20px 22px 22px;box-sizing:border-box;box-shadow:var(--pp-x-shadow-box);cursor:default;" role="dialog" aria-modal="true">' +
+      '<div data-pp2-mhead="1" style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;' + LT_STICKY_HEAD + 'margin-bottom:4px;">' +
         '<div style="display:flex;flex-direction:column;gap:4px;min-width:0;"><span style="font-size:16px;font-weight:800;letter-spacing:-0.01em;white-space:nowrap;">' +
           esc(r.label) + '</span><span style="font-size:12.5px;color:var(--text-label);">' + esc(scope) + '</span></div>' + LT_CLOSE('lt-close') + '</div>' +
       '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:14px;">' + tiles + '</div>' +
@@ -16677,8 +16681,8 @@
           t.label + '</span>';
       }).join('') + '</span>';
     return ltBoxShell('<div data-pp2="card" data-lt-box="heat" style="position:relative;width:860px;max-width:100%;background:var(--card);border:1px solid var(--edge-16);' +
-      'border-radius:14px;padding:20px 22px 22px;box-shadow:var(--pp-x-shadow-box);display:flex;flex-direction:column;gap:18px;box-sizing:border-box;cursor:default;">' +
-      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;">' +
+      'border-radius:14px;padding:20px 22px 22px;box-shadow:var(--pp-x-shadow-box);display:flex;flex-direction:column;gap:18px;box-sizing:border-box;cursor:default;" role="dialog" aria-modal="true">' +
+      '<div data-pp2-mhead="1" style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;' + LT_STICKY_HEAD + 'margin-bottom:-12px;">' +
         '<div style="display:flex;flex-direction:column;gap:6px;">' +
           '<span data-hb="eyebrow"' + (covTip ? ' title="' + esc(covTip) + '"' : '') + ' style="' + LT_CAPS + '">' + esc(eyebrow) + '</span>' +
           '<span style="font-size:18px;font-weight:800;letter-spacing:-0.015em;">Hold / break heatmap</span>' +

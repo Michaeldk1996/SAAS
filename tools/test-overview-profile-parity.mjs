@@ -71,15 +71,19 @@ function profileFigures(win, p, tier) {
   const sp = h.slice(h.indexOf('Record by season'));
   // founder 2026-11-14: the profile shows "Surface not known" only for a player who has such a match; without the
   // column it reads as "—" (nothing there), which is what the Overview prints for it
-  const NC = />Surface not known<\/div>/.test(sp) ? 6 : 5;
+  // founder 2026-11-28: it is no column at all now: five data columns, and the seasons that have such a match are read
+  // from the line under the table ("Surface not known, counted in Total only: 2026 1–0 · … · Career 1–1")
+  const NC = 5;
+  const unk = Object.fromEntries([...sp.matchAll(/data-v="(\d{4}|career)\|unknown"[^>]*>(?:\d{4}|Career) ([^<]*)</g)].map(x => [x[1], norm(x[2])]));
   const re = new RegExp('>(\\d{4})<\\/div>((?:<div[^>]*>[^<]*<\\/div>){' + NC + '})', 'g');
   let m;
   while ((m = re.exec(sp))) {
     const v = [...m[2].matchAll(/>([^<]*)<\/div>/g)].map(x => norm(x[1]));
-    seasons[m[1]] = Object.fromEntries(COLS.map((c, i) => [c, i < NC ? v[i] : '—']));
+    seasons[m[1]] = Object.fromEntries(COLS.map((c, i) => [c, i < NC ? v[i] : (unk[m[1]] || '—')]));
   }
   const ft = new RegExp('>Career<\\/div>((?:<div[^>]*>[^<]*<\\/div>){' + NC + '})').exec(sp);
-  const career = ft ? Object.fromEntries(COLS.map((c, i) => [c, i < NC ? norm([...ft[1].matchAll(/>([^<]*)<\/div>/g)][i][1]) : '—'])) : null;
+  const oneSeason = Object.keys(unk).filter(k => k !== 'career');   // one season only: the line prints no separate Career figure
+  const career = ft ? Object.fromEntries(COLS.map((c, i) => [c, i < NC ? norm([...ft[1].matchAll(/>([^<]*)<\/div>/g)][i][1]) : (unk.career || (oneSeason.length === 1 ? unk[oneSeason[0]] : '—'))])) : null;
   return { rec: norm(hero && hero[1]), rate: hero ? hero[2] || hero[3] || null : null, bars, unknownN: un ? +un[1] : 0, seasons, career,
     rateText: I.rateText };
 }
