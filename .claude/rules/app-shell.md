@@ -34,7 +34,7 @@ drift, the line-chart Model icon. `test-ten286-layout.mjs` locks every closed va
   **Betting** = Picks · Bet Tracker (founder 2026-10-28, Bet Tracker T1: Picks moved out of Analyse; Bet Tracker = the
   `design_handoff_bet_tracker` glyph, short label "Tracker" kept as `data-short`, no compact-rail slot shows it yet).
   Group gap 14px closed / 10px open; rows 4px apart. When open a caps name sits above each group (Hanken 10.5 / 700 /
-  0.10em, `--text-label`, padding `0 14px 2px`). account.html carries the same groups with the items it links to (no Betting group: it links neither page).
+  0.10em, `--text-label`, padding `0 14px 2px`). account.html carries the same four groups and the same 13 items as the app (founder 2026-11-28), each a link `./?open=<tab>`; the app consumes `open` once and clicks that rail item when it is shown (`test-ten286-layout.mjs` "account.html menu = the app menu").
 - Rows: height 48 closed / 42 open, padding `0 13px` inside a 1.5px transparent border, radius 14, gap 13. Icon 20px,
   stroke 1.6: active `--text`, idle `--text-label`, Pro-locked `--nav-locked`. Open adds the label (13.5/600): active
   white, idle `--text-label`. Hover (not the active row) = `--inner`.
@@ -70,17 +70,16 @@ retired line-chart glyph); `test-ten242-rulings.mjs` item 1.1 (the 12 items in o
 also name 12.5/600 white · plan 10.5 `--text-label` · ›). The row is `<a class="sf-userchip" id="acctMain"
 href="account.html" aria-haspopup="menu">`. Clicking it opens `#sfMenu` beside the rail (left `calc(100% + 14px)`,
 bottom-aligned with the foot): 232px, `--card` + 1px `--edge-10`, radius 14, `--shadow-avatar`, padding 14, gap 12 —
-name · plan row; caps "Theme" over the Night / Day / Auto darker track (theme.js's one switch, `data-sf-theme-switch`,
-mounted once, here); Upgrade to Pro (`--pro`, 36px, radius 10, → account.html; hidden on a Pro plan); then on an 8%
+name · plan row; no theme switch (night only, founder 2026-11-28 — it used to sit here); Upgrade to Pro (`--pro`, 36px, radius 10, → account.html; hidden on a Pro plan); then on an 8%
 white hairline Account settings (white, → account.html) and Sign out (`--text-label`, white on hover; `#acctSignout` →
-`BSP.signOut()` → auth.html), rows `--inner` on hover. A click outside or Escape closes it; the theme switch keeps it open.
+`BSP.signOut()` → auth.html), rows `--inner` on hover. A click outside or Escape closes it.
 The plan line is the account's own plan (`free | edge | pro` → "Free plan" / "Edge plan" / "Pro plan").
 **Signed out there is no account** (founder TEN-380 review, 2026-10-04): no initials and no plan (`paintAcct` hides both;
 signing in restores them), a person glyph in the circle, the open row reads "Sign in", the row links to
 `auth.html?mode=signin` and opens no menu.
 
-**The test.** `test-ten286-layout.mjs` "rulings": the row → account.html with `aria-haspopup="menu"`; the menu holds the
-theme switch, Upgrade → account.html, Account settings → account.html, Sign out `#acctSignout`; the switch / Upgrade are
+**The test.** `test-ten286-layout.mjs` "rulings": the row → account.html with `aria-haspopup="menu"`; the menu holds
+Upgrade → account.html, Account settings → account.html, Sign out `#acctSignout`; no theme switch anywhere and Upgrade is
 not back at the foot (mutants: switchBackAtFoot, rowToAuth, noSignout, noMenu). Signed-out painting:
 `test-ten314-modal-frame.mjs` "review item 5".
 

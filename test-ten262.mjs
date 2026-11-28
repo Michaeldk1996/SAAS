@@ -368,7 +368,7 @@ function checkShell(pages) {
     const open = /\.sf-sidebar:hover, \.sf-sidebar:has\(:focus-visible\)\{ width:(\d+)px; \}/.exec(rail);
     if (!push || push[1] !== '248') return `${file}: the open rail does not push the page to 248px (${push && push[1]})`;
     if (!open || open[1] !== '248') return `${file}: open rail width ${open && open[1]}px`;
-    const item = /<(?:a|button)[^>]*(?:#edge|data-tab="edge")[^>]*>([\s\S]*?)Stennisfy Model<\/span><\/(?:a|button)>/.exec(html);
+    const item = /<(?:a|button)[^>]*(?:[#=]edge|data-tab="edge")[^>]*>([\s\S]*?)Stennisfy Model<\/span><\/(?:a|button)>/.exec(html);
     if (!item) return file + ': no Stennisfy Model nav item';
     const d = [...item[1].matchAll(/<path d="([^"]+)"/g)].map(m => m[1]);
     if (d.length !== 1 || d[0] !== STAR) return `${file}: Stennisfy Model icon paths ${JSON.stringify(d)}`;

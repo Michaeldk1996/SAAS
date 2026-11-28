@@ -2210,17 +2210,6 @@ window.sfEarlyFetch = function (u, init) {
   .sf-item:focus-visible, .sf-userchip:focus-visible, .sf-menu a:focus-visible, .sf-menu button:focus-visible{ outline:2px solid var(--edge-16); outline-offset:-2px; }
   .sf-menu-who{ display:flex; align-items:center; gap:11px; }
   .sf-menu-who .sf-userinfo{ display:flex; }
-  .sf-menu-theme{ display:flex; flex-direction:column; gap:6px; }
-  .sf-menu-cap{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); }
-  /* Night · Day · Auto = the darker track (theme.js renders it into [data-sf-theme-switch]) */
-  .sf-theme-seg{ display:flex; gap:2px; padding:3px; background:var(--card); border:1px solid var(--edge-6); border-radius:10px; }
-  .sf-theme-opt{ flex:1; height:30px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; gap:6px; padding:0;
-    border:1px solid transparent; border-radius:8px; background:transparent; color:var(--text-label);
-    font-family:var(--font-words); font-size:11.5px; font-weight:700; cursor:pointer; }
-  .sf-theme-opt svg{ width:14px; height:14px; flex:none; stroke:currentColor; stroke-width:1.6; }
-  .sf-theme-opt:hover{ color:var(--text); }
-  .sf-theme-opt.on{ background:var(--inner); border-color:var(--edge-10); color:var(--text); }
-  .sf-theme-note{ margin:6px 2px 0; font-family:var(--font-words); font-size:10.5px; color:var(--text-label); }
   .sf-upgrade, .sf-upgrade:hover{ display:flex; align-items:center; justify-content:center; height:36px; border-radius:10px;
     background:var(--pro); color:var(--pro-text); font-family:var(--font-words); font-size:12.5px; font-weight:700;
     white-space:nowrap; text-decoration:none; cursor:pointer; }
@@ -2655,7 +2644,6 @@ window.sfEarlyFetch = function (u, init) {
     </a>
     <div class="sf-menu" id="sfMenu" role="menu" aria-label="Account">
       <div class="sf-menu-who"><span class="sf-userav" data-sf-acct="initials"></span><span class="sf-userinfo"><span class="sf-username" data-sf-acct="name"></span><span class="sf-userplan" data-sf-acct="plan"></span></span></div>
-      <div class="sf-menu-theme"><span class="sf-menu-cap">Theme</span><div data-sf-theme-switch></div></div>
       <a class="sf-upgrade" href="account.html" role="menuitem">Upgrade to Pro</a>
       <div class="sf-menu-links">
         <a class="sf-menu-row" href="account.html" role="menuitem"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 11.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM3.5 17.5c.9-2.9 3.4-4.5 6.5-4.5s5.6 1.6 6.5 4.5"/></svg>Account settings</a>
@@ -2713,7 +2701,7 @@ window.sfEarlyFetch = function (u, init) {
 // Pro unlocks both. The paint paths call sfPlanLocks(u) on every auth change. Visual only: navigation is NOT gated —
 // clicking a locked row still opens the page. A row is found by data-tab (dashboard) or its #tab link (account.html).
 window.sfNavLock = function (tab, on) {
-  var b = document.querySelector('.sf-nav [data-tab="' + tab + '"], .sf-nav a.sf-item[href$="#' + tab + '"]'); if (!b) return;
+  var b = document.querySelector('.sf-nav [data-tab="' + tab + '"], .sf-nav a.sf-item[href$="=' + tab + '"]'); if (!b) return;
   var ico = b.querySelector('.sf-ico'), lock = ico.querySelector('.sf-lock');
   b.classList.toggle('is-locked', !!on);
   if (on && !lock) ico.insertAdjacentHTML('beforeend', '<span class="sf-lock" aria-label="Pro"><svg viewBox="0 0 20 20" fill="none" stroke-linejoin="round"><path d="M5 9h10v8H5zM7 9V6a3 3 0 016 0v3"/></svg></span>');
@@ -19649,6 +19637,22 @@ document.getElementById('matchlist').addEventListener('keydown', e => {
 });
 
 window.addEventListener('hashchange', mxApplyHash);
+// Account settings carries the full menu (founder 2026-11-28) and links here as ./?open=<tab>. One-shot: the parameter is
+// consumed, then that rail item is clicked once it is shown (Live, Trading Report, Dropping Odds, Series and Database
+// are revealed after their guards). A tab that never shows leaves the page where it opened.
+(function(){
+  var q; try { q = new URLSearchParams(location.search); } catch (e) { return; }
+  var tab = (q.get('open') || '').replace(/[^a-z0-9-]/g, ''); if (!q.has('open')) return;
+  q.delete('open'); var rest = q.toString();
+  try { history.replaceState(null, '', location.pathname + (rest ? '?' + rest : '') + location.hash); } catch (e) {}
+  var tries = 0;
+  function go(){
+    var b = tab && document.querySelector('#mainNav button[data-tab="' + tab + '"]');
+    if (b && b.style.display !== 'none') { if (!b.classList.contains('active')) b.click(); return; }
+    if (b && ++tries < 40) setTimeout(go, 250);
+  }
+  if (document.readyState === 'complete') go(); else window.addEventListener('load', go);
+})();
 // Surface is now a dropdown menu (All surfaces / Grass / Hard / Clay).
 const surfaceLabels = { all:'All surfaces', grass:'Grass', hard:'Hard', clay:'Clay' };
 function setSurfaceActive(value){

@@ -661,3 +661,18 @@ Supersedes the v3 values it restates. Reference = `Player Stat Boxes.dc.html` / 
 - **Level & round "?" (kept over the export):** the scope chip keeps "Career · W–L · rate · N matches" — the Q1 ruling
   (the baseline is printed so the gap is reproducible, locked by `tools/test-pp2-reconcile.js` Q1/Q2); the export's
   "… by round, level and opponent · click a row for its matches" is not used.
+
+## Drawer usability rulings (founder 2026-11-28) — these post-date the export and win over it
+- **The drawer head stays in view.** Title, page switch and Close are `position:sticky` at the top of the scrolling scrim
+  (`data-pp2-mhead`; the card clips with `overflow:clip`, never a scroll container). All eight drawers share it. The card
+  is `role="dialog" aria-modal="true"` with the drawer title as its label.
+- **Career record figures and surface rows work from the keyboard.** `.pp2-crec` / `.pp2-csrow` carry `tabindex="0"
+  role="button"`; Enter / Space = the click (`onActivateKey`), focus returns to the same figure after the redraw; a
+  visible focus ring (`--edge-16`). Under the pointer or focus a figure turns `--link`.
+- **"Surface not known" is no column.** The seasons that have such a match are listed in one line under Record by
+  season ("Surface not known, counted in Total only: 2026 1–0"), each figure still opening its matches. The line is
+  absent for a player with none. Every season still sums to its total with that line (TEN-449 kept).
+- **One record format:** the en dash everywhere in the drawer (`recordText`), the season table included (was `70/19`).
+- **"Career" once.** The surface section is titled "Record by surface" with the period in its sub-line
+  ("All time · All tiers · 985 matches" / "Last 52 weeks · …"); the period pill reads "All time" (was "Career").
+

@@ -120,6 +120,9 @@ column draws a 7px `--pos` live dot before its clock (`app-shell.md` "Page heade
   Auto switch is the exception: it changes the theme and leaves the modal open.
 - **Provider marks** (U4) are the providers' own files in `assets/brand/`, unmodified, shown as `<img>`; the buttons
   around them are site-style (`--inner`, no edge, 16% on hover, white label).
+- **Night only** (founder 2026-11-28): the app has one theme. The Night / Day / Auto switch is out of the avatar menu,
+  `theme.js` always resolves to night and ignores a saved Day / Auto. The Day tokens stay in `tokens.css`, unused; do not
+  build or restore a light theme unless the founder asks.
 - **Type** (README §7; founder 2026-11-28: the words font **stays Hanken Grotesk** — Geist, the stennisfy.com text font,
   was tried app-wide and reverted the same day as too common on AI-built sites; do not re-propose it or Inter): two families — Hanken Grotesk 400–800 for words, IBM Plex Mono 400–800 (tabular) for every
   aligned digit — loaded with `display=block` (no fallback flash). Caps labels are Hanken 10.5 / 700 / 0.10em /

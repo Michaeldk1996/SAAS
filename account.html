@@ -110,17 +110,6 @@
   .sf-item:focus-visible, .sf-userchip:focus-visible, .sf-menu a:focus-visible, .sf-menu button:focus-visible{ outline:2px solid var(--edge-16); outline-offset:-2px; }
   .sf-menu-who{ display:flex; align-items:center; gap:11px; }
   .sf-menu-who .sf-userinfo{ display:flex; }
-  .sf-menu-theme{ display:flex; flex-direction:column; gap:6px; }
-  .sf-menu-cap{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); }
-  /* Night · Day · Auto = the darker track (theme.js renders it into [data-sf-theme-switch]) */
-  .sf-theme-seg{ display:flex; gap:2px; padding:3px; background:var(--card); border:1px solid var(--edge-6); border-radius:10px; }
-  .sf-theme-opt{ flex:1; height:30px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; gap:6px; padding:0;
-    border:1px solid transparent; border-radius:8px; background:transparent; color:var(--text-label);
-    font-family:var(--font-words); font-size:11.5px; font-weight:700; cursor:pointer; }
-  .sf-theme-opt svg{ width:14px; height:14px; flex:none; stroke:currentColor; stroke-width:1.6; }
-  .sf-theme-opt:hover{ color:var(--text); }
-  .sf-theme-opt.on{ background:var(--inner); border-color:var(--edge-10); color:var(--text); }
-  .sf-theme-note{ margin:6px 2px 0; font-family:var(--font-words); font-size:10.5px; color:var(--text-label); }
   .sf-upgrade, .sf-upgrade:hover{ display:flex; align-items:center; justify-content:center; height:36px; border-radius:10px;
     background:var(--pro); color:var(--pro-text); font-family:var(--font-words); font-size:12.5px; font-weight:700;
     white-space:nowrap; text-decoration:none; cursor:pointer; }
@@ -330,19 +319,28 @@
   <nav class="sf-nav">
     <div class="sf-group" role="group" aria-label="Analyse">
       <div class="sf-glabel">Analyse</div>
-      <a class="sf-item" href="./#matches" aria-label="Matches"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5h14M3 10h14M3 13.5h14"/></svg></span><span class="sf-lbl">Matches</span></a>
-      <a class="sf-item" href="./#picks" aria-label="Picks"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13ZM7.3 10.2l1.9 1.9 3.6-4"/></svg></span><span class="sf-lbl">Picks</span></a>
+      <a class="sf-item" href="./?open=matches" aria-label="Matches"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5h14M3 10h14M3 13.5h14"/></svg></span><span class="sf-lbl">Matches</span></a>
+      <a class="sf-item" href="./?open=live" aria-label="Live"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 8.5a1.5 1.5 0 100 3 1.5 1.5 0 000-3M6.8 6.8a4.5 4.5 0 000 6.4M13.2 6.8a4.5 4.5 0 010 6.4M4.6 4.6a7.6 7.6 0 000 10.8M15.4 4.6a7.6 7.6 0 010 10.8"/></svg></span><span class="sf-lbl">Live</span></a>
+      <a class="sf-item" href="./?open=trading" aria-label="Trading Report"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 15.5 7 10l3 2.5 4-7M13 3.5h3.5V7"/></svg></span><span class="sf-lbl">Trading Report</span></a>
+      <a class="sf-item" href="./?open=drops" aria-label="Dropping Odds"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5 8 10l3-2.5 5.5 6M16.5 9.5v4h-4"/></svg></span><span class="sf-lbl">Dropping Odds</span></a>
+      <a class="sf-item" href="./?open=series" aria-label="Series"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14.5c2.5 0 3.2-3.4 5-3.4s2.3 2.2 4 2.2 2.6-4.8 5-4.8"/></svg></span><span class="sf-lbl">Series</span></a>
     </div>
     <div class="sf-group" role="group" aria-label="Research">
       <div class="sf-glabel">Research</div>
-      <a class="sf-item" href="./#players" aria-label="Players"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 10a3 3 0 100-6 3 3 0 000 6ZM4.5 16a5.5 5.5 0 0111 0"/></svg></span><span class="sf-lbl">Players</span></a>
-      <a class="sf-item" href="./#tournaments" aria-label="Tournaments"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h8v3a4 4 0 01-8 0V4ZM10 11v3M7.5 16.5h5"/></svg></span><span class="sf-lbl">Tournaments</span></a>
+      <a class="sf-item" href="./?open=players" aria-label="Players"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 10a3 3 0 100-6 3 3 0 000 6ZM4.5 16a5.5 5.5 0 0111 0"/></svg></span><span class="sf-lbl">Players</span></a>
+      <a class="sf-item" href="./?open=h2h" aria-label="Head to Head"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v12M13 4v12M3.5 8.5h3M13.5 11.5h3"/></svg></span><span class="sf-lbl">Head to Head</span></a>
+      <a class="sf-item" href="./?open=tournaments" aria-label="Tournaments"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h8v3a4 4 0 01-8 0V4ZM10 11v3M7.5 16.5h5"/></svg></span><span class="sf-lbl">Tournaments</span></a>
+      <a class="sf-item" href="./?open=database" aria-label="Database"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.4c3 0 5.4.8 5.4 1.9v9.4c0 1.1-2.4 1.9-5.4 1.9s-5.4-.8-5.4-1.9V5.3c0-1.1 2.4-1.9 5.4-1.9ZM4.6 5.3c0 1.1 2.4 1.9 5.4 1.9s5.4-.8 5.4-1.9M4.6 10c0 1.1 2.4 1.9 5.4 1.9s5.4-.8 5.4-1.9"/></svg></span><span class="sf-lbl">Database</span></a>
     </div>
     <div class="sf-group" role="group" aria-label="Insights">
       <div class="sf-glabel">Insights</div>
-      <a class="sf-item" href="./#edge" aria-label="Stennisfy Model"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3l1.9 3.9 4.3.6-3.1 3 .7 4.3L10 16.8 6.3 18.8l.7-4.3-3.1-3 4.3-.6z"/></svg></span><span class="sf-lbl">Stennisfy Model</span></a>
-      <a class="sf-item" href="./#styles" aria-label="Playing Styles"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15V9M8 15V5M12 15v-4M16 15V7"/></svg></span><span class="sf-lbl">Playing Styles</span></a>
-      <a class="sf-item" href="./#news" aria-label="News"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h9v10H4zM13 8h3v5.5a1.5 1.5 0 01-3 0zM6 8h5M6 11h5"/></svg></span><span class="sf-lbl">News</span></a>
+      <a class="sf-item" href="./?open=edge" aria-label="Stennisfy Model"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3l1.9 3.9 4.3.6-3.1 3 .7 4.3L10 16.8 6.3 18.8l.7-4.3-3.1-3 4.3-.6z"/></svg></span><span class="sf-lbl">Stennisfy Model</span></a>
+      <a class="sf-item" href="./?open=news" aria-label="News"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h9v10H4zM13 8h3v5.5a1.5 1.5 0 01-3 0zM6 8h5M6 11h5"/></svg></span><span class="sf-lbl">News</span></a>
+    </div>
+    <div class="sf-group" role="group" aria-label="Betting">
+      <div class="sf-glabel">Betting</div>
+      <a class="sf-item" href="./?open=picks" aria-label="Picks"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13ZM7.3 10.2l1.9 1.9 3.6-4"/></svg></span><span class="sf-lbl">Picks</span></a>
+      <a class="sf-item" href="./?open=tracker" aria-label="Bet Tracker" data-short="Tracker"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5h13v9h-13zM3.5 9h13M6.5 12h3M13 5.5v9"/></svg></span><span class="sf-lbl">Bet Tracker</span></a>
     </div>
   </nav>
   <div class="sf-foot">
@@ -357,7 +355,6 @@
     </a>
     <div class="sf-menu" id="sfMenu" role="menu" aria-label="Account">
       <div class="sf-menu-who"><span class="sf-userav" data-sf-acct="initials"></span><span class="sf-userinfo"><span class="sf-username" data-sf-acct="name"></span><span class="sf-userplan" data-sf-acct="plan"></span></span></div>
-      <div class="sf-menu-theme"><span class="sf-menu-cap">Theme</span><div data-sf-theme-switch></div></div>
       <a class="sf-upgrade" href="account.html" role="menuitem">Upgrade to Pro</a>
       <div class="sf-menu-links">
         <a class="sf-menu-row" href="account.html" role="menuitem"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 11.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM3.5 17.5c.9-2.9 3.4-4.5 6.5-4.5s5.6 1.6 6.5 4.5"/></svg>Account settings</a>
@@ -417,7 +414,7 @@
 // Pro unlocks both. The paint paths call sfPlanLocks(u) on every auth change. Visual only: navigation is NOT gated —
 // clicking a locked row still opens the page. A row is found by data-tab (dashboard) or its #tab link (account.html).
 window.sfNavLock = function (tab, on) {
-  var b = document.querySelector('.sf-nav [data-tab="' + tab + '"], .sf-nav a.sf-item[href$="#' + tab + '"]'); if (!b) return;
+  var b = document.querySelector('.sf-nav [data-tab="' + tab + '"], .sf-nav a.sf-item[href$="=' + tab + '"]'); if (!b) return;
   var ico = b.querySelector('.sf-ico'), lock = ico.querySelector('.sf-lock');
   b.classList.toggle('is-locked', !!on);
   if (on && !lock) ico.insertAdjacentHTML('beforeend', '<span class="sf-lock" aria-label="Pro"><svg viewBox="0 0 20 20" fill="none" stroke-linejoin="round"><path d="M5 9h10v8H5zM7 9V6a3 3 0 016 0v3"/></svg></span>');

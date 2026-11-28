@@ -189,9 +189,11 @@ test('the Night / Day / Auto switch: the modal delegates to theme.js — one att
   const api = new Function('window', `${slice('maThemeMode')}\n${slice('maApplyTheme')}\n${slice('maSetTheme')}\nreturn { maSetTheme, maThemeMode, maApplyTheme };`)(window);
   assert.equal(attrs['data-theme'], 'night', 'Night is the default, set before first paint');
   assert.equal(api.maThemeMode(), 'night');
-  api.maSetTheme('day'); assert.deepEqual([attrs['data-theme'], store['stennisfy-theme'], api.maThemeMode()], ['day', 'day', 'day']);
-  osLight = false; api.maSetTheme('auto'); assert.deepEqual([attrs['data-theme'], store['stennisfy-theme']], ['night', 'auto'], 'Auto + dark OS = night');
-  osLight = true; api.maApplyTheme(); assert.equal(attrs['data-theme'], 'day', 'Auto + light OS = day');
+  // founder 2026-11-28: night only — Day and Auto no longer apply, whatever is asked or was saved
+  api.maSetTheme('day'); assert.deepEqual([attrs['data-theme'], store['stennisfy-theme'], api.maThemeMode()], ['night', 'night', 'night']);
+  osLight = false; api.maSetTheme('auto'); assert.deepEqual([attrs['data-theme'], store['stennisfy-theme']], ['night', 'night'], 'Auto is night');
+  osLight = true; api.maApplyTheme(); assert.equal(attrs['data-theme'], 'night', 'a light OS is still night');
+  store['stennisfy-theme'] = 'day'; api.maApplyTheme(); assert.equal(attrs['data-theme'], 'night', 'a saved Day is night');
   api.maSetTheme('bogus'); assert.deepEqual([store['stennisfy-theme'], attrs['data-theme']], ['night', 'night']);
   assert.deepEqual(Object.keys(store), ['stennisfy-theme'], 'one storage key');
   assert.match(HTML, /<div class="modal-overlay ma-theme" id="analysisModal">/);

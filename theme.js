@@ -7,9 +7,9 @@
 (function () {
   var KEY = 'stennisfy-theme';
   var mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
-  function mode() {
-    try { var v = localStorage.getItem(KEY); return v === 'day' || v === 'auto' ? v : 'night'; } catch (e) { return 'night'; }
-  }
+  // Founder 2026-11-28: the app is night only. The Night / Day / Auto switch is gone from the avatar menu and a saved
+  // Day / Auto no longer applies. The Day tokens stay in tokens.css, unused.
+  function mode() { return 'night'; }
   function resolved(m) { return m === 'auto' ? (mq && mq.matches ? 'day' : 'night') : m; }
   function apply() {
     var m = mode(), t = resolved(m), root = document.documentElement;
@@ -22,7 +22,7 @@
     return m;
   }
   function set(m) {
-    try { localStorage.setItem(KEY, m === 'day' || m === 'auto' ? m : 'night'); } catch (e) {}
+    try { localStorage.setItem(KEY, 'night'); } catch (e) {}
     var r = apply();
     try { window.dispatchEvent(new CustomEvent('sf-thememode', { detail: { mode: r } })); } catch (e) {}
     return r;
@@ -60,38 +60,6 @@
   };
   fit();
   window.addEventListener('resize', fit);
-
-  // README §5.14 — the Night · Day · Auto switch (darker track), in the rail's avatar menu (TEN-403). Markup: <div data-sf-theme-switch></div>.
-  // Under it, only while Auto is on, a 10.5px --text-label note "Auto · following the OS (light|dark)".
-  // Each option = 14px glyph + word (TEN-403 avatar menu, the shell package's reference: moon / sun / half disc).
-  var LABELS = [['night', 'Night', 'M16.2 12.3A6.5 6.5 0 017.7 3.8a6.5 6.5 0 108.5 8.5z'],
-    ['day', 'Day', 'M10 6.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7M10 2.5v1.6M10 15.9v1.6M2.5 10h1.6M15.9 10h1.6M4.7 4.7l1.1 1.1M14.2 14.2l1.1 1.1M4.7 15.3l1.1-1.1M14.2 5.8l1.1-1.1'],
-    ['auto', 'Auto', 'M10 3a7 7 0 100 14 7 7 0 000-14zM10 3v14']];
-  function renderSwitch(host) {
-    var m = mode();
-    host.innerHTML = '<div class="sf-theme-seg" role="radiogroup" aria-label="Theme">' + LABELS.map(function (o) {
-      var on = o[0] === m;
-      return '<button type="button" role="radio" aria-checked="' + on + '" data-mode="' + o[0] + '" class="sf-theme-opt' + (on ? ' on' : '') + '"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + o[2] + '"/></svg>' + o[1] + '</button>';
-    }).join('') + '</div>' + (m === 'auto' ? '<div class="sf-theme-note">Auto · following the OS (' + (mq && mq.matches ? 'light' : 'dark') + ')</div>' : '');
-  }
-  function mountAll() {
-    var hosts = document.querySelectorAll('[data-sf-theme-switch]');
-    for (var i = 0; i < hosts.length; i++) {
-      var h = hosts[i];
-      renderSwitch(h);
-      if (!h.__sfBound) {
-        h.__sfBound = true;
-        h.addEventListener('click', function (e) {
-          var b = e.target.closest && e.target.closest('[data-mode]');
-          if (b) set(b.getAttribute('data-mode'));
-        });
-      }
-    }
-  }
-  window.addEventListener('sf-thememode', mountAll);
-  window.addEventListener('sf-themechange', mountAll);
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mountAll); else mountAll();
-  window.sfTheme.mountSwitch = mountAll;
 })();
 
 /* First paint (2026-11-12): the dashboard hides <body> until html.sf-css-ready (its <head> rule `sf-first-paint`), because

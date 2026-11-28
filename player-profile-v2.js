@@ -411,7 +411,9 @@
     // so the hover token is the one the same file uses for its other clickable
     // data row (.dc.html:489) rather than a colour invented here.
     '.pp2-crec{transition:background .12s ease,color .12s ease;}' +
-    '.pp2-crec:hover{background:var(--pp-x-hover);color:var(--text);border-radius:8px!important;border-top-color:transparent!important;}' +
+    '.pp2-crec:hover,.pp2-crec:focus-visible{background:var(--pp-x-hover);color:var(--link)!important;border-radius:8px!important;border-top-color:transparent!important;}' +
+    '.pp2-crec:focus-visible,.pp2-csrow:focus-visible{outline:2px solid var(--edge-16);outline-offset:-2px;}' +
+    '.pp2-csrow:focus-visible{background:var(--pp-x-hover);border-radius:10px!important;border-top-color:transparent!important;}' +
     // §5.4 item 14 — the heat cell's hover, verbatim from the design file's own
     // stylesheet (`Player Stat Boxes.dc.html`:24-26). A win cell goes to green
     // 0.42 with an inset ring, a loss cell to red, a level cell to white 0.14.
@@ -3680,10 +3682,12 @@
       '<div class="pp2-scrim" data-pp2="scrim" style="position:fixed;inset:0 0 0 var(--sf-side, 0px);background:var(--backdrop); backdrop-filter:blur(3px);' +
       'z-index:60;display:flex;align-items:flex-start;justify-content:center;' +
       'padding:28px 20px;overflow-y:auto;">' + MODAL_SHELL_CSS +
-        '<div class="pp2-card" data-pp2="card" style="width:100%;max-width:' + (MODAL_WIDTH[key] || 900) + 'px;' +
-        'background:var(--card);border:1px solid var(--edge-16);border-radius:16px;overflow:hidden;">' +   // v2: 16% ring
-          '<div style="display:flex;gap:13px;padding:20px 22px;align-items:center;' +
-            'border-bottom:1px solid var(--line);">' +
+        '<div class="pp2-card" data-pp2="card" role="dialog" aria-modal="true" aria-label="' + esc(title) + '" style="width:100%;max-width:' + (MODAL_WIDTH[key] || 900) + 'px;' +
+        // founder 2026-11-28: the head stays in view while the drawer scrolls (overflow:clip keeps the rounded clip without
+        // making the card a scroll container, so the sticky head answers to the scrim; older browsers keep `hidden`)
+        'background:var(--card);border:1px solid var(--edge-16);border-radius:16px;overflow:hidden;overflow:clip;">' +   // v2: 16% ring
+          '<div data-pp2-mhead="1" style="display:flex;gap:13px;padding:20px 22px;align-items:center;' +
+            'border-bottom:1px solid var(--line);position:sticky;top:-28px;z-index:5;background:var(--card);">' +   // -28px = the scrim's top padding: flush with the window top
             '<span style="width:34px;height:34px;border-radius:10px;flex:none;display:flex;align-items:center;' +
               'justify-content:center;background:var(--selected);color:var(--link);">' +   // the export's blue drawer icon
               '<svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" ' +
@@ -5415,7 +5419,7 @@
   function careerTabsHtml() {
     var tab = state.careerTab === 'ratings' ? 'ratings' : 'record';
     // final 2026-11-26 (export careerBand): loose pills 11.5 pad 6/13 r8, gap 8, a 1px divider before the tier pills; band pad 20/24
-    var win = calPills('career-scope', [['l52', 'Last 52 weeks'], ['career', 'Career']], state.careerScope === 'l52' ? 'l52' : 'career', 11.5,
+    var win = calPills('career-scope', [['l52', 'Last 52 weeks'], ['career', 'All time']], state.careerScope === 'l52' ? 'l52' : 'career', 11.5,
       function (t) { return ' data-scope="' + t[0] + '"'; });
     var tier = tab === 'record' ? '<span style="width:1px;height:18px;background:var(--edge-10);margin:0 6px;"></span>' + calPills('career-tier', CAREER_TIERS, careerTier(), 11.5) : '';
     return bandBox(win + tier, tab === 'ratings' ? 'joined-8' : 'joined-card', 'padding:20px 24px;gap:8px;');
@@ -5753,12 +5757,12 @@
       // whose first line is the rate, so the rate keeps the hero's baseline and the mark takes a second line.
       // profile v2 (founder 2026-11-09): no small-sample mark — a 5–9 rate prints like any other
     }
-    var scopeCaps = isL52 ? 'Last 52 weeks' : 'Career';
+    var scopeCaps = isL52 ? 'Last 52 weeks' : 'All time';
     // v5 §1: title 18/800 ("Last 52 weeks" / "Career") over a 13 grey "tier · n matches" | record 26 mono 700 + win rate 14 grey
     var hero = '<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px 24px;flex-wrap:wrap;">' +
       '<div style="display:flex;flex-direction:column;gap:4px;min-width:0;">' +
-        '<span style="font-size:18px;font-weight:800;letter-spacing:-0.005em;color:var(--text);">' + scopeCaps + '</span>' +
-        '<span style="font-size:13px;color:var(--text-label);">' + esc(tierWord.charAt(0).toUpperCase() + tierWord.slice(1)) + ' ' + MIDDOT + ' ' + (tn ? tn.toLocaleString('en-US') + ' matches' : DASH) + '</span></div>' +
+        '<span style="font-size:18px;font-weight:800;letter-spacing:-0.005em;color:var(--text);">Record by surface</span>' +
+        '<span style="font-size:13px;color:var(--text-label);">' + scopeCaps + ' ' + MIDDOT + ' ' + esc(tierWord.charAt(0).toUpperCase() + tierWord.slice(1)) + ' ' + MIDDOT + ' ' + (tn ? tn.toLocaleString('en-US') + ' matches' : DASH) + '</span></div>' +
       '<div style="display:flex;align-items:baseline;gap:12px;">' +
         '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:26px;font-weight:700;line-height:1;' +
           'letter-spacing:-0.02em;white-space:nowrap;color:' + (tn ? 'var(--text)' : DASH_COLOUR) + ';">' +
@@ -5791,7 +5795,7 @@
         : (n && !rated ? n + ' match' + (n === 1 ? '' : 'es') + ' ' + MIDDOT + ' under the five-match minimum' : '');
       var fill = barFillColour(n);
       var vs = (rated && allRate != null) ? pct - allRate : null;
-      var attrs = can ? ' data-pp2="career-surf" data-v="' + s.id + '"' : '';
+      var attrs = can ? ' data-pp2="career-surf" data-v="' + s.id + '" tabindex="0" role="button"' : '';
       var tip = why ? ' title="' + esc(why) + '"' : '';
       return '<div' + attrs + tip + (can ? ' class="pp2-csrow"' : '') + ' style="' + SCOLS +
           'min-height:54px;padding:0 10px;margin:0 -10px;border-radius:0;border-top:1px solid var(--edge-6);' + (can ? 'cursor:pointer;' : '') + '">' +
@@ -5871,7 +5875,10 @@
     // Founder 2026-11-14: the column shows only for a player who has a match on no surface in this view (tier); a player
     // whose every match has a surface gets the reference's five surface columns. Arithmetic on his own cells, nothing guessed.
     var hasUnknown = years.some(function (y) { var u = tierGridCells(y, tier).unknown; return !!u && (u.won || 0) + (u.lost || 0) > 0; });
-    if (!hasUnknown) HEADS = HEADS.filter(function (h) { return h.id !== 'unknown'; });
+    // Founder 2026-11-28: it is no column any more (it was a dash in nearly every season): the seasons that have such a
+    // match are listed in one line under the table, each figure still opening its matches. ALL_HEADS keeps the label.
+    var ALL_HEADS = HEADS;
+    HEADS = HEADS.filter(function (h) { return h.id !== 'unknown'; });
     var unknownTip = 'Matches in no other column: no clay, hard or grass surface on record (Tennis Explorer lists most ' +
       'Davis Cup ties as "Not set"; an outdoor carpet match lands here too). Total less Clay, Hard, Indoors and Grass, ' +
       'so every season sums to its total.';
@@ -5888,11 +5895,11 @@
     // is just those 2 matches. The n ≥ 5 gate lives where the claim is (the rate and the bar).
     function cellCan(rec) { return !!rec && ((rec.won || 0) + (rec.lost || 0)) > 0; }
     function cellAttrs(can, v) {
-      return can ? ' class="pp2-crec" data-pp2="career-cell" data-v="' + esc(v) + '"' : '';
+      return can ? ' class="pp2-crec" data-pp2="career-cell" data-v="' + esc(v) + '" tabindex="0" role="button"' : '';
     }
     function drillTitleFor(surfId, scopeLabel) {
       var lab = surfId
-        ? HEADS.filter(function (h) { return h.id === surfId; })[0].label
+        ? ALL_HEADS.filter(function (h) { return h.id === surfId; })[0].label
         : 'All matches';
       return lab + ' ' + MIDDOT + ' ' + scopeLabel;
     }
@@ -5914,7 +5921,7 @@
       var yearCan = cellCan(g.total);
       var cellsHtml = HEADS.slice(1).map(function (h) {
         var r = g[h.id];
-        var txt = r ? (r.won || 0) + '/' + (r.lost || 0) : DASH;
+        var txt = r ? recordText(r.won, r.lost) : DASH;
         var can = cellCan(r);
         var on = openCell === (h.id === 'total' ? '' : h.id);
         var isTot = h.id === 'total';
@@ -5957,7 +5964,7 @@
           ' style="' + MONO + 'font-size:14px;font-weight:700;letter-spacing:-0.14px;text-align:right;' +
           'padding:15px 6px 13px;margin:0 -6px;border-radius:0;color:' + (r ? 'var(--text)' : DIM_COLOUR) + ';' + (can ? 'cursor:pointer;' : '') +
           'border-top:1px solid var(--pp-x-edge-12);">' +
-          (r ? (r.won || 0) + '/' + (r.lost || 0) : DASH) + '</div>';
+          (r ? recordText(r.won, r.lost) : DASH) + '</div>';
       }).join('') +
       (openCareerCell !== null
         ? drillFor('career', openCareerCell || null,
@@ -5977,6 +5984,13 @@
       });
     }
 
+    var unknownNote = !hasUnknown ? '' : '<div data-pp2-unknown="1" title="' + esc(unknownTip) + '" style="margin-top:14px;font-size:12.5px;' +
+      'line-height:1.6;color:var(--text-label);">Surface not known, counted in Total only: ' +
+      years.map(function (y) {
+        var u = tierGridCells(y, tier).unknown;
+        return cellCan(u) ? '<span' + cellAttrs(true, String(y.year) + '|unknown') + ' style="' + MONO + 'font-weight:600;' +
+          'color:var(--text-soft);padding:2px 6px;cursor:pointer;white-space:nowrap;">' + esc(String(y.year)) + ' ' + recordText(u.won, u.lost) + '</span>' : '';
+      }).filter(Boolean).join(' ' + MIDDOT + ' ') + '</div>';
     // profile v2: every methodology line lives in the season panel's (?) — no helper sentence, no foot note
     var cr2Notes = noteBits.slice(1).map(function (t) {   // the popover escapes: plain text, a hover's reason kept as its 2nd sentence
       return String(t).replace(/<span title="([^"]*)">([^<]*)<\/span>/g, function (_, why, what) { return what + '. ' + why.replace(/&rsquo;|&#39;/g, '’'); })
@@ -5990,7 +6004,7 @@
         '<span style="font-size:13px;color:var(--text-label);">' + esc(tierWord.charAt(0).toUpperCase() + tierWord.slice(1)) + ' ' + MIDDOT + ' wins and losses ' + MIDDOT + ' click a figure for its matches</span></span></div>' +
       '<div style="height:14px;"></div></div>' +
       '<div style="display:grid;grid-template-columns:auto repeat(' + (HEADS.length - 1) + ',minmax(0,1fr));gap:0 14px;' +
-        'align-items:center;">' + head + body + footer + surfDrill + '</div>',
+        'align-items:center;">' + head + body + footer + surfDrill + '</div>' + unknownNote,
       'bottom-ruled', '24px 24px 20px');
 
     return careerTabsHtml() + card + season + drillBox;
@@ -16958,6 +16972,19 @@
     if (state.info === v) return;
     state.info = v; repaint();
   }
+  // Enter / Space on a focused record figure or surface row = its click; the page redraws, so focus is put back on it.
+  function onActivateKey(e) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    var el = e.target;
+    if (!el || !el.matches || !el.matches('.pp2-crec,.pp2-csrow')) return;
+    e.preventDefault();
+    var kind = el.getAttribute('data-pp2'), v = el.getAttribute('data-v');
+    el.click();
+    setTimeout(function () {   // after the redraw (a drill can load its matches first)
+      var again = mounted && mounted.querySelector('[data-pp2="' + kind + '"][data-v="' + v + '"]');
+      if (again && document.activeElement !== again) again.focus({ preventScroll: true });
+    }, 60);
+  }
   function onClick(e) {
     var el = e.target && e.target.closest ? e.target.closest('[data-pp2]') : null;
     if (!el || !mounted.contains(el)) return;
@@ -17262,11 +17289,13 @@
     if (mounted !== container) {
       if (mounted) {
         mounted.removeEventListener('click', onClick);
+        mounted.removeEventListener('keydown', onActivateKey);
         mounted.removeEventListener('input', onInput);
         mounted.removeEventListener('scroll', onDrillScroll, true);
         mounted.removeEventListener('scroll', onCalSync, true);
       }
       container.addEventListener('click', onClick);
+      container.addEventListener('keydown', onActivateKey);
       container.addEventListener('input', onInput);
       container.addEventListener('mouseover', onOver);
       // capture:true — `scroll` does not bubble, so a delegated listener on the

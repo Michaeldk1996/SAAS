@@ -93,8 +93,6 @@ const SPEC = [
   ['.sf-userinfo', 'display', 'none'], ['.sf-username', 'font-size', '12.5px'], ['.sf-userplan', 'font-size', '10.5px'], ['.sf-chev', 'transform', 'rotate(-90deg)'],
   ['.sf-menu', 'width', '232px'], ['.sf-menu', 'left', 'calc(100% + 14px)'], ['.sf-menu', 'bottom', '0'], ['.sf-menu', 'padding', '14px'], ['.sf-menu', 'gap', '12px'],
   ['.sf-menu', 'border-radius', '14px'], ['.sf-menu', 'background', 'var(--card)'], ['.sf-menu', 'border', '1px solid var(--edge-10)'], ['.sf-menu', 'box-shadow', 'var(--shadow-avatar)'],
-  ['.sf-theme-seg', 'background', 'var(--card)'], ['.sf-theme-seg', 'border', '1px solid var(--edge-6)'], ['.sf-theme-opt', 'height', '30px'], ['.sf-theme-opt', 'color', 'var(--text-label)'],
-  ['.sf-theme-opt.on', 'background', 'var(--inner)'], ['.sf-theme-opt.on', 'border-color', 'var(--edge-10)'], ['.sf-theme-opt.on', 'color', 'var(--text)'],
   ['.sf-upgrade', 'background', 'var(--pro)'], ['.sf-upgrade', 'color', 'var(--pro-text)'], ['.sf-upgrade', 'border-radius', '10px'], ['.sf-upgrade', 'height', '36px'],
   ['.sf-menu-links', 'border-top', '1px solid color-mix(in srgb, var(--text) 8%, transparent)'], ['.sf-menu-links', 'margin', '0 -8px -8px'],
   ['.sf-menu-row', 'height', '36px'], ['.sf-menu-row', 'color', 'var(--text)'], ['.sf-menu-row:hover', 'background', 'var(--inner)'],
@@ -171,16 +169,15 @@ function shellRulings(html, want = ['Analyse', 'Research', 'Insights', 'Betting'
   const foot = html.slice(html.indexOf('<div class="sf-foot">'), html.indexOf('</aside>'));
   const menu = foot.slice(foot.indexOf('<div class="sf-menu" id="sfMenu"'));
   const beforeMenu = foot.slice(0, foot.indexOf('<div class="sf-menu" id="sfMenu"'));
-  if (!menu.includes('data-sf-theme-switch')) p.push('no theme switch in the menu');
-  if (/data-sf-theme-switch|sf-upgrade/.test(beforeMenu)) p.push('theme switch / Upgrade back at the foot');
+  if (/data-sf-theme-switch|sf-theme-seg/.test(html)) p.push('the theme switch is back (night only, founder 2026-11-28)');
+  if (/sf-upgrade/.test(beforeMenu)) p.push('Upgrade back at the foot');
   if (!/<a class="sf-upgrade" href="account.html"/.test(menu)) p.push('no Upgrade to Pro in the menu');
   if (!/<a class="sf-menu-row" href="account.html"[^>]*>[\s\S]*?Account settings<\/a>/.test(menu)) p.push('no Account settings → account.html');
   if (!/<button type="button" class="sf-menu-row sf-menu-out" id="acctSignout"[^>]*>[\s\S]*?Sign out<\/button>/.test(menu)) p.push('no Sign out (#acctSignout)');
-  if ((html.match(/<div data-sf-theme-switch>/g) || []).length !== 1) p.push('the theme switch is mounted more than once');
   return p;
 }
-const ACCT_GROUPS = ['Analyse', 'Research', 'Insights'];
-test('rulings: Analyse / Research / Insights / Betting groups (account.html: the first three); the avatar opens the menu (theme, Upgrade, Account settings, Sign out) — both pages', () => {
+const ACCT_GROUPS = undefined;   // founder 2026-11-28: account.html carries the full menu, the same four groups
+test('rulings: Analyse / Research / Insights / Betting groups (account.html: the same four); the avatar opens the menu (Upgrade, Account settings, Sign out; no theme switch) — both pages', () => {
   assert.deepEqual(shellRulings(DASH), []); assert.deepEqual(shellRulings(ACCT, ACCT_GROUPS), []);
   assert.notDeepEqual(shellRulings(DASH.replace('<div class="sf-glabel">Betting</div>', '')), [], 'mutant survived: bettingLost');
   const mut = {
@@ -191,6 +188,16 @@ test('rulings: Analyse / Research / Insights / Betting groups (account.html: the
     noMenu: DASH.replace(' aria-haspopup="menu"', ''),
   };
   for (const [name, html] of Object.entries(mut)) { assert.notEqual(html, name.startsWith('rowTo') || name === 'noSignout' ? ACCT : DASH, `mutant ${name} must apply`); assert.notDeepEqual(shellRulings(html, name.startsWith('rowTo') || name === 'noSignout' ? ACCT_GROUPS : undefined), [], `mutant survived: ${name}`); }
+});
+
+// founder 2026-11-28: Account settings carries the SAME menu as the app, as links ./?open=<tab>; the app opens that tab.
+test('account.html menu = the app menu (same items, order, labels), each a ./?open=<tab> link the app consumes', () => {
+  const navOf = h => h.slice(h.indexOf('<nav class="sf-nav"'), h.indexOf('</nav>', h.indexOf('<nav class="sf-nav"')));
+  const app = [...navOf(DASH).matchAll(/<button class="sf-item[^>]*data-tab="([^"]+)"[^>]*aria-label="([^"]+)"/g)].map(m => [m[1], m[2]]);
+  const acct = [...navOf(ACCT).matchAll(/<a class="sf-item" href="\.\/\?open=([^"]+)" aria-label="([^"]+)"/g)].map(m => [m[1], m[2]]);
+  assert.equal(app.length, 13); assert.deepEqual(acct, app);
+  assert.equal((navOf(ACCT).match(/class="sf-item"/g) || []).length, 13, 'no account item outside the ./?open= form');
+  assert.match(DASH, /q\.get\('open'\)[\s\S]{0,700}#mainNav button\[data-tab="' \+ tab \+ '"\]'\)[\s\S]{0,200}b\.click\(\)/, 'the app reads ?open= and clicks that rail item');
 });
 
 // open state (desktop @media min-width:901px; hover or keyboard focus): rows 42, groups 10 apart, pill radius 26, caps group
@@ -428,22 +435,22 @@ function lockApi(html) {
     for (const alt of sel.split(/,\s*/)) {
       let m = /^\.sf-nav \[data-tab="([^"]+)"\]$/.exec(alt);
       if (m) { const r = rows.find(x => x.tab === m[1]); if (r) return r; continue; }
-      m = /^\.sf-nav a\.sf-item\[href\$="#([^"]+)"\]$/.exec(alt);
-      if (m) { const r = rows.find(x => x.tag === 'a' && x.href.endsWith('#' + m[1])); if (r) return r; continue; }
+      m = /^\.sf-nav a\.sf-item\[href\$="=([^"]+)"\]$/.exec(alt);   // account.html links: ./?open=<tab>
+      if (m) { const r = rows.find(x => x.tag === 'a' && x.href.endsWith('=' + m[1])); if (r) return r; continue; }
       throw new Error('unexpected selector ' + alt);
     }
     return null;
   } };
   const window = {};
   new Function('window', 'document', code)(window, document);
-  const locked = () => rows.filter(r => r.lock || r.cls.has('is-locked')).map(r => r.tab || r.href.split('#')[1]).sort();
+  const locked = () => rows.filter(r => r.lock || r.cls.has('is-locked')).map(r => r.tab || r.href.split('=')[1]).sort();
   for (const r of rows) if (r.lock !== r.cls.has('is-locked')) throw new Error('badge and icon state disagree');
   return { window, rows, locked };
 }
 function lockProblems(html, page) {
   const p = [];
   let L; try { L = lockApi(html); } catch (e) { return ['threw ' + e.message]; }
-  const want = page === 'dash' ? ['edge', 'trading'] : ['edge'];   // account.html's rail carries no Trading Report
+  const want = ['edge', 'trading'];   // both pages: account.html carries the full menu (founder 2026-11-28)
   const cases = [[null, want], [{ plan: 'free' }, want], [{}, want], [{ plan: 'edge' }, []], [{ plan: 'pro' }, []], [null, want]];
   for (const [u, exp] of cases) {
     L.window.sfPlanLocks(u);
@@ -471,7 +478,7 @@ test('Pro lock: Free / signed out lock Trading Report + Model, Edge / Pro / the 
     signedOutOpen: [DASH.replace("var open = !!u && (u.plan === 'edge'", "var open = !u || (u.plan === 'edge'"), 'dash'],
     notWired: [DASH.replace('    if (window.sfPlanLocks) window.sfPlanLocks(u);', ''), 'dash'],
     acctNotWired: [ACCT.replace('    if (window.sfPlanLocks) window.sfPlanLocks(user);', ''), 'acct'],
-    acctLookup: [ACCT.replace(`, .sf-nav a.sf-item[href$="#' + tab + '"]'`, `'`), 'acct'],
+    acctLookup: [ACCT.replace(`, .sf-nav a.sf-item[href$="=' + tab + '"]'`, `'`), 'acct'],
     adminLocked: [DASH.replace("  if (!open && u && window.ADMIN_CONFIG && (window.ADMIN_CONFIG.ADMIN_UIDS || []).indexOf(u.uid) >= 0) open = true;\n", ''), 'dash'],
     acctAdminLocked: [ACCT.replace("  if (!open && u && window.ADMIN_CONFIG && (window.ADMIN_CONFIG.ADMIN_UIDS || []).indexOf(u.uid) >= 0) open = true;\n", ''), 'acct'],
     acctNoAdminList: [ACCT.replace('<script src="admin-config.js"></script>\n', ''), 'acct'],
