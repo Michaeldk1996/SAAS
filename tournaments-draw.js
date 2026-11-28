@@ -1129,8 +1129,33 @@ function oppFacts(meKey, meName, o, city) {
 }
 // a played match's prices from its card (matches.json / the draw store): the card book's close and that book's open,
 // oriented to the player; dominance ratio = his return points won % / his opponent's (the progression's point counts)
-function playedFacts(ev, c, meKey) {
+// Bet105's own recorded history for a finished match (founder 2026-11-28: "focus on the bet105 move"): the Kibl
+// price_history the Today's Matches odds pop-up reads (PriceHistoryBox), both sides, pre-match rows cut at the start
+// (the card's startTs, else the scheduled start — the schedule only ever cuts earlier). Open = Bet105's first recorded
+// price, close = its last pre-match price: ONE book for the closing price and the move. Loaded once per match.
+const B105 = {};
+function b105Facts(ev, c, row) {
+  const ek = String(c.match.eventKey); if (B105[ek]) return B105[ek];
+  const f = B105[ek] = { state: 'loading', rows: {} };
+  const pm = ev.entry && Array.isArray(ev.entry.matches) ? ev.entry.matches.find(x => String(x.eventKey) === ek) : null;
+  const PHB = typeof window !== 'undefined' ? window.PriceHistoryBox : null;
+  if (!pm || !pm.p1 || !pm.p2 || !pm.date || !PHB || typeof ocsMatchKey !== 'function' || typeof ocsNameKey !== 'function') { f.state = 'none'; return f; }
+  const start = typeof cardStartMs === 'function' ? cardStartMs({ startTs: row && row.startTs, date: pm.date, time: pm.time }) : NaN;
+  f.verified = !!(row && row.startTs);
+  PHB.fetchHistory(ocsMatchKey(pm.date, pm.p1.name, pm.p2.name)).then(p => {
+    if (!p) { f.state = 'failed'; repaint(); return; }
+    const side = n => PHB.changesOnly(PHB.sideRows(p, ocsNameKey(n), ocsNameKey)).filter(r => !isFinite(start) || r.at <= start);
+    f.rows[String(pm.p1.playerKey)] = side(pm.p1.name); f.rows[String(pm.p2.playerKey)] = side(pm.p2.name);
+    f.state = 'ok'; repaint();
+  }).catch(() => { f.state = 'failed'; repaint(); });
+  return f;
+}
+function playedFacts(ev, c, meKey, oKey) {
   const id = analysisId(ev, c.match), row = id && typeof matchById === 'function' ? matchById(id) : null;
+  const b = b105Facts(ev, c, row), mine = b.rows[String(meKey)] || [], theirs = b.rows[String(oKey)] || [];
+  if (b.state === 'ok' && mine.length && theirs.length)
+    return Object.assign(rest(), { cp: mine[mine.length - 1].price, co: theirs[theirs.length - 1].price, op: mine[0].price, src: 'bet105', verified: b.verified });
+  if (b.state === 'loading') return Object.assign(rest(), { cp: null, co: null, op: null, src: 'loading' });
   const me1 = row ? String(row.p1Key) === String(meKey) : true, W = me1 ? ['p1', 'p2'] : ['p2', 'p1'];
   const px = (fn, w) => { try { const v = row && typeof fn === 'function' ? fn(row, w) : null; return typeof v === 'number' && v >= 1.01 ? v : null; } catch (e) { return null; } };
   const cp = px(typeof _mcCardCloseOf !== 'undefined' ? _mcCardCloseOf : null, W[0]), co = px(typeof _mcCardCloseOf !== 'undefined' ? _mcCardCloseOf : null, W[1]);
@@ -1153,18 +1178,18 @@ function playedFacts(ev, c, meKey) {
 }
 // the card of a FINISHED round (design 2026-11-26): the pre-match layout with the result, no chance bar, four rows
 function playedCard(ev, c, P, o, f, nm) {
-  const ok = String(o.playerKey), won = c.state === 'won', pf = playedFacts(ev, c, P.key);
+  const ok = String(o.playerKey), won = c.state === 'won', pf = playedFacts(ev, c, P.key, ok);
   const r2 = v => Math.round(v * 100) / 100;
   const dog = pf.cp != null && pf.co != null ? (r2(pf.cp) > r2(pf.co) ? true : r2(pf.cp) < r2(pf.co) ? false : null) : null;
   const flag = dog == null ? '' : won === dog ? (won ? 'Upset' : 'Upset loss') : 'As priced', flagC = flag === 'Upset loss' ? C.red : flag === 'Upset' ? C.white : C.muted;
   const why = dog == null ? 'No closing price on record for this match' : `${nm} ${won ? 'won' : 'lost'} as the ${dog ? 'underdog' : 'favourite'} at the close.`;
   const sets = (c.score || '').split(/\s+/).filter(Boolean).map(x => x.split('-').map(Number)), sw = sets.filter(g => g[0] > g[1]).length;
-  let mv = DASH, mvT = pf.src === 'pinnacle' ? "No Pinnacle opening price on record for this match (the open on file is another book's)" : 'Needs the opening and the closing price of the same book';
+  let mv = DASH, mvT = pf.src === 'loading' ? 'Loading Bet105 prices' : pf.src === 'pinnacle' ? "No Pinnacle opening price on record for this match (the open on file is another book's)" : 'Needs the opening and the closing price of the same book';
   if (pf.cp != null && pf.op != null) { const a = r2(pf.op), b = r2(pf.cp), d = b - a;
     mv = Math.abs(d) < 0.005 ? 'No move' : `Opened ${a.toFixed(2)} · ${d > 0 ? 'drifted +' : 'shortened ' + MINUS}${(Math.abs(d) / a * 100).toFixed(1)}%`;
-    mvT = 'Move from his opening price to his closing price, as a share of the opening price, on the prices shown'; }
+    mvT = (pf.src === 'bet105' ? "Bet105: his first recorded price to his last pre-match price" : 'Move from his opening price to his closing price') + ', as a share of the opening price, on the prices shown'; }
   const h2h = f.h2h ? `${f.h2h.a}${NDASH}${f.h2h.b}` : DASH;
-  const fa = [['Closing price', pf.cp != null && pf.co != null ? `${pf.cp.toFixed(2)} · Opp ${pf.co.toFixed(2)}` : DASH, pf.cp != null ? (pf.src === 'pinnacle' ? "Pinnacle's closing price, the last price before the start" : "The match card's closing price, one book for both players") : 'No closing price on record for this match'],
+  const fa = [['Closing price', pf.cp != null && pf.co != null ? `${pf.cp.toFixed(2)} · Opp ${pf.co.toFixed(2)}` : DASH, pf.cp != null ? (pf.src === 'bet105' ? "Bet105's last pre-match price (recorded by Kibl), both players" + (pf.verified ? '' : ' · cut at the scheduled start, not a confirmed close') : pf.src === 'pinnacle' ? "Pinnacle's closing price, the last price before the start" : "The match card's closing price, one book for both players") : (pf.src === 'loading' ? 'Loading Bet105 prices' : 'No closing price on record for this match')],
     ['Price move', mv, mvT],
     ['Dominance ratio', pf.dr != null ? pf.dr.toFixed(2) : DASH, pf.dr != null ? `His return points won % ÷ his opponent's (our box score, n = ${pf.drN} return points)` : 'No box score with point counts for this match'],
     ['Head to head now', h2h, f.h2h ? `${f.h2h.n} meetings, this match included (ATP head-to-head population)` : 'Loading the head to head']];
@@ -1472,7 +1497,7 @@ const TTDraw = {
   rowById(id) { return ROWS.get(String(id)) || null; },
   _h(i, ev) { const f = H[i]; if (typeof f !== 'function') return; if (ev && ev.type === 'click' && ev.stopPropagation) ev.stopPropagation(); f(ev); },
   // test hooks (Node): the pure parts and the state
-  _test: { S, events, modelOf, facts, pathOf, statsModel, seasonFigs, dbRowsOf, setFacts, stageOf, render, FILES, reset, boardPrice, resultRow, analysisId, ROWS,
+  _test: { B105, S, events, modelOf, facts, pathOf, statsModel, seasonFigs, dbRowsOf, setFacts, stageOf, render, FILES, reset, boardPrice, resultRow, analysisId, ROWS,
     boxModel, ptsModel, pickName, chancesFor, chanceDP, eloBaseP, eloKeyOf, eloRecOf, pctS, fairS, bookPairP, get CH() { return CH; }, get CHB() { return CHB; }, get H() { return H; } },
 };
 if (typeof module !== 'undefined' && module.exports) module.exports = TTDraw;

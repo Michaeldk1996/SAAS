@@ -293,6 +293,34 @@ check('founder 2026-11-26: a finished round opens the result card — Won/Lost, 
     } finally { delete ctx.matchById; delete ctx._mcCardCloseOf; delete ctx._openAnchorOf; }
   });
 });
+check('founder 2026-11-28: the finished card prices from Bet105 history — open → last pre-match price, one book (mutant: Bet105 history ignored)', ({ html, T, root, win, ctx }) => {
+  withResults(ctx, () => {
+    const ev = T.events().all.find(e => e.key === PARIS), M = T.modelOf(ev, 'main'), F = T.facts(M, ev);
+    const who = F.champ, P = T.pathOf(M, F, who), ri = P.cells.findIndex(c => c.state === 'won' && c.cands.length);
+    const c = P.cells[ri], ok0 = String(c.cands[0].playerKey), ek = String(c.match.eventKey);
+    const pm = ev.entry.matches.find(x => String(x.eventKey) === ek), meName = String(pm.p1.playerKey) === who ? pm.p1.name : pm.p2.name;
+    const t0 = Date.parse(pm.date + 'T00:00:00Z'), after = t0 + 3 * 86400000;
+    // his side opened 2.00, last pre-match 2.10 (drifted +5.0%); a row after the start is never read
+    const hist = { stream: [], poller: [], fixtures: [] };
+    const push = (n, at, price) => hist.stream.push({ side: n, at: new Date(at).toISOString(), price });
+    const nk = n => String(n).toLowerCase();
+    push(nk(meName), t0 - 86400000, 2.0); push(nk(meName), t0 - 3600000, 2.1); push(nk(meName), after, 9.9);
+    const oppName = String(pm.p1.playerKey) === who ? pm.p2.name : pm.p1.name;
+    push(nk(oppName), t0 - 86400000, 1.85); push(nk(oppName), t0 - 3600000, 1.8);
+    win.PriceHistoryBox = { fetchHistory: () => ({ then(f) { f(hist); return { catch() {} }; } }),
+      sideRows: (p, k) => p.stream.filter(r => r.side === k).map(r => ({ at: Date.parse(r.at), price: r.price })).sort((a, b) => a.at - b.at),
+      changesOnly: r => r };
+    ctx.ocsMatchKey = () => 'k'; ctx.ocsNameKey = nk; ctx.cardStartMs = () => t0 + 86400000;
+    try {
+      for (const k of Object.keys(T.B105)) delete T.B105[k];
+      html({ key: PARIS, sel: who, cmp: true, b: F.slots.map(x => String(x.playerKey)).find(k => k && k !== who && k !== ok0) });
+      T.S.opp = { who: 'a', r: ri }; win.TTDraw.render(root);
+      const o = text(root.innerHTML);
+      ok(/Closing price 2\.10 · Opp 1\.80 Price move Opened 2\.00 · drifted \+5\.0%/.test(o), 'Bet105 open → close: ' + (o.match(/Closing price.{0,90}/) || [])[0]);
+      ok(/Upset/.test(o), 'won as the longer Bet105 price = Upset');
+    } finally { delete win.PriceHistoryBox; delete ctx.ocsMatchKey; delete ctx.ocsNameKey; delete ctx.cardStartMs; for (const k of Object.keys(T.B105)) delete T.B105[k]; }
+  });
+});
 check('founder 2026-11-26: points that dropped before this edition are not defended; players not in the draw are not listed (mutant: dropped points still defended / players not in this draw listed / would-be ignores the first-round points)', ({ html, T, ctx }) => {
   const ev = T.events().all.find(e => e.key === PARIS), F = T.facts(T.modelOf(ev, 'main'), ev);
   const pm = T.ptsModel(ev, F);
@@ -491,6 +519,7 @@ const MUT = [
   ['dropped points still defended', "const dropped = !!(e.dropDate", "const dropped = false && !!(e.dropDate"],
   ['past editions not read', "if (+y < cy && m && m.value != null && m.n >= hfloor) { o[y] = m.value * mul; nn[y] = m.n; }", "if (false) {}"],
   ['decider tour dash', "tour: tourOk ? mb.value * 100 : null", "tour: null"],
+  ['Bet105 history ignored', "if (b.state === 'ok' && mine.length && theirs.length)", "if (false)"],
   ['finished card back to the pre-match card', 'if (done) return playedCard(ev, c, P, o, f, nm);', ''],
   ['sort ignored', "const byD = S.ptSort === 'drop';", 'const byD = false;'],
 ];

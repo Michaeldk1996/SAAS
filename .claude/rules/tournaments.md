@@ -55,9 +55,11 @@ Rationale: `BUILD-NOTES.md` "2026-11-15 — Tournaments tab rebuild".
   the header count follows. **Test:** `tools/test-tt-draw.mjs` "points that dropped before this edition".
 - **Opponents box, finished round** = the pre-match card layout with the result: Finished + "Match statistics ›" (the one
   Match analysis), Won / Lost + As priced / Upset / Upset loss, "a–b in sets · score", no chance bar, rows Closing price ·
-  Price move · Dominance ratio · Head to head now only. Prices = the match card's close and that same book's open; a stored
-  row whose card state expired takes the match's Pinnacle close (`pinClose`) and only Pinnacle's own open — never another
-  book's (else Price move is a dash with that reason). Dominance ratio = his return points won % ÷ his opponent's (the
+  Price move · Dominance ratio · Head to head now only. **Prices = Bet105** (founder 2026-11-28, "focus on the bet105 move"):
+  its own recorded history (the Kibl `price_history` the odds pop-up reads), open = Bet105's first recorded price, close =
+  its last pre-match price, both players, cut at the card's start (else the scheduled start, hover "not a confirmed
+  close"); one book for the closing price and the move. Only without Bet105 history: the card's close and that book's
+  open, else the Pinnacle close with Pinnacle's own open — never two books in one move. Dominance ratio = his return points won % ÷ his opponent's (the
   progression's point counts). Unplayed cards: Opening price = the card's first recorded price; On this court = each
   player's record at this event (a rate from 5 matches). **Test:** `tools/test-tt-draw.mjs` "a finished round opens the
   result card".
