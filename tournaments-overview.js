@@ -462,7 +462,9 @@ const CSS = [
   `${P}.tt-ov-qn .w .y{ font-family:${M}; color:var(--tt-soft); }`,
   `${P}.tt-ov-qt{ font-size:14.5px; line-height:1.65; color:var(--tt-text); text-wrap:pretty; padding-top:1px; }`,
   // backing box: the Database page mounted boxed (transparent on the box colour, no View row, Filters row kept)
-  `${P}.tt-ov-sheet.roi{ max-height:none; max-width:1180px; display:block; }`,
+  `${P}.tt-ov-sheet.roi{ max-height:none; max-width:1180px; display:block; overflow:clip; }`,
+  // the backing box scrolls with its scrim (top padding 34px): its head stays in view (founder 2026-11-28)
+  `${P}.tt-ov-sheet.roi .tt-ov-shd{ position:sticky; top:-34px; z-index:5; background:var(--tt-card); border-radius:15px 15px 0 0; }`,
   `${P}[data-db-root="roi"]{ background:transparent; min-height:0; max-width:none; padding:20px 24px 28px; }`,
   `${P}[data-db-root="roi"] .db-ctltop{ display:none; }`,
   `${P}[data-db-root="roi"] .db-ctlbot{ border-top:0; }`,
