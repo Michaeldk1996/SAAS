@@ -68,6 +68,23 @@ ev_c as materialized (
     from ten287_rec.events e
    where e.start_at >= now() - make_interval(hours => p_hours + 24) and e.start_at < now() + interval '3 days'
      and coalesce(e.home, '') not like '%/%' and coalesce(e.away, '') not like '%/%'
+     and e.event_id < 900000000000     -- odds-api.io events only: our Polymarket recorder's live at 9e11+ (pm_c)
+),
+pm_c as materialized (  -- Polymarket (founder 2026-11-28: prediction markets on the page), our CLOB recorder's events
+  select e.event_id, e.start_at,
+         least(drops_api.nk(e.home), drops_api.nk(e.away)) k1, greatest(drops_api.nk(e.home), drops_api.nk(e.away)) k2
+    from ten287_rec.events e
+   where e.event_id >= 900000000000
+     and e.start_at >= now() - make_interval(hours => p_hours + 24) and e.start_at < now() + interval '3 days'
+),
+kx_c as materialized (  -- Kalshi: one event = two markets, one per player ("X wins"); both players named, distinct
+  select k.event_ticker, max(k.last_seen) last_seen,
+         least(min(drops_api.nk(k.player)), max(drops_api.nk(k.player))) k1,
+         greatest(min(drops_api.nk(k.player)), max(drops_api.nk(k.player))) k2
+    from kalshi_rec.markets k
+   where k.last_seen >= now() - make_interval(hours => p_hours + 24) and k.player is not null
+   group by k.event_ticker
+  having count(*) = 2 and min(drops_api.nk(k.player)) <> max(drops_api.nk(k.player))
 ),
 m as (     -- the same match at each vendor: the alert's own id, else exactly one candidate
   select s.*,
@@ -76,26 +93,31 @@ m as (     -- the same match at each vendor: the alert's own id, else exactly on
                         and (s.st is null or abs(extract(epoch from c.scheduled_start - s.st)) < 43200))) kfx,
     coalesce(s.eid, (select case when count(*) = 1 then min(c.event_id) end from ev_c c
                       where c.k1 = s.k1 and c.k2 = s.k2
-                        and (s.st is null or abs(extract(epoch from c.start_at - s.st)) < 43200))) kev
+                        and (s.st is null or abs(extract(epoch from c.start_at - s.st)) < 43200))) kev,
+    (select case when count(*) = 1 then min(c.event_id) end from pm_c c
+      where c.k1 = s.k1 and c.k2 = s.k2 and (s.st is null or abs(extract(epoch from c.start_at - s.st)) < 43200)) kpm,
+    -- Kalshi's own times are listing placeholders: the pair alone, one open event seen in the window
+    (select case when count(*) = 1 then min(c.event_ticker) end from kx_c c where c.k1 = s.k1 and c.k2 = s.k2) kkx
     from sel s
 ),
 -- ── odds-api.io books (TEN-295's pre-match rule) ──
 live_from as (
   select t.event_id, min(least(coalesce(t.book_updated_at, t.seen_at), t.seen_at)) at
-    from ten287_rec.ticks t where t.event_id in (select kev from m where kev is not null)
+    from ten287_rec.ticks t where t.event_id in (select kev from m where kev is not null union all select kpm from m where kpm is not null)
      and t.event_status is distinct from 'pending'
    group by 1
 ),
 tk as (
-  select m.k1, m.k2, m.ks, t.book, t.id::text id, t.book_updated_at at, t.seen_at seen,
+  select m.k1, m.k2, m.ks, case when t.event_id = m.kpm then 'Polymarket' else t.book end book, t.id::text id, t.book_updated_at at, t.seen_at seen,
          case when drops_api.nk(e.home) = m.ks then t.back_home when drops_api.nk(e.away) = m.ks then t.back_away end ps,
          case when drops_api.nk(e.home) = m.ks then t.back_away when drops_api.nk(e.away) = m.ks then t.back_home end po
     from m
-    join ten287_rec.ticks t on t.event_id = m.kev
+    join ten287_rec.ticks t on t.event_id = m.kev or t.event_id = m.kpm
     join ten287_rec.events e on e.event_id = t.event_id
-    left join live_from lf on lf.event_id = m.kev
+    left join live_from lf on lf.event_id = t.event_id
    where t.market = 'ML' and t.event_status = 'pending' and t.book_updated_at is not null
-     and exists (select 1 from ten287_rec.config c where c.id and t.book = any (c.books))
+     and ((t.event_id = m.kev and t.book not like 'Polymarket%' and exists (select 1 from ten287_rec.config c where c.id and t.book = any (c.books)))
+       or (t.event_id = m.kpm and t.book = (select pc.book from polyrec.config pc)))
      and (lf.at is null or t.book_updated_at < lf.at)
      and drops_api.nk(e.home) <> drops_api.nk(e.away)
 ),
@@ -112,10 +134,20 @@ ko as (
      and o.side_id in (2, 3)            -- the drop bot's own filter: any other side_id is not a player
      and drops_api.nk(f.player1_name) <> drops_api.nk(f.player2_name)
 ),
+-- ── Kalshi (our recorder, founder 2026-11-28): the price to back a player = 1 / his market's yes ask; open markets only ──
+kt as (
+  select m.k1, m.k2, m.ks, 'Kalshi'::text book, t.id::text id, coalesce(t.updated_at, t.seen_at) at, t.seen_at seen,
+         case when drops_api.nk(km.player) = m.ks then 's' else 'o' end w, round(1 / t.yes_ask, 3) px
+    from m
+    join kalshi_rec.markets km on km.event_ticker = m.kkx
+    join kalshi_rec.ticks t on t.ticker = km.ticker
+   where t.status = 'active' and t.yes_ask > 0 and t.yes_ask < 1
+),
 pts as (   -- one stream of (selection, book, which side, time, price)
   select k1, k2, ks, book, id, at, seen, 's' w, ps px from tk where ps >= 1.01
   union all select k1, k2, ks, book, id, at, seen, 'o', po from tk where po >= 1.01
   union all select k1, k2, ks, book, id, at, seen, case when side_id = side_s then 's' else 'o' end, px from ko where side_s is not null
+  union all select k1, k2, ks, book, id, at, seen, w, px from kt where px >= 1.01
 ),
 chg as (   -- same-price re-stamps collapse
   select *, lag(px) over (partition by k1, k2, ks, book, w order by at, id) prev from pts
@@ -140,7 +172,7 @@ seen as (  -- every sighting, re-stamps included (the series collapses them): a 
 per_book as (  -- one row per book, both sides pivoted from per_side in one pass
   select p.k1, p.k2, p.ks, p.book,
          jsonb_build_object(
-           'source', case when p.book = 'Bet105' then 'Kibl' else 'odds-api.io' end,
+           'source', case p.book when 'Bet105' then 'Kibl' when 'Kalshi' then 'Kalshi' when 'Polymarket' then 'Polymarket CLOB' else 'odds-api.io' end,
            'lastSeen', max(sn.last_seen),
            'first', (array_agg(jsonb_build_array(p.first_at, round(p.first_px::numeric, 3))) filter (where p.w = 's'))[1],
            'side',  coalesce((array_agg(p.series) filter (where p.w = 's'))[1], '[]'::jsonb),

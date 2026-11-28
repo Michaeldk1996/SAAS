@@ -496,7 +496,7 @@ test('pop-up SQL: pre-match = pending AND before the first non-pending sighting;
   assert.match(sql, /t\.event_status is distinct from 'pending'/);
   assert.match(sql, /\(lf\.at is null or t\.book_updated_at < lf\.at\)/);
   assert.match(sql, /o\.is_live is false/);
-  assert.equal((sql.match(/case when count\(\*\) = 1 then min\(/g) || []).length, 2, 'exactly one candidate at each vendor, never a guess');
+  assert.equal((sql.match(/case when count\(\*\) = 1 then min\(/g) || []).length, 4, 'exactly one candidate at each vendor (Kibl, odds-api.io, Polymarket, Kalshi), never a guess');
   assert.match(sql, /prev is distinct from px/, 'same-price re-stamps collapse');
   assert.doesNotMatch(sql, /_id::text/, 'a text cast on an id defeats its index');
   assert.doesNotMatch(sql, /= any \(\(select/, 'the x = any((select arr)) trap');
@@ -984,3 +984,22 @@ test('TEN-299: both bots drop every tick at or after the live start, in one guar
 
 
 
+
+test('prediction markets in the pop-up lines (founder 2026-11-28): Polymarket from our CLOB recorder, Kalshi from its markets; pre-match; never mixed into the odds-api.io match', () => {
+  const sql = read('tools/ten294-drops-lines.sql').replace(/--.*$/gm, '');
+  assert.match(sql, /and e\.event_id < 900000000000/, 'odds-api.io candidates exclude our Polymarket events (they would make a match look ambiguous)');
+  assert.match(sql, /pm_c as materialized \([\s\S]*?e\.event_id >= 900000000000/);
+  assert.match(sql, /t\.event_id = m\.kpm and t\.book = \(select pc\.book from polyrec\.config pc\)/, 'Polymarket = our recorder\'s own label only');
+  assert.match(sql, /t\.event_id = m\.kev and t\.book not like 'Polymarket%'/, 'the odds-api.io branch never carries a Polymarket feed');
+  assert.match(sql, /case when t\.event_id = m\.kpm then 'Polymarket' else t\.book end book/);
+  assert.match(sql, /kx_c as materialized \([\s\S]*?having count\(\*\) = 2 and min\(drops_api\.nk\(k\.player\)\) <> max\(drops_api\.nk\(k\.player\)\)/, 'a Kalshi event = two markets, two different players');
+  assert.match(sql, /round\(1 \/ t\.yes_ask, 3\) px[\s\S]*?where t\.status = 'active' and t\.yes_ask > 0 and t\.yes_ask < 1/, 'price = 1 / yes ask, open markets only');
+  assert.match(sql, /union all select k1, k2, ks, book, id, at, seen, w, px from kt where px >= 1\.01/);
+  assert.match(sql, /when 'Kalshi' then 'Kalshi' when 'Polymarket' then 'Polymarket CLOB'/);
+  const st = JSON.parse(read('tools/ten294-steps-lines.json')), inst = st.find((x) => x.name === 'install_lines_guarded');
+  assert.ok(inst.transaction && inst.required && inst.stop_on_error, 'lines-only install: one transaction, required');
+  assert.deepEqual(inst.sql_files, ['tools/ten294-drops-lines.sql']);
+  assert.match(inst.sql_tail, /perform drops_api\.snapshot\(72\)[\s\S]*interval '10 seconds' then raise exception/, 'rolled back when the reader\'s read gets slow');
+  assert.ok(!st.some((x) => /ten28[07]_bot|live_cut|vault/.test(JSON.stringify(x))), 'the lines install touches no bot and no secret');
+  assert.match(read('.github/workflows/ten294-drops.yml'), /inputs\.steps == 'lines' && 'tools\/ten294-steps-lines\.json' \|\| 'tools\/ten294-steps-install\.json'/);
+});

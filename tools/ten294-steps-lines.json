@@ -1,0 +1,37 @@
+[
+ {
+  "name": "lines_before",
+  "sql": "select round(extract(epoch from (clock_timestamp() - now())) * 1000) ms from (select drops_api.snapshot(72) j) s"
+ },
+ {
+  "name": "install_lines_guarded",
+  "required": true,
+  "stop_on_error": true,
+  "transaction": true,
+  "sql_files": [
+   "tools/ten294-drops-lines.sql"
+  ],
+  "sql_tail": "do $g$ declare t0 timestamptz := clock_timestamp(); d interval; begin perform drops_api.snapshot(72); d := clock_timestamp() - t0; if d > interval '10 seconds' then raise exception 'drops_api.snapshot(72) took % with the new lines(): rolled back (limit 10 s, reader timeout 20 s)', d; end if; end $g$;"
+ },
+ {
+  "name": "lines_grants",
+  "required": true,
+  "sql": "select 1 where not has_function_privilege('anon', 'drops_api.lines(integer)', 'execute') and not has_function_privilege('authenticated', 'drops_api.lines(integer)', 'execute')"
+ },
+ {
+  "name": "lines_books",
+  "sql": "select b from (select drops_api.lines(72) l) x, jsonb_array_elements(x.l) e, jsonb_object_keys(e->'books') b group by b"
+ },
+ {
+  "name": "lines_with_polymarket",
+  "sql": "select 1 from (select drops_api.lines(72) l) x, jsonb_array_elements(x.l) e where e->'books' ? 'Polymarket'"
+ },
+ {
+  "name": "lines_with_kalshi",
+  "sql": "select 1 from (select drops_api.lines(72) l) x, jsonb_array_elements(x.l) e where e->'books' ? 'Kalshi'"
+ },
+ {
+  "name": "lines_after",
+  "sql": "select round(extract(epoch from (clock_timestamp() - now())) * 1000) ms from (select drops_api.snapshot(72) j) s"
+ }
+]

@@ -13,6 +13,12 @@ on:
   # SQL only (overload fix, founder 2026-10-30): reinstalls drops_api + the drops_reader role setting from the
   # dispatched ref. Never deploys, restarts or re-keys the Fly app: deploy (and the watchdog after it) is push-only.
   workflow_dispatch:
+    inputs:
+      steps:
+        description: "install = the full drops_api install (bots' live cut included); lines = lines() only, in one transaction rolled back when snapshot(72) takes over 10 s"
+        type: choice
+        options: [install, lines]
+        default: install
 permissions:
   contents: read
 concurrency:
@@ -30,7 +36,7 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          TEN294_STEPS: tools/ten294-steps-install.json
+          TEN294_STEPS: ${{ inputs.steps == 'lines' && 'tools/ten294-steps-lines.json' || 'tools/ten294-steps-install.json' }}
         run: python3 tools/ten294-sql.py
       - uses: actions/upload-artifact@v4
         if: always()
