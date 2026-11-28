@@ -71,7 +71,7 @@ const ms = (t) => (t == null ? null : new Date(t).toISOString());
 function out(rd) {
   if (!rd) return null;
   const last = rd.c != null ? rd.c : rd.n;
-  return { o: rd.o, oAt: ms(rd.oAt), c: rd.c, cAt: ms(rd.cAt), drop: r1((rd.o - last) / rd.o * 100), pts: r1(r1(100 / last) - r1(100 / rd.o)),
+  return { o: rd.o, oAt: ms(rd.oAt), c: rd.c, cAt: ms(rd.cAt), n: last, drop: r1((rd.o - last) / rd.o * 100), pts: r1(r1(100 / last) - r1(100 / rd.o)),
     mv: rd.step ? { from: rd.step.from, to: rd.step.to, at: ms(rd.step.t), fromAt: ms(rd.step.fromT), pct: r1(rd.step.p * 100) } : null,
     line: rd.series ? thin(rd.series, rd.step).map((p) => [ms(p.t), r2(p.v)]) : [] };
 }
