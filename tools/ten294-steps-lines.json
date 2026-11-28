@@ -12,7 +12,7 @@
    "tools/ten294-lines-before.sql",
    "tools/ten294-drops-lines.sql"
   ],
-  "sql_tail": "do $g$ declare t0 timestamptz := clock_timestamp(); d interval; d0 interval := (select d from _lines_d0); begin perform drops_api.snapshot(72); d := clock_timestamp() - t0; if d > interval '15 seconds' or d > greatest(interval '10 seconds', d0 + interval '2 seconds') then raise exception 'drops_api.snapshot(72) took % with the new lines() (% before): rolled back (limit: the greater of 10 s and before + 2 s, never over 15 s; reader timeout 20 s)', d, d0; end if; raise notice 'snapshot(72): % with the new lines(), % before', d, d0; end $g$;"
+  "sql_tail": "do $g$ declare t0 timestamptz := clock_timestamp(); d interval; d0 interval := (select x.before_d from _lines_d0 x); begin perform drops_api.snapshot(72); d := clock_timestamp() - t0; if d > interval '15 seconds' or d > greatest(interval '10 seconds', d0 + interval '2 seconds') then raise exception 'drops_api.snapshot(72) took % with the new lines() (% before): rolled back (limit: the greater of 10 s and before + 2 s, never over 15 s; reader timeout 20 s)', d, d0; end if; raise notice 'snapshot(72): % with the new lines(), % before', d, d0; end $g$;"
  },
  {
   "name": "lines_grants",
