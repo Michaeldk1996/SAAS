@@ -1,18 +1,18 @@
 {
- "generatedAt": "2026-11-28T15:13:35.190Z",
+ "generatedAt": "2026-11-28T15:50:43.440Z",
  "tournaments": [
   {
    "key": "3120",
    "season": "2026",
    "name": "Davis Cup - World Group",
    "file": "news-ticker/3120-2026.json",
-   "items": 46,
+   "items": 49,
    "byType": {
-    "quote": 35,
-    "digest": 11
+    "digest": 12,
+    "quote": 37
    },
-   "latestTimestamp": "2026-11-28T14:28:00.000Z",
-   "updatedAt": "2026-11-28T15:13:35.190Z"
+   "latestTimestamp": "2026-11-28T14:58:02.000Z",
+   "updatedAt": "2026-11-28T15:50:43.440Z"
   },
   {
    "key": "tour",
@@ -69,6 +69,106 @@
   }
  ],
  "latest": [
+  {
+   "id": "digest-16f60899f13507",
+   "type": "digest",
+   "version": 1,
+   "playerId": "1103",
+   "player": "C. Norrie",
+   "opponentId": "50323",
+   "opponent": "R. Jodar",
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "eventKey": "12183186",
+   "context": "after losing to R. Jodar",
+   "category": "Quotes",
+   "timestamp": "2026-11-28T14:58:02.000Z",
+   "members": [
+    "quote-0c04ffc424e048",
+    "quote-79c977b973b6cb"
+   ],
+   "memberHash": "0f158b91091a7b5c",
+   "digestedAt": "2026-11-28T15:26:01.701Z",
+   "blocks": [
+    {
+     "label": "after his semi-final loss to Jodar",
+     "text": "I thought Rafa played really well. I was really excited to play the match. I played a little bit too aggressive and tried to take my chance too early and play a little bit too close to the line in a couple of games. I was proud that I fought and gave everything, got myself into the match when he was playing his best level.",
+     "from": [
+      "quote-0c04ffc424e048",
+      "quote-79c977b973b6cb"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "1731b4744e53a8e0",
+   "publishedAt": "2026-11-28T15:50:43.440Z",
+   "file": "news-ticker/3120-2026.json"
+  },
+  {
+   "id": "quote-0c04ffc424e048",
+   "type": "quote",
+   "playerId": "1103",
+   "opponentId": "50323",
+   "player": "C. Norrie",
+   "opponent": "R. Jodar",
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-28T14:58:02.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after losing to R. Jodar",
+   "eventKey": "12183186",
+   "won": false,
+   "text": "I thought Rafa played really well, … I was really excited to play the match. I played a little bit too aggressive and tried to take my chance too early and play a little bit too close to the line in a couple games.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "LTA",
+   "sourceUrl": "https://www.lta.org.uk/fan-zone/davis-cup/news/final-8-great-britain-bow-out-to-spain-in-semi-finals",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his semi-final loss to Rafael Jodar",
+   "setting": "after losing to Jodar in the Davis Cup Final 8 semi-finals",
+   "sourceHash": "5385fd927c9e1559",
+   "publishedAt": "2026-11-28T15:50:43.440Z",
+   "file": "news-ticker/3120-2026.json"
+  },
+  {
+   "id": "quote-79c977b973b6cb",
+   "type": "quote",
+   "playerId": "1103",
+   "opponentId": "50323",
+   "player": "C. Norrie",
+   "opponent": "R. Jodar",
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-28T14:58:02.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after losing to R. Jodar",
+   "eventKey": "12183186",
+   "won": false,
+   "text": "I was proud that I fought and gave everything, got myself into the match when he was playing his best level.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "LTA",
+   "sourceUrl": "https://www.lta.org.uk/fan-zone/davis-cup/news/final-8-great-britain-bow-out-to-spain-in-semi-finals",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his fighting effort in losing to Jodar",
+   "setting": "after his loss to Jodar in the Davis Cup semi-finals",
+   "sourceHash": "ba0773f930c9663a",
+   "publishedAt": "2026-11-28T15:50:43.440Z",
+   "file": "news-ticker/3120-2026.json"
+  },
   {
    "id": "quote-76012288c599b2",
    "type": "quote",
@@ -1374,110 +1474,6 @@
    "sourceHash": "e30d0900a2a22acc",
    "publishedAt": "2026-11-26T04:09:42.809Z",
    "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "digest-8c342461fe77c1",
-   "type": "digest",
-   "version": 1,
-   "playerId": "2382",
-   "player": "C. Alcaraz",
-   "opponentId": null,
-   "opponent": null,
-   "tournament": "Davis Cup - World Group",
-   "tournamentKey": "3120",
-   "season": "2026",
-   "eventKey": null,
-   "context": null,
-   "category": "Quotes",
-   "timestamp": "2026-11-26T03:15:22.384Z",
-   "members": [
-    "quote-dc0060806592c0",
-    "quote-f19182b3e4a3e0"
-   ],
-   "memberHash": "c5e11dcc9948aa3e",
-   "digestedAt": "2026-11-28T10:55:14.105Z",
-   "blocks": [
-    {
-     "label": "on Sinner's absence and recovery from knee surgery",
-     "text": "Obviously I'm going to say tennis misses him. I miss him. We haven't seen each other since April. I can't wait to see him practising, stepping back on court. I wish him the best, a speedy recovery, and hopefully I'll see him around on the tour and talk to him.",
-     "from": [
-      "quote-f19182b3e4a3e0",
-      "quote-dc0060806592c0"
-     ]
-    }
-   ],
-   "model": "claude-opus-5-5",
-   "sourceHash": "65f9585be0cb1295",
-   "publishedAt": "2026-11-28T11:28:28.953Z",
-   "file": "news-ticker/3120-2026.json"
-  },
-  {
-   "id": "digest-a7a98c888fe3a0",
-   "type": "digest",
-   "version": 1,
-   "playerId": "1980",
-   "player": "A. Zverev",
-   "opponentId": null,
-   "opponent": null,
-   "tournament": "Davis Cup - World Group",
-   "tournamentKey": "3120",
-   "season": "2026",
-   "eventKey": null,
-   "context": null,
-   "category": "Quotes",
-   "timestamp": "2026-11-26T03:15:22.384Z",
-   "members": [
-    "quote-459f81dcb3cf4b",
-    "quote-bd4eee4e495eae"
-   ],
-   "memberHash": "6268054e9816db2e",
-   "digestedAt": "2026-11-26T09:08:49.999Z",
-   "blocks": [
-    {
-     "label": "on Jannik Sinner's recovery from knee surgery",
-     "text": "Even though, of course, he's one of my biggest competitors, one of the most difficult players for me to play, I still wish for him to come back to the tour because I've been there, I know what injury feels like, and I don't wish injury upon anyone. He's mentally strong. We know that he's mentally strong. I hope that he takes every step seriously and that in three, four months he can be back to 100 per cent and be back playing.",
-     "from": [
-      "quote-bd4eee4e495eae",
-      "quote-459f81dcb3cf4b"
-     ]
-    }
-   ],
-   "model": "claude-opus-5-5",
-   "sourceHash": "2abedaa750c12e1d",
-   "publishedAt": "2026-11-26T09:44:02.184Z",
-   "file": "news-ticker/3120-2026.json"
-  },
-  {
-   "id": "quote-459f81dcb3cf4b",
-   "type": "quote",
-   "playerId": "1980",
-   "opponentId": null,
-   "player": "A. Zverev",
-   "opponent": null,
-   "tournament": "Davis Cup - World Group",
-   "tournamentKey": "3120",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-26T03:15:22.384Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "He's mentally strong. We know that he's mentally strong. I hope that he takes every step serious and that in three, four months he can be back to 100 per cent and be back playing,",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "The National",
-   "sourceUrl": "https://www.thenationalnews.com/sport/tennis/2026/11/26/davis-cup-finals-carlos-alcaraz-and-alexander-zverev-send-messages-of-support-to-injured-jannik-sinner/",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On Jannik Sinner's recovery from knee surgery",
-   "settingTried": true,
-   "sourceHash": "6d0386955c8b5070",
-   "publishedAt": "2026-11-26T09:44:02.184Z",
-   "file": "news-ticker/3120-2026.json"
   }
  ]
 }
