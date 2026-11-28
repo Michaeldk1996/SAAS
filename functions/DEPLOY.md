@@ -26,6 +26,7 @@ Repo → **Settings → Secrets and variables → Actions → New repository sec
 | `FIREBASE_SERVICE_ACCOUNT` | paste the full JSON from step 1 |
 | `WHOP_WEBHOOK_SECRET` | `whsec_…` from Whop → Settings → Webhooks |
 | `WHOP_API_KEY` | Whop API key (Developer → API keys) that can read memberships and member emails |
+| `KIT_API_KEY` | Optional. Kit API key (Kit → Settings → Developer). Buyers then get the Kit tag "Stennisfy member", so the checkout reminder skips them |
 
 ## Deploy (one click)
 Repo → **Actions** tab → **Deploy Whop Webhook** → **Run workflow** →

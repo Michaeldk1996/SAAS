@@ -2,10 +2,11 @@
 const assert = require('assert');
 const Module = require('module');
 const load = Module._load;
+const params = {};   // function settings a test can switch on (KIT_API_KEY)
 Module._load = function (req, ...rest) {
   if (req === 'firebase-admin') return { initializeApp() {}, firestore: () => ({}) };
   if (req === 'firebase-functions/v2/https') return { onRequest: (o, f) => f };
-  if (req === 'firebase-functions/params') return { defineString: () => ({ value: () => '' }) };
+  if (req === 'firebase-functions/params') return { defineString: (name) => ({ value: () => params[name] || '' }) };
   if (req === 'firebase-functions/logger') return { info() {}, warn() {}, error() {} };
   return load.call(this, req, ...rest);
 };
@@ -46,3 +47,23 @@ assert.ok(verifyWhopSignature(body, h, secret).ok);
 assert.ok(!verifyWhopSignature(body + ' ', h, secret).ok);
 assert.ok(!verifyWhopSignature(body, h, 'ws_other').ok);
 console.log('signature: 3 checks passed');
+
+// Kit member tag: no key -> Kit is left alone; paid -> subscriber + tag; ended -> tag removed; Kit down -> an error the caller logs
+(async () => {
+  const { syncKitMember } = require('../index.js');
+  let calls = [];
+  const realFetch = global.fetch;
+  global.fetch = async (url, o) => { calls.push(`${o.method} ${url.replace('https://api.kit.com/v4', '')}`); return new Response(JSON.stringify({ subscriber: { id: 77 } }), { status: 200 }); };
+  assert.strictEqual(await syncKitMember('a@b.test', true), 'skipped');
+  assert.strictEqual(calls.length, 0);
+  params.KIT_API_KEY = 'test';
+  assert.strictEqual(await syncKitMember('a@b.test', true), 'tagged');
+  assert.deepStrictEqual(calls, ['POST /subscribers', 'POST /tags/26520084/subscribers']);
+  calls = [];
+  assert.strictEqual(await syncKitMember('a@b.test', false), 'untagged');
+  assert.deepStrictEqual(calls, ['POST /subscribers', 'DELETE /tags/26520084/subscribers/77']);
+  global.fetch = async () => new Response('down', { status: 500 });
+  await assert.rejects(syncKitMember('a@b.test', true), /Kit POST \/subscribers -> 500/);
+  global.fetch = realFetch; delete params.KIT_API_KEY;
+  console.log('kit member tag: 6 checks passed');
+})().catch((e) => { console.error(e); process.exit(1); });

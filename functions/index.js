@@ -42,6 +42,10 @@ const WHOP_WEBHOOK_SECRET = defineString('WHOP_WEBHOOK_SECRET');
 // the stored access always matches Whop's current state and the buyer's email
 // is found even when the webhook payload leaves it out.
 const WHOP_API_KEY = defineString('WHOP_API_KEY', { default: '' });
+// Optional Kit API key (the email tool, same account as BSP Consult). With it, the Kit tag "Stennisfy member"
+// follows the paid state, so the checkout reminder automation in Kit skips buyers. Without it, Kit is left alone.
+const KIT_API_KEY = defineString('KIT_API_KEY', { default: '' });
+const KIT_TAG_MEMBER = 26520084; // Kit tag "Stennisfy member"
 
 // Stennisfy products on Whop (business "stennisfy"). Both unlock everything for
 // now; the app reads `plan` and decides what each tier sees.
@@ -130,6 +134,28 @@ async function whopGet(path) {
   if (r.status === 404) return null;
   if (!r.ok) throw new Error(`Whop API ${path} -> ${r.status}`);
   return r.json();
+}
+
+// Kit: adds the member tag while access is paid and takes it off when it ends. Creating the subscriber first is how
+// Kit finds them by email; someone who unsubscribed stays unsubscribed. Same calls as the BSP site's kitSync.js.
+async function kitRequest(key, method, path, body) {
+  const r = await fetch(`https://api.kit.com/v4${path}`, {
+    method,
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-Kit-Api-Key': key },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (r.status === 404 && method === 'DELETE') return null; // the tag was not on the subscriber
+  if (!r.ok) throw new Error(`Kit ${method} ${path} -> ${r.status}`);
+  return r.status === 204 ? null : r.json();
+}
+
+async function syncKitMember(email, active) {
+  const key = (KIT_API_KEY.value() || '').trim();
+  if (!key) return 'skipped';
+  const data = await kitRequest(key, 'POST', '/subscribers', { email_address: email });
+  if (active) await kitRequest(key, 'POST', `/tags/${KIT_TAG_MEMBER}/subscribers`, { email_address: email });
+  else if (data && data.subscriber) await kitRequest(key, 'DELETE', `/tags/${KIT_TAG_MEMBER}/subscribers/${data.subscriber.id}`);
+  return active ? 'tagged' : 'untagged';
 }
 
 // ISO string, unix seconds or unix ms -> Date (or null).
@@ -224,10 +250,13 @@ async function handleEvent(action, data) {
     planSource: 'whop',
     planUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
   }, { merge: true });
-  return { status: 'ok', uid, plan: doc.plan, accessUntil: a.active && a.accessUntil ? a.accessUntil.toISOString() : null };
+  // Kit comes last and can never undo the access just saved: a Kit problem is logged, the event still succeeds.
+  const kit = await syncKitMember(email, a.active).catch((e) => { logger.error('Kit member tag failed', { error: e.message }); return 'failed'; });
+  return { status: 'ok', uid, plan: doc.plan, accessUntil: a.active && a.accessUntil ? a.accessUntil.toISOString() : null, kit };
 }
 
 exports.accessFor = accessFor;
+exports.syncKitMember = syncKitMember;
 exports.verifyWhopSignature = verifyWhopSignature;
 
 exports.whopWebhook = onRequest(
