@@ -2,7 +2,7 @@
  "tournament": "Davis Cup - World Group",
  "tournamentKey": "3120",
  "season": "2026",
- "updatedAt": "2026-11-28T15:50:43.440Z",
+ "updatedAt": "2026-11-28T16:26:04.903Z",
  "items": [
   {
    "id": "digest-16f60899f13507",
@@ -102,6 +102,47 @@
    "publishedAt": "2026-11-28T15:50:43.440Z"
   },
   {
+   "id": "digest-168675c5dc8d24",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2382",
+   "player": "C. Alcaraz",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-28T14:28:00.000Z",
+   "members": [
+    "quote-76012288c599b2",
+    "quote-78497205eb31fe"
+   ],
+   "memberHash": "fd557114037d5e60",
+   "digestedAt": "2026-11-28T15:56:15.535Z",
+   "blocks": [
+    {
+     "label": "on playing for Spain at the Davis Cup Finals",
+     "text": "It is a great privilege for me to be here.",
+     "from": [
+      "quote-76012288c599b2"
+     ]
+    },
+    {
+     "label": "on the Davis Cup final against Italy",
+     "text": "It's going to be a massive day, and I'm going to really enjoy my time on court.",
+     "from": [
+      "quote-78497205eb31fe"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "b113c489edc90ef5",
+   "publishedAt": "2026-11-28T16:26:04.903Z"
+  },
+  {
    "id": "quote-76012288c599b2",
    "type": "quote",
    "playerId": "2382",
@@ -131,6 +172,153 @@
    "setting": "after beating Fery in the Davis Cup semifinal in Bologna",
    "sourceHash": "4327c6ada9522a46",
    "publishedAt": "2026-11-28T15:13:35.190Z"
+  },
+  {
+   "id": "digest-63f144f87fcfda",
+   "type": "digest",
+   "version": 1,
+   "playerId": "50323",
+   "player": "R. Jodar",
+   "opponentId": "1103",
+   "opponent": "C. Norrie",
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "eventKey": "12183186",
+   "context": "after beating C. Norrie",
+   "category": "Quotes",
+   "timestamp": "2026-11-28T12:27:11.000Z",
+   "members": [
+    "quote-78bf6d853c92f6",
+    "quote-9e13c4917e5a23"
+   ],
+   "memberHash": "902442ce981a5649",
+   "digestedAt": "2026-11-28T15:56:15.535Z",
+   "blocks": [
+    {
+     "label": "on Cameron Norrie's fighting spirit",
+     "text": "I knew that Cam was going to fight until the end. That's his spirit and his personality.",
+     "from": [
+      "quote-78bf6d853c92f6"
+     ]
+    },
+    {
+     "label": "on the Davis Cup",
+     "text": "We'll try to give him the Davis Cup.",
+     "from": [
+      "quote-9e13c4917e5a23"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "a5837ca6159ea6b0",
+   "publishedAt": "2026-11-28T16:26:04.903Z"
+  },
+  {
+   "id": "quote-78497205eb31fe",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": null,
+   "player": "C. Alcaraz",
+   "opponent": null,
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-28T12:27:11.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "It's going to be a massive day that I'm going to really enjoy my time on court,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Gulf Times",
+   "sourceUrl": "https://www.gulf-times.com/article/739155/sport/tennis/alcaraz-leads-spain-into-davis-cup-final-showdown-with-italy",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On the Davis Cup final against Italy",
+   "setting": "after his semi-final win over Fery at the Davis Cup",
+   "alsoReportedBy": [
+    {
+     "sourceName": "SuperSport",
+     "sourceUrl": "https://supersport.com/tennis/news/b7249f5a-bbdc-44d3-937a-1ec4b5c9fc3d/alcaraz-leads-spain-into-davis-cup-final-showdown-with-italy",
+     "language": "en"
+    }
+   ],
+   "sourceHash": "92e13453bc148070",
+   "publishedAt": "2026-11-28T16:26:04.903Z"
+  },
+  {
+   "id": "quote-78bf6d853c92f6",
+   "type": "quote",
+   "playerId": "50323",
+   "opponentId": "1103",
+   "player": "R. Jodar",
+   "opponent": "C. Norrie",
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-28T12:27:11.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating C. Norrie",
+   "eventKey": "12183186",
+   "won": true,
+   "text": "I knew that Cam was going to fight until the end. That's his spirit and his personality,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Gulf Times",
+   "sourceUrl": "https://www.gulf-times.com/article/739155/sport/tennis/alcaraz-leads-spain-into-davis-cup-final-showdown-with-italy",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On Cameron Norrie's fighting spirit",
+   "setting": "after beating Norrie in the Davis Cup semi-final in Bologna",
+   "sourceHash": "29cdfd20fefa9f11",
+   "publishedAt": "2026-11-28T16:26:04.903Z"
+  },
+  {
+   "id": "quote-9e13c4917e5a23",
+   "type": "quote",
+   "playerId": "50323",
+   "opponentId": "1103",
+   "player": "R. Jodar",
+   "opponent": "C. Norrie",
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-28T12:27:11.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating C. Norrie",
+   "eventKey": "12183186",
+   "won": true,
+   "text": "We'll try to give him the Davis Cup,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Gulf Times",
+   "sourceUrl": "https://www.gulf-times.com/article/739155/sport/tennis/alcaraz-leads-spain-into-davis-cup-final-showdown-with-italy",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "alsoReportedBy": [
+    {
+     "sourceName": "SuperSport",
+     "sourceUrl": "https://supersport.com/tennis/news/b7249f5a-bbdc-44d3-937a-1ec4b5c9fc3d/alcaraz-leads-spain-into-davis-cup-final-showdown-with-italy",
+     "language": "en"
+    }
+   ],
+   "sourceHash": "b7a9972952bb0a3b",
+   "publishedAt": "2026-11-28T16:26:04.903Z",
+   "topicTried": true
   },
   {
    "id": "digest-c4585c967f4e3e",
