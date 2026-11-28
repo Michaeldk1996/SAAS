@@ -102,7 +102,8 @@ export function summarise(rec, fixture) {
   if (so) so.book = softR.book;
   const lagMin = sh && so && sh.mv && so.mv ? Math.round((Date.parse(so.mv.at) - Date.parse(sh.mv.at)) / 60000) : null;
   return { key: rec.key, eventKey: rec.event_key, playerA: rec.player_a, playerB: rec.player_b, side: rec.side,
-    opp: sk(rec.side) === sk(rec.player_a) ? rec.player_b : rec.player_a,   // the feed's own pair (api-tennis's order is side_first) tier: tierOf(rec.event_type), event: rec.tournament || null, round: rec.round || null,
+    // the opponent: the feed pair's other player (api-tennis's order is side_first)
+    opp: sk(rec.side) === sk(rec.player_a) ? rec.player_b : rec.player_a, tier: tierOf(rec.event_type), event: rec.tournament || null, round: rec.round || null,
     scheduledAt: rec.scheduled_at || null, startAt: rec.start_at || null, won: rec.side_first === rec.winner_first, status: rec.status,
     score: scoreOf(fixture, rec.side_first), sharp: sh, soft: so, lagMin: lagMin != null && lagMin >= 0 ? lagMin : null };
 }
