@@ -2,7 +2,7 @@
 const assert = require('assert');
 const Module = require('module');
 const load = Module._load;
-const params = {};   // function settings a test can switch on (KIT_API_KEY)
+const params = {};   // function settings a test can switch on (STENNISFY_KIT_API_KEY)
 Module._load = function (req, ...rest) {
   if (req === 'firebase-admin') return { initializeApp() {}, firestore: () => ({}) };
   if (req === 'firebase-functions/v2/https') return { onRequest: (o, f) => f };
@@ -56,7 +56,7 @@ console.log('signature: 3 checks passed');
   global.fetch = async (url, o) => { calls.push(`${o.method} ${url.replace('https://api.kit.com/v4', '')}`); return new Response(JSON.stringify({ subscriber: { id: 77 } }), { status: 200 }); };
   assert.strictEqual(await syncKitMember('a@b.test', true), 'skipped');
   assert.strictEqual(calls.length, 0);
-  params.KIT_API_KEY = 'test';
+  params.STENNISFY_KIT_API_KEY = 'test';
   assert.strictEqual(await syncKitMember('a@b.test', true), 'tagged');
   assert.deepStrictEqual(calls, ['POST /subscribers', 'POST /tags/26520084/subscribers']);
   calls = [];
@@ -64,6 +64,6 @@ console.log('signature: 3 checks passed');
   assert.deepStrictEqual(calls, ['POST /subscribers', 'DELETE /tags/26520084/subscribers/77']);
   global.fetch = async () => new Response('down', { status: 500 });
   await assert.rejects(syncKitMember('a@b.test', true), /Kit POST \/subscribers -> 500/);
-  global.fetch = realFetch; delete params.KIT_API_KEY;
+  global.fetch = realFetch; delete params.STENNISFY_KIT_API_KEY;
   console.log('kit member tag: 6 checks passed');
 })().catch((e) => { console.error(e); process.exit(1); });

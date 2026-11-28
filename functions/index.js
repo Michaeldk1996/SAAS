@@ -44,7 +44,8 @@ const WHOP_WEBHOOK_SECRET = defineString('WHOP_WEBHOOK_SECRET');
 const WHOP_API_KEY = defineString('WHOP_API_KEY', { default: '' });
 // Optional Kit API key (the email tool, same account as BSP Consult). With it, the Kit tag "Stennisfy member"
 // follows the paid state, so the checkout reminder automation in Kit skips buyers. Without it, Kit is left alone.
-const KIT_API_KEY = defineString('KIT_API_KEY', { default: '' });
+// The setting is named STENNISFY_KIT_API_KEY because Firebase reserves names that start with KIT_.
+const KIT_API_KEY = defineString('STENNISFY_KIT_API_KEY', { default: '' });
 const KIT_TAG_MEMBER = 26520084; // Kit tag "Stennisfy member"
 
 // Stennisfy products on Whop (business "stennisfy"). Both unlock everything for

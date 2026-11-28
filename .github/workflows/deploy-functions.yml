@@ -10,7 +10,8 @@ name: Deploy Whop Webhook (Firebase Functions)
 #   WHOP_WEBHOOK_SECRET       - the whsec_... value from the Whop webhook
 #   WHOP_API_KEY              - (recommended) Whop API key that can read
 #                               memberships and member emails
-#   KIT_API_KEY               - (optional) Kit API key: buyers get the Kit tag
+#   KIT_API_KEY               - (optional) Kit API key (written to functions/.env as
+#                               STENNISFY_KIT_API_KEY: Firebase reserves KIT_): buyers get the Kit tag
 #                               "Stennisfy member"; without it Kit is left alone
 # The Sharp / Sharp+ product ids are in functions/index.js (PRODUCT_TIER).
 
@@ -71,7 +72,7 @@ jobs:
           if [ -z "$KIT_API_KEY" ]; then
             echo "::warning::No KIT_API_KEY: buyers are not tagged in Kit, so the checkout reminder also reaches them"
           fi
-          printf 'WHOP_WEBHOOK_SECRET=%s\nWHOP_API_KEY=%s\nKIT_API_KEY=%s\n' "$WHOP_WEBHOOK_SECRET" "$WHOP_API_KEY" "$KIT_API_KEY" > functions/.env
+          printf 'WHOP_WEBHOOK_SECRET=%s\nWHOP_API_KEY=%s\nSTENNISFY_KIT_API_KEY=%s\n' "$WHOP_WEBHOOK_SECRET" "$WHOP_API_KEY" "$KIT_API_KEY" > functions/.env
 
       - name: Self-check the access logic
         run: node functions/test/access.test.js
