@@ -12,6 +12,12 @@
   "stop_on_error": true
  },
  {
+  "name": "install_archive",
+  "file": "tools/drops-archive.sql",
+  "required": true,
+  "stop_on_error": true
+ },
+ {
   "name": "grants",
   "required": true,
   "sql": "select has_function_privilege('anon', 'drops_api.snapshot(integer)', 'execute') anon_exec, has_function_privilege('authenticated', 'drops_api.snapshot(integer)', 'execute') auth_exec, has_function_privilege('drops_reader', 'drops_api.snapshot(integer)', 'execute') reader_exec, (select rolcanlogin from pg_roles where rolname = 'drops_reader') reader_login, has_schema_privilege('anon', 'drops_api', 'usage') anon_usage"
@@ -131,5 +137,13 @@
  {
   "name": "ten299_after_cut",
   "sql": "select 'Superbet' bot, count(*) n from ten287_bot.alerts a join drops_live.cuts_287(now() - interval '4 days') c using (event_id) where a.mode = 'backtest' and a.run_id like 'ten299-cut-%' and a.eval_at >= c.cut_at union all select 'Bet105', count(*) from ten280_bot.alerts a join drops_live.cuts_280(now() - interval '4 days') c using (fixture_id) where a.mode = 'backtest' and a.run_id like 'ten299-cut-%' and a.eval_at >= c.cut_at"
+ },
+ {
+  "name": "archive_collect",
+  "sql": "select drops_archive.collect() n"
+ },
+ {
+  "name": "archive_rows",
+  "sql": "select 1 from drops_archive.records"
  }
 ]

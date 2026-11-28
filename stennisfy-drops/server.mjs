@@ -17,6 +17,7 @@ import zlib from 'node:zlib';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import { withStatus, apiNeeds, createApiTennis } from './status.mjs';
+import { createArchiveService } from './archive.mjs';
 
 export const READ_INTERVAL_MS = 30_000;    // the bots' tick
 export const MIN_GAP_MS = 10_000;          // floor between two reads, whatever the alignment says
@@ -109,7 +110,7 @@ export function makeEnrich({ api, now = () => Date.now(), log = () => {} }) {
   };
 }
 
-export function createDropsService({ readSnapshot, enrich = null, now = () => Date.now(), origins = DEFAULT_ORIGINS, log = () => {} }) {
+export function createDropsService({ readSnapshot, enrich = null, now = () => Date.now(), origins = DEFAULT_ORIGINS, log = () => {}, archive = null }) {
   const state = {
     snapshot: null,          // last GOOD snapshot
     generatedAtMs: null,     // when that good read finished (our clock)
@@ -208,6 +209,18 @@ export function createDropsService({ readSnapshot, enrich = null, now = () => Da
       res.writeHead(200, gz ? { ...base, 'Content-Encoding': 'gzip' } : base);
       return res.end(req.method === 'HEAD' ? undefined : gz ? state.rowsGz : state.rowsBody);
     }
+    if (url.pathname === '/archive.json') {   // Dropping Odds archive (founder 2026-11-28): tools/drops-archive.sql + archive.mjs
+      const a = archive && archive.state;
+      if (!a || !a.body) {
+        res.writeHead(503, { ...cors, 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'Retry-After': '60' });
+        return res.end(JSON.stringify({ error: 'no archive yet' }));
+      }
+      const base = { ...cors, 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=300', ETag: a.etag, 'Access-Control-Expose-Headers': 'ETag' };
+      if (req.headers['if-none-match'] === a.etag) { res.writeHead(304, base); return res.end(); }
+      const gz = /\bgzip\b/.test(req.headers['accept-encoding'] || '');
+      res.writeHead(200, gz ? { ...base, 'Content-Encoding': 'gzip' } : base);
+      return res.end(req.method === 'HEAD' ? undefined : gz ? a.gz : a.body);
+    }
     if (url.pathname === '/health') {
       const s = status();
       const bad = s.freshness !== 'ok' || s.sources.some((x) => x.state !== 'ok');
@@ -235,8 +248,17 @@ async function main() {
   // the api-tennis key comes from the Fly secret only, and is never logged (status.mjs reports codes)
   if (!process.env.API_TENNIS_KEY) log('API_TENNIS_KEY not set: finished checks off, missed live sightings read "unknown"');
   const api = createApiTennis({ key: process.env.API_TENNIS_KEY || '', log });
-  const svc = createDropsService({ readSnapshot, enrich: makeEnrich({ api, log }), origins, log });
+  // the archive: one read every 10 min (its own loop), each match's set scores asked once from api-tennis
+  const fetchFixture = process.env.API_TENNIS_KEY ? async (ek) => {
+    const r = await fetch('https://api.api-tennis.com/tennis/?method=get_fixtures&timezone=UTC&APIkey=' + encodeURIComponent(process.env.API_TENNIS_KEY) + '&event_key=' + encodeURIComponent(ek), { signal: AbortSignal.timeout(8000) });
+    const j = await r.json();
+    const f = j && String(j.success) === '1' && Array.isArray(j.result) ? j.result.find((x) => String(x.event_key) === String(ek)) : null;
+    return f ? { event_status: f.event_status, scores: Array.isArray(f.scores) ? f.scores.map((s) => ({ score_first: s.score_first, score_second: s.score_second })) : null } : null;
+  } : null;
+  const archive = createArchiveService({ readArchive: async () => (await pool.query('select drops_archive.read(90) as j')).rows[0].j, fetchFixture, log, gzip: (b) => zlib.gzipSync(b) });
+  const svc = createDropsService({ readSnapshot, enrich: makeEnrich({ api, log }), origins, log, archive });
   await svc.start();
+  archive.start().catch(() => {});   // never blocks the live feed
   const port = Number(process.env.PORT || 8080);
   http.createServer(svc.handle).listen(port, '0.0.0.0', () => console.log(`stennisfy-drops on :${port}`));
   setInterval(() => { const s = svc.status(); console.log(`tick age=${s.ageS}s rows=${s.rowCount} fresh=${s.freshness} err=${s.lastError ?? '-'}`); }, 60_000);
