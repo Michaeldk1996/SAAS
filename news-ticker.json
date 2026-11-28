@@ -1,18 +1,18 @@
 {
- "generatedAt": "2026-11-28T16:26:04.903Z",
+ "generatedAt": "2026-11-28T16:42:14.987Z",
  "tournaments": [
   {
    "key": "3120",
    "season": "2026",
    "name": "Davis Cup - World Group",
    "file": "news-ticker/3120-2026.json",
-   "items": 54,
+   "items": 56,
    "byType": {
     "digest": 14,
-    "quote": 40
+    "quote": 42
    },
-   "latestTimestamp": "2026-11-28T14:58:02.000Z",
-   "updatedAt": "2026-11-28T16:26:04.903Z"
+   "latestTimestamp": "2026-11-28T16:12:45.000Z",
+   "updatedAt": "2026-11-28T16:42:14.987Z"
   },
   {
    "key": "tour",
@@ -69,6 +69,124 @@
   }
  ],
  "latest": [
+  {
+   "id": "digest-168675c5dc8d24",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2382",
+   "player": "C. Alcaraz",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-28T16:12:45.000Z",
+   "members": [
+    "quote-2ef070ed73366a",
+    "quote-76012288c599b2",
+    "quote-78497205eb31fe",
+    "quote-f42147ba32d315"
+   ],
+   "memberHash": "a52b66de14a3cb04",
+   "digestedAt": "2026-11-28T16:27:18.268Z",
+   "blocks": [
+    {
+     "label": "on reaching his first Davis Cup final",
+     "text": "It is a second straight final, it is going to be my first Davis Cup final. I'll do whatever it takes to win. It's something I have been chasing for a really long time, to be in a Davis Cup final.",
+     "from": [
+      "quote-2ef070ed73366a",
+      "quote-f42147ba32d315"
+     ]
+    },
+    {
+     "label": "on the Davis Cup final against Italy",
+     "text": "It's going to be a massive day, and I'm going to really enjoy my time on court.",
+     "from": [
+      "quote-78497205eb31fe"
+     ]
+    },
+    {
+     "label": "on playing for Spain at the Davis Cup Finals",
+     "text": "It is a great privilege for me to be here.",
+     "from": [
+      "quote-76012288c599b2"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5",
+   "sourceHash": "9ae87a38ca1889f4",
+   "publishedAt": "2026-11-28T16:26:04.903Z",
+   "revisedAt": "2026-11-28T16:42:14.987Z",
+   "revision": 1,
+   "file": "news-ticker/3120-2026.json"
+  },
+  {
+   "id": "quote-2ef070ed73366a",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": null,
+   "player": "C. Alcaraz",
+   "opponent": null,
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-28T16:12:45.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "It is a second straight final, it is going to be my first Davis Cup final, I’ll do whatever it takes to win,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Ubitennis",
+   "sourceUrl": "https://www.ubitennis.net/2026/11/spain-cruise-into-davis-cup-final-as-leon-smith-bids-farewell-after-17-years/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On reaching his first Davis Cup final",
+   "setting": "after beating Fery in the Davis Cup semi-final",
+   "sourceHash": "1346d18719835359",
+   "publishedAt": "2026-11-28T16:42:14.987Z",
+   "file": "news-ticker/3120-2026.json"
+  },
+  {
+   "id": "quote-f42147ba32d315",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": null,
+   "player": "C. Alcaraz",
+   "opponent": null,
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-28T16:12:45.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "It’s something I have been chasing for a really long time, to be in a Davis Cup final.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Ubitennis",
+   "sourceUrl": "https://www.ubitennis.net/2026/11/spain-cruise-into-davis-cup-final-as-leon-smith-bids-farewell-after-17-years/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On reaching his first Davis Cup final",
+   "setting": "after beating Fery in the Davis Cup semi-final",
+   "sourceHash": "22fff3eb36b7a169",
+   "publishedAt": "2026-11-28T16:42:14.987Z",
+   "file": "news-ticker/3120-2026.json"
+  },
   {
    "id": "digest-16f60899f13507",
    "type": "digest",
@@ -167,48 +285,6 @@
    "setting": "after his loss to Jodar in the Davis Cup semi-finals",
    "sourceHash": "ba0773f930c9663a",
    "publishedAt": "2026-11-28T15:50:43.440Z",
-   "file": "news-ticker/3120-2026.json"
-  },
-  {
-   "id": "digest-168675c5dc8d24",
-   "type": "digest",
-   "version": 1,
-   "playerId": "2382",
-   "player": "C. Alcaraz",
-   "opponentId": null,
-   "opponent": null,
-   "tournament": "Davis Cup - World Group",
-   "tournamentKey": "3120",
-   "season": "2026",
-   "eventKey": null,
-   "context": null,
-   "category": "Quotes",
-   "timestamp": "2026-11-28T14:28:00.000Z",
-   "members": [
-    "quote-76012288c599b2",
-    "quote-78497205eb31fe"
-   ],
-   "memberHash": "fd557114037d5e60",
-   "digestedAt": "2026-11-28T15:56:15.535Z",
-   "blocks": [
-    {
-     "label": "on playing for Spain at the Davis Cup Finals",
-     "text": "It is a great privilege for me to be here.",
-     "from": [
-      "quote-76012288c599b2"
-     ]
-    },
-    {
-     "label": "on the Davis Cup final against Italy",
-     "text": "It's going to be a massive day, and I'm going to really enjoy my time on court.",
-     "from": [
-      "quote-78497205eb31fe"
-     ]
-    }
-   ],
-   "model": "claude-opus-5-5",
-   "sourceHash": "b113c489edc90ef5",
-   "publishedAt": "2026-11-28T16:26:04.903Z",
    "file": "news-ticker/3120-2026.json"
   },
   {
@@ -1414,98 +1490,6 @@
    "publishedAt": "2026-11-26T02:48:24.212Z",
    "revisedAt": "2026-11-26T07:13:19.218Z",
    "revision": 1,
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "digest-a7a98c888fe3a0",
-   "type": "digest",
-   "version": 1,
-   "playerId": "1980",
-   "player": "A. Zverev",
-   "opponentId": null,
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "eventKey": null,
-   "context": null,
-   "category": "Quotes",
-   "timestamp": "2026-11-26T05:50:00.000Z",
-   "members": [
-    "quote-0ee6b1e1c93196",
-    "quote-797d7f3bddbbe3",
-    "quote-9fa5c737f7678d",
-    "quote-e07e715b2d4034"
-   ],
-   "memberHash": "ff92f935c53b1ec9",
-   "digestedAt": "2026-11-26T14:10:39.373Z",
-   "blocks": [
-    {
-     "label": "on finishing the season as year-end No 1",
-     "text": "It's a great honour to be holding this trophy, to be part of this celebration. Last year, playing this tournament, I thought: Maybe I can win a Grand Slam. Maybe I can do well during the year. But I didn't imagine I could be standing here holding this trophy. To be the Year-End No 1 is the most special thing. It's the biggest achievement of my career.",
-     "from": [
-      "quote-9fa5c737f7678d"
-     ]
-    },
-    {
-     "label": "on his chronic right ankle pain",
-     "text": "Since what happened in Paris. They come and go, I'll have to live with them until the end of my career. But, considering that I've played more than anyone, I should be satisfied with how this year has gone.",
-     "from": [
-      "quote-797d7f3bddbbe3"
-     ]
-    },
-    {
-     "label": "on Sinner's recovery from knee surgery",
-     "text": "We know that he's mentally strong. I hope that he takes every step seriously and that, in three, four months' time, he can be back to 100 per cent and be back playing.",
-     "from": [
-      "quote-e07e715b2d4034"
-     ]
-    },
-    {
-     "label": "on Brenda Patea's new legal action against him",
-     "text": "No, not at all. It's not a court case. It's a... what is it called?",
-     "from": [
-      "quote-0ee6b1e1c93196"
-     ]
-    }
-   ],
-   "model": "claude-opus-5-5",
-   "sourceHash": "c728d9640d6a6fbe",
-   "publishedAt": "2026-11-26T05:09:53.468Z",
-   "revisedAt": "2026-11-26T14:41:50.085Z",
-   "revision": 4,
-   "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-797d7f3bddbbe3",
-   "type": "quote",
-   "playerId": "1980",
-   "opponentId": null,
-   "player": "A. Zverev",
-   "opponent": null,
-   "tournament": "ATP Tour",
-   "tournamentKey": "tour",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-26T05:50:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Interviews",
-   "context": null,
-   "eventKey": null,
-   "won": null,
-   "text": "since what happened in Paris. They come and go, I'll have to live with them until the end of my career. But, considering that I've played more than anyone, I should be satisfied with how this year has gone",
-   "originalText": "desde lo que pasó en París. Vienen y van, tendré que convivir con ellos hasta el final de mi carrera. Pero, considerando que he jugado más que nadie, debo estar satisfecho por cómo ha ido este año",
-   "language": "es",
-   "translated": true,
-   "translationModel": "claude-opus-5-5",
-   "sourceName": "Mundo Deportivo",
-   "sourceUrl": "https://www.mundodeportivo.com/tenis/20261126/1004255533/zverev-jefazo-atp-injusto-no-analgesicos-tomamos-no-avisamos-vez-tomamos.html",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the original-language text of the fetched page",
-   "topic": "On his chronic right ankle pain",
-   "settingTried": true,
-   "sourceHash": "3c5d96d09e0abbb8",
-   "publishedAt": "2026-11-26T06:28:05.543Z",
    "file": "news-ticker/tour-2026.json"
   }
  ]
