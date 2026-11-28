@@ -48,7 +48,8 @@ const LAST52_DAYS = 364;
 // includes 2025/26 and refreshes weekly via CI. The per-player fetch + contribution
 // build lives in surface-ratings-chall-apitennis.js, which emits contribs in the exact
 // addContribution shape, so the api sample flows through the identical discount + blend.
-const { fetchChallengerContribs } = require('./surface-ratings-chall-apitennis.js');
+const { fetchChallengerContribs, fetchItfContribs } = require('./surface-ratings-chall-apitennis.js');
+const ITF_DISCOUNT = (() => { const v = parseFloat(process.env.ITF_DISCOUNT); return Number.isFinite(v) ? v : 0.8; })();
 // Tour-level fill for the seasons TML does not carry (TML 2026.csv stops 17 Jan 2026):
 // tour matches dated after TML's last date come from api-tennis ATP singles, one source
 // per match. See surface-ratings-tour-apitennis.js.
@@ -653,6 +654,13 @@ if (require.main === module) (async () => {
     apiKey, fromYear: CHALL_FROM_YEAR, dateStop, surfaceMap, concurrency: 8, log: console.log,
   }) : { contribs: [] };
   const challContribs = challResult.contribs.concat(extraResult.contribs);
+  // ITF (founder 2026-11-28): fetched for pool players not on the last published board, used only for the
+  // Under-pressure list below (never a board row).
+  let prevBoard = new Set();
+  try { prevBoard = new Set((require('./surface-ratings.json').players || []).map(p => String(p.key))); } catch (e) { /* first build */ }
+  const itfCands = pool.filter(m => m.key && !prevBoard.has(String(m.key))).map(m => ({ playerKey: m.key, name: m.name }));
+  const itf = await fetchItfContribs(itfCands, { apiKey, fromYear: CHALL_FROM_YEAR, dateStop, surfaceMap,
+    itfDiscount: ITF_DISCOUNT, challDiscount: CHALL_DISCOUNT, concurrency: 8, log: console.log });
 
   // ── TEN-254 · FAIL LOUD, founder ruling 2026-09-23 ─────────────────────────
   // "If api-tennis refuses, errors or returns empty for a meaningful share of the
@@ -810,7 +818,9 @@ if (require.main === module) (async () => {
     // Under-pressure figure for the model, from his tour + discounted Challenger sample, kept
     // OUT of the pool and the board (upExtra, indexed against the pool below).
     if (scopes.career.All.matches < INCLUDE_MIN_MATCHES) {
-      if (ac) {
+      const itfC = itf.byKey.get(String(meta.key)) || [];
+      for (const c of itfC) { if (SURFACES.includes(c.surface)) addContribution(chall.career[c.surface], c); addContribution(chall.career.All, c); }
+      if (ac || itfC.length) {
         const surfaces = {};
         for (const surf of [...SURFACES, 'All']) surfaces[surf] = { career: { underPressure: computeRatings(scopes.career[surf], careerFloors, chall.career[surf]).underPressure } };
         if (surfaces.All.career.underPressure.rating != null) upExtra.push({ key: meta.key, name: meta.name, surfaces });
@@ -929,6 +939,7 @@ if (require.main === module) (async () => {
     // Founder 2026-11-26: Under pressure for players under the inclusion gate, read by the model
     // only (h2h-model/data.js). Index = the same component percentiles against the pool above.
     underPressureExtra: upExtra,
+    underPressureExtraNote: 'career tour + Challenger (x' + CHALL_DISCOUNT + ') + ITF men\u2019s singles (x' + ITF_DISCOUNT + ') for players under the inclusion gate; model only',
   };
   const dest = path.join(__dirname, 'surface-ratings.json');
   const tmp = dest + '.tmp';
