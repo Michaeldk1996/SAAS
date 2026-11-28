@@ -2,8 +2,70 @@
  "tournament": "Davis Cup - World Group",
  "tournamentKey": "3120",
  "season": "2026",
- "updatedAt": "2026-11-27T23:21:21.396Z",
+ "updatedAt": "2026-11-28T09:24:16.339Z",
  "items": [
+  {
+   "id": "quote-7871e65420a62e",
+   "type": "quote",
+   "playerId": "2849",
+   "opponentId": "902",
+   "player": "L. Musetti",
+   "opponent": "J. Mensik",
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-28T08:55:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating J. Mensik",
+   "eventKey": "12183129",
+   "won": true,
+   "text": "Our focus is on achieving something and sticking together",
+   "originalText": "Unser Fokus liegt darauf, etwas zu schaffen und zusammenzuhalten",
+   "language": "de",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "tennisnet.com",
+   "sourceUrl": "https://www.tennisnet.com/news/davis-cup-selbst-musetti-und-berrettini-haben-sich-wieder-lieb",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On Italy's team spirit in the Davis Cup",
+   "settingTried": true,
+   "sourceHash": "20aca78f3958d132",
+   "publishedAt": "2026-11-28T09:24:16.339Z"
+  },
+  {
+   "id": "quote-f5e2ce3d97c339",
+   "type": "quote",
+   "playerId": "2849",
+   "opponentId": "902",
+   "player": "L. Musetti",
+   "opponent": "J. Mensik",
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-28T08:55:00.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Quotes",
+   "context": "after beating J. Mensik",
+   "eventKey": "12183129",
+   "won": true,
+   "text": "Today is a special day for me.",
+   "originalText": "Heute ist für mich ein besonderer Tag.",
+   "language": "de",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "tennisnet.com",
+   "sourceUrl": "https://www.tennisnet.com/news/davis-cup-selbst-musetti-und-berrettini-haben-sich-wieder-lieb",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On reaching the Davis Cup final with Italy",
+   "settingTried": true,
+   "sourceHash": "a9258a244f59d09c",
+   "publishedAt": "2026-11-28T09:24:16.339Z"
+  },
   {
    "id": "quote-8cbc15e55fbfad",
    "type": "quote",
@@ -858,28 +920,38 @@
    "eventKey": "12183129",
    "context": "after beating J. Mensik",
    "category": "Quotes",
-   "timestamp": "2026-11-27T22:41:00.000Z",
+   "timestamp": "2026-11-28T08:55:00.000Z",
    "members": [
+    "quote-7871e65420a62e",
     "quote-8cbc15e55fbfad",
     "quote-c299fd4f16c688",
-    "quote-cd08620819289f"
+    "quote-cd08620819289f",
+    "quote-f5e2ce3d97c339"
    ],
-   "memberHash": "f498fe98b24c264b",
-   "digestedAt": "2026-11-27T23:21:21.396Z",
+   "memberHash": "a50af2a707980630",
+   "digestedAt": "2026-11-28T09:24:16.339Z",
    "blocks": [
     {
      "label": "after his win over Mensik",
      "text": "It feels amazing, honestly. I knew that Jakub was a really tough player, especially on this surface. He was serving bombs from the beginning, averaging about three aces per game, so it was not easy to break him. I dealt with all the break points I faced and I'm really happy with the attitude and the energy I showed.",
      "from": [
-      "quote-cd08620819289f",
-      "quote-c299fd4f16c688"
+      "quote-c299fd4f16c688",
+      "quote-cd08620819289f"
      ]
     },
     {
-     "label": "on redemption after his previous Davis Cup losses",
-     "text": "This has a special meaning in my heart, especially because my last matches in the Davis Cup weren't wins, so I felt that I needed this to come back and to prove that I could help the team.",
+     "label": "on making amends for his past Davis Cup losses",
+     "text": "Today is a special day for me. This has a special meaning in my heart, especially because my last matches in the Davis Cup weren't wins, so I felt that I needed this to come back and to prove that I could help the team.",
      "from": [
+      "quote-f5e2ce3d97c339",
       "quote-8cbc15e55fbfad"
+     ]
+    },
+    {
+     "label": "on Italy's team spirit in the Davis Cup",
+     "text": "Our focus is on achieving something and sticking together.",
+     "from": [
+      "quote-7871e65420a62e"
      ]
     }
    ],
