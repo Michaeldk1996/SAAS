@@ -400,7 +400,7 @@ test('page: no placeholder from the export ships', () => {
 const linesOf = (rows) => rows.map((r) => ({ key: '', playerA: r.playerA, playerB: r.playerB, side: r.side,
   books: { [r.book]: { side: [[r.open.at, +r.open.price], [r.latest.at, +r.latest.price]], other: [], lastSeen: r.latest.at } } }));
 async function renderPage({ rows, ageS = 12, reachable = true, board = [], statusExtra = {}, mk = null, leave = false, tz = 'UTC' }) {
-  const root = { innerHTML: '', addEventListener() {}, closest: () => ({ classList: { contains: () => false } }), querySelector: () => null };
+  const root = { innerHTML: '', addEventListener() {}, closest: () => ({ classList: { contains: () => false } }), querySelector: () => null, querySelectorAll: () => [], contains: () => false };
   const btn = { style: { display: 'none' } };
   const timers = [];
   const status = { schema: 1, generatedAt: new Date(PT0 - ageS * 1000).toISOString(), serverNow: new Date(PT0).toISOString(), ageS, freshness: ageS > 300 ? 'paused' : 'ok', rowCount: rows.length, sources: [], ...statusExtra };
@@ -446,7 +446,7 @@ test('page: polling stops when the tab is left', async () => {
 
 // ── second review (of eac4f55b): lock every fix, in a sandbox that keeps the modal and the key handler ──
 function pageSandbox({ feed, windowHours = 24, hang = false, ageS = 12 }) {
-  const root = { innerHTML: '', addEventListener() {}, closest: () => ({ classList: { contains: () => false } }), querySelector: () => null };
+  const root = { innerHTML: '', addEventListener() {}, closest: () => ({ classList: { contains: () => false } }), querySelector: () => null, querySelectorAll: () => [], contains: () => false };
   const overlay = { writes: 0, _h: '', style: { setProperty() {} }, className: '', id: '', remove() { overlay.gone = true; }, querySelector: () => null };
   Object.defineProperty(overlay, 'innerHTML', { get: () => overlay._h, set: (v) => { overlay.writes += 1; overlay._h = v; } });
   let mounted = false; const keys = [];
@@ -521,7 +521,7 @@ async function openPopup({ rows, board = [], lines = [], chart = null, elo = nul
   const overlay = { writes: 0, _h: '', style: { setProperty() {} }, remove() {}, querySelector: () => null };
   Object.defineProperty(overlay, 'innerHTML', { get: () => overlay._h, set: (v) => { overlay.writes += 1; overlay._h = v; } });
   let mounted = false;
-  const root = { innerHTML: '', addEventListener() {}, closest: () => ({ classList: { contains: () => false } }), querySelector: () => null };
+  const root = { innerHTML: '', addEventListener() {}, closest: () => ({ classList: { contains: () => false } }), querySelector: () => null, querySelectorAll: () => [], contains: () => false };
   const status = { schema: 1, generatedAt: new Date(PT0 - 10000).toISOString(), serverNow: new Date(PT0).toISOString(), ageS: 10, freshness: 'ok', sources: [] };
   const res = (body) => ({ status: 200, ok: true, headers: { get: () => '"e1"' }, json: async () => body });
   const sandbox = {

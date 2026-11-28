@@ -1,7 +1,10 @@
-// Dropping Odds v2 (handoff design_handoff_dropping_odds_v2, founder brief 2026-11-23): the rebuilt page and price move
-// box, executed on a frozen slice of the real drops feed (tools/fixtures/drops-v2.json, captured 23 Nov 2026) plus one
-// synthetic ATP selection with a board card and a Pinnacle chart (the live feed had none that day). Rules:
-// .claude/rules/drops.md. Mutants: tools/test-drops-v2-mutants.js (DROPSV2_SRC / DROPSV2_CSS swap in a mutated copy).
+// Dropping Odds — final design (handoff design_handoff_dropping_odds_final_2026-11-27, LOCKED; founder rulings 2026-11-28)
+// on the v2 model (sharp vs soft, founder 2026-11-23). The desktop page and the price history box are the design file's
+// markup, compiled into drops-page.js (dc/compile.mjs: dcDesk / dcDrawer) and filled by the ported view logic
+// (pageVals / drawerVals); the phone list keeps the v2 layout (the final days changed desktop only, README §7).
+// Executed on a frozen slice of the real drops feed (tools/fixtures/drops-v2.json, captured 23 Nov 2026) plus one
+// synthetic ATP selection with a board card and a Pinnacle chart. Rules: .claude/rules/drops.md.
+// Mutants: tools/test-drops-v2-mutants.js (DROPSV2_SRC / DROPSV2_CSS swap in a mutated copy).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -28,21 +31,21 @@ const CARD = { id: 'upcoming-999', p1: 'A. Alpha', p2: 'B. Beta', p1Key: 11, p2K
 const CHART = { books: { 'Pinnacle +30s': { p1: [[iso(22), 2.12], [iso(8), 1.9], [iso(4), 1.46]], p2: [[iso(22), 1.8], [iso(4), 2.85]] } },
   meta: { 'Pinnacle +30s': { source: 'Oddspapi', checkedAt: iso(0.2) } } };
 
-function boot({ rows = FIX.rows.concat([ATP_ROW]), lines = FIX.lines.concat([ATP_LINE]), ageS = 10, reachable = true, tz = 'UTC', board = [CARD] } = {}) {
-  const root = { innerHTML: '', _l: {}, addEventListener(t, f) { root._l[t] = f; }, closest: () => ({ classList: { contains: () => true } }), querySelector: () => null };
-  const ov = { id: '', _h: '', remove() { mounted = false; }, querySelector: () => null, addEventListener(t, f) { ov._l = f; } };
-  Object.defineProperty(ov, 'innerHTML', { get: () => ov._h, set: (v) => { ov._h = v; } });
+function boot({ rows = FIX.rows.concat([ATP_ROW]), lines = FIX.lines.concat([ATP_LINE]), ageS = 10, reachable = true, tz = 'UTC', board = [CARD], width = 1440 } = {}) {
+  const mk = () => { const o = { _h: '', _l: {}, addEventListener(t, f) { (o._l[t] = o._l[t] || []).push(f); }, contains: () => false, querySelectorAll: () => [], querySelector: () => null,
+    closest: () => ({ classList: { contains: () => true } }) }; Object.defineProperty(o, 'innerHTML', { get: () => o._h, set: (v) => { o._h = v; } }); return o; };
+  const root = mk(), ov = mk(); ov.remove = () => { mounted = false; };
   let mounted = false; const timers = []; const winL = {};
   const status = { generatedAt: new Date(NOW - ageS * 1000).toISOString(), serverNow: new Date(NOW).toISOString(), ageS };
   const res = (b) => ({ status: 200, ok: true, headers: { get: () => '"e"' }, json: async () => b });
   class FD extends Date { constructor(...a) { super(...(a.length ? a : [NOW])); } static now() { return NOW; } }
   const sb = {
-    document: { readyState: 'complete', activeElement: null, querySelector: () => null, addEventListener() {},
-      getElementById: (id) => (id === 'dropsRoot' ? root : id === 'do2Overlay' ? (mounted ? ov : null) : id === 'dropsTabBtn' ? { style: {} } : null),
-      body: { appendChild: () => { mounted = true; } }, createElement: () => ov },
+    document: { readyState: 'complete', activeElement: null, querySelector: () => null, addEventListener() {}, head: { appendChild() {} },
+      getElementById: (id) => (id === 'dropsRoot' ? root : id === 'do3Overlay' ? (mounted ? ov : null) : id === 'dropsTabBtn' ? { style: {} } : null),
+      body: { appendChild: () => { mounted = true; } }, createElement: (t) => (t === 'style' ? {} : ov) },
     location: { search: '' }, URLSearchParams, Intl, Date: FD, Promise, JSON, Math, String, Number, Object, Array, isFinite, parseFloat, RegExp, Error,
     localStorage: { getItem: () => null }, newsTz: () => tz, matches: board, roundBadgeText: (r) => (r === 'Quarter-finals' ? 'QF' : r),
-    cardStartMs: () => NOW + 6 * H, openAnalysisModal: (id) => { sb._opened = id; },
+    cardStartMs: () => NOW + 6 * H, openAnalysisModal: (id) => { sb._opened = id; }, requestAnimationFrame: (f) => f(), innerWidth: width,
     newsPlayerName: (k, n) => ({ 11: 'A. Alpha-Profile', 22: 'B. Beta-Profile' }[k] || n), sfEventName: (raw) => (raw === 'ATP Testville' ? 'Testville Open' : raw),
     playerPhotoImg: (k, n) => '<img class="sf-ph" data-key="' + k + '" alt="' + n + '">',
     ensureOddsMovement: async (m) => { m._oddsLoaded = true; m.oddsMovement = { chart: CHART }; },
@@ -53,12 +56,14 @@ function boot({ rows = FIX.rows.concat([ATP_ROW]), lines = FIX.lines.concat([ATP
   sb.window = sb;
   vm.runInNewContext(SRC, sb);
   const D = sb.DropsPage, flush = async () => { for (let i = 0; i < 12; i++) await new Promise((r) => setImmediate(r)); };
-  const act = async (a, v, tgt) => { const el = { getAttribute: (k) => (k === 'data-act' ? a : k === 'data-v' ? (v == null ? null : String(v)) : null) };
-    (tgt === 'ov' ? ov._l : root._l.click)({ target: { closest: () => el }, stopPropagation() {}, preventDefault() {} }); await flush(); };
-  return { D, st: D._state, root, ov, timers, flush, act, sb, winL,
+  const act = async (a, v) => { const el = { getAttribute: (k) => (k === 'data-act' ? a : k === 'data-v' ? (v == null ? null : String(v)) : null) };
+    root._l.click.forEach((f) => f({ target: { closest: () => el }, stopPropagation() {}, preventDefault() {} })); await flush(); };
+  const ev = { stopPropagation() {}, preventDefault() {}, currentTarget: { getBoundingClientRect: () => ({ left: 0, width: 1000 }) } };
+  return { D, st: D._state, root, ov, timers, flush, act, sb, winL, ev,
     start: async () => { D.setActive(true); await flush(); D._state.metaSig = null; D.setActive(true); await flush(); return root.innerHTML; } };
 }
 const sel = (st, re) => st.sels.find((s) => re.test(s.side));
+const kinds = (list, btype) => list.map((s) => { const c = M.calc(s.bk); return btype === 'soft' ? c.soft.r : c.sharp; });
 
 test('readings: every %, implied and pts figure from the two prices shown (README rd)', () => {
   const a = M.rd(2.12, 1.46), b = M.rd(5.30, 3.65);
@@ -69,14 +74,12 @@ test('readings: every %, implied and pts figure from the two prices shown (READM
   assert.equal(M.rd(null, 1.58).kind, 'one'); assert.equal(M.rd(null, null).kind, 'none');
 });
 
-test('soft reading: the average of soft books with two prices, "n of m soft books down", one book names itself', () => {
-  const c = M.calc({ Superbet: { first: 4.05, now: 2.92 }, 'Napoleon Sports BE': { first: 4.10, now: 2.90 }, Bet105: { first: 4.0, now: 3.1 } });
-  assert.equal(c.soft.lead, 'avg'); assert.equal(c.soft.r.o, 4.08); assert.equal(c.soft.r.n, 2.91);
+test('soft reading: the average of soft books with two prices, "n of m soft books down"; prediction markets are never soft', () => {
+  const c = M.calc({ Superbet: { first: 4.05, now: 2.92 }, 'Napoleon Sports BE': { first: 4.10, now: 2.90 }, Bet105: { first: 4.0, now: 3.1 }, Polymarket: { first: 4.2, now: 3.3 } });
+  assert.equal(c.soft.lead, 'avg'); assert.equal(c.soft.r.o, 4.08); assert.equal(c.soft.r.n, 2.91); assert.equal(c.soft.quotes, 2);
   assert.equal(M.softCount(c), '2 of 2 soft books down'); assert.equal(c.sharp.kind, 'none', 'never the soft figure in the sharp slot');
-  assert.equal(M.bestSub(c), 'Best · Bet105');
-  const one = M.calc({ Superbet: { first: 3, now: 2.5 } });
-  assert.equal(one.soft.lead, 'Superbet'); assert.equal(M.bestSub(one), 'Superbet only');
-  assert.equal(M.softLabel(one), 'Soft books · Superbet');
+  assert.equal(c.best.book, 'Polymarket', 'best now across every quoting book and market (the file\'s allNames)');
+  assert.equal(JSON.stringify(M.PRED_BOOKS.map((b) => b[0])), '["Polymarket","Kalshi"]');
 });
 
 test('selections: one per match side from the endpoint lines; the side\'s own line wins; roster books only; 24 h quoting; nothing at or after the cut', () => {
@@ -84,7 +87,7 @@ test('selections: one per match side from the endpoint lines; the side\'s own li
   const ids = new Set(s.map((x) => x.id)); assert.equal(ids.size, s.length, 'one row per selection');
   const v = s.find((x) => /Villanueva/.test(x.side)), o = s.find((x) => /Alcala/.test(x.side));
   assert.ok(v && o, 'both sides of the match'); assert.notDeepEqual(v.bk.Superbet.series, o.bk.Superbet.series);
-  assert.ok(s.every((x) => Object.keys(x.bk).every((b) => b === '_b105nm' || M.BOOKS.some((r) => r[0] === b))), 'only books the page has a source for (plus the derived Bet105 no-margin line)');
+  assert.ok(s.every((x) => Object.keys(x.bk).every((b) => b === '_b105nm' || M.BOOK_NAMES3().includes(b))), 'only books the page has a source for');
   const old = { ...ATP_LINE, books: { Bet105: { ...ATP_LINE.books.Bet105, lastSeen: iso(25) } } };
   assert.equal(Object.keys(M.buildSelections([old], [ATP_ROW], NOW).find((x) => /Alpha/.test(x.side)).bk).length, 0, 'a book not seen for 24 h is not quoting');
   const cut = { ...ATP_ROW, match: { status: 'in_play', liveAt: iso(5) } };
@@ -93,191 +96,179 @@ test('selections: one per match side from the endpoint lines; the side\'s own li
   assert.equal(M.isUpcoming(c, NOW), false, 'a started match is not listed (upcoming only, drops.md r2)');
 });
 
-test('list: default sort = biggest sharp drop, no-sharp selections after by their soft drop; Movement counts follow the other filters', async () => {
-  const p = boot(); const html = await p.start();
+test('sort Biggest sharp drop (default): every sharp reading first, by its drop; then the rest by their soft drop', async () => {
+  const p = boot(); await p.start();
   const v = M.view(p.st.sels, M.defaults(), NOW);
   assert.match(v.list[0].side, /Alpha/, 'the Pinnacle drop ranks first');
-  const withSharp = v.list.filter((s) => M.calc(s.bk).sharp.kind !== 'none').length;
-  assert.ok(v.list.slice(0, withSharp).every((s) => M.calc(s.bk).sharp.kind !== 'none'), 'every selection with a sharp line ranks first');
-  const soft = v.list.slice(withSharp).map((s) => M.calc(s.bk).soft.r.d ?? -1);
-  assert.deepEqual(soft, soft.slice().sort((a, b) => b - a), 'then by soft drop');
-  assert.equal(v.mvN.all, v.mvN.both + v.mvN.sharp + v.mvN.soft + v.mvN.nosharp + v.list.filter((s) => M.mvOf(M.calc(s.bk)) === 'none').length);
-  assert.match(html, /All<span class="do2-optn">\d+<\/span>/);
-  assert.match(html, new RegExp(v.list.length + ' selections across ' + v.nMatches + ' matches'));
+  const sh = kinds(v.list, 'all'), n = sh.filter((r) => r.d != null).length;
+  assert.ok(sh.slice(0, n).every((r) => r.d != null), 'every selection with a sharp reading ranks first');
+  assert.deepEqual(sh.slice(0, n).map((r) => r.d), sh.slice(0, n).map((r) => r.d).sort((a, b) => b - a));
 });
 
-test('row: the Pinnacle reading red with its meter, the soft average white, open struck; no sharp line reads "—" + "No sharp line"', async () => {
-  const p = boot(); const html = await p.start();
-  assert.match(html, /<span class="do2-sh-fig drop" style="font-size:23px">31\.1<span class="do2-pct">%<\/span><\/span><span class="do2-impl">\+21\.3 pts implied<\/span>/);
-  assert.match(html, /<span class="do2-open strike">2\.12<\/span><span class="do2-arr">→<\/span><span class="do2-now">1\.46<\/span>/);
-  assert.match(html, /<span class="do2-sh-fig dim" style="font-size:23px">—<span class="do2-pct"><\/span><\/span><span class="do2-impl"><\/span><\/span><span class="do2-note">No sharp line<\/span>/);
-  assert.match(html, /A\. Alpha-Profile to win/);
-  assert.match(html, /1 soft book quoting, 1 price recorded|soft books quoting, 1 price recorded each/, 'one price: the reason, not a zero');
-  assert.match(html, /<span class="do2-so-fig flat" style="font-size:11px">No move/, 'no move: smaller, text2');
+test('sort Biggest soft drop (founder 2026-11-27): the biggest soft drops first, then no move, then soft rises, then no soft reading — never a rise on top', () => {
+  const s = M.buildSelections(FIX.lines, FIX.rows, NOW);
+  const S = { ...M.defaults(), sort: 'drop', btype: 'soft' }, list = M.view(s, S, NOW).list, r = kinds(list, 'soft');
+  const ORDER = { drop: 0, flat: 1, up: 2, one: 3, none: 3 };
+  assert.deepEqual(r.map((x) => ORDER[x.kind]), r.map((x) => ORDER[x.kind]).sort((a, b) => a - b), 'drops, then flat, then rises, then no soft reading: ' + r.map((x) => x.kind + (x.d ?? '')).join(' '));
+  const d = r.filter((x) => x.kind === 'drop').map((x) => x.d);
+  assert.deepEqual(d, d.slice().sort((a, b) => b - a), 'the drops largest first');
+  assert.ok(r.some((x) => x.kind === 'up' && x.d < -1) && r.some((x) => x.kind === 'none'), 'the fixture holds rises over 1% and selections with no soft line (the measured case)');
+  const up = r.filter((x) => x.kind === 'up').map((x) => x.d);
+  assert.deepEqual(up, up.slice().sort((a, b) => b - a), 'rises: the smallest first');
+  // Min drop reads the soft reading when the soft sort is on
+  const S5 = { ...S, min: 5 }, kept = kinds(M.view(s, S5, NOW).list, 'soft');
+  assert.ok(kept.length && kept.every((x) => x.kind === 'drop' && x.d >= 5), 'Min drop 5% under the soft sort keeps only soft drops of 5% or more');
+  const sharpOnly = s.filter((x) => M.isUpcoming(x, NOW)).find((x) => { const c = M.calc(x.bk); return c.sharp.kind === 'drop' && c.sharp.d >= 5 && !(c.soft.r.d >= 5); });
+  assert.ok(sharpOnly, 'a selection with a sharp drop of 5% or more and a smaller soft reading exists in the fixture');
+  assert.ok(M.view(s, { ...M.defaults(), min: 5 }, NOW).list.includes(sharpOnly), 'control: under the sharp sort it passes');
+  assert.ok(!M.view(s, S5, NOW).list.includes(sharpOnly), 'its sharp drop does not pass the soft filter');
 });
 
-test('header: Drops · Biggest · Updated; Updated = the read\'s generatedAt in the member zone; dashes before the first read', async () => {
-  const p = boot({ tz: 'Asia/Jakarta' }); const html = await p.start();
-  const up = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(NOW - 10e3));
-  assert.match(html, new RegExp('Updated</span><span class="do2-stat-v">' + up + '<'));
-  const v = M.view(p.st.sels, M.defaults(), NOW);
-  assert.match(html, new RegExp('Drops</span><span class="do2-stat-v">' + v.drops + '<')); assert.ok(v.drops >= 1);
-  assert.match(html, new RegExp('Biggest</span><span class="do2-stat-v">' + v.biggest.toFixed(1).replace('.', '\\.') + '%<'));
-  const q = boot({ reachable: false }); const h2 = await q.start();
-  assert.match(h2, /Drops<\/span><span class="do2-stat-v dim">—</); assert.match(h2, /Updated<\/span><span class="do2-stat-v dim">—</);
-  assert.doesNotMatch(h2, /selections across/, 'never a count claim with nothing read');
-});
-
-test('banner: past 5 min (or unreachable) "Feed disconnected" as drawn, rows dimmed; fresh = no banner', async () => {
-  assert.doesNotMatch(await boot({ ageS: 60 }).start(), /Feed disconnected/);
-  const h = await boot({ ageS: 400 }).start();
-  assert.match(h, /<span class="do2-banner-k">Feed disconnected<\/span><span class="do2-banner-t">Showing prices as of <span class="do2-mono do2-banner-v">\d\d:\d\d<\/span>\. New moves appear once the feed reconnects\.<\/span>/);
-  assert.match(h, /data-act="reconnect">Reconnect</); assert.match(h, /do2-list stale/);
-});
-
-test('explainer: the four blocks word for word (the "moves first" claim confirmed by the founder, 2026-11-23)', async () => {
-  const h = await boot().start();
-  for (const t of ['How far the price has fallen since we first recorded it.', 'The bookmaker margin is still in the figure.', 'The same drop can mean very different things.',
-    'Sharp is Pinnacle, which tends to move first. Soft is the average of the other bookmakers. The first recorded price is not necessarily the opening line.']) assert.ok(h.includes(t), t);
-});
-
-test('filters: Bookmaker menu keeps one on and clears with ×; Min drop, Window, search; Reset only when something is set; empty state', async () => {
+test('Drops in = Pts implied: ranks by the implied shift and switching resets the sort to the drop', async () => {
+  const s = M.buildSelections(FIX.lines, FIX.rows, NOW);
+  const r = kinds(M.view(s, { ...M.defaults(), unit: 'pts', btype: 'soft' }, NOW).list, 'soft').filter((x) => x.pts != null && x.kind === 'drop').map((x) => x.pts);
+  assert.deepEqual(r, r.slice().sort((a, b) => b - a));
   const p = boot(); await p.start();
-  assert.doesNotMatch(p.root.innerHTML, /data-act="reset">Reset filters/);
-  await p.act('menu', 'book'); for (const b of ['Pinnacle', 'Bet105', 'Superbet']) await p.act('book', b);
-  await p.act('book', 'Napoleon Sports BE');
-  assert.equal(JSON.stringify(p.st.S.books), '["Napoleon Sports BE"]', 'at least one stays on');
-  assert.match(p.root.innerHTML, /do2-mbtn-v set">Napoleon Sports BE</); assert.match(p.root.innerHTML, /Reset filters/);
-  await p.act('clear', 'book'); assert.equal(p.st.S.books.length, 4);
-  await p.act('min', '30'); await p.act('win', '12h'); await p.act('mv', 'sharp');
-  assert.match(p.root.innerHTML, /No selections match these filters<\/span><span class="do2-empty-d">Minimum drop 30% · last 12h</);
-  await p.act('reset'); assert.equal(JSON.stringify(p.st.S), JSON.stringify(M.defaults()));
-  p.st.S.q = 'kountour'; p.D.setActive(true); await p.flush();
-  assert.match(p.root.innerHTML, /2 selections across 1 match/, 'search matches the match: both players\' selections');
+  p.st.lastV.sortOpts[2].onClick(); assert.equal(p.st.S.sort, 'recent');
+  p.st.lastV.unitOpts[1].onClick(); assert.equal(p.st.S.unit, 'pts'); assert.equal(p.st.S.sort, 'drop');
+  assert.match(p.st.lastV.hdrBiggest, /^\+\d+\.\d pts$/, 'header Biggest in pts');
 });
 
-test('box: three tiles, Pinnacle chart + compared book, bookmaker groups; the summary counts with denominators; Match analysis only with a board card', async () => {
-  const p = boot(); await p.start();
-  const id = sel(p.st, /Alpha/).id; await p.act('row', id);
-  const b = p.ov.innerHTML;
-  assert.match(b, /Match winner · vs B\. Beta-Profile · Testville Open · QF/);
-  assert.match(b, /data-act="analysis" data-v="upcoming-999">Match analysis</);
-  assert.match(b, /Sharp · Pinnacle<\/span><span class="do2-tile-top"><span class="do2-tfig28 drop">31\.1%/);
-  assert.match(b, /Last move<\/span><span class="do2-kv-v">4h ago</);
-  assert.match(b, /Quoting<\/span><span class="do2-kv-v">3 of 4</);
-  assert.match(b, /Down at 3 of 3 quoting this line \(2 of 2 sharp, 1 of 1 soft\)\./);
-  assert.match(b, /class="do2-ln pin"/); assert.match(b, /Compare with Pinnacle<\/span><span class="do2-mbtn-v set">Superbet</, 'default compared = highest price outside Pinnacle');
-  assert.doesNotMatch(b, /Polymarket|Kalshi|Prediction market/, 'no prediction market without a source');
-  await p.act('drbook', 'Bet105', 'ov');
-  assert.match(p.ov.innerHTML, /do2-mbtn-v set">Bet105</); assert.match(p.ov.innerHTML, /do2-brow on q" role="button" tabindex="0" data-act="drbook" data-v="Bet105"/);
-  const ch = sel(p.st, /Villanueva/); await p.act('row', ch.id);
-  assert.doesNotMatch(p.ov.innerHTML, /Match analysis/, 'no board card, no link');
-  assert.match(p.ov.innerHTML, /Pinnacle has no line on this selection, so the chart has no sharp overlay\./);
-  assert.match(p.ov.innerHTML, /Each drop compares a book's own first recorded price with its own current price\./);
-});
-
-test('Bet105 without its margin is the sharp reading where Pinnacle has no line (founder 2026-11-23); never over Pinnacle', () => {
-  // own 2.10 / other 1.80 -> fair 1 + 2.10/1.80 = 2.1667; own 1.60 (other still 1.80) -> 1.8889; other 2.40 -> 1.6667
-  const line = { key: 'k', playerA: 'Carl Gamma', playerB: 'Dan Delta', side: 'Carl Gamma', books: { Bet105: {
-    side: [[iso(10), 2.10], [iso(6), 1.60]], other: [[iso(10.5), 1.80], [iso(3), 2.40]], lastSeen: iso(0.1) } } };
-  const row = { ...ATP_ROW, playerA: 'Carl Gamma', playerB: 'Dan Delta', side: 'Carl Gamma', tier: 'Challenger' };
-  const g = M.buildSelections([line], [row], NOW).find((x) => /Gamma/.test(x.side));
-  assert.equal(JSON.stringify(g.bk._b105nm.series.map((p) => +p.v.toFixed(4))), '[2.1667,1.8889,1.6667]');
-  const c = M.calc(g.bk);
-  assert.equal(c.sharp.src, 'Bet105'); assert.equal(JSON.stringify([c.sharp.o, c.sharp.n, c.sharp.d, c.sharp.io, c.sharp.inn, c.sharp.pts]), '[2.17,1.67,23,46.1,59.9,13.8]');
-  assert.equal(c.best.book, 'Bet105', 'best now = the quoted price, never the no-margin one'); assert.equal(c.best.price, 1.6);
-  assert.equal(M.sharpCell(c, 23).lead, 'Bet105', 'the row names the source of its sharp figure');
-  const pin = M.calc({ ...g.bk, Pinnacle: { first: 3, now: 2.5 } });
-  assert.equal(pin.sharp.src, 'Pinnacle', 'Pinnacle wins whenever it has a line');
-  const one = M.buildSelections([{ ...line, books: { Bet105: { ...line.books.Bet105, other: [] } } }], [row], NOW).find((x) => /Gamma/.test(x.side));
-  assert.equal(one.bk._b105nm, undefined, 'no other side, no pair, no no-margin price');
-});
-
-test('box with a Bet105 sharp reading: tile, legend and note name it; Bet105 is not offered as the compared book', async () => {
+test('Meaningful only and the Sharp move chip (the file\'s isMean): Pinnacle, or Bet105 without its margin (founder 2026-11-28), moved 5 pts, or 2 pts with half the soft books following', () => {
+  const mk = (sh, softDown) => ({ sharp: sh, soft: { quotes: 2, down: softDown } });
+  assert.equal(M.isMean(mk(M.rd(2.12, 1.46), 0)), true, '21 pts');
+  assert.equal(M.isMean(mk(M.rd(2.0, 1.9), 1)), true, '2.6 pts, 1 of 2 soft down');
+  assert.equal(M.isMean(mk(M.rd(2.0, 1.9), 0)), false, '2.6 pts, no soft follows');
+  assert.equal(M.isMean(mk(M.rd(2.0, 1.97), 2)), false, 'under 2 pts');
   const line = { key: 'k', playerA: 'Carl Gamma', playerB: 'Dan Delta', side: 'Carl Gamma', books: {
-    Bet105: { side: [[iso(10), 2.10], [iso(6), 1.60]], other: [[iso(10.5), 1.80], [iso(3), 2.40]], lastSeen: iso(0.1) },
-    Superbet: { side: [[iso(9), 2.0], [iso(4), 1.7]], other: [], lastSeen: iso(0.1) } } };
-  const row = { ...ATP_ROW, playerA: 'Carl Gamma', playerB: 'Dan Delta', side: 'Carl Gamma', tier: 'Challenger' };
-  const p = boot({ rows: [row], lines: [line], board: [] }); await p.start();
-  await p.act('row', sel(p.st, /Gamma/).id); const b = p.ov.innerHTML;
-  assert.match(b, /Sharp · Bet105 \(no margin\)<\/span><span class="do2-tile-top"><span class="do2-tfig28 drop">23\.0%/);
-  assert.match(b, /do2-leg-bar pin"><\/span><span class="do2-leg-n">Bet105 \(no margin\)</);
-  assert.match(b, /Pinnacle has no line on this selection, so the sharp line is Bet105 with its margin removed\./);
-  assert.match(b, /do2-leg-bar sel"><\/span><span class="do2-leg-n">Superbet</, 'the compared (white) line is the other book, never Bet105 itself');
-  assert.doesNotMatch(b, /data-act="drpick"/, 'one other book quoting: no compare menu (the export\'s rule)');
-  assert.match(b, /data-v="Bet105" title="Bet105 is on the chart"/);
+    Bet105: { side: [[iso(10), 2.10], [iso(6), 1.60]], other: [[iso(10.5), 1.80], [iso(3), 2.40]], lastSeen: iso(0.1) } } };
+  const g = M.buildSelections([line], [{ ...ATP_ROW, playerA: 'Carl Gamma', playerB: 'Dan Delta', side: 'Carl Gamma', tier: 'Challenger' }], NOW)[0];
+  const c = M.calc(g.bk); assert.equal(c.sharp.src, 'Bet105'); assert.equal(M.isMean(c), true, 'a Bet105 no-margin move counts');
+  const t = M.timing(g, c, NOW); assert.equal(t.chipLbl, 'Strong sharp move'); assert.match(t.chipTitle, /^Bet105 moved this selection by 5 pts implied or more$/);
+  const S = { ...M.defaults(), mean: true }, s = M.buildSelections(FIX.lines.concat([ATP_LINE]), FIX.rows.concat([ATP_ROW]), NOW);
+  assert.ok(M.view(s, S, NOW).list.every((x) => M.isMean(M.calc(x.bk))));
 });
 
-test('Arbitrage view retired (founder 2026-11-23): no module, no script tag, not published', () => {
-  assert.ok(!fs.existsSync(new URL('./arb-page.js', import.meta.url)));
-  assert.doesNotMatch(read('bsp-consult-dashboard.html'), /arb-page\.js/); assert.doesNotMatch(read('tools/site-code.sh'), /arb-page\.js/);
-  assert.doesNotMatch(SRC, /ArbPage/);
+test('header: the design card; the subtitle says first recorded (founder 2026-11-28); Updated = the read\'s generatedAt in the member zone', async () => {
+  const p = boot({ tz: 'Asia/Jakarta' }); const html = await p.start();
+  assert.match(html, />Prices that have shortened since we first recorded them\. Sharp and soft books are read separately\.</);
+  assert.doesNotMatch(html, /since they opened/);
+  const up = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(NOW - 10e3));
+  assert.equal(p.st.lastV.updatedVal, up);
+  const v = M.view(p.st.sels, M.defaults(), NOW);
+  assert.equal(p.st.lastV.hdrDrops, String(v.drops)); assert.equal(p.st.lastV.hdrBiggest, v.biggest.toFixed(1) + '%');
+  const q = boot({ reachable: false }); const h2 = await q.start();
+  assert.equal(q.st.lastV.hdrDrops, '—'); assert.equal(q.st.lastV.updatedVal, '—');
+  assert.doesNotMatch(h2, /data-docard/, 'never a card with nothing read');
+  assert.doesNotMatch(html, /selections across/, 'the count line is removed (README §3)');
+  assert.doesNotMatch(html, /data-doarchive/, 'the archive link waits for the archive page');
 });
 
-test('phone (under 820px): the export card list, Filters / Sort sheet, How-to-read line, market chips; no ILLUSTRATIVE, no LIVE line', async () => {
-  const p = boot(); p.sb.innerWidth = 390; const h = await p.start();
-  assert.match(h, /<div class="do2-wrap do2-m"><div class="do2-mwrapper"><div class="do2-mtitle"><h1>Dropping Odds<\/h1><\/div>/);
-  assert.match(h, /data-act="sheet">.*Filters<\/span><span class="do2-mbtn2 sort" role="button" tabindex="0" data-act="sheet"><span class="do2-msort-l">Sort<\/span><span class="do2-msort-v">Biggest sharp drop</);
-  assert.match(h, /How to read these figures/); assert.match(h, /class="do2-mchip on"[^>]*data-act="mk" data-v="mw">Match winner/);
-  assert.match(h, /<div class="do2-mcard" role="button"/); assert.match(h, /class="do2-m-lbl">Sharp · Pinnacle</);
-  assert.doesNotMatch(h, /ILLUSTRATIVE|LIVE ·|Book names are placeholders/);
-  await p.act('sheet'); assert.match(p.root.innerHTML, /TIER · MEN ONLY/); assert.match(p.root.innerHTML, /Show \d+ selections?/);
-  await p.act('min', '30'); assert.match(p.root.innerHTML, /<span class="do2-mbadge">1</);
-  await p.act('sheetclose'); assert.doesNotMatch(p.root.innerHTML, /do2-sheet"/);
-  const d = boot({ ageS: 400 }); d.sb.innerWidth = 390; assert.match(await d.start(), /FEED DISCONNECTED.*data-act="reconnect">Reconnect/);
+test('cards: one per selection, the design\'s card markup (5% edge at rest, 16% on hover), sharp label names its source', async () => {
+  const p = boot(); const html = await p.start();
+  const n = (html.match(/data-docard/g) || []).length;
+  assert.equal(n, M.view(p.st.sels, M.defaults(), NOW).list.length);
+  assert.match(html, /data-docard[^>]*border:1px solid var\(--do3-edge-5\)[^>]*class="dxh\d+"/);
+  assert.match(SRC, /\.dxh\d+:hover\{border-color:var\(--do3-edge-16\) !important\}/);
+  assert.match(html, /A\. Alpha-Profile to win/); assert.match(html, /vs B\. Beta-Profile · Testville Open</);
+  assert.match(html, />Sharp · Pinnacle</); assert.match(html, />Sharp · Bet105 \(no margin\)</);
+  assert.match(html, /data-dosharp/, 'a Sharp move chip where isMean holds');
+  assert.match(html, />No sharp line</); assert.match(html, />Opened · biggest move</);
 });
 
-test('chart (TEN-301 step line): every segment flat or vertical, a dot per recorded price in the window, the axis never under 1.00', () => {
-  const series = [{ t: NOW - 30 * H, v: 1.12 }, { t: NOW - 10 * H, v: 1.08 }, { t: NOW - 2 * H, v: 1.05 }];
-  const ch = M.chartModel([{ role: 'sel', series }], NOW);
-  const pts = ch.lines[0].points.split(' ').map((x) => x.split(',').map(Number));
-  for (let i = 1; i < pts.length; i++) assert.ok(pts[i][0] === pts[i - 1][0] || pts[i][1] === pts[i - 1][1], 'no diagonal between two prices');
-  assert.equal(ch.lines[0].dots.length, 2, 'the price recorded before the window is carried in, not dotted');
-  assert.equal(pts[pts.length - 1][0], 1000, 'the last price runs on to now');
-  assert.ok(+ch.gridY[4].label >= 1, 'decimal odds never under 1.00');
-});
-
-test('Escape closes an open box menu first, then the box; the box rebuilds only when what it shows changes', async () => {
+test('filters: Bookmaker menu (sharp · soft · prediction markets) keeps one on and clears with ×; Min drop, Window; Reset only when something is set; empty state', async () => {
   const p = boot(); await p.start();
-  await p.act('row', sel(p.st, /Alpha/).id); await p.act('drpick', null, 'ov');
+  assert.doesNotMatch(p.root.innerHTML, />Reset filters</);
+  p.st.lastV.tabMenus[0].onToggle(); assert.equal(p.st.menu, 'book');
+  assert.match(p.root.innerHTML, />Prediction markets</); assert.match(p.root.innerHTML, />Kalshi</);
+  for (const name of M.BOOK_NAMES3()) p.st.lastV.tabMenus[0].groups.flatMap((x) => x.opts).find((x) => x.label === name).onClick();
+  assert.equal(p.st.S.books.length, 1, 'at least one stays on');
+  assert.match(p.root.innerHTML, />Reset filters</);
+  p.st.lastV.tabMenus[0].onClear(p.ev); assert.equal(p.st.S.books.length, M.BOOK_NAMES3().length);
+  p.st.lastV.minOpts[4].onClick(); p.st.lastV.winOpts[1].onClick(); p.st.lastV.mvOpts[2].onClick();
+  assert.match(p.root.innerHTML, />No selections match these filters</); assert.match(p.root.innerHTML, />Minimum drop 30% · last 12h</);
+  p.st.lastV.resetFilters(); assert.equal(JSON.stringify(p.st.S), JSON.stringify(M.defaults()));
+});
+
+test('box: tiles with their Opening rows, the chart (sharp blue, compared white), legend switches, bookmaker tables; Match analysis only with a board card', async () => {
+  const p = boot(); await p.start();
+  p.st.lastV.rows.find((r) => /Alpha/.test(r.line)).onClick();
+  const b = p.ov.innerHTML, dr = p.st.lastDr;
+  assert.match(b, /Match winner · vs B\. Beta-Profile · Testville Open · QF/);
+  assert.equal(dr.maD, 'flex'); dr.openMA(); assert.equal(p.sb._opened, 'upcoming-999'); assert.equal(p.st.drawer, null);
+  p.st.lastV.rows.find((r) => /Alpha/.test(r.line)).onClick();
+  const d = p.st.lastDr;
+  assert.equal(d.shLbl, 'Sharp · Pinnacle'); assert.match(d.shOpening, /^2\.12 · \w{3} \d\d:\d\d$/); assert.equal(d.quoting, '3 of 6');
+  assert.equal(d.summary, 'Down at 3 of 3 quoting this line (2 of 2 sharp, 1 of 1 soft, no prediction market quoting).');
+  assert.equal(d.ch.legend.map((l) => l.name).join('|'), 'Pinnacle|Superbet', 'default compared = highest price outside Pinnacle');
+  assert.equal(d.predNote, 'No prediction market quotes this selection, so the chart has no prediction market line.');
+  assert.ok(d.ch.pinPoints && d.ch.points);
+  d.ch.legend[0].onClick(); assert.equal(p.st.lastDr.ch.pinPoints, '', 'a legend pill hides its line');
+  assert.equal(p.st.lastDr.ch.gridY[0].label, d.ch.gridY[0].label, 'the price scale does not rescale');
+  p.st.lastDr.ch.legend[0].onClick();
+  p.st.lastDr.colA[0].rows.find((r) => r.book === 'Bet105').onPick(); assert.equal(p.st.lastDr.selName, 'Bet105');
+  const ch = sel(p.st, /Villanueva/); p.st.drawer = ch.id; p.D.setActive(true); await p.flush();
+  assert.equal(p.st.lastDr.maD, 'none', 'no board card, no link');
+  assert.equal(p.st.lastDr.pinNote, 'Pinnacle has no line on this selection, so the chart has no sharp overlay.');
+});
+
+test('chart (founder 2026-11-28): straight lines through the recorded prices, two dots per line (first recorded, now), the axis never under 1.00', async () => {
+  const series = [{ t: NOW - 30 * H, v: 1.12 }, { t: NOW - 10 * H, v: 1.08 }, { t: NOW - 2 * H, v: 1.05 }];
+  const s = M.shapeSeries(series, NOW - 24 * H, NOW);
+  assert.equal(s.carried, true, 'a price recorded before the window enters at the left edge');
+  assert.equal(s.pts.map((x) => x.v).join(' '), '1.11 1.08 1.05 1.05', 'the edge value lies on the straight line to the next price; the last price runs on to now');
+  assert.equal(s.pts[s.pts.length - 1].fr, 1);
+  const p = boot(); await p.start(); p.st.lastV.rows.find((r) => /Alpha/.test(r.line)).onClick();
+  const d = p.st.lastDr, pin = d.ch.pinPoints.split(' ').map((x) => x.split(',').map(Number));
+  assert.ok(pin.some((q, i) => i && q[0] !== pin[i - 1][0] && q[1] !== pin[i - 1][1]), 'a move is a slope, never a step');
+  assert.equal(d.ch.dots.map((x) => x.s).join(' '), '6px 9px 9px', 'opening (6px) and now (9px) on Pinnacle; Superbet\'s first price is older than the window, so it enters at the edge with no opening dot');
+  assert.ok(d.ch.gridY.every((g) => +g.label >= 1));
+  const low = { key: 'k', playerA: 'Carl Gamma', playerB: 'Dan Delta', side: 'Carl Gamma', books: {
+    Superbet: { side: [[iso(9), 1.06], [iso(4), 1.02]], other: [], lastSeen: iso(0.1) }, 'Napoleon Sports BE': { side: [[iso(8), 1.05], [iso(3), 1.03]], other: [], lastSeen: iso(0.1) } } };
+  const q = boot({ rows: [{ ...ATP_ROW, playerA: 'Carl Gamma', playerB: 'Dan Delta', side: 'Carl Gamma' }], lines: [low], board: [] }); await q.start();
+  q.st.lastV.rows[0].onClick();
+  assert.equal(q.st.lastDr.ch.gridY[4].label, '1.00', 'prices near 1.01: the axis floor is 1.00, never under');
+  d.ch.onMove({ currentTarget: { getBoundingClientRect: () => ({ left: 0, width: 1000 }) }, clientX: 700 });
+  assert.equal(p.st.lastDr.ch.hov.on, true); assert.equal(p.st.lastDr.ch.hov.rows.length, 2); assert.match(p.st.lastDr.ch.hov.tf, /-100%/, 'past 60% the readout flips left');
+});
+
+test('Escape closes an open box menu first, then the box', async () => {
+  const p = boot(); await p.start();
+  p.st.lastV.rows.find((r) => /Alpha/.test(r.line)).onClick(); p.st.lastDr.pickToggle();
   assert.ok(p.st.drPick);
-  // esc-nav.js presses the open layer with the highest z
   const esc = () => { const L = p.sb.sfEscLayers.filter((l) => l.isOpen()).sort((a, b) => b.z - a.z)[0]; if (L) L.close(); };
   esc(); assert.equal(p.st.drPick, false); assert.ok(p.st.drawer);
-  const before = p.ov.innerHTML; p.D.setActive(true); await p.flush(); assert.equal(p.ov.innerHTML, before);
   esc(); assert.equal(p.st.drawer, null);
 });
 
-test('shared strings (carried from TEN-427 Data 5): names through newsPlayerName on the board key, events through sfEventName, the photo by ID over the initials', async () => {
-  const p = boot(); const h = await p.start();
-  assert.match(h, /A\. Alpha-Profile to win/); assert.match(h, /vs B\. Beta-Profile · Testville Open · moved/);
-  assert.match(h, /<span class="do2-av" aria-hidden="true">AA<img class="sf-ph" data-key="11"/);
-  assert.match(h, /<span class="do2-av" aria-hidden="true">GV<\/span>/, 'no board card (Challenger): initials only, never a name-matched photo');
+test('phone (under 820px): the v2 card list, Filters / Sort sheet; the box is the design\'s bottom sheet', async () => {
+  const p = boot({ width: 390 }); const h = await p.start();
+  assert.match(h, /<div class="do2-wrap do2-m"><div class="do2-mwrapper"><div class="do2-mtitle"><h1>Dropping Odds<\/h1><\/div>/);
+  assert.match(h, /<div class="do2-mcard" role="button"/); assert.doesNotMatch(h, /ILLUSTRATIVE|LIVE ·/);
+  await p.act('sheet'); assert.match(p.root.innerHTML, /TIER · MEN ONLY/);
+  await p.act('sheetclose'); await p.act('row', sel(p.st, /Alpha/).id);
+  assert.equal(p.st.lastDr.top, '64px'); assert.equal(p.st.lastDr.rad, '16px 16px 0 0'); assert.equal(p.st.lastDr.maD, 'none');
 });
 
-test('safety: feed strings escaped; polling stops when the page is left; no placeholder ships', async () => {
+test('safety: feed strings escaped; polling stops when the page is left; no sample data ships', async () => {
   const evil = '<img src=x onerror=alert(1)>';
   const line = { ...ATP_LINE, playerA: evil, side: evil }, row = { ...ATP_ROW, playerA: evil, side: evil };
   const h = await boot({ rows: [row], lines: [line] }).start();
   assert.ok(!h.includes('<img src=x'), 'raw markup reached the page'); assert.match(h, /&lt;img/);
-  const p = boot(); p.D.setActive(true); const n = p.timers.length; p.D.setActive(false); await p.flush();   // left while the first read is in flight
+  const p = boot(); p.D.setActive(true); const n = p.timers.length; p.D.setActive(false); await p.flush();
   assert.equal(p.timers.slice(n).filter((ms) => ms === 30000).length, 0);
-  for (const bad of ['Unibet', 'Betsson', 'bet365', 'randomuser', 'Kalshi', 'Polymarket', '09:19', 'Villanueva']) assert.ok(!SRC.includes(bad), bad);
+  for (const bad of ['Unibet', 'Betsson', 'bet365', 'randomuser', '09:19', 'Villanueva', 'Gorzny', 'ILLUSTRATIVE']) assert.ok(!SRC.includes(bad), bad);
 });
 
-test('colour: red only on drop figures, meters, the strike and the banner; blue only on the Pinnacle line; names never ellipsised', () => {
-  const rules = CSS.split('}').map((r) => r.trim()).filter(Boolean);
-  const red = rules.filter((r) => /var\(--do2-(red|meter)\)/.test(r)).map((r) => r.split('{')[0]);
-  assert.ok(red.every((s) => /\.drop|meter|banner|mdisc/.test(s)), red.join(' | '));
-  const blue = rules.filter((r) => /var\(--do2-blue\)/.test(r)).map((r) => r.split('{')[0]);
-  assert.ok(blue.every((s) => /\.pin|mdisc-r|sheet-reset|mempty-r/.test(s)), 'blue = the sharp line, else the phone links the export draws blue: ' + blue.join(' | '));
-  assert.ok(!/text-overflow:\s*ellipsis/.test(CSS), 'player names wrap, never an ellipsis');
-  assert.match(CSS, /grid-template-columns: 252px minmax\(0, 1\.3fr\) minmax\(204px, 0\.8fr\) 112px 104px 10px; gap: 18px;/);
-  assert.match(CSS, /@media \(max-width: 1239px\)[^}]*196px minmax\(0, 1fr\) 156px 104px 10px; gap: 14px;/);
+test('colour: the design\'s colours read through tokens only; red only on drop figures', () => {
+  assert.doesNotMatch(SRC, /#[0-9a-fA-F]{6}\b|rgba?\(\s*\d/, 'no raw colour in the page script');
+  assert.ok((SRC.match(/var\(--do2-red\)/g) || []).length >= 1);
+  assert.match(read('tokens.css'), /--do3-edge-5: rgba\(255, 255, 255, 0\.05\);/);
+  assert.match(CSS, /\[data-page="drops"\] \.do3-wrap \*, \.do3-ov, \.do3-ov \* \{ box-sizing: content-box; \}/, 'the design is drawn on the browser\'s default box model');
 });
 
-test('wiring: published with tokens; the module loads in node', () => {
+test('wiring: published with tokens; the module loads in node; the Arbitrage view stays retired', () => {
   const req = createRequire(import.meta.url); assert.ok(req('./drops-page.js').buildSelections);
   assert.match(read('tools/site-code.sh'), /drops-page\.js drops-page\.css/);
-  assert.match(read('tokens.css'), /--do2-card:\s+#0E1019;/);
+  assert.ok(!fs.existsSync(new URL('./arb-page.js', import.meta.url))); assert.doesNotMatch(SRC, /ArbPage/);
 });

@@ -91,8 +91,8 @@ function checkPages(dash, js, css) {
   const jsHeads = { trading: /'<div class="sfh tr-hdr">' \+\s*'<div class="sfh__text">' \+\s*'<h1 class="sfh__title">Trading Report<\/h1>' \+\s*'<p class="sfh__sub">/,
     series: /'<div class="sfh sr-head">' \+\s*'<div class="sfh__text"><h1 class="sfh__title">Series<\/h1><p class="sfh__sub">'/
   };
-  // Dropping Odds v2 (2026-11-23): its own header card, the handoff's (title 24/800, one grey sentence, Drops · Biggest · Updated)
-  if (!/'<div class="do2-card do2-head"><div class="do2-head-t"><h1>Dropping Odds<\/h1>'/.test(js.drops)) return 'drops: header is not the v2 design head';
+  // Dropping Odds (final design, 2026-11-27): its own header card, the locked file's (title 22/800, one grey sentence, Drops · Biggest · Updated)
+  if (!/<h1 style="margin:0; font-size:22px; font-weight:800; letter-spacing:-0\.015em; line-height:1\.1;">\$\{E\(v\.tabName\)\}<\/h1>/.test(js.drops)) return 'drops: header is not the final design head';
   for (const [k, re] of Object.entries(jsHeads)) if (!re.test(js[k])) return `${k}: header is not the 35b .sfh card`;
   // no caps label line above any title (the old headers' "ATP TOUR · …" eyebrows)
   if (/pgh-eyebrow|tourx-headcap|db-headcap|ATP tour · this week's draws|ATP tour · Season calendar|ATP tour · closing-line archive/.test(dash))
@@ -207,7 +207,7 @@ test('CONTROL: each check goes red on its mutant', () => {
   assert.ok(red(() => checkPages(m(DASH, '<div class="sfh db-headcard" data-db="head">\n', '<div class="db-headcard" data-db="head">\n'), JS, CSS)), 'database off the component');
   assert.ok(red(() => checkPages(DASH, { ...JS, series: m(JS.series, "'<div class=\"sfh sr-head\">'", "'<div class=\"sr-head\">'") }, CSS)), 'series off the component');
   assert.ok(red(() => checkPages(m(DASH, '#tourListView .tourx-head{ margin-bottom:16px; }', '#tourListView .tourx-head h1{ font-size:29px; }'), JS, CSS)), 'page-owned title rule');
-  assert.ok(red(() => checkPages(DASH, { ...JS, drops: m(JS.drops, '<h1>Dropping Odds</h1>', '<h1 class="sfh__title">Dropping Odds</h1>') }, CSS)), 'drops off its v2 head');
+  assert.ok(red(() => checkPages(DASH, { ...JS, drops: m(JS.drops, '<h1 style="margin:0; font-size:22px;', '<h1 class="sfh__title" style="margin:0; font-size:22px;') }, CSS)), 'drops off its final design head');
   // head to head (the rebuilt design head + sticky picker)
   assert.ok(red(() => checkH2H(m(DASH, '<h1 style="margin:0; font-size:24px; font-weight:800;', '<h1 style="margin:0; font-size:29px; font-weight:800;'))), 'h2h title off the design');
   assert.ok(red(() => checkH2H(m(DASH, "coverageLine: 'a dash means not covered'", "coverageLine: 'Data honesty · em dash means not covered'"))), 'h2h old coverage line back');

@@ -1,4 +1,4 @@
-// Dropping Odds v2 — every rule test-drops-v2.mjs locks must turn it red when the rule is bent. Each mutant is applied to
+// Dropping Odds (final design on the v2 model) — every rule test-drops-v2.mjs locks must turn it red when the rule is bent. Each mutant is applied to
 // a copy of drops-page.js (DROPSV2_SRC) or drops-page.css (DROPSV2_CSS); a mutant that leaves the suite green is a
 // vacuous test and fails this runner. Anchors must occur exactly once.
 const fs = require('fs'), os = require('os'), path = require('path'), { spawnSync } = require('child_process');
@@ -12,28 +12,36 @@ const MUTANTS = [
   ['js', 'a stale book still quoting', "          if (isFinite(seen) && now != null && now - seen > QUOTING_MS) return;", ""],
   ['js', 'prices after the live start kept', "      .filter(function (p) { return isFinite(p.t) && p.v != null && p.v >= 1.01 && !(cut != null && p.t >= cut); })", "      .filter(function (p) { return isFinite(p.t) && p.v != null && p.v >= 1.01; })"],
   ['js', 'started matches listed', "    if (s.liveAt || s.cutAt || s.status === 'in_play' || s.status === 'finished') return false;", ""],
-  ['js', 'no-sharp rows rank above the sharp drops', "    return c.sharp.d != null ? 1000 + c.sharp.d : (btype === 'all' ? dOf(c.soft.r) : -1);", "    return c.sharp.d != null ? c.sharp.d : (btype === 'all' ? 1000 + dOf(c.soft.r) : -1);"],
-  ['js', 'the Bookmaker menu lets the last book go', "      case 'book': S.books = toggle(S.books, v, true); break;", "      case 'book': S.books = toggle(S.books, v, false); break;"],
-  ['js', 'Updated = the clock', "    var upd = st.everLoaded && st.status && st.status.generatedAt ? clock(st.status.generatedAt) : '—';", "    var upd = clock(Date.now() + 60e3);"],
-  ['js', 'the banner never shows', "      (fs === 'disconnected' && (st.everLoaded || !st.reachable) ? bannerHtml() : '') + listHtml(v, fs) +", "      listHtml(v, fs) +"],
-  ['js', 'a diagonal between two prices', "      inW.forEach(function (p) { if (path.length) path.push({ t: p.t, v: path[path.length - 1].v }); path.push({ t: p.t, v: p.v }); });", "      inW.forEach(function (p) { path.push({ t: p.t, v: p.v }); });"],
-  ['js', 'the axis under 1.00', "    if (lo < 1) lo = 1;", ""],
-  ['js', 'Escape closes the box with the menu open', "{ id: 'drops-box-menu', z: 77,", "{ id: 'drops-box-menu', z: 75,"],
-  ['js', 'feed strings unescaped', "<span class=\"do2-sel\">' + esc((s.dSide || s.side) + ' to win')", "<span class=\"do2-sel\">' + ((s.dSide || s.side) + ' to win')"],
-  ['js', 'polling continues off the page', "    if (!st.active) return;\n    st.timer", "    st.timer"],
-  ['js', 'a placeholder book on the roster', "['Superbet', 'soft'], ['Napoleon Sports BE', 'soft']];", "['Superbet', 'soft'], ['Napoleon Sports BE', 'soft'], ['Unibet', 'soft']];"],
-  ['js', 'Match analysis offered without a board card', "      (s.card && s.card.id != null ? '<span", "      (true ? '<span"],
-  ['js', 'the sharp line not on the chart', "if (pinOn) lines.push({ role: 'pin', series: bk[sk].series }); ", ""],
   ['js', 'Bet105 no-margin = the quoted price', "      var v = 1 + s / o, last = out[out.length - 1];", "      var v = s, last = out[out.length - 1];"],
   ['js', 'Bet105 no-margin over Pinnacle', "  function sharpKey(bk) { return bk.Pinnacle ? 'Pinnacle' : bk[B105_NM] ? B105_NM : null; }", "  function sharpKey(bk) { return bk[B105_NM] ? B105_NM : bk.Pinnacle ? 'Pinnacle' : null; }"],
-  ['js', 'no Bet105 fallback', "        if (bk.Bet105 && b105) {", "        if (false) {"],
-  ['js', 'Bet105 offered as the compared line beside its own no-margin line', "nonPin = quoted.filter(function (b) { return b !== sharpBook; });", "nonPin = quoted.filter(function (b) { return b !== 'Pinnacle'; });"],
-  ['js', 'the confirmed sentence dropped', "Sharp is Pinnacle, which tends to move first. Soft", "Sharp is Pinnacle. Soft"],
+  // the soft sort (founder 2026-11-27) and its filter
+  ['js', 'the pre-fix soft sort: no soft line ranks above a soft rise', "var x = unit === 'pts' ? r.pts : r.d; return x != null ? x : -Infinity;", "var x = unit === 'pts' ? r.pts : r.d; return x != null ? x : -1;"],
+  ['js', 'Biggest soft drop ranks the sharp reading', "if (btype === 'soft') return vOf(c.soft.r);", "if (btype === 'soft') return vOf(c.sharp);"],
+  ['js', 'Min drop reads the sharp reading under the soft sort', "    return btype === 'sharp' ? a : btype === 'soft' ? b : Math.max(a, b);", "    return btype === 'sharp' ? a : Math.max(a, b);"],
+  ['js', 'Drops in = pts ignored', "var x = unit === 'pts' ? r.pts : r.d; return x != null ? x : -Infinity;", "var x = r.d; return x != null ? x : -Infinity;"],
+  ['js', 'Drops in does not reset the sort', "function () { setS({ unit: u[0], sort: 'drop' }); }", "function () { setS({ unit: u[0] }); }"],
+  // Meaningful only (isMean, Bet105 counts: founder 2026-11-28)
+  ['js', 'Meaningful only does not filter', "    if (S.mean && !isMean(c)) return false;", ""],
+  ['js', 'isMean without the soft-follow condition', "(sh.pts >= 2 && c.soft.quotes > 0 && c.soft.down * 2 >= c.soft.quotes)", "(sh.pts >= 2)"],
+  ['js', 'Bet105 no-margin moves never meaningful', "    var sh = c.sharp;\n    return sh.kind === 'drop'", "    var sh = c.sharp;\n    return sh.src === 'Pinnacle' && sh.kind === 'drop'"],
+  // design copy and bindings
+  ['js', 'the subtitle back to "since they opened"', "Prices that have shortened since we first recorded them.", "Prices that have shortened since they opened."],
+  ['js', 'the sharp label always Pinnacle', "var shName = c.sharp.src === 'Bet105' ? 'Sharp · Bet105 (no margin)' : 'Sharp · Pinnacle';", "var shName = 'Sharp · Pinnacle';"],
+  ['js', 'the archive link shown before the archive exists', "v.deskPad = '30px 40px 70px 24px'; v.hasArchive = false;", "v.deskPad = '30px 40px 70px 24px'; v.hasArchive = true;"],
+  ['js', 'Match analysis offered without a board card', "maD: !mobile && card ? 'flex' : 'none',", "maD: !mobile ? 'flex' : 'none',"],
+  ['js', 'feed strings unescaped', "  function E(x) { return x == null ? '' : x.__raw != null ? x.__raw : esc(x); }", "  function E(x) { return x == null ? '' : x.__raw != null ? x.__raw : String(x); }"],
+  ['js', 'the card edge off the design at rest', 'title="Show the price history" style="display:flex; flex-direction:column; border-radius:16px; background:var(--do2-inner); border:1px solid var(--do3-edge-5);', 'title="Show the price history" style="display:flex; flex-direction:column; border-radius:16px; background:var(--do2-inner); border:1px solid var(--do2-hair);'],
+  // chart (founder 2026-11-28: straight lines, two dots)
+  ['js', 'a carried-in line gets an opening dot', "if (!carried && a.length > 1) out.push(", "if (a.length > 1) out.push("],
+  ['js', 'the edge value not on the straight line', "      pts.unshift({ t: t0, v: r2(v0) }); carried = true;", "      pts.unshift({ t: t0, v: r2(before.v) }); carried = true;"],
+  ['js', 'a hidden line rescales the axis', "    var vs = pS.pts.concat(pP.pts, pR.pts).map", "    var vs = vPts.concat(vPin, vPrd).map"],
+  ['js', 'the axis under 1.00', "    if (lo < 1) lo = 1;                   // decimal odds never go under 1.00 (drops.md r2 fix 11)", ""],
+  // runtime
+  ['js', 'Escape closes the box with the menu open', "{ id: 'drops-box-menu', z: 77,", "{ id: 'drops-box-menu', z: 75,"],
+  ['js', 'polling continues off the page', "    if (!st.active) return;\n    st.timer", "    st.timer"],
+  ['js', 'a placeholder book on the roster', "['Superbet', 'soft'], ['Napoleon Sports BE', 'soft']];", "['Superbet', 'soft'], ['Napoleon Sports BE', 'soft'], ['Unibet', 'soft']];"],
   ['js', 'no phone layout', "  function isMobile() { try { return window.innerWidth <= MOBILE_MAX; } catch (e) { return false; } }", "  function isMobile() { return false; }"],
-  ['js', 'the ILLUSTRATIVE chip shipped', "'<div class=\"do2-mwrapper\"><div class=\"do2-mtitle\"><h1>Dropping Odds</h1></div>'", "'<div class=\"do2-mwrapper\"><div class=\"do2-mtitle\"><h1>Dropping Odds</h1><span>ILLUSTRATIVE</span></div>'"],
-  ['css', 'red on a non-drop figure', ".do2-wrap .do2-so-fig.drop { color: var(--do2-text); }", ".do2-wrap .do2-so-fig.drop { color: var(--do2-text); }\n.do2-wrap .do2-best { color: var(--do2-red); }"],
-  ['css', 'an ellipsis on player names', "[data-page=\"drops\"] .do2-sel { font-size: 15.5px;", "[data-page=\"drops\"] .do2-sel { text-overflow: ellipsis; font-size: 15.5px;"],
-  ['css', 'the list grid off the design', "grid-template-columns: 252px minmax(0, 1.3fr) minmax(204px, 0.8fr) 112px 104px 10px; gap: 18px;", "grid-template-columns: 240px minmax(0, 1.3fr) minmax(204px, 0.8fr) 112px 104px 10px; gap: 18px;"],
+  ['css', 'the page drawn on border-box', "[data-page=\"drops\"] .do3-wrap *, .do3-ov, .do3-ov * { box-sizing: content-box; }", ""],
 ];
 let killed = 0; const survived = [];
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'dropsv2-mut-'));
