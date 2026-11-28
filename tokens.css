@@ -1,17 +1,26 @@
+/* ONE PALETTE (founder ruling 2026-11-28). The app had two sets of meaning colours and greys: the foundation set (Matches,
+   Players, Picks) and the export set (Profile, Tournaments, Head to Head, Database, Model, News, Dropping Odds, Match
+   analysis). They are one set now, on every page:
+     green #3DD68C · red #E0616F · blue (links) #5B9BFF · soft text #DDE0EA · label grey #A3AABE
+   29 tokens changed value that day; tools/test-one-palette.mjs keeps every token of a family on the same value.
+   Left alone on purpose: --viz-grass (a court-surface colour, not "positive"). */
 /* Stennisfy foundation tokens — OFFICIAL VERSION 1 (locked 2026-10-03)
    Source of truth for every colour on the site. Night = default, Day = [data-theme="day"].
    Auto = follow prefers-color-scheme (light → day, dark → night). */
 
 :root,
 [data-theme="night"] {
-  /* Surfaces (layer order: page < card < inner < selected) */
-  --page:        #090B12;
-  --card:        #10131D;
-  --inner:       #171B28;
-  --selected:    #1B2031;
-  --tile-hover:  #141824;   /* clickable tile hover = card → inner 60% */
-  --sidebar:     #121520;   /* the floating sidebar panel only (founder R2, measured on OFFICIAL VERSION 1) */
-  --glow:        rgba(52, 70, 170, 0.22);
+  /* Surfaces (layer order: page < card < inner < selected).
+     Founder ruling 2026-11-28 ("Ink"): the page is the stennisfy.com site background (#05060A), so site and app read as one
+     product; the card sits one step higher than a straight re-step so its edge holds on weak screens. Replaces the
+     OFFICIAL VERSION 1 values (#090B12 / #10131D / #171B28 / #1B2031 / #141824 / sidebar #121520, glow 0.22). */
+  --page:        #05060A;
+  --card:        #0E1119;
+  --inner:       #141823;
+  --selected:    #191E2D;
+  --tile-hover:  #11141D;   /* clickable tile hover = between card and inner */
+  --sidebar:     #10131C;   /* the floating sidebar panel only: a touch above the card, as before */
+  --glow:        rgba(52, 70, 170, 0.24);
 }
 
 [data-theme="day"] {
@@ -39,7 +48,7 @@
   /* Picks page surfaces — founder ruling 2026-10-27, exact hex from Picks LOCKED 2026-10-27 (a night-only design: the
      same value in Day until the design has a Day one). The inner band sits darker than its card — against the layer
      rule; on the Claude Design handoff list. */
-  --lost-card:   #0E1119;   /* a LOST pick card's fill */
+  --lost-card:   #0A0C13;   /* a LOST pick card's fill: stays below --card after the Ink ruling 2026-11-28 (was #0E1119 under card #10131D) */
   --inner-band:  #0D1017;   /* inner band: Record ledger head + total, the mobile card's trail panel */
   --drawer-backdrop: rgba(5, 6, 10, 0.55);   /* the Post-a-pick drawer's page dim (Picks lock, SPEC §8) */
   --shadow-drawer: -24px 0 60px rgba(0, 0, 0, 0.5), inset 1px 0 0 rgba(255, 255, 255, 0.06);   /* the right drawer (Picks lock) */
@@ -58,7 +67,7 @@
      design, night-only: the same value in Day). The group hairlines are solid hex by design. */
   --sig-rule:        #2A2E3A;   /* the two group hairlines (before Elo Overall, before Kalshi) */
   --sig-chip:        #131623;   /* the dark $-traded chip under a prediction-market price */
-  --sig-soft:        #C6CCDB;   /* chip ink on the trailing side; Completed source names */
+  --sig-soft:        #DDE0EA;   /* chip ink on the trailing side; Completed source names */
   --sig-done-rule:   #1A1D26;   /* the Completed drawer's header rule */
   --sig-legend:      #6B7390;   /* "| = Pinnacle close" */
   --sig-done-track:  rgba(255, 255, 255, 0.08);   /* Completed bar track */
@@ -75,7 +84,7 @@
   --tracker-pill:       #131623;   /* selected pill: menus, month chips, triggers; the disabled Post button */
   --tracker-seg:        #1B2031;   /* selected segment: Type / Placed / ledger filter / view, plan chips */
   --tracker-ink:        #FFFFFF;   /* primary ink (README "Primary #FFFFFF"); its alpha washes are color-mix of it */
-  --tracker-pill-text:  #C6CCDB;   /* idle pill / chip text */
+  --tracker-pill-text:  #DDE0EA;   /* idle pill / chip text */
   --tracker-ring:       #007AFF;   /* ring blue: curve, your-stakes line, Log-a-bet / Post / Apply buttons, the seal */
   --tracker-ring-hover: #3A60E8;   /* ring-blue button hover */
   --tracker-link-2:     #5B9BFF;   /* menu footer links (Reset filters, Remove, Use, Close) */
@@ -93,11 +102,11 @@
   /* Meaning colours — same in night and day */
   --bar:         #007AFF;                  /* every data bar (lead / selected) */
   --bar-2:       rgba(0, 122, 255, 0.45);  /* second-tier bar (trailing player, other rows) */
-  --link:        #6A9AF8;                  /* link text only */
+  --link:        #5B9BFF;                  /* link text only */
   --pro:         #2F52D6;                  /* Upgrade to Pro button only */
   --pro-text:    #F2F3F7;
-  --pos:         #5CCB84;                  /* signed good values, winner pill, W square */
-  --neg:         #E06266;                  /* signed bad values, L square, break outlines */
+  --pos:         #3DD68C;                  /* signed good values, winner pill, W square */
+  --neg:         #E0616F;                  /* signed bad values, L square, break outlines */
   --amber:       #E8A84E;                  /* ONLY Stennisfy Model value layers + Trading Report field tiers + Live Interrupted (TEN-417) */
   --nav-locked:  #5B6880;                  /* ONLY the icon of a Pro-locked page on the navigation rail (TEN-403 shell package) */
   --serve-ball:  #EAF928;                  /* ONLY the live serving dot */
@@ -115,7 +124,10 @@
   --line-strong: rgba(255, 255, 255, 0.10);  /* under column heads, between sections */
   --track:       rgba(255, 255, 255, 0.06);  /* bar track */
   --open-card:   rgba(106, 154, 248, 0.30);  /* the one periwinkle outline: open / expanded card — value measured on OFFICIAL VERSION 1 (README listed 143,170,255 @ 0.28; reference wins, TEN-376) */
-  --top-light:   inset 0 1px 0 rgba(143, 170, 255, 0.05);  /* every top-level card */
+  /* every top-level card. Founder ruling 2026-11-28 ("blue glass rim"): the top light stronger (was 0.05), a shade on the
+     bottom rim and a faint blue-tinted line all round, so the card's edge holds on the Ink page on any screen. */
+  --field-top-light: inset 0 1px 0 rgba(143, 170, 255, 0.14);   /* the cards' top light alone: an outlined field (the Players search bar) */
+  --top-light:   inset 0 1px 0 rgba(143, 170, 255, 0.14), inset 0 -1px 0 rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(143, 170, 255, 0.04);
   --wash-4:      rgba(255, 255, 255, 0.04);  /* Derived lines highlighted rows */
   --wash-5:      rgba(255, 255, 255, 0.05);  /* highlighted table column, latest tick row */
 
@@ -124,14 +136,14 @@
      read them with getComputedStyle(document.documentElement) and re-read on theme change. */
   --viz-lead:        #007AFF;
   --viz-second:      rgba(0, 122, 255, 0.45);
-  --viz-up:          #5CCB84;
-  --viz-down:        #E06266;
+  --viz-up:          #3DD68C;
+  --viz-down:        #E0616F;
   --viz-amber:       #E8A84E;                 /* Model + Trading Report only */
   --viz-white-lead:  #E7E9EE;                 /* Head to Head + white-bar exceptions (README §6) */
   --viz-track:       rgba(255, 255, 255, 0.06);
   --viz-guide:       rgba(255, 255, 255, 0.12);
   --viz-rule:        rgba(255, 255, 255, 0.32);
-  --viz-tick:        #8B96B5;
+  --viz-tick:        #A3AABE;
   /* Calendar record modal Swing band ONLY (founder S4, TEN-376: the locked design, bundle `Stennisfy Website.html`, Player Stat
      Boxes; bars 4px, radius 2px, opacity 0.75). Everywhere else surfaces are neutral text, Grass included. */
   --viz-hard:        #4DB8FF;
@@ -149,6 +161,7 @@
      pop = floating pop-ups anchored to an element (odds hover, verify card); modal = centred modals / sheets. */
   --shadow-pop:  inset 0 0 0 1px rgba(255,255,255,0.10), 0 18px 48px rgba(0,0,0,0.55);
   --shadow-menu: 0 12px 28px rgba(0, 0, 0, 0.45);
+  --shadow-lift: 0 16px 28px -14px rgba(0, 0, 0, 0.9);   /* under a tile that lifts on hover (the profile's record tiles) */
   --shadow-modal: 0 40px 120px rgba(9, 11, 18, 0.54);   /* centred modals / sheets only (U5; value measured on OFFICIAL VERSION 1) */
   /* TEN-403 shell package (founder, 2026-10-08 — PROMPT_SHELL part 2, values computed on its reference export): the
      floating rail pill's drop (with --top-light) and the avatar menu beside it. Nowhere else. */
@@ -182,9 +195,9 @@
   --tt-track:    #0A0C13;   /* 2026-11-20 handoff: switch tracks */
   --tt-text:     #E7E9EE;
   --tt-white:    #FFFFFF;
-  --tt-soft:     #C6CCDB;
+  --tt-soft:     #DDE0EA;
   --tt-soft-2:   #CFD6E6;
-  --tt-muted:    #8B96B5;
+  --tt-muted:    #A3AABE;
   --tt-past:     #4A5470;
   --tt-a3:       #A3AABE;   /* Reports heat cells */
   --tt-blue:     #5B9BFF;
@@ -217,8 +230,8 @@
   --h2h-hover:    #171B28;   /* every hover fill (20 Nov §8); never a white wash, never blue */
   --h2h-track:    #0A0C13;   /* every pill switch track, with a 10% edge (20 Nov §8) */
   --h2h-text:     #E7E9EE;   /* primary; player two */
-  --h2h-soft:     #C6CCDB;   /* secondary figures, body copy */
-  --h2h-grey:     #8B96B5;   /* labels, sub lines, captions */
+  --h2h-soft:     #DDE0EA;   /* secondary figures, body copy */
+  --h2h-grey:     #A3AABE;   /* labels, sub lines, captions */
   --h2h-dead:     #3A4256;   /* a surface tab with no meetings */
   --h2h-chart-b:  #9AA3B5;   /* Market edge chart: player two when absent from the series */
   --h2h-blue:     #5B9BFF;   /* player one, links, chevrons, primary button */
@@ -242,8 +255,9 @@
   --pp-x-inner:      #0C0E16;
   --pp-x-selected:   #131623;
   --pp-x-tile-hover: #171B28;   /* v5 §0.1 (2026-11-19): one hover tone for rows, options and tiles */
-  --pp-x-text-soft:  #C6CCDB;
-  --pp-x-text-label: #8B96B5;
+  --pp-x-text-soft:  #DDE0EA;
+  --pp-x-text-label: #A3AABE;
+  --pp-x-text-label-page: #A3AABE;   /* founder 2026-11-28: the profile's MAIN page reads its labels and sub-lines in the app's label grey (= --text-label); the breakdown panels keep #8B96B5 */
   --pp-x-pos:        #3DD68C;
   --pp-x-neg:        #E0616F;
   --pp-x-link:       #5B9BFF;
@@ -276,8 +290,8 @@
   --db2-inset:    #0C0E16;
   --db2-raised:   #131623;
   --db2-ink:      #E7E9EE;
-  --db2-ink-2:    #C6CCDB;
-  --db2-muted:    #8B96B5;
+  --db2-ink-2:    #DDE0EA;
+  --db2-muted:    #A3AABE;
   --db2-blue:     #5B9BFF;
   --db2-blue-hov: #82B4FF;
   --db2-blue-hv2: #8DB6FF;
@@ -307,16 +321,16 @@
   --sm-pill:      #121521;   /* pills, "Show all 14 layers" row (2026-11-18) */
   --sm-raised:    #131623;   /* lifted / selected / hover, avatar fill, odd fields */
   --sm-text:      #E7E9EE;   /* text, player two ring */
-  --sm-soft:      #C6CCDB;   /* secondary */
+  --sm-soft:      #DDE0EA;   /* secondary */
   --sm-body:      #C9CDD9;   /* body text in an opened layer panel */
-  --sm-muted:     #8B96B5;   /* labels, sub lines */
+  --sm-muted:     #A3AABE;   /* labels, sub lines */
   --sm-blue:      #5B9BFF;   /* player one ring, links, chevrons */
   --sm-blue-hov:  #82B4FF;
   --sm-pos:       #3DD68C;
   --sm-neg:       #E0616F;
-  --sm-q-good:    #5CCB84;   /* data quality: good */
+  --sm-q-good:    #3DD68C;   /* data quality: good */
   --sm-q-med:     #E8A84E;   /* data quality: medium (amber: Stennisfy Model only, foundation.md) */
-  --sm-q-poor:    #E06266;   /* data quality: poor */
+  --sm-q-poor:    #E0616F;   /* data quality: poor */
   --sm-white:     #FFFFFF;
   --sm-black:     #000000;
   --sm-shadow-pop:  0 18px 44px rgba(0, 0, 0, 0.55);
@@ -333,8 +347,8 @@
   --news-hover:    #171B28;   /* row / option hover */
   --news-on:       #131623;   /* switch tab on, chosen option, the idle Publish */
   --news-text:     #E7E9EE;
-  --news-soft:     #C6CCDB;   /* body text, initials */
-  --news-grey:     #8B96B5;
+  --news-soft:     #DDE0EA;   /* body text, initials */
+  --news-grey:     #A3AABE;
   --news-blue:     #5B9BFF;   /* links, chevrons, stat bars, the ready Publish */
   --news-blue-hov: #8FBCFF;
   --news-green:    #3ECF8E;   /* "Won", a dominance ratio of 1.00 or more */
@@ -354,11 +368,11 @@
   --do2-track:     #0A0C13;
   --do2-hover:     #171B28;
   --do2-text:      #E7E9EE;
-  --do2-text2:     #C6CCDB;
-  --do2-grey:      #8B96B5;
+  --do2-text2:     #DDE0EA;
+  --do2-grey:      #A3AABE;
   --do2-dim:       #5B6880;
   --do2-dim2:      #4B5672;
-  --do2-red:       #E06266;   /* drop figures */
+  --do2-red:       #E0616F;   /* drop figures */
   --do2-meter:     #E0616F;   /* the sharp meter, the banner dot and words */
   --do2-blue:      #5B9BFF;   /* the Pinnacle line only */
   --do2-hair:      rgba(255, 255, 255, 0.06);
@@ -430,8 +444,8 @@
   --ma2-track:   #0A0C13;   /* switch tracks, price pills */
   --ma2-white:   #FFFFFF;   /* edges, tracks, hairlines — always at a stated alpha */
   --ma2-text:    #E7E9EE;   /* names, figures; player two */
-  --ma2-soft:    #C6CCDB;   /* secondary text */
-  --ma2-grey:    #8B96B5;   /* labels, scope lines */
+  --ma2-soft:    #DDE0EA;   /* secondary text */
+  --ma2-grey:    #A3AABE;   /* labels, scope lines */
   --ma2-quiet:   #5B6880;   /* quiet grey, empty "—" */
   --ma2-dim:     #4B5672;   /* score en dash, the losing game score in point by point */
   --ma2-blue:    #5B9BFF;   /* player one */
@@ -448,8 +462,8 @@
 /* Live page rebuild (handoff design_handoff_live_final, locked 2026-11-25): the export's values the --ma2-* family
    does not carry. live-page.js reads them on the Live page and its match modal only. Night only. */
 :root {
-  --lv-green:      #5CCB84;   /* above the player's own average / positive */
-  --lv-red:        #E06266;   /* below the player's own average / negative; the medical-timeout cross */
+  --lv-green:      #3DD68C;   /* above the player's own average / positive */
+  --lv-red:        #E0616F;   /* below the player's own average / negative; the medical-timeout cross */
   --lv-amber:      #E8A84E;   /* Interrupted, medical timeout chip */
   --lv-card-hover: #0D0F18;   /* a match card under the pointer */
   --lv-shadow-menu:  0 14px 34px rgba(0, 0, 0, 0.55);

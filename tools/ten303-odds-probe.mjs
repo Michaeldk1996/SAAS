@@ -2,7 +2,7 @@
 //
 //   node tools/ten303-odds-probe.mjs <dashboardUrl> <outDir> [matchSurname]
 //
-// Neutralises only the Firebase auth gate (BSP stub before any page script), opens the analysis modal on
+// Neutralises only the Firebase auth gate (Stennisfy stub before any page script), opens the analysis modal on
 // the first board match whose p1/p2 contains <matchSurname> (default: the first match with an odds shard),
 // switches to the Odds tab, and writes: tab.png, tooltip.png (book-name hover, 250 ms delay honoured),
 // popup.png, novig.png, plus probe.json (rows, STEAM, tooltip text, pop-up header, build sha) read from the DOM.
@@ -34,9 +34,9 @@ try {
   await send('Page.enable'); await send('Runtime.enable');
   ws.addEventListener('message', m => { const d = JSON.parse(m.data); if (d.method === 'Runtime.exceptionThrown') errors.push(d.params.exceptionDetails.exception ? d.params.exceptionDetails.exception.description : d.params.exceptionDetails.text); });
   await send('Emulation.setDeviceMetricsOverride', { width: 1512, height: 982, deviceScaleFactor: 2, mobile: false });
-  // auth.js assigns window.BSP in strict mode: own the property with a setter that neuters only the
+  // auth.js assigns window.Stennisfy in strict mode: own the property with a setter that neuters only the
   // redirect (requireVerified / requireAuth resolve a verified probe user) — every other script loads real.
-  await send('Page.addScriptToEvaluateOnNewDocument', { source: `(function(){var _b,u={emailVerified:true,email:'probe@x',uid:'probe'};Object.defineProperty(window,'BSP',{configurable:true,get:function(){return _b;},set:function(v){if(v){v.requireVerified=function(){return Promise.resolve(u);};v.requireAuth=function(){return Promise.resolve(u);};}_b=v;}});})();` });
+  await send('Page.addScriptToEvaluateOnNewDocument', { source: `(function(){var _b,u={emailVerified:true,email:'probe@x',uid:'probe'};Object.defineProperty(window,'Stennisfy',{configurable:true,get:function(){return _b;},set:function(v){if(v){v.requireVerified=function(){return Promise.resolve(u);};v.requireAuth=function(){return Promise.resolve(u);};}_b=v;}});})();` });
   await send('Page.navigate', { url });
   await waitFor('typeof matches !== "undefined" && Array.isArray(matches) && matches.length > 0 && typeof openAnalysisModal === "function"');
   const pick = await ev(`(async () => { const idx = await loadOddsIndex(); const keys = new Set(idx || []);

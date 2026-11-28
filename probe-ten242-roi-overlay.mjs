@@ -62,13 +62,13 @@ await send('Page.enable'); await send('Runtime.enable');
 const errors = [];
 ws.addEventListener('message', e => { const m = JSON.parse(e.data);
   if (m.method === 'Runtime.exceptionThrown') errors.push((m.params?.exceptionDetails?.exception?.description || '').slice(0, 160)); });
-// A SETTER, never a frozen value: auth.js does `global.BSP = BSP` and a
+// A SETTER, never a frozen value: auth.js does `global.Stennisfy = Stennisfy` and a
 // non-writable stub makes the page throw its own TypeError, which this probe
 // would then report as a page error it manufactured itself.
 await send('Page.addScriptToEvaluateOnNewDocument', { source: `(function(){var v;var u={emailVerified:true,email:'p@l',uid:'p'};
-  Object.defineProperty(window,'BSP',{configurable:true,get:function(){return v;},
+  Object.defineProperty(window,'Stennisfy',{configurable:true,get:function(){return v;},
     set:function(o){ if(o&&typeof o==='object'){ o.requireVerified=function(){return Promise.resolve(u);}; o.requireAuth=function(){return Promise.resolve(u);}; } v=o; }});
-  window.BSP={currentUser:function(){return u;},onAuthChange:function(f){f(u);return function(){};},ready:Promise.resolve(u),whenAuthReady:function(){return Promise.resolve(u);},requireAuth:function(){return Promise.resolve(u);},requireVerified:function(){return Promise.resolve(u);},isValidEmail:function(){return true;},updateProfile:function(){return Promise.resolve();},NOTIF:{}};
+  window.Stennisfy={currentUser:function(){return u;},onAuthChange:function(f){f(u);return function(){};},ready:Promise.resolve(u),whenAuthReady:function(){return Promise.resolve(u);},requireAuth:function(){return Promise.resolve(u);},requireVerified:function(){return Promise.resolve(u);},isValidEmail:function(){return true;},updateProfile:function(){return Promise.resolve();},NOTIF:{}};
 })();` });
 await send('Page.navigate', { url: URL });
 

@@ -14,12 +14,12 @@
   var SETTLED = ['won', 'lost', 'void'], OPEN = ['posted', 'live'];
 
   function db() { return window.firebase && firebase.firestore ? firebase.firestore() : null; }
-  function user() { return window.BSP && BSP.currentUser ? BSP.currentUser() : null; }
-  function isAdmin() { return typeof window.isBspAdmin === 'function' ? !!window.isBspAdmin() : false; }
+  function user() { return window.Stennisfy && Stennisfy.currentUser ? Stennisfy.currentUser() : null; }
+  function isAdmin() { return typeof window.isStennisfyAdmin === 'function' ? !!window.isStennisfyAdmin() : false; }
   function isPro() { return window.sfPlan === 'pro'; }
   function ready() {
-    if (!window.BSP || !BSP.whenAuthReady) return Promise.resolve(null);
-    return BSP.whenAuthReady().then(function () { return db() && user() ? { db: db(), user: user(), admin: isAdmin(), pro: isPro() } : null; });
+    if (!window.Stennisfy || !Stennisfy.whenAuthReady) return Promise.resolve(null);
+    return Stennisfy.whenAuthReady().then(function () { return db() && user() ? { db: db(), user: user(), admin: isAdmin(), pro: isPro() } : null; });
   }
 
   function iso(v) {

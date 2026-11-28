@@ -53,7 +53,7 @@ await send('Page.enable'); await send('Runtime.enable');
 await send('Emulation.setDeviceMetricsOverride', { width: 924, height: 540, deviceScaleFactor: 1, mobile: false });
 // The viewer sits in the venue's zone, so the header's viewer-time start reads 18:00 like the design's badge.
 await send('Emulation.setTimezoneOverride', { timezoneId: TZ });
-await send('Page.addScriptToEvaluateOnNewDocument', { source: `(function(){var u={emailVerified:true,email:'fixture@test'};var S={currentUser:()=>u,onAuthChange:f=>{try{f(u)}catch(e){}},ready:Promise.resolve(u),whenAuthReady:()=>Promise.resolve(u),requireAuth:()=>Promise.resolve(u),requireVerified:()=>Promise.resolve(u),isValidEmail:()=>true,updateProfile:()=>Promise.resolve(),NOTIF:{}};Object.defineProperty(window,'BSP',{value:S,writable:false,configurable:false});})();` });
+await send('Page.addScriptToEvaluateOnNewDocument', { source: `(function(){var u={emailVerified:true,email:'fixture@test'};var S={currentUser:()=>u,onAuthChange:f=>{try{f(u)}catch(e){}},ready:Promise.resolve(u),whenAuthReady:()=>Promise.resolve(u),requireAuth:()=>Promise.resolve(u),requireVerified:()=>Promise.resolve(u),isValidEmail:()=>true,updateProfile:()=>Promise.resolve(),NOTIF:{}};Object.defineProperty(window,'Stennisfy',{value:S,writable:false,configurable:false});})();` });
 await send('Page.navigate', { url: `http://127.0.0.1:${port}/bsp-consult-dashboard.html` });
 for (let i = 0; i < 120; i++) { if (await ev(`typeof matches!=='undefined' && Array.isArray(matches) && typeof openAnalysisModal==='function'`).catch(() => false)) break; await new Promise(r => setTimeout(r, 500)); }
 

@@ -93,7 +93,7 @@ const EXPECT = JSON.parse(fs.readFileSync('.probe-ten196d/expect.json', 'utf8'))
       if(k==='requireVerified'||k==='requireAuth') return function(){return Promise.resolve({ok:true,email:'probe@local'})};
       if(k==='onAuthChange') return function(){};
       return t[k]||function(){}; },set:function(t,k,v){t[k]=v;return true}});
-      Object.defineProperty(window,'BSP',{get:function(){return stub},set:function(){},configurable:true,enumerable:true});})();`,
+      Object.defineProperty(window,'Stennisfy',{get:function(){return stub},set:function(){},configurable:true,enumerable:true});})();`,
   });
   await c.send('Page.navigate', { url: URL + bust() });
   await sleep(2000);
@@ -394,7 +394,7 @@ const EXPECT = JSON.parse(fs.readFileSync('.probe-ten196d/expect.json', 'utf8'))
   }
 
   // ══ console hygiene ══════════════════════════════════════════════════════════
-  const real = errs.filter((e) => !/read only property 'BSP'/.test(e));
+  const real = errs.filter((e) => !/read only property 'Stennisfy'/.test(e));
   ok('no page console exceptions', real.length === 0, real.slice(0, 3), []);
   const aliasWarn = warns.filter((w) => /alias table/.test(w));
   ok('no tournament string is missing from the alias table', aliasWarn.length === 0, aliasWarn.slice(0, 1), []);

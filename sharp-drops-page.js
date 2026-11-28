@@ -1,9 +1,9 @@
 /* sharp-drops-page.js — Sharp drop alerts (founder 2026-11-14; rules .claude/rules/sharp-drops.md).
- * Beta: admins only (isBspAdmin), opened through #sharp — no rail row yet. Built on the site tokens; to be redrawn by
+ * Beta: admins only (isStennisfyAdmin), opened through #sharp — no rail row yet. Built on the site tokens; to be redrawn by
  * Claude Design. Three blocks:
  *   1. Telegram — the member's link code (saved on his account) and the bot's link state (written by the member sync).
  *   2. Settings — levels, drop, price, time before the start, move shape, books, daily cap, quiet hours; saved to
- *      users/{uid}.sharpDrops through BSP.updateProfile, cleaned by SharpDropsCore (the engine's own filter).
+ *      users/{uid}.sharpDrops through Stennisfy.updateProfile, cleaned by SharpDropsCore (the engine's own filter).
  *   3. Record — every alert of the last 60 days from public.sharp_feed (graded on the Oddspapi Pinnacle close),
  *      filtered by the settings on screen. Nothing here computes a price: every figure is the engine's row, or a dash.
  */
@@ -17,8 +17,8 @@
 
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
   function root() { return document.getElementById('sharpRoot'); }
-  function user() { return window.BSP && BSP.currentUser ? BSP.currentUser() : null; }
-  function isAdmin() { return S.fixture ? true : (typeof window.isBspAdmin === 'function' && window.isBspAdmin()); }
+  function user() { return window.Stennisfy && Stennisfy.currentUser ? Stennisfy.currentUser() : null; }
+  function isAdmin() { return S.fixture ? true : (typeof window.isStennisfyAdmin === 'function' && window.isStennisfyAdmin()); }
   function tz() { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch (e) { return 'UTC'; } }
   function px(v) { return v == null || !isFinite(v) ? DASH : Number(v).toFixed(2); }
   function sgn(v, d, u) { if (v == null || !isFinite(v)) return DASH; var n = Number(v); return (n > 0 ? '+' : n < 0 ? '−' : '±') + Math.abs(n).toFixed(d) + (u || ''); }
@@ -46,16 +46,16 @@
   }
   // the first visit makes the link code and saves the founder's default rule with it
   function ensureCode() {
-    if (S.fixture || code() || !user() || !window.BSP || S._making) return;
+    if (S.fixture || code() || !user() || !window.Stennisfy || S._making) return;
     S._making = true;
-    BSP.updateProfile({ sharpDrops: { settings: draft(), linkCode: C.newCode(), tz: tz() } })
+    Stennisfy.updateProfile({ sharpDrops: { settings: draft(), linkCode: C.newCode(), tz: tz() } })
       .then(function () { S._making = false; render(); }, function () { S._making = false; S.status = 'Could not create your link code. Reload to try again.'; render(); });
   }
   function save() {
     if (S.fixture) { S.saved = JSON.stringify(S.draft); S.status = 'Saved.'; render(); return; }
-    if (!window.BSP) return;
+    if (!window.Stennisfy) return;
     S.status = 'Saving…'; render();
-    BSP.updateProfile({ sharpDrops: { settings: S.draft, linkCode: code() || C.newCode(), tz: tz() } })
+    Stennisfy.updateProfile({ sharpDrops: { settings: S.draft, linkCode: code() || C.newCode(), tz: tz() } })
       .then(function () { S.saved = JSON.stringify(S.draft); S.status = 'Saved. Alerts follow these settings within 10 minutes.'; render(); },
             function () { S.status = 'Could not save. Check your connection and try again.'; render(); });
   }
@@ -213,7 +213,7 @@
     var el = root(); if (!el || el._sdWired) return; el._sdWired = true;
     el.addEventListener('click', onClick); el.addEventListener('change', onChange);
   }
-  if (window.BSP && BSP.onAuthChange) BSP.onAuthChange(function () { S.draft = null; if (S.active) render(); });
+  if (window.Stennisfy && Stennisfy.onAuthChange) Stennisfy.onAuthChange(function () { S.draft = null; if (S.active) render(); });
   // tests inject a fixture: { user: {settings, linkCode, telegram}, feed: {generatedAt, alerts} }
   function inject(fx) { S.fixture = fx; S.draft = null; S.feed = fx.feed; if (S.timer) { clearInterval(S.timer); S.timer = null; } wire(); render(); }
   window.SharpDropsPage = { setActive: setActive, render: render, _inject: inject, _state: S };

@@ -5,7 +5,7 @@
 // ("Identifier '_tpLoad' has already been declared"), no page global existed, and members saw a dead page for five hours.
 //
 // HOW: the deployed bytes are fetched from --base (cache-busted) and served from 127.0.0.1 with ONE change: the sign-in
-// redirect call (BSP.requireVerified / BSP.requireAuth) is removed, so nothing is signed in (the same strip as the preview
+// redirect call (Stennisfy.requireVerified / Stennisfy.requireAuth) is removed, so nothing is signed in (the same strip as the preview
 // proxy). A navigation to auth.html / verify.html is also refused through CDP, as tools/price-consistency.mjs does, in case
 // the redirect ever moves. Chrome over CDP, the price guard's harness.
 //
@@ -43,8 +43,8 @@ const SHA_RE = /<meta name="build-sha" content="([0-9a-f]{40})">/g;
 export function stripAuth(html) {
   let n = 0;
   const out = html
-    .replace(/BSP\.requireVerified\('auth\.html\?mode=signin', 'verify\.html'\);/g, () => { n++; return '/* post-deploy check: sign-in redirect removed */'; })
-    .replace(/BSP\.requireAuth\('auth\.html\?mode=signin'\);/g, () => { n++; return '/* post-deploy check: sign-in redirect removed */'; });
+    .replace(/Stennisfy\.requireVerified\('auth\.html\?mode=signin', 'verify\.html'\);/g, () => { n++; return '/* post-deploy check: sign-in redirect removed */'; })
+    .replace(/Stennisfy\.requireAuth\('auth\.html\?mode=signin'\);/g, () => { n++; return '/* post-deploy check: sign-in redirect removed */'; });
   return { html: out, stripped: n };
 }
 export const metaShas = (html) => [...String(html).matchAll(SHA_RE)].map((m) => m[1]);

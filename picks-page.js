@@ -7,7 +7,7 @@
  * with the figures from picks-core.js. Nothing here computes a number: every price, CLV, P/L and record figure comes
  * from PicksCore, or is a dash. Values = the export's inline styles (picks-page.css).
  *
- * Roles (founder 2026-10-27: real roles, no preview switch): the admin (isBspAdmin) sees everything and posts / edits;
+ * Roles (founder 2026-10-27: real roles, no preview switch): the admin (isStennisfyAdmin) sees everything and posts / edits;
  * a Pro member (window.sfPlan === 'pro') sees today's picks; any other member gets the teaser of today's picks (blurred
  * over placeholders — the real pick never reaches the browser) and every settled pick. Tests inject a fixture with
  * PicksPage._inject (tools/fixtures/picks-demo.json).

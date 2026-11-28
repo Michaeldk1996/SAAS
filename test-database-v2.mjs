@@ -272,7 +272,7 @@ const CHECKS = {
   },
   // The design's own colours, read through tokens.css (identical colours).
   tokens(src) {
-    const want = { card: '#0E1019', inset: '#0C0E16', raised: '#131623', ink: '#E7E9EE', 'ink-2': '#C6CCDB', muted: '#8B96B5', blue: '#5B9BFF', green: '#3DD68C', red: '#E0616F' };
+    const want = { card: '#0E1019', inset: '#0C0E16', raised: '#131623', ink: '#E7E9EE', 'ink-2': '#DDE0EA', muted: '#A3AABE', blue: '#5B9BFF', green: '#3DD68C', red: '#E0616F' };
     for (const [k, v] of Object.entries(want)) if (!new RegExp('--db2-' + k + ':\\s*' + v + ';').test(TOKENS)) return '--db2-' + k + ' is not ' + v;
     if (!/\[data-db-root\]\{ --card:var\(--db2-card\);/.test(src)) return 'the Database does not read the --db2 palette';
     return null;

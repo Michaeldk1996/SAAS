@@ -31,7 +31,7 @@ function load(opts = {}) {
   const ls = { getItem: k => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = String(v); } };
   const f = new Function('document', 'localStorage', 'fetch', 'opts', 'TP', `
     const playerProfiles = opts.profiles || {};
-    const window = { BSP: opts.admin ? { currentUser: () => ({ uid: 'admin' }) } : null, ADMIN_CONFIG: { ADMIN_UIDS: ['admin'] }, confirm: () => true }; const BSP = window.BSP;
+    const window = { Stennisfy: opts.admin ? { currentUser: () => ({ uid: 'admin' }) } : null, ADMIN_CONFIG: { ADMIN_UIDS: ['admin'] }, confirm: () => true }; const Stennisfy = window.Stennisfy;
     const TOURNAMENT_CATALOG = ['Australian Open', 'French Open', 'Roland Garros', 'Wimbledon', 'Shanghai', 'Beijing', 'Tokyo', 'Montreal', 'Toronto'].map(name => ({ name }));
     const SF_EVENT_NAMES = { 'Australian Open': 'Australian Open', 'French Open': 'Roland Garros', 'Roland Garros': 'Roland Garros', Wimbledon: 'Wimbledon', Shanghai: 'Shanghai Masters', Beijing: 'China Open',
       Tokyo: 'Japan Open', Montreal: 'Canadian Open', Toronto: 'Canadian Open' };

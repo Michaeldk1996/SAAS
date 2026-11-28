@@ -34,7 +34,7 @@ await send('Page.enable'); await send('Runtime.enable');
 // Never read a cached bundle — a shipped fix reads as broken otherwise.
 await send('Network.enable'); await send('Network.setCacheDisabled', { cacheDisabled: true });
 await send('Page.addScriptToEvaluateOnNewDocument', { source:
-  `(function(){var _b;Object.defineProperty(window,'BSP',{configurable:true,get(){return _b;},set(v){if(v){v.requireVerified=()=>true;v.requireAuth=()=>true;}_b=v;}});window.__e=[];window.addEventListener('error',e=>window.__e.push(String(e.message)));})();` });
+  `(function(){var _b;Object.defineProperty(window,'Stennisfy',{configurable:true,get(){return _b;},set(v){if(v){v.requireVerified=()=>true;v.requireAuth=()=>true;}_b=v;}});window.__e=[];window.addEventListener('error',e=>window.__e.push(String(e.message)));})();` });
 await send('Page.navigate', { url: URL_ });
 for (let i = 0; i < 150; i++) {
   const n = await ev(`(typeof playerProfiles!=='undefined'&&playerProfiles)?Object.keys(playerProfiles).length:0`, false);

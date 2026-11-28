@@ -118,7 +118,9 @@ test('player card: rank, two initials, a lifted odds tile that is not a link, Vi
 
 test('card surfaces: no outline, no hover lift, avatar + odds tile --selected (ruling Q3), View profile --link', () => {
   assert.match(cssRule('.playercard'), /background:var\(--card\); border:1px solid transparent; box-shadow:var\(--top-light\)/);
-  assert.ok(!/\.playercard[^{]*:hover\{/.test(html), 'no hover rule on the player card (no lift, no edge)');
+  // founder 2026-11-28: a card that opens turns one step lighter under the mouse; a colour step only (no lift, no edge, no motion)
+  assert.match(cssRule('.playercard[data-clickable="1"]:hover'), /^[^;]*background:var\(--tile-hover\);\s*$/, 'the hover is the tile-hover colour and nothing else');
+  assert.ok(!/\.playercard(?!\[data-clickable="1"\]:hover\{)[^{]*:hover\{/.test(html), 'no other hover rule on the player card');
   assert.ok(!/translateY\(-2px\)/.test(cssRule('.playercard[data-clickable="1"]') || ''));
   assert.match(cssRule('.playercard .pc-odds'), /border:1px solid var\(--line\); border-radius:9px; background:var\(--selected\)/);
   assert.match(cssRule('.playercard .pc-avatar-init'), /background:var\(--selected\); border:1px solid var\(--line\)/);

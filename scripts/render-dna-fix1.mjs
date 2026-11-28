@@ -7,7 +7,7 @@ import path from 'node:path';
 const WT = process.argv[2]; const OUTDIR = process.argv[3] || WT;
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 const src = fs.readFileSync(path.join(WT, 'bsp-consult-dashboard.html'), 'utf8');
-const stub = `<script>window.BSP={ready:Promise.resolve(),_u:{uid:"p",name:"A",displayName:"A",email:"a@b.local",emailVerified:true},currentUser:function(){return this._u;},requireVerified:function(){return Promise.resolve(this._u);},requireAuth:function(){return Promise.resolve(this._u);},onAuthChange:function(cb){try{cb(this._u);}catch(e){}return function(){};},signOut:function(){return Promise.resolve();}};</script>`;
+const stub = `<script>window.Stennisfy={ready:Promise.resolve(),_u:{uid:"p",name:"A",displayName:"A",email:"a@b.local",emailVerified:true},currentUser:function(){return this._u;},requireVerified:function(){return Promise.resolve(this._u);},requireAuth:function(){return Promise.resolve(this._u);},onAuthChange:function(cb){try{cb(this._u);}catch(e){}return function(){};},signOut:function(){return Promise.resolve();}};</script>`;
 const marker = '<script src="./auth.js"></script>';
 const previewName = '_render-dna-fix1.html';
 fs.writeFileSync(path.join(WT, previewName), src.replace(marker, marker + '\n' + stub));

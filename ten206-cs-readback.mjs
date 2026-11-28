@@ -56,9 +56,9 @@ async function ev(expr) {
 
 await send('Page.enable'); await send('Runtime.enable'); await send('Network.enable');
 await send('Network.setCacheDisabled', { cacheDisabled: true });
-// Memory: CDP deployed-page auth bypass — neuter BSP.requireVerified via init script.
+// Memory: CDP deployed-page auth bypass — neuter Stennisfy.requireVerified via init script.
 await send('Page.addScriptToEvaluateOnNewDocument', {
-  source: `(function(){var _b;Object.defineProperty(window,'BSP',{configurable:true,
+  source: `(function(){var _b;Object.defineProperty(window,'Stennisfy',{configurable:true,
     get(){return _b;},set(v){if(v){v.requireVerified=()=>true;v.requireAuth=()=>true;}_b=v;}});})();`,
 });
 await send('Page.navigate', { url: `${BASE}/bsp-consult-dashboard.html` });

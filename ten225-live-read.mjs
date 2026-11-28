@@ -34,7 +34,7 @@ const AUTH_STUB = `
     isValidEmail: () => true, updateProfile: () => Promise.resolve(),
     NOTIF: { show(){}, hide(){} },
   };
-  Object.defineProperty(window, 'BSP',
+  Object.defineProperty(window, 'Stennisfy',
     { value: STUB, writable:false, configurable:false });
 })();`;
 

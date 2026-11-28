@@ -38,7 +38,7 @@ await send('Page.enable'); await send('Runtime.enable');
 await send('Network.enable'); await send('Network.setCacheDisabled', { cacheDisabled: true });
 await send('Emulation.setDeviceMetricsOverride', { width: 1512, height: 982, deviceScaleFactor: 2, mobile: false });
 await send('Page.addScriptToEvaluateOnNewDocument', { source:
-  `(function(){var _b;Object.defineProperty(window,'BSP',{configurable:true,get(){return _b;},set(v){if(v){v.requireVerified=()=>true;v.requireAuth=()=>true;}_b=v;}});})();` });
+  `(function(){var _b;Object.defineProperty(window,'Stennisfy',{configurable:true,get(){return _b;},set(v){if(v){v.requireVerified=()=>true;v.requireAuth=()=>true;}_b=v;}});})();` });
 await send('Page.navigate', { url: URL_ });
 for (let i = 0; i < 150; i++) {
   const n = await ev(`(typeof playerProfiles!=='undefined'&&playerProfiles)?Object.keys(playerProfiles).length:0`, false);

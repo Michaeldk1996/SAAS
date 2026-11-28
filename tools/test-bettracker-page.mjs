@@ -85,7 +85,7 @@ async function browser() {
     // where Firebase resolves "signed out" before the deferred scripts arrive; the Linux gate happened to win the race.
     // The route guards resolve signed out without redirecting; the abort above stays as the backstop.
     await send('Page.addScriptToEvaluateOnNewDocument', { source: `(function(){ var b;
-      Object.defineProperty(window, 'BSP', { configurable: true, get: function(){ return b; }, set: function(v){
+      Object.defineProperty(window, 'Stennisfy', { configurable: true, get: function(){ return b; }, set: function(v){
         b = v; if (v && typeof v === 'object') ['requireAuth', 'requireVerified'].forEach(function(k){
           if (typeof v[k] === 'function') v[k] = function(){ return Promise.resolve(null); }; }); } }); })();` });
     const size = (w) => send('Emulation.setDeviceMetricsOverride', { width: w, height: 982, deviceScaleFactor: 1, mobile: false });
@@ -145,7 +145,7 @@ async function browser() {
       ['.bt-addbank', ['width', 'border-top-style', 'border-top-color'], ['200px', 'dashed', 'rgba(255, 255, 255, 0.18)']],
       ['.bt-h1', ['font-size', 'font-weight', 'letter-spacing', 'line-height'], ['24px', '800', '-0.36px', '26.4px']],
       ['.bt-bankname', ['font-size', 'font-weight', 'color'], ['13px', '700', 'rgb(255, 255, 255)']],
-      ['.bt-cert', ['height', 'border-radius', 'background-color', 'border-top-color', 'color', 'font-size', 'font-weight'], ['24px', '7px', 'rgba(0, 122, 255, 0.12)', 'rgba(0, 122, 255, 0.35)', 'rgb(106, 154, 248)', '11.5px', '700']],
+      ['.bt-cert', ['height', 'border-radius', 'background-color', 'border-top-color', 'color', 'font-size', 'font-weight'], ['24px', '7px', 'rgba(0, 122, 255, 0.12)', 'rgba(0, 122, 255, 0.35)', 'rgb(91, 155, 255)', '11.5px', '700']],
       ['.bt-cert .bt-seal', ['width', 'height', 'background-color'], ['12px', '12px', 'rgb(0, 122, 255)']],
       ['.bt-headsub', ['font-size', 'color'], ['13px', 'rgb(221, 224, 234)']],
       ['.bt-logbtn', ['height', 'border-radius', 'background-color', 'font-size', 'font-weight'], ['36px', '10px', 'rgb(0, 122, 255)', '13px', '700']],
@@ -382,8 +382,8 @@ async function browser() {
     const now = new Date(), ymNow = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-';
     const csv = readFileSync(join(ROOT, 'tools/fixtures/bettracker-import-sample.csv'), 'utf8').replace(/2026-10-/g, ymNow);
     check('import: 10 bets stored', (await E(`TrackerPage.importText(${JSON.stringify(csv)}).stored`)) === 10);
-    check('import: its bankroll is selected and named BSP Consult Bet-Analytix', (await T('.bt-bank.is-on .bt-bank-name')) === 'BSP Consult Bet-Analytix');
-    check('F1: after an import the header is the bankroll name only — no banner, no meta sentence', (await T('.bt-headsub')) === 'BSP Consult Bet-Analytix' && !(await E(`!!document.querySelector('.bt-importmsg')`)));
+    check('import: its bankroll is selected and named Bet-Analytix', (await T('.bt-bank.is-on .bt-bank-name')) === 'Bet-Analytix');
+    check('F1: after an import the header is the bankroll name only — no banner, no meta sentence', (await T('.bt-headsub')) === 'Bet-Analytix' && !(await E(`!!document.querySelector('.bt-importmsg')`)));
     check('import: every imported result is unlocked (undo + Lock, no seal)', await E(`[...document.querySelectorAll('.bt-tr[data-bet]')].every(r => r.querySelector('.bt-undo') && r.querySelector('.bt-lock') && !r.querySelector('.bt-seal'))`));
     check('import: a blank market and bookmaker read —', await E(`(function(){ var r = [...document.querySelectorAll('.bt-tr')].find(x => x.querySelector('.bt-bettext') && x.querySelector('.bt-bettext').textContent.startsWith('Two legs')); return r.querySelector('.bt-market').textContent === '—' && r.querySelector('.bt-book').textContent === '—'; })()`));
     check('import: no "undefined" anywhere on the page', !(await E(`document.getElementById('trackerRoot').textContent.includes('undefined')`)));

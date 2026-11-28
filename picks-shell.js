@@ -1,12 +1,12 @@
 /* picks-shell.js — the Picks pieces that live outside the Picks page (LOCK 2026-10-30):
  *   - the Picks count badge on the rail (bets posted today, the Live count chip; hidden at 0);
  *   (no "+ Pick" on match cards or the analysis header: picks are posted only from the Picks page, founder 2026-10-30)
- *   - the admin badge on the rail avatar (the founder's account, isBspAdmin).
+ *   - the admin badge on the rail avatar (the founder's account, isStennisfyAdmin).
  * The shared sf-menu / rail markup is identical on account.html and stays untouched: these are painted onto it here.
  */
 (function () {
   'use strict';
-  function admin() { return typeof window.isBspAdmin === 'function' && !!window.isBspAdmin(); }
+  function admin() { return typeof window.isStennisfyAdmin === 'function' && !!window.isStennisfyAdmin(); }
 
   // the admin badge on the rail avatar
   var SHIELD = '<svg width="9" height="9" viewBox="0 0 20 20" fill="none"><path d="M10 3l6 2.5v4.5c0 3.5-2.6 6.2-6 7-3.4-.8-6-3.5-6-7V5.5z" stroke-width="2.2" stroke-linejoin="round"></path></svg>';
@@ -51,8 +51,8 @@
   }
 
   function onAuth() { paintBadge(); checkCount(); if (typeof window.mxBetsRefresh === 'function') window.mxBetsRefresh(); }
-  if (window.BSP && BSP.onAuthChange) BSP.onAuthChange(function () { onAuth(); });
-  if (window.BSP && BSP.whenAuthReady) BSP.whenAuthReady().then(onAuth);
+  if (window.Stennisfy && Stennisfy.onAuthChange) Stennisfy.onAuthChange(function () { onAuth(); });
+  if (window.Stennisfy && Stennisfy.whenAuthReady) Stennisfy.whenAuthReady().then(onAuth);
   setInterval(function () { if (!document.hidden) checkCount(); }, 5 * 60000);
   window.PicksShell = { checkCount: checkCount, todayCount: todayCount, todayOpen: todayOpen, loadToday: loadToday, setCount: setCount, paintBadge: paintBadge };
 })();

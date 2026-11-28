@@ -100,9 +100,9 @@ async function measure(url, label) {
   await c.send('Page.enable'); await c.send('Runtime.enable'); await c.send('Network.enable');
   await c.send('Network.setCacheDisabled', { cacheDisabled: true });
   await c.send('Page.addScriptToEvaluateOnNewDocument', {
-    source: `Object.defineProperty(window,'BSP',{configurable:true,
-      get(){return window.__bsp;},
-      set(v){window.__bsp=v;try{v.requireVerified=async()=>({ok:true,user:{email:'probe@local'}});v.requireAuth=async()=>true;}catch(e){}}});`,
+    source: `Object.defineProperty(window,'Stennisfy',{configurable:true,
+      get(){return window.__stennisfy;},
+      set(v){window.__stennisfy=v;try{v.requireVerified=async()=>({ok:true,user:{email:'probe@local'}});v.requireAuth=async()=>true;}catch(e){}}});`,
   });
   await c.send('Page.navigate', { url });
   let ok = false;

@@ -14,8 +14,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,600&display=block" rel="stylesheet">
 <!--
   6-DIGIT EMAIL CODE (founder 2026-11-24: option (b), a real typed code)
-  "Continue with email" -> BSP.sendCode emails a code from noreply@stennisfy.com (stennisfy-auth
-  Worker at auth.stennisfy.com, SendGrid). "Verify" -> BSP.signInWithCode signs in with a Firebase
+  "Continue with email" -> Stennisfy.sendCode emails a code from noreply@stennisfy.com (stennisfy-auth
+  Worker at auth.stennisfy.com, SendGrid). "Verify" -> Stennisfy.signInWithCode signs in with a Firebase
   custom token; same email = same account as a password sign-up; a new email gets a 'free' profile.
   The password sign-in / sign-up stays reachable ("Use a password instead").
 -->
@@ -413,7 +413,11 @@
 
     function qp(name){ var m=new RegExp('[?&]'+name+'=([^&]*)').exec(location.search); return m?decodeURIComponent(m[1]):null; }
 
+    // The email step lives on stennisfy.com now (founder 2026-11-28: the old "Log in or sign up" form is retired).
+    // Any other host (tests, previews) keeps the old form. localhost:8850 serves a copy of the site's pages under /www/.
+    var NEW_SIGNIN = location.hostname === 'app.stennisfy.com' ? 'https://stennisfy.com/' : location.host === 'localhost:8850' ? '/www/' : '';
     function goStep(step){
+      if (step === 'email' && NEW_SIGNIN){ location.replace(NEW_SIGNIN + (qp('mode') === 'signup' ? 'signup.html' : 'signin.html')); return; }
       ['stepEmail','stepCode','stepPassword'].forEach(function(id){
         document.getElementById(id).classList.toggle('hidden', id !== 'step'+cap(step));
       });
@@ -439,7 +443,7 @@
     function onEmailInput(){
       var v = document.getElementById('email').value.trim();
       var btn = document.getElementById('continueBtn');
-      btn.disabled = !(window.BSP && BSP.isValidEmail(v));
+      btn.disabled = !(window.Stennisfy && Stennisfy.isValidEmail(v));
       document.getElementById('emailErr').textContent = '';
       document.getElementById('email').classList.remove('err');
     }
@@ -447,7 +451,7 @@
     function continueEmail(){
       var el = document.getElementById('email');
       var v = el.value.trim();
-      if (!(window.BSP && BSP.isValidEmail(v))){
+      if (!(window.Stennisfy && Stennisfy.isValidEmail(v))){
         document.getElementById('emailErr').textContent = 'Enter a valid email address.';
         el.classList.add('err'); el.focus();
         return;
@@ -463,7 +467,7 @@
         document.getElementById('continueLbl').textContent = 'Continue with email';
         document.getElementById('continueArrow').style.display = '';
       }
-      BSP.sendCode(v).then(function(){ reset(); clearCodes(); goStep('code'); })
+      Stennisfy.sendCode(v).then(function(){ reset(); clearCodes(); goStep('code'); })
         .catch(function(err){ reset(); document.getElementById('emailErr').textContent = err.message; el.classList.add('err'); });
     }
 
@@ -522,8 +526,8 @@
       if (btn.disabled && btn.classList.contains('loading')) return; // Enter pressed while verifying
       btn.disabled = true; btn.classList.add('loading');
       note.style.color = ''; note.textContent = '';
-      BSP.signInWithCode(currentEmail, code)
-        .then(function(){ location.href = 'bsp-consult-dashboard.html'; })
+      Stennisfy.signInWithCode(currentEmail, code)
+        .then(function(){ location.href = './'; })
         .catch(function(err){
           btn.classList.remove('loading'); updateVerify();
           codeInputs().forEach(function(i){ i.classList.add('err'); });
@@ -534,7 +538,7 @@
     function resendCode(){
       var note = document.getElementById('otpNote');
       note.style.color = ''; note.textContent = 'Sending a new code…';
-      BSP.sendCode(currentEmail)
+      Stennisfy.sendCode(currentEmail)
         .then(function(){ clearCodes(); updateVerify(); note.style.color = 'var(--pos)'; note.textContent = 'New code sent to ' + currentEmail + '.'; })
         .catch(function(err){ note.style.color = ''; note.textContent = err.message; });
     }
@@ -568,7 +572,7 @@
       var email = document.getElementById('pwEmail').value.trim();
       var pass = document.getElementById('pwPass').value;
       var ok = true;
-      if (!(window.BSP && BSP.isValidEmail(email))){ document.getElementById('pwEmailErr').textContent='Enter a valid email address.'; document.getElementById('pwEmail').classList.add('err'); ok=false; }
+      if (!(window.Stennisfy && Stennisfy.isValidEmail(email))){ document.getElementById('pwEmailErr').textContent='Enter a valid email address.'; document.getElementById('pwEmail').classList.add('err'); ok=false; }
 
       if (isSignup){
         var name = document.getElementById('pwName').value.trim();
@@ -577,15 +581,15 @@
         if (!termsChecked){ document.getElementById('pwFormErr').textContent='Please accept the terms to continue.'; ok=false; }
         if (!ok) return;
         setBusy('pwSubmit','pwSubmitLbl','Creating account…');
-        BSP.signUp({ name:name, email:email, password:pass, plan:'free' })
+        Stennisfy.signUp({ name:name, email:email, password:pass, plan:'free' })
           .then(function(){ location.href='verify.html'; })
           .catch(function(err){ clearBusy('pwSubmit','pwSubmitLbl','Start free trial'); document.getElementById('pwFormErr').textContent = err.message; });
       } else {
         if (!pass){ document.getElementById('pwPassErr').textContent='Enter your password.'; document.getElementById('pwPass').classList.add('err'); ok=false; }
         if (!ok) return;
         setBusy('pwSubmit','pwSubmitLbl','Signing in…');
-        BSP.signIn(email, pass)
-          .then(function(u){ location.href = (u && u.emailVerified) ? 'bsp-consult-dashboard.html' : 'verify.html'; })
+        Stennisfy.signIn(email, pass)
+          .then(function(u){ location.href = (u && u.emailVerified) ? './' : 'verify.html'; })
           .catch(function(err){
             clearBusy('pwSubmit','pwSubmitLbl','Sign in');
             document.getElementById('pwFormErr').textContent = err.message;
@@ -602,9 +606,9 @@
       var el = document.getElementById('pwEmail');
       var email = el.value.trim();
       var fe = document.getElementById('pwFormErr');
-      if (!(window.BSP && BSP.isValidEmail(email))){ document.getElementById('pwEmailErr').textContent='Enter your email above, then tap “Forgot?” for a reset link.'; el.classList.add('err'); el.focus(); return; }
+      if (!(window.Stennisfy && Stennisfy.isValidEmail(email))){ document.getElementById('pwEmailErr').textContent='Enter your email above, then tap “Forgot?” for a reset link.'; el.classList.add('err'); el.focus(); return; }
       var link = document.getElementById('pwForgot'); link.textContent='Sending…';
-      BSP.sendPasswordReset(email).then(function(){ fe.style.color='var(--pos)'; fe.textContent='Reset link sent to '+email; link.textContent='Forgot?'; })
+      Stennisfy.sendPasswordReset(email).then(function(){ fe.style.color='var(--pos)'; fe.textContent='Reset link sent to '+email; link.textContent='Forgot?'; })
         .catch(function(err){ fe.style.color=''; fe.textContent=(err&&err.message)||'Could not send a reset link.'; link.textContent='Forgot?'; });
     }
 

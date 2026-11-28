@@ -38,7 +38,7 @@
   function appliedPlan() { var b = curBank(); return b && b.plan && M.plan(b.plan) ? b.plan : null; }
   // The Bet-Analytix import (T1b): admin only — the control is not in the design (reported); the console path is
   // TrackerPage.importText(csvText). The file is read in this browser and goes nowhere else.
-  function isAdmin() { return typeof window.isBspAdmin === 'function' && !!window.isBspAdmin(); }
+  function isAdmin() { return typeof window.isStennisfyAdmin === 'function' && !!window.isStennisfyAdmin(); }
   var active = false, wired = false;
 
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }

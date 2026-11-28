@@ -164,7 +164,7 @@
   // source into the same bankroll — store.removeImport(bankId, source) wipes it first.
   function run(text, store, opts) {
     opts = opts || {};
-    var bankId = opts.bankId || 'bet-analytix', name = opts.bankName || 'BSP Consult Bet-Analytix';
+    var bankId = opts.bankId || 'bet-analytix', name = opts.bankName || 'Bet-Analytix';
     var out = parse(text, { bankId: bankId });
     if (!out.report.ok) return { ok: false, reason: 'file', report: out.report };
     if (!store.listBanks().some(function (b) { return b.id === bankId; })) store.saveBank({ id: bankId, name: name, archived: false });

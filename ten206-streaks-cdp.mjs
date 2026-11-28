@@ -372,7 +372,7 @@ async function run(w, h, dpr, SHOTS) {
 
   // ─── STAGED PAGE ───────────────────────────────────────────────────────────
   await send('Page.addScriptToEvaluateOnNewDocument', {
-    source: `(function(){var _b;Object.defineProperty(window,'BSP',{configurable:true,
+    source: `(function(){var _b;Object.defineProperty(window,'Stennisfy',{configurable:true,
       get(){return _b;},set(v){if(v){v.requireVerified=function(){return true;};
       v.requireAuth=function(){return true;};}_b=v;}});
       window.FEATURE_PP2=true;window.__err=[];

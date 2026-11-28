@@ -419,7 +419,7 @@ test('look: the export’s colours as --sm-* tokens only; no sample data; player
   assert.ok(!/sample data/i.test(PAGE + BLOCK + CSS), 'no "sample data" note');
   assert.ok(!/#[0-9a-fA-F]{3,8}\b|rgba?\(/.test(CSS), 'no raw colours in the page CSS');
   const tok = readFileSync(join(HERE, 'tokens.css'), 'utf8');
-  for (const [k, v] of [['--sm-card', '#0E1019'], ['--sm-inner', '#0C0E16'], ['--sm-pill', '#121521'], ['--sm-raised', '#131623'], ['--sm-text', '#E7E9EE'], ['--sm-soft', '#C6CCDB'], ['--sm-body', '#C9CDD9'], ['--sm-muted', '#8B96B5'], ['--sm-blue', '#5B9BFF'], ['--sm-blue-hov', '#82B4FF'], ['--sm-pos', '#3DD68C'], ['--sm-neg', '#E0616F'], ['--sm-q-good', '#5CCB84'], ['--sm-q-med', '#E8A84E'], ['--sm-q-poor', '#E06266']])
+  for (const [k, v] of [['--sm-card', '#0E1019'], ['--sm-inner', '#0C0E16'], ['--sm-pill', '#121521'], ['--sm-raised', '#131623'], ['--sm-text', '#E7E9EE'], ['--sm-soft', '#DDE0EA'], ['--sm-body', '#C9CDD9'], ['--sm-muted', '#A3AABE'], ['--sm-blue', '#5B9BFF'], ['--sm-blue-hov', '#82B4FF'], ['--sm-pos', '#3DD68C'], ['--sm-neg', '#E0616F'], ['--sm-q-good', '#3DD68C'], ['--sm-q-med', '#E8A84E'], ['--sm-q-poor', '#E0616F']])
     assert.match(tok, new RegExp(k + ':\\s+' + v + ';'), k);
   assert.match(CSS, /\.sm-av\.a\{ box-shadow:0 0 0 2px var\(--sm-blue\); \}/);
   assert.match(CSS, /\.sm-av\{[^}]*box-shadow:0 0 0 2px var\(--sm-text\);/);

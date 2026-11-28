@@ -2,7 +2,7 @@
 // every display surface against an independent recompute (the arithmetic re-done here from the raw
 // counts, not by calling house-ratings.js). Usage:
 //   node tools/ten327-probe.mjs [baseUrl]      default: the deployed site
-// Only the Firebase auth gate is stubbed (window.BSP); every script and data file loads from baseUrl.
+// Only the Firebase auth gate is stubbed (window.Stennisfy); every script and data file loads from baseUrl.
 // Local pre-land runs: TEN327_TP=<file> answers the page's tournament-progression.json fetch with that
 // file (the committed copy is stale and carries no box-score components, which would make the
 // Tournament Report check vacuous).
@@ -24,7 +24,7 @@ const send = (m, p = {}) => new Promise((res) => { const i = ++id; w.set(i, res)
 const ev = async (x) => { const r = await send('Runtime.evaluate', { expression: x, awaitPromise: true, returnByValue: true });
   if (r.result?.exceptionDetails) throw new Error(r.result.exceptionDetails.exception?.description || 'threw'); return r.result?.result?.value; };
 await send('Page.enable'); await send('Runtime.enable');
-await send('Page.addScriptToEvaluateOnNewDocument', { source: `Object.defineProperty(window,'BSP',{value:(function(){var u={emailVerified:true};return {currentUser:()=>u,onAuthChange:f=>{f(u);return()=>{}},ready:Promise.resolve(u),whenAuthReady:()=>Promise.resolve(u),requireAuth:()=>Promise.resolve(u),requireVerified:()=>Promise.resolve(u),isValidEmail:()=>true,updateProfile:()=>Promise.resolve(),NOTIF:{}};})(),writable:false,configurable:false});` });
+await send('Page.addScriptToEvaluateOnNewDocument', { source: `Object.defineProperty(window,'Stennisfy',{value:(function(){var u={emailVerified:true};return {currentUser:()=>u,onAuthChange:f=>{f(u);return()=>{}},ready:Promise.resolve(u),whenAuthReady:()=>Promise.resolve(u),requireAuth:()=>Promise.resolve(u),requireVerified:()=>Promise.resolve(u),isValidEmail:()=>true,updateProfile:()=>Promise.resolve(),NOTIF:{}};})(),writable:false,configurable:false});` });
 if (process.env.TEN327_TP) {
   const tp = fs.readFileSync(process.env.TEN327_TP, 'utf8');
   await send('Page.addScriptToEvaluateOnNewDocument', { source: `(function(){var TP=${JSON.stringify(tp)};var f=window.fetch;window.fetch=function(u,o){if(/tournament-progression\.json/.test(String(u&&u.url||u)))return Promise.resolve(new Response(TP,{status:200,headers:{'content-type':'application/json'}}));return f.apply(this,arguments);};})();` });

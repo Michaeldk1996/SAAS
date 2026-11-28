@@ -144,7 +144,7 @@ await c.send('Page.addScriptToEvaluateOnNewDocument', { source:
     if(k==='requireVerified'||k==='requireAuth') return function(){return Promise.resolve({ok:true,email:'probe@local'})};
     if(k==='onAuthChange') return function(){};
     return t[k]||function(){}; },set:function(t,k,v){t[k]=v;return true}});
-    Object.defineProperty(window,'BSP',{value:stub,writable:false,configurable:false,enumerable:true});})();` });
+    Object.defineProperty(window,'Stennisfy',{value:stub,writable:false,configurable:false,enumerable:true});})();` });
 await c.send('Page.navigate', { url: URL_ });
 await sleep(2600);
 const ev = async expr => {
@@ -307,7 +307,7 @@ const rnds = [...src.matchAll(/(?<![A-Za-z0-9_$])rnd\s*=\s*Math\.max\(([^)]*)\)/
 eq('S7 the two rnd formulas are exactly the two ruled-on ones', rnds, ['10,step/10', '1,step/5']);
 
 // The probe's own auth stub collides with auth.js by design; anything else is the page.
-const pageErrs = consoleErrs.filter(e => !/Cannot assign to read only property 'BSP'/.test(e));
+const pageErrs = consoleErrs.filter(e => !/Cannot assign to read only property 'Stennisfy'/.test(e));
 ok('X1 no page console error beyond the probe\'s own auth stub', pageErrs.length === 0, pageErrs, []);
 
 console.log(`\n${pass + fail} assertions, ${pass} pass, ${fail} fail`);

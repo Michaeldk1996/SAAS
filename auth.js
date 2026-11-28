@@ -1,10 +1,10 @@
 /*
- * BSP Consult — shared client-side session + preferences module (Firebase-backed).
+ * Stennisfy — shared client-side session + preferences module (Firebase-backed).
  *
- * Plain <script>-includable (no ES modules/imports). Exposes a global `BSP`.
+ * Plain <script>-includable (no ES modules/imports). Exposes a global `Stennisfy`.
  * This module replaces the earlier localStorage-only implementation with a real
  * Firebase Authentication + Cloud Firestore backend, while keeping the same
- * public `BSP.*` surface so existing pages (auth.html, account.html, the
+ * public `Stennisfy.*` surface so existing pages (auth.html, account.html, the
  * dashboard) keep working with only their async call-sites updated.
  *
  * The Firebase compat SDK is loaded on demand from Google's gstatic CDN, so
@@ -158,8 +158,8 @@
       })
       .then(function () {
         var firebase = global.firebase;
-        if (!global.__bspFirebaseApp) {
-          global.__bspFirebaseApp = firebase.initializeApp(firebaseConfig);
+        if (!global.__stennisfyFirebaseApp) {
+          global.__stennisfyFirebaseApp = firebase.initializeApp(firebaseConfig);
         }
         _auth = firebase.auth();
         _db = firebase.firestore();
@@ -331,8 +331,8 @@
     return e;
   }
 
-  /* ---------- BSP API ---------- */
-  var BSP = {
+  /* ---------- Stennisfy API ---------- */
+  var Stennisfy = {
     /* --- lifecycle --- */
 
     // ready() -> Promise resolved once the SDK has initialised.
@@ -468,7 +468,7 @@
     // requireAuth(redirectTo) -> Promise<publicUser|null>. Redirects to the
     // login page if there is no session once auth state has resolved.
     requireAuth: function (redirectTo) {
-      return BSP.whenAuthReady().then(function (u) {
+      return Stennisfy.whenAuthReady().then(function (u) {
         if (!u) { global.location.replace(redirectTo || 'auth.html'); return null; }
         return u;
       }).catch(function () {
@@ -482,7 +482,7 @@
     // email holding screen. Used to gate the dashboard so a verification link
     // must be clicked before the board is reachable.
     requireVerified: function (loginTo, verifyTo) {
-      return BSP.whenAuthReady().then(function (u) {
+      return Stennisfy.whenAuthReady().then(function (u) {
         if (!u) { global.location.replace(loginTo || 'auth.html'); return null; }
         if (!u.emailVerified) { global.location.replace(verifyTo || 'verify.html'); return null; }
         return u;
@@ -625,16 +625,16 @@
       if (!u) return { oddsFormat: 'decimal', timezone: '', timezoneMode: 'auto', notifications: defaultNotif() };
       return { oddsFormat: u.oddsFormat, timezone: u.timezone, timezoneMode: u.timezoneMode, notifications: u.notifications };
     },
-    setOddsFormat: function (fmt) { return BSP.updateProfile({ oddsFormat: fmt }); },
+    setOddsFormat: function (fmt) { return Stennisfy.updateProfile({ oddsFormat: fmt }); },
     // Manual override: pin the member to an IANA zone; detection stops applying.
     setTimezone: function (tz) {
-      return BSP.updateProfile({ timezone: tz, timezoneMode: 'manual' }).then(function (u) {
+      return Stennisfy.updateProfile({ timezone: tz, timezoneMode: 'manual' }).then(function (u) {
         syncActiveTimezone(); return u;
       });
     },
     // Return to automatic: clear the override so device detection wins again.
     clearTimezone: function () {
-      return BSP.updateProfile({ timezone: '', timezoneMode: 'auto' }).then(function (u) {
+      return Stennisfy.updateProfile({ timezone: '', timezoneMode: 'auto' }).then(function (u) {
         syncActiveTimezone(); return u;
       });
     },
@@ -644,7 +644,7 @@
     activeTimezone: function () { return resolveTz().zone; },  // just the IANA id
     tzOffsetLabel: function (zone) { return tzOffsetLabel(zone); },
     isValidTimezone: function (zone) { return isValidIana(zone); },
-    setNotifications: function (notifications) { return BSP.updateProfile({ notifications: notifications }); },
+    setNotifications: function (notifications) { return Stennisfy.updateProfile({ notifications: notifications }); },
 
     /* --- odds formatting --- */
     formatOdds: function (decimalPrice, format) {
@@ -684,9 +684,9 @@
   function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { var t = b; b = a % b; a = t; } return a || 1; }
 
   /* ---------- expose ---------- */
-  BSP.isValidEmail = isValidEmail;
-  BSP.NOTIF_KEYS = NOTIF_KEYS;
-  global.BSP = BSP;
+  Stennisfy.isValidEmail = isValidEmail;
+  Stennisfy.NOTIF_KEYS = NOTIF_KEYS;
+  global.Stennisfy = Stennisfy;
 
   // Detect on every page load (Flashscore model): write the device zone into the
   // canonical key immediately, before Firebase resolves. A per-device manual

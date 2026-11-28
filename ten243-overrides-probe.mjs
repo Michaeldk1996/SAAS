@@ -36,7 +36,7 @@ function stubAuth() {
   fs.copyFileSync(AUTH, AUTH_BAK);
   fs.writeFileSync(AUTH, `
 （function(g){ var U={emailVerified:true,email:'probe@local',uid:'probe'};
-  g.BSP={ currentUser:function(){return U;}, onAuthChange:function(cb){cb(U);return function(){};},
+  g.Stennisfy={ currentUser:function(){return U;}, onAuthChange:function(cb){cb(U);return function(){};},
     ready:Promise.resolve(U), whenAuthReady:function(){return Promise.resolve(U);},
     requireAuth:function(){return Promise.resolve(U);}, requireVerified:function(){return Promise.resolve(U);} };
 })(window);`.replace('（', '('));

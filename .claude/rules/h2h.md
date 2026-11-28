@@ -83,7 +83,7 @@ live calculation (Data below).
 
 - **Colours = the export's own values**, page-scoped tokens `--h2h-*` in `tokens.css` (`--h2h-card` #0E1019,
   `--h2h-layer` #121521, `--h2h-inner` #0C0E16, `--h2h-raised` #121521 (lifted, with a 14% edge), `--h2h-hover` #171B28
-  (every hover fill, never a white or blue wash), `--h2h-track` #0A0C13 (every switch track, 10% edge) — 20 Nov §8, `--h2h-text` #E7E9EE, `--h2h-soft` #C6CCDB, `--h2h-grey` #8B96B5,
+  (every hover fill, never a white or blue wash), `--h2h-track` #0A0C13 (every switch track, 10% edge) — 20 Nov §8, `--h2h-text` #E7E9EE, `--h2h-soft` #DDE0EA, `--h2h-grey` #A3AABE (one palette, founder 2026-11-28; were #C6CCDB / #8B96B5),
   `--h2h-blue` #5B9BFF, `--h2h-up` / `--h2h-down`; white alphas = `color-mix` of `--h2h-white`). Nothing else reads them.
   **Test:** `tools/lint-raw-colours.mjs` (0 raw colours) and the H2H suites (each role's token).
 - **One colour for every box (design change 2026-11-18 §3):** every box inside a section or pop-up AND every caps column

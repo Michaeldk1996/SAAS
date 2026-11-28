@@ -65,7 +65,7 @@ function load(opts) {
     ${sliceFn('pgRenderWatchStrip')}
     ${sliceFn('ppWatchOnAuth')}
     return { ppWatch, ppWatchOnAuth, pgWatchStripHtml, pgRenderWatchStrip };`;
-  const window = { BSP: { updateProfile: p => { writes.push(p); return Promise.resolve(); } } };
+  const window = { Stennisfy: { updateProfile: p => { writes.push(p); return Promise.resolve(); } } };
   // eslint-disable-next-line no-new-func
   const api = new Function('window', 'STORE', 'STRIP', 'OPENED', src)(window, store, strip, opened);
   return { api, window, store, writes, strip, opened };

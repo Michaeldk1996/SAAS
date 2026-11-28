@@ -10,7 +10,7 @@ const OUT = process.argv[3];
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 const src = fs.readFileSync(path.join(WT, 'bsp-consult-dashboard.html'), 'utf8');
-const stub = `<script>window.BSP={ready:Promise.resolve(),_u:{uid:"preview",name:"Alex Morgan",displayName:"Alex Morgan",email:"alex.morgan@stennisfy.local",emailVerified:true},currentUser:function(){return this._u;},requireVerified:function(){return Promise.resolve(this._u);},requireAuth:function(){return Promise.resolve(this._u);},onAuthChange:function(cb){try{cb(this._u);}catch(e){}return function(){};},signOut:function(){return Promise.resolve();}};</script>`;
+const stub = `<script>window.Stennisfy={ready:Promise.resolve(),_u:{uid:"preview",name:"Alex Morgan",displayName:"Alex Morgan",email:"alex.morgan@stennisfy.local",emailVerified:true},currentUser:function(){return this._u;},requireVerified:function(){return Promise.resolve(this._u);},requireAuth:function(){return Promise.resolve(this._u);},onAuthChange:function(cb){try{cb(this._u);}catch(e){}return function(){};},signOut:function(){return Promise.resolve();}};</script>`;
 const marker = '<script src="./auth.js"></script>';
 if (!src.includes(marker)) throw new Error('auth.js marker not found');
 const html = src.replace(marker, marker + '\n' + stub);

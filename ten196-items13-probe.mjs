@@ -165,11 +165,11 @@ function client(wsUrl) {
       if(k==='requireVerified'||k==='requireAuth') return function(){return Promise.resolve({ok:true,email:'probe@local'})};
       if(k==='onAuthChange') return function(){};
       return t[k]||function(){}; },set:function(t,k,v){t[k]=v;return true}});
-      // getter/setter, not a frozen value: auth.js assigns window.BSP on load, and a
+      // getter/setter, not a frozen value: auth.js assigns window.Stennisfy on load, and a
       // read-only value property makes that assignment THROW in strict mode. The
       // throw is a probe artefact, but it would sit in the same error channel this
       // probe asserts on, so swallow the write instead of letting it fake a defect.
-      Object.defineProperty(window,'BSP',{get:function(){return stub},set:function(){},configurable:true,enumerable:true});})();`,
+      Object.defineProperty(window,'Stennisfy',{get:function(){return stub},set:function(){},configurable:true,enumerable:true});})();`,
   });
   await c.send('Page.navigate', { url: URL + bust() });
   await sleep(2000);

@@ -48,7 +48,7 @@ column draws a 7px `--pos` live dot before its clock (`app-shell.md` "Page heade
   `#F2F3F7` measured for text or an icon on the reference is a 15a leftover → `--text` (S5); `--pro-text` is only the
   text on a `--pro` button (Upgrade, auth / verify primary).
 - **Blue `#007AFF` is a fill, never text.** Bars, the Live player-A series, the one primary-tier fill, the rail's Live count badge (the only blue on navigation). Blue text is
-  `--link` #6A9AF8 on real links only ("View all news →", "Compare all →", Back, ledger links, the "Most covered"
+  `--link` #5B9BFF (one palette, founder 2026-11-28; was #6A9AF8) on real links only ("View all news →", "Compare all →", Back, ledger links, the "Most covered"
   label). **Names are white everywhere** (favourite, winner, player A — Q2.3). **Selection is lift (tone + edge),
   never blue**: tabs / segmented / chip rows are the darker track (track `--card` + `--edge-6`, selected `--inner` +
   `--edge-10`, white 700 text). Toggle words (Show… / Hide… / ↓ ▾) are white.
@@ -120,7 +120,8 @@ column draws a 7px `--pos` live dot before its clock (`app-shell.md` "Page heade
   Auto switch is the exception: it changes the theme and leaves the modal open.
 - **Provider marks** (U4) are the providers' own files in `assets/brand/`, unmodified, shown as `<img>`; the buttons
   around them are site-style (`--inner`, no edge, 16% on hover, white label).
-- **Type** (README §7): two families — Hanken Grotesk 400–800 for words, IBM Plex Mono 400–800 (tabular) for every
+- **Type** (README §7; founder 2026-11-28: the words font **stays Hanken Grotesk** — Geist, the stennisfy.com text font,
+  was tried app-wide and reverted the same day as too common on AI-built sites; do not re-propose it or Inter): two families — Hanken Grotesk 400–800 for words, IBM Plex Mono 400–800 (tabular) for every
   aligned digit — loaded with `display=block` (no fallback flash). Caps labels are Hanken 10.5 / 700 / 0.10em /
   `--text-label`, never mono caps. True minus `−`, en dash in records, odds 2 decimals.
 - **No native `<select>`.** Every dropdown is the custom menu (README §5.5).

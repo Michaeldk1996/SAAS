@@ -72,7 +72,7 @@ await send('Network.setCacheDisabled', { cacheDisabled: true });
 await send('Emulation.setDeviceMetricsOverride',
   { width: WIDTH, height: HEIGHT, deviceScaleFactor: 1, mobile: false });
 await send('Page.addScriptToEvaluateOnNewDocument', {
-  source: `(function(){var _b;Object.defineProperty(window,'BSP',{configurable:true,
+  source: `(function(){var _b;Object.defineProperty(window,'Stennisfy',{configurable:true,
     get(){return _b;},set(v){if(v){v.requireVerified=()=>true;v.requireAuth=()=>true;}_b=v;}});})();`,
 });
 await send('Page.navigate', { url: `${BASE}/bsp-consult-dashboard.html` });

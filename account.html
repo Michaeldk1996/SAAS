@@ -145,16 +145,22 @@
     .sf-sidebar:hover .sf-chev, .sf-sidebar:has(:focus-visible) .sf-chev{ display:block; }
     .sf-sidebar:hover .sf-userinfo, .sf-sidebar:has(:focus-visible) .sf-userinfo{ display:flex; }
   }
-  /* mobile: the rail is a static block above the page, laid out open; overlays cover the full width */
+  /* mobile (founder 2026-11-28): the rail is one compact bar above the page: logo, the pages in a row that swipes sideways
+     (icons, the open page also shows its name), avatar. The open block it replaces filled the whole first phone screen.
+     The avatar menu opens downwards from the bar; overlays cover the full width. */
   @media (max-width:900px){
     :root{ --sf-side:0px; }
-    .sf-sidebar{ position:static; width:auto; padding:0; }
-    .sf-panel{ border-radius:26px; }
-    .sf-nav{ gap:10px; overflow:visible; }
-    .sf-item{ height:42px; }
-    .sf-glabel, .sf-lbl, .sf-chev{ display:block; }
-    .sf-userinfo{ display:flex; }
-    .sf-menu{ left:0; bottom:calc(100% + 8px); }
+    .sf-sidebar{ position:static; width:auto; padding:10px 10px 0; }
+    .sf-panel{ flex-direction:row; align-items:center; gap:4px; padding:6px 8px; border-radius:20px; }
+    .sf-brand{ align-self:center; }
+    .sf-logo{ width:28px; height:28px; margin:0 6px 0 4px; }
+    .sf-nav{ flex:1; flex-direction:row; gap:2px; padding:9px 0 0; margin-top:-9px; overflow-x:auto; overflow-y:hidden; }   /* 9px: room for the count / lock badges */
+    .sf-group{ flex-direction:row; gap:2px; flex:none; }
+    .sf-item{ width:auto; height:40px; gap:8px; padding:0 11px; }
+    .sf-item.active .sf-lbl{ display:block; }
+    .sf-foot{ margin:0; padding:0; }
+    .sf-userchip{ height:40px; padding:0 2px; }
+    .sf-menu{ left:auto; right:0; bottom:auto; top:calc(100% + 10px); }
   }
   /* sf-rail:end */
 
@@ -318,25 +324,25 @@
 <!-- ===== GLOBAL SIDEBAR (Stennisfy app shell) ===== -->
 <aside class="sf-sidebar">
   <div class="sf-panel">
-  <a class="sf-brand" href="bsp-consult-dashboard.html">
+  <a class="sf-brand" href="./">
     <img class="sf-logo" src="assets/ring-transparent.png" alt="Stennisfy" width="34" height="34">
   </a>
   <nav class="sf-nav">
     <div class="sf-group" role="group" aria-label="Analyse">
       <div class="sf-glabel">Analyse</div>
-      <a class="sf-item" href="bsp-consult-dashboard.html#matches" aria-label="Matches"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5h14M3 10h14M3 13.5h14"/></svg></span><span class="sf-lbl">Matches</span></a>
-      <a class="sf-item" href="bsp-consult-dashboard.html#picks" aria-label="Picks"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13ZM7.3 10.2l1.9 1.9 3.6-4"/></svg></span><span class="sf-lbl">Picks</span></a>
+      <a class="sf-item" href="./#matches" aria-label="Matches"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5h14M3 10h14M3 13.5h14"/></svg></span><span class="sf-lbl">Matches</span></a>
+      <a class="sf-item" href="./#picks" aria-label="Picks"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13ZM7.3 10.2l1.9 1.9 3.6-4"/></svg></span><span class="sf-lbl">Picks</span></a>
     </div>
     <div class="sf-group" role="group" aria-label="Research">
       <div class="sf-glabel">Research</div>
-      <a class="sf-item" href="bsp-consult-dashboard.html#players" aria-label="Players"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 10a3 3 0 100-6 3 3 0 000 6ZM4.5 16a5.5 5.5 0 0111 0"/></svg></span><span class="sf-lbl">Players</span></a>
-      <a class="sf-item" href="bsp-consult-dashboard.html#tournaments" aria-label="Tournaments"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h8v3a4 4 0 01-8 0V4ZM10 11v3M7.5 16.5h5"/></svg></span><span class="sf-lbl">Tournaments</span></a>
+      <a class="sf-item" href="./#players" aria-label="Players"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 10a3 3 0 100-6 3 3 0 000 6ZM4.5 16a5.5 5.5 0 0111 0"/></svg></span><span class="sf-lbl">Players</span></a>
+      <a class="sf-item" href="./#tournaments" aria-label="Tournaments"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h8v3a4 4 0 01-8 0V4ZM10 11v3M7.5 16.5h5"/></svg></span><span class="sf-lbl">Tournaments</span></a>
     </div>
     <div class="sf-group" role="group" aria-label="Insights">
       <div class="sf-glabel">Insights</div>
-      <a class="sf-item" href="bsp-consult-dashboard.html#edge" aria-label="Stennisfy Model"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3l1.9 3.9 4.3.6-3.1 3 .7 4.3L10 16.8 6.3 18.8l.7-4.3-3.1-3 4.3-.6z"/></svg></span><span class="sf-lbl">Stennisfy Model</span></a>
-      <a class="sf-item" href="bsp-consult-dashboard.html#styles" aria-label="Playing Styles"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15V9M8 15V5M12 15v-4M16 15V7"/></svg></span><span class="sf-lbl">Playing Styles</span></a>
-      <a class="sf-item" href="bsp-consult-dashboard.html#news" aria-label="News"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h9v10H4zM13 8h3v5.5a1.5 1.5 0 01-3 0zM6 8h5M6 11h5"/></svg></span><span class="sf-lbl">News</span></a>
+      <a class="sf-item" href="./#edge" aria-label="Stennisfy Model"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3l1.9 3.9 4.3.6-3.1 3 .7 4.3L10 16.8 6.3 18.8l.7-4.3-3.1-3 4.3-.6z"/></svg></span><span class="sf-lbl">Stennisfy Model</span></a>
+      <a class="sf-item" href="./#styles" aria-label="Playing Styles"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15V9M8 15V5M12 15v-4M16 15V7"/></svg></span><span class="sf-lbl">Playing Styles</span></a>
+      <a class="sf-item" href="./#news" aria-label="News"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h9v10H4zM13 8h3v5.5a1.5 1.5 0 01-3 0zM6 8h5M6 11h5"/></svg></span><span class="sf-lbl">News</span></a>
     </div>
   </nav>
   <div class="sf-foot">
@@ -366,7 +372,7 @@
 /* sf-menu:start — TEN-403 avatar menu (identical on bsp-consult-dashboard.html and account.html). The avatar row toggles
    the menu; a click outside it or Escape closes it. Signed out (.sf-out) the row is a plain link to sign-in and there
    is no menu. The menu's name · plan · initials are read from the row paintAcct / paintChip already painted.
-   Sign out = BSP.signOut(), then the sign-in page (the account page's own sign-out path). */
+   Sign out = Stennisfy.signOut(), then the sign-in page (the account page's own sign-out path). */
 (function () {
   var chip = document.getElementById('acctMain'), menu = document.getElementById('sfMenu');
   if (!chip || !menu) return;
@@ -402,7 +408,7 @@
   });
   var out = document.getElementById('acctSignout');
   if (out) out.addEventListener('click', function () {
-    if (window.BSP && BSP.signOut) BSP.signOut().then(function () { location.href = 'auth.html'; });
+    if (window.Stennisfy && Stennisfy.signOut) Stennisfy.signOut().then(function () { location.href = 'auth.html'; });
   });
   window.sfAcctMenu = set;
 })();
@@ -431,7 +437,7 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
 
 <!-- ===== CONTENT COLUMN ===== -->
 <main class="ac-main" id="acMain" style="display:none;">
-  <a class="ac-back" href="bsp-consult-dashboard.html">‹ Back to matches</a>
+  <a class="ac-back" href="./">‹ Back to matches</a>
   <h1 class="ac-h1">Account settings</h1>
   <p class="ac-sub">Manage your profile, plan, preferences and notifications.</p>
 
@@ -663,9 +669,9 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   function saveProfile(){
     var name=$('inName').value.trim(), email=$('inEmail').value.trim();
     if(!name){ setMsg('profMsg','Please enter your full name.',false); return; }
-    if(!BSP.isValidEmail(email)){ setMsg('profMsg','Please enter a valid email address.',false); return; }
+    if(!Stennisfy.isValidEmail(email)){ setMsg('profMsg','Please enter a valid email address.',false); return; }
     setMsg('profMsg','Saving…',true);
-    BSP.updateProfile({ name:name, email:email }).then(function(u){
+    Stennisfy.updateProfile({ name:name, email:email }).then(function(u){
       user=u; renderProfile(); paintChip(); openEdit(false); toast('Profile saved');
     }).catch(function(err){ setMsg('profMsg', err.message||'Could not save.', false); });
   }
@@ -689,7 +695,7 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   }
   function setOdds(fmt){
     var prev=user.oddsFormat; user.oddsFormat=fmt; renderOdds();
-    BSP.setOddsFormat(fmt).then(function(u){ user=u; renderOdds(); toast('Odds format updated'); })
+    Stennisfy.setOddsFormat(fmt).then(function(u){ user=u; renderOdds(); toast('Odds format updated'); })
       .catch(function(err){ user.oddsFormat=prev; renderOdds(); toast(err.message||'Could not save.'); });
   }
 
@@ -716,7 +722,7 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
     if(i>=0) sel.splice(i,1); else sel.push(key);
     var prev = user.favouriteBookmakers;
     user.favouriteBookmakers = sel; renderBookMenu();
-    BSP.updateProfile({ favouriteBookmakers: sel }).then(function(u){ user=u; renderBookMenu(); })
+    Stennisfy.updateProfile({ favouriteBookmakers: sel }).then(function(u){ user=u; renderBookMenu(); })
       .catch(function(err){ user.favouriteBookmakers=prev; renderBookMenu(); toast(err.message||'Could not save.'); });
   }
 
@@ -726,10 +732,10 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   var _hiZone = null;          // zone currently highlighted in the list (for hover preview)
 
   function zoneDisplay(z){ return String(z||'').replace(/_/g,' '); }
-  function offParen(z){ var o = BSP.tzOffsetLabel(z); return o ? '('+o+')' : ''; }
+  function offParen(z){ var o = Stennisfy.tzOffsetLabel(z); return o ? '('+o+')' : ''; }
 
   function renderTz(){
-    var r = BSP.resolveTimezone();          // { zone, mode }
+    var r = Stennisfy.resolveTimezone();          // { zone, mode }
     var zone = r.zone || '';
     $('tzZone').textContent = zone ? zoneDisplay(zone) : 'Unknown';
     $('tzOff').textContent = offParen(zone);
@@ -775,13 +781,13 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   function closeList(){ $('tzList').classList.remove('open'); $('tzSearch').setAttribute('aria-expanded','false'); _hiZone=null; }
 
   function chooseZone(z){
-    if (!BSP.isValidTimezone(z)) { toast('That is not a valid timezone.'); return; }
+    if (!Stennisfy.isValidTimezone(z)) { toast('That is not a valid timezone.'); return; }
     closeList();
-    BSP.setTimezone(z).then(function(u){ if(u) user=u; renderTz(); toast('Timezone set to '+zoneDisplay(z)); })
+    Stennisfy.setTimezone(z).then(function(u){ if(u) user=u; renderTz(); toast('Timezone set to '+zoneDisplay(z)); })
       .catch(function(err){ renderTz(); toast(err.message||'Could not save.'); });
   }
   function useAutomatic(){
-    BSP.clearTimezone().then(function(u){ if(u) user=u; renderTz(); toast('Following your device automatically'); })
+    Stennisfy.clearTimezone().then(function(u){ if(u) user=u; renderTz(); toast('Following your device automatically'); })
       .catch(function(err){ renderTz(); toast(err.message||'Could not save.'); });
   }
 
@@ -800,7 +806,7 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
     var next = !(user.notifications && user.notifications[key]);
     sw.classList.toggle('on', next);
     var patch={}; patch[key]=next;
-    BSP.setNotifications(patch).then(function(u){ user=u; })
+    Stennisfy.setNotifications(patch).then(function(u){ user=u; })
       .catch(function(err){ sw.classList.toggle('on', !next); setMsg('notifMsg', err.message||'Could not save.', false); });
   }
 
@@ -811,7 +817,7 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
     if(nw.length<8){ setMsg('pwMsg','New password must be at least 8 characters.',false); return; }
     if(nw!==cf){ setMsg('pwMsg','New passwords do not match.',false); return; }
     setMsg('pwMsg','Updating…',true);
-    BSP.changePassword(cur,nw).then(function(){
+    Stennisfy.changePassword(cur,nw).then(function(){
       $('pwCur').value=''; $('pwNew').value=''; $('pwConf').value='';
       setMsg('pwMsg','',true); $('pwReveal').classList.remove('open'); toast('Password updated');
     }).catch(function(err){ setMsg('pwMsg', err.message||'Could not update password.', false); });
@@ -831,12 +837,12 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   document.addEventListener('click', function(){ $('bookMenu').classList.remove('open'); });
   $('pwToggle').onclick = function(){ $('pwReveal').classList.toggle('open'); };
   $('pwSave').onclick = updatePassword;
-  $('signOutBtn').onclick = function(){ BSP.signOut().then(function(){ location.href='auth.html'; }); };
+  $('signOutBtn').onclick = function(){ Stennisfy.signOut().then(function(){ location.href='auth.html'; }); };
   $('deleteBtn').onclick = function(){ $('delReveal').classList.toggle('open'); };
   $('delCancel').onclick = function(){ $('delReveal').classList.remove('open'); };
 
   /* ---------- boot (protected route) ---------- */
-  BSP.requireAuth('auth.html').then(function(u){
+  Stennisfy.requireAuth('auth.html').then(function(u){
     if(!u) return;
     user = u;
     $('loadwrap').style.display='none';

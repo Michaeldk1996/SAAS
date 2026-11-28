@@ -177,8 +177,8 @@ async function browser() {
     // band + controls = the reference's values (CHANGES_2026-10-30 §1 / SPEC §3), with a negative control
     const REFV = `const want = {
         'band': ['.pk-band', { backgroundColor: 'rgb(14, 16, 25)', borderTopWidth: '1px', borderRadius: '14px', paddingTop: '12px', paddingLeft: '18px', columnGap: '18px', cursor: 'pointer' }],
-        'tabs track': ['.pk-tabs', { backgroundColor: 'rgb(23, 27, 40)', borderTopWidth: '0px', borderRadius: '10px', paddingTop: '3px', columnGap: '3px' }],
-        'tab on': ['.pk-tab.on', { backgroundColor: 'rgb(27, 32, 49)', borderTopColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '8px', paddingTop: '7px', paddingLeft: '14px', fontSize: '12.5px', fontWeight: '700' }],
+        'tabs track': ['.pk-tabs', { backgroundColor: 'rgb(20, 24, 35)', borderTopWidth: '0px', borderRadius: '10px', paddingTop: '3px', columnGap: '3px' }],
+        'tab on': ['.pk-tab.on', { backgroundColor: 'rgb(25, 30, 45)', borderTopColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '8px', paddingTop: '7px', paddingLeft: '14px', fontSize: '12.5px', fontWeight: '700' }],
         'tab off': ['.pk-tab:not(.on)', { backgroundColor: 'rgba(0, 0, 0, 0)', color: 'rgb(163, 170, 190)', fontWeight: '600' }],
         'tab sub': ['.pk-tsub', { fontSize: '12.5px', color: 'rgb(163, 170, 190)' }],
         'type tag': ['.pk-band .pk-tag', { height: '20px', paddingLeft: '8px', borderRadius: '6px', fontSize: '10px', fontWeight: '700' }] };
@@ -285,7 +285,7 @@ async function browser() {
     await E(`(() => { const t = Date.now() + 3 * 3600e3;
       window.__pkMatch = { id: 'upcoming-999001', date: new Date(t).toISOString().slice(0, 10), time: '20:30', startTs: new Date(t).toISOString(), p1: 'M. Berrettini', p2: 'T. M. Etcheverry',
         p1Key: 111, p2Key: 222, tour: 'ATP Vienna', tournamentRound: 'ATP Vienna - 1/16-finals', surface: 'hard', valueSnapshot: { fairP1: 0.58, fairP2: 0.42, ts: new Date().toISOString() } };
-      matches.push(window.__pkMatch); window.__pkCalls = []; window.__pkAdminWas = window.isBspAdmin; window.isBspAdmin = () => true;
+      matches.push(window.__pkMatch); window.__pkCalls = []; window.__pkAdminWas = window.isStennisfyAdmin; window.isStennisfyAdmin = () => true;
       PicksStore.post = (pick, opts) => { window.__pkCalls.push(['post', pick, opts]); return Promise.resolve('id1'); };
       PicksStore.edit = (id, patch) => { window.__pkCalls.push(['edit', id, patch]); return Promise.resolve(); };
       PicksStore.voidPick = (id, why) => { window.__pkCalls.push(['void', id, why]); return Promise.resolve(); };
@@ -370,7 +370,7 @@ async function browser() {
     const mutSrc = drawerSrc.replace("selection: D.market === 'Total games' && !D.marketCustom ?", "selection: D.market === 'Total games' ?");
     check('MUTANT caught: a typed market stored on the Total games side', mutSrc !== drawerSrc && await (async () => {
       await E(`(0, eval)(${JSON.stringify(mutSrc)}); 1`); const m = await DR(TM); await E(`(0, eval)(${JSON.stringify(drawerSrc)}); 1`); return m.pick.selection !== 'b'; })());
-    await E(`(() => { window.isBspAdmin = window.__pkAdminWas; matches.splice(matches.indexOf(window.__pkMatch), 1); })()`);
+    await E(`(() => { window.isStennisfyAdmin = window.__pkAdminWas; matches.splice(matches.indexOf(window.__pkMatch), 1); })()`);
 
     // 1j · mobile 390: the mobile card
     await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });

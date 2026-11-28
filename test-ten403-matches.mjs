@@ -292,11 +292,11 @@ function favApi({ ls = {}, bsp = null, src = html } = {}) {
     ${slice('mxOddsTxt', src)}
     ${FAV_FNS.map(n => slice(n, src)).join('\n')}
     ${consts}
-    return { mxFav, ${FAV_FNS.join(', ')} };`)(localStorage, { BSP: bsp });
+    return { mxFav, ${FAV_FNS.join(', ')} };`)(localStorage, { Stennisfy: bsp });
   return Object.assign(api, { store });
 }
 const LS = 'stennisfy.favourites';
-const fakeBsp = (fail = false) => {
+const fakeStennisfy = (fail = false) => {
   const calls = [];
   return { calls, updateProfile: patch => { calls.push(patch); return fail ? Promise.reject(new Error('offline')) : Promise.resolve({}); } };
 };
@@ -367,7 +367,7 @@ test('settle-clear: a starred match that settled leaves the list and the store; 
 });
 
 test('signed out → signed in: the local list merges into the account, is written once, then emptied', async () => {
-  const bsp = fakeBsp();
+  const bsp = fakeStennisfy();
   const F = favApi({ ls: { [LS]: JSON.stringify(['a', 'b']) }, bsp });
   const merged = await F.mxFavOnAuth({ uid: 'u1', favouriteMatches: ['b', 'c'] });
   assert.deepEqual(merged, ['b', 'c', 'a'], 'account order first, then local-only keys');
@@ -384,11 +384,11 @@ test('signed out → signed in: the local list merges into the account, is writt
 });
 
 test('merge edge cases: a failed write keeps the local list; nothing local → no write', async () => {
-  const failing = fakeBsp(true);
+  const failing = fakeStennisfy(true);
   const F = favApi({ ls: { [LS]: JSON.stringify(['a']) }, bsp: failing });
   assert.deepEqual(await F.mxFavOnAuth({ uid: 'u1', favouriteMatches: [] }), ['a']);
   assert.equal(F.store.get(LS), JSON.stringify(['a']), 'the write failed: the local list survives for the next sign-in');
-  const quiet = fakeBsp();
+  const quiet = fakeStennisfy();
   const G = favApi({ bsp: quiet });
   assert.deepEqual(await G.mxFavOnAuth({ uid: 'u2', favouriteMatches: ['x', 'x', 7, ''] }), ['x'], 'junk in the account is cleaned');
   assert.deepEqual(quiet.calls, [], 'nothing local: no write');
@@ -397,7 +397,7 @@ test('merge edge cases: a failed write keeps the local list; nothing local → n
 test('MUTANT: a merge that drops the local list, or a prune that ignores settling, is caught', async () => {
   const bad = html.replace('const merged = mxFavMerge(account, local);', 'const merged = account;');
   assert.notEqual(bad, html);
-  const F = favApi({ ls: { [LS]: JSON.stringify(['a']) }, bsp: fakeBsp(), src: bad });
+  const F = favApi({ ls: { [LS]: JSON.stringify(['a']) }, bsp: fakeStennisfy(), src: bad });
   assert.notDeepEqual(await F.mxFavOnAuth({ uid: 'u', favouriteMatches: ['b'] }), ['b', 'a']);
   const bad2 = html.replace('return !!m && !m.live && !!(m.finalScore || m.retired || m.walkover || m.defaulted);', 'return false;');
   assert.notEqual(bad2, html);
@@ -425,7 +425,7 @@ test('the account accepts the field: auth.js updateProfile + publicUser carry fa
 test('wiring: renderMatches settle-clears against the board; the signed-out list starts from localStorage', () => {
   assert.match(slice('renderMatches'), /\n  mxFavSettleClear\(matches\);\n/, 'renderMatches calls the settle-clear on the loaded board');
   assert.match(html, /const mxFav = \{ keys: mxFavReadLocal\(\), uid: null \};/, 'signed out, the list is the local store');
-  assert.match(html, /BSP\.onAuthChange\(u => \{ mxFavOnAuth\(u\)/, 'auth changes drive the merge');
+  assert.match(html, /Stennisfy\.onAuthChange\(u => \{ mxFavOnAuth\(u\)/, 'auth changes drive the merge');
 });
 
 test('MUTANT: dropping the settle-clear call or the local start is caught', () => {
@@ -439,7 +439,7 @@ test('MUTANT: dropping the settle-clear call or the local start is caught', () =
 
 test('a failed profile read never writes the account: stays on the local list (auth.js flags the fallback)', async () => {
   assert.match(authSrc, /var pu = publicUser\(fbUser, \{\}\); pu\.profileLoadFailed = true; done\(pu\);/);
-  const bsp = fakeBsp();
+  const bsp = fakeStennisfy();
   const F = favApi({ ls: { [LS]: JSON.stringify(['a']) }, bsp });
   assert.deepEqual(await F.mxFavOnAuth({ uid: 'u1', favouriteMatches: [], profileLoadFailed: true }), ['a']);
   assert.equal(F.mxFav.uid, null, 'treated as signed out');
@@ -448,7 +448,7 @@ test('a failed profile read never writes the account: stays on the local list (a
   assert.equal(F.store.get(LS), JSON.stringify(['a', 'b']));
   const bad = html.replace('if (!uid || u.profileLoadFailed){', 'if (!uid){');
   assert.notEqual(bad, html);
-  const G = favApi({ ls: { [LS]: JSON.stringify(['a']) }, bsp: fakeBsp(), src: bad });
+  const G = favApi({ ls: { [LS]: JSON.stringify(['a']) }, bsp: fakeStennisfy(), src: bad });
   await G.mxFavOnAuth({ uid: 'u1', favouriteMatches: [], profileLoadFailed: true });
   assert.equal(G.mxFav.uid, 'u1', 'mutant: the failed read is taken as the account');
 });

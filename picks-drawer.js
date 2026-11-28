@@ -1,5 +1,5 @@
 /* picks-drawer.js — the Post-a-pick drawer (boards 1f new · 1f2 search + manual price · 1f3 outright · 1g posted,
- * editable · 1h frozen of `design_handoff_picks`, LOCKED 2026-10-27; SPEC §8). Admin only: it opens for isBspAdmin()
+ * editable · 1h frozen of `design_handoff_picks`, LOCKED 2026-10-27; SPEC §8). Admin only: it opens for isStennisfyAdmin()
  * and firestore.rules refuse every other writer anyway.
  *
  * What the founder types: the selection, the market (and a line), the book when it is not bet105, the price only when

@@ -222,7 +222,7 @@ function client(wsUrl) {
       if(k==='requireVerified'||k==='requireAuth') return function(){return Promise.resolve({ok:true,email:'probe@local'})};
       if(k==='onAuthChange') return function(){};
       return t[k]||function(){}; },set:function(t,k,v){t[k]=v;return true}});
-      Object.defineProperty(window,'BSP',{get:function(){return stub},set:function(){},configurable:true,enumerable:true});})();`,
+      Object.defineProperty(window,'Stennisfy',{get:function(){return stub},set:function(){},configurable:true,enumerable:true});})();`,
   });
   await c.send('Page.navigate', { url: URL + bust() });
   await sleep(2200);
@@ -1025,8 +1025,8 @@ function client(wsUrl) {
 
   // ══ console cleanliness ══════════════════════════════════════════════════════
   console.log('\n── console ──');
-  const real = errs.filter((e) => !/read only property 'BSP'/.test(e));
-  ok('no page console errors (probe’s own BSP stub filtered)', real.length === 0, real.slice(0, 3), []);
+  const real = errs.filter((e) => !/read only property 'Stennisfy'/.test(e));
+  ok('no page console errors (probe’s own Stennisfy stub filtered)', real.length === 0, real.slice(0, 3), []);
 
   // THE BACKSTOP. Without this the probe reports success when whole sections never
   // run: renaming `.db-prow` (a plausible refactor) made it print "94 passed, 0 failed,

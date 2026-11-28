@@ -43,7 +43,7 @@ const getJSON = url => new Promise((res, rej) => {
   // gate does not bounce the headless browser to the sign-in page. This is a
   // RENDER verification of the matrix read-side; auth is out of scope here.
   const STUB = `(function(g){ var U={name:'Verify Bot',email:'verify@local',emailVerified:true,plan:'premium'};
-    g.BSP={ currentUser:function(){return U;}, ready:Promise.resolve(U),
+    g.Stennisfy={ currentUser:function(){return U;}, ready:Promise.resolve(U),
       onAuthChange:function(cb){ try{cb(U);}catch(e){} return function(){}; },
       requireAuth:function(){return Promise.resolve(U);},
       requireVerified:function(){return Promise.resolve(U);} };

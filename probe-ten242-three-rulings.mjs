@@ -11,7 +11,7 @@ const send=(m,p={})=>new Promise(res=>{const i=++id;w.set(i,res);ws.send(JSON.st
 const ev=async x=>{const r=await send('Runtime.evaluate',{expression:x,awaitPromise:true,returnByValue:true});
  if(r.result?.exceptionDetails) throw new Error(r.result.exceptionDetails.exception?.description||'threw'); return r.result?.result?.value;};
 await send('Page.enable'); await send('Runtime.enable');
-await send('Page.addScriptToEvaluateOnNewDocument',{source:`Object.defineProperty(window,'BSP',{value:(function(){var u={emailVerified:true};return {currentUser:()=>u,onAuthChange:f=>{f(u);return()=>{}},ready:Promise.resolve(u),whenAuthReady:()=>Promise.resolve(u),requireAuth:()=>Promise.resolve(u),requireVerified:()=>Promise.resolve(u),isValidEmail:()=>true,updateProfile:()=>Promise.resolve(),NOTIF:{}};})(),writable:false,configurable:false});`});
+await send('Page.addScriptToEvaluateOnNewDocument',{source:`Object.defineProperty(window,'Stennisfy',{value:(function(){var u={emailVerified:true};return {currentUser:()=>u,onAuthChange:f=>{f(u);return()=>{}},ready:Promise.resolve(u),whenAuthReady:()=>Promise.resolve(u),requireAuth:()=>Promise.resolve(u),requireVerified:()=>Promise.resolve(u),isValidEmail:()=>true,updateProfile:()=>Promise.resolve(),NOTIF:{}};})(),writable:false,configurable:false});`});
 await send('Page.navigate',{url:URL}); await new Promise(r=>setTimeout(r,5000));
 let pass=0,fail=0;
 const check=async(n,f)=>{try{const d=await f();console.log(`  ok    ${n}${d?'  — '+d:''}`);pass++;}catch(e){console.log(`  FAIL  ${n}\n        ${e.message}`);fail++;}};

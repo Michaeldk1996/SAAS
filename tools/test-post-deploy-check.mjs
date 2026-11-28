@@ -25,8 +25,8 @@ const SHA = 'a'.repeat(40), OTHER = 'b'.repeat(40);
 // ── unit ──
 const dash = readFileSync(join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
 const st = stripAuth(dash);
-ok(st.stripped === 2 && !/BSP\.require(Verified|Auth)\(/.test(st.html), 'the shipped dashboard: both sign-in redirect calls removed, nothing else', st.stripped);
-ok(st.html.length - dash.length === 2 * ('/* post-deploy check: sign-in redirect removed */'.length) - "BSP.requireVerified('auth.html?mode=signin', 'verify.html');".length - "BSP.requireAuth('auth.html?mode=signin');".length,
+ok(st.stripped === 2 && !/Stennisfy\.require(Verified|Auth)\(/.test(st.html), 'the shipped dashboard: both sign-in redirect calls removed, nothing else', st.stripped);
+ok(st.html.length - dash.length === 2 * ('/* post-deploy check: sign-in redirect removed */'.length) - "Stennisfy.requireVerified('auth.html?mode=signin', 'verify.html');".length - "Stennisfy.requireAuth('auth.html?mode=signin');".length,
   'the strip changes only those two calls (byte count)');
 ok(metaShas(`<meta charset="UTF-8">\n<meta name="build-sha" content="${SHA}">`).join() === SHA && metaShas('<p>').length === 0, 'build-sha meta read like publish-site.mjs writes it');
 const G = Object.fromEntries(Object.entries(GLOBALS));

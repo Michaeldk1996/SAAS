@@ -76,7 +76,7 @@
 </div>
 <div id="app"></div>
 
-<!-- Real Firebase auth (shared member-site session layer). Provides BSP.*. -->
+<!-- Real Firebase auth (shared member-site session layer). Provides Stennisfy.*. -->
 <script src="./auth.js"></script>
 <script>
 'use strict';
@@ -109,31 +109,31 @@ function showDenied(signedIn){
 function grant(){
   document.getElementById('gate').style.display = 'none';
   document.getElementById('app').style.display = 'block';
-  document.title = 'BSP Admin';
+  document.title = 'Stennisfy Admin';
   if (!BOOTED){ BOOTED = true; boot(); }
 }
 (function initGate(){
   // Fail closed: if the auth layer is unavailable, deny and never boot.
-  if (!(window.BSP && BSP.onAuthChange)){ showDenied(false); return; }
+  if (!(window.Stennisfy && Stennisfy.onAuthChange)){ showDenied(false); return; }
   // Fires on session restore and every subsequent auth-state change.
-  BSP.onAuthChange(function(u){ if (isFounder(u)) grant(); else showDenied(!!u); });
+  Stennisfy.onAuthChange(function(u){ if (isFounder(u)) grant(); else showDenied(!!u); });
 
   var email = document.getElementById('gEmail');
   var pw = document.getElementById('gPw');
   var err = document.getElementById('gErr');
   function submit(){
     err.textContent = '';
-    if (!(window.BSP && BSP.signIn)){ err.textContent = 'Auth unavailable.'; return; }
-    BSP.signIn(email.value, pw.value).then(function(u){
+    if (!(window.Stennisfy && Stennisfy.signIn)){ err.textContent = 'Auth unavailable.'; return; }
+    Stennisfy.signIn(email.value, pw.value).then(function(u){
       // onAuthChange grants if founder; otherwise surface a neutral denial and
       // sign the non-founder back out so no member session lingers here.
-      if (!isFounder(u)){ err.textContent = 'Not authorized.'; BSP.signOut && BSP.signOut(); }
+      if (!isFounder(u)){ err.textContent = 'Not authorized.'; Stennisfy.signOut && Stennisfy.signOut(); }
     }).catch(function(e){ err.textContent = (e && e.message) || 'Sign-in failed.'; });
   }
   pw.addEventListener('keydown', function(e){ if (e.key === 'Enter') submit(); });
   email.addEventListener('keydown', function(e){ if (e.key === 'Enter') submit(); });
   var so = document.getElementById('gateSignout');
-  if (so) so.onclick = function(){ if (window.BSP && BSP.signOut) BSP.signOut().then(function(){ showDenied(false); }); };
+  if (so) so.onclick = function(){ if (window.Stennisfy && Stennisfy.signOut) Stennisfy.signOut().then(function(){ showDenied(false); }); };
 })();
 
 // ---- helpers -------------------------------------------------------------
@@ -153,8 +153,8 @@ async function getJson(url){ const r=await fetch(url+'?cb='+Date.now()); if(!r.o
 // the ledger object, or null on any error (caller falls back to a static fetch).
 async function fetchAdminLogFromFirestore(){
   try{
-    if (!window.BSP || !BSP.ready) return null;
-    await BSP.ready();                          // ensures the firebase compat SDK is loaded
+    if (!window.Stennisfy || !Stennisfy.ready) return null;
+    await Stennisfy.ready();                          // ensures the firebase compat SDK is loaded
     if (!(window.firebase && firebase.firestore)) return null;
     const snap = await firebase.firestore().collection('admin').doc('log').get();
     if (snap && snap.exists){ const d = snap.data() || {}; return d.payload || d; }
@@ -166,7 +166,7 @@ let DATA = { model:null, matches:null, health:null, harvest:null, adminLog:null,
 
 async function boot(){
   const app = document.getElementById('app');
-  app.innerHTML = '<header class="top"><h1>BSP Consult · Admin</h1><span class="meta" id="topmeta">loading…</span></header>'
+  app.innerHTML = '<header class="top"><h1>Stennisfy · Admin</h1><span class="meta" id="topmeta">loading…</span></header>'
     + '<nav class="tabs" id="tabs"></nav>'
     + '<section class="tab active" id="tab1"></section>'
     + '<section class="tab" id="tab2"></section>'

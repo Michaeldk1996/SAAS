@@ -5,6 +5,9 @@
 <!-- TEN-376 foundation: theme first (sets data-theme before paint), then the one colour file. -->
 <script src="./theme.js"></script>
 <link rel="stylesheet" href="./tokens.css">
+<script>
+// The dashboard is the site root: an old link to this file's own name shows the clean address (live host only).
+if(/stennisfy\.com$/.test(location.hostname)&&/\/bsp-consult-dashboard\.html$/.test(location.pathname))history.replaceState(null,'',location.pathname.replace(/[^/]*$/,'')+location.search+location.hash);</script>
 <!-- First paint (2026-11-12): the Matches page's own look (theme-12a, layout-12a, match-analysis-*) is parsed only at
      the end of this file, while the board can already draw from the early fetches below. Keep the page hidden until the
      parser has passed those last style blocks (theme.js sets the class on DOMContentLoaded); the page glow on <html>
@@ -1276,19 +1279,21 @@ window.sfEarlyFetch = function (u, init) {
   .sfh.sfh--ctl{ display:block; padding:18px 26px 22px; }
   .sfh--ctl > .sfh__row{ display:flex; align-items:center; justify-content:space-between; gap:28px; margin:0 0 16px; }
   @media (max-width:899px){ .sfh, .sfh--ctl > .sfh__row{ flex-wrap:wrap; row-gap:14px; }
-    .sfh__stats{ flex:1 1 100%; flex-wrap:wrap; row-gap:12px; gap:12px 24px; } .sfh__stat{ align-items:flex-start; } }
+    .sfh__stats{ flex:1 1 100%; flex-wrap:wrap; row-gap:12px; gap:12px 24px; } .sfh__stat{ align-items:flex-start; }
+    .sfh__sub{ white-space:normal; } }   /* phone: the page's one-line description wraps instead of being cut with an ellipsis */
 
   /* Players — tournament groups (column, 30px apart) */
   #playerGroups{ display:flex; flex-direction:column; gap:30px; }
   /* Export group head: full-width hairline UNDER the row (border-bottom), meta sits
      right after the name (gap:14px) — not a trailing hair to the right edge. */
-  .pgroup-head{ display:flex; align-items:baseline; gap:14px; border-bottom:1px solid var(--line); padding-bottom:13px; margin-bottom:18px; }
-  .pgroup-title{ display:flex; align-items:center; gap:9px; flex:none; }
+  /* the row wraps and a long name breaks, so nothing is cut off at the edge of a phone (2026-11-28) */
+  .pgroup-head{ display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 14px; border-bottom:1px solid var(--line); padding-bottom:13px; margin-bottom:18px; }
+  .pgroup-title{ display:flex; align-items:center; gap:9px; flex:0 1 auto; min-width:0; }
   .pgroup-dot{ width:8px; height:8px; border-radius:50%; flex:none; }
   .pgroup-dot.hard{ background:var(--bar); }
   .pgroup-dot.clay{ background:var(--text-soft); }
   .pgroup-dot.grass{ background:var(--text-soft); }
-  .pgroup-name{ font-family:'Hanken Grotesk', sans-serif; font-weight:800; font-size:15px; color:var(--text); flex:none; letter-spacing:-0.01em; }
+  .pgroup-name{ font-family:'Hanken Grotesk', sans-serif; font-weight:800; font-size:15px; color:var(--text); flex:0 1 auto; min-width:0; overflow-wrap:anywhere; letter-spacing:-0.01em; }
   /* Meta is a UI label, count included — Hanken (not mono) per the export. */
   .pgroup-meta{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; color:var(--text-label); flex:none; text-transform:uppercase; }
 
@@ -1323,28 +1328,41 @@ window.sfEarlyFetch = function (u, init) {
   .playercard .pc-ext svg{ width:11px; height:11px; }
   .playercard .pc-view{ padding-bottom:7px; font-size:12px; font-weight:600; color:var(--link); white-space:nowrap; }
   .playercard[data-clickable="1"]{ cursor:pointer; }
+  /* Founder ruling 2026-11-28 (replaces TEN-384 "no hover"): a card that opens turns one step lighter under the mouse.
+     A colour step only: still no lift, no edge, no motion. */
+  .playercard[data-clickable="1"]:hover{ background:var(--tile-hover); }
+  .playercard:focus-visible{ outline:2px solid var(--edge-16); outline-offset:2px; }   /* keyboard only: the card opens on Enter */
   /* No built profile: nothing to open, so not a link. */
   .playercard[data-clickable="0"] .pc-view{ color:var(--text-label); }
 
   /* Players — search autocomplete dropdown */
-  .psearch-results{ position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:60; background:var(--card); border:1px solid var(--edge-6); border-radius:10px; max-height:340px; overflow-y:auto;  }
+  /* Founder ruling 2026-11-28 ("card + rim"): a pop-up above the cards in the card colour, with the cards' blue glass rim and
+     the menu shadow under it. Before today it had the card colour with a faint edge and no shadow, so its rows read as part
+     of the cards underneath. */
+  .psearch-results{ position:absolute; top:calc(100% + 6px); left:0; right:0; z-index:60; background:var(--card); border:1px solid transparent; border-radius:12px; box-shadow:var(--top-light), var(--shadow-menu); max-height:340px; overflow-y:auto;  }
   .psearch-item{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; cursor:pointer; border-bottom:1px solid var(--line); }
   .psearch-item:last-child{ border-bottom:none; }
-  .psearch-item:hover, .psearch-item.active{ background:var(--tile-hover); }
+  /* the row's portrait (26px): photo over initials, like the card's avatar */
+  .psearch-av{ position:relative; width:26px; height:26px; flex:none; }
+  .psearch-av-init{ position:absolute; inset:0; border-radius:50%; box-sizing:border-box; display:flex; align-items:center; justify-content:center; font-family:var(--font-nums); font-weight:600; font-size:9.5px; color:var(--text); background:var(--selected); border:1px solid var(--line); }
+  .psearch-av .sf-ph.sf-on{ background:var(--selected); }
+  .psearch-item:hover, .psearch-item.active{ background:var(--inner); }
   /* Known player, profile not built yet — findable but not openable, so it must
      not offer a pointer or a hover state it can't honour. */
   .psearch-item-noprofile{ cursor:default; opacity:0.55; }
   .psearch-item-noprofile:hover{ background:transparent; }
-  .psearch-name{ font-size:13px; font-weight:600; color:var(--text); }
+  .psearch-name{ flex:1; min-width:0; font-size:13px; font-weight:600; color:var(--text); }
   .psearch-meta{ font-size:11px; color:var(--text-label); font-family:'IBM Plex Mono', monospace; white-space:nowrap; }
   .psearch-empty{ padding:12px 13px; font-size:12.5px; color:var(--text-label); }
 
   /* Players — global search bar (zone 1) */
-  .pgsearchbar{ display:flex; align-items:center; gap:14px; padding:17px 20px; background:var(--inner); border:1px solid transparent; border-radius:14px; transition:border-color .15s ease; }
-  .pgsearchbar:focus-within{ border-color:var(--edge-10); }
+  /* Founder ruling 2026-11-28 ("top light"): an outlined field, no fill, with the cards' blue-tinted top light. While typing
+     the line turns a brighter neutral: no blue glow (founder: not a fan of the blue highlight). Was --inner, no line. */
+  .pgsearchbar{ display:flex; align-items:center; gap:14px; padding:17px 20px; background:transparent; border:1px solid var(--edge-7); box-shadow:var(--field-top-light); border-radius:14px; transition:border-color .15s ease; }
+  .pgsearchbar:focus-within{ border-color:var(--edge-24); }
   .pgsearch-icon{ display:flex; align-items:center; justify-content:center; width:19px; height:19px; color:var(--text); flex:none; }
   .pgsearch-icon svg{ width:19px; height:19px; }
-  .pgsearchbar input{ flex:1; min-width:0; background:transparent; border:none; outline:none; color:var(--text); font-family:'Hanken Grotesk', sans-serif; font-size:16px; font-weight:400; }
+  .pgsearchbar input{ flex:1; min-width:0; text-overflow:ellipsis; background:transparent; border:none; outline:none; color:var(--text); font-family:'Hanken Grotesk', sans-serif; font-size:16px; font-weight:400; }
   .pgsearchbar input::placeholder{ color:var(--text-label); }
   .pgsearch-tag{ flex:none; font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); }
 
@@ -2103,7 +2121,7 @@ window.sfEarlyFetch = function (u, init) {
   /* ================================================================= */
   /* STENNISFY APP SHELL — sidebar / header / content column (TEN-8).   */
   /* Presentation-only port of the design export. Appended last so it   */
-  /* overrides the legacy BSP top-bar layout without editing it inline. */
+  /* overrides the legacy Stennisfy top-bar layout without editing it inline. */
   /* Tokens sourced from export/README.md.                              */
   /* ================================================================= */
   :root{ --sf-font-ui:'Hanken Grotesk',sans-serif; --sf-font-mono:'IBM Plex Mono',monospace;
@@ -2227,16 +2245,22 @@ window.sfEarlyFetch = function (u, init) {
     .sf-sidebar:hover .sf-chev, .sf-sidebar:has(:focus-visible) .sf-chev{ display:block; }
     .sf-sidebar:hover .sf-userinfo, .sf-sidebar:has(:focus-visible) .sf-userinfo{ display:flex; }
   }
-  /* mobile: the rail is a static block above the page, laid out open; overlays cover the full width */
+  /* mobile (founder 2026-11-28): the rail is one compact bar above the page: logo, the pages in a row that swipes sideways
+     (icons, the open page also shows its name), avatar. The open block it replaces filled the whole first phone screen.
+     The avatar menu opens downwards from the bar; overlays cover the full width. */
   @media (max-width:900px){
     :root{ --sf-side:0px; }
-    .sf-sidebar{ position:static; width:auto; padding:0; }
-    .sf-panel{ border-radius:26px; }
-    .sf-nav{ gap:10px; overflow:visible; }
-    .sf-item{ height:42px; }
-    .sf-glabel, .sf-lbl, .sf-chev{ display:block; }
-    .sf-userinfo{ display:flex; }
-    .sf-menu{ left:0; bottom:calc(100% + 8px); }
+    .sf-sidebar{ position:static; width:auto; padding:10px 10px 0; }
+    .sf-panel{ flex-direction:row; align-items:center; gap:4px; padding:6px 8px; border-radius:20px; }
+    .sf-brand{ align-self:center; }
+    .sf-logo{ width:28px; height:28px; margin:0 6px 0 4px; }
+    .sf-nav{ flex:1; flex-direction:row; gap:2px; padding:9px 0 0; margin-top:-9px; overflow-x:auto; overflow-y:hidden; }   /* 9px: room for the count / lock badges */
+    .sf-group{ flex-direction:row; gap:2px; flex:none; }
+    .sf-item{ width:auto; height:40px; gap:8px; padding:0 11px; }
+    .sf-item.active .sf-lbl{ display:block; }
+    .sf-foot{ margin:0; padding:0; }
+    .sf-userchip{ height:40px; padding:0 2px; }
+    .sf-menu{ left:auto; right:0; bottom:auto; top:calc(100% + 10px); }
   }
   /* sf-rail:end */
 
@@ -2521,6 +2545,54 @@ window.sfEarlyFetch = function (u, init) {
   .ltm-note{ text-align:center; color:var(--text-label,var(--text-label)); font-size:12.5px; padding:26px 10px; }
   @media (max-width:560px){ .ltm-head{ grid-template-columns:1fr auto 1fr; } .ltm-pname{ font-size:13.5px; } .ltm-av{ width:32px; height:32px; } }
 </style>
+<style id="sf-one-surface">
+  /* ONE SURFACE LANGUAGE (founder ruling 2026-11-28: "apply everything we set up to the whole website").
+     The choices made on the Players page that day hold on every page:
+       1. a top-level box carries the cards' blue glass rim (--top-light) in place of a flat grey line;
+       2. a field a member types into (search fields, and since the same day every other text field) is an outline: no
+          fill, a thin line, the cards' top light; while typing the line turns a brighter neutral (no blue glow);
+       3. a list of search results is a pop-up in the card colour with the glass rim and the menu shadow.
+     The newer pages draw their boxes with their own rules or inline styles, so this one sheet overrides them
+     (hence !important), the same way the profile's sheet overrides its inline ring. Boxes nested inside a box keep
+     their own line. Left alone on purpose: the Bet Tracker (its look is locked to its reference design) and the panels
+     that open from a profile tile (founder: leave them). */
+
+  /* 1 · boxes */
+  .tourx-head.sfh, .tourx-shell,
+  #dbCtl.db-ctl, .db3-bcard, .db3-card,
+  .sm-head, #edgeRail.sm-rail, .sm-card,
+  .nx-card,
+  .do2-card:not(.do2-banner),
+  #h2hRoot .x-hcard,
+  #h2hRoot [style*="background:var(--h2h-card); border:1px solid color-mix(in srgb, var(--h2h-white) 6%, transparent); border-radius:16px"],
+  /* audit of every sub-view, 2026-11-28: the Database tabs, and the Match analysis view (each of its twelve sections) */
+  .db3-fcard, .db2-card, .db-prompt,
+  .modal-analysis [style*="background:var(--ma2-card); border:1px solid color-mix(in srgb, var(--ma2-white) 6%, transparent); border-radius:16px"],
+  .modal-analysis .me-card, .modal-analysis .ma-ms-sheet{
+    border-color:transparent !important; box-shadow:var(--top-light) !important; }
+  #h2h-sticky{ border-color:transparent !important; box-shadow:var(--top-light), var(--h2h-shadow-sticky) !important; }
+
+  /* 2 · search fields */
+  .mx-searchwrap, .tr-search, .tt-ov-search, .tt-entry-search, .nx-search, .do2-search,
+  .db-chipin, .db3-well, .pkd-search,
+  /* founder 2026-11-28 ("yes, all inputs"): every field a member types into, not only search fields */
+  .sm-odd, .db3-fmin input, .nx-psw, .nx-ta, .pkd-txt, .pkd-pbox, .pkd-sbox, #pkdNote,
+  html #h2hRoot .h2hin{
+    background:transparent !important; border:1px solid var(--edge-7) !important; box-shadow:var(--field-top-light) !important; }
+  .mx-searchwrap:focus-within, .tr-search:focus-within, .tt-ov-search:focus-within, .tt-entry-search:focus-within,
+  .nx-search:focus-within, .do2-search:focus-within,
+  .db-chipin:focus-within, .db3-well:focus-within, .pkd-search:focus-within,
+  .sm-odd:focus, .db3-fmin input:focus, .nx-psw:focus, .nx-psw:focus-within, .nx-ta:focus, .pkd-txt:focus, .pkd-pbox:focus,
+  .pkd-pbox:focus-within, .pkd-sbox:focus, .pkd-sbox:focus-within, #pkdNote:focus,
+  html #h2hRoot .h2hin:focus{
+    border-color:var(--edge-24) !important;
+  }
+
+  /* 3 · search result lists */
+  #h2hRoot [role="listbox"][style*="background:var(--h2h-raised)"]{
+    background:var(--h2h-card) !important; border-color:transparent !important; box-shadow:var(--top-light), var(--shadow-menu) !important; }
+  .nx-panel{ border-color:transparent !important; box-shadow:var(--top-light), var(--shadow-menu) !important; }   /* the News filter menus */
+</style>
 </head>
 <body>
 
@@ -2597,7 +2669,7 @@ window.sfEarlyFetch = function (u, init) {
 /* sf-menu:start — TEN-403 avatar menu (identical on bsp-consult-dashboard.html and account.html). The avatar row toggles
    the menu; a click outside it or Escape closes it. Signed out (.sf-out) the row is a plain link to sign-in and there
    is no menu. The menu's name · plan · initials are read from the row paintAcct / paintChip already painted.
-   Sign out = BSP.signOut(), then the sign-in page (the account page's own sign-out path). */
+   Sign out = Stennisfy.signOut(), then the sign-in page (the account page's own sign-out path). */
 (function () {
   var chip = document.getElementById('acctMain'), menu = document.getElementById('sfMenu');
   if (!chip || !menu) return;
@@ -2632,7 +2704,7 @@ window.sfEarlyFetch = function (u, init) {
     }, ownFocus: true });
   var out = document.getElementById('acctSignout');
   if (out) out.addEventListener('click', function () {
-    if (window.BSP && BSP.signOut) BSP.signOut().then(function () { location.href = 'auth.html'; });
+    if (window.Stennisfy && Stennisfy.signOut) Stennisfy.signOut().then(function () { location.href = 'auth.html'; });
   });
   window.sfAcctMenu = set;
 })();
@@ -2688,7 +2760,7 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
 </script>
 <script src="./auth.js"></script>
 <!-- admin allowlist (ADMIN_UIDS / ADMIN_EMAILS) — also used by the News page's
-     BSP Consult Intel composer to decide whether to show the admin controls. -->
+     Stennisfy Intel composer to decide whether to show the admin controls. -->
 <script src="./admin-config.js"></script>
 <script>
 // Protected route + top-nav account chip, backed by the Firebase session.
@@ -2729,18 +2801,18 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
     }catch(e){}
   }
   window.sfPaintAcct = paintAcct;   // the shell tests drive the real painter (signed in / signed out)
-  if (window.BSP && BSP.onAuthChange){
-    BSP.onAuthChange(paintAcct);
+  if (window.Stennisfy && Stennisfy.onAuthChange){
+    Stennisfy.onAuthChange(paintAcct);
     // Protected route: redirect to sign-in if there is no session, or to the
     // email holding screen if the signed-in user hasn't verified their email.
-    if (BSP.requireVerified){
-      BSP.requireVerified('auth.html?mode=signin', 'verify.html');
+    if (Stennisfy.requireVerified){
+      Stennisfy.requireVerified('auth.html?mode=signin', 'verify.html');
     } else {
-      BSP.requireAuth('auth.html?mode=signin');
+      Stennisfy.requireAuth('auth.html?mode=signin');
     }
     // Founder 2026-11-26: an account without an active Sharp / Sharp+ membership doesn't see the dashboard; it goes
     // to the plans. auth.js reads any active paid tier as plan 'pro'. Admins pass; a failed profile read is not "free".
-    BSP.whenAuthReady().then(function (u) {
+    Stennisfy.whenAuthReady().then(function (u) {
       if (!u || u.profileLoadFailed || u.plan === 'pro') return;
       if (window.ADMIN_CONFIG && (window.ADMIN_CONFIG.ADMIN_UIDS || []).indexOf(u.uid) >= 0) return;
       window.location.replace('https://stennisfy.com/#plans');
@@ -5238,6 +5310,16 @@ function sfActivateTabRaw(tab, hash){
   sfSetTabLoops(tab);
 }
 function sfActiveTab(){ const b = document.querySelector('#mainNav button.active'); return b ? b.dataset.tab : null; }
+// Phone bar (max-width 900px): the pages sit in one row that swipes sideways, so the open page is brought into view
+// whenever the selection changes. Does nothing while the row fits (the desktop rail).
+(function(){
+  const nav = document.getElementById('mainNav'); if (!nav || !window.MutationObserver) return;
+  const show = () => { const b = nav.querySelector('button.active'); if (!b || nav.scrollWidth <= nav.clientWidth) return;
+    const br = b.getBoundingClientRect(), nr = nav.getBoundingClientRect();
+    nav.scrollLeft += br.left - nr.left - (nav.clientWidth - br.width) / 2; };
+  new MutationObserver(show).observe(nav, { subtree: true, attributes: true, attributeFilter: ['class'] });
+  show();
+})();
 function sfAnalysisModalState(){
   const el = document.getElementById('analysisModal');
   if (!el || !el.classList.contains('open') || typeof _aOdds !== 'object' || !_aOdds || !_aOdds.m) return null;
@@ -6127,7 +6209,7 @@ function newsPageIntelItems(){
   return newsIntelItems().map(it => {
     const text = (it.bodyParas || []).join('\n\n');
     const first = text.split(/[.!?]/)[0].trim().slice(0, 90);
-    const named = it.player && it.player !== 'BSP Intel';
+    const named = it.player && it.player !== 'Stennisfy Intel';
     // News v2 §6: the post takes the group chosen in the composer as its category (an older note: Tour News) and its
     // player's tournament; a note being edited leaves the feed until it is published again
     return { kind: 'intel', id: 'i' + it.intelId, intelId: it.intelId, ts: it.ts,
@@ -6143,9 +6225,9 @@ function newsIntelItems(){
     const text = String(n.text || '').trim();
     return {
       kind: 'intel', intelId: n.id, ts: ms,
-      player: pr.label || 'BSP Intel', playerKey: pr.key,
+      player: pr.label || 'Stennisfy Intel', playerKey: pr.key,
       title: text || 'Intel note', bodyParas: newsSplitParas(text),
-      cat: n.cat || '', tour: n.tour || '', src: '', srcRaw: 'BSP Consult Intel',
+      cat: n.cat || '', tour: n.tour || '', src: '', srcRaw: 'Stennisfy Intel',
     };
   });
 }
@@ -6269,7 +6351,7 @@ function renderNews(){
     if (idx[key] == null){ idx[key] = groups.length; groups.push({ key, label: isFinite(it.ts) ? newsFmtDateKey(it.ts) : '', items: [] }); }
     groups[idx[key]].items.push(it);
   }
-  const admin = isBspAdmin();
+  const admin = isStennisfyAdmin();
   listEl.innerHTML = groups.map(g => {
     const n = g.items.length;
     const header = g.label ? `<div class="nx-day"><span class="nx-day-l">${newsEscape(g.label)}</span><span class="nx-day-n">${n} ${n === 1 ? 'article' : 'articles'}</span><span class="nx-day-r"></span></div>` : '';
@@ -6411,7 +6493,7 @@ const newsTip = { hide: () => {} };
 function newsToggleRow(id){ _newsOpenId = _newsOpenId === id ? '' : id; renderNews(); }
 
 
-/* ---------- BSP CONSULT INTEL (manual injury / insider notes, TEN-8) ----------
+/* ---------- Stennisfy CONSULT INTEL (manual injury / insider notes, TEN-8) ----------
    Founder-authored notes stored in Firestore (collection `intel_notes`), shown
    above the automated api-tennis articles. Members READ the notes; only the
    founder (Firebase admin allowlist in admin-config.js, enforced again by
@@ -6428,8 +6510,8 @@ const INTEL_MAX = 5;
 let _intelNotes = [];      // cached, newest first
 let _intelEditingId = null;
 
-function isBspAdmin(){
-  const u = (window.BSP && BSP.currentUser) ? BSP.currentUser() : null;
+function isStennisfyAdmin(){
+  const u = (window.Stennisfy && Stennisfy.currentUser) ? Stennisfy.currentUser() : null;
   if (!u) return false;
   const cfg = window.ADMIN_CONFIG || {};
   const uids = cfg.ADMIN_UIDS || [];
@@ -6440,7 +6522,7 @@ function isBspAdmin(){
 
 function intelDb(){
   // auth.js loads the Firebase compat SDK and calls initializeApp; after
-  // BSP.ready() the `firebase` global + firestore() are available.
+  // Stennisfy.ready() the `firebase` global + firestore() are available.
   if (!window.firebase || !firebase.firestore) return null;
   return firebase.firestore();
 }
@@ -6543,7 +6625,7 @@ function intelResolveNote(n){
 
 async function loadIntel(){
   try {
-    if (window.BSP && BSP.ready) await BSP.ready();
+    if (window.Stennisfy && Stennisfy.ready) await Stennisfy.ready();
     const db = intelDb();
     if (!db) { newsAfterIntel(); return; }
     // Order by our own millis field to avoid the serverTimestamp null-until-ack race.
@@ -6612,7 +6694,7 @@ function intelSetCat(c){ _cmpCat = c; newsRenderComposer(true); }
 function newsRenderComposer(force){
   const host  = document.getElementById('newsPostIntelHost');
   const panel = document.getElementById('newsComposer');
-  const admin = isBspAdmin(), n = (_intelNotes || []).length;
+  const admin = isStennisfyAdmin(), n = (_intelNotes || []).length;
   if (host){
     host.innerHTML = admin
       ? `<button type="button" class="nx-post nx-seg${_composerOpen ? ' open' : ''}" aria-expanded="${_composerOpen}" onclick="newsToggleComposer()">Post intel <span class="nx-post-n">${n}/${INTEL_MAX}</span></button>`
@@ -6653,14 +6735,14 @@ function intelCancelEdit(){ newsCancelComposer(); }
 
 async function intelPublish(){
   const setMsg = t => { const m = document.getElementById('intelMsg'); if (m) m.textContent = t; };
-  if (!isBspAdmin()){ setMsg('Admin session required.'); return; }
+  if (!isStennisfyAdmin()){ setMsg('Admin session required.'); return; }
   if (!intelCanPublish()) return;
   const db = intelDb();
   if (!db){ setMsg('Firestore unavailable — try again once signed in.'); return; }
   const P = _cmpPlayer, doc = { text: _cmpText.trim(), player: P.name, playerKey: P.key, cat: _cmpCat, tour: P.tour || '' };
   setMsg('Saving…');
   try {
-    const u = BSP.currentUser();
+    const u = Stennisfy.currentUser();
     if (_intelEditingId) await db.collection(INTEL_COLLECTION).doc(_intelEditingId).set(Object.assign({ createdAtMs: Date.now() }, doc), { merge: true });
     else await db.collection(INTEL_COLLECTION).add(Object.assign({ authorUid: u ? u.uid : null, createdAtMs: Date.now(), createdAt: firebase.firestore.FieldValue.serverTimestamp() }, doc));
     await intelPruneToMax(db);
@@ -6673,7 +6755,7 @@ async function intelPublish(){
 }
 
 async function intelDelete(id){
-  if (!isBspAdmin()) return;
+  if (!isStennisfyAdmin()) return;
   if (!window.confirm('Delete this intel note for all members?')) return;
   const db = intelDb();
   if (!db) return;
@@ -10243,7 +10325,7 @@ function mxLandOnNearestDay(){
 // survives a matches.json refresh AND the card turning into a result (the settle-clear needs
 // exactly that: it finds the settled card under the same key).
 // STORE: signed in (a uid) → the account, Firestore users/{uid}.favouriteMatches via
-// BSP.updateProfile; signed out → localStorage `stennisfy.favourites`. Signing in merges the
+// Stennisfy.updateProfile; signed out → localStorage `stennisfy.favourites`. Signing in merges the
 // local list into the account (account order first, then any local-only keys) and, once the
 // account write succeeds, empties the local list.
 // SETTLE-CLEAR: a starred match that has settled (finished, retired or walkover, not live)
@@ -10274,8 +10356,8 @@ function mxFavPrune(keys, list){
 function mxFavHas(m){ return mxFav.keys.includes(mxFavKey(m)); }
 function mxFavPersist(){
   const keys = mxFav.keys.slice();
-  if (mxFav.uid && window.BSP && typeof window.BSP.updateProfile === 'function')
-    return Promise.resolve(window.BSP.updateProfile({ favouriteMatches: keys })).catch(() => null);
+  if (mxFav.uid && window.Stennisfy && typeof window.Stennisfy.updateProfile === 'function')
+    return Promise.resolve(window.Stennisfy.updateProfile({ favouriteMatches: keys })).catch(() => null);
   mxFavWriteLocal(keys);
   return Promise.resolve(null);
 }
@@ -10296,12 +10378,12 @@ function mxFavOnAuth(u){
   const merged = mxFavMerge(account, local);
   mxFav.uid = uid; mxFav.keys = merged;
   if (!local.length) return Promise.resolve(merged);
-  const write = (merged.length !== account.length && window.BSP && typeof window.BSP.updateProfile === 'function')
-    ? Promise.resolve(window.BSP.updateProfile({ favouriteMatches: merged })) : Promise.resolve(null);
+  const write = (merged.length !== account.length && window.Stennisfy && typeof window.Stennisfy.updateProfile === 'function')
+    ? Promise.resolve(window.Stennisfy.updateProfile({ favouriteMatches: merged })) : Promise.resolve(null);
   return write.then(() => { mxFavWriteLocal([]); return merged; }).catch(() => merged);
 }
 // Profile v2 (founder 2026-11-09): the PLAYER watchlist — the star beside the name on Player Profile. Same store
-// pattern as the match favourites above: signed in → Firestore users/{uid}.watchPlayers (BSP.updateProfile); signed
+// pattern as the match favourites above: signed in → Firestore users/{uid}.watchPlayers (Stennisfy.updateProfile); signed
 // out → localStorage `stennisfy.watchPlayers`; signing in merges the local list into the account. Keys = api-tennis
 // player keys (strings). The Players page lists them (pgWatchStripHtml).
 const PP_WATCH_LS = 'stennisfy.watchPlayers';
@@ -10310,8 +10392,8 @@ function ppWatchReadLocal(){ try { return mxFavClean(JSON.parse(localStorage.get
 function ppWatchWriteLocal(keys){ try { if (keys.length) localStorage.setItem(PP_WATCH_LS, JSON.stringify(keys)); else localStorage.removeItem(PP_WATCH_LS); } catch (e) {} }
 function ppWatchPersist(){
   const keys = ppWatch.keys.slice();
-  if (ppWatch.uid && window.BSP && typeof window.BSP.updateProfile === 'function')
-    return Promise.resolve(window.BSP.updateProfile({ watchPlayers: keys })).catch(() => null);
+  if (ppWatch.uid && window.Stennisfy && typeof window.Stennisfy.updateProfile === 'function')
+    return Promise.resolve(window.Stennisfy.updateProfile({ watchPlayers: keys })).catch(() => null);
   ppWatchWriteLocal(keys);
   return Promise.resolve(null);
 }
@@ -10371,8 +10453,8 @@ function ppWatchOnAuth(u){
   const merged = mxFavMerge(account, local);
   ppWatch.uid = uid; ppWatch.keys = merged;
   if (!local.length) return Promise.resolve(merged);
-  const write = (merged.length !== account.length && window.BSP && typeof window.BSP.updateProfile === 'function')
-    ? Promise.resolve(window.BSP.updateProfile({ watchPlayers: merged })) : Promise.resolve(null);
+  const write = (merged.length !== account.length && window.Stennisfy && typeof window.Stennisfy.updateProfile === 'function')
+    ? Promise.resolve(window.Stennisfy.updateProfile({ watchPlayers: merged })) : Promise.resolve(null);
   return write.then(() => { ppWatchWriteLocal([]); return merged; }).catch(() => merged);
 }
 // Settle-clear against the loaded board; rewrites the store only when something left.
@@ -10447,8 +10529,8 @@ function mxSurname(name){
   return t.join(' ');
 }
 // Pro = the signed-in member's plan (sfPlanLocks is told on every auth change). Signed out / Free / Edge = not Pro.
-// founder 2026-10-28: the admin (isBspAdmin — the founder's uid, the same rule as firestore.rules) bypasses Pro gating everywhere
-function mxIsPro(){ return window.sfPlan === 'pro' || (typeof isBspAdmin === 'function' && !!isBspAdmin()); }
+// founder 2026-10-28: the admin (isStennisfyAdmin — the founder's uid, the same rule as firestore.rules) bypasses Pro gating everywhere
+function mxIsPro(){ return window.sfPlan === 'pro' || (typeof isStennisfyAdmin === 'function' && !!isStennisfyAdmin()); }
 // Pinnacle close as a NUMBER may use it: both legs present and each last moved within 60 min of the start
 // (TEN-253 ruling 2 — displayed older closes never feed a figure). null otherwise.
 function mxPinCloseW60(m){
@@ -13081,7 +13163,7 @@ function pbpPointList(points){
     return `<span class="pbp-pt">${s}${p.bp ? '<span class="pbp-bp">BP</span>' : ''}${sep}</span>`;
   }).join('');
 }
-// The point log draws its own tennis ball rather than reusing BSP_ICONS.ball:
+// The point log draws its own tennis ball rather than reusing STENNISFY_ICONS.ball:
 // the shared token is a side-on ball (vertical seams) sized for the stat tiles,
 // where this one is the face-on ball the point log is designed around. Founder
 // pass-3 §6: the glyph, its arc path and 1.8 stroke are taken straight from the
@@ -13447,20 +13529,20 @@ function weatherImpactPhrase(w, surface){
 // the four visual buckets the design defines (sun / partly / cloud / rain).
 function wmoWeather(code){
   const SUN = 'var(--text)', PARTLY = 'var(--text)', CLOUD = 'var(--text-label)', RAIN = 'var(--text)';   // neutral: Weather has no colour (amber = Model + Trading Report only; founder R4)
-  if (code == null) return { icon: BSP_ICONS.wxCloud, label: '—', tint: CLOUD };
-  if (code === 0) return { icon: BSP_ICONS.wxSun, label: 'Clear', tint: SUN };
-  if (code === 1) return { icon: BSP_ICONS.wxSun, label: 'Mainly clear', tint: SUN };
-  if (code === 2) return { icon: BSP_ICONS.wxPartly, label: 'Partly cloudy', tint: PARTLY };
-  if (code === 3) return { icon: BSP_ICONS.wxCloud, label: 'Overcast', tint: CLOUD };
-  if (code === 45 || code === 48) return { icon: BSP_ICONS.wxCloud, label: 'Fog', tint: CLOUD };
-  if (code >= 51 && code <= 57) return { icon: BSP_ICONS.wxRain, label: 'Drizzle', tint: RAIN };
-  if (code >= 61 && code <= 65) return { icon: BSP_ICONS.wxRain, label: code === 65 ? 'Heavy rain' : 'Rain', tint: RAIN };
-  if (code === 66 || code === 67) return { icon: BSP_ICONS.wxRain, label: 'Freezing rain', tint: RAIN };
-  if (code >= 71 && code <= 77) return { icon: BSP_ICONS.wxCloud, label: 'Snow', tint: CLOUD };
-  if (code >= 80 && code <= 82) return { icon: BSP_ICONS.wxRain, label: 'Showers', tint: RAIN };
-  if (code === 85 || code === 86) return { icon: BSP_ICONS.wxCloud, label: 'Snow showers', tint: CLOUD };
-  if (code >= 95) return { icon: BSP_ICONS.wxRain, label: 'Thunderstorms', tint: RAIN };
-  return { icon: BSP_ICONS.wxCloud, label: '—', tint: CLOUD };
+  if (code == null) return { icon: STENNISFY_ICONS.wxCloud, label: '—', tint: CLOUD };
+  if (code === 0) return { icon: STENNISFY_ICONS.wxSun, label: 'Clear', tint: SUN };
+  if (code === 1) return { icon: STENNISFY_ICONS.wxSun, label: 'Mainly clear', tint: SUN };
+  if (code === 2) return { icon: STENNISFY_ICONS.wxPartly, label: 'Partly cloudy', tint: PARTLY };
+  if (code === 3) return { icon: STENNISFY_ICONS.wxCloud, label: 'Overcast', tint: CLOUD };
+  if (code === 45 || code === 48) return { icon: STENNISFY_ICONS.wxCloud, label: 'Fog', tint: CLOUD };
+  if (code >= 51 && code <= 57) return { icon: STENNISFY_ICONS.wxRain, label: 'Drizzle', tint: RAIN };
+  if (code >= 61 && code <= 65) return { icon: STENNISFY_ICONS.wxRain, label: code === 65 ? 'Heavy rain' : 'Rain', tint: RAIN };
+  if (code === 66 || code === 67) return { icon: STENNISFY_ICONS.wxRain, label: 'Freezing rain', tint: RAIN };
+  if (code >= 71 && code <= 77) return { icon: STENNISFY_ICONS.wxCloud, label: 'Snow', tint: CLOUD };
+  if (code >= 80 && code <= 82) return { icon: STENNISFY_ICONS.wxRain, label: 'Showers', tint: RAIN };
+  if (code === 85 || code === 86) return { icon: STENNISFY_ICONS.wxCloud, label: 'Snow showers', tint: CLOUD };
+  if (code >= 95) return { icon: STENNISFY_ICONS.wxRain, label: 'Thunderstorms', tint: RAIN };
+  return { icon: STENNISFY_ICONS.wxCloud, label: '—', tint: CLOUD };
 }
 // ══ TEN-304 Wave B — Match analysis → Weather tab ════════════════════════════════════════════════
 // Spec: design/handoff-weather/Weather Tab - Paperclip.md (§1–§6 markup + wxFor/wIcon, ported to the
@@ -17769,7 +17851,7 @@ const AKC_ICONS = {
 // standalone Tournament Page (design-handoff batch requiring "simple inline
 // line SVGs, no emoji, keeping stroke weight/size"). Path data ported from
 // the design mock's icon() helper.
-const BSP_ICONS = {
+const STENNISFY_ICONS = {
   thermometer: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.8V6a2 2 0 1 0-4 0v8.8a4 4 0 1 0 4 0Z"></path><path d="M12 15.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Z" fill="currentColor"></path></svg>`,
   wind: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h11a2.5 2.5 0 1 0-2.5-2.5"></path><path d="M3 12h15a3 3 0 1 1-3 3"></path><path d="M3 16h7"></path></svg>`,
   droplet: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5s6 6 6 10a6 6 0 1 1-12 0c0-4 6-10 6-10Z"></path></svg>`,
@@ -19483,9 +19565,9 @@ document.querySelector('[data-page="matches"]').addEventListener('keydown', e =>
   if (e.key !== 'Enter' && e.key !== ' ') return;
   if (e.target.matches('[data-sig-model], .mx-favcard[data-id]')) mxSigModelGo(e) || mxFavCardGo(e);
 }, true);
-if (window.BSP && BSP.onAuthChange){
-  BSP.onAuthChange(u => { mxFavOnAuth(u).then(() => { if (matchesLoadedOnce) renderMatches(); }); });
-  BSP.onAuthChange(u => { ppWatchOnAuth(u).then(() => { if (typeof pgRenderWatchStrip === 'function') pgRenderWatchStrip(); if (typeof ppState !== 'undefined' && ppState && ppState.key && typeof pp2RepaintIfOpen === 'function') pp2RepaintIfOpen(ppState.key); }); });
+if (window.Stennisfy && Stennisfy.onAuthChange){
+  Stennisfy.onAuthChange(u => { mxFavOnAuth(u).then(() => { if (matchesLoadedOnce) renderMatches(); }); });
+  Stennisfy.onAuthChange(u => { ppWatchOnAuth(u).then(() => { if (typeof pgRenderWatchStrip === 'function') pgRenderWatchStrip(); if (typeof ppState !== 'undefined' && ppState && ppState.key && typeof pp2RepaintIfOpen === 'function') pp2RepaintIfOpen(ppState.key); }); });
 }
 
 document.getElementById('mxModeToggle').addEventListener('click', e => {
@@ -19898,7 +19980,7 @@ function renderPlayers(filter){
     // removes it and the initials show through.
     const photo = playerPhotoImg(p.key, p.name);
     return `
-    <div class="playercard" data-clickable="${hasProfile ? 1 : 0}"${hasProfile ? ` onclick="showPlayerProfile('${p.key}')"` : ''}>
+    <div class="playercard" data-clickable="${hasProfile ? 1 : 0}"${hasProfile ? ` onclick="showPlayerProfile('${p.key}')" tabindex="0" onkeydown="if(event.key==='Enter'){this.click();}"` : ''}>
       <div class="pc-id">
         <span class="pc-avatar"><span class="pc-avatar-init">${initial}</span>${photo}</span>
         <div class="pc-idtext">
@@ -20001,6 +20083,9 @@ function renderPlayerSearch(query){
   }
   box.innerHTML = list.map(p => {
     const rank = (p.rank != null && !Number.isNaN(p.rank)) ? `#${p.rank}` : '';
+    // founder 2026-11-28: each row leads with the player's portrait, the same resolver and initials fallback as the cards
+    // (playerPhotoImg over pgInitials), so a player without a photo shows his initials: never a stand-in picture.
+    const av = `<span class="psearch-av" aria-hidden="true"><span class="psearch-av-init">${pesc(pgInitials(p.name))}</span>${playerPhotoImg(p.key, p.name)}</span>`;
     // Third state, honestly labelled: we know this player, his profile has not
     // been built yet. Previously indistinguishable from "no such player".
     // R4 (founder ruling, 2026-09-17): a player with no profile shard shows
@@ -20010,13 +20095,13 @@ function renderPlayerSearch(query){
     // majority path, not an edge case.
     if (!p.hasProfile){
       return `<div class="psearch-item psearch-item-noprofile" title="Profile not built yet">
-        <span class="psearch-name">${pesc(p.name)}</span>
+        ${av}<span class="psearch-name">${pesc(p.name)}</span>
         <span class="psearch-meta">${rank}${rank ? ' · ' : ''}Profile not built yet</span>
       </div>`;
     }
     const meta = rank || (p.lastTournament ? pesc(p.lastTournament) : '');
     return `<div class="psearch-item" onclick="selectSearchedPlayer('${p.key}')">
-      <span class="psearch-name">${pesc(p.name)}</span>
+      ${av}<span class="psearch-name">${pesc(p.name)}</span>
       <span class="psearch-meta">${meta}</span>
     </div>`;
   }).join('');
@@ -20293,7 +20378,7 @@ async function loadPlayerStyles(){ try { const res = await fetch('./playing-styl
 // Derived live from career-splits.json + playing-styles.json, both already
 // loaded above. Falls back to the pipeline's p.insights when a player has
 // no splits row or produces fewer than three findings.
-/* BSP Consult — dynamic Key Insights engine.
+/* Stennisfy — dynamic Key Insights engine.
  *
  * Pure functions, no imports, no DOM: the same source runs under Node (for the
  * sample report) and inside bsp-consult-dashboard.html.
@@ -22917,7 +23002,7 @@ function ppTournamentDropdownHtml(p, query){
     const tint = ppTournamentSurfaceTint(t.name);
     const cat = ppTournamentCategory(t.name);
     return `<div data-pp-tourney-pick="${pesc(t.name)}" onmouseover="this.style.background='color-mix(in srgb, var(--bar) 8%, transparent)'" onmouseout="this.style.background='transparent'" style="display:flex;align-items:center;gap:11px;padding:10px 14px;cursor:pointer;background:transparent;${i>0?'border-top:1px solid var(--line);':''}">
-      <span style="width:22px;height:22px;border-radius:6px;background:${ppHexA(tint,0.14)};border:1px solid ${ppHexA(tint,0.3)};display:flex;align-items:center;justify-content:center;flex:none;color:${tint};"><span style="display:flex;width:12px;height:12px;">${BSP_ICONS.trophy}</span></span>
+      <span style="width:22px;height:22px;border-radius:6px;background:${ppHexA(tint,0.14)};border:1px solid ${ppHexA(tint,0.3)};display:flex;align-items:center;justify-content:center;flex:none;color:${tint};"><span style="display:flex;width:12px;height:12px;">${STENNISFY_ICONS.trophy}</span></span>
       <span style="flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${pesc(t.name)}</span>
       ${cat ? `<span style="font-size:11px;color:var(--text-label);font-family:'IBM Plex Mono',monospace;white-space:nowrap;">${pesc(cat)}</span>` : ''}
     </div>`;
@@ -22945,7 +23030,7 @@ function ppTournamentResultHtml(p, name){
   if (!t){
     return `<div style="position:relative;background:var(--card);border:1px solid var(--edge-6);border-radius:16px;padding:30px 24px;text-align:center;">
       <div style="position:absolute;top:12px;right:12px;">${dismissBtn}</div>
-      <div style="width:44px;height:44px;margin:0 auto 12px;color:var(--text-label);opacity:.6;display:flex;align-items:center;justify-content:center;"><span style="display:flex;width:40px;height:40px;">${BSP_ICONS.trophy}</span></div>
+      <div style="width:44px;height:44px;margin:0 auto 12px;color:var(--text-label);opacity:.6;display:flex;align-items:center;justify-content:center;"><span style="display:flex;width:40px;height:40px;">${STENNISFY_ICONS.trophy}</span></div>
       <div style="font-size:13.5px;font-weight:700;color:var(--text-soft);">No results at this tournament</div>
       <div style="font-size:12.5px;color:var(--text-label);margin-top:5px;">We have no record of ${pesc(ppAbbrevName(p.name))} playing ${pesc(name)}.</div>
     </div>`;
@@ -23049,7 +23134,7 @@ function ppTournamentResultHtml(p, name){
   }).join('');
   return `<div style="background:var(--card);border:1px solid var(--edge-6);border-radius:16px;padding:22px 24px;">
     <div style="display:flex;align-items:center;gap:11px;">
-      <span style="width:26px;height:26px;border-radius:8px;background:${ppHexA(tint,0.14)};border:1px solid ${ppHexA(tint,0.3)};display:flex;align-items:center;justify-content:center;flex:none;color:${tint};"><span style="display:flex;width:15px;height:15px;">${BSP_ICONS.trophy}</span></span>
+      <span style="width:26px;height:26px;border-radius:8px;background:${ppHexA(tint,0.14)};border:1px solid ${ppHexA(tint,0.3)};display:flex;align-items:center;justify-content:center;flex:none;color:${tint};"><span style="display:flex;width:15px;height:15px;">${STENNISFY_ICONS.trophy}</span></span>
       <span style="flex:1;min-width:0;font-size:14px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${pesc(ppAbbrevName(p.name))} at ${pesc(t.name)}</span>
       ${cat ? `<span style="font-size:10.5px;font-weight:600;color:${tint};background:${ppHexA(tint,0.14)};border:1px solid ${ppHexA(tint,0.3)};border-radius:7px;padding:3px 10px;font-family:'IBM Plex Mono',monospace;white-space:nowrap;flex:none;">${pesc(cat)}</span>` : ''}
       ${dismissBtn}
@@ -24197,7 +24282,7 @@ function showTournamentProfile(key){
   ` : '';
 
   const header = `
-    <button class="tprofile-back" onclick="showTournamentList()">${BSP_ICONS.back} Back to Tournaments</button>
+    <button class="tprofile-back" onclick="showTournamentList()">${STENNISFY_ICONS.back} Back to Tournaments</button>
     <div class="tprofile-header">
       <div>
         <div class="badges">${badges}</div>
@@ -24225,12 +24310,12 @@ function showTournamentProfile(key){
   const champ = profile.defendingChampion;
 
   const statTiles = [
-    statTile(BSP_ICONS.trophy, 'var(--text)', 'Defending Champion', champ ? champ.name : '—', champ && champ.country ? champ.country : null)
+    statTile(STENNISFY_ICONS.trophy, 'var(--text)', 'Defending Champion', champ ? champ.name : '—', champ && champ.country ? champ.country : null)
   ];
   if (courtData) {
-    statTiles.push(statTile(BSP_ICONS.mountain, 'var(--text-label)', 'Altitude', `${courtData.altitude}m`, 'Above sea level'));
-    if (courtData.firstServeWon != null) statTiles.push(statTile(BSP_ICONS.ball, 'var(--text)', '1st Serve Points Won', `${courtData.firstServeWon}%`, 'Tournament average'));
-    if (courtData.serviceHold != null) statTiles.push(statTile(BSP_ICONS.target, 'var(--neg)', 'Service Hold', `${courtData.serviceHold}%`, 'Tournament average'));
+    statTiles.push(statTile(STENNISFY_ICONS.mountain, 'var(--text-label)', 'Altitude', `${courtData.altitude}m`, 'Above sea level'));
+    if (courtData.firstServeWon != null) statTiles.push(statTile(STENNISFY_ICONS.ball, 'var(--text)', '1st Serve Points Won', `${courtData.firstServeWon}%`, 'Tournament average'));
+    if (courtData.serviceHold != null) statTiles.push(statTile(STENNISFY_ICONS.target, 'var(--neg)', 'Service Hold', `${courtData.serviceHold}%`, 'Tournament average'));
   }
   const statsHtml = `<div class="tprofile-stats" style="grid-template-columns:repeat(${statTiles.length},1fr);">${statTiles.join('')}</div>`;
 
@@ -24242,7 +24327,7 @@ function showTournamentProfile(key){
         <div class="terrain-slider"><span class="marker" style="left:${courtData.speed}%;"></span></div>
         <div class="terrain-endpoints"><span>Slow</span><span>Fast</span></div>
         <div class="tdesc">${speedDescription(speedCat, cat ? cat.surface : null)}</div>
-        <div class="tinsight"><span class="tinsight-ico">${BSP_ICONS.bulb}</span><span>${abstractSpeedInsight(asVal)}</span></div>
+        <div class="tinsight"><span class="tinsight-ico">${STENNISFY_ICONS.bulb}</span><span>${abstractSpeedInsight(asVal)}</span></div>
       </div>
     `;
 
@@ -24256,7 +24341,7 @@ function showTournamentProfile(key){
         <div class="tprofile-card trend-card">
           <div class="cardlabel">3-year speed trend</div>
           <div class="trend-chart">${svg}</div>
-          ${insight ? `<div class="tinsight"><span class="tinsight-ico">${BSP_ICONS.chart}</span><span>${insight}</span></div>` : ''}
+          ${insight ? `<div class="tinsight"><span class="tinsight-ico">${STENNISFY_ICONS.chart}</span><span>${insight}</span></div>` : ''}
         </div>
       `;
     }
@@ -24272,7 +24357,7 @@ function showTournamentProfile(key){
   const ctaHtml = `
     <div class="tprofile-cta">
       <div class="ctaleft">
-        <span class="ticon-circle">${BSP_ICONS.calendar}</span>
+        <span class="ticon-circle">${STENNISFY_ICONS.calendar}</span>
         <div class="txt">Ready to find today's edge?</div>
       </div>
       <button onclick="switchToMatchesTab()">Go to Matches →</button>
@@ -26587,7 +26672,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, profileRosterMap: () =
   let _ratings = null;
 
   // TEN-402 Data 6 / L-default H6 — one player's items in the News page's feed: its default unfiltered build (wire
-  // articles of the last H2H_NEWS_HOURS + BSP Intel notes + ASAP quotes), kept to the items the News page itself
+  // articles of the last H2H_NEWS_HOURS + Stennisfy Intel notes + ASAP quotes), kept to the items the News page itself
   // attributes to THIS player (newsWireItems' rule: the article's player_key / player_name when the feed carries them,
   // else newsPlayerFor — exactly one in-roster surname, leading the headline, one roster key; intel and ASAP items carry
   // their own key). So the chip always names the player the item is about: a headline that only mentions the other
@@ -30858,7 +30943,7 @@ window.DatabaseTab = (function(){
   // there, and do nothing rather than navigate somewhere broken when it is not.
   function ratOpenPlayer(name){
     try {
-      if(window.BSP && typeof window.BSP.openPlayer==='function'){ window.BSP.openPlayer(name); return; }
+      if(window.Stennisfy && typeof window.Stennisfy.openPlayer==='function'){ window.Stennisfy.openPlayer(name); return; }
       if(typeof window.openPlayerProfile==='function'){ window.openPlayerProfile(name); return; }
     } catch(e){}
   }

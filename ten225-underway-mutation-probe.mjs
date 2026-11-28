@@ -55,7 +55,7 @@ await send('Page.addScriptToEvaluateOnNewDocument', {
       requireVerified: () => Promise.resolve(U), requireAuth: () => Promise.resolve(U),
       onAuthChange: (cb) => { try { cb && cb(U); } catch {} return () => {}; },
       isValidEmail: () => true, updateProfile: () => Promise.resolve(U), NOTIF: {} };
-    Object.defineProperty(window, 'BSP', { value: STUB, writable: false, configurable: false });
+    Object.defineProperty(window, 'Stennisfy', { value: STUB, writable: false, configurable: false });
   })()`,
 });
 await send('Page.navigate', { url: URL_ + '#Matches' });

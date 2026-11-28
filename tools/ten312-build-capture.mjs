@@ -153,7 +153,7 @@ async function main() {
     function D(...a) { if (!new.target) return new RD(now()).toString(); return a.length ? new RD(...a) : new RD(now()); }
     D.prototype = RD.prototype; D.now = now; D.parse = RD.parse; D.UTC = RD.UTC;
     Object.defineProperty(D.prototype, 'constructor', { value: D }); window.Date = D;
-    var _b; Object.defineProperty(window, 'BSP', { configurable: true, get() { return _b; }, set(v) { if (v) { const u = Promise.resolve({ emailVerified: true });
+    var _b; Object.defineProperty(window, 'Stennisfy', { configurable: true, get() { return _b; }, set(v) { if (v) { const u = Promise.resolve({ emailVerified: true });
       v.requireVerified = () => u; v.requireAuth = () => u; } _b = v; } });
   })();` });
   const ev = async (expr) => { const r = await c.send('Runtime.evaluate', { expression: expr, returnByValue: true, awaitPromise: true }); if (r.exceptionDetails) throw new Error('eval threw: ' + (r.exceptionDetails.exception?.description || r.exceptionDetails.text)); return r.result?.value; };

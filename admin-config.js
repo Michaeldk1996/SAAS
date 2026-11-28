@@ -1,9 +1,9 @@
-// BSP Consult — Admin dashboard config.
+// Stennisfy — Admin dashboard config.
 //
 // TEN-8 (Firebase auth): the old client-side `password` gate was OBSCURITY only
 // (admin.html and admin-log.json are static files on GitHub Pages — anyone with
 // the URL could read them). The dashboard now gates on a REAL Firebase Auth
-// session via auth.js/BSP.*, and "founder only" is enforced by the allowlist
+// session via auth.js/Stennisfy.*, and "founder only" is enforced by the allowlist
 // below AND by the matching Firestore rule on the `admin/*` collection.
 //
 // >>> FOUNDER ACTION REQUIRED <<<
@@ -12,7 +12,7 @@
 //      ADMIN_EMAILS below (must be a VERIFIED email on the account).
 //   2. The SAME uid(s)/email(s) inside firestore.rules → `match /admin/{doc}`.
 // Find your uid in the Firebase console (Authentication → Users) or by signing
-// in and running `BSP.currentUser().uid` / `BSP.currentUser().email` in the
+// in and running `Stennisfy.currentUser().uid` / `Stennisfy.currentUser().email` in the
 // browser console. Until at least one entry is filled, NOBODY can pass the gate.
 window.ADMIN_CONFIG = {
   // Allowlisted Firebase Auth uids that may open the admin dashboard.

@@ -6,7 +6,7 @@
 <script src="./theme.js"></script>
 <link rel="stylesheet" href="./tokens.css">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BSP Consult · Verify your email</title>
+<title>Stennisfy · Verify your email</title>
 <link rel="icon" type="image/png" href="assets/ring-transparent.png">
 <script src="analytics.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -71,7 +71,7 @@
 
         <div class="steps">
           <ol>
-            <li>Open the email from BSP Consult (check spam if it's not there).</li>
+            <li>Open the email from Stennisfy (check spam if it's not there).</li>
             <li>Click <strong>Verify your email</strong>.</li>
             <li>Return here — we'll let you in automatically.</li>
           </ol>
@@ -103,13 +103,13 @@
 
     function goDashboard(){
       if (_pollTimer) clearInterval(_pollTimer);
-      location.href = 'bsp-consult-dashboard.html';
+      location.href = './';
     }
 
     // Reload the Firebase user and route on if the link has been clicked.
     function refresh(silent){
-      if (!(window.BSP && BSP.reloadUser)) return Promise.resolve(false);
-      return BSP.reloadUser().then(function(u){
+      if (!(window.Stennisfy && Stennisfy.reloadUser)) return Promise.resolve(false);
+      return Stennisfy.reloadUser().then(function(u){
         if (!u){ location.replace('auth.html?mode=signin'); return false; }
         if (u.emailVerified){ setStatus('Verified! Taking you in…', 'ok'); goDashboard(); return true; }
         if (!silent) setStatus('Not verified yet — click the link in your email, then try again.', 'err');
@@ -139,11 +139,11 @@
     }
 
     function resend(){
-      if (!(window.BSP && BSP.sendVerificationEmail)) return;
+      if (!(window.Stennisfy && Stennisfy.sendVerificationEmail)) return;
       var btn = document.getElementById('resendBtn');
       btn.disabled = true;
       setStatus('<span class="spin"></span>Sending…', 'muted');
-      BSP.sendVerificationEmail().then(function(){
+      Stennisfy.sendVerificationEmail().then(function(){
         setStatus('Sent — check your inbox (and spam).', 'ok');
         _cooldown = 30;
         if (_cooldownTimer) clearInterval(_cooldownTimer);
@@ -155,17 +155,17 @@
     }
 
     function doSignOut(){
-      if (window.BSP && BSP.signOut){ BSP.signOut().then(function(){ location.href = 'auth.html?mode=signin'; }); }
+      if (window.Stennisfy && Stennisfy.signOut){ Stennisfy.signOut().then(function(){ location.href = 'auth.html?mode=signin'; }); }
       else location.href = 'auth.html?mode=signin';
     }
 
     // Boot: must be signed in; if already verified, skip straight to the board.
     (function init(){
-      if (!(window.BSP && BSP.whenAuthReady)){
+      if (!(window.Stennisfy && Stennisfy.whenAuthReady)){
         setStatus('Auth is unavailable. Please reload.', 'err');
         return;
       }
-      BSP.whenAuthReady().then(function(u){
+      Stennisfy.whenAuthReady().then(function(u){
         if (!u){ location.replace('auth.html?mode=signin'); return; }
         document.getElementById('emailOut').textContent = u.email || 'your email';
         if (u.emailVerified){ goDashboard(); return; }

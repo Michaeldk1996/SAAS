@@ -1,6 +1,6 @@
 // Reproducible 1400px render of Today's Matches from the CURRENT worktree.
 // Zero installs: Node 24 global WebSocket + a spawned headless Chrome via CDP.
-// Injects a BSP auth stub so requireVerified resolves (display name "Alex Morgan").
+// Injects a Stennisfy auth stub so requireVerified resolves (display name "Alex Morgan").
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import http from 'node:http';
@@ -15,8 +15,8 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 const src = COMMIT === 'WORKING'
   ? fs.readFileSync(path.join(WT, 'bsp-consult-dashboard.html'), 'utf8')
   : spawnSync('git', ['-C', WT, 'show', `${COMMIT}:bsp-consult-dashboard.html`], {maxBuffer: 1<<30}).stdout.toString('utf8');
-const stub = `<script>window.BSP={ready:Promise.resolve(),_u:{uid:"preview",name:"Alex Morgan",displayName:"Alex Morgan",email:"alex.morgan@stennisfy.local",emailVerified:true},currentUser:function(){return this._u;},requireVerified:function(){return Promise.resolve(this._u);},requireAuth:function(){return Promise.resolve(this._u);},onAuthChange:function(cb){try{cb(this._u);}catch(e){}return function(){};},signOut:function(){return Promise.resolve();}};</script>`;
-// insert stub right AFTER the auth.js include so it overrides BSP
+const stub = `<script>window.Stennisfy={ready:Promise.resolve(),_u:{uid:"preview",name:"Alex Morgan",displayName:"Alex Morgan",email:"alex.morgan@stennisfy.local",emailVerified:true},currentUser:function(){return this._u;},requireVerified:function(){return Promise.resolve(this._u);},requireAuth:function(){return Promise.resolve(this._u);},onAuthChange:function(cb){try{cb(this._u);}catch(e){}return function(){};},signOut:function(){return Promise.resolve();}};</script>`;
+// insert stub right AFTER the auth.js include so it overrides Stennisfy
 const marker = '<script src="./auth.js"></script>';
 if (!src.includes(marker)) throw new Error('auth.js marker not found');
 const html = src.replace(marker, marker + '\n' + stub);

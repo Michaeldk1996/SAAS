@@ -171,9 +171,9 @@ async function drive(rawData, fn, serve, width) {
     await c.send('Fetch.enable', { patterns: [{ urlPattern: '*series.js*' }, { urlPattern: '*series.css*' }, { urlPattern: '*series.json*' }] });
     await c.send('Emulation.setDeviceMetricsOverride', { width: width || WIDTH, height: 1600, deviceScaleFactor: 1, mobile: false });
     await c.send('Page.addScriptToEvaluateOnNewDocument', {
-      source: `Object.defineProperty(window,'BSP',{configurable:true,set(v){
+      source: `Object.defineProperty(window,'Stennisfy',{configurable:true,set(v){
         try{ v.requireVerified=function(){return Promise.resolve({uid:'probe',email:'probe@x'});}; }catch(e){}
-        Object.defineProperty(window,'BSP',{value:v,writable:true,configurable:true});
+        Object.defineProperty(window,'Stennisfy',{value:v,writable:true,configurable:true});
       },get(){return undefined;}});`,
     });
     const ev = async (expr) => {

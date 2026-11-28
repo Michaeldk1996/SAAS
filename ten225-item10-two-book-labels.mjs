@@ -30,7 +30,7 @@ const AUTH_STUB = `
     onAuthChange: cb => { try { cb(user); } catch(e){} return () => {}; },
     isValidEmail: () => true, updateProfile: () => Promise.resolve(),
     NOTIF: { show(){}, hide(){} } };
-  Object.defineProperty(window, 'BSP', { value: STUB, writable:false, configurable:false });
+  Object.defineProperty(window, 'Stennisfy', { value: STUB, writable:false, configurable:false });
 })();`;
 
 async function cdp() {

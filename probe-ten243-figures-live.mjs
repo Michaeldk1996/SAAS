@@ -36,15 +36,15 @@ ws.addEventListener('message',e=>{const m=JSON.parse(e.data);
   if(m.method==='Runtime.exceptionThrown') errors.push((m.params?.exceptionDetails?.exception?.description||'').slice(0,140));});
 // The live dashboard is requireVerified-gated; without this it navigates to
 // auth.html mid-render and the board reads as "never built".
-// A SETTER, not a frozen value. auth.js:585 does `global.BSP = BSP`; defining
-// BSP as non-writable makes that assignment throw, and the probe then reports
+// A SETTER, not a frozen value. auth.js:585 does `global.Stennisfy = Stennisfy`; defining
+// Stennisfy as non-writable makes that assignment throw, and the probe then reports
 // its own TypeError as a page error. Accept the real object and neuter only the
 // two auth gates that would navigate us away.
 await send('Page.addScriptToEvaluateOnNewDocument',{source:`(function(){var v;var u={emailVerified:true,email:'p@l',uid:'p'};
-  Object.defineProperty(window,'BSP',{configurable:true,
+  Object.defineProperty(window,'Stennisfy',{configurable:true,
     get:function(){return v;},
     set:function(o){ if(o&&typeof o==='object'){ o.requireVerified=function(){return Promise.resolve(u);}; o.requireAuth=function(){return Promise.resolve(u);}; } v=o; }});
-  window.BSP={currentUser:function(){return u;},onAuthChange:function(f){f(u);return function(){};},ready:Promise.resolve(u),whenAuthReady:function(){return Promise.resolve(u);},requireAuth:function(){return Promise.resolve(u);},requireVerified:function(){return Promise.resolve(u);},isValidEmail:function(){return true;},updateProfile:function(){return Promise.resolve();},NOTIF:{}};
+  window.Stennisfy={currentUser:function(){return u;},onAuthChange:function(f){f(u);return function(){};},ready:Promise.resolve(u),whenAuthReady:function(){return Promise.resolve(u);},requireAuth:function(){return Promise.resolve(u);},requireVerified:function(){return Promise.resolve(u);},isValidEmail:function(){return true;},updateProfile:function(){return Promise.resolve();},NOTIF:{}};
 })();`});
 await send('Page.navigate',{url:URL});
 const wait=async(x,l,ms=45000)=>{const t0=Date.now();for(;;){let v;try{v=await ev(x);}catch{v=null;}

@@ -191,9 +191,9 @@ async function main() {
     await c.send('Emulation.setDeviceMetricsOverride', { width: WIDTH, height: 1400, deviceScaleFactor: 1, mobile: false });
     // Auth bypass: neuter the verified-user redirect so the gated dashboard paints.
     await c.send('Page.addScriptToEvaluateOnNewDocument', {
-      source: `Object.defineProperty(window,'BSP',{configurable:true,set(v){
+      source: `Object.defineProperty(window,'Stennisfy',{configurable:true,set(v){
         try{ v.requireVerified=function(){return Promise.resolve({uid:'probe',email:'probe@x'});}; }catch(e){}
-        Object.defineProperty(window,'BSP',{value:v,writable:true,configurable:true});
+        Object.defineProperty(window,'Stennisfy',{value:v,writable:true,configurable:true});
       },get(){return undefined;}});`,
     });
 

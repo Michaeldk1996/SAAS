@@ -385,8 +385,19 @@
     '@media (max-width:1100px){.pp2-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;}}' +
     '@media (max-width:720px){.pp2-grid{grid-template-columns:minmax(0,1fr)!important;}}' +
     // TEN-384: clickable tile hover = --tile-hover + --edge-16; ribbon chip hover = --edge-24.
-    // v4 reference: a tile's hover lifts its ring to 16% only (style-hover border-color), no background change
-    '.pp2-box:hover{border-color:var(--edge-16)!important;}' +
+    // Founder ruling 2026-11-28: the landing boxes (form ribbon, record tiles, insight cards) carry the cards' blue glass
+    // rim in place of the 6% ring (replaces "no top-light inset", 2026-11-13). The inline ring stays in the markup and is
+    // made transparent here, the same way this sheet already overrides inline styles.
+    '.pp2-ribbon,.pp2-box,[data-insight]{border-color:transparent!important;box-shadow:var(--top-light);}' +
+    // Founder ruling 2026-11-28 ("B: balanced"): on the profile's main page the grey of labels and sub-lines is the app's
+    // label grey, brighter than the profile palette's (contrast on a box 6.4 -> 8.2). Main page only: the panels that
+    // open from a tile keep the palette's grey.
+    '.pp2-main{--text-label:var(--pp-x-text-label-page);}' +
+    // Founder ruling 2026-11-28 ("lift"): a record tile answers the mouse so a member sees it opens: it rises 2px with a
+    // shadow under it and a brighter line (replaces the ring-only hover of the v4 reference). No movement on reduced motion.
+    '.pp2-box{transition:box-shadow .15s ease,transform .15s ease;}' +
+    '.pp2-box:hover{transform:translateY(-2px);box-shadow:inset 0 0 0 1px var(--edge-16),var(--top-light),var(--shadow-lift);}' +
+    '@media (prefers-reduced-motion:reduce){.pp2-box{transition:none;}.pp2-box:hover{transform:none;}}' +
     // founder 2026-11-26: every clickable box shows a hover outline — the Recent form W/L squares and the ledger rows
     // had none. One 1px inset ring, 70% ink on the tinted squares so it reads on green / red.
     '.pp2-strip-cell[data-pp2]:hover{box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--text) 70%, transparent);}' +
@@ -1219,7 +1230,8 @@
           // name that is not the subject.
           '<div style="font-size:12px;font-weight:700;">' +
             esc(m.opponent ? surnameFirst(m.opponent) : DASH) + '</div>' +
-          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;color:var(--text-label);">' +
+          // founder 2026-11-28 ("B: balanced"): the chip's event + score line is 11.5px (was 10px, the hardest text on the page)
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--text-label);">' +
             esc(eventName(m, ctx.p) + ' ' + roundLabel(m)) + ' ' + MIDDOT + ' ' +
             // Correction-pass item 4b: the export's chip meta is the SET SCORES
             // (space-joined — Player Profile.dc.html:1838 replaces its own ", "),

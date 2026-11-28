@@ -61,7 +61,7 @@ function run(I) {
   // the store path
   const St = load(STORE), store = St.create({ local: storage(), session: storage(), now: () => new Date(Date.UTC(2026, 9, 28)) });
   const w = I.run(CSV, store, {});
-  eq('run: one bankroll named BSP Consult Bet-Analytix holding 10 bets', [w.ok, w.stored, store.listBanks().find(b => b.id === 'bet-analytix').name, store.listBets('bet-analytix').length], [true, 10, 'BSP Consult Bet-Analytix', 10]);
+  eq('run: one bankroll named Bet-Analytix holding 10 bets', [w.ok, w.stored, store.listBanks().find(b => b.id === 'bet-analytix').name, store.listBets('bet-analytix').length], [true, 10, 'Bet-Analytix', 10]);
   eq('run twice is refused, nothing doubled', [I.run(CSV, store, {}).reason, store.listBets('bet-analytix').length], ['already-imported', 10]);
   eq('removeImport then redo', [store.removeImport('bet-analytix', 'bet-analytix').removed, I.run(CSV, store, {}).stored], [10, 10]);
   eq('a file without the columns is refused', I.parse('"a";"b"\n"1";"2"', {}).report.ok, false);

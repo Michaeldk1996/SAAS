@@ -38,9 +38,9 @@ await send('Page.enable'); await send('Runtime.enable'); await send('Network.ena
 // which is exactly how a "still broken" false alarm gets written up.
 await send('Network.setCacheDisabled', { cacheDisabled: true });
 await send('Emulation.setDeviceMetricsOverride', { width: W, height: H, deviceScaleFactor: DPR, mobile: false });
-// Memory: CDP deployed-page auth bypass — neuter BSP.requireVerified via init script.
+// Memory: CDP deployed-page auth bypass — neuter Stennisfy.requireVerified via init script.
 await send('Page.addScriptToEvaluateOnNewDocument', { source:
-  `(function(){var _b;Object.defineProperty(window,'BSP',{configurable:true,get(){return _b;},set(v){if(v){v.requireVerified=()=>true;v.requireAuth=()=>true;}_b=v;}});window.__e=[];window.addEventListener('error',e=>window.__e.push(String(e.message)));})();` });
+  `(function(){var _b;Object.defineProperty(window,'Stennisfy',{configurable:true,get(){return _b;},set(v){if(v){v.requireVerified=()=>true;v.requireAuth=()=>true;}_b=v;}});window.__e=[];window.addEventListener('error',e=>window.__e.push(String(e.message)));})();` });
 await send('Page.navigate', { url: URL_ });
 // The host bridges the file in one of two shapes across builds; resolve it rather
 // than assume, so a shape change reads as "not loaded yet" instead of a crash.

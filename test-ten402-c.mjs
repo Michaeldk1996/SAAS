@@ -94,7 +94,7 @@ test('surfaces: every section is the design card (--h2h-card #0E1019, 1px 6% whi
   assert.ok(h.call(h.stylesCard, styleView([], [])).startsWith(`<div id="h2h-styles" class="x-sec" style="${SEC}`), 'Record against each style');
   assert.ok(h.call(h.tourneyCard, { tourney: { empty: true, emptyText: 'x' } }).startsWith(`<div id="h2h-tour" class="x-sec" style="${SEC}`), 'Tournament record');
   const tok = readFileSync(join(HERE, 'tokens.css'), 'utf8');
-  for (const [k, v] of [['--h2h-card', '#0E1019'], ['--h2h-inner', '#0C0E16'], ['--h2h-raised', '#121521'], ['--h2h-hover', '#171B28'], ['--h2h-track', '#0A0C13'], ['--h2h-blue', '#5B9BFF'], ['--h2h-text', '#E7E9EE'], ['--h2h-grey', '#8B96B5'], ['--h2h-soft', '#C6CCDB']])
+  for (const [k, v] of [['--h2h-card', '#0E1019'], ['--h2h-inner', '#0C0E16'], ['--h2h-raised', '#121521'], ['--h2h-hover', '#171B28'], ['--h2h-track', '#0A0C13'], ['--h2h-blue', '#5B9BFF'], ['--h2h-text', '#E7E9EE'], ['--h2h-grey', '#A3AABE'], ['--h2h-soft', '#DDE0EA']])
     assert.match(tok, new RegExp(`${k}:\\s*${v};`, 'i'), k);
 });
 

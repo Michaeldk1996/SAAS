@@ -90,10 +90,16 @@ suite(SRC, 'shipped module');
 console.log('source rules');
 check('§0.6: the profile prints no "Data paused" / feed status (code, comments aside)', () =>
   !/splitsPaused|sfFeedPaused|Data paused/.test(SRC.replace(/\/\/[^\n]*/g, '')) || 'paused text present');
-check('page: tiles on a 6% ring, ring-only hover, headline line-height 1.1', () =>
-  /var TILE_EDGE = 'var\(--edge-6\)'/.test(SRC) && /'\.pp2-box:hover\{border-color:var\(--edge-16\)!important;\}'/.test(SRC) &&
+// founder 2026-11-28: the tile hover is the "lift" (2px up, a shadow under it, a 16% line), not the ring-only hover
+check('page: tiles on a 6% ring in the markup, lift hover (no movement on reduced motion), headline line-height 1.1', () =>
+  /var TILE_EDGE = 'var\(--edge-6\)'/.test(SRC) &&
+  /'\.pp2-box:hover\{transform:translateY\(-2px\);box-shadow:inset 0 0 0 1px var\(--edge-16\),var\(--top-light\),var\(--shadow-lift\);\}'/.test(SRC) &&
+  /'@media \(prefers-reduced-motion:reduce\)\{\.pp2-box\{transition:none;\}\.pp2-box:hover\{transform:none;\}\}'/.test(SRC) &&
   /';line-height:1\.1;white-space:nowrap;'/.test(SRC) || 'tile chrome');
-check('page: ribbon, ledger and insight cards carry no top-light inset', () => {
+// founder 2026-11-28: the landing boxes carry the cards' blue glass rim, set once in the profile's sheet
+check('page: ribbon, tiles and insight cards carry the glass rim from the sheet', () =>
+  /'\.pp2-ribbon,\.pp2-box,\[data-insight\]\{border-color:transparent!important;box-shadow:var\(--top-light\);\}'/.test(SRC) || 'glass rim rule');
+check('page: the ribbon, ledger and insight markup itself carries no top-light inset (the rim comes from the sheet)', () => {
   const grab = re => (re.exec(SRC) || [''])[0];
   const parts = [grab(/class="pp2-ribbon" style="[^\n]*/), grab(/class="pp2-ledger" style="[^\n]*\n[^\n]*/), grab(/data-insight="[\s\S]{0,400}/)].map(x => x.replace(/\/\/[^\n]*/g, ''));
   return parts.every(x => x && !/top-light/.test(x)) || 'top-light still on ' + parts.map(x => /top-light/.test(x)).join(',');

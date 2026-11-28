@@ -277,7 +277,7 @@ const B_FEED = (ruledOff) => `(() => { const S = _maMsSheet; if (!S) throw new E
   return { match, scopes, pbp }; })()`;
 
 async function buildSide(dir, overlay, demo) {
-  const x = await browser([overlay, ROOT], 'bsp-consult-dashboard.html', `var _b; Object.defineProperty(window, 'BSP', { configurable: true, get() { return _b; }, set(v) { if (v) { const u = Promise.resolve({ emailVerified: true }); v.requireVerified = () => u; v.requireAuth = () => u; } _b = v; } });`);
+  const x = await browser([overlay, ROOT], 'bsp-consult-dashboard.html', `var _b; Object.defineProperty(window, 'Stennisfy', { configurable: true, get() { return _b; }, set(v) { if (v) { const u = Promise.resolve({ emailVerified: true }); v.requireVerified = () => u; v.requireAuth = () => u; } _b = v; } });`);
   const t0 = Date.now();
   while (!(await x.ev(`typeof matches === 'object' && Array.isArray(matches) && typeof openAnalysisModal === 'function' && typeof aShowTab === 'function'`).catch(() => false))) { if (Date.now() - t0 > 90000) throw new Error('dashboard did not boot'); await sleep(300); }
   await x.ev(`document.fonts.ready.then(() => true)`);

@@ -106,7 +106,7 @@ ok('subject has an idle season, so the two bases are distinguishable on him',
 const src = fs.readFileSync(path.join(WT, 'bsp-consult-dashboard.html'), 'utf8');
 const marker = '<script src="./auth.js"></script>';
 if (!src.includes(marker)) throw new Error('auth.js marker not found');
-const stub = `<script>window.BSP={ready:Promise.resolve(),_u:{uid:"p",name:"P",email:"p@x",emailVerified:true},currentUser:function(){return this._u;},requireVerified:function(){return Promise.resolve(this._u);},requireAuth:function(){return Promise.resolve(this._u);},onAuthChange:function(cb){try{cb(this._u);}catch(e){}return function(){};},signOut:function(){return Promise.resolve();}};</script>`;
+const stub = `<script>window.Stennisfy={ready:Promise.resolve(),_u:{uid:"p",name:"P",email:"p@x",emailVerified:true},currentUser:function(){return this._u;},requireVerified:function(){return Promise.resolve(this._u);},requireAuth:function(){return Promise.resolve(this._u);},onAuthChange:function(cb){try{cb(this._u);}catch(e){}return function(){};},signOut:function(){return Promise.resolve();}};</script>`;
 const preview = '_probe-r4.html';
 fs.writeFileSync(path.join(WT, preview), src.replace(marker, marker + '\n' + stub));
 

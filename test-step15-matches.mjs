@@ -218,7 +218,7 @@ test('Bets today (BETS_TODAY_TILE.md, LOCK 2026-10-30): row = selection · marke
   // teasers (no selection, no price), so each blurred row is drawn over a placeholder — never the real pick.
   const PC = createRequire(import.meta.url)('./picks-core.js');   // the real picks-core: the tile reads the Picks page's own words
   const B = (picks, plan, admin, src = slice('mxBetsTileHtml')) => new Function('picks', 'plan', 'admin', 'PicksCore', `
-    const window = { sfPlan: plan }; let _mxPicks = picks; const isBspAdmin = () => !!admin;
+    const window = { sfPlan: plan }; let _mxPicks = picks; const isStennisfyAdmin = () => !!admin;
     ${slice('psEsc')} ${slice('mxOddsTxt')} ${slice('mxIsPro')} ${slice('mxBetMarket')} ${src} return mxBetsTileHtml();`)(picks, plan, admin, PC);
   const mw = (a, b, sel, px, extra) => Object.assign({ kind: 'match', market: 'Match winner', tournament: 'Swiss Indoors', round: 'QF', selection: sel, player_a: { name: a }, player_b: { name: b }, posted_price: px, status: 'posted' }, extra || {});
   const fritz = mw('T. Fritz', 'A. Fils', 'a', 1.95), struff = mw('J-L. Struff', 'N. Borges', 'a', 1.77),
@@ -257,7 +257,7 @@ test('Bets today (BETS_TODAY_TILE.md, LOCK 2026-10-30): row = selection · marke
   assert.doesNotMatch(free, /Fritz|Struff|1\.95|1\.77/, 'a non-Pro tile never holds the real selection or price');
   // the admin bypasses Pro gating (founder 2026-10-28)
   const adm = B([fritz], 'free', true); assert.doesNotMatch(adm, /is-blur/); assert.match(adm, /Open picks →/);
-  const mxIsPro = new Function('window', 'isBspAdmin', `${slice('mxIsPro')} return mxIsPro();`);
+  const mxIsPro = new Function('window', 'isStennisfyAdmin', `${slice('mxIsPro')} return mxIsPro();`);
   assert.equal(mxIsPro({ sfPlan: 'free' }, () => true), true); assert.equal(mxIsPro({ sfPlan: 'free' }, () => false), false); assert.equal(mxIsPro({ sfPlan: 'pro' }, () => false), true);
   // CHANGES_2026-11-11 A6: zero posted is a real 0 on one line; loading / a failed read stays a dash
   assert.match(B([], null), /mc-story__now">0<\/span><span class="mc-story__name">bets today<\/span><\/div><\/div><\/div>$/);

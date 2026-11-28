@@ -1,5 +1,5 @@
 /*
- * BSP Consult — GA4 behaviour analytics (TEN-8, item 8).
+ * Stennisfy — GA4 behaviour analytics (TEN-8, item 8).
  *
  * Loads the GA4 gtag.js tag once per page, auto-sends a page_view, and exposes
  * a tiny global `teTrack(name, params)` — the GA4 logEvent() equivalent — that

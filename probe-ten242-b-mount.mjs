@@ -26,7 +26,7 @@ const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 
 // ---- auth stub: the page redirects to signin without a Firebase session -----
 const STUB = `(function(g){var u={emailVerified:true,email:'probe@local',uid:'probe'};
- g.BSP={currentUser:function(){return u;},onAuthChange:function(f){f(u);return function(){};},
+ g.Stennisfy={currentUser:function(){return u;},onAuthChange:function(f){f(u);return function(){};},
  ready:Promise.resolve(u),whenAuthReady:function(){return Promise.resolve(u);},
  requireAuth:function(){return Promise.resolve(u);},requireVerified:function(){return Promise.resolve(u);},
  isValidEmail:function(){return true;},updateProfile:function(){return Promise.resolve();},NOTIF:{}};})(window);`;
@@ -76,7 +76,7 @@ const evalJs = async (expr) => {
 
 await send('Page.enable'); await send('Runtime.enable');
 await send('Page.addScriptToEvaluateOnNewDocument', {
-  source: `Object.defineProperty(window,'BSP',{value:(function(){var u={emailVerified:true,email:'probe@local',uid:'probe'};
+  source: `Object.defineProperty(window,'Stennisfy',{value:(function(){var u={emailVerified:true,email:'probe@local',uid:'probe'};
     return {currentUser:function(){return u;},onAuthChange:function(f){f(u);return function(){};},ready:Promise.resolve(u),
     whenAuthReady:function(){return Promise.resolve(u);},requireAuth:function(){return Promise.resolve(u);},
     requireVerified:function(){return Promise.resolve(u);},isValidEmail:function(){return true;},

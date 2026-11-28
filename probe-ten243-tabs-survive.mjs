@@ -4,7 +4,7 @@
 import { spawn } from 'node:child_process';
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
 const WT = process.argv[2]; const PORT = 8931 + (process.pid % 300);
-const STUB = `(function(g){var u={emailVerified:true,email:'p@l',uid:'p'};g.BSP={currentUser:()=>u,onAuthChange:f=>{f(u);return()=>{}},ready:Promise.resolve(u),whenAuthReady:()=>Promise.resolve(u),requireAuth:()=>Promise.resolve(u),requireVerified:()=>Promise.resolve(u),isValidEmail:()=>true,updateProfile:()=>Promise.resolve(),NOTIF:{}};})(window);`;
+const STUB = `(function(g){var u={emailVerified:true,email:'p@l',uid:'p'};g.Stennisfy={currentUser:()=>u,onAuthChange:f=>{f(u);return()=>{}},ready:Promise.resolve(u),whenAuthReady:()=>Promise.resolve(u),requireAuth:()=>Promise.resolve(u),requireVerified:()=>Promise.resolve(u),isValidEmail:()=>true,updateProfile:()=>Promise.resolve(),NOTIF:{}};})(window);`;
 const srv = http.createServer((q,s)=>{const u=decodeURIComponent(q.url.split('?')[0]);
  if(u==='/auth.js'){s.writeHead(200,{'content-type':'text/javascript'});return s.end(STUB);}
  const f=path.join(WT,u.replace(/^\/+/,''));
@@ -25,7 +25,7 @@ const ev=async x=>{const r=await send('Runtime.evaluate',{expression:x,awaitProm
  if(r.result?.exceptionDetails) throw new Error(r.result.exceptionDetails.exception?.description||'threw');
  return r.result?.result?.value;};
 await send('Page.enable'); await send('Runtime.enable');
-await send('Page.addScriptToEvaluateOnNewDocument',{source:`Object.defineProperty(window,'BSP',{value:(function(){var u={emailVerified:true};return {currentUser:()=>u,onAuthChange:f=>{f(u);return()=>{}},ready:Promise.resolve(u),whenAuthReady:()=>Promise.resolve(u),requireAuth:()=>Promise.resolve(u),requireVerified:()=>Promise.resolve(u),isValidEmail:()=>true,updateProfile:()=>Promise.resolve(),NOTIF:{}};})(),writable:false,configurable:false});`});
+await send('Page.addScriptToEvaluateOnNewDocument',{source:`Object.defineProperty(window,'Stennisfy',{value:(function(){var u={emailVerified:true};return {currentUser:()=>u,onAuthChange:f=>{f(u);return()=>{}},ready:Promise.resolve(u),whenAuthReady:()=>Promise.resolve(u),requireAuth:()=>Promise.resolve(u),requireVerified:()=>Promise.resolve(u),isValidEmail:()=>true,updateProfile:()=>Promise.resolve(),NOTIF:{}};})(),writable:false,configurable:false});`});
 await send('Page.navigate',{url:`http://127.0.0.1:${PORT}/bsp-consult-dashboard.html`});
 const wait=async(x,l,ms=30000)=>{const t0=Date.now();for(;;){let v;try{v=await ev(x);}catch{v=null;} if(v)return v;
  if(Date.now()-t0>ms) throw new Error('timeout: '+l); await new Promise(r=>setTimeout(r,250));}};

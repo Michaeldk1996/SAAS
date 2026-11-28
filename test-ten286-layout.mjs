@@ -260,12 +260,12 @@ test('C · all 13 nav glyphs are the design paths, element for element', () => {
 // (a scoped §6 variant such as the H2H white bars is allowed); no retired 12a token is defined or read; and tokens.css
 // (Night) carries the foundation values.
 const TOKENS_CSS = read('tokens.css');
-const FOUNDATION = { page: '#090B12', card: '#10131D', inner: '#171B28', selected: '#1B2031', 'tile-hover': '#141824',
-  text: '#E7E9EE', 'text-soft': '#DDE0EA', 'text-label': '#A3AABE', bar: '#007AFF', 'bar-2': 'rgba(0,122,255,0.45)', link: '#6A9AF8',
-  pro: '#2F52D6', 'pro-text': '#F2F3F7', pos: '#5CCB84', neg: '#E06266', 'serve-ball': '#EAF928',
+const FOUNDATION = { page: '#05060A', card: '#0E1119', inner: '#141823', selected: '#191E2D', 'tile-hover': '#11141D',
+  text: '#E7E9EE', 'text-soft': '#DDE0EA', 'text-label': '#A3AABE', bar: '#007AFF', 'bar-2': 'rgba(0,122,255,0.45)', link: '#5B9BFF',
+  pro: '#2F52D6', 'pro-text': '#F2F3F7', pos: '#3DD68C', neg: '#E0616F', 'serve-ball': '#EAF928',
   'edge-6': 'rgba(255,255,255,0.06)', 'edge-7': 'rgba(255,255,255,0.07)', 'edge-10': 'rgba(255,255,255,0.10)', 'edge-16': 'rgba(255,255,255,0.16)',
   'edge-24': 'rgba(255,255,255,0.24)', line: 'rgba(255,255,255,0.05)', track: 'rgba(255,255,255,0.06)', 'open-card': 'rgba(106,154,248,0.30)',
-  'top-light': 'inset 0 1px 0 rgba(143,170,255,0.05)', 'font-words': "'Hanken Grotesk',sans-serif", 'font-nums': "'IBM Plex Mono',monospace" };
+  'top-light': 'inset 0 1px 0 rgba(143,170,255,0.14),inset 0 -1px 0 rgba(0,0,0,0.5),inset 0 0 0 1px rgba(143,170,255,0.04)', 'font-words': "'Hanken Grotesk',sans-serif", 'font-nums': "'IBM Plex Mono',monospace" };
 // the 12a token names the foundation retired (the old block's names that tokens.css does not define)
 const RETIRED = ['nav-panel', 'surface', 'surface-inner', 'popup', 'line-soft', 'line-panel', 'line-open', 'line-avatar', 'text-sub', 'label',
   'nav-idle', 'nav-icon-idle', 'blue-ring', 'periwinkle', 'navy', 'royal', 'lime', 'bar-track', 'bar-dog', 'seg-active', 'seg-active-line',
@@ -304,7 +304,7 @@ test('tokens: one colour file (tokens.css) loaded first on both pages, no page r
   assert.deepEqual(tokenProblems(DASH, ACCT), []);
   const mut = {
     drift: [DASH, ACCT.replace('</style>', '  :root{ --text-label:#A3AABF; }\n</style>')],
-    staleCard: [DASH, ACCT, TOKENS_CSS.replace('--card:        #10131D;', '--card:        #0E1019;')],
+    staleCard: [DASH, ACCT, TOKENS_CSS.replace('--card:        #0E1119;', '--card:        #0E1019;')],
     proLost: [DASH, ACCT, TOKENS_CSS.replace(/\n\s*--pro:[^\n]*/, '')],
     notLoaded: [DASH, ACCT.replace('<link rel="stylesheet" href="./tokens.css">', '')],
     loadedLate: [DASH.replace('<link rel="stylesheet" href="./tokens.css">', '').replace('</head>', '<link rel="stylesheet" href="./tokens.css">\n</head>'), ACCT],

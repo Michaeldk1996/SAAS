@@ -70,7 +70,7 @@ async function rosterFor(mutate) {
 
 const AUTH_TAIL = `
 ;(function(){ var U = { uid: 'probe', email: 'probe@example.test', name: 'Probe User', plan: 'pro', emailVerified: true, favouriteMatches: [] };
-  var B = window.BSP; if (!B) return;
+  var B = window.Stennisfy; if (!B) return;
   B.ready = function(){ return Promise.resolve(); };
   B.whenAuthReady = function(){ return Promise.resolve(U); };
   B.requireAuth = function(){ return Promise.resolve(U); };

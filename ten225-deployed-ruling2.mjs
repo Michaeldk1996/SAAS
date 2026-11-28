@@ -84,10 +84,10 @@ try {
 
   await c.send('Page.addScriptToEvaluateOnNewDocument', {
     source: `
-      Object.defineProperty(window, 'BSP', {
+      Object.defineProperty(window, 'Stennisfy', {
         configurable: true,
-        get(){ return window.__bsp; },
-        set(v){ window.__bsp = v; try { v.requireVerified = async () => ({ ok: true, user: { email: 'probe@local' } }); } catch(e){} },
+        get(){ return window.__stennisfy; },
+        set(v){ window.__stennisfy = v; try { v.requireVerified = async () => ({ ok: true, user: { email: 'probe@local' } }); } catch(e){} },
       });
     `,
   });

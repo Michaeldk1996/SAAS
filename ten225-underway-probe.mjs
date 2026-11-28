@@ -50,7 +50,7 @@ const evalJs = async (expr) => {
 
 await send('Page.enable'); await send('Runtime.enable');
 // Neutralize ONLY the Firebase auth gate, before any page script runs. auth.js is
-// non-strict and assigns `global.BSP = {...}`; a non-writable defineProperty makes
+// non-strict and assigns `global.Stennisfy = {...}`; a non-writable defineProperty makes
 // that assignment a silent no-op, so requireVerified resolves instead of redirecting.
 await send('Page.addScriptToEvaluateOnNewDocument', {
   source: `(() => {
@@ -61,7 +61,7 @@ await send('Page.addScriptToEvaluateOnNewDocument', {
       onAuthChange: (cb) => { try { cb && cb(U); } catch {} return () => {}; },
       isValidEmail: () => true, updateProfile: () => Promise.resolve(U), NOTIF: {},
     };
-    Object.defineProperty(window, 'BSP', { value: STUB, writable: false, configurable: false });
+    Object.defineProperty(window, 'Stennisfy', { value: STUB, writable: false, configurable: false });
   })()`,
 });
 await send('Page.navigate', { url: URL_ + '#Matches' });
