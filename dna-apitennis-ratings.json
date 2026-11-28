@@ -26,7 +26,7 @@
   "eloResolved": 277,
   "underPressureSource": {
    "file": "surface-ratings.json",
-   "generatedAt": "2026-11-27T15:52:20.372Z",
+   "generatedAt": "2026-11-28T03:04:25.277Z",
    "players": 284,
    "joined": 255,
    "rated": 309,
@@ -489,7 +489,6 @@
        169.8,
        170,
        171,
-       171,
        171.2,
        171.5,
        171.8,
@@ -497,6 +496,7 @@
        172.7,
        172.8,
        173,
+       174.1,
        174.2,
        174.3,
        174.6,
@@ -2028,7 +2028,7 @@
        213.8,
        214.3,
        214.9,
-       215.5,
+       216.6,
        218.3,
        218.9,
        219.3,
@@ -2036,14 +2036,14 @@
        221,
        221,
        221.5,
+       221.5,
        222.6,
        222.9,
        223.3,
-       223.7,
        223.8,
+       224.5,
        224.7,
        225.1,
-       225.3,
        225.6,
        225.7,
        227.9,
@@ -2053,7 +2053,7 @@
        228.7,
        230.7,
        231.4,
-       233.2,
+       234.4,
        237.9,
        238.9,
        241.2,
@@ -2859,9 +2859,9 @@
        164.9,
        167.3,
        167.6,
-       167.9,
        169.1,
        169.8,
+       170.1,
        170.6,
        171.4,
        171.6,
@@ -5255,10 +5255,10 @@
        160,
        160.4,
        162.3,
-       162.7,
        163.2,
        163.4,
        163.5,
+       164.3,
        167.4,
        167.8,
        168.4,
@@ -5447,7 +5447,7 @@
        210.1,
        210.4,
        210.5,
-       210.5,
+       211,
        211.1,
        211.6,
        211.7,
@@ -5470,11 +5470,11 @@
        215.6,
        216.1,
        216.6,
-       216.9,
+       216.8,
        217.1,
+       217.3,
        217.7,
        217.7,
-       218.1,
        218.1,
        218.5,
        219.1,
@@ -8449,7 +8449,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "career",
-       "pct": 91.4
+       "pct": 91.8
       },
       "underPressureAtp": {
        "bpConvPct": 43.5,
@@ -10371,15 +10371,15 @@
       },
       "underPressure": {
        "bpSavedPct": 61.4,
-       "bpConvPct": 37.7,
+       "bpConvPct": 37.9,
        "tbWinPct": 54.3,
-       "decWinPct": 70.4,
-       "rating": 223.7,
+       "decWinPct": 67.9,
+       "rating": 221.5,
        "estimated": false,
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 89.1
+       "pct": 87.6
       },
       "underPressureAtp": {
        "bpConvPct": 37.9,
@@ -10429,15 +10429,15 @@
       },
       "underPressure": {
        "bpSavedPct": 62.3,
-       "bpConvPct": 38.6,
+       "bpConvPct": 38.7,
        "tbWinPct": 51.8,
-       "decWinPct": 65.4,
-       "rating": 218.1,
+       "decWinPct": 64.6,
+       "rating": 217.3,
        "estimated": false,
        "components": 4,
        "inclChallenger": false,
        "srScope": "career",
-       "pct": 92.2
+       "pct": 91.2
       },
       "underPressureAtp": {
        "bpConvPct": 38,
@@ -13878,11 +13878,11 @@
        "pct": 77
       },
       "underPressure": {
-       "bpSavedPct": 64.9,
-       "bpConvPct": 39,
+       "bpSavedPct": 65.8,
+       "bpConvPct": 39.3,
        "tbWinPct": 57.9,
        "decWinPct": 71.4,
-       "rating": 233.2,
+       "rating": 234.4,
        "estimated": false,
        "components": 4,
        "inclChallenger": false,
@@ -13936,16 +13936,16 @@
        "pct": 81.4
       },
       "underPressure": {
-       "bpSavedPct": 59.4,
-       "bpConvPct": 39.9,
+       "bpSavedPct": 59.6,
+       "bpConvPct": 40,
        "tbWinPct": 55.6,
        "decWinPct": 61.6,
-       "rating": 216.6,
+       "rating": 216.8,
        "estimated": false,
        "components": 4,
        "inclChallenger": false,
        "srScope": "career",
-       "pct": 90
+       "pct": 90.4
       },
       "underPressureAtp": {
        "bpConvPct": 38.4,
@@ -14896,7 +14896,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 88.7
+       "pct": 89.1
       },
       "underPressureAtp": {
        "bpConvPct": 41,
@@ -15032,7 +15032,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 26.9
+       "pct": 26.3
       },
       "underPressureAtp": {
        "bpConvPct": 32.1,
@@ -16537,8 +16537,8 @@
        "pct": 74
       },
       "underPressure": {
-       "bpSavedPct": 61.5,
-       "bpConvPct": 40.4,
+       "bpSavedPct": 61.6,
+       "bpConvPct": 40.3,
        "tbWinPct": 60,
        "decWinPct": 65,
        "rating": 226.9,
@@ -16906,16 +16906,16 @@
        "pct": 45.8
       },
       "underPressure": {
-       "bpSavedPct": 60.1,
-       "bpConvPct": 36.4,
+       "bpSavedPct": 59.9,
+       "bpConvPct": 35.8,
        "tbWinPct": 63.3,
        "decWinPct": 65.5,
-       "rating": 225.3,
+       "rating": 224.5,
        "estimated": false,
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 90.9
+       "pct": 90
       },
       "underPressureAtp": {
        "bpConvPct": 35.8,
@@ -16964,16 +16964,16 @@
        "pct": 58.6
       },
       "underPressure": {
-       "bpSavedPct": 62.7,
-       "bpConvPct": 37.9,
+       "bpSavedPct": 62.6,
+       "bpConvPct": 37.7,
        "tbWinPct": 59,
        "decWinPct": 57.4,
-       "rating": 216.9,
+       "rating": 216.6,
        "estimated": false,
        "components": 4,
        "inclChallenger": false,
        "srScope": "career",
-       "pct": 90.4
+       "pct": 90
       },
       "underPressureAtp": {
        "bpConvPct": 38.8,
@@ -18486,7 +18486,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "career",
-       "pct": 91.4
+       "pct": 91.8
       },
       "underPressureAtp": {
        "bpConvPct": 37.9,
@@ -19429,11 +19429,11 @@
        "pct": 47
       },
       "underPressure": {
-       "bpSavedPct": 67.6,
-       "bpConvPct": 38,
+       "bpSavedPct": 67.2,
+       "bpConvPct": 37.9,
        "tbWinPct": 50,
-       "decWinPct": 60,
-       "rating": 215.5,
+       "decWinPct": 61.5,
+       "rating": 216.6,
        "estimated": false,
        "components": 4,
        "inclChallenger": false,
@@ -19490,13 +19490,13 @@
        "bpSavedPct": 64,
        "bpConvPct": 38.2,
        "tbWinPct": 54.2,
-       "decWinPct": 54.1,
-       "rating": 210.5,
+       "decWinPct": 54.7,
+       "rating": 211,
        "estimated": false,
        "components": 4,
        "inclChallenger": false,
        "srScope": "career",
-       "pct": 81.2
+       "pct": 81.4
       },
       "underPressureAtp": {
        "bpConvPct": 38.6,
@@ -20078,7 +20078,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 28.7
+       "pct": 28.1
       },
       "underPressureAtp": {
        "bpConvPct": 38.5,
@@ -32047,7 +32047,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 90
+       "pct": 90.4
       },
       "underPressureAtp": {
        "bpConvPct": 42.1,
@@ -41168,7 +41168,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 27.5
+       "pct": 26.9
       },
       "underPressureAtp": {
        "bpConvPct": 21.2,
@@ -41671,7 +41671,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 28.1
+       "pct": 27.5
       },
       "underPressureAtp": {
        "bpConvPct": 36.6,
@@ -43182,7 +43182,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 25.7
+       "pct": 25.1
       },
       "underPressureAtp": {
        "bpConvPct": 40.2,
@@ -49128,7 +49128,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "career",
-       "pct": 81.2
+       "pct": 81
       },
       "underPressureAtp": {
        "bpConvPct": 36,
@@ -50248,7 +50248,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "career",
-       "pct": 11.5
+       "pct": 11
       },
       "underPressureAtp": {
        "bpConvPct": 39.1,
@@ -50753,7 +50753,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "career",
-       "pct": 11
+       "pct": 10.6
       },
       "underPressureAtp": {
        "bpConvPct": 42.5,
@@ -54107,7 +54107,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "career",
-       "pct": 6.9
+       "pct": 6.5
       },
       "underPressureAtp": {
        "bpConvPct": 37,
@@ -55189,7 +55189,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 29.6
+       "pct": 29
       },
       "underPressureAtp": {
        "bpConvPct": 29.3,
@@ -56198,7 +56198,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 26.3
+       "pct": 25.7
       },
       "underPressureAtp": {
        "bpConvPct": 43.9,
@@ -57015,7 +57015,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 90.4
+       "pct": 90.9
       },
       "underPressureAtp": {
        "bpConvPct": 33.5,
@@ -64475,7 +64475,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 87.3
+       "pct": 87.6
       },
       "underPressureAtp": {
        "bpConvPct": 45.4,
@@ -68921,7 +68921,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 88.2
+       "pct": 88.7
       },
       "underPressureAtp": {
        "bpConvPct": 38.8,
@@ -79476,7 +79476,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 27.5
+       "pct": 26.9
       },
       "underPressureAtp": {
        "bpConvPct": 43.7,
@@ -87257,7 +87257,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "career",
-       "pct": 7.3
+       "pct": 6.9
       },
       "underPressureAtp": {
        "bpConvPct": 37.9,
@@ -91817,7 +91817,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 27.5
+       "pct": 26.9
       },
       "underPressureAtp": {
        "bpConvPct": 36.2,
@@ -102524,7 +102524,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 87.8
+       "pct": 88.2
       },
       "underPressureAtp": {
        "bpConvPct": 44.5,
@@ -107492,7 +107492,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "career",
-       "pct": 92.2
+       "pct": 92.4
       },
       "underPressureAtp": {
        "bpConvPct": 37.6,
@@ -107936,7 +107936,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 87.6
+       "pct": 88
       },
       "underPressureAtp": {
        "bpConvPct": 47.1,
@@ -108072,7 +108072,7 @@
        "components": 4,
        "inclChallenger": false,
        "srScope": "last52",
-       "pct": 24.9
+       "pct": 24.6
       },
       "underPressureAtp": {
        "bpConvPct": 44.8,
@@ -109054,7 +109054,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 29.3
+       "pct": 28.7
       },
       "underPressureAtp": {
        "bpConvPct": 71.4,
@@ -113933,7 +113933,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "career",
-       "pct": 6.5
+       "pct": 6.1
       },
       "underPressureAtp": {
        "bpConvPct": 38.3,
@@ -114011,7 +114011,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 29.3
+       "pct": 28.7
       },
       "underPressureAtp": {
        "bpConvPct": 44.4,
@@ -116064,11 +116064,11 @@
        "pct": 42.7
       },
       "underPressure": {
-       "bpSavedPct": 59.1,
-       "bpConvPct": 39.2,
+       "bpSavedPct": 59,
+       "bpConvPct": 39.3,
        "tbWinPct": 41.1,
        "decWinPct": 40.9,
-       "rating": 180.3,
+       "rating": 180.2,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
@@ -116122,7 +116122,7 @@
        "pct": 31.5
       },
       "underPressure": {
-       "bpSavedPct": 56.9,
+       "bpSavedPct": 56.8,
        "bpConvPct": 40.5,
        "tbWinPct": 53.7,
        "decWinPct": 48.8,
@@ -116308,8 +116308,8 @@
        "pct": 15.5
       },
       "underPressure": {
-       "bpSavedPct": 60.3,
-       "bpConvPct": 37.5,
+       "bpSavedPct": 60.2,
+       "bpConvPct": 37.6,
        "tbWinPct": 40,
        "decWinPct": 45,
        "rating": 182.8,
@@ -118929,16 +118929,16 @@
        "pct": 88.3
       },
       "underPressure": {
-       "bpSavedPct": 55.3,
-       "bpConvPct": 34.4,
-       "tbWinPct": 49.5,
+       "bpSavedPct": 55.4,
+       "bpConvPct": 35,
+       "tbWinPct": 51.9,
        "decWinPct": 31.8,
-       "rating": 171,
+       "rating": 174.1,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 24.9
+       "pct": 29.3
       },
       "underPressureAtp": {
        "bpConvPct": 38.5,
@@ -118988,15 +118988,15 @@
       },
       "underPressure": {
        "bpSavedPct": 54.1,
-       "bpConvPct": 34.7,
-       "tbWinPct": 49.2,
+       "bpConvPct": 34.8,
+       "tbWinPct": 51.2,
        "decWinPct": 30,
-       "rating": 167.9,
+       "rating": 170.1,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "career",
-       "pct": 10.6
+       "pct": 11.5
       },
       "underPressureAtp": {
        "bpConvPct": 39.1,
@@ -119355,15 +119355,15 @@
       },
       "underPressure": {
        "bpSavedPct": 53.8,
-       "bpConvPct": 33.3,
-       "tbWinPct": 45.6,
+       "bpConvPct": 33.4,
+       "tbWinPct": 47.1,
        "decWinPct": 30,
-       "rating": 162.7,
+       "rating": 164.3,
        "estimated": false,
        "components": 4,
        "inclChallenger": true,
        "srScope": "career",
-       "pct": 6.1
+       "pct": 7.3
       },
       "underPressureAtp": {
        "bpConvPct": 38.7,
@@ -119944,7 +119944,7 @@
        "components": 4,
        "inclChallenger": true,
        "srScope": "last52",
-       "pct": 26.6
+       "pct": 26
       },
       "underPressureAtp": {
        "bpConvPct": 28.6,
