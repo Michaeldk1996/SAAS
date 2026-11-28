@@ -34,6 +34,30 @@ def line(a, b, side, extra_after_start=True):
 LINES = [line('Alan Alpha', 'Bruno Beta', 'Alan Alpha'), line('Alan Alpha', 'Bruno Beta', 'Bruno Beta'),
          line('Carl Gamma', 'Dan Delta', 'Carl Gamma'), line('Eve Eps', 'Fred Phi', 'Eve Eps'), line('Gus Gee', 'Hal Hay', 'Gus Gee'),
          line('Ian Iota', 'Jon Jay', 'Ian Iota')]
+POLY_STUB = """
+create schema ten280_bot; create schema ten287_bot; create schema ten287_rec;
+create table ten280_bot.alerts (id bigserial primary key, mode text not null, fixture_id bigint not null, side_id int not null default 2,
+  tier text, player_a text, player_b text, side_player text, eval_at timestamptz not null default now(),
+  delivery text not null default 'unsent', created_at timestamptz not null default now());
+create table ten287_bot.alerts (id bigserial primary key, mode text not null, book text not null default 'Superbet', event_id bigint not null,
+  side text not null default 'home', tier text, player_a text, player_b text, side_player text, eval_at timestamptz not null default now(),
+  delivery text not null default 'unsent', created_at timestamptz not null default now());
+create table public.kibl_fixtures (fixture_id bigint primary key, scheduled_start timestamptz);
+create table ten287_rec.config (id boolean primary key default true check (id), books text[] not null default array['Polymarket', 'Superbet']);
+insert into ten287_rec.config (id) values (true);
+create table ten287_rec.requests (id bigint primary key, kind text not null, book text, fired_at timestamptz not null default now(),
+  processed_at timestamptz, status_code integer, n_items integer, ratelimit_remaining integer, note text, event_id bigint);
+create table ten287_rec.events (event_id bigint primary key, home text, away text, start_at timestamptz, status text, league text, tier text,
+  bookmaker_ids jsonb, first_seen timestamptz not null default now(), last_seen timestamptz not null default now());
+create table ten287_rec.ticks (id bigserial primary key, book text not null, event_id bigint not null, market text not null default 'ML',
+  back_home numeric, back_away numeric, lay_home numeric, lay_away numeric, depth_home numeric, depth_away numeric,
+  depth_lay_home numeric, depth_lay_away numeric, book_updated_at timestamptz, seen_at timestamptz not null, event_status text,
+  src text not null, state_md5 text not null);
+create unique index ticks_state_uq on ten287_rec.ticks (book, event_id, market, book_updated_at, state_md5) nulls not distinct;
+create function ten287_rec.tier(p_league text, p_home text) returns text language sql immutable as $$
+  select case when coalesce(p_home, '') like '%/%' then null when p_league like 'ATP - %' then 'ATP'
+              when p_league like 'Challenger - %' then 'Challenger' when p_league like '%ITF Men%' then 'ITF Men' else null end $$;
+"""
 STUB = """
 create schema drops_api; create role drops_reader nologin;
 create table public.lines_stub (j jsonb);
@@ -42,7 +66,7 @@ create table public.live_flip_log_current (event_key text primary key, last_not_
 """
 try:
     pg.roles()
-    rc, out = q(STUB); check('stubs', rc == 0, out)
+    rc, out = q(POLY_STUB + STUB); check('stubs', rc == 0, out)
     rc, err = pg.file(SCOPE); check('drops-scope.sql applies', rc == 0, err)
     for i in (1, 2):
         rc, err = pg.file(SQL); check(f'drops-archive.sql applies (pass {i}: idempotent)', rc == 0, err)
