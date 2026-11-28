@@ -1,6 +1,19 @@
 {
- "generatedAt": "2026-11-28T09:56:49.007Z",
+ "generatedAt": "2026-11-28T10:42:52.590Z",
  "tournaments": [
+  {
+   "key": "tour",
+   "season": "2026",
+   "name": "ATP Tour",
+   "file": "news-ticker/tour-2026.json",
+   "items": 217,
+   "byType": {
+    "quote": 177,
+    "digest": 40
+   },
+   "latestTimestamp": "2026-11-28T10:15:34.000Z",
+   "updatedAt": "2026-11-28T10:42:52.590Z"
+  },
   {
    "key": "3120",
    "season": "2026",
@@ -13,19 +26,6 @@
    },
    "latestTimestamp": "2026-11-28T08:55:00.000Z",
    "updatedAt": "2026-11-28T09:56:49.007Z"
-  },
-  {
-   "key": "tour",
-   "season": "2026",
-   "name": "ATP Tour",
-   "file": "news-ticker/tour-2026.json",
-   "items": 216,
-   "byType": {
-    "quote": 176,
-    "digest": 40
-   },
-   "latestTimestamp": "2026-11-27T15:54:53.000Z",
-   "updatedAt": "2026-11-27T16:33:31.358Z"
   },
   {
    "key": "2794",
@@ -69,6 +69,38 @@
   }
  ],
  "latest": [
+  {
+   "id": "quote-b4f2be9799ca70",
+   "type": "quote",
+   "playerId": "1103",
+   "opponentId": null,
+   "player": "C. Norrie",
+   "opponent": null,
+   "tournament": "ATP Tour",
+   "tournamentKey": "tour",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-28T10:15:34.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "He completely destroyed me in those two matches",
+   "originalText": "Me ha destrozado completamente en esos dos partidos",
+   "language": "es",
+   "translated": true,
+   "translationModel": "claude-opus-5-5",
+   "sourceName": "AS (Diario AS)",
+   "sourceUrl": "https://as.com/tenis/oficial-alcaraz-jugara-su-individual-f202611-n/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On his two defeats to Jódar this year",
+   "settingTried": true,
+   "sourceHash": "91586567adbbc141",
+   "publishedAt": "2026-11-28T10:42:52.590Z",
+   "file": "news-ticker/tour-2026.json"
+  },
   {
    "id": "digest-c4585c967f4e3e",
    "type": "digest",
@@ -1445,39 +1477,6 @@
    "sourceHash": "e6b460e472a5aab5",
    "publishedAt": "2026-11-26T05:09:53.468Z",
    "file": "news-ticker/tour-2026.json"
-  },
-  {
-   "id": "quote-91b9a9c46e52e1",
-   "type": "quote",
-   "playerId": "50323",
-   "opponentId": "416",
-   "player": "R. Jodar",
-   "opponent": "J. Rodionov",
-   "tournament": "Davis Cup - World Group",
-   "tournamentKey": "3120",
-   "season": "2026",
-   "round": null,
-   "timestamp": "2026-11-26T00:00:00.000Z",
-   "timestampKind": "observed (the outlet's own publication time)",
-   "category": "Quotes",
-   "context": "after beating J. Rodionov",
-   "eventKey": "12183005",
-   "won": true,
-   "text": "I think the advice that the captain David [Ferrer] really helped me to start the second set with more confidence and more relaxed, … That’s what I had to do. I was in a Davis Cup match, so I had to enjoy myself and try to play free. That’s what I did best.",
-   "originalText": null,
-   "language": "en",
-   "translated": false,
-   "translationModel": null,
-   "sourceName": "ATP Tour",
-   "sourceUrl": "https://www.atptour.com/en/news/jodar-spain-austria-davis-cup-finals-2026-thursday",
-   "verbatimCheck": "passed",
-   "verbatimCheckedOn": "the fetched ATP page, by the ATP reader",
-   "topic": "On captain Ferrer's advice before the second set",
-   "sourceHash": "73eb359cc43bd3f0",
-   "publishedAt": "2026-11-26T21:33:49.091Z",
-   "revisedAt": "2026-11-26T22:45:35.695Z",
-   "revision": 1,
-   "file": "news-ticker/3120-2026.json"
   }
  ]
 }
