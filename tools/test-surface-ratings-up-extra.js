@@ -20,10 +20,4 @@ const floors = { minMatches: 20, minSvpt: 400, minBpFaced: 50, minBpChance: 50, 
 const r = computeRatings(tour, floors, ch).underPressure;
 assert(r.rating != null && r.components === 4 && r.inclChallenger, 'the Challenger top-up rates him: ' + JSON.stringify(r));
 assert(computeRatings(tour, floors, null).underPressure.rating == null, 'control: tour alone is below the floors');
-// ITF (founder 2026-11-28): success counts scaled so that after the Challenger discount (0.9) an ITF success counts 0.8.
-const { scaleSuccess } = require('../surface-ratings-chall-apitennis.js');
-const itf = scaleSuccess({ bpFaced: 10, bpSaved: 6, oBpFaced: 10, oBpSaved: 6, tbPlayed: 2, tbWon: 1, decPlayed: 1, decWon: 1 }, 0.8 / 0.9);
-const near = (a, b) => Math.abs(a - b) < 1e-9;
-assert(itf.itf && near(itf.bpSaved * 0.9, 6 * 0.8) && near((itf.oBpFaced - itf.oBpSaved) * 0.9, 4 * 0.8) && near(itf.tbWon * 0.9, 0.8) && near(itf.decWon * 0.9, 0.8), 'ITF successes count 0.8: ' + JSON.stringify(itf));
-assert(itf.bpFaced === 10 && itf.oBpFaced === 10 && itf.tbPlayed === 2 && itf.decPlayed === 1, 'denominators untouched');
 console.log('surface-ratings Under-pressure extra: all checks pass');

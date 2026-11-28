@@ -49,8 +49,7 @@ const CHALL_EVENT_TYPE = 281;   // Challenger Men Singles
 // `eventType` defaults to Challenger (281); surface-ratings-tour-apitennis.js passes 265
 // (ATP singles) for the tour-level fill of the seasons TML does not carry.
 async function fetchPlayerChallengerFixtures(apiKey, playerKey, dateStart, dateStop, eventType = CHALL_EVENT_TYPE) {
-  // eventType null = every event type (the ITF fetch filters on event_type_type itself)
-  const url = `${API_BASE}?method=get_fixtures&APIkey=${apiKey}&date_start=${dateStart}&date_stop=${dateStop}&player_key=${playerKey}` + (eventType != null ? `&event_type_key=${eventType}` : '');
+  const url = `${API_BASE}?method=get_fixtures&APIkey=${apiKey}&date_start=${dateStart}&date_stop=${dateStop}&player_key=${playerKey}&event_type_key=${eventType}`;
   let res;
   try { res = await fetch(url); } catch (e) { return { ok: false, rows: null, reason: 'transport' }; }
   if (!res) return { ok: false, rows: null, reason: 'no-response' };
@@ -213,39 +212,4 @@ async function fetchChallengerContribs(candidates, opts) {
   return { contribs: out, resolvedKeys, refusals, fetched, refusalRate, reasons, maxRefusalRate: MAX_REFUSAL_RATE };
 }
 
-// ITF men's singles (founder 2026-11-28, "Yes, add ITF"): for the model's Under-pressure list only. api-tennis has no
-// ITF event_type_key on file here, so each player's fixtures are fetched across types and filtered on event_type_type.
-// Success counts are scaled so that, after computeRatings' Challenger discount, an ITF success counts ITF_DISCOUNT
-// (0.8: ITF fields are weaker than Challenger's 0.9). Refusals are counted and logged, never gate the store.
-const ITF_TYPE = 'Itf Men Singles';
-function scaleSuccess(c, f) {
-  const conv = c.oBpFaced != null ? (c.oBpFaced - c.oBpSaved) * f : null;
-  return Object.assign({}, c, { itf: true,
-    bpSaved: c.bpSaved != null ? c.bpSaved * f : c.bpSaved,
-    oBpSaved: conv != null ? c.oBpFaced - conv : c.oBpSaved,
-    tbWon: c.tbWon * f, decWon: c.decWon * f });
-}
-async function fetchItfContribs(candidates, opts) {
-  const { apiKey, fromYear, dateStop, surfaceMap, itfDiscount, challDiscount, concurrency = 6, log = () => {} } = opts;
-  const f = itfDiscount / challDiscount;
-  const byKey = new Map();
-  let i = 0, fetched = 0, refusals = 0, fixtures = 0, withStats = 0;
-  async function worker() {
-    while (i < candidates.length) {
-      const c = candidates[i++];
-      const r = await fetchPlayerChallengerFixtures(apiKey, c.playerKey, `${fromYear}-01-01`, dateStop, null);
-      fetched++;
-      if (!r || !r.ok) { refusals++; continue; }
-      const rows = r.rows.filter(x => x && x.event_type_type === ITF_TYPE);
-      fixtures += rows.length;
-      const contribs = buildContribs(rows, c.playerKey, surfaceMap).map(x => scaleSuccess(x, f));
-      withStats += contribs.length;
-      if (contribs.length) byKey.set(String(c.playerKey), contribs);
-    }
-  }
-  await Promise.all(Array.from({ length: Math.min(concurrency, candidates.length || 1) }, worker));
-  log(`itf-api: ${fetched} fetched, ${refusals} refused, ${fixtures} ITF fixtures, ${withStats} with box-score stats, ${byKey.size} players with ITF data.`);
-  return { byKey, fetched, refusals, fixtures, withStats };
-}
-
-module.exports = { fetchChallengerContribs, fetchPlayerChallengerFixtures, buildContribs, serveBlock, fetchItfContribs, scaleSuccess };
+module.exports = { fetchChallengerContribs, fetchPlayerChallengerFixtures, buildContribs, serveBlock };
