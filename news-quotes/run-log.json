@@ -1,284 +1,6 @@
 {
  "runs": [
   {
-   "at": "2026-11-19T16:21:37.625Z",
-   "activeTournaments": [
-    "Finals - Turin"
-   ],
-   "tournaments": [
-    {
-     "name": "Finals - Turin",
-     "key": "2794",
-     "sources": [],
-     "fromOutlets": 43,
-     "counts": {
-      "candidates": 43,
-      "droppedNotVerbatim": 0,
-      "droppedNoPlayer": 0,
-      "droppedAmbiguous": 0,
-      "notTranslatedNoKey": 0,
-      "notTranslatedApiError": 0,
-      "droppedTranslationCheck": 0,
-      "droppedEnglishExists": 0,
-      "mergedSameQuote": 1,
-      "alreadyHeld": 0,
-      "items": 42,
-      "tokens": {
-       "input": 2068,
-       "output": 259
-      },
-      "modelError": null,
-      "retryUrls": 0,
-      "topicsAdded": 2
-     },
-     "digests": {
-      "cards": 32,
-      "kept": 21,
-      "made": 2,
-      "failed": 0,
-      "waiting": 0,
-      "single": 9
-     },
-     "added": 6,
-     "held": 174,
-     "byCategory": {
-      "Quotes": 131,
-      "Injuries": 9,
-      "Interviews": 34
-     },
-     "finishedMatches": 7,
-     "matchesWithWinnerQuote": 7
-    },
-    {
-     "name": "ATP Tour",
-     "key": "tour",
-     "sources": [],
-     "fromOutlets": 0,
-     "counts": {
-      "candidates": 0,
-      "droppedNotVerbatim": 0,
-      "droppedNoPlayer": 0,
-      "droppedAmbiguous": 0,
-      "notTranslatedNoKey": 0,
-      "notTranslatedApiError": 0,
-      "droppedTranslationCheck": 0,
-      "droppedEnglishExists": 0,
-      "mergedSameQuote": 0,
-      "alreadyHeld": 0,
-      "items": 0,
-      "tokens": {
-       "input": 0,
-       "output": 0
-      },
-      "modelError": null,
-      "retryUrls": 0
-     },
-     "digests": {
-      "cards": 51,
-      "kept": 20,
-      "made": 3,
-      "failed": 0,
-      "waiting": 0,
-      "single": 28
-     },
-     "added": 0,
-     "held": 118,
-     "byCategory": {
-      "Interviews": 87,
-      "Injuries": 8,
-      "Quotes": 23
-     },
-     "finishedMatches": 0,
-     "matchesWithWinnerQuote": 0
-    }
-   ],
-   "newItems": 6,
-   "tokens": {
-    "input": 9808,
-    "output": 2241
-   },
-   "press": {
-    "matchesLookedUp": 0,
-    "answers": 0
-   },
-   "ttvInbox": {
-    "held": 87,
-    "routed": 31
-   },
-   "atpInbox": {
-    "held": 24,
-    "routed": 10
-   },
-   "outlets": {
-    "read": 131,
-    "withCandidates": 2,
-    "blocked": [
-     "El Deber: the site refuses a plain request",
-     "Tenniskafe: the site refuses a plain request",
-     "TenisovySvet.cz: the site refuses a plain request",
-     "tennisnet.com: unexpected answer",
-     "The Indian Express: the site refuses a plain request",
-     "ESPN México (Tenis): unexpected answer",
-     "Aftonbladet: unexpected answer",
-     "ESPN: unexpected answer"
-    ],
-    "articlesFetched": 23,
-    "paywalled": 1,
-    "unnamed": 16,
-    "byOutlet": [
-     {
-      "outlet": "Sporza (VRT)",
-      "country": "Belgium",
-      "language": "nl",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "La DH Les Sports+",
-      "country": "Belgium",
-      "language": "fr",
-      "fetched": 1,
-      "candidates": 1
-     },
-     {
-      "outlet": "RTBF Sport",
-      "country": "Belgium",
-      "language": "fr",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "CT sport",
-      "country": "Czech Republic",
-      "language": "cs",
-      "fetched": 1,
-      "candidates": 1
-     },
-     {
-      "outlet": "We Love Tennis",
-      "country": "France",
-      "language": "fr",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "Tennis Actu",
-      "country": "France",
-      "language": "fr",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "Sport1",
-      "country": "Germany",
-      "language": "de",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "Sportstar (The Hindu)",
-      "country": "India",
-      "language": "en",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "Tennis365",
-      "country": "INT",
-      "language": "en",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "Tennishead",
-      "country": "INT",
-      "language": "en",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "Nemzeti Sport",
-      "country": "Hungary",
-      "language": "hu",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "Ubitennis",
-      "country": "INT",
-      "language": "en",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "Corriere dello Sport",
-      "country": "Italy",
-      "language": "it",
-      "fetched": 2,
-      "candidates": 0
-     },
-     {
-      "outlet": "La Gazzetta dello Sport",
-      "country": "Italy",
-      "language": "it",
-      "fetched": 2,
-      "candidates": 0
-     },
-     {
-      "outlet": "WP SportoweFakty",
-      "country": "Poland",
-      "language": "pl",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "Sport Klub",
-      "country": "Serbia",
-      "language": "sr",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "AS (Diario AS)",
-      "country": "Spain",
-      "language": "es",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "Sport Aktuality",
-      "country": "Slovakia",
-      "language": "sk",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "Sportnet (SME)",
-      "country": "Slovakia",
-      "language": "sk",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "BBC Sport",
-      "country": "United Kingdom",
-      "language": "en",
-      "fetched": 1,
-      "candidates": 0
-     },
-     {
-      "outlet": "Sky Sports",
-      "country": "United Kingdom",
-      "language": "en",
-      "fetched": 1,
-      "candidates": 0
-     }
-    ]
-   },
-   "rehomed": 0,
-   "alerts": []
-  },
-  {
    "at": "2026-11-19T16:51:23.609Z",
    "activeTournaments": [
     "Finals - Turin"
@@ -69729,6 +69451,186 @@
       "outlet": "RTHK",
       "country": "Hong Kong",
       "language": "en",
+      "fetched": 1,
+      "candidates": 0
+     }
+    ]
+   },
+   "rehomed": 0,
+   "alerts": []
+  },
+  {
+   "at": "2026-11-28T08:54:23.698Z",
+   "activeTournaments": [
+    "Davis Cup - World Group"
+   ],
+   "tournaments": [
+    {
+     "name": "Davis Cup - World Group",
+     "key": "3120",
+     "sources": [],
+     "fromOutlets": 3,
+     "counts": {
+      "candidates": 3,
+      "droppedNotVerbatim": 0,
+      "droppedNoPlayer": 0,
+      "droppedAmbiguous": 0,
+      "notTranslatedNoKey": 0,
+      "notTranslatedApiError": 0,
+      "droppedTranslationCheck": 0,
+      "droppedEnglishExists": 0,
+      "mergedSameQuote": 0,
+      "alreadyHeld": 0,
+      "items": 3,
+      "tokens": {
+       "input": 0,
+       "output": 0
+      },
+      "modelError": null,
+      "retryUrls": 0
+     },
+     "digests": {
+      "cards": 14,
+      "kept": 9,
+      "made": 0,
+      "failed": 0,
+      "waiting": 0,
+      "single": 5
+     },
+     "added": 0,
+     "held": 36,
+     "byCategory": {
+      "Quotes": 26,
+      "Injuries": 2,
+      "Interviews": 8
+     },
+     "finishedMatches": 8,
+     "matchesWithWinnerQuote": 4
+    },
+    {
+     "name": "ATP Tour",
+     "key": "tour",
+     "sources": [],
+     "fromOutlets": 1,
+     "counts": {
+      "candidates": 1,
+      "droppedNotVerbatim": 0,
+      "droppedNoPlayer": 0,
+      "droppedAmbiguous": 0,
+      "notTranslatedNoKey": 0,
+      "notTranslatedApiError": 0,
+      "droppedTranslationCheck": 0,
+      "droppedEnglishExists": 0,
+      "mergedSameQuote": 0,
+      "alreadyHeld": 0,
+      "items": 1,
+      "tokens": {
+       "input": 0,
+       "output": 0
+      },
+      "modelError": null,
+      "retryUrls": 0
+     },
+     "digests": {
+      "cards": 78,
+      "kept": 40,
+      "made": 0,
+      "failed": 0,
+      "waiting": 0,
+      "single": 38
+     },
+     "added": 0,
+     "held": 216,
+     "byCategory": {
+      "Interviews": 156,
+      "Injuries": 20,
+      "Quotes": 40
+     },
+     "finishedMatches": 0,
+     "matchesWithWinnerQuote": 0
+    }
+   ],
+   "newItems": 0,
+   "tokens": {
+    "input": 0,
+    "output": 0
+   },
+   "press": {
+    "matchesLookedUp": 0,
+    "answers": 0
+   },
+   "ttvInbox": {
+    "held": 106,
+    "routed": 0
+   },
+   "atpInbox": {
+    "held": 62,
+    "routed": 4
+   },
+   "outlets": {
+    "read": 131,
+    "withCandidates": 0,
+    "blocked": [
+     "El Deber: the site refuses a plain request",
+     "Tenniskafe: the site refuses a plain request",
+     "TenisovySvet.cz: the site refuses a plain request",
+     "The Indian Express: the site refuses a plain request",
+     "ESPN México (Tenis): unexpected answer",
+     "Monaco Tribune: the site refuses a plain request",
+     "AS (Diario AS): the site refuses a plain request",
+     "Aftonbladet: unexpected answer",
+     "ESPN: unexpected answer"
+    ],
+    "articlesFetched": 7,
+    "paywalled": 0,
+    "unnamed": 15,
+    "byOutlet": [
+     {
+      "outlet": "Sport.cz",
+      "country": "Czech Republic",
+      "language": "cs",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "We Love Tennis",
+      "country": "France",
+      "language": "fr",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Tennis Actu",
+      "country": "France",
+      "language": "fr",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "The Times of India",
+      "country": "India",
+      "language": "en",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "SuperTennis (FITP)",
+      "country": "Italy",
+      "language": "it",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "Ubitennis",
+      "country": "Italy",
+      "language": "it",
+      "fetched": 1,
+      "candidates": 0
+     },
+     {
+      "outlet": "La Gazzetta dello Sport",
+      "country": "Italy",
+      "language": "it",
       "fetched": 1,
       "candidates": 0
      }
