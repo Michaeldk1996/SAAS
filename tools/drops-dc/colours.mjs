@@ -24,6 +24,11 @@ export const NEW_TOKENS = {
   '--do3-blue-40': 'rgba(91, 155, 255, 0.40)',
   '--do3-blue-55': 'rgba(91, 155, 255, 0.55)',
   '--do3-blue-70': 'rgba(91, 155, 255, 0.70)',
+  // the archive page (Dropping Odds Archive.dc.html, LOCKED 2026-11-27)
+  '--do3-arch-bg': '#07090F',
+  '--do3-arch-ph': '#5D6680',
+  '--do3-row-hover': '#131724',
+  '--do3-scrim-74': 'rgba(4, 6, 10, 0.74)',
 };
 const OLD = {
   '#0e1019': 'do2-card', '#0c0e16': 'do2-inner', '#121521': 'do2-lift', '#0a0c13': 'do2-track', '#171b28': 'do2-hover',

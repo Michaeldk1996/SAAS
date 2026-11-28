@@ -31,7 +31,7 @@ const CARD = { id: 'upcoming-999', p1: 'A. Alpha', p2: 'B. Beta', p1Key: 11, p2K
 const CHART = { books: { 'Pinnacle +30s': { p1: [[iso(22), 2.12], [iso(8), 1.9], [iso(4), 1.46]], p2: [[iso(22), 1.8], [iso(4), 2.85]] } },
   meta: { 'Pinnacle +30s': { source: 'Oddspapi', checkedAt: iso(0.2) } } };
 
-function boot({ rows = FIX.rows.concat([ATP_ROW]), lines = FIX.lines.concat([ATP_LINE]), ageS = 10, reachable = true, tz = 'UTC', board = [CARD], width = 1440 } = {}) {
+function boot({ rows = FIX.rows.concat([ATP_ROW]), lines = FIX.lines.concat([ATP_LINE]), ageS = 10, reachable = true, tz = 'UTC', board = [CARD], width = 1440, archive = null } = {}) {
   const mk = () => { const o = { _h: '', _l: {}, addEventListener(t, f) { (o._l[t] = o._l[t] || []).push(f); }, contains: () => false, querySelectorAll: () => [], querySelector: () => null,
     closest: () => ({ classList: { contains: () => true } }) }; Object.defineProperty(o, 'innerHTML', { get: () => o._h, set: (v) => { o._h = v; } }); return o; };
   const root = mk(), ov = mk(); ov.remove = () => { mounted = false; };
@@ -45,11 +45,12 @@ function boot({ rows = FIX.rows.concat([ATP_ROW]), lines = FIX.lines.concat([ATP
       body: { appendChild: () => { mounted = true; } }, createElement: (t) => (t === 'style' ? {} : ov) },
     location: { search: '' }, URLSearchParams, Intl, Date: FD, Promise, JSON, Math, String, Number, Object, Array, isFinite, parseFloat, RegExp, Error,
     localStorage: { getItem: () => null }, newsTz: () => tz, matches: board, roundBadgeText: (r) => (r === 'Quarter-finals' ? 'QF' : r),
-    cardStartMs: () => NOW + 6 * H, openAnalysisModal: (id) => { sb._opened = id; }, requestAnimationFrame: (f) => f(), innerWidth: width,
+    cardStartMs: () => NOW + 6 * H, openAnalysisModal: (id) => { sb._opened = id; }, requestAnimationFrame: (f) => f(), innerWidth: width, scrollTo() {},
     newsPlayerName: (k, n) => ({ 11: 'A. Alpha-Profile', 22: 'B. Beta-Profile' }[k] || n), sfEventName: (raw) => (raw === 'ATP Testville' ? 'Testville Open' : raw),
     playerPhotoImg: (k, n) => '<img class="sf-ph" data-key="' + k + '" alt="' + n + '">',
     ensureOddsMovement: async (m) => { m._oddsLoaded = true; m.oddsMovement = { chart: CHART }; },
-    fetch: async (u) => { if (!reachable) throw new Error('down'); return res(String(u).endsWith('/status.json') ? status : { schema: 1, windowHours: 72, rows, lines }); },
+    fetch: async (u) => { if (!reachable) throw new Error('down'); if (String(u).endsWith('/archive.json')) { if (!archive) throw new Error('no archive'); return res(archive); }
+      return res(String(u).endsWith('/status.json') ? status : { schema: 1, windowHours: 72, rows, lines }); },
     setTimeout: (f, ms) => { timers.push(ms); return timers.length; }, clearTimeout() {}, setInterval: () => 0, clearInterval() {},
     addEventListener: (t, f) => { winL[t] = f; },
   };
@@ -161,7 +162,7 @@ test('header: the design card; the subtitle says first recorded (founder 2026-11
   assert.equal(q.st.lastV.hdrDrops, '—'); assert.equal(q.st.lastV.updatedVal, '—');
   assert.doesNotMatch(h2, /data-docard/, 'never a card with nothing read');
   assert.doesNotMatch(html, /selections across/, 'the count line is removed (README §3)');
-  assert.doesNotMatch(html, /data-doarchive/, 'the archive link waits for the archive page');
+  assert.match(html, /data-doarchive[^>]*>Biggest moves of the past days ›</, 'the archive link (founder 2026-11-28)');
 });
 
 test('cards: one per selection, the design\'s card markup (5% edge at rest, 16% on hover), sharp label names its source', async () => {
@@ -271,4 +272,40 @@ test('wiring: published with tokens; the module loads in node; the Arbitrage vie
   const req = createRequire(import.meta.url); assert.ok(req('./drops-page.js').buildSelections);
   assert.match(read('tools/site-code.sh'), /drops-page\.js drops-page\.css/);
   assert.ok(!fs.existsSync(new URL('./arb-page.js', import.meta.url))); assert.doesNotMatch(SRC, /ArbPage/);
+});
+
+// ─── the archive: "Biggest moves of the past days" (founder 2026-11-28) ───
+const AR = (k, over) => ({ key: k, eventKey: 1, playerA: 'Alan Alpha', playerB: 'Bruno Beta', side: 'Alan Alpha', opp: 'Bruno Beta', tier: 'Challenger', event: 'Testville',
+  round: 'R16', scheduledAt: iso(20), startAt: iso(20), won: true, status: 'Finished', score: '6-4  7-6', lagMin: 25,
+  sharp: { o: 2.12, oAt: iso(30), c: 1.46, cAt: iso(20.1), n: 1.46, drop: 31.1, pts: 21.3, mv: { from: 2.0, to: 1.6, at: iso(25), fromAt: iso(26), pct: 20 }, line: [[iso(30), 2.12], [iso(26), 2.0], [iso(25), 1.6], [iso(20.1), 1.46]] },
+  soft: { o: 2.10, oAt: iso(29), c: 1.50, cAt: iso(20.2), n: 1.5, drop: 28.6, pts: 19.1, mv: { from: 1.9, to: 1.6, at: iso(24.6), fromAt: iso(27), pct: 15.8 }, line: [[iso(29), 2.1], [iso(24.6), 1.6], [iso(20.2), 1.5]], book: 'avg' }, ...over });
+const ARCH = { schema: 1, generatedAt: iso(0.1), rows: [AR('a'), AR('b', { won: false, sharp: { ...AR('x').sharp, drop: 12, o: 3.0, pts: 3.1 }, scheduledAt: iso(50) }),
+  AR('c', { startAt: null, sharp: { ...AR('x').sharp, c: null, drop: 8, pts: 1.2 }, scheduledAt: iso(24 * 20) }), AR('d', { sharp: { ...AR('x').sharp, drop: -3, pts: -1 } })] };
+
+test('archive: the link opens it; rows by day, drops only, biggest first; tiles count with denominators; no close without a verified start', async () => {
+  const p = boot({ archive: ARCH }); await p.start();
+  assert.match(p.root.innerHTML, /data-doarchive/, 'the link is drawn once the archive exists');
+  p.st.lastV.openArchive(p.ev); await p.flush();
+  const v = p.st.lastA;
+  assert.equal(v.groups.length, 2, 'two days in the last 7 (the 20-day record and the rise are out)');
+  assert.equal(v.tiles[0].val, '2'); assert.equal(v.tiles[2].val, '50%'); assert.equal(v.tiles[2].sub, '1 of 2 selections won');
+  assert.equal(v.tiles[3].val, '—', 'under 5 moves: no yield');
+  assert.match(v.countLine, /^2 moves on finished matches · sharp books \(Bet105 \(no margin\)\)$/);
+  v.tracks[1].opts[1].onClick(); await p.flush();
+  const w = p.st.lastA, rows = w.groups.flatMap((g) => g.rows);
+  assert.equal(rows.length, 3); assert.ok(rows.some((r) => r.closePx === '—'), 'no verified start: the Closed cell is a dash, never a snapshot');
+  assert.ok(!rows.some((r) => r.drop.startsWith('-')), 'a rise is not a move');
+  assert.match(p.root.innerHTML, />Biggest moves · archive</);
+});
+
+test('archive box: the step strip, the recorded prices joined straight, the 1u result at the price after the biggest move; Escape closes it; back returns', async () => {
+  const p = boot({ archive: ARCH }); await p.start(); p.st.lastV.openArchive(p.ev); await p.flush();
+  p.st.lastA.groups[0].rows[0].onOpen(); await p.flush();
+  const m = p.st.lastA.m;
+  assert.equal(m.sharpName, 'Bet105 (no margin)'); assert.equal(m.sharp.mvFromTo, '2.00 → 1.60'); assert.equal(m.pl, '+0.60u'); assert.equal(m.backPx, '1.60');
+  assert.equal(m.sharpLine.split(' ').length, 4, 'one point per recorded price in the line'); assert.equal(m.lead, 'soft books followed 25m later');
+  assert.match(p.root.innerHTML, /data-amodal/);
+  const esc = () => { const L = p.sb.sfEscLayers.filter((l) => l.isOpen()).sort((a, b) => b.z - a.z)[0]; if (L) L.close(); };
+  esc(); assert.equal(p.st.A.open, null);
+  p.st.lastA.back(); await p.flush(); assert.equal(p.st.archive, false); assert.match(p.root.innerHTML, /data-docard/);
 });

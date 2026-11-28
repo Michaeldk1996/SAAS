@@ -220,8 +220,23 @@ files `drops-page.js`, `drops-page.css`. Suite `test-drops-v2.mjs` (a frozen sli
 - **Missing is a dash plus its reason** ("No sharp line", "No line", "One price", "No move"), never a zero.
 - **Header** = the file's card: Drops · Biggest (in pts under Drops in = Pts implied) · Updated = the read's
   `generatedAt` HH:MM in `stennisfy.tz`, "—" before the first good read. No count line under the tabs (README §3).
-- **The "Biggest moves of the past days" link and archive page** are approved (founder 2026-11-28) and wait for their
-  90-day store; until then the link is not drawn.
+- **Prediction markets in the lines** (founder 2026-11-28, "link it"): `drops_api.lines()` (`tools/ten294-drops-lines.sql`)
+  joins our Polymarket CLOB recorder's events (`ten287_rec` events from 9e11, label `polyrec.config.book`, kept out of the
+  odds-api.io match lookup so they never make a match ambiguous) and Kalshi's per-player markets (`kalshi_rec`: price = 1 /
+  yes ask, open markets only) to each selection, exactly one candidate each, pre-match. Installed with
+  `ten294-drops.yml` steps=lines: the install and a `snapshot(72)` timing check in one transaction, rolled back past 10 s.
+  **Test:** `test-ten294-drops.mjs` "prediction markets in the pop-up lines".
+- **"Biggest moves of the past days" (the archive)** (founder 2026-11-28, design `Dropping Odds Archive.dc.html`): one
+  record per selection the drop bots flagged (a selection in `lines(72)`) once its api-tennis match is decided (Finished or
+  Retired with a winner; a walkover never). `drops_archive.collect()` (pg_cron `drops-archive-collect`, :07 / :37) stores its
+  recorded series cut before the verified start (`live_flip_log_current`), insert-only, 90 days (`tools/drops-archive.sql`);
+  the endpoint's `/archive.json` computes the figures (`stennisfy-drops/archive.mjs`) and adds each match's set score from
+  api-tennis. Sharp = Bet105 without its margin (the store holds no Pinnacle; founder 2026-11-28 "Bet105 is Pinnacle with a
+  margin"), named so wherever the file says Pinnacle. **A close only at a verified start**: without one the Closed cell is a
+  dash and the drop reads to the last recorded price. A rise is not a move (only drops are listed). Yield = 1u at the price
+  right after the biggest sharp move, shown from 5 moves. Opened from the header link; back and Escape return.
+  **Test:** `tools/test-drops-archive.mjs` (the reader; Bet105 no-margin = the page's rule point for point), `tools/test-drops-archive-sql.py`
+  (real Postgres: cut, insert-only, decided only, one fixture, 90 days, reader-only), `test-drops-v2.mjs` "archive".
 - **Price history box:** three tiles (Sharp, Soft, Best price now) with their Opening rows (price · day time recorded), the
   chart, the bookmaker tables (Sharp · Soft · Prediction markets: Opened · Now · Drop). **The chart draws straight lines
   between recorded prices** (founder 2026-11-28, replacing TEN-301's step line): last 24 h, a price recorded before the

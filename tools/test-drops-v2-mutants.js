@@ -27,7 +27,11 @@ const MUTANTS = [
   // design copy and bindings
   ['js', 'the subtitle back to "since they opened"', "Prices that have shortened since we first recorded them.", "Prices that have shortened since they opened."],
   ['js', 'the sharp label always Pinnacle', "var shName = c.sharp.src === 'Bet105' ? 'Sharp · Bet105 (no margin)' : 'Sharp · Pinnacle';", "var shName = 'Sharp · Pinnacle';"],
-  ['js', 'the archive link shown before the archive exists', "v.deskPad = '30px 40px 70px 24px'; v.hasArchive = false;", "v.deskPad = '30px 40px 70px 24px'; v.hasArchive = true;"],
+  ['js', 'the archive link not drawn', "v.deskPad = '30px 40px 70px 24px'; v.hasArchive = true;", "v.deskPad = '30px 40px 70px 24px'; v.hasArchive = false;"],
+  ['js', 'the archive calls a snapshot a close', "closePx: m.c != null ? f2(m.c) : '—', onOpen:", "closePx: f2(m.c != null ? m.c : m.n), onOpen:"],
+  ['js', 'the archive lists rises', "      return m && m.drop > 0 && isFinite(t)", "      return m && isFinite(t)"],
+  ['js', 'the archive yield under 5 moves', "val: priced.length >= 5 ?", "val: priced.length >= 1 ?"],
+  ['js', 'the archive names Pinnacle for Bet105', "  var ARCH_SHARP = 'Bet105 (no margin)';", "  var ARCH_SHARP = 'Pinnacle';"],
   ['js', 'Match analysis offered without a board card', "maD: !mobile && card ? 'flex' : 'none',", "maD: !mobile ? 'flex' : 'none',"],
   ['js', 'feed strings unescaped', "  function E(x) { return x == null ? '' : x.__raw != null ? x.__raw : esc(x); }", "  function E(x) { return x == null ? '' : x.__raw != null ? x.__raw : String(x); }"],
   ['js', 'the card edge off the design at rest', 'title="Show the price history" style="display:flex; flex-direction:column; border-radius:16px; background:var(--do2-inner); border:1px solid var(--do3-edge-5);', 'title="Show the price history" style="display:flex; flex-direction:column; border-radius:16px; background:var(--do2-inner); border:1px solid var(--do2-hair);'],
