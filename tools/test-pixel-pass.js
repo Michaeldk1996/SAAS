@@ -361,7 +361,7 @@ check('item 5 · the body states the split RATE, which README §6 requires', () 
 //  track width, which the dashboard shell sets — that is the capture
 //  difference the founder ruled out of scope, not a defect, and it is reported
 //  with the measured numbers rather than chased.
-check('item 6 · the ribbon emits six chips and fades rather than clipping', () => {
+check('item 6 · the ribbon emits six chips, fades and scrolls rather than clipping', () => {
   const html = I.renderRibbon({ filtered: HCTX.rows, ledgerOpen: false });
   const chips = html.match(/class="pp2-chip"/g) || [];
   assert.strictEqual(chips.length, 6, `the ribbon emits ${chips.length} chips, README §3 says six`);
@@ -371,7 +371,8 @@ check('item 6 · the ribbon emits six chips and fades rather than clipping', () 
     'the chip track does not carry the spec fade mask — it will CLIP');
   assert(/-webkit-mask-image:linear-gradient\(90deg,var\(--page\) 82%,transparent\)/.test(html),
     'the chip track is missing the -webkit- mask, so it clips in WebKit');
-  assert(/overflow:hidden/.test(html), 'the chip track does not clip its overflow');
+  // README final 2026-11-26: the track scrolls sideways (the fade stays as the "more" hint), never a dead clip
+  assert(/data-pp2-ribbonchips="1"[^>]*overflow-x:auto/.test(html), 'the chip track does not scroll');
 });
 
 check('item 6 · the ribbon grid is README §3\'s five tracks, verbatim', () => {

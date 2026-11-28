@@ -954,7 +954,7 @@
     // sit side by side (no hairline between them), as the reference draws it.
     var HAIR = '<span aria-hidden="true" style="width:1px;height:12px;background:' + EDGE_14 + ';"></span>';
     var badge = '<span class="pp2-style-badge" style="font-size:12.5px;font-weight:700;padding:3px 9px;border-radius:6px;background:var(--selected);' +
-      'box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--text) 12%, transparent);white-space:nowrap;flex:none;color:' +
+      'box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--text) 12%, transparent);max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:' +
       (ctx.archetype ? 'var(--text)' : DASH_COLOUR) + ';">' + esc(ctx.archetype || DASH) + '</span>';
     var meta = [
       '<span>' + esc(p.country || DASH) + '</span>',
@@ -966,10 +966,12 @@
       '<div class="pp2-head" style="border-bottom:1px solid var(--edge-10);padding-bottom:26px;' +
       'display:flex;align-items:center;gap:28px;flex-wrap:wrap;">' +
       renderAvatar(p, rank) +
-      '<div style="flex:1;min-width:260px;display:flex;flex-direction:column;gap:10px;">' +
-        '<div style="display:flex;align-items:center;gap:10px;position:relative;">' +
-          '<span class="pp2-name" style="font-size:40px;font-weight:800;letter-spacing:-0.02em;line-height:1;' +
-            'white-space:nowrap;color:var(--text);">' + esc(p.name) + '</span>' +
+      // README (final 2026-11-26): at narrow widths the name / archetype must never run under the stat cells — the text
+      // column shrinks (min-width 0, basis 300) and the name wraps; below that the cells drop to the next line
+      '<div data-pp2-headtext="1" style="flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:10px;">' +
+        '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px 10px;position:relative;">' +
+          '<span class="pp2-name" style="font-size:40px;font-weight:800;letter-spacing:-0.02em;line-height:1.05;' +
+            'min-width:0;overflow-wrap:anywhere;color:var(--text);">' + esc(p.name) + '</span>' +
           watchStarHtml(p) + compareButtonHtml() +
           (state.cmpOpen ? comparePopoverHtml(p) : '') +
         '</div>' +
@@ -1248,7 +1250,9 @@
         '<div><div style="display:flex;gap:4px;">' + (strip || '') + '</div>' +
           eyebrow('last ' + last18.length + ' ' + MIDDOT + ' oldest → most recent') + '</div>' +
         '<div style="width:1px;height:44px;background:var(--line);"></div>' +
-        '<div style="display:flex;gap:8px;overflow:hidden;' +
+        // README (final 2026-11-26): the chips scroll sideways when they do not fit — never cut off with no way to see them
+        '<div data-pp2-ribbonchips="1" style="display:flex;gap:8px;min-width:0;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;' +
+          'overscroll-behavior-x:contain;padding-bottom:2px;' +
           '-webkit-mask-image:linear-gradient(90deg,var(--page) 82%,transparent);' +
           'mask-image:linear-gradient(90deg,var(--page) 82%,transparent);">' + chipHtml + '</div>' +
         // A link while it opens the ledger; "Hide ledger" is a toggle word, so white (foundation).

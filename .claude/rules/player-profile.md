@@ -650,3 +650,14 @@ Supersedes the v3 values it restates. Reference = `Player Stat Boxes.dc.html` / 
   price bands with the fav / dog edge at 1.95 (`modal-market-edge.md` Bands; the export draws eight at 2.00); the band
   box's closing-price heads are the avatar + Opp (the README site rule, over the file's "Price"); the band foot names our
   tour population (every priced ATP main-tour match since 2010). **Test:** `tools/test-pp7.js` derived / market.
+- **Narrow widths (README "known and not fixed in the design"; Michael 2026-11-28: fix them now, ahead of the
+  desktop-first rule):** the header's text column shrinks (`flex:1 1 300px; min-width:0`) and the name wraps
+  (`overflow-wrap:anywhere`), so a long name or archetype never runs under the stat cells ("Current run · since …");
+  when the column would fall under 300px the cells drop to the next line. The archetype badge truncates with an
+  ellipsis as a last resort. The recent-form chip row scrolls sideways (thin scrollbar) and keeps its right-edge fade as
+  the "more" hint — never a dead clip. **Test:** measured 960–1440 with "B. Van De Zandschulp" + "Big Server + Complete
+  Baseliner": the text column always ends before the cells or the cells wrap; `tools/test-pp7.js` narrow (+ controls),
+  `tools/test-pixel-pass.js` item 6.
+- **Level & round "?" (kept over the export):** the scope chip keeps "Career · W–L · rate · N matches" — the Q1 ruling
+  (the baseline is printed so the gap is reproducible, locked by `tools/test-pp2-reconcile.js` Q1/Q2); the export's
+  "… by round, level and opponent · click a row for its matches" is not used.

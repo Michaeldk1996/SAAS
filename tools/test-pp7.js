@@ -273,4 +273,22 @@ H.mustFail('CONTROL · caps role labels fail', () => lcOk(mutant([[
 const mkOk = src => assert(/data-mk-charthead="1" style="display:inline-flex;align-items:baseline;gap:12px;/.test(src), 'the chart sub line is not on the title line');
 H.check('market · "Cumulative return" and its sub line share one baseline (gap 12)', () => mkOk(SRC));
 H.mustFail('CONTROL · the stacked chart head fails', () => mkOk(SRC.replace('data-mk-charthead="1" style="display:inline-flex;align-items:baseline;gap:12px;', 'data-mk-charthead="1" style="display:flex;flex-direction:column;gap:5px;')));
+// ── narrow widths (README "known and not fixed in the design", Michael 2026-11-28: fix them) ─────────────────
+const narrowOk = X => {
+  reset(X, {});
+  const h = X.renderPage ? X.renderPage(p) : null;
+  const src = X.__src || SRC;
+  // the header text column may shrink (min-width 0) and the name wraps, so it never runs under the stat cells
+  assert(/data-pp2-headtext="1" style="flex:1 1 300px;min-width:0;/.test(src), 'the header text column cannot shrink');
+  assert(/class="pp2-name" style="[^"]*overflow-wrap:anywhere;/.test(src) && !/class="pp2-name" style="[^"]*white-space:nowrap/.test(src), 'the name cannot wrap');
+  assert(/class="pp2-style-badge" style="[^"]*max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;/.test(src), 'the archetype badge cannot truncate');
+  // the recent-form chips scroll sideways, never cut off under a fade
+  assert(/data-pp2-ribbonchips="1" style="display:flex;gap:8px;min-width:0;overflow-x:auto;/.test(src), 'the form chips do not scroll');
+  return h;
+};
+H.check('narrow · header name column shrinks and wraps (never under the stat cells); form chips scroll', () => narrowOk({ resetState: I.resetState, state: I.state }));
+H.mustFail('CONTROL · the pre-fix nowrap name with a 260px floor fails', () => narrowOk({ resetState: I.resetState, state: I.state,
+  __src: SRC.replace('data-pp2-headtext="1" style="flex:1 1 300px;min-width:0;', 'data-pp2-headtext="1" style="flex:1;min-width:260px;') }));
+H.mustFail('CONTROL · the pre-fix clipped chip strip fails', () => narrowOk({ resetState: I.resetState, state: I.state,
+  __src: SRC.replace('overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;', 'overflow:hidden;') }));
 H.done();
