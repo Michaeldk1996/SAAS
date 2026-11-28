@@ -2,8 +2,70 @@
  "tournament": "Davis Cup - World Group",
  "tournamentKey": "3120",
  "season": "2026",
- "updatedAt": "2026-11-28T15:56:15.535Z",
+ "updatedAt": "2026-11-28T16:27:18.268Z",
  "items": [
+  {
+   "id": "quote-2ef070ed73366a",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": null,
+   "player": "C. Alcaraz",
+   "opponent": null,
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-28T16:12:45.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "It is a second straight final, it is going to be my first Davis Cup final, I’ll do whatever it takes to win,",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Ubitennis",
+   "sourceUrl": "https://www.ubitennis.net/2026/11/spain-cruise-into-davis-cup-final-as-leon-smith-bids-farewell-after-17-years/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On reaching his first Davis Cup final",
+   "setting": "after beating Fery in the Davis Cup semi-final",
+   "sourceHash": "1346d18719835359",
+   "publishedAt": "2026-11-28T16:27:18.268Z"
+  },
+  {
+   "id": "quote-f42147ba32d315",
+   "type": "quote",
+   "playerId": "2382",
+   "opponentId": null,
+   "player": "C. Alcaraz",
+   "opponent": null,
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "round": null,
+   "timestamp": "2026-11-28T16:12:45.000Z",
+   "timestampKind": "observed (the outlet's own publication time)",
+   "category": "Interviews",
+   "context": null,
+   "eventKey": null,
+   "won": null,
+   "text": "It’s something I have been chasing for a really long time, to be in a Davis Cup final.",
+   "originalText": null,
+   "language": "en",
+   "translated": false,
+   "translationModel": null,
+   "sourceName": "Ubitennis",
+   "sourceUrl": "https://www.ubitennis.net/2026/11/spain-cruise-into-davis-cup-final-as-leon-smith-bids-farewell-after-17-years/",
+   "verbatimCheck": "passed",
+   "verbatimCheckedOn": "the original-language text of the fetched page",
+   "topic": "On reaching his first Davis Cup final",
+   "setting": "after beating Fery in the Davis Cup semi-final",
+   "sourceHash": "22fff3eb36b7a169",
+   "publishedAt": "2026-11-28T16:27:18.268Z"
+  },
   {
    "id": "quote-0c04ffc424e048",
    "type": "quote",
@@ -1258,6 +1320,55 @@
    "topicTried": true
   },
   {
+   "id": "digest-168675c5dc8d24",
+   "type": "digest",
+   "version": 1,
+   "playerId": "2382",
+   "player": "C. Alcaraz",
+   "opponentId": null,
+   "opponent": null,
+   "tournament": "Davis Cup - World Group",
+   "tournamentKey": "3120",
+   "season": "2026",
+   "eventKey": null,
+   "context": null,
+   "category": "Quotes",
+   "timestamp": "2026-11-28T16:12:45.000Z",
+   "members": [
+    "quote-2ef070ed73366a",
+    "quote-76012288c599b2",
+    "quote-78497205eb31fe",
+    "quote-f42147ba32d315"
+   ],
+   "memberHash": "a52b66de14a3cb04",
+   "digestedAt": "2026-11-28T16:27:18.268Z",
+   "blocks": [
+    {
+     "label": "on reaching his first Davis Cup final",
+     "text": "It is a second straight final, it is going to be my first Davis Cup final. I'll do whatever it takes to win. It's something I have been chasing for a really long time, to be in a Davis Cup final.",
+     "from": [
+      "quote-2ef070ed73366a",
+      "quote-f42147ba32d315"
+     ]
+    },
+    {
+     "label": "on the Davis Cup final against Italy",
+     "text": "It's going to be a massive day, and I'm going to really enjoy my time on court.",
+     "from": [
+      "quote-78497205eb31fe"
+     ]
+    },
+    {
+     "label": "on playing for Spain at the Davis Cup Finals",
+     "text": "It is a great privilege for me to be here.",
+     "from": [
+      "quote-76012288c599b2"
+     ]
+    }
+   ],
+   "model": "claude-opus-5-5"
+  },
+  {
    "id": "digest-16f60899f13507",
    "type": "digest",
    "version": 1,
@@ -1285,45 +1396,6 @@
      "from": [
       "quote-0c04ffc424e048",
       "quote-79c977b973b6cb"
-     ]
-    }
-   ],
-   "model": "claude-opus-5-5"
-  },
-  {
-   "id": "digest-168675c5dc8d24",
-   "type": "digest",
-   "version": 1,
-   "playerId": "2382",
-   "player": "C. Alcaraz",
-   "opponentId": null,
-   "opponent": null,
-   "tournament": "Davis Cup - World Group",
-   "tournamentKey": "3120",
-   "season": "2026",
-   "eventKey": null,
-   "context": null,
-   "category": "Quotes",
-   "timestamp": "2026-11-28T14:28:00.000Z",
-   "members": [
-    "quote-76012288c599b2",
-    "quote-78497205eb31fe"
-   ],
-   "memberHash": "fd557114037d5e60",
-   "digestedAt": "2026-11-28T15:56:15.535Z",
-   "blocks": [
-    {
-     "label": "on playing for Spain at the Davis Cup Finals",
-     "text": "It is a great privilege for me to be here.",
-     "from": [
-      "quote-76012288c599b2"
-     ]
-    },
-    {
-     "label": "on the Davis Cup final against Italy",
-     "text": "It's going to be a massive day, and I'm going to really enjoy my time on court.",
-     "from": [
-      "quote-78497205eb31fe"
      ]
     }
    ],
